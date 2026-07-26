@@ -184,22 +184,25 @@ async fn tag_targets_must_be_within_the_same_ehr() {
     let vo_a: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let tag = json!([{ "key": "clin-proj-27a" }]);
-    // Tagging A's composition from A: accepted.
+    // Tagging A's composition from A: accepted. The route family must match
+    // the stored kind (the fixture previously said EHR_STATUS for a
+    // COMPOSITION target, which the kind guard now rejects).
     svc.target_tags_replace(
         ehr_a,
         vo_a.to_string(),
-        "EHR_STATUS",
+        "COMPOSITION",
         tag.as_array().unwrap().clone(),
     )
     .await
     .expect("own-EHR tag accepted");
 
-    // Tagging A's composition from B: rejected — cross-EHR target.
+    // Tagging A's composition from B: rejected — cross-EHR target (the type
+    // matches, so the refusal is the same-EHR duty, not the kind guard).
     let err = svc
         .target_tags_replace(
             ehr_b,
             vo_a.to_string(),
-            "EHR_STATUS",
+            "COMPOSITION",
             tag.as_array().unwrap().clone(),
         )
         .await

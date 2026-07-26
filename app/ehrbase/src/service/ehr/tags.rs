@@ -3,14 +3,15 @@
 //!
 //! Spec: RM `ITEM_TAG`
 //! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`
-//! — the invariants `Inv_key_valid` / `Inv_value_valid`; RM ehr `ehr.adoc`
-//! `EHR.tags`: "Tag target values can only be within the same EHR") and the
-//! development-branch OAS `ItemTag` schema (`key`/`value`/`target_path`/
-//! `target`/`owner_id`, `additionalProperties: false`). `PUT …/tags` "updates
-//! the list of **all** `ITEM_TAG` resources associated with a given target …
-//! an empty list will effectively remove all" — a full-collection replace.
-//! Not an SM-EHR interface. The `item_tag` table SQL is spec-silent
-//! (storage seam — our own design).
+//! — `target: UID_BASED_ID` "may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`",
+//! `owner_id: OBJECT_REF`, the invariants `Inv_key_valid` / `Inv_value_valid`;
+//! RM ehr `ehr.adoc` `EHR.tags`: "Tag target values can only be within the
+//! same EHR") and ITS-REST overview `Requests_and_responses.md` §item-tag
+//! headers (identity: "uniquely identified by their `key` and `target_path`
+//! pair"; container vs specific-VERSION targets are distinct). `PUT …/tags`
+//! is a full-collection replace of the ADDRESSED collection — the container's
+//! or one VERSION's, never both. Not an SM-EHR interface. The `item_tag`
+//! table SQL is spec-silent (storage seam — our own design).
 
 use crate::ids::{EhrId, VoId};
 use crate::service::status::{CallStatusType, SmError};
@@ -52,11 +53,12 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
+        target_version: Option<&str>,
     ) -> Result<Vec<Value>, ServiceError> {
         let rows = crate::storage::tag_repo::list_tags(
             &self.pool,
             Some(ehr_id),
-            Some(target_vo_id),
+            Some((target_vo_id, target_version)),
             None,
             None,
             None,
@@ -79,27 +81,16 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
+        target_version: Option<&str>,
         target_type: &str,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
-        // "Tag target values can only be within the same EHR" (RM ehr
-        // `ehr.adoc` EHR.tags): the target versioned object must exist AND
-        // belong to this EHR — the item_tag table is deliberately FK-less (a
-        // tag may address a specific VERSION), so the ownership check lives
-        // here.
-        let owner = crate::storage::version_repo::meta::vo_owner(&self.pool, target_vo_id).await?;
-        if owner != Some(Some(ehr_id)) {
-            return Err(ServiceError::sm(
-                CallStatusType::VersionedObjectDoesNotExist,
-                format!(
-                    "tag target {target_vo_id} does not exist in EHR {ehr_id} \
-                     (tag targets can only be within the same EHR)"
-                ),
-            ));
-        }
-        // Validate every tag before writing; the `replace_tags` upsert arm
-        // covers same-key repetition (last-wins) in the EHR scope.
+        self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
+            .await?;
+        // Validate every tag before writing; the storage replace dedupes the
+        // posted set on the ITEM_TAG identity — the (key, target_path) PAIR
+        // (ITS-REST Requests_and_responses.md §item-tag headers), last-wins.
         let mut new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> =
             Vec::with_capacity(tags.len());
         for tag in &tags {
@@ -130,13 +121,75 @@ impl EhrbaseService {
             });
         }
         let mut tx = self.pool.begin().await?;
-        crate::storage::tag_repo::replace_tags(&mut tx, Some(ehr_id), target_vo_id, &new_tags)
-            .await?;
+        crate::storage::tag_repo::replace_tags(
+            &mut tx,
+            Some(ehr_id),
+            target_vo_id,
+            target_version,
+            &new_tags,
+        )
+        .await?;
         tx.commit().await?;
-        self.target_tags(ehr_id, target_vo_id).await
+        self.target_tags(ehr_id, target_vo_id, target_version).await
     }
 
-    /// Delete a tag by key from a target object.
+    /// The tag-target guard: the addressed versioned object must exist in
+    /// THIS EHR ("Tag target values can only be within the same EHR" — RM ehr
+    /// `ehr.adoc` `EHR.tags`), its stored kind must match the route family
+    /// (a COMPOSITION route must not tag an `EHR_STATUS` container), and a
+    /// VERSION-addressed target must name an existing version. The `item_tag`
+    /// table is deliberately FK-less, so these checks live here.
+    async fn ensure_tag_target(
+        &self,
+        ehr_id: EhrId,
+        target_vo_id: VoId,
+        target_version: Option<&str>,
+        target_type: &str,
+    ) -> Result<(), ServiceError> {
+        let not_found = || {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!(
+                    "tag target {target_vo_id} does not exist in EHR {ehr_id} \
+                     (tag targets can only be within the same EHR)"
+                ),
+            )
+        };
+        let Some((owner, kind)) =
+            crate::storage::version_repo::meta::vo_owner_kind(&self.pool, target_vo_id).await?
+        else {
+            return Err(not_found());
+        };
+        if owner != Some(ehr_id) || kind != target_type {
+            return Err(not_found());
+        }
+        if let Some(tail) = target_version {
+            let tree = crate::versioning::object_version_id::parse_version_tail(tail)?;
+            let (branch_number, branch_version) = tree.branch.unwrap_or((0, 0));
+            if !crate::storage::version_repo::meta::version_exists(
+                &self.pool,
+                target_vo_id,
+                tree.trunk,
+                branch_number,
+                branch_version,
+            )
+            .await?
+            {
+                return Err(ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("tag target version {target_vo_id}::{tail}"),
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Delete a target collection's tags by key. The wire addresses tags by
+    /// `key` alone while the `ITEM_TAG` identity is the (`key`, `target_path`)
+    /// pair — so this is a SET delete: every tag under the key in the
+    /// addressed collection goes (ITS-REST `Requests_and_responses.md`
+    /// §item-tag headers; the Release-1.1.0 tag routes carry no path
+    /// selector).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when no such tag exists on the target;
@@ -145,10 +198,17 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         target_vo_id: VoId,
+        target_version: Option<&str>,
         key: &str,
     ) -> Result<(), ServiceError> {
-        if !crate::storage::tag_repo::delete_tag(&self.pool, Some(ehr_id), target_vo_id, key)
-            .await?
+        if !crate::storage::tag_repo::delete_tag(
+            &self.pool,
+            Some(ehr_id),
+            target_vo_id,
+            target_version,
+            key,
+        )
+        .await?
         {
             return Err(ServiceError::sm(
                 CallStatusType::VersionedObjectDoesNotExist,
@@ -158,22 +218,33 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// One `ITEM_TAG` in its wire shape: exactly the OAS `ItemTag`
-    /// properties — `key`, optional `value`/`target_path`, OBJECT_REF-shaped
-    /// `target` (the tagged versioned object, its RM type in `type`) and
-    /// `owner_id` (the owning EHR). No extra fields — the schema is
-    /// `additionalProperties: false` (`_type` is its discriminator).
+    /// One `ITEM_TAG` in its RM wire shape (`item_tag.adoc`): `key`, optional
+    /// `value`/`target_path`, `target` as a bare `UID_BASED_ID` — a
+    /// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
+    /// VERSION target ("may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") —
+    /// and `owner_id` as the RM's `OBJECT_REF` to the owning EHR.
+    ///
+    /// NOTE: `_type` is emitted on the tag itself for canonical-JSON
+    /// consistency (ITS-REST `Resources.md` §JSON Format neither requires nor
+    /// forbids it on a concrete standalone type); the stalled OAS `ItemTag`
+    /// schema disagrees with the RM on `target`'s shape — the RM is the
+    /// RELEASED component and wins (owner ruling 2026-07-24).
     fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {
         let target_vo_id = row.target_vo_id;
+        let target = match &row.target_version {
+            Some(tail) => json!({
+                "_type": "OBJECT_VERSION_ID",
+                "value": format!("{target_vo_id}::{tail}")
+            }),
+            None => json!({
+                "_type": "HIER_OBJECT_ID",
+                "value": target_vo_id.to_string()
+            }),
+        };
         let mut tag = json!({
             "_type": "ITEM_TAG",
             "key": row.key.as_str(),
-            "target": {
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": row.target_type.as_str(),
-                "id": { "_type": "HIER_OBJECT_ID", "value": target_vo_id.to_string() }
-            },
+            "target": target,
             "owner_id": {
                 "_type": "OBJECT_REF",
                 "namespace": "local",
@@ -225,8 +296,8 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         uid_based_id: String,
     ) -> Result<Vec<Value>, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
-        Ok(self.target_tags(an_ehr_id, vo_id).await?)
+        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
+        Ok(self.target_tags(an_ehr_id, vo_id, tail).await?)
     }
 
     /// `PUT …/{uid_based_id}/tags` — full-collection replace of a target's
@@ -243,9 +314,9 @@ impl EhrbaseService {
         target_type: &str,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
         Ok(self
-            .replace_tags(an_ehr_id, vo_id, target_type, tags)
+            .replace_tags(an_ehr_id, vo_id, tail, target_type, tags)
             .await?)
     }
 
@@ -260,8 +331,31 @@ impl EhrbaseService {
         uid_based_id: String,
         key: String,
     ) -> Result<(), SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
-        self.delete_tag(an_ehr_id, vo_id, &key).await?;
+        let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
+        self.delete_tag(an_ehr_id, vo_id, tail, &key).await?;
         Ok(())
     }
+}
+
+/// Split a tag route's `uid_based_id` into the versioned-object id and — for a
+/// VERSION-addressed target — the verbatim `creating_system_id::version_tree_id`
+/// tail (RM `item_tag.adoc`: `target` "may be a `VERSIONED_OBJECT<T>` or a
+/// `VERSION<T>`"). The tail is validated as a well-formed `OBJECT_VERSION_ID`
+/// before it is kept verbatim.
+fn parse_tag_target(uid_based_id: &str) -> Result<(VoId, Option<&str>), SmError> {
+    let (vo_id, tree) = parse_uid_based_id(uid_based_id)?;
+    if tree.is_none() {
+        return Ok((vo_id, None));
+    }
+    let tail = uid_based_id
+        .split_once("::")
+        .map(|(_, tail)| tail)
+        .filter(|tail| !tail.is_empty())
+        .ok_or_else(|| {
+            SmError::new(
+                CallStatusType::PreconditionViolation,
+                format!("malformed version-addressed tag target {uid_based_id:?}"),
+            )
+        })?;
+    Ok((vo_id, Some(tail)))
 }
