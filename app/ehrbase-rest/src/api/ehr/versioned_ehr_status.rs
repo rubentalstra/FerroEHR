@@ -7,7 +7,6 @@
 //! versioned_ehr_status_version_get_by_id}.yaml`.
 
 use axum::response::Response;
-use http::StatusCode;
 
 use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusGetParams, VersionedEhrStatusRevisionHistoryParams,
@@ -29,7 +28,6 @@ pub(super) async fn run(
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
     let q = parts.query.as_deref();
-    let ok = StatusCode::OK;
     let base = state.config().server.base_path.clone();
 
     match op {
@@ -40,10 +38,14 @@ pub(super) async fn run(
             // VERSIONED_OBJECT container — canonical JSON or XML
             // (ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
             // `ToXml` for the concrete `VERSIONED_*` class serves it).
-            Ok(negotiate::respond_rm::<VersionedEhrStatus>(
+            // Container-uid ETag (§ETag and Last-Modified); no commit instant
+            // on the container body, so Last-Modified is honestly absent.
+            let resp = super::read_resp(&p.ehr_id, body);
+            Ok(negotiate::read_rm::<VersionedEhrStatus>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "versioned_ehr_status",
             ))
         }
@@ -51,10 +53,24 @@ pub(super) async fn run(
             let p = params::build::<VersionedEhrStatusRevisionHistoryParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = state.backend().ehr_status_revision_history(ehr_id).await?;
-            Ok(negotiate::respond_rm::<RevisionHistory>(
+            // The status container's uid is not in the path — take it from the
+            // history read's owning EHR: derive via the versioned-status read
+            // is an extra round trip, so the ETag uses the EHR-scoped history
+            // identity the body itself provides (the last item's version uid's
+            // object id), falling back to header-less when absent.
+            let vo_uid = body["items"]
+                .as_array()
+                .and_then(|items| items.last())
+                .and_then(|item| item["version_id"]["value"].as_str())
+                .and_then(|uid| uid.split("::").next())
+                .unwrap_or_default()
+                .to_owned();
+            let resp = super::revision_history_resp(&p.ehr_id, &vo_uid, body);
+            Ok(negotiate::read_rm::<RevisionHistory>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "revision_history",
             ))
         }
@@ -87,10 +103,14 @@ pub(super) async fn run(
             // Full-identity check as on the ehr_status by-version read
             // (Resources.md §Identifier types; BASE master05 case rule).
             super::ensure_served_version(&p.version_uid, &body)?;
-            Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
+            // Version-uid ETag + commit-time Last-Modified (§ETag and
+            // Last-Modified SHOULD on VERSION reads).
+            let resp = super::read_resp(&p.ehr_id, body);
+            Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "original_version",
             ))
         }

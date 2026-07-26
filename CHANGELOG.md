@@ -207,6 +207,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`ETag`/`Last-Modified` on every versioned read** (#368). The
+  VERSIONED_COMPOSITION and VERSIONED_EHR_STATUS container reads, the
+  VERSION-by-id reads, and both revision-history reads now carry the
+  versioning headers (container/version uid as the `ETag`; the commit
+  instant as `Last-Modified` where the body carries one) — previously only
+  the at-time variants did.
+
 - **Version identity is the full three-part `version_uid`, compared
   case-insensitively** (#367). Deleting a composition (and reading a version
   by id) with a fabricated `creating_system_id` is now refused (409 / 404) —

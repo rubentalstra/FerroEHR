@@ -7,7 +7,6 @@
 //! versioned_composition_version_get_by_id}.yaml`.
 
 use axum::response::Response;
-use http::StatusCode;
 
 use openehr_its::rest::generated::ehr::{
     VersionedCompositionGetParams, VersionedCompositionRevisionHistoryParams,
@@ -29,7 +28,6 @@ pub(super) async fn run(
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
     let q = parts.query.as_deref();
-    let ok = StatusCode::OK;
     let base = state.config().server.base_path.clone();
 
     match op {
@@ -41,11 +39,16 @@ pub(super) async fn run(
                 .backend()
                 .get_versioned_composition(ehr_id, ehrbase::ids::VoId(vo_id))
                 .await?;
-            // VERSIONED_OBJECT container — canonical JSON or XML.
-            Ok(negotiate::respond_rm::<VersionedComposition>(
+            // VERSIONED_OBJECT container — canonical JSON or XML, with the
+            // container-uid ETag (Requests_and_responses.md §ETag and
+            // Last-Modified: "VERSIONED_OBJECT.uid.value"); the container body
+            // carries no commit instant, so Last-Modified is honestly absent.
+            let resp = super::read_resp(&p.ehr_id, body);
+            Ok(negotiate::read_rm::<VersionedComposition>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "versioned_composition",
             ))
         }
@@ -57,10 +60,14 @@ pub(super) async fn run(
                 .backend()
                 .composition_revision_history(ehr_id, ehrbase::ids::VoId(vo_id))
                 .await?;
-            Ok(negotiate::respond_rm::<RevisionHistory>(
+            // ETag from the container uid + Last-Modified from the most
+            // recent item (§ETag and Last-Modified SHOULD on versioned reads).
+            let resp = super::revision_history_resp(&p.ehr_id, &p.versioned_object_uid, body);
+            Ok(negotiate::read_rm::<RevisionHistory>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "revision_history",
             ))
         }
@@ -93,12 +100,15 @@ pub(super) async fn run(
                 .backend()
                 .composition_original_version(ehr_id, ovid)
                 .await?;
-            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML; carries the
-            // version `<signature>` (ECC-SIG-001).
-            Ok(negotiate::respond_rm::<OriginalVersion<Composition>>(
+            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML, with the
+            // version-uid ETag + commit-time Last-Modified (§ETag and
+            // Last-Modified SHOULD on VERSION reads).
+            let resp = super::read_resp(&p.ehr_id, body);
+            Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
                 h,
-                ok,
-                &body,
+                &base,
+                None,
+                &resp,
                 "original_version",
             ))
         }
