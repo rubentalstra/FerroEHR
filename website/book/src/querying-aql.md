@@ -74,8 +74,15 @@ The query API is **JSON only** (`Accept: application/json`).
 ### Scoping to an EHR
 
 You can restrict a query to one EHR without writing the constraint into the
-AQL: pass an `ehr_id` query-string parameter (on `GET` **or** `POST`), or the
-`openEHR-EHR-id` request header (the parameter wins when both are present).
+AQL: pass an `ehr_id` query-string parameter, or the `openehr-ehr-id` request
+header. Both forms work on **every** execution endpoint — ad-hoc and stored,
+`GET` and `POST` alike. (`openEHR-EHR-id` is the deprecated spelling of the
+same header and still resolves, HTTP header names being case-insensitive.)
+
+If a request carries **both** forms they must name the **same** EHR; a request
+whose parameter and header name **different** EHRs is self-contradictory and is
+rejected with a **400 Bad Request**.
+
 The id must exist: a **malformed** id is a **400**, and a well-formed id that
 matches **no EHR** is an honest **404 Not Found** rather than an empty result
 set, so a typo cannot masquerade as "no data".

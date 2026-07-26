@@ -47,7 +47,7 @@ pub struct AqlQueryRequest {
 
 impl AqlQueryRequest {
     /// The single-EHR scope of the ITS-REST wire (`ehr_id` query parameter /
-    /// `openEHR-EHR-id` header), if exactly one EHR is scoped.
+    /// `openehr-ehr-id` header), if exactly one EHR is scoped.
     #[must_use]
     pub fn single_ehr_id(&self) -> Option<&str> {
         match self.ehr_ids.as_slice() {

@@ -1,0 +1,61 @@
+# The `openehr-ehr-id` REQUEST HEADER, alone, scopes a GET ad-hoc execution to
+# one EHR. Ground (ITS-REST docs text, the released oracle):
+# docs/query/Request.md §"About the ehr_id parameter" — "Depending on the needs,
+# clients MAY supply it as a query parameter `ehr_id` or alternatively as a
+# request header named `openehr-ehr-id`" — with §"Common Headers and Query
+# Parameters" listing it under "Related request headers ... used to execute the
+# query within a single EHR context", and docs/query/Query_types.md §"Single EHR
+# queries" repeating the pair. None of them distinguishes HTTP methods, so the
+# header must scope the GET form exactly as the `ehr_id` parameter does.
+#
+# The AQL is deliberately UNSCOPED (a population query over `EHR e CONTAINS
+# COMPOSITION c`, Query_types.md §"Population queries": "not referring or using
+# any `ehr_id` parameter to constrain the scope on a specific EHR"), so the
+# header is the ONLY thing narrowing the result: a server that ignores it
+# answers with every EHR's compositions and the bag equality below fails. Row
+# order is unspecified (no ORDER BY), so the expected uids are matched as a bag
+# (QUERY master03 §ORDER BY).
+#
+# TODO: strengthen to a deterministic two-EHR discrimination (commit into a
+# second EHR in the same case, then assert the scoped read excludes it). Not
+# authorable today: the case surface has no capture alias, so a second
+# `create_ehr` step rebinds `${ehr_id}` and the first EHR becomes unreachable.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_get
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic, QueryApi]
+profiles: [STANDARD]
+test_purpose: >-
+  A GET ad-hoc execution whose EHR scope is supplied ONLY as the
+  `openehr-ehr-id` request header returns exactly that EHR's compositions —
+  the header is honoured as the single-EHR execution context.
+description: "GET ad-hoc AQL scoped by the openehr-ehr-id request header alone"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "ITS-REST query Request.md §About the ehr_id parameter"
+  - "ITS-REST query Request.md §Common Headers and Query Parameters"
+  - "ITS-REST query Query_types.md §Single EHR queries, §Population queries"
+  - "QUERY AQL §CONTAINS, §Identified Paths"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+requires:
+  server: any
+  templates: [cnf.opt.blood_pressure]
+  ehr: { commits: none }                    # mints ${ehr_id}
+  commit: [cnf.set.query-bp-10]             # generated: 10 BP compositions
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    variant: get_ehr_id_header              # GET /query/aql, scope via openehr-ehr-id
+    with:
+      ehr_id: "${ehr_id}"                   # travels in the header, not the query string
+      q: >-
+        SELECT c/uid/value AS uid
+        FROM EHR e CONTAINS COMPOSITION c
+      fetch: 100                            # fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: set                          # no ORDER BY: bag equality (QUERY master03 §ORDER BY)
+        rows: { from: "${ds:cnf.set.query-bp-10#all_uids_asc}" }
+        columns: [{ name: uid }]

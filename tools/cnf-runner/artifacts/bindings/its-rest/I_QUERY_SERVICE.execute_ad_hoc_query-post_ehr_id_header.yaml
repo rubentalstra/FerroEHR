@@ -1,0 +1,49 @@
+# Wire realization of I_QUERY_SERVICE.execute_ad_hoc_query, variant
+# `post_ehr_id_header`: the POST form of ad-hoc execution with the single-EHR
+# scope carried by the `openehr-ehr-id` REQUEST HEADER instead of the `ehr_id`
+# query parameter.
+#
+# Every expectation below is assigned by the ITS-REST DOCS TEXT, quoted:
+#
+# - the header realization of the EHR scope — docs/query/Request.md §"About the
+#   ehr_id parameter": "Depending on the needs, clients MAY supply it as a query
+#   parameter `ehr_id` or alternatively as a request header named
+#   `openehr-ehr-id`." The sentence draws no method distinction, and the scope
+#   has no body form to compete with: the §"GET vs POST" body carries only the
+#   query and its parameters ("Below is a mostly self-documented AQL query in a
+#   request body" — `q` + `query_parameters`), so on POST the header IS the
+#   alternative form. docs/query/Query_types.md §"Single EHR queries" repeats
+#   the pair.
+# - `offset` / `fetch` / `query_parameters` — docs/query/Request.md §"Common
+#   Headers and Query Parameters" ("All query execution requests SHOULD support
+#   at least the following parameters") and §"Query parameters".
+# - `200` — docs/overview/Requests_and_responses.md §"HTTP status codes", row
+#   `200 OK`: "The request succeeded, payload sent in a 200 response depends on
+#   the request method".
+# - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
+#   "Related response headers: `ETag` - A unique identifier of the resultSet".
+#
+# Identical to the variant-less POST binding except for where the scope travels,
+# so a red row localizes to the header realization on POST alone. `ehr_id` is
+# deliberately absent from `query`.
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+its: its-rest
+variant: post_ehr_id_header
+request:
+  method: POST
+  path: /query/aql
+  body:
+    q: "${q}"
+    query_parameters: "${query_parameters?}"
+    offset: "${offset?}"
+    fetch: "${fetch?}"
+  headers:
+    openehr-ehr-id: "${ehr_id}"           # Request.md §About the ehr_id parameter
+    Content-Type: application/json
+    Accept: application/json
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                           # Requests_and_responses.md §HTTP status codes, row 200
+    headers: { ETag: "present?" }         # Request.md §Common Headers and Query Parameters (related response headers)
+    body: result_set_body
