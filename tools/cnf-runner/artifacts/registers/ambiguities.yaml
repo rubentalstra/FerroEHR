@@ -601,50 +601,51 @@ AMB-57:
   upstream_ref: "UPR-26"
 AMB-58:
   ambiguity: >-
-    The ADL 1.4 OPT GET (/definition/template/adl1.4/{template_id}) is
-    internally inconsistent about Accept: application/json. The operation
-    description names exactly two representations — the canonical XML OPT
-    (Accept: application/xml) and the web template (Accept:
-    application/openehr.wt+json) — while the operation's own Accept parameter
-    and the 200 response's Content-Type header both ENUMERATE
-    application/json, for which the 200 content map declares no schema. So the
-    source both offers and does not offer a canonical-JSON template
-    representation, and no released docs-text sentence says what an
-    application/json read of an OPT returns.
+    NOT an openEHR ambiguity — a documented extension of ours, kept in this
+    register because a case rests on it and must never be mistaken for a
+    spec-derived expectation (re-framed 2026-07-27 under the owner ruling that
+    an "ambiguity" whose only conflict lives in the stalled OAS is not one).
+    The released docs text is simply SILENT on what an `Accept:
+    application/json` read of an operational template returns: it defines no
+    canonical-JSON representation of an OPERATIONAL_TEMPLATE anywhere, names
+    only `application/openehr.wt+json` for the template-as-JSON case, and
+    assigns the request neither a body nor a refusal. Both answers a service
+    could give — serve some JSON document, or refuse 406 — are consistent with
+    every released sentence. The earlier framing of this entry as an internal
+    inconsistency has been dropped: the half that "offers" application/json
+    exists only in the OpenAPI source fragments, which are stalled and are not
+    an oracle, so it never had standing to contradict anything.
   source: >-
-    ITS-REST specifications/operations/definition_template_adl1.4_get.yaml
-    §description ("either the original (canonical) XML based OPT format ... as
-    well as the simplified JSON-based 'web template' format") vs
-    specifications/parameters/header/Accept_Template.yaml and
-    specifications/headers/ContentType_Template.yaml (both enum
-    [application/json, application/xml, application/openehr.wt+json]) vs
-    responses/200_Template_adl1_4_retrieved.yaml (no application/json content
-    entry) — inconsistency CONFIRMED first-hand. The governing RELEASED
-    docs-text rules are ITS-REST overview Resources.md §JSON Format ("The
-    client SHOULD use the Accept: application/json request header to specify
-    the expected JSON response format. If the service cannot fulfil this aspect
-    of the request, it MUST respond with HTTP status code 406 Not Acceptable" +
-    "Proper header Content-Type: application/json MUST be present in the
-    response of the service unless the response has no content body") and
-    §Simplified Formats ("application/openehr.wt+json for the Operational
-    Template definition as Web Template JSON format").
+    ITS-REST overview Resources.md §JSON Format ("The client SHOULD use the
+    Accept: application/json request header to specify the expected JSON
+    response format. If the service cannot fulfil this aspect of the request,
+    it MUST respond with HTTP status code 406 Not Acceptable"; "Proper header
+    Content-Type: application/json MUST be present in the response of the
+    service unless the response has no content body") + §Simplified Formats
+    ("application/openehr.wt+json for the Operational Template definition as
+    Web Template JSON format") — the two rules that govern IF the request is
+    fulfilled, neither of which says whether it is. No released sentence
+    defines a canonical-JSON OPERATIONAL_TEMPLATE representation; silence
+    CONFIRMED first-hand across specifications/docs/**.
   handling: >-
-    Fixed handling: Accept: application/json on the OPT GET is FULFILLED, with
-    the Web Template document — the only JSON representation of an operational
-    template the released text defines — and the response carries
-    Content-Type: application/json, the type the client negotiated
-    (Resources.md §JSON Format MUST). A 406 disposition is rejected: it would
-    contradict the two explicit application/json enum entries in the same
-    released source. The wt+json Accept keeps its own type and body
-    (SF-WT-web_template_get); the application/json branch is
-    SF-WT-web_template_json_accept, tagged with this entry and kept at OPTIONS
-    (never gating) because the representation rests on this adjudication, not
-    on a docs-text assignment. Flips to a canonical-JSON OPERATIONAL_TEMPLATE
-    body, or to 406, only if a future ITS-REST release resolves the
-    inconsistency. No upstream_ref: the offering half of the inconsistency
-    lives only in the OpenAPI source fragments, which are a stalled non-oracle
-    (owner ruling 2026-07-24) and are out of scope for the outbound
-    docs-text report ledger.
+    Our own design/extension, documented rather than derived — no openEHR spec
+    governs which of the two permitted answers a service gives. This CDR
+    FULFILS the request with the Web Template document, the only JSON
+    rendering of an operational template the released text names at all, and
+    answers it under `Content-Type: application/json`, the type the client
+    negotiated (the §JSON Format MUST, which binds once a body is returned).
+    Fulfilling rather than refusing keeps a plain `application/json` client
+    working without a second round trip, and the negotiated Content-Type keeps
+    the response honest about what it is. Because the CHOICE is ours, the case
+    that exercises it (SF-WT-web_template_json_accept) is tagged with this
+    entry and kept at OPTIONS, reported and never gating: no conformant server
+    is required to answer this way, and one that returns 406 instead is not in
+    breach of anything. The spec-named branch is separately and gatingly
+    covered by SF-WT-web_template_get (Accept: application/openehr.wt+json →
+    the Web Template under its own type). Revisits — and becomes a real
+    expectation — if a future ITS-REST release defines the application/json
+    template representation. No upstream_ref: there is no released-source
+    defect to report, only a silence we filled.
   disposition: fixed_handling
 AMB-59:
   ambiguity: >-
@@ -787,3 +788,236 @@ AMB-61:
     own).
   disposition: option_select
   options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]
+AMB-62:
+  ambiguity: >-
+    The `Prefer: return=minimal` branch — which is ALSO the assumed default
+    when no `Prefer` is sent — has no assigned response status. The released
+    text offers two sentences for the same exchange and neither assigns one:
+    "The HTTP status is typically `201 Created`" is descriptive ("typically",
+    not a MUST or a SHOULD), and "If no response body is returned, the service
+    SHOULD use `204 No Content`" is conditional on whether a body is returned,
+    a fact the same text never assigns either. So a conformant minimal write
+    may answer 201 or 204 and the text distinguishes neither, on any write
+    operation.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §"Prefer
+    minimal, identifier or full representation response" ("`Prefer:
+    return=minimal` Indicates the client prefers a minimal response. The
+    response SHOULD include a `Location` header pointing to the newly created
+    or updated resource. The HTTP status is typically `201 Created`. If no
+    response body is returned, the service SHOULD use `204 No Content`.") +
+    §Representation details negotiation ("If no `Prefer` header is provided,
+    the default behavior is assumed to be `return=minimal`") — the absence of
+    a status assignment CONFIRMED first-hand. Contrast the SIBLING preference,
+    which IS assigned: §"Prefer only identifier" fixes "the status will be
+    `201 Created` or `200 OK`, never `204 No Content`".
+  handling: >-
+    No case pins the minimal status, and no binding declares a minimal
+    outcome — not even one carrying an alt_status pair. Accepting {201, 204}
+    would still be an authored expectation assembled from a descriptive
+    adverb plus a conditional SHOULD, which is the invention the attribution
+    law forbids; the honest position is that the branch has no assertable
+    status at all. What the branch DOES assign is asserted elsewhere: the
+    `Location` SHOULD is executed on the create outcomes
+    (wire_surface `header-location-on-create`), and the body selector
+    `prefer_conditional` deliberately never judges the minimal branch. The
+    default-when-absent half is exercised indirectly by the bindings that send
+    no `Prefer` (I_DEFINITION_ADL2.upload_artefact reads its identifier back
+    from `Location`). Carried as the cited wire_surface element
+    `header-prefer-return-minimal`. Activates as a gating case when a future
+    ITS-REST release fixes the minimal status, or when the case model gains an
+    either-status expectation grounded in the two sentences (extension only by
+    schedule release).
+  disposition: fixed_handling
+AMB-63:
+  ambiguity: >-
+    One-EHR-per-subject is neither defined nor denied by the released sources,
+    and three sub-questions follow from that silence. (a) THE KEY: no released
+    sentence says which parts of the subject reference are compared, nor how —
+    whether `PARTY_REF.type` participates, and whether `id.value` /
+    `namespace` are matched byte-for-byte or folded (BASE gives a case rule for
+    composite IDENTIFIERS, not for a demographic id borne inside a
+    PARTY_SELF). (b) THE SCOPE: SM i_ehr_service.adoc declares the error
+    `ehr_for_subject_already_exists` on `create_ehr_for_subject` but NOT on
+    `create_ehr_for_subject_with_id`, whose error list carries only
+    `ehr_create_fail_duplicate_id` — so whether the refusal reaches the
+    client-supplied-id create path is unstated in both directions. (c) THE
+    MULTIPLICITY: the same interface's `get_ehrs_for_subject` returns a
+    `List<EHR_SUMMARY>` and reads "Retrieve EHR or EHRs that have
+    `ehr_status.subject_id` = supplied subject id", and `has_ehr_for_subject`
+    reads "Returns True if there are EHR(s) for `_a_subject_id_`" — plural
+    readings that contradict a one-EHR-per-subject rule outright, while the
+    ITS-REST subject read is a single-EHR resource.
+  source: >-
+    SM i_ehr_service.adoc §create_ehr_for_subject (error
+    `ehr_for_subject_already_exists`) vs §create_ehr_for_subject_with_id (only
+    `ehr_create_fail_duplicate_id`) vs §get_ehrs_for_subject ("Retrieve EHR or
+    EHRs …": `List<EHR_SUMMARY>`) and §has_ehr_for_subject ("there are EHR(s)")
+    + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, "The
+    subject of this EHR. The `_external_ref_` attribute can be used to contain
+    a direct reference to the subject in a demographic or identity service" —
+    no uniqueness, no comparison rule) + the released ITS-REST docs text, which
+    never mentions a subject at all (grep of
+    specifications/docs/**: zero hits) — silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, and the parts of it that rest on nothing released are
+    flagged as such rather than dressed up as spec. (a) THE KEY is the
+    EHR_STATUS.subject.external_ref pair (`id.value`, `namespace`), compared
+    EXACTLY — byte-for-byte, no case folding, `type` not part of the key. No
+    openEHR spec governs this — our own design/extension: a demographic
+    identifier is opaque to the CDR, so two spellings that a demographic
+    service might reconcile are two different subjects here, and folding them
+    would silently merge two patients' records, the wrong-clinical-answer
+    failure mode. Explicitly NOT the BASE composite-identifier case rule
+    (base_types master05 §Composite Identifiers and Case), which governs
+    OBJECT_VERSION_ID-shaped ids, not a demographic id. (b) THE SCOPE: the
+    refusal is carried to EVERY create path, the client-supplied-id form
+    included — the with-id operation's text does not lift it, and a rule that
+    a client could evade by choosing its own uuid would not be a rule.
+    Because that carry is not stated, the case resting on it
+    (I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken) is kept at OPTIONS,
+    reported and never gating — the AMB-58 treatment. The id-less path's
+    refusal IS stated and stays gating
+    (I_EHR_SERVICE.create_ehr-two_ehrs_same_patient). (c) THE MULTIPLICITY
+    question does not arise under (b): at most one EHR ever matches, so the
+    single-EHR ITS-REST subject read is never asked to choose among several,
+    and no case asserts a multi-match shape. The wire cannot distinguish an
+    id-duplicate from a subject-duplicate either — both are the 409 of
+    Requests_and_responses.md §HTTP status codes ("Indicates that the request
+    could not be processed because it might generate a duplicate or a
+    conflict") — so the two share the `already_exists` outcome kind and are
+    told apart by CASE, never by expectation. Revisits if a future release
+    states the key, the scope, or admits several EHRs per subject.
+  disposition: fixed_handling
+AMB-64:
+  ambiguity: >-
+    Whether the `Last-Modified` SHOULD reaches the EHR resource is left open by
+    the scope sentence itself. The header is SHOULDed "for VERSION,
+    VERSIONED_OBJECT, or other resources that have versioning or unique state
+    identifiers" — and an EHR is neither a VERSION nor a VERSIONED_OBJECT: it
+    is a root object that is not versioned at all (RM ehr EHR class carries no
+    uid/version attributes, only `ehr_id` and `time_created`). Whether it
+    qualifies under the open-ended third limb turns on reading "unique state
+    identifiers", which the document never defines. The companion sentence
+    compounds it: the value "should be derived from
+    `VERSION.commit_audit.time_committed.value`", and the EHR resource has no
+    VERSION of its own to derive it from.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §"ETag and
+    Last-Modified" ("Both `ETag` and `Last-Modified` SHOULD be included in
+    responses for VERSION, VERSIONED_OBJECT, or other resources that have
+    versioning or unique state identifiers"; "For openEHR resources, this value
+    should be derived from VERSION.commit_audit.time_committed.value") + RM ehr
+    EHR class §Attributes (`ehr_id` 1..1 HIER_OBJECT_ID, `time_created` 1..1
+    DV_DATE_TIME — no uid, no version identity; the EHR is not a
+    change-controlled resource) — the undefined third limb and the missing
+    derivation source CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, split by whether a real derivation source exists for the
+    exchange. On EHR CREATION (POST /ehr and PUT /ehr/{ehr_id}) the header is
+    asserted present: the creation commits an EHR_STATUS under a CONTRIBUTION
+    ("the result should be a root EHR object, an EHR Status object, and an EHR
+    Access object … created and committed in a Contribution" — RM ehr master04
+    §EHR Creation), so a genuine
+    `VERSION.commit_audit.time_committed.value` exists and the second sentence
+    is satisfiable exactly as written. On an EHR READ (GET /ehr/{ehr_id}, GET
+    /ehr?subject_id=…) the header is declared NEITHER present NOR absent: a
+    read of the non-versioned root has no commit instant of its own, the third
+    limb is undefined, and both asserting and forbidding the header would
+    resolve the scope question privately. The sibling `ETag` is unaffected —
+    §"ETag and Last-Modified" names "EHR.ehr_id.value" among the identifiers it
+    may carry, so it is asserted on EHR reads and writes alike. Revisits if a
+    future ITS-REST release defines the third limb or names a derivation source
+    for non-versioned resources.
+  disposition: fixed_handling
+AMB-65:
+  ambiguity: >-
+    Two RELEASED sources contradict each other on the FORM of the uid copied
+    into a top-level object. The RM says copy the leading Guid only: the
+    `_uid_` of a top-level type is set "to a copy of the `_uid.object_id()_`
+    value of the owning `VERSION` object … i.e. the leading Uid, which is
+    normally a Guid", worked through as
+    `87284370-…::uk.nhs.ehr1::2` -> `87284370-…` — a HIER_OBJECT_ID. The
+    ITS-REST docs text says copy the whole three-part identifier: the inherited
+    `uid` "be populated using the `uid` copied from the enclosing VERSION
+    object", worked through as `87284370-…::uk.nhs.ehr1::2` ->
+    `87284370-…::uk.nhs.ehr1::2` — an OBJECT_VERSION_ID. The two rules take the
+    SAME example value and produce different results, and both are stated as
+    recommendations for the same attribute. LOCATABLE.uid is a UID_BASED_ID, so
+    both forms are type-legal and the model itself does not arbitrate.
+  source: >-
+    RM common master03-archetyped_package.adoc §Unique Node Identification
+    ("The exception is the top-level types such as `COMPOSITION`, `EHR_STATUS`,
+    `PARTY` etc for which it is recommended to set the `_uid_` value to a copy
+    of the `_uid.object_id()_` value of the owning `VERSION` object (usually an
+    `ORIGINAL_VERSION`), i.e. the leading Uid, which is normally a Guid …
+    the Guid `87284370-2D4B-4e3d-A3F3-F303D2F4F34B` would be copied to the
+    contained `COMPOSITION.uid` field") and RM ehr EHR_STATUS class §Description
+    (the same object_id()-only rule restated for EHR_STATUS) vs ITS-REST
+    specifications/docs/overview/Resources.md §Identifier types ("Since RM
+    Release 1.0.4 it is strongly recommended that the inherited `uid` attribute
+    in COMPOSITION objects be populated using the `uid` copied from the
+    enclosing VERSION object. For example, if an ORIGINAL_VERSION.uid is
+    `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, then this value
+    should be copied to the COMPOSITION.uid attribute") + RM common
+    locatable.adoc §Attributes (`uid`: UID_BASED_ID 0..1 — both forms legal) —
+    released-vs-released contradiction CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: on the wire the served top-level object carries the FULL
+    three-part OBJECT_VERSION_ID, the ITS-REST form. Grounds, all from the same
+    released ITS-REST chapter that states the rule: §Identifier types builds
+    the addressing model on that value — "the COMPOSITION identifier
+    `8849182c-…::openEHRSys.example.com::1`, taken from COMPOSITION.uid.value,
+    which also implies that the VERSIONED_OBJECT identifier is `8849182c-…` and
+    the latest version is `1`" — so the served body's uid is what a client
+    parses the version address out of, and §Multiple identifiers for the same
+    resource then derives BOTH the explicit-version and implicit-latest request
+    forms from it. Truncating to the object_id would delete the version
+    coordinate the wire depends on, while the RM form remains recoverable from
+    the full one (it is its first segment), so the ITS-REST reading loses no
+    information and the RM reading does. This is a wire-representation
+    question, and the ITS-REST docs text is the wire oracle. Flips only if a
+    future release aligns the two sentences the other way.
+  disposition: fixed_handling
+  upstream_ref: "UPR-27"
+AMB-66:
+  ambiguity: >-
+    The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
+    `create_ehr` and `create_ehr_with_id`, is unsatisfiable and contradicts
+    three released sources at once — including the paragraph directly beneath
+    it. (1) RM: `EHR_STATUS.subject` is 1..1 PARTY_SELF, so a supplied
+    EHR_STATUS whose subject is Void is not a valid EHR_STATUS at all and the
+    precondition can never hold for a non-null argument. (2) The SM's own
+    prose, two lines below the precondition: "A default `_subject_` will be
+    generating containing a `PARTY_SELF` object" — describing a subject that
+    exists, not one that is Void. (3) ITS-REST: the released API surfaces no
+    for-subject create endpoint, so the EHR_STATUS body of POST /ehr and PUT
+    /ehr/{ehr_id} is the ONLY way a client can ever give an EHR a subject;
+    enforcing the precondition would make subject-bearing EHRs uncreatable over
+    the released wire, and would strand the subject-keyed reads the same SM
+    interface defines (`get_ehrs_for_subject`, `has_ehr_for_subject`).
+  source: >-
+    SM i_ehr_service.adoc §create_ehr and §create_ehr_with_id
+    (`Pre_no_subject`: `an_ehr_status.subject = Void`, immediately followed by
+    "A default `_subject_` will be generating containing a `PARTY_SELF`
+    object") vs RM ehr EHR_STATUS class §Attributes (`subject`: 1..1
+    PARTY_SELF — "The subject of this EHR") vs the released ITS-REST EHR API
+    (no for-subject create operation; the optional EHR_STATUS body is the only
+    subject-bearing input) — contradiction CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: `Pre_no_subject` is treated as a released SM defect and is
+    NOT enforced. A create carrying an EHR_STATUS with a subject is accepted
+    and the subject becomes the EHR's subject, which is the only reading under
+    which the same interface's subject-keyed operations
+    (`create_ehr_for_subject`, `get_ehrs_for_subject`, `has_ehr_for_subject`)
+    have anything to read, and the only one reachable over the released wire.
+    Every subject-keyed case in the catalogue supplies its subject exactly that
+    way (I_EHR_SERVICE.create_ehr-two_ehrs_same_patient,
+    -existing_ehr_by_subject_id, -with_ehr_id_subject_taken), so the deviation
+    is exercised rather than merely declared. No case asserts the
+    precondition's rejection branch — a conformant server refusing a
+    subject-bearing create would satisfy the SM sentence while failing the RM
+    cardinality and the wire, and the catalogue does not test a server into a
+    defect. Revisits when the SM drops or restates the precondition.
+  disposition: fixed_handling
+  upstream_ref: "UPR-28"

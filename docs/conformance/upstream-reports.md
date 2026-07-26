@@ -475,3 +475,65 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** Define a simplified-format inner-data surface for
   `commit_contribution` (or state explicitly that CONTRIBUTION commit is
   canonical-only), so the boundary is authoritative rather than inferred.
+
+### UPR-27 — RM and ITS-REST disagree on the form of the uid copied into a top-level object
+
+- **Register entry:** AMB-65
+- **Channel:** SPECPR
+- **Status:** draft
+- **Spec citation:** RM common `master03-archetyped_package.adoc` §Unique Node
+  Identification — for "the top-level types such as `COMPOSITION`,
+  `EHR_STATUS`, `PARTY` etc" it is recommended "to set the `_uid_` value to a
+  copy of the `_uid.object_id()_` value of the owning `VERSION` object …
+  i.e. the leading Uid, which is normally a Guid", worked through as
+  `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2` →
+  `87284370-2D4B-4e3d-A3F3-F303D2F4F34B`; the RM ehr `EHR_STATUS` class
+  §Description restates the same object_id()-only rule. ITS-REST overview
+  `Resources.md` §Identifier types recommends the opposite for the same
+  attribute: the inherited `uid` "be populated using the `uid` copied from the
+  enclosing VERSION object", worked through — from the identical example value
+  — as `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2` →
+  `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`.
+- **Problem:** Two released components give conflicting recommendations for
+  one attribute, using the same worked example and producing different values
+  (a HIER_OBJECT_ID vs an OBJECT_VERSION_ID). `LOCATABLE._uid_` is typed
+  `UID_BASED_ID`, so both are model-legal and nothing arbitrates. Implementers
+  split, and a client cannot tell from the specification whether a served
+  top-level object's `uid` carries a version coordinate — which ITS-REST's own
+  §Identifier types then relies on for request addressing ("the COMPOSITION
+  identifier `8849182c-…::openEHRSys.example.com::1`, taken from
+  COMPOSITION.uid.value, which also implies that the VERSIONED_OBJECT
+  identifier is `8849182c-…` and the latest version is `1`").
+- **Ask:** Align the two sentences on one form. The three-part
+  OBJECT_VERSION_ID is the one that keeps ITS-REST's addressing derivation
+  sound and loses no information (the RM's Guid is its first segment); if the
+  RM's object_id()-only rule is intended to stand, ITS-REST §Identifier types
+  needs a different basis for deriving the version coordinate from a served
+  body.
+
+### UPR-28 — SM `create_ehr.Pre_no_subject` is unsatisfiable and contradicts RM + ITS-REST
+
+- **Register entry:** AMB-66
+- **Channel:** SPECPR
+- **Status:** draft
+- **Spec citation:** SM `i_ehr_service.adoc` §`create_ehr` and
+  §`create_ehr_with_id` both state `Pre_no_subject`:
+  `an_ehr_status.subject = Void`, and both follow it two lines later with "A
+  default `_subject_` will be generating containing a `PARTY_SELF` object".
+  RM ehr `EHR_STATUS` class §Attributes types `subject` as `1..1 PARTY_SELF`
+  ("The subject of this EHR"). The released ITS-REST EHR API surfaces no
+  for-subject create operation, so the optional `EHR_STATUS` request body is
+  the only channel through which a client can ever give an EHR a subject.
+- **Problem:** The precondition cannot be satisfied by any valid argument: an
+  `EHR_STATUS` with a Void subject violates the RM's 1..1 cardinality, so for
+  every well-formed `an_ehr_status` the precondition is false. It also
+  contradicts the sentence immediately beneath it, and enforcing it would make
+  subject-bearing EHRs uncreatable over the released REST wire — stranding the
+  subject-keyed operations the same interface defines
+  (`create_ehr_for_subject`, `get_ehrs_for_subject`, `has_ehr_for_subject`),
+  which would have nothing to read.
+- **Ask:** Remove `Pre_no_subject` from `create_ehr` / `create_ehr_with_id`,
+  or restate it as the intended constraint (presumably that the caller need
+  not pre-populate the subject, the server defaulting it to an anonymous
+  `PARTY_SELF` when absent) so it is satisfiable and consistent with the RM
+  cardinality and the REST surface.
