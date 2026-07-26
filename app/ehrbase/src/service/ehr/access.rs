@@ -16,12 +16,16 @@ use std::sync::Arc;
 
 use crate::ids::EhrId;
 use crate::service::ehr::access_types::EhrAccessSettings;
+use crate::service::error::ServiceError;
 use crate::service::status::SmError;
 use moka::future::Cache;
 use serde_json::{Value, json};
+use sqlx::PgConnection;
 
 use crate::service::EhrbaseService;
 use crate::versioning::Kind;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::{Change, commit_contribution};
 use crate::versioning::read::read_current;
 
 impl EhrbaseService {
@@ -43,6 +47,61 @@ impl EhrbaseService {
     /// [`Self::invalidate_ehr_access`].
     pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: EhrId) {
         self.ehr_access.insert(ehr_id, None).await;
+    }
+
+    /// Commit the default [`default_ehr_access`] for an EHR that has none,
+    /// inside the caller's transaction — the EHR-Extract import bootstrap
+    /// ([`crate::service::message`]).
+    ///
+    /// `EHR.ehr_access` is 1..1 (RM ehr `ehr.adoc` invariant
+    /// `Ehr_access_valid`) and RM ehr master04 §EHR Creation requires that
+    /// creating an EHR yields "a root EHR object, an EHR Status object, and an
+    /// EHR Access object … created and committed in a Contribution". A clone
+    /// whose source extract carried no `EHR_ACCESS` would otherwise violate
+    /// that invariant permanently and serve an `EHR` body without the mandatory
+    /// reference, so the missing object is created locally.
+    ///
+    /// It is server-created content, NOT replayed extract content: it is
+    /// committed as a normal first `ORIGINAL_VERSION` (`249|creation|`,
+    /// server-signed when signing is enabled) under its OWN CONTRIBUTION rather
+    /// than folded into the import CONTRIBUTION — that one records the local
+    /// act of committal for the received originals, which "are never modified"
+    /// (RM common `master06-change_control_package.adoc` §Copying), and the
+    /// replay preserves each original's foreign identity/audit verbatim, which
+    /// a locally minted object has no business joining. Both CONTRIBUTIONs
+    /// commit in the caller's single transaction, so the created EHR is
+    /// complete atomically.
+    ///
+    /// # Errors
+    /// The [`crate::versioning::change::commit_contribution`] write errors.
+    pub(in crate::service) async fn commit_default_ehr_access(
+        &self,
+        tx: &mut PgConnection,
+        ehr_id: EhrId,
+        description: &str,
+    ) -> Result<(), ServiceError> {
+        let audit = self.audit(change_type::CREATION, description);
+        commit_contribution(
+            tx,
+            Some(ehr_id),
+            None,
+            &audit,
+            vec![(
+                audit.clone(),
+                Change::Create {
+                    kind: Kind::EhrAccess,
+                    canonical: default_ehr_access(),
+                    template_id: None,
+                    signature: None,
+                    lifecycle_state: None,
+                    attestations: Vec::new(),
+                },
+            )],
+            Vec::new(),
+            &self.signing_ctx(),
+        )
+        .await?;
+        Ok(())
     }
 
     /// Read + parse the EHR's current `EHR_ACCESS` scheme settings from

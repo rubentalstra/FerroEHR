@@ -10,7 +10,8 @@
 //! policy, directory-slot resolution, the `is_modifiable` write guard) stay in
 //! the service layer, which calls these functions with plain inputs.
 
-use sqlx::{PgConnection, PgPool, Row};
+use serde_json::Value;
+use sqlx::{PgConnection, PgExecutor, PgPool, Row};
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
@@ -85,51 +86,55 @@ pub async fn insert_ehr(
     }
 }
 
-/// Refresh the promoted `ehr` status-flag columns (`is_queryable` +
-/// `is_modifiable`) from the EHR's CURRENT `EHR_STATUS` root node (`num = 0`,
-/// latest trunk). Used by the paths that land `EHR_STATUS` versions WITHOUT the
-/// service's `sync_ehr_subject` hook — the EHR Extract import and the admin
-/// archive load — so both promoted flags match the stored status: the AQL
-/// full-population gate (SM `I_QUERY_SERVICE`, `i_query_service.adoc`: full
-/// population = EHRs whose status has `is_queryable = True`) and the
-/// content-write guard (RM ehr master04 §EHR Active Status:
-/// `EHR_STATUS.is_modifiable`) both read the column, not the node. Semantics: RM
-/// ehr master04 §EHR Status (`is_queryable`, 1..1 Boolean) / §EHR Active Status
-/// (`is_modifiable`, 1..1 Boolean). Each falls back to `true` (the column
-/// default / the default `EHR_STATUS`) when the EHR has no current `EHR_STATUS`.
-/// No openEHR spec governs the promoted columns — our own storage design.
+/// The CURRENT `EHR_STATUS` root node fragment (`num = 0` of the latest trunk
+/// version) of an EHR, read on the CALLER'S connection so a transaction sees
+/// the `EHR_STATUS` it has just written. `None` when the EHR has no current
+/// `EHR_STATUS`.
+///
+/// This is the read half of the promoted-column refresh the paths that land
+/// `EHR_STATUS` versions WITHOUT the service write hook use — the EHR Extract
+/// import and the admin archive load: they hand this fragment to the single
+/// service-layer extraction (`service::ehr::status::ehr_promoted_columns`), so
+/// every path promotes identical `(subject_id, subject_namespace,
+/// is_queryable, is_modifiable)` values. The fragment carries all four inputs
+/// verbatim — the decomposition splits only *structure* types into their own
+/// `node` rows, and a subject `PARTY_SELF`/`PARTY_IDENTIFIED` is not one, so
+/// `subject.external_ref` stays inline on the root. Semantics: RM ehr master04
+/// §EHR Status (`subject`, `is_queryable`) / §EHR Active Status
+/// (`is_modifiable`). No openEHR spec governs the promoted columns or the node
+/// decomposition — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn sync_status_flags(tx: &mut PgConnection, ehr_id: EhrId) -> Result<(), StorageError> {
-    sqlx::query(
-        "UPDATE ehr e SET \
-           is_queryable = COALESCE(s.is_queryable, true), \
-           is_modifiable = COALESCE(s.is_modifiable, true) \
-         FROM (SELECT $1::uuid AS id) k \
-         LEFT JOIN LATERAL (\
-           SELECT (n.data->>'is_queryable') = 'true' AS is_queryable, \
-                  (n.data->>'is_modifiable') = 'true' AS is_modifiable \
-           FROM vo_version v \
-           JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-           WHERE v.ehr_id = k.id AND v.kind = 'EHR_STATUS' \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0) s ON true \
-         WHERE e.id = k.id",
+pub async fn current_status_root(
+    tx: &mut PgConnection,
+    ehr_id: EhrId,
+) -> Result<Option<Value>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT n.data FROM vo_version v \
+         JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
+           AND upper_inf(v.sys_period) AND v.branch_number = 0",
     )
     .bind(ehr_id)
-    .execute(&mut *tx)
-    .await?;
-    Ok(())
+    .fetch_optional(&mut *tx)
+    .await?)
 }
 
 /// The id of the EHR whose promoted subject columns match `(subject_id,
 /// namespace)`, or `None`. Served from the unique `ehr.subject_*` columns (one
 /// EHR per subject — RM ehr master04 §EHR Status).
 ///
+/// Generic over the executor (the one such read in this module): the subject
+/// lookup serves both the pooled `GET /ehr?subject_id` path and the
+/// import/archive-load conflict pre-check, which must run on the caller's
+/// transaction connection rather than take a second pooled connection while a
+/// write transaction is open.
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn ehr_id_by_subject(
-    pool: &PgPool,
+pub async fn ehr_id_by_subject<'e>(
+    executor: impl PgExecutor<'e>,
     subject_id: &str,
     namespace: &str,
 ) -> Result<Option<EhrId>, StorageError> {
@@ -137,7 +142,7 @@ pub async fn ehr_id_by_subject(
         sqlx::query_scalar("SELECT id FROM ehr WHERE subject_id = $1 AND subject_namespace = $2")
             .bind(subject_id)
             .bind(namespace)
-            .fetch_optional(pool)
+            .fetch_optional(executor)
             .await?,
     )
 }
@@ -341,11 +346,12 @@ pub async fn directory_current_meta(
 }
 
 /// Whether the EHR is modifiable, read from the promoted `ehr.is_modifiable`
-/// column (kept in lockstep with the current `EHR_STATUS.is_modifiable` by
-/// [`sync_status_flags`] and the service's `sync_ehr_subject` hook; RM ehr
-/// master04 §EHR Active Status). `None` when the EHR does not exist (the caller
-/// treats that as modifiable so the guard never spuriously blocks). No openEHR
-/// spec governs the promoted column — our own storage design.
+/// column (kept in lockstep with the current `EHR_STATUS.is_modifiable` by the
+/// service's `sync_ehr_subject` hook and its import/archive-load re-promotion
+/// over [`current_status_root`]; RM ehr master04 §EHR Active Status). `None`
+/// when the EHR does not exist (the caller treats that as modifiable so the
+/// guard never spuriously blocks). No openEHR spec governs the promoted column
+/// — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -361,7 +367,8 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bo
 /// The two content-write pre-checks in ONE round trip: whether the EHR exists,
 /// and whether it is modifiable. Reads the `ehr` row directly — a present row is
 /// the existence signal and carries the promoted `is_modifiable` column (synced
-/// with the current `EHR_STATUS` by [`sync_status_flags`] / `sync_ehr_subject`).
+/// with the current `EHR_STATUS` by `sync_ehr_subject` and its
+/// import/archive-load re-promotion over [`current_status_root`]).
 /// Returns `(exists, is_modifiable)` where `is_modifiable` is `None` exactly when
 /// the EHR does not exist. The concepts guarded are RM ehr master04 §EHR
 /// Creation (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
