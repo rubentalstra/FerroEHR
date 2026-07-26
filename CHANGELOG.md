@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-07-26
+
 ### Added
 
 - **Admin console: EHR_STATUS editing and a status version history** (#306). The
@@ -2079,7 +2081,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.10.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.10.0...v3.11.0
 [3.10.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.9.0...v3.10.0
 [3.9.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.7.0...v3.8.0
