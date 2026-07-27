@@ -95,6 +95,10 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 /// is supported; anything else is `501`. EVERY response (success and error) is
 /// a FHIR `OperationOutcome` in `application/fhir+json`. Config-gated on the
 /// FHIR connector: `404` when `fhir_api_enabled` is off.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     post, path = "/fhir/r4/{resource_type}", tag = "fhir",
     params(("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only).")),
@@ -102,7 +106,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     responses(
         (status = 201, description = "Committed as a COMPOSITION (informational OperationOutcome + ETag/Location pointing at the openEHR COMPOSITION).", content_type = "application/fhir+json"),
         (status = 400, description = "The request body is not valid JSON, or a mapping precondition failed (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json"),
         (status = 422, description = "Mapped COMPOSITION failed validation (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
@@ -122,6 +126,10 @@ pub(crate) async fn fhir_ingest(
 /// generic FHIR Search. The success Bundle is `application/fhir+json`; errors
 /// are FHIR `OperationOutcome`. Config-gated on the FHIR connector: `404` when
 /// `fhir_api_enabled` is off.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     get, path = "/fhir/r4/{resource_type}", tag = "fhir",
     params(
@@ -132,7 +140,7 @@ pub(crate) async fn fhir_ingest(
     responses(
         (status = 200, description = "A FHIR searchset Bundle of reverse-mapped resources.", content_type = "application/fhir+json"),
         (status = 400, description = "The `patient` scope is missing or blank (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json"),
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
 )]
@@ -153,6 +161,13 @@ pub(crate) async fn fhir_search(
 /// operator surface). Supported parameter subset: `date` (`ge`/`le`
 /// prefixes), `patient`, `agent`, `entity`, `outcome`, `action`, `_count`,
 /// `_offset`; other FHIR search parameters are ignored (lenient search).
+///
+/// OUR OWN EXTENSION as far as openEHR is concerned — no openEHR spec governs
+/// this: the ITS-REST resource set defines no audit-retrieval endpoint. Its
+/// basis is IHE ITI TF-2, transaction **ITI-81 (Retrieve ATNA Audit Event)**,
+/// whose RESTful-ATNA option this realizes over the local Audit Record
+/// Repository; the SM only names `I_SYSTEM_LOG` as "IHE ATNA-compliant" and
+/// defines no wire.
 #[utoipa::path(
     get, path = "/fhir/r4/AuditEvent", tag = "audit",
     params(
@@ -169,7 +184,7 @@ pub(crate) async fn fhir_search(
         (status = 200, description = "A FHIR searchset Bundle of AuditEvent resources.", content_type = "application/fhir+json"),
         (status = 400, description = "Malformed search parameter (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 403, description = "Caller lacks the admin role (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "The local audit record repository is disabled (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "The local audit record repository is disabled (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn audit_event_search(
@@ -184,11 +199,15 @@ pub(crate) async fn audit_event_search(
 ///
 /// Config-gated on the FHIR connector: `404` (a FHIR `OperationOutcome`) when
 /// `fhir_api_enabled` is off. The success list is `application/json`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/fhir_mapping", tag = "fhir",
     responses(
         (status = 200, description = "The mapping records.", body = serde_json::Value),
-        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_list(
@@ -203,6 +222,10 @@ pub(crate) async fn fhir_mapping_list(
 ///
 /// Body: `{name, definition, template_id?}`. The success record is
 /// `application/json`; every error is a FHIR `OperationOutcome`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     post, path = "/admin/fhir_mapping", tag = "fhir",
     request_body(content = serde_json::Value, description = "The mapping definition (canonical JSON)."),
@@ -211,7 +234,7 @@ pub(crate) async fn fhir_mapping_list(
         (status = 400, description = "`name`/`definition` is missing or malformed, the `template_id` is unknown (FK), or the body is not valid JSON (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 409, description = "A mapping with that name already exists (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 415, description = "The request `Content-Type` is not `application/json` (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_create(
@@ -226,13 +249,17 @@ pub(crate) async fn fhir_mapping_create(
 /// (`GET /admin/fhir_mapping/{mapping_id}`).
 ///
 /// The success record is `application/json`; errors are FHIR `OperationOutcome`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
     responses(
         (status = 200, description = "The mapping record.", body = serde_json::Value),
         (status = 400, description = "`mapping_id` is not a valid UUID (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_get(
@@ -247,6 +274,10 @@ pub(crate) async fn fhir_mapping_get(
 ///
 /// The success record is `application/json`; every error is a FHIR
 /// `OperationOutcome`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     put, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
@@ -256,7 +287,7 @@ pub(crate) async fn fhir_mapping_get(
         (status = 400, description = "`mapping_id` is not a valid UUID, the definition is malformed, the `template_id` is unknown (FK), or the body is not valid JSON (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 409, description = "A mapping with that name already exists (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 415, description = "The request `Content-Type` is not `application/json` (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_update(
@@ -271,13 +302,17 @@ pub(crate) async fn fhir_mapping_update(
 /// (`DELETE /admin/fhir_mapping/{mapping_id}`).
 ///
 /// Errors are FHIR `OperationOutcome`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines a FHIR connector, a FHIR read facade, or a mapping store,
+/// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     delete, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
     responses(
         (status = 204, description = "Deleted."),
         (status = 400, description = "`mapping_id` is not a valid UUID (OperationOutcome).", content_type = "application/fhir+json"),
-        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_delete(

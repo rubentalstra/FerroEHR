@@ -1301,24 +1301,125 @@ async fn admin_extension_operations_are_flagged_as_an_extension() {
     }
 }
 
-/// The eight `PARTY_RELATIONSHIP` operations are OUR OWN EXTENSION: the
-/// released Demographic API defines no `party_relationship` path, so every one
-/// of them must say so in its description and none may be counted towards a
-/// conformance-profile claim.
-#[tokio::test]
-async fn party_relationship_operations_are_flagged_as_an_extension() {
-    const BASE: &str = "/ehrbase/rest/openehr/v1/demographic";
-    let doc = served_document().await;
+/// One family of served operations that **no released openEHR specification
+/// governs**, and the honest-boundary flag every one of its operations must
+/// carry in the SERVED document.
+struct NonSpecFamily {
+    /// What the family is (assertion messages only).
+    label: &'static str,
+    /// Served path prefixes; an operation under any of them is in the family.
+    prefixes: &'static [&'static str],
+    /// The flag phrase (lower-cased) the served summary+description must carry.
+    flag: &'static str,
+    /// How many operations the family serves.
+    operations: usize,
+}
 
-    let mut seen = 0;
-    for (path, method, op) in operations(&doc) {
-        if !path.starts_with(&format!("{BASE}/party_relationship"))
-            && !path.starts_with(&format!("{BASE}/versioned_party_relationship"))
-        {
-            continue;
-        }
-        seen += 1;
-        let text = format!(
+/// Every non-spec path prefix the server serves, with its flag and its
+/// operation count.
+///
+/// The load-bearing fact: nothing in the released ITS-REST text authorises
+/// serving resources outside its own resource set, so **every** operation
+/// outside the standardised groups is our own extension and MUST say so where
+/// a reader of the served document can see it. A module-level `//!` comment
+/// does not qualify — utoipa never serves those.
+const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
+    NonSpecFamily {
+        label: "the ops-introspection management surface",
+        prefixes: &["/management"],
+        flag: "no openehr spec governs this",
+        operations: 8,
+    },
+    NonSpecFamily {
+        label: "the terminology extension wire",
+        prefixes: &["/ehrbase/rest/openehr/v1/terminology"],
+        flag: "no openehr spec governs this",
+        operations: 6,
+    },
+    NonSpecFamily {
+        label: "the event-subscription extension",
+        prefixes: &["/ehrbase/rest/openehr/v1/admin/event_subscription"],
+        flag: "no openehr spec governs this",
+        operations: 5,
+    },
+    NonSpecFamily {
+        label: "the multi-tenancy extension",
+        prefixes: &["/ehrbase/rest/openehr/v1/admin/tenant"],
+        flag: "no openehr spec governs this",
+        operations: 5,
+    },
+    NonSpecFamily {
+        label: "the FHIR R4 connector + read facade",
+        prefixes: &["/ehrbase/rest/openehr/v1/fhir/r4/{resource_type}"],
+        flag: "no openehr spec governs this",
+        operations: 2,
+    },
+    NonSpecFamily {
+        label: "the FHIR mapping store",
+        prefixes: &["/ehrbase/rest/openehr/v1/admin/fhir_mapping"],
+        flag: "no openehr spec governs this",
+        operations: 5,
+    },
+    NonSpecFamily {
+        // IHE ITI-81 is its own (non-openEHR) basis; the flag still has to say
+        // that no openEHR spec governs the endpoint.
+        label: "the ITI-81 ATNA audit retrieval",
+        prefixes: &["/ehrbase/rest/openehr/v1/fhir/r4/AuditEvent"],
+        flag: "no openehr spec governs this",
+        operations: 1,
+    },
+    NonSpecFamily {
+        label: "the PARTY_RELATIONSHIP demographic extension",
+        prefixes: &[
+            "/ehrbase/rest/openehr/v1/demographic/party_relationship",
+            "/ehrbase/rest/openehr/v1/demographic/versioned_party_relationship",
+        ],
+        flag: "no its-rest operation governs this",
+        operations: 8,
+    },
+    NonSpecFamily {
+        label: "the ADMIN group's own-design routes",
+        prefixes: &[
+            "/ehrbase/rest/openehr/v1/admin/config",
+            "/ehrbase/rest/openehr/v1/admin/template/",
+            "/ehrbase/rest/openehr/v1/admin/query/",
+        ],
+        flag: "no its-rest operation governs this",
+        operations: 3,
+    },
+    NonSpecFamily {
+        label: "the operational status document",
+        prefixes: &["/ehrbase/rest/status"],
+        flag: "no openehr spec governs an operational status endpoint",
+        operations: 1,
+    },
+    NonSpecFamily {
+        label: "the always-on public health family",
+        prefixes: &["/health"],
+        flag: "no openehr spec governs a health endpoint",
+        operations: 3,
+    },
+    NonSpecFamily {
+        label: "the OAS meta-endpoints",
+        prefixes: &["/ehrbase/rest/api-docs", "/ehrbase/rest/swagger-ui"],
+        flag: "no openehr spec governs",
+        operations: 3,
+    },
+];
+
+/// The honesty battery: EVERY operation the server serves outside the
+/// standardised ITS-REST resource set carries its our-own-extension flag in the
+/// served document, and each family serves exactly the operation count recorded
+/// above (so a new unflagged endpoint cannot slip in, and a family cannot
+/// silently shrink).
+#[tokio::test]
+async fn every_extension_operation_is_flagged_in_the_served_document() {
+    let doc = served_document().await;
+    // Whitespace-normalized + lower-cased: doc comments hard-wrap, so a flag
+    // sentence may span a line break in the served description, and the
+    // sentence-initial capital varies with where the flag sits.
+    let text = |op: &Value| -> String {
+        format!(
             "{} {}",
             op.get("summary")
                 .and_then(Value::as_str)
@@ -1326,15 +1427,113 @@ async fn party_relationship_operations_are_flagged_as_an_extension() {
             op.get("description")
                 .and_then(Value::as_str)
                 .unwrap_or_default()
-        );
-        assert!(
-            text.contains("no ITS-REST operation governs this"),
-            "{} {path} must carry the our-own-extension flag; has: {text}",
-            method.to_uppercase()
+        )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+    };
+
+    for family in NON_SPEC_FAMILIES {
+        let mut seen = 0;
+        for (path, method, op) in operations(&doc) {
+            if !family.prefixes.iter().any(|p| path.starts_with(p)) {
+                continue;
+            }
+            seen += 1;
+            let body = text(&op);
+            assert!(
+                body.contains(family.flag),
+                "{} {path} ({}) must carry the our-own-extension flag \
+                 \"{}\" in its served summary/description; has: {body}",
+                method.to_uppercase(),
+                family.label,
+                family.flag
+            );
+        }
+        assert_eq!(
+            seen, family.operations,
+            "{} serves {} documented operation(s), found {seen} — update the \
+             battery deliberately, never to make it pass",
+            family.label, family.operations
         );
     }
+}
+
+/// Document-level ratchet: the served document declares the things a consumer
+/// needs to use it — the OAS version, a `servers` entry, every tag its
+/// operations use, the product version, and the openEHR ITS-REST contract
+/// identity as a machine-readable `x-` extension (distinct from `info.version`,
+/// which is the product `SemVer`).
+#[tokio::test]
+async fn the_document_declares_its_own_identity() {
+    let doc = served_document().await;
+
     assert_eq!(
-        seen, 8,
-        "the PARTY_RELATIONSHIP extension serves eight operations"
+        doc["openapi"].as_str(),
+        Some("3.1.0"),
+        "utoipa emits OpenAPI 3.1.0; pin it so a version change is deliberate"
+    );
+
+    let version = doc["info"]["version"].as_str().unwrap_or_default();
+    assert!(
+        !version.is_empty(),
+        "info.version must state the product version"
+    );
+    assert_eq!(
+        version,
+        env!("CARGO_PKG_VERSION"),
+        "info.version is the PRODUCT SemVer, not an openEHR contract version"
+    );
+
+    let its_rest = doc["x-openehr-its-rest"].as_str().unwrap_or_default();
+    assert!(
+        !its_rest.is_empty(),
+        "the document must publish the implemented ITS-REST contract version as \
+         the x-openehr-its-rest extension"
+    );
+
+    let servers = doc["servers"].as_array().expect("a servers block");
+    assert!(!servers.is_empty(), "the servers block must have an entry");
+    // The paths are absolute from the server root and already carry the
+    // configured base path, so the server URL must not repeat it.
+    for server in servers {
+        let url = server["url"].as_str().unwrap_or_default();
+        assert!(
+            !url.contains("/openehr/v1"),
+            "server url {url} repeats the base path the paths already carry"
+        );
+    }
+
+    let external = doc["externalDocs"]["url"].as_str().unwrap_or_default();
+    assert!(
+        external.contains("specifications.openehr.org")
+            && external.contains("ITS-REST/Release-1.1.0"),
+        "externalDocs must point at the implemented released ITS-REST spec; has: {external}"
+    );
+
+    let declared: std::collections::BTreeSet<String> = doc["tags"]
+        .as_array()
+        .map(|tags| {
+            tags.iter()
+                .filter_map(|t| t["name"].as_str())
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut undeclared = Vec::new();
+    for (path, method, op) in operations(&doc) {
+        for tag in op["tags"].as_array().into_iter().flatten() {
+            let Some(tag) = tag.as_str() else { continue };
+            if !declared.contains(tag) {
+                undeclared.push(format!("{} {path}: {tag}", method.to_uppercase()));
+            }
+        }
+    }
+    assert!(
+        undeclared.is_empty(),
+        "every tag an operation uses must be declared (with a description) at \
+         document level:\n{}",
+        undeclared.join("\n")
     );
 }
