@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The SMART discovery endpoint is fully described in the published API
+  reference** (#535): the `application/json` requirement, the required
+  `org.openehr.rest` service with its absolute `baseUrl`, the
+  capability-honesty rules, the public pre-auth posture, and a worked
+  document example — previously a one-line declaration.
+
 - **The FLAT/STRUCTURED mapping of `INSTRUCTION_DETAILS` and
   `INTERVAL_EVENT.sample_count`** (#521). An ACTION's instruction details now
   travel over the wire exactly as the Simplified Formats specification maps
