@@ -21,7 +21,12 @@
 #   `200 OK`: "The request succeeded, payload sent in a 200 response depends on
 #   the request method".
 # - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
-#   "Related response headers: `ETag` - A unique identifier of the resultSet".
+#   "Related response headers: `ETag` - A unique identifier of the resultSet";
+#   its FORM by docs/overview/Requests_and_responses.md §"Deprecated headers":
+#   "all `ETag` headers that hold a resource identifier MUST include a weakness
+#   indicator `W/`". The identifier inside the tag is the service's choice
+#   ("usually taken from e.g. VERSIONED_OBJECT.uid.value, …"), so only the weak
+#   wrapper is asserted.
 #
 # Identical to the variant-less POST binding except for where the scope travels,
 # so a red row localizes to the header realization on POST alone. `ehr_id` is
@@ -45,5 +50,5 @@ formats: [canonical-json]
 outcomes:
   ok:
     status: 200                           # Requests_and_responses.md §HTTP status codes, row 200
-    headers: { ETag: "present?" }         # Request.md §Common Headers and Query Parameters (related response headers)
+    headers: { ETag: 'pattern:W/"[^"]+"' } # Request.md §Common Headers and Query Parameters + overview §Deprecated headers
     body: result_set_body

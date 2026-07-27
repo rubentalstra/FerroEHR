@@ -930,3 +930,60 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   define {key} encoding, list ordering/paging, and the
   optional-feature refusal branch; state tag lifecycle vs target
   lifecycle; note the development-RM provenance of the whole class.
+
+### UPR-62 — REST paging vs AQL LIMIT/OFFSET is unlegislated
+
+- **Components:** ITS-REST (Request.md, the fetch bullet), QUERY (AQL §TOP/§LIMIT)
+- **Register:** AMB-98 (fixed_handling)
+- **Facts:** the exclusion clause targets the deprecated TOP; LIMIT (its
+  replacement, same release) has no combination rule; no status is
+  assigned even to the stated prohibition.
+- **Ask:** update the clause for LIMIT and define the composition (ours:
+  REST windows over the AQL-limited set).
+
+### UPR-63 — POST parameter-source precedence is unassigned
+
+- **Component:** ITS-REST (Request.md SHOULD-list vs the body-only POST declarations)
+- **Register:** AMB-99 (fixed_handling)
+- **Ask:** assign the precedence (ours: equal accepted, conflict 400).
+
+### UPR-64 — protocol parameter names are not reserved from $parameter binding
+
+- **Component:** ITS-REST (Request.md; the QueryParameters/StoredQuery examples collide)
+- **Register:** AMB-100 (fixed_handling)
+- **Ask:** reserve q/ehr_id/offset/fetch (ours) or rename the protocol
+  parameters; fix the colliding examples.
+
+### UPR-65 — ehr_id scoping semantics + the unknown-EHR branch
+
+- **Components:** ITS-REST (Request.md §About the ehr_id parameter), SM (i_query_service)
+- **Register:** AMB-101 (fixed_handling)
+- **Facts:** routing-hint wording only; no filter/predicate/interaction
+  rule; the SM's ehr_id_does_not_exist error has no wire realization.
+- **Ask:** define the scoping effect and bind the unknown-EHR branch
+  (ours: scope-constrained execution; unknown → 404 realizing the SM
+  error).
+
+### UPR-66 — malformed version/name selectors have no branch
+
+- **Component:** ITS-REST (parameters/path/version.yaml + 404_Query_version)
+- **Register:** AMB-102 (fixed_handling)
+- **Ask:** assign the malformed-selector branch (ours: 404 — an
+  unmatchable selector is a version that does not exist).
+
+### UPR-67 — the Query editorial defect bundle
+
+- **Components:** SM (i_query_service + the execute-spec/result-set classes, master08), ITS-REST, QUERY, ITS-XML, CNF
+- **Register:** AMB-103 (editorial)
+- **Facts/Asks:** reconcile the SM RESULT_SET requiredness inversion, the
+  competing identifier grammar, exact-only version matching, the
+  Hash<String,String> parameter typing (vs the AQL quoting NOTE), the
+  unrealized ehr_ids list, the SM-only negative-value semantics, the
+  wrapped row shape; surface the executed stored version on the wire
+  (the flattened descriptor loses version/formalism/registration_time);
+  fix "Rox data."/the empty Meaning/the left-in TODO; fix Request.md's
+  FETCH-keyword example + malformed at-code; vendor the missing AQL
+  grammar files; fix the .yaml-suffixed operationIds; give 400_Query an
+  error body; reconcile JSON-only with the canonical-format MUST (the
+  ITS-XML RESULT_SET is a draft stub); add the query terms to the
+  glossary; fix the CNF querying schedule's demographic-service link.

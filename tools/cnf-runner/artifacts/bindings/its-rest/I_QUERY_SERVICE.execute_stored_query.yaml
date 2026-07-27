@@ -5,6 +5,21 @@
 # 400_Query.yaml, 404_Query.yaml, 408_Query.yaml; the request-shaping
 # parameters/query/{ehr_id_Query,offset,fetch,query_parameters}.yaml and
 # parameters/path/qualified_query_name.yaml.
+#
+# The `ETag` matcher is the WEAK-FORM pin, assigned by the released docs text:
+# docs/query/Request.md §"Common Headers and Query Parameters" declares the
+# header for query execution — "Related response headers: `ETag` - A unique
+# identifier of the resultSet" — and docs/overview/Requests_and_responses.md
+# §"Deprecated headers" fixes its form: "all `ETag` headers that hold a resource
+# identifier MUST include a weakness indicator `W/`". Only the weak wrapper is
+# asserted; the identifier inside is the service's choice.
+#
+# `404` is docs/overview/Requests_and_responses.md §"HTTP status codes", row
+# `404 Not Found`: "The origin service did not find the target resource or is
+# not willing to disclose that one exists" — a `qualified_query_name` that
+# names no stored query (including the reserved `aql` query-name, which
+# docs/query/Qualified_query_name.md forbids ever being stored under) is
+# exactly that.
 sm_operation: I_QUERY_SERVICE.execute_stored_query
 its: its-rest
 applies: { its_rest: ">=1.0.0" }
@@ -22,8 +37,8 @@ formats: [canonical-json]
 outcomes:
   ok:
     status: 200                              # 200_Query.yaml
-    headers: { ETag: "present?", Content-Type: negotiated }
+    headers: { ETag: 'pattern:W/"[^"]+"', Content-Type: negotiated }
     body: result_set_body
   invalid_query: { status: 400 }             # 400_Query.yaml
-  not_found: { status: 404 }                 # 404_Query.yaml (no such stored query name)
+  not_found: { status: 404 }                 # Requests_and_responses.md §HTTP status codes, row 404
   timeout: { status: 408 }                   # 408_Query.yaml

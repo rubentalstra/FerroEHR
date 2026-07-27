@@ -1,6 +1,19 @@
 # Wire realization of I_QUERY_SERVICE.execute_ad_hoc_query for ITS-REST 1.1.0.
 # Sources: specifications/operations query_execute (POST /query/aql),
 # responses/200_Query.yaml, 400_Query.yaml, 408_Query.yaml.
+#
+# The `ETag` matcher is the WEAK-FORM pin, assigned by the released docs text:
+# docs/query/Request.md §"Common Headers and Query Parameters" declares the
+# response header for query execution — "Related response headers: `ETag` - A
+# unique identifier of the resultSet" — and docs/overview/Requests_and_responses.md
+# §"Deprecated headers" fixes its form for every such header: "all `ETag`
+# headers that hold a resource identifier MUST include a weakness indicator
+# `W/`" (§"ETag and Last-Modified" repeats the rationale — the openEHR `ETag`
+# is format-independent, "therefore … of weak-type", and SHOULD be included for
+# "resources that have versioning or unique state identifiers", which is exactly
+# what the resultSet identifier is). The identifier INSIDE the tag is the
+# service's choice ("usually taken from e.g. VERSIONED_OBJECT.uid.value, …"), so
+# only the weak wrapper is asserted.
 sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
 its: its-rest
 request:
@@ -20,7 +33,9 @@ formats: [canonical-json]
 outcomes:
   ok:
     status: 200                           # 200_Query.yaml
-    headers: { ETag: "present?" }
+    # Request.md §Common Headers and Query Parameters (related response
+    # headers) + overview §Deprecated headers (the W/ MUST)
+    headers: { ETag: 'pattern:W/"[^"]+"' }
     body: result_set_body
   invalid_query: { status: 400 }          # 400_Query.yaml
   timeout: { status: 408 }                # 408_Query.yaml
