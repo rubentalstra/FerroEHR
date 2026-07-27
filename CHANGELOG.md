@@ -66,6 +66,36 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
+  operations** (#475). The EHR-wide read, the two per-target reads, the two
+  collection replaces and the two key-scoped deletes now document what the
+  wire actually does. The dual-form `uid_based_id` is spelled out with the
+  released version/container sentence and the disjointness it implies (a tag
+  has exactly one `target`, so container tags and version tags are separate
+  collections and neither read sees the other). The `PUT` bodies are
+  described as what they are — a bare JSON array of UPDATE_ITEM_TAG (`key`
+  required, `value`/`target_path` optional, `target`/`owner_id`
+  server-assigned from the route and ignored if sent), with `[]` quoted as
+  the clear-all form, (`key`, `target_path`) as the identity, last-wins on a
+  duplicate pair, an empty `target_path` normalizing to absent, and the
+  200/204 `Prefer` split (204 by default, 200 carrying the full RESULTING
+  list, `return=identifier` resolving to minimal because an ITEM_TAG has no
+  uid). The deletes document their SET semantics (every tag under the key on
+  the addressed collection) and the released third 404 trigger that makes
+  them deliberately non-idempotent. Every operation now declares the target
+  guard's 404s (unknown, foreign-EHR, wrong-kind or missing-version target),
+  the JSON-only reality (406 for an XML `Accept`, 415 for an XML
+  `Content-Type` — no ITEM_TAG type exists in the canonical XML ITS), the
+  RM-invariant 422 family on the writes, the `ehr_tags_get` filter semantics
+  (AND-combined, exact, case-sensitive, scalar, unbounded), and real ITEM_TAG
+  examples including a VERSION-targeted tag. Also recorded: no tag route
+  serves `ETag`/`Last-Modified` or accepts `If-Match` — a tag has neither a
+  version nor a uid — and the released-text defects met on the way (the
+  aggregate read's COMPOSITION-typed response schema, the `_updated`
+  responses' copy-pasted "retrieved" wording, `tag_key` vs the `key` path
+  parameter, and the "(logically) deleted" wording on a non-versioned
+  resource). Document only — no wire change.
+
 - **Served OpenAPI: complete documentation for the three CONTRIBUTION
   operations** (#464). The native change-set commit now declares the whole
   `NewContribution` envelope — `versions[]` of UPDATE_VERSION
