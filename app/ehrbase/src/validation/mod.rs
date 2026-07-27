@@ -93,10 +93,11 @@ pub(crate) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
 ///
 /// # Errors
 ///
-/// The first violation found, as [`ServiceError::BadRequest`] (→ ITS-REST
-/// `400`, what the CNF `I_DEFINITION_ADL14` upload/validate suites assert for
-/// an invalid OPT) carrying the AOM2 rule code in the message
-/// (`"<CODE>: <detail>"`).
+/// The first violation found, as [`ServiceError::ValidationFailed`] (→
+/// ITS-REST `422` rendering the `Error` object with the AOM2 rule code in
+/// `validationErrors[]`): a rule violation on a successfully parsed artefact
+/// is a semantic error (the overview status table's `422` row), never the
+/// syntactic `400` branch of `responses/400.yaml`.
 pub fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     opt::validate_opt_artefact(opt)
 }

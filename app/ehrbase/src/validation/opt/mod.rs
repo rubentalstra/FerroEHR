@@ -26,10 +26,13 @@
 //!
 //! It does **not** run `valid_value` (that is instance-time — surface B in
 //! [`crate::validation`]). Every violation is reported through
-//! `ServiceError::sm` with `CallStatusType::PreconditionViolation` (→ ITS-REST
-//! `400 Bad Request`), carrying the AOM2 rule code in the message. `400` is
-//! what the CNF `I_DEFINITION_ADL14` upload/validate suites assert for an
-//! invalid OPT (`CNF/tests/platform/robot/I_DEFINITION_ADL14/validate_opt/…`).
+//! [`ServiceError::ValidationFailed`] (→ ITS-REST `422`, the `Error` object
+//! with the AOM2 rule code in `validationErrors[]`): an AOM2 rule violation is
+//! a semantic error on a successfully parsed artefact (the overview status
+//! table's `422` row, `docs/specs/openehr/ITS-REST/specifications/docs/
+//! overview/Requests_and_responses.md` §HTTP status codes), distinct from the
+//! syntactic `400` branch of `responses/400.yaml` that owns not-well-formed
+//! content.
 //!
 //! The check sequence (terminology sets first, then the walk; per node:
 //! VCORM → VATID → per-kind invariants → recurse) reports the **first**
@@ -46,7 +49,6 @@ use std::collections::HashSet;
 use openehr_its::opt14::{CAttribute, CObject, Intervalofinteger, OperationalTemplate};
 
 use crate::service::error::ServiceError;
-use crate::service::status::CallStatusType;
 
 /// One artefact-validity violation: the AOM2 rule code + a human detail.
 struct Violation {
@@ -140,19 +142,25 @@ fn attribute_children(attr: &CAttribute) -> &[CObject] {
 }
 
 /// Validate an uploaded OPT 1.4 artefact against the AOM2/08 standalone-artefact
-/// validity rules. The first violation found is returned as a `400` carrying the
-/// AOM2 rule code (`"<CODE>: <detail>"`); a fully valid artefact returns `Ok`.
+/// validity rules. The first violation found is returned as a `422` carrying the
+/// AOM2 rule code; a fully valid artefact returns `Ok`.
 ///
 /// # Errors
 ///
-/// `ServiceError::sm(PreconditionViolation, …)` — [`ServiceError::BadRequest`]
-/// on the wire (ITS-REST `400`) — for the first violation found.
+/// [`ServiceError::ValidationFailed`] (→ ITS-REST `422` rendering the `Error`
+/// object with the rule code in `validationErrors[]`) for the first violation
+/// found: an AOM2 rule violation is a semantic error on a successfully parsed
+/// artefact (the overview status table's `422` row,
+/// `docs/specs/openehr/ITS-REST/specifications/docs/overview/
+/// Requests_and_responses.md` §HTTP status codes; no template operation
+/// declares `422`, so the semantic branch is register-adjudicated), never the
+/// syntactic `400` branch of `responses/400.yaml`.
 pub(super) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     check(opt).map_err(|v| {
-        ServiceError::sm(
-            CallStatusType::PreconditionViolation,
-            format!("{}: {}", v.code, v.detail),
-        )
+        ServiceError::ValidationFailed(vec![openehr_its::rest::runtime::ValidationError {
+            path: v.code.to_string(),
+            message: v.detail,
+        }])
     })
 }
 
