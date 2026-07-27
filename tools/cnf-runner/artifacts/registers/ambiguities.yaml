@@ -100,9 +100,14 @@ AMB-17:
   upstream_ref: "UPR-05"
 AMB-22:
   ambiguity: >-
-    The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced by
-    ITS-REST 1.1.0 — no collection GET exists on /ehr/{ehr_id}/contribution
-    (only the single-CONTRIBUTION GET by uid).
+    The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced
+    by ITS-REST 1.1.0 — no collection GET exists on
+    /ehr/{ehr_id}/contribution (POST only; the stalled Robot suite itself
+    records the deletion: "NOTE: no such endpoint (anymore)???"). WIDENED
+    2026-07-27: the same applies to has_contribution (inferable only from
+    the by-uid GET's 200/404) and contribution_count (inferable from
+    NOTHING — with no collection endpoint there is no way to count) — three
+    of the interface's five operations have no wire.
   source: >-
     SM i_ehr_contribution.adoc (list_contributions — defines the operation) vs
     released ITS-REST 1.1.0 (no collection GET on /ehr/{ehr_id}/contribution —
@@ -485,38 +490,36 @@ AMB-51:
   upstream_ref: "UPR-22"
 AMB-54:
   ambiguity: >-
-    commit_contribution rejection of a mismatched change_type has no assigned
-    status code: a 251|modification| committed as the FIRST version of a
-    VERSIONED_OBJECT (nothing to modify), or a 249|creation| naming a
-    preceding_version_uid, violates RM change-control and MUST be rejected —
-    but the released ITS-REST docs text assigns no code, and the overview
-    permits either 400 (generic client error) or 422 (semantic).
+    NARROWED 2026-07-27: the released 400_CONTRIBUTION response text
+    ASSIGNS 400 to one half of what this entry originally carried — "or the
+    modification type does not match the operation - i.e. first version of
+    a MODIFICATION" — so a non-creation change_type committed as the FIRST
+    version of a versioned object is NOT ambiguous (400, and this server
+    answers 400). What remains UNASSIGNED by any released text: (a) the
+    mirror case — a 249|creation| member that names a
+    preceding_version_uid (RM Preceding_version_uid_validity grounds the
+    rejection, no wire code); (b) a stale or unknown preceding_version_uid
+    on a member (no If-Match exists on this operation, no 412/409 trigger
+    covers it); (c) an out-of-group change_type/lifecycle token (the RM
+    invariants ground the rejection, no wire code).
   source: >-
-    RM common master06-change_control_package.adoc §Change Control (addition =
-    a first ORIGINAL_VERSION with preceding_version_uid Void, change_type
-    249|creation|; modification = a new ORIGINAL_VERSION on an EXISTING
-    VERSIONED_OBJECT, change_type 251|modification|) — the rejection of a
-    mismatched change_type is REQUIRED. The ITS-REST docs text
-    (specifications/docs/) assigns NO status code to a change_type mismatch
-    (confirmed silent first-hand); ITS-REST overview Requests_and_responses.md
-    §HTTP status codes permits 400 (generic client-side error, "used when no
-    other 4xx error code is appropriate") or 422 (semantic) — the exact code is
-    unassigned.
+    ITS-REST specifications/responses/400_CONTRIBUTION.yaml (the assigned
+    trigger, quoted); operations/contribution_create.yaml (responses
+    201/400/404/409 — no 412/422); RM common
+    UML/classes/org.openehr.rm.common.version.adoc
+    (Preceding_version_uid_validity) + master06 §Contributions (the
+    change-kind law) — confirmed first-hand.
   handling: >-
-    commit_contribution's validation_failed carries BOTH semantic content
-    invalidity (422, exact) AND this mismatched-change_type rejection
-    (spec-unassigned code); the binding accepts 422 with alt_status [400] for
-    the latter. Pure semantic-content cases stay 422. The SAME silence
-    governs a direct commit whose openehr-audit-details committal header
-    carries an operation-contradicting change_type (overview
-    §"openehr-version and openehr-audit-details" requires the merge; RM
-    change control requires the rejection; no docs-text sentence assigns the
-    code): the update_composition audit_change_type variant's
-    change_type_mismatch outcome accepts both (400 with alt_status [422]).
-    Out-of-group tokens are NOT this silence — they violate
-    AUDIT_DETAILS.Change_type_valid, a semantic error, 422 exact.
+    Fixed handling: (a) creation-with-preceding and (c) out-of-group tokens
+    are 422 (well-formed envelopes whose change-control semantics cannot be
+    followed — the general 422 row); (b) a stale/unknown
+    preceding_version_uid is 412 with the current-latest weak ETag,
+    consistent with the direct routes' precondition family. The
+    first-version-modification case gates at the released 400. Reported
+    upstream (UPR-47): assign the three residual branches.
   disposition: fixed_handling
-  upstream_ref: "UPR-23"
+  upstream_ref: "UPR-47"
+
 AMB-55:
   ambiguity: >-
     DV_CODED_TEXT.value has no value==rubric invariant. The dv_coded_text.adoc
@@ -576,29 +579,39 @@ AMB-56:
   upstream_ref: "UPR-25"
 AMB-57:
   ambiguity: >-
-    ITS-REST 1.1.0 defines no simplified-format (FLAT/STRUCTURED) inner-data
-    surface for commit_contribution. The contribution create operation accepts a
-    CONTRIBUTION envelope (versions[] + audit) in canonical JSON/XML; the
-    Simplified Formats sub-spec scopes itself to COMPOSITION serialization and
-    defines only the two wt COMPOSITION MIME types, with no CONTRIBUTION
-    representation. So committing a CONTRIBUTION whose inner versions carry
-    simplified-format COMPOSITIONs has no wire.
+    CORRECTED 2026-07-27 (the prior text claimed no simplified-format wire
+    exists for commit_contribution — STALE: SPECITS-84, Release-1.1.0,
+    defines it in four places). The RESIDUAL conflict is read-side:
+    contribution_get's §Simplified Formats paragraph and the released
+    200_CONTRIBUTION response text both promise that "each versions[i].data
+    payload is serialized in the requested FLAT or STRUCTURED form", but the
+    declared 200 body (the CONTRIBUTION schema) carries versions as
+    OBJECT_REFs — there is NO versions[i].data in the read shape at all —
+    and the operation declares no Prefer parameter, leaving the generic
+    "Prefer: return=representation, resolve_refs" mechanism unbound.
   source: >-
-    ITS-REST simplified_formats master02-overview.adoc §Scope (covers "Mapping
-    between the Simplified Formats and canonical openEHR RM (e.g. COMPOSITION)";
-    CONTRIBUTION not in scope) + §MIME Types (only
-    application/openehr.wt.flat+json and application/openehr.wt.structured+json)
-    vs the released ITS-REST contribution-create operation (CONTRIBUTION
-    envelope body, canonical JSON/XML only) — CONFIRMED first-hand
+    ITS-REST specifications/operations/contribution_{create,get}.yaml
+    §Simplified Formats + responses/{201,200}_CONTRIBUTION.yaml (the
+    envelope-canonical / inner-simplified rule, all four places);
+    docs/overview/Amendment_record.md SPECITS-84 (27 Apr 2026,
+    Release-1.1.0); schemas/common/Contribution.yaml (versions =
+    ObjectRefOfObjectVersionId, no data); Requests_and_responses.md §Prefer
+    resolving Object references — confirmed first-hand.
   handling: >-
-    No normative cases: there is no ITS-REST 1.1.0 wire for committing a
-    CONTRIBUTION with simplified inner data, so the behaviour is
-    statement-declared (a server MAY offer it as an extension). commit_contribution
-    coverage stays on the canonical-JSON/XML envelope. Activates if a future
-    ITS-REST release defines a simplified contribution surface. SM/ITS alignment
-    candidate.
-  disposition: statement_declared
-  upstream_ref: "UPR-26"
+    Fixed handling: the create side is implemented exactly as released
+    (envelope canonical, each versions[i].data in the negotiated
+    FLAT/STRUCTURED form, both request and Prefer-representation response).
+    On the GET, inner serialization binds to "Prefer:
+    return=representation, resolve_refs": with it, versions inline as full
+    ORIGINAL_VERSIONs and COMPOSITION data serializes in the requested wt
+    form (non-COMPOSITION inner payloads 406); without it, the OBJECT_REF
+    members pass through and the envelope serves canonically. Reported
+    upstream (UPR-13 lineage; re-reported as UPR-48): align the GET's
+    simplified paragraph with its declared schema or bind resolve_refs
+    explicitly.
+  disposition: fixed_handling
+  upstream_ref: "UPR-48"
+
 AMB-58:
   ambiguity: >-
     NOT an openEHR ambiguity — a documented extension of ours, kept in this
@@ -1423,7 +1436,9 @@ AMB-82:
     EhrStatus schema) — confirmed first-hand.
   handling: >-
     Fixed handling: this server answers 409 Conflict on any content write
-    (COMPOSITION or directory create/update/delete) into an EHR with
+    (COMPOSITION or directory create/update/delete, AND the native
+    CONTRIBUTION commit — the primary write route; scope extended
+    2026-07-27) into an EHR with
     is_modifiable = false — the request conflicts with the resource's
     current state; EHR_STATUS itself stays always-writable (RM: "The
     EHR_STATUS object itself can always be written to"), which is how a
@@ -1472,6 +1487,195 @@ AMB-83:
     Location on 412. Reported upstream (UPR-45).
   disposition: editorial
   upstream_ref: "UPR-45"
+
+AMB-84:
+  ambiguity: >-
+    An empty versions array on a committed CONTRIBUTION has NO released
+    ground for rejection: NewContribution declares no minItems (the READ
+    schema does: minItems 1 — an asymmetry), the RM CONTRIBUTION class
+    declares NO invariants at all (its versions multiplicity is 1..1 on
+    the List attribute, not 1..* on items), and no operation branch covers
+    it. The stalled Robot asserts 400 with an invented message.
+  source: >-
+    ITS-REST specifications/schemas/ehr/NewContribution.yaml (no minItems)
+    vs schemas/common/Contribution.yaml (minItems 1); RM common
+    UML/classes/org.openehr.rm.common.contribution.adoc (invariants
+    section absent) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server rejects an empty (or missing) versions
+    list 422 — a well-formed envelope that commits nothing cannot be
+    followed as a change set (a CONTRIBUTION exists to list "the affected
+    VERSION objects", master06 §Contributions). Reported upstream
+    (UPR-46): add the minItems to the commit schema or an invariant to the
+    RM class.
+  disposition: fixed_handling
+  upstream_ref: "UPR-46"
+
+AMB-85:
+  ambiguity: >-
+    The RM's logical-deletion procedure requires committing a version
+    whose data is DELETED (master06 §Logical Deletion: "delete its data"),
+    but the released commit schema makes UpdateVersion.data REQUIRED with
+    no null form — delete-through-contribution is not representable as
+    the RM describes it (and the read-side Version schema likewise
+    requires data, contradicting ORIGINAL_VERSION.data 0..1).
+  source: >-
+    RM common master06-change_control_package.adoc §Logical Deletion +
+    UML/classes/org.openehr.rm.common.original_version.adoc (data 0..1)
+    vs ITS-REST specifications/schemas/ehr/{UpdateVersion,Version}.yaml
+    (data required) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server follows the RM — a 523|deleted| member
+    MUST omit data (or carry JSON null, treated as absent) and a
+    523|deleted| member CARRYING data is rejected 422; the stalled
+    schema's required-data is not enforced for deletion members. Reported
+    upstream (UPR-49): give the commit schema a deletion shape.
+  disposition: fixed_handling
+  upstream_ref: "UPR-49"
+
+AMB-86:
+  ambiguity: >-
+    Whether the openehr-version / openehr-audit-details committal headers
+    apply to the NATIVE contribution POST — whose body already carries the
+    audit and per-version envelopes natively — is unstated: the overview
+    MUST-accept sentence is scoped in context to the convenience
+    PUT/POST/DELETE methods on change-controlled resources, and no
+    precedence rule exists for a header value conflicting with a body
+    value on the native route.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §openehr-version and openehr-audit-details L74-94 (the scoping
+    context) vs operations/contribution_create.yaml (no header
+    parameters) — confirmed first-hand.
+  handling: >-
+    Fixed handling: on the native route the BODY is authoritative — the
+    committal headers are not merged (they exist to give the convenience
+    methods a metadata channel the native envelope already has); the
+    server-set fields (time_committed, system_id fallback) apply
+    identically either way. Reported upstream (UPR-50): state the header
+    scope explicitly.
+  disposition: fixed_handling
+  upstream_ref: "UPR-50"
+
+AMB-87:
+  ambiguity: >-
+    Whether the ETag / Last-Modified SHOULD reaches the CONTRIBUTION GET
+    is left open: the overview SHOULDs both headers for "VERSION,
+    VERSIONED_OBJECT, or other resources that have versioning or unique
+    state identifiers", Resources.md classifies CONTRIBUTION as a
+    NON-versioned resource, the released 200_CONTRIBUTION declares
+    neither header — yet the 201 carries the contribution-uid ETag and a
+    CONTRIBUTION is immutable with a unique identifier.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §"ETag and Last-Modified" vs Resources.md §Resources (the
+    non-versioned classification) vs responses/{200,201}_CONTRIBUTION.yaml
+    — confirmed first-hand.
+  handling: >-
+    Fixed handling: the GET serves the contribution-uid weak ETag (the
+    identity the 201 already carries) and Last-Modified from
+    audit.time_committed — an immutable resource's unique identifier is a
+    unique state identifier, and the instant of committal is its one
+    modification instant. Reported upstream (UPR-51): declare the headers
+    on the 200 or scope the SHOULD.
+  disposition: fixed_handling
+  upstream_ref: "UPR-51"
+
+AMB-88:
+  ambiguity: >-
+    The type discipline of CONTRIBUTION.versions[i] OBJECT_REFs is
+    internally tense in released text: the RM defines the refs as "Set of
+    references to Versions causing changes" while the released schema
+    example emits the DATA class (COMPOSITION, FOLDER) as the ref type
+    with an OBJECT_VERSION_ID id; OBJECT_REF.type is "Name of the class
+    ... of object to which this identifier type refers", which for an
+    OBJECT_VERSION_ID id would be a VERSION type. The RM's own next
+    sentence ("items of types such as COMPOSITION and FOLDER") leans to
+    the data-class reading.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.contribution.adoc
+    (versions meaning, both sentences); BASE
+    UML/classes/org.openehr.base.base_types.object_ref.adoc (type
+    meaning); ITS-REST specifications/schemas/common/Contribution.yaml
+    (the example: type COMPOSITION / FOLDER) — confirmed first-hand.
+  handling: >-
+    Fixed handling: the wire follows the released example — versions[i]
+    carries the DATA class (COMPOSITION / EHR_STATUS / FOLDER) as type,
+    namespace local, and the full OBJECT_VERSION_ID (with _type) as id.
+    Reported upstream (UPR-52): reconcile the RM wording with the example.
+  disposition: fixed_handling
+  upstream_ref: "UPR-52"
+
+AMB-89:
+  ambiguity: >-
+    The RM mandates that an imported ORIGINAL_VERSION is wrapped as an
+    IMPORTED_VERSION and "committed in the normal way (i.e. as part of a
+    Contribution)" — but the released commit wire has NO path for it:
+    NewContribution.versions items are UpdateVersion only (no oneOf, no
+    _type, no item, no uid field to preserve the foreign identity), and
+    the SM commit_contribution likewise takes List<UPDATE_VERSION> only.
+    IMPORTED_VERSION is readable (the read-side unions) but not writable.
+  source: >-
+    RM common master06-change_control_package.adoc §Copying ("committed in
+    the normal way (i.e. as part of a Contribution)"), §Contributions
+    (import → 249|creation|), §Version and its Subtypes vs ITS-REST
+    specifications/schemas/ehr/{NewContribution,UpdateVersion}.yaml (no
+    import shape; ImportedVersion.yaml referenced only from read unions);
+    SM UML/classes/i_ehr_contribution.adoc — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server does not accept IMPORTED_VERSION members
+    on the contribution route (nothing released defines the shape); the
+    distributed-import capability is realized by our own EHR-Extract
+    import extension (import_ehr — flagged our-own-design), which
+    preserves foreign version identities. Reported upstream (UPR-53):
+    define the import commit shape.
+  disposition: fixed_handling
+  upstream_ref: "UPR-53"
+
+AMB-90:
+  ambiguity: >-
+    The SM I_EHR_CONTRIBUTION interface and its commit DTOs carry an
+    editorial defect bundle: get_contribution's precondition calls
+    has_contribution with one argument (declared with two);
+    commit_contribution's postcondition references a_contrib_id, which is
+    not a parameter; both error-name spellings (ehr_id_does_not_exist /
+    ehr_does_not_exist) and both parameter spellings (an_ehr_id / ehr_id)
+    inside one interface; commit_contribution declares NO validation,
+    conflict, or precondition error (its only error is
+    ehr_id_does_not_exist) so the wire 400/409/412/422 families have no SM
+    counterparts; has_contribution typed 0..1 with no return type; SM
+    UPDATE_VERSION names the per-version audit "audit" where ITS-REST and
+    RM say commit_audit, and carries NO signature attribute; SM
+    UPDATE_AUDIT has NO system_id (master03 says it "need[s] to be
+    generated on the server") — contradicted by released ITS-REST 1.1.0
+    which added client system_id (SPECPR-472/SPECITS-95); SM's
+    Terminology_code typing of change_type/lifecycle_state predates the
+    released SPECITS-95 move to DV_CODED_TEXT and its own Change_type_valid
+    invariant dereferences .defining_code, which Terminology_code lacks;
+    UPDATE_AUDIT.description is String vs DV_TEXT (RM) vs UDvText
+    (ITS-REST); no SM envelope uid parameter (the wire's client-uid 409
+    has no counterpart). Minor released silences travel with the same
+    report: the system_id "will be validated" criterion is undefined;
+    contribution_uid is missing from the glossary; the Content-Type MUST
+    exempts only 204 (a minimal 201 with an empty body is unaddressed);
+    the cross-EHR contribution read is 404 only by implication; atomicity
+    is an RM "should" never restated in ITS-REST; the copy-down rule
+    (system_id/committer/time_committed "should be copied" into member
+    audits) is unreconciled with the wire requiring a per-member
+    committer.
+  source: >-
+    SM UML/classes/{i_ehr_contribution,update_version,update_audit}.adoc +
+    SM openehr_platform master03-common_package.adoc §Version Update
+    Semantics; ITS-REST specifications/schemas/{ehr/UpdateVersion,
+    common/UpdateAudit}.yaml + docs/overview/Amendment_record.md
+    (SPECITS-95, SPECPR-472) + Glossary_and_conventions.md; RM common
+    master06 §Committal and Audits — confirmed first-hand.
+  handling: >-
+    Editorial: the catalogue keeps the SM operation names; wire behaviour
+    adjudicates from the ITS-REST 1.1.0 released text (the newer, typed
+    side of every divergence) + RM. Reported upstream (UPR-54).
+  disposition: editorial
+  upstream_ref: "UPR-54"
 
 AMB-66:
   ambiguity: >-
