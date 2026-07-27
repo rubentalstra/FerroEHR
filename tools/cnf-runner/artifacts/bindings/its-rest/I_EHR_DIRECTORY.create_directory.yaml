@@ -35,9 +35,22 @@ outcomes:
     status: 400                           # 400.yaml (invalid FOLDER)
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
-  already_exists: { status: 409 }         # EHR already has a directory (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 409 = conflict
+  already_exists: { status: 409 }         # a LIVE directory already occupies the slot (SM Pre_no_directory; RM ehr §EHR.directory 0..1) — no released branch assigns this; register AMB-79 carries the adjudicated 409, whose text the overview §HTTP status codes 409 row supplies ("the request could not be processed because it might generate a duplicate or a conflict")
+  conflict:
+    # A content write into a DEACTIVATED EHR. RM ehr master04 §EHR Active
+    # Status refuses writes to "everything other than the EHR_STATUS object"
+    # while `is_modifiable` is false — naming hierarchical Folders alongside
+    # Compositions — but no released ITS-REST sentence assigns the refusal a
+    # code; register AMB-82 carries the adjudicated 409, the overview §HTTP
+    # status codes row for a request that "could not be processed because it
+    # might generate a duplicate or a conflict" with the resource's state.
+    status: 409
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
 captures:
   version_uid:
     from: header ETag                     # the new directory VERSION uid (201_directory.yaml ETag)
     strip: weak-quotes
+  versioned_object_uid:
+    from: capture version_uid             # the VERSIONED_FOLDER container id — ITS-REST overview Resources.md §Identifier types: a version_uid's "`object_id` matches the VERSIONED_OBJECT identifier"
+    transform: root-uid
 server_assigned: [uid]

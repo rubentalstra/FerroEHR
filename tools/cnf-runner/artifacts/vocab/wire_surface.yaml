@@ -303,26 +303,22 @@ branches:
     outcome: validation_failed
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_DIRECTORY.create_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_DIRECTORY.delete_directory
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_DIRECTORY.delete_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gaps: the directory precondition family is now exercised.
+  # delete_directory / update_directory `precondition_failed` are gated by
+  # I_EHR_DIRECTORY.{delete,update}_directory-stale_if_match, and
+  # get_directory_at_time `ok_empty` by
+  # I_EHR_DIRECTORY.get_directory_at_time-deleted_at_time — so those three
+  # exceptions are gone rather than reworded (coverage only ratchets up).
+  # The two `precondition_missing` branches convert to variant_of on the same
+  # reasoning the COMPOSITION/EHR_STATUS PUTs already carry.
   - binding: I_EHR_DIRECTORY.delete_directory
     outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_DIRECTORY.delete_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_DIRECTORY.get_directory_at_time
-    outcome: ok_empty
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_DIRECTORY.get_directory_at_time is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_DIRECTORY.update_directory
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_DIRECTORY.update_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_DIRECTORY.delete_directory-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
   - binding: I_EHR_DIRECTORY.update_directory
     outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_DIRECTORY.update_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_DIRECTORY.update_directory-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
   # The created and already_exists branches of the with_ehr_id variant are now
   # EXERCISED by I_EHR_SERVICE.create_ehr-with_ehr_id (and the subject-duplicate
   # half by -with_ehr_id_subject_taken), so their exceptions are retired: the
@@ -717,6 +713,9 @@ elements:
       - I_EHR_STATUS.set_ehr_queryable-existing_ehr
       - I_EHR_DIRECTORY.create_directory-empty_ehr
       - I_EHR_DIRECTORY.update_directory-ehr_with_directory
+      # The weak indicator on a DELETE's 204 as well, where the identifier
+      # inside it is the newly committed deleted version (register AMB-75).
+      - I_EHR_DIRECTORY.delete_directory-etag_names_new_version
       - I_EHR_CONTRIBUTION.commit_contribution-valid_composition
       - SIG-VERSION-signature_present
   - id: header-location-on-create
@@ -743,6 +742,10 @@ elements:
       # asserts nor forbids it on an EHR READ.
       - I_EHR_SERVICE.create_ehr-with_ehr_id
       - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+      # The DELETE's 204: the delete COMMITS a version (RM common master06
+      # §Logical Deletion), so the SHOULD reaches it and the instant is that
+      # commit's own (register AMB-75).
+      - I_EHR_DIRECTORY.delete_directory-etag_names_new_version
       - SIG-VERSION-signature_present
   - id: header-prefer-return-representation
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
@@ -784,6 +787,15 @@ elements:
       # the preceding VERSION uid).
       - I_EHR_COMPOSITION.update_composition-stale_if_match
       - I_EHR_COMPOSITION.update_composition-missing_if_match
+      # Both halves again on the DIRECTORY PUT *and* the DIRECTORY DELETE —
+      # the routes carry no version segment at all, so the scope sentence
+      # reaches them too, and the delete is the case that keeps the 412/409
+      # line honest: a version-in-the-path delete (COMPOSITION) conflicts,
+      # a version-in-If-Match delete (directory) fails its precondition.
+      - I_EHR_DIRECTORY.update_directory-stale_if_match
+      - I_EHR_DIRECTORY.update_directory-missing_if_match
+      - I_EHR_DIRECTORY.delete_directory-stale_if_match
+      - I_EHR_DIRECTORY.delete_directory-missing_if_match
   - id: header-if-match-weak-form
     description: "If-Match supplied in the weak entity-tag form W/\"<uid>\" — the shape the server itself emits as the ETag — is decoded and evaluated as a precondition: a current value passes the write, a stale value is 412 (never a malformed-syntax rejection)."
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (the ETag \"is considered to be of weak-type and should have a weakness indicator W/ prefix\") + §Deprecated headers (\"all ETag headers that hold a resource identifier MUST include a weakness indicator W/\") + §If-Match and accidental overwrites (412 only when \"the condition evaluates to false\")"
@@ -836,6 +848,9 @@ elements:
       - I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
       - I_EHR_DIRECTORY.get_directory-ehr_root_directory
       - I_EHR_DIRECTORY.delete_directory-ehr_with_directory
+      - I_EHR_DIRECTORY.delete_directory-etag_names_new_version
+      - I_EHR_DIRECTORY.get_directory-path_sub_folder
+      - I_EHR_DIRECTORY.get_directory_at_version-path_sub_folder
       - I_EHR_STATUS.get_versioned_ehr_status-container_shape
       - I_EHR_STATUS.get_ehr_status_at_version-addressed_version
       - I_EHR_COMPOSITION.get_versioned_composition-container_shape
@@ -976,6 +991,10 @@ elements:
       - I_EHR_COMPOSITION.get_composition_at_times
       - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory
       - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions
+      # The two clock-independent directory edges, both fixed Z-bearing
+      # literals rather than captured instants.
+      - I_EHR_DIRECTORY.get_directory_at_time-before_first_version
+      - I_EHR_DIRECTORY.get_directory_at_time-future
       - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
       # The EHR_STATUS at-time reads, on both routes, with Z-bearing literals.
       - I_EHR_STATUS.get_ehr_status-at_time_before_first_version
@@ -1066,6 +1085,13 @@ elements:
       - I_EHR_STATUS.get_versioned_ehr_status-at_time_malformed
       - I_EHR_STATUS.get_versioned_ehr_status-at_time_before_first_version
       - I_EHR_STATUS.get_versioned_ehr_status-at_time_future
+      # The DIRECTORY route, whose at-time reads are the third resource the
+      # same accessor governs. The omitted-parameter branch is the ordinary
+      # get_directory read; the malformed branch is the shared datetime
+      # grammar; these two are the extancy EDGES, both as clock-independent
+      # fixed literals.
+      - I_EHR_DIRECTORY.get_directory_at_time-before_first_version
+      - I_EHR_DIRECTORY.get_directory_at_time-future
   # The version container as a resource of its own (RM common
   # versioned_object.adoc §Attributes).
   - id: versioned-object-container-shape
@@ -1074,6 +1100,24 @@ elements:
     covered_by:
       - I_EHR_STATUS.get_versioned_ehr_status-container_shape
   # The per-EHR scoping of a version container (RM ehr ehr.adoc EHR.ehr_status).
+  # The directory `path` query parameter (ITS-REST directory GET operations).
+  - id: directory-path-parameter-navigation
+    description: "The `path` query parameter NARROWS a directory GET to a nested sub-FOLDER — the served body is that sub-FOLDER, not the root — on BOTH directory read routes (latest/at-time and by-version); a path that resolves to nothing is 404, never an ancestor folder and never an empty success."
+    source: "ITS-REST specifications/operations/directory_get_at_time.yaml and directory_get_by_version_id.yaml, whose descriptions BOTH read \"If `path` is supplied, retrieves from the directory only the sub-FOLDER that is associated with that path\" and which both list ../parameters/query/path.yaml + their 404 response files 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml / 404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml (\"or when `path` does not exist within the directory\") + Requests_and_responses.md §HTTP status codes row 404. The parameter's GRAMMAR — leading slash, whether the root FOLDER's own name is a segment, duplicate-sibling disambiguation, escaping a slash inside a name — is stated by nothing beyond the one sentence in parameters/query/path.yaml (\"consists of slash-separated values of the name attribute of FOLDERs in the directory\", example `episodes/a/b/c`) and is adjudicated in register AMB-81"
+    covered_by:
+      - I_EHR_DIRECTORY.get_directory-path_sub_folder
+      - I_EHR_DIRECTORY.get_directory-path_unresolved
+      - I_EHR_DIRECTORY.get_directory_at_version-path_sub_folder
+      - I_EHR_DIRECTORY.get_directory_at_version-path_unresolved
+      # The same wire read as a boolean probe (status only, body ignored).
+      - I_EHR_DIRECTORY.has_path-folder_structure
+  # Deactivated-EHR content refusal (RM ehr master04 §EHR Active Status).
+  - id: ehr-not-modifiable-refuses-content-writes
+    description: "While EHR_STATUS.is_modifiable is false the EHR refuses content writes — on BOTH content kinds the rule enumerates, Compositions and hierarchical Folders — while EHR_STATUS itself stays writable so the EHR can be reactivated."
+    source: "RM ehr master04-ehr_package.adoc §EHR Active Status: \"The `EHR_STATUS._is_modifiable_` attribute is used to indicate whether _the contents of an EHR_ are modifiable, and is set to `True` if the EHR is considered _active_. An EHR's 'contents' consist of everything other than the `EHR_STATUS` object, i.e. its Compositions (Versioned objects referred to by the `_compositions_` attribute), its hierarchical Folders (Versioned objects referred to by the `_folders_` attribute) and any other content that may be added in later releases of this specification\" — the ITS-REST docs text never mentions is_modifiable outside the EHR-creation defaults (grep of specifications/docs/**: zero hits) and assigns the refusal no status code, so the 409 is adjudicated in register AMB-82 against Requests_and_responses.md §HTTP status codes row 409 (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\")"
+    covered_by:
+      - I_EHR_DIRECTORY.create_directory-ehr_not_modifiable
+      - I_EHR_COMPOSITION.create_composition-ehr_not_modifiable
   - id: versioned-object-addressing-is-ehr-scoped
     description: "A version_uid resolves only within the EHR whose route addresses it: a live version identifier belonging to another EHR's container is not served, so version ids are not a global namespace."
     source: "RM ehr UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (`ehr_status` is THIS EHR's VERSIONED_EHR_STATUS) + RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (`version_with_id`, `Pre: has_version_id (a_ver_id)` — membership of the addressed container) + ITS-REST Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
