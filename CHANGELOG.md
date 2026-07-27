@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The CONTRIBUTION GET serves `ETag` + `Last-Modified`** (#463).
+  `GET …/contribution/{contribution_uid}` now carries the contribution-uid
+  weak `ETag` (the same identity the 201 already carries) and a
+  `Last-Modified` derived from the contribution audit's commit instant
+  (ITS-REST overview *Requests and responses* §"ETag and Last-Modified").
+
 - **Directory by-version reads verify the full addressed identity; the
   directory DELETE 204 carries the deleted version's identity** (#456).
   `GET …/directory/{version_uid}` now answers 404 when the addressed
