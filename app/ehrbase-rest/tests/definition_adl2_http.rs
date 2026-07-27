@@ -543,3 +543,71 @@ async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
          version changes (overview §\"ETag and Last-Modified\")"
     );
 }
+
+// ── POST: a non-text/plain payload type is 415, never a parse-time 400 ──────
+// The operation declares `text/plain` as its single request body type
+// (`operations/definition_template_adl2_upload.yaml`); a payload DECLARING
+// another media type cannot be processed as it — `Resources.md` §format rules:
+// "If the service cannot process the request payload as … format, it MUST
+// respond with HTTP status code 415 Unsupported Media Type". Mirrors the
+// ADL 1.4 sibling's guard.
+
+#[tokio::test]
+async fn adl2_upload_with_xml_content_type_is_415() {
+    let (_pg, app) = app().await;
+    let (status, _headers, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl2"))
+            .header(header::CONTENT_TYPE, "application/xml")
+            .body(Body::from(source()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::UNSUPPORTED_MEDIA_TYPE,
+        "a declared non-text/plain payload type is refused before parsing: {body}"
+    );
+}
+
+#[tokio::test]
+async fn adl2_upload_without_content_type_is_created() {
+    let (_pg, app) = app().await;
+    let (status, _headers, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl2"))
+            .body(Body::from(source()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "an absent Content-Type declares nothing to refuse (the header is a \
+         client MAY): {body}"
+    );
+}
+
+#[tokio::test]
+async fn adl2_upload_with_charset_parameter_is_created() {
+    let (_pg, app) = app().await;
+    let (status, _headers, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl2"))
+            .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
+            .body(Body::from(source()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "media-type parameters do not change the declared type: {body}"
+    );
+}
