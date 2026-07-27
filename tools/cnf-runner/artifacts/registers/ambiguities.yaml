@@ -1330,6 +1330,149 @@ AMB-78:
   disposition: report_only
   upstream_ref: "UPR-40"
 
+AMB-79:
+  ambiguity: >-
+    Creating a directory on an EHR that already has a live one has NO
+    assigned wire outcome: directory_create declares only 201/400/404, the
+    status table's 409 row is not bound to it, and the ITS-REST docs text
+    never mentions the case. SM I_EHR_DIRECTORY establishes the RULE
+    (Pre_no_directory: not has_directory(ehr_id)) but no error code. The
+    stalled Robot suite asserts 409 with the in-file admission "NOTE:
+    @PABLO this is not (yet) in the SPEC".
+  source: >-
+    ITS-REST specifications/operations/directory_create.yaml (responses
+    201/400/404 only); SM UML/classes/i_ehr_directory.adoc create_directory
+    (Pre_no_directory, errors lack a code for it);
+    Requests_and_responses.md §HTTP status codes (the unbound 409 row); CNF
+    robot directory_keywords.robot L730-737 (the admission) — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling: this server answers 409 Conflict (the row's own text —
+    "the request could not be processed because it might generate a
+    duplicate or a conflict") when a LIVE directory occupies the slot; a
+    logically deleted directory vacates it (the container survives, RM
+    master06 §Logical Deletion) so a re-create opens a new hierarchy. The
+    create-conflict case gates on 409. Reported upstream (UPR-41): bind
+    the branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-41"
+
+AMB-80:
+  ambiguity: >-
+    Updating or deleting the directory of an EHR that has NONE has no
+    assigned wire outcome: both operations' only 404 file is scoped "when
+    an EHR with ehr_id does not exist"; 412 is scoped to an If-Match
+    mismatch against the latest version — and there is no latest version.
+    SM has Pre_has_directory on both with no error code
+    (delete_directory's only error is ehr_id_does_not_exist).
+  source: >-
+    ITS-REST specifications/operations/directory_{update,delete}.yaml +
+    responses/404_unknown_ehr_id.yaml (the scoping) +
+    responses/412_directory.yaml; SM UML/classes/i_ehr_directory.adoc
+    (Pre_has_directory without an error code) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server answers 404 Not Found — the directory
+    resource the request addresses does not exist, the closest released
+    semantics (the 404 row: "the resource … does not exist"). The
+    no-directory update/delete cases gate on 404. Reported upstream
+    (UPR-42): scope the 404 files to cover the missing-directory case or
+    bind another branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-42"
+
+AMB-81:
+  ambiguity: >-
+    The directory `path` query parameter's grammar is stated in one
+    sentence ("consists of slash-separated values of the name attribute of
+    FOLDERs in the directory", example episodes/a/b/c) that leaves
+    unstated: whether a leading slash is permitted; whether the root
+    FOLDER's own name is a segment or implicit; how duplicate sibling
+    names disambiguate (the RM's own bracket uniqueness-modifier
+    convention for directory paths is never adopted by the REST param);
+    and how a slash inside a FOLDER name escapes. The RM path syntax
+    (master05 §Paths) is a DIFFERENT grammar the parameter never
+    references.
+  source: >-
+    ITS-REST specifications/parameters/query/path.yaml (the whole released
+    definition); SM UML/classes/i_ehr_directory.adoc has_path (identical
+    wording); RM common master05-directory_package.adoc §Paths (the
+    distinct RM grammar) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server resolves the parameter root-implicitly
+    (segments name SUB-folders; the root's own name is not a segment),
+    tolerates a leading slash and empty segments, matches the first
+    sibling with the exact name value, navigates folders only (never
+    items), and answers 404 for an unresolved path (the declared trigger).
+    Path cases pin this grammar. Reported upstream (UPR-43): define the
+    grammar normatively.
+  disposition: fixed_handling
+  upstream_ref: "UPR-43"
+
+AMB-82:
+  ambiguity: >-
+    RM requires content writes to be REFUSED on a deactivated EHR
+    (EHR_STATUS.is_modifiable = false scopes to "everything other than the
+    EHR_STATUS object" — Compositions AND hierarchical Folders), but NO
+    released text assigns the refusal a status code: the ITS-REST docs
+    text never mentions is_modifiable outside the EHR-creation defaults,
+    and no composition/directory operation declares a branch for it.
+  source: >-
+    RM ehr master04-ehr_package.adoc §EHR Active Status (the refusal rule,
+    naming Compositions and Folders); ITS-REST specifications/ (grep:
+    is_modifiable appears only in ehr_create*.yaml defaults and the
+    EhrStatus schema) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server answers 409 Conflict on any content write
+    (COMPOSITION or directory create/update/delete) into an EHR with
+    is_modifiable = false — the request conflicts with the resource's
+    current state; EHR_STATUS itself stays always-writable (RM: "The
+    EHR_STATUS object itself can always be written to"), which is how a
+    deactivated EHR is reactivated. Cases exercising the deactivated-EHR
+    refusal gate on 409. Reported upstream (UPR-44): assign the branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-44"
+
+AMB-83:
+  ambiguity: >-
+    The SM I_EHR_DIRECTORY interface carries editorial defects in the
+    AMB-72/77 pattern: five operations declare their parameter as `ehr_id`
+    while their preconditions read `an_ehr_id` (the interface mixes both
+    spellings); version identifiers and ehr ids are typed UUID where the
+    wire values are OBJECT_VERSION_ID/HIER_OBJECT_ID; the preconditions
+    call valid_content(...) where I_VALIDITY_CHECKER declares
+    content_valid(...) — the same defect recurring in a third interface;
+    update_directory's Meaning ("Create or update a directory") contradicts
+    its own Pre_has_directory and duplicates create_directory's create
+    path, while declaring no preceding_version_uid parameter (the value
+    lives only in UV_FOLDER); get_directory_at_version declares no
+    preconditions and only version_does_not_exist (omitting
+    ehr_id_does_not_exist, which its REST 404 explicitly covers);
+    has_directory declares no errors while the structurally identical
+    has_path declares one; the three write operations are typed 0..1 with
+    no return type; no SM error corresponds to the wire 412; and the three
+    boolean probes (has_directory, has_path, has_directory_version) have
+    no ITS-REST route (inferable only from GET status codes — AMB-24
+    covers only get_versioned_directory). Two released ITS-REST
+    response-file contract defects travel with the same report: the
+    update's 200 and 204 branches select DIFFERENT Location/ETag header
+    contracts (Location_directory+ETag_FOLDER vs
+    Location_version+generic ETag) for one operation's success, and
+    412_directory declares a Location header solely to deprecate it.
+  source: >-
+    SM UML/classes/i_ehr_directory.adoc (all interface defects) +
+    i_validity_checker.adoc; ITS-REST
+    specifications/responses/{200_directory_updated,204_version_updated,
+    412_directory}.yaml + headers/{Location_directory,Location_version,
+    Location_deprecated,ETag,ETag_FOLDER}.yaml — confirmed first-hand.
+  handling: >-
+    Editorial: the catalogue keeps the SM operation names and adjudicates
+    wire behaviour from the ITS-REST docs text + RM; the wire serves ONE
+    consistent header contract on both update successes (Location = the
+    by-version directory URL, weak ETag = the new version uid) and no
+    Location on 412. Reported upstream (UPR-45).
+  disposition: editorial
+  upstream_ref: "UPR-45"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
