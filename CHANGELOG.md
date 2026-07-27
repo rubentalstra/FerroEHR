@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Template rejection statuses are coherent across both upload routes**
+  (#493). An ADL2 source with grammar-level syntax errors now answers
+  `400 Bad Request` (the released "syntactically invalid … content" branch)
+  instead of `422`; AOM2 validation-phase failures on a parsed source keep
+  answering `422` with the rule codes in `validationErrors`. On the ADL 1.4
+  side, an AOM2 artefact-validity violation on a successfully parsed OPT now
+  answers `422` with the rule code in `validationErrors` (previously `400`) —
+  syntax gates `400`, semantics gate `422`, on both routes.
+
 - **Template-upload rejection statuses follow the released split** (#489).
   An ADL 1.4 OPT upload whose body is not well-formed XML now answers
   `400 Bad Request` (the released "syntactically invalid … content" branch)

@@ -113,8 +113,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     ///
-    /// - Source that fails to parse or fails an AOM2 validation phase →
-    ///   `invalid_artefact` (`422`, via [`ServiceError`]).
+    /// - Source that fails to parse → bad request (`400`, syntactically
+    ///   invalid content — `responses/400.yaml`); source that fails an AOM2
+    ///   validation phase → `invalid_artefact` (`422`, via [`ServiceError`]).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         let summary = self.adl2_validate(&adl2).await?;
@@ -278,18 +279,20 @@ impl EhrbaseService {
     /// Validate one uploaded ADL2 source with the `openehr-adl` engine and return
     /// its identity [`ArtefactSummary`].
     ///
-    /// Any invalidity — an unparseable source (S-code syntax errors) or an AOM2
-    /// validation-phase failure (V-codes) — is a `ValidationFailed`: the SM
-    /// `upload_artefact` maps it to `invalid_artefact` (`422`), and the wire
-    /// renders the ITS-REST `Error` object with the rule-code mnemonics as
-    /// `validationErrors[]` (`schemas/others/Error.yaml`). The openEHR
+    /// Invalidity splits on the syntax/semantics line: an unparseable source
+    /// (S-code syntax errors) is *syntactically invalid content* — the released
+    /// `400` branch (`responses/400.yaml`, via [`syntax_bad_request`]) — while
+    /// an AOM2 validation-phase failure (V-codes) on a parsed source is a
+    /// `ValidationFailed` (`422`), the wire rendering the ITS-REST `Error`
+    /// object with the rule-code mnemonics as `validationErrors[]`
+    /// (`schemas/others/Error.yaml`). The openEHR
     /// [`ProductionRmModel`] governs openEHR-published archetypes; a foreign/test
     /// model skips the RM pass (`AOM2/master04.3` §Reference Model Type Matching
     /// — a model this build does not carry would false-fire VCORM). External
     /// term bindings are verified through the terminology-service resolver
     /// (VETDF, `master03` §Validity Rules — see [`Self::adl2_terminology_resolver`]).
     async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
-        let archetype = parse_artefact(source).map_err(syntax_validation_failure)?;
+        let archetype = parse_artefact(source).map_err(|errs| syntax_bad_request(&errs))?;
         let repo = self.adl2_repository().await?;
         let issues = if production_model_governs(&archetype) {
             // VETDF: external term bindings are verified against the terminology
@@ -300,7 +303,7 @@ impl EhrbaseService {
         } else {
             validate_source_phase1(source, Some(&repo))
         }
-        .map_err(syntax_validation_failure)?;
+        .map_err(|errs| syntax_bad_request(&errs))?;
 
         let errors: Vec<ValidationError> = issues
             .iter()
@@ -805,20 +808,18 @@ fn join_syntax_errors(errs: &[openehr_adl::error::SyntaxError]) -> String {
         .join("; ")
 }
 
-/// Map an ADL2 parse failure to a [`ServiceError::ValidationFailed`] carrying
-/// the S-code mnemonics as `validationErrors[]` — an unparseable source is an
-/// invalid artefact (`422`), not a distinct wire status (`AOM2/master04.6`
-/// §Syntax Validity Rules; SM `i_definition_adl2.adoc` `upload_artefact`
-/// `invalid_artefact`).
-fn syntax_validation_failure(errs: Vec<openehr_adl::error::SyntaxError>) -> ServiceError {
-    ServiceError::ValidationFailed(
-        errs.into_iter()
-            .map(|e| ValidationError {
-                path: e.code.mnemonic().to_owned(),
-                message: format!("{} (line {}, column {})", e.message, e.line, e.column),
-            })
-            .collect(),
-    )
+/// Map an ADL2 parse failure to a [`ServiceError::BadRequest`] carrying the
+/// joined S-code details — an unparseable source is *syntactically invalid
+/// content*, the released `400` branch declared on the upload
+/// (`docs/specs/openehr/ITS-REST/specifications/responses/400.yaml`: "the
+/// request could not be parsed or is invalid (e.g. … syntactically invalid …
+/// content)"). AOM2 validation-phase failures (V-codes) on a *parsed* source
+/// are the semantic `422` branch instead (see [`EhrbaseService::adl2_validate`]).
+fn syntax_bad_request(errs: &[openehr_adl::error::SyntaxError]) -> ServiceError {
+    ServiceError::BadRequest(format!(
+        "syntactically invalid ADL2 content: {}",
+        join_syntax_errors(errs)
+    ))
 }
 
 /// Map an artefact `kind` to the value the storage `kind` column accepts. The
