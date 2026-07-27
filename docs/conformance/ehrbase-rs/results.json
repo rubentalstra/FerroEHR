@@ -2833,6 +2833,12 @@
       "rows_total": 2
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-fetch_over_limit",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top",
       "status": "passed",
       "rows_driven": 1,
@@ -2857,6 +2863,24 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_and_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_only",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-result_set_etag",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
       "status": "passed",
       "rows_driven": 1,
@@ -2875,6 +2899,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude",
       "status": "passed",
       "rows_driven": 1,
@@ -2888,6 +2918,54 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_stored_query-empty_db",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-post_empty_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-protocol_fetch_reserved",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-reserved_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-version_exact",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-version_major_prefix",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-version_malformed_selector",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-version_minor_prefix",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_stored_query-version_unknown_major",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
