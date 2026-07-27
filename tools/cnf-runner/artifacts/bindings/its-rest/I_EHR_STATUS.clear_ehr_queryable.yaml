@@ -43,3 +43,14 @@ captures:
   status_version_uid:
     from: header ETag
     strip: weak-quotes
+  # The same wire value under the canonical `version_uid` name, so a later
+  # step's stale-precondition 412 can be judged against the version this
+  # commit actually created — ITS-REST overview Requests_and_responses.md
+  # §"If-Match and accidental overwrites": the service "MUST respond with HTTP
+  # status code `412 Precondition Failed`, and SHOULD return also latest
+  # `version_uid` in the `ETag` response headers". Without this mapping the
+  # `latest-version-uid` matcher has nothing to compare against and degrades
+  # to a bare presence check.
+  version_uid:
+    from: header ETag
+    strip: weak-quotes

@@ -109,10 +109,6 @@ sm_operations:
     reason: variant_of
     source: "released ITS-REST 1.1.0 EHR_STATUS retrieval — version_at_time query parameter on GET /ehr/{ehr_id}/ehr_status"
     note: "realized as the version_at_time query variant of I_EHR_STATUS.get_ehr_status"
-  - operation: I_EHR_STATUS.get_ehr_status_at_version
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}"
-    note: "realized via I_EHR_STATUS.get_versioned_ehr_status"
   - operation: I_EHR_STATUS.has_ehr_status_version
     reason: off_wire
     source: "SM i_ehr_status.adoc vs released ITS-REST 1.1.0 — no has-version wire on versioned_ehr_status (version existence is GET 200/404)"
@@ -394,11 +390,6 @@ branches:
     outcome: validation_failed
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.get_versioned_ehr_status
-    variant: version
-    outcome: not_found
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_STATUS.get_versioned_ehr_status binding; this variant scopes only its distinctive negotiation/rejection branch"
   - binding: I_EHR_STATUS.set_ehr_modifiable
     outcome: precondition_failed
     reason: coverage_gap
@@ -411,18 +402,18 @@ branches:
     outcome: validation_failed
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_queryable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # The precondition_failed branch of I_EHR_STATUS.set_ehr_queryable is now
+  # EXERCISED on the variant-less binding by
+  # I_EHR_STATUS.set_ehr_queryable-stale_if_match, so its exception is retired.
+  # The two below scope the branches the variant-less realization cannot reach.
   - binding: I_EHR_STATUS.set_ehr_queryable
     outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.set_ehr_queryable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
   - binding: I_EHR_STATUS.set_ehr_queryable
     outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.set_ehr_queryable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
   - binding: I_PARTY.delete_party
     outcome: already_deleted
     reason: coverage_gap
@@ -636,11 +627,12 @@ branches:
     format: canonical-xml
     reason: coverage_gap
     source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.get_ehr_status is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  # Scoped to every realization of the operation (container read + version
+  # sub-resource): neither declares a canonical-xml case yet.
   - binding: I_EHR_STATUS.get_versioned_ehr_status
-    variant: version
     format: canonical-xml
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_EHR_STATUS.get_versioned_ehr_status binding; this variant scopes its distinctive branch"
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of the VERSIONED_EHR_STATUS container read and of its version sub-resource is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
   - binding: I_EHR_STATUS.set_ehr_modifiable
     format: canonical-xml
     reason: coverage_gap
@@ -799,6 +791,9 @@ elements:
       # the case proves the returned `uid` is that by reading the EHR back
       # through it.
       - I_EHR_SERVICE.create_ehr-return_identifier
+      # The UPDATE half of the preference: 200 (never 204) and the identifier
+      # of the version the update created.
+      - I_EHR_STATUS.set_ehr_queryable-return_identifier
   - id: header-preference-applied
     description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
@@ -808,9 +803,12 @@ elements:
   - id: header-if-match-412
     description: "If-Match precondition on a state-changing method evaluates false → 412 Precondition Failed, latest version_uid echoed in ETag; absent when required → 400."
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (412 on false condition; 400 when the service expects If-Match and it is absent)"
-    exception:
-      reason: coverage_gap
-      note: "NEW-CASE candidate: a stale-If-Match update (update_composition / update_directory / update_party) expecting 412 + latest version_uid in ETag. Consistent with the Axis-2 precondition_failed/precondition_missing gaps on those bindings."
+    covered_by:
+      # Both halves land on the EHR_STATUS whole-resource PUT — the operation
+      # the same section's scope sentence describes exactly ("when the
+      # `preceding_version_uid` is not part of the endpoint path segment").
+      - I_EHR_STATUS.set_ehr_queryable-stale_if_match
+      - I_EHR_STATUS.set_ehr_queryable-missing_if_match
   - id: header-if-match-weak-form
     description: "If-Match supplied in the weak entity-tag form W/\"<uid>\" — the shape the server itself emits as the ETag — is decoded and evaluated as a precondition: a current value passes the write, a stale value is 412 (never a malformed-syntax rejection)."
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (the ETag \"is considered to be of weak-type and should have a weakness indicator W/ prefix\") + §Deprecated headers (\"all ETag headers that hold a resource identifier MUST include a weakness indicator W/\") + §If-Match and accidental overwrites (412 only when \"the condition evaluates to false\")"
@@ -824,6 +822,9 @@ elements:
       - I_EHR_COMPOSITION.update_composition-audit_amendment
       - I_EHR_COMPOSITION.update_composition-audit_change_type_mismatch
       - I_EHR_COMPOSITION.update_composition-audit_change_type_invalid
+      # The same MUST-merge on the other change-controlled resource the
+      # section names (EHR_STATUS), including the description attribute.
+      - I_EHR_STATUS.set_ehr_queryable-audit_change_type
   - id: header-committal-on-delete
     description: "The committal request headers are accepted and merged on DELETE too — the delete commits a 523|deleted| VERSION whose AUDIT_DETAILS carries the supplied description/committer."
     source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (\"services MUST also allow PUT, POST and DELETE methods directly\"; \"services MUST accept openehr-version and openehr-audit-details custom request headers\") + RM common master06 §Logical Deletion"
@@ -860,6 +861,8 @@ elements:
       - I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
       - I_EHR_DIRECTORY.get_directory-ehr_root_directory
       - I_EHR_DIRECTORY.delete_directory-ehr_with_directory
+      - I_EHR_STATUS.get_versioned_ehr_status-container_shape
+      - I_EHR_STATUS.get_ehr_status_at_version-addressed_version
       - I_EHR_CONTRIBUTION.get_contribution-existing
       - I_DEMOGRAPHIC_SERVICE.get_party-aaaa
       - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
@@ -875,6 +878,10 @@ elements:
       - I_EHR_COMPOSITION.get_composition_version
       - I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa
       - I_DEMOGRAPHIC_SERVICE.versioned_party_version_read
+      # The VERSIONED_EHR_STATUS container itself — the "VERSIONED_OBJECT"
+      # half of the SHOULD, named outright by the sentence.
+      - I_EHR_STATUS.get_versioned_ehr_status-container_shape
+      - I_EHR_STATUS.get_ehr_status_at_version-addressed_version
   # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
   - id: negotiation-canonical-json
     description: "Canonical-JSON representation negotiated and returned (the default representation)."
@@ -989,6 +996,11 @@ elements:
       - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory
       - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions
       - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
+      # The EHR_STATUS at-time reads, on both routes, with Z-bearing literals.
+      - I_EHR_STATUS.get_ehr_status-at_time_before_first_version
+      - I_EHR_STATUS.get_ehr_status-at_time_future
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_before_first_version
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_future
   # Legacy / experimental alternative data formats (ITS-REST Resources.md
   # §Alternative data formats).
   - id: media-legacy-alternative-formats
@@ -1056,3 +1068,33 @@ elements:
       reason: coverage_gap
       register: AMB-62
       note: "NEW-CASE candidate, but not authorable as a gating case today, and NOT authorable with an alt_status either: the released text leaves the minimal status OPEN — \"The HTTP status is typically `201 Created`\" is descriptive (an adverb, not a MUST or a SHOULD) and \"If no response body is returned, the service SHOULD use `204 No Content`\" is conditional on a body-presence fact the same text never assigns. A binding outcome would have to pick a status, or assemble a {201, 204} alt_status pair, that no docs-text sentence assigns — exactly the invention the attribution law forbids — so the branch carries no binding at all (re-affirmed under #428, which considered and rejected the alt_status route). Registered as AMB-62. What IS assertable is already executed: the `Location` header the minimal branch SHOULDs, on the create/update outcomes (header-location-on-create), and the body selector `prefer_conditional` deliberately never judges this branch. Closes when a future ITS-REST release fixes the minimal status, or when the case model gains an either-status expectation grounded in the two sentences (extension only by schedule release). The default-when-absent half is exercised indirectly: the I_DEFINITION_ADL2.upload_artefact binding sends no Prefer and reads its identifier back from Location. The SIBLING preference is fully covered — §\"Prefer only identifier\" DOES assign its status, and header-prefer-return-identifier carries a case on both a COMPOSITION and an EHR create."
+  # Version-at-time semantics (RM common versioned_object.adoc; the wire form
+  # in ITS-REST Resources.md §Datetime format).
+  - id: version-at-time-extancy-branches
+    description: "The four branches of an at-time versioned read: the parameter omitted serves the latest version; a value outside the ISO 8601 grammar is a client error; an instant before the first commit finds no version; an instant after the newest commit still serves the newest version rather than 404-ing."
+    source: "SM i_ehr_status.adoc §get_ehr_status_at_time (\"Get the version of the EHR Status extant at time `_a_time_`. If no time supplied, get the latest.\") + RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (`version_at_time (a_time): VERSION`, `Pre: has_version_at_time (a_time)` — the only released statement of the accessor, which fixes neither the extancy interval nor the future-T answer) + ITS-REST Resources.md §Datetime format (\"HTTP query parameters and path segments that are dates, datetimes, or times, MUST always use the _extended_ ISO 8601 format\") + Requests_and_responses.md §HTTP status codes rows 400 and 404. The unstated halves — which instant anchors extancy, and what a future T returns — are adjudicated in register AMB-70"
+    covered_by:
+      # The bare-EHR_STATUS route.
+      - I_EHR_STATUS.get_ehr_status-at_time_omitted
+      - I_EHR_STATUS.get_ehr_status-at_time_malformed
+      - I_EHR_STATUS.get_ehr_status-at_time_before_first_version
+      - I_EHR_STATUS.get_ehr_status-at_time_future
+      # The VERSION-envelope route, where the served version's identity is
+      # assertable from the envelope's own normative uid.
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_omitted
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_malformed
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_before_first_version
+      - I_EHR_STATUS.get_versioned_ehr_status-at_time_future
+  # The version container as a resource of its own (RM common
+  # versioned_object.adoc §Attributes).
+  - id: versioned-object-container-shape
+    description: "A served VERSIONED_OBJECT carries a container uid with NO version extension (unlike the three-part VERSION uid), an owner_id referencing the owning entity, and its creation time."
+    source: "RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Attributes (`uid`: HIER_OBJECT_ID, \"Unique identifier of this version container in the form of a UID with no extension\"; `owner_id`: OBJECT_REF 1..1, \"Reference to object to which this version container belongs, e.g. the id of the containing EHR or other relevant owning entity\"; `time_created`: DV_DATE_TIME 1..1) contrasted with RM common master06 §change_control (\"VERSION objects are identified by a `_uid_` attribute of type `OBJECT_VERSION_ID`\"); the WIRE VALUES of owner_id are stated by no released text and are adjudicated in register AMB-69"
+    covered_by:
+      - I_EHR_STATUS.get_versioned_ehr_status-container_shape
+  # The per-EHR scoping of a version container (RM ehr ehr.adoc EHR.ehr_status).
+  - id: versioned-object-addressing-is-ehr-scoped
+    description: "A version_uid resolves only within the EHR whose route addresses it: a live version identifier belonging to another EHR's container is not served, so version ids are not a global namespace."
+    source: "RM ehr UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (`ehr_status` is THIS EHR's VERSIONED_EHR_STATUS) + RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (`version_with_id`, `Pre: has_version_id (a_ver_id)` — membership of the addressed container) + ITS-REST Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
+    covered_by:
+      - I_EHR_STATUS.get_versioned_ehr_status-version_of_other_ehr
