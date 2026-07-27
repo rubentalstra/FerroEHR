@@ -117,11 +117,11 @@ mod tests {
     fn disposition_shapes() {
         let r: AmbiguityRegister = serde_json::from_value(serde_json::json!({
             "AMB-4": {
-                "ambiguity": "ADL 1.4 templates have no formal versioning — duplicate template_id handling is implementation-defined",
-                "source": "CNF platform_test_schedule master04 NOTE",
+                "ambiguity": "a duplicate ADL 1.4 template_id upload may be refused as a conflict or replace the stored template",
+                "source": "SM i_definition_adl14.adoc §upload_opt (silent on duplicates) vs ITS-REST 409_template_already_exists.yaml",
                 "handling": "sibling cases carry option tags; the ICS options declaration selects",
                 "disposition": "option_select",
-                "options": ["adl14-duplicate-conflict", "adl14-duplicate-versioned"]
+                "options": ["adl14-duplicate-conflict", "adl14-duplicate-replace"]
             }
         }))
         .unwrap();

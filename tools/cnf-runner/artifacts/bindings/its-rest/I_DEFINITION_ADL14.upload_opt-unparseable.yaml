@@ -1,0 +1,39 @@
+# Wire realization of I_DEFINITION_ADL14.upload_opt, variant `unparseable`: the
+# SYNTACTIC rejection branch of the OPT upload, as opposed to the semantic one
+# the variant-less binding carries at 422.
+#
+# DOCS TEXT (ITS-REST overview `Requests_and_responses.md` §HTTP status codes,
+# row 400 — the wire oracle): "The service cannot or will not process the
+# request due to something that is perceived to be a client error (e.g.,
+# malformed request syntax, syntactically invalid content)". A request body
+# that is not well-formed XML at all IS syntactically invalid content, so it
+# falls in that row and not in row 422, which the same table confines to a
+# request that "was well-formed but was unable to be followed due to semantic
+# errors". The upload operation declares the 400 branch, and its response
+# component states the same trigger in the same words
+# (specifications/responses/400.yaml: "`400 Bad Request` is returned when the
+# request could not be parsed or is invalid (e.g. malformed request URL syntax,
+# missing required header or parameter, or syntactically invalid header,
+# parameter or content)").
+#
+# The two branches cannot share one binding because the closed outcome taxonomy
+# (vocab/outcomes.yaml) has no dedicated syntactic-rejection kind — the same
+# closed-vocabulary limit recorded on `ehr-id-path-segment-malformed-rejection`
+# in vocab/wire_surface.yaml. `validation_failed` is the kind the catalogue
+# already uses at 400 wherever a released sentence puts malformed input there
+# (I_EHR_COMPOSITION.get_composition_at_time, I_DEFINITION_QUERY.store_query),
+# and the variant discriminator keeps the two statuses apart per case.
+# Register: AMB-110 (the branch split).
+sm_operation: I_DEFINITION_ADL14.upload_opt
+its: its-rest
+variant: unparseable
+request:
+  method: POST
+  path: /definition/template/adl1.4
+  body: opt_xml
+  headers:
+    Content-Type: application/xml         # the declared body type is correct; only the CONTENT is unparseable
+outcomes:
+  validation_failed:
+    status: 400                           # §HTTP status codes row 400 — "syntactically invalid content"
+    body: error_loose                     # §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

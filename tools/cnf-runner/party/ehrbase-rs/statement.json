@@ -73,6 +73,7 @@
   ],
   "options": [
     "adl14-duplicate-conflict",
+    "adl14-partial-id-exact",
     "directory-empty-error",
     "legacy-alt-formats-unsupported",
     "sf-deprecated-types-unsupported"

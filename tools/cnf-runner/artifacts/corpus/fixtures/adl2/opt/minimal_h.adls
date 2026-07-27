@@ -1,0 +1,27 @@
+operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+    openEHR-EHR-COMPOSITION.cnf_minimal_h.v1.0.0
+
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"openEHR CNF">
+    >
+
+definition
+    COMPOSITION[id1] matches {    -- CNF minimal encounter
+        content cardinality matches {0..*; unordered} matches {
+            OBSERVATION[id2] occurrences matches {0..*} matches {*}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"CNF minimal">; description = <"CNF minimal encounter">>
+            ["id2"] = <text = <"Observation">; description = <"An observation">>
+        >
+    >
