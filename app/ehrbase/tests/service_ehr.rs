@@ -1258,7 +1258,7 @@ async fn item_tag_crud() {
     assert!(has_key(&upserted, "priority"));
 
     let on_comp = svc
-        .target_tags_get(ehr_uuid, vo_id.clone())
+        .target_tags_get(ehr_uuid, vo_id.clone(), "COMPOSITION")
         .await
         .expect("comp tags");
     assert_eq!(on_comp.len(), 1);
@@ -1269,11 +1269,16 @@ async fn item_tag_crud() {
         .expect("ehr tags");
     assert_eq!(all.len(), 1);
 
-    svc.target_tag_delete(ehr_uuid, vo_id.clone(), "priority".to_owned())
-        .await
-        .expect("delete tag");
+    svc.target_tag_delete(
+        ehr_uuid,
+        vo_id.clone(),
+        "COMPOSITION",
+        "priority".to_owned(),
+    )
+    .await
+    .expect("delete tag");
     let after = svc
-        .target_tags_get(ehr_uuid, vo_id.clone())
+        .target_tags_get(ehr_uuid, vo_id.clone(), "COMPOSITION")
         .await
         .expect("comp tags after");
     assert!(after.is_empty());
@@ -1380,11 +1385,11 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
     );
 
     // The Release-1.1.0 wire deletes by key alone → the whole key SET goes.
-    svc.target_tag_delete(ehr_uuid, vo_id.clone(), "flag".to_owned())
+    svc.target_tag_delete(ehr_uuid, vo_id.clone(), "COMPOSITION", "flag".to_owned())
         .await
         .expect("key delete");
     let rest = svc
-        .target_tags_get(ehr_uuid, vo_id)
+        .target_tags_get(ehr_uuid, vo_id, "COMPOSITION")
         .await
         .expect("list after delete");
     assert!(rest.is_empty(), "a key delete removes every path under it");
@@ -1438,13 +1443,13 @@ async fn item_tag_version_and_container_targets_are_distinct() {
     assert_eq!(on_container[0]["target"]["value"], vo_id);
 
     let version_list = svc
-        .target_tags_get(ehr_uuid, version_uid.clone())
+        .target_tags_get(ehr_uuid, version_uid.clone(), "COMPOSITION")
         .await
         .expect("version list");
     assert_eq!(version_list.len(), 1);
     assert_eq!(version_list[0]["key"], "reviewed");
     let container_list = svc
-        .target_tags_get(ehr_uuid, vo_id.clone())
+        .target_tags_get(ehr_uuid, vo_id.clone(), "COMPOSITION")
         .await
         .expect("container list");
     assert_eq!(container_list.len(), 1);
