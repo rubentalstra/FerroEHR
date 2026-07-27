@@ -5377,18 +5377,18 @@ pub(crate) async fn contribution_get(
 // stalled shape on these operations: an XML `Accept` is `406` and an XML
 // `Content-Type` on the two PUTs is `415`.
 
-/// Retrieve every ITEM_TAG in an EHR (`GET /ehr/{ehr_id}/tags`).
+/// Retrieve every `ITEM_TAG` in an EHR (`GET /ehr/{ehr_id}/tags`).
 ///
-/// The EHR-wide aggregate read: "Retrieves the list of ITEM_TAG resources
-/// associated with any target VERSION or VERSIONED_OBJECT within the EHR
+/// The EHR-wide aggregate read: "Retrieves the list of `ITEM_TAG` resources
+/// associated with any target VERSION or `VERSIONED_OBJECT` within the EHR
 /// identified by `ehr_id`" (ITS-REST
 /// `specifications/operations/ehr_tags_get.yaml`). One list therefore spans
-/// BOTH target forms (a VERSIONED_OBJECT container and a specific VERSION) and
-/// every taggable kind (COMPOSITION, EHR_STATUS, FOLDER). Each row names its
+/// BOTH target forms (a `VERSIONED_OBJECT` container and a specific VERSION) and
+/// every taggable kind (COMPOSITION, `EHR_STATUS`, FOLDER). Each row names its
 /// own `target` by identifier, but NOT by RM class: the RM types `target` as a
 /// bare `UID_BASED_ID` (`item_tag.adoc`), which carries no `type` member, so a
 /// client that needs the target's kind resolves the uid. (The stalled OAS
-/// models `target` as an OBJECT_REF, which would carry it; the released RM
+/// models `target` as an `OBJECT_REF`, which would carry it; the released RM
 /// wins.)
 ///
 /// The list is unbounded: the released operation declares no `offset`/`fetch`,
@@ -5492,11 +5492,6 @@ pub(crate) async fn contribution_get(
                                       \"malformed request syntax, \
                                       syntactically invalid content\").",
          body = serde_json::Value),
-        // TODO: the EHR-wide tag read runs no EHR-existence guard — an unknown
-        // `ehr_id` answers `200 []` today instead of the released
-        // `404_unknown_ehr_id` trigger documented below; the guard belongs on
-        // `EhrbaseService::ehr_tags_get`, beside the one the per-target routes
-        // run.
         (status = 404, description = "The released trigger, verbatim: `404 Not \
                                       Found` \"is returned when an EHR with \
                                       `ehr_id` does not exist\" (ITS-REST \
@@ -5536,8 +5531,8 @@ pub(crate) async fn ehr_tags_get(
 /// Retrieve a COMPOSITION's item tags
 /// (`GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// COMPOSITION version or VERSIONED_COMPOSITION identified by `uid_based_id`
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// COMPOSITION version or `VERSIONED_COMPOSITION` identified by `uid_based_id`
 /// and owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/composition_tags_get.yaml`).
 ///
@@ -5684,13 +5679,13 @@ pub(crate) async fn composition_tags_get(
 /// Replace a COMPOSITION's item tags
 /// (`PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// COMPOSITION version or VERSIONED_COMPOSITION identified by `uid_based_id`
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// COMPOSITION version or `VERSIONED_COMPOSITION` identified by `uid_based_id`
 /// and owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/composition_tags_update.yaml`). It is a FULL
 /// COLLECTION REPLACE of the ADDRESSED collection — the container's or one
 /// version's, never both: tags omitted from the body are removed, and
-/// "providing an empty list will effectively remove all ITEM_TAG associated
+/// "providing an empty list will effectively remove all `ITEM_TAG` associated
 /// with the given target".
 ///
 /// Tags are not change-controlled, so this write commits no CONTRIBUTION,
@@ -5952,12 +5947,12 @@ pub(crate) async fn composition_tags_update(
 /// Delete a COMPOSITION's item tags under one key
 /// (`DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target COMPOSITION version or VERSIONED_COMPOSITION identified by
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target COMPOSITION version or `VERSIONED_COMPOSITION` identified by
 /// `uid_based_id` and owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/composition_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the
 /// (`key`, `target_path`) pair, the route carries no `target_path` selector,
 /// and the released text says "resource(s)" — so EVERY tag under `key` on the
 /// addressed collection goes, however many paths they carry.
@@ -6065,8 +6060,8 @@ pub(crate) async fn composition_tags_delete(
 /// Retrieve an `EHR_STATUS`'s item tags
 /// (`GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// EHR_STATUS version or VERSIONED_EHR_STATUS identified by `uid_based_id` and
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `EHR_STATUS` version or `VERSIONED_EHR_STATUS` identified by `uid_based_id` and
 /// owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/ehr_status_tags_get.yaml`).
 ///
@@ -6205,17 +6200,17 @@ pub(crate) async fn ehr_status_tags_get(
 /// Replace an `EHR_STATUS`'s item tags
 /// (`PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// EHR_STATUS version or VERSIONED_EHR_STATUS identified by `uid_based_id` and
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `EHR_STATUS` version or `VERSIONED_EHR_STATUS` identified by `uid_based_id` and
 /// owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/ehr_status_tags_update.yaml`). It is a FULL
 /// COLLECTION REPLACE of the ADDRESSED collection — the container's or one
 /// version's, never both: tags omitted from the body are removed, and
-/// "providing an empty list will effectively remove all ITEM_TAG associated
+/// "providing an empty list will effectively remove all `ITEM_TAG` associated
 /// with the given target".
 ///
 /// Tags are not change-controlled, so this write commits no CONTRIBUTION,
-/// mints no EHR_STATUS version, takes no `If-Match` and no committal headers,
+/// mints no `EHR_STATUS` version, takes no `If-Match` and no committal headers,
 /// and serves neither `ETag` nor `Last-Modified` (see the section note above).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ITEM_TAG",
@@ -6473,12 +6468,12 @@ pub(crate) async fn ehr_status_tags_update(
 /// Delete an `EHR_STATUS`'s item tags under one key
 /// (`DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target EHR_STATUS version or VERSIONED_EHR_STATUS identified by
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `EHR_STATUS` version or `VERSIONED_EHR_STATUS` identified by
 /// `uid_based_id` and owned by EHR identified by `ehr_id`"
 /// (`specifications/operations/ehr_status_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the
 /// (`key`, `target_path`) pair, the route carries no `target_path` selector,
 /// and the released text says "resource(s)" — so EVERY tag under `key` on the
 /// addressed collection goes, however many paths they carry.
