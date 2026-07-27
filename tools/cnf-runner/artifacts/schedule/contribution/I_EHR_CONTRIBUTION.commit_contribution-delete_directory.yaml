@@ -47,4 +47,10 @@ postconditions:
     text: >-
       The EHR's directory (root FOLDER) is logically deleted (effect
       under-specified in the SM — AMB-10; reported, not gating).
-ambiguities: [AMB-10]
+# AMB-85: the ACCEPTANCE of this data-less member rests on following the RM
+# procedure over the released commit schema, which makes the member's `data`
+# required with no null form. The register's fixed handling is what makes a
+# data-less deletion member legal here at all; the rejection half — a
+# 523|deleted| member that carries data — is the sibling
+# -deleted_member_with_data case.
+ambiguities: [AMB-10, AMB-85]
