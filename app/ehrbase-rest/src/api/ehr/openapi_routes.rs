@@ -1940,10 +1940,10 @@ pub(crate) async fn composition_create(
 /// (`GET /ehr/{ehr_id}/composition/{uid_based_id}`).
 ///
 /// The one route that accepts BOTH identifier forms (`Resources.md`
-/// §"Multiple identifiers for the same resource"): an OBJECT_VERSION_ID
-/// serves that exact version, a HIER_OBJECT_ID container id serves the latest
+/// §"Multiple identifiers for the same resource"): an `OBJECT_VERSION_ID`
+/// serves that exact version, a `HIER_OBJECT_ID` container id serves the latest
 /// version or the one extant at `version_at_time`. The served body is the
-/// BARE COMPOSITION; the ORIGINAL_VERSION envelope is served by the
+/// BARE COMPOSITION; the `ORIGINAL_VERSION` envelope is served by the
 /// `versioned_composition` operations below.
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
