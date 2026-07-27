@@ -17,6 +17,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Stored-query stores answer honest `Location`s and validate the version
+  segment** (#498). The version-less `PUT /definition/query/{name}` now
+  always names the version it actually wrote (`…/1.0.0`) in `Location` —
+  previously, when a higher version already existed, the header pointed at
+  that untouched neighbour. The versioned
+  `PUT /definition/query/{name}/{version}` now requires an exact numeric
+  `major.minor.patch` and rejects prefix, pre-release, or malformed version
+  segments with `400 Bad Request` — previously any string was stored
+  verbatim, and a single non-numeric version (e.g. `1.0.0-rc.1`) broke every
+  later stored-query list and retrieval on the server. Both store forms also
+  now refuse a payload declaring a media type other than their single
+  `text/plain` body type with `415 Unsupported Media Type` (an absent
+  `Content-Type` remains accepted).
+
 - **Template rejection statuses are coherent across both upload routes**
   (#493). An ADL2 source with grammar-level syntax errors now answers
   `400 Bad Request` (the released "syntactically invalid … content" branch)
