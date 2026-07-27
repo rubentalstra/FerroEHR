@@ -148,6 +148,12 @@ pub(super) async fn run(
 /// `person_update.yaml`). The party must already exist (`item_tag.target_vo_id` FK), so this runs
 /// after the create/update write. A present-but-empty header clears all tags
 /// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
+// TODO: `person_update.yaml` (and the four sibling updates) declare
+// `openehr-version-item-tag` as the update's ITEM_TAG request header, but only
+// `openehr-item-tag` is read below — a client that sets tags on an update the
+// way the released operation documents gets nothing stored. Read both headers
+// here (they address the same VERSIONED_PARTY-anchored set on this surface) and
+// cover the update path with a CNF case.
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,

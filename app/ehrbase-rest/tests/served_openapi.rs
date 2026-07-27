@@ -432,3 +432,305 @@ async fn system_options_operation_is_documented() {
         "the Options manifest schema is registered"
     );
 }
+
+/// The Demographic API group's 26 released operations are documented to full
+/// step-6 completeness: every served status branch, a `headers(...)` block on
+/// every success response that emits headers, released-shaped examples, and no
+/// `Location` on a read or a delete.
+///
+/// The branches are the RELEASED ITS-REST text, not the stalled OAS. The five
+/// party CRUD quintets are byte-identical on the wire
+/// (`specifications/operations/{person,agent,group,organisation,role}_*.yaml`
+/// and their `$ref`d responses), so the loop below asserts each kind
+/// individually — a quintet that drifts apart fails here.
+/// `Requests_and_responses.md` §Location confines `Location` to creation
+/// responses and §"Deprecated headers" deprecates it on `GET`/`DELETE`;
+/// §"If-Match and accidental overwrites" gives the update's `412` and its
+/// missing-header `400`; `Resources.md` §"XML Format"/§"JSON Format"/
+/// §"Simplified Formats" make an unprocessable payload a `415` and an
+/// unfulfillable `Accept` a `406`.
+#[tokio::test]
+#[allow(clippy::too_many_lines)] // one regression test per audited group keeps the pins together
+async fn demographic_operations_are_fully_documented() {
+    const BASE: &str = "/ehrbase/rest/openehr/v1/demographic";
+    const KINDS: &[(&str, &str)] = &[
+        ("person", "PERSON"),
+        ("agent", "AGENT"),
+        ("group", "GROUP"),
+        ("organisation", "ORGANISATION"),
+        ("role", "ROLE"),
+    ];
+
+    let doc = served_document().await;
+
+    let codes = |op: &Value| -> Vec<String> {
+        op["responses"]
+            .as_object()
+            .map(|r| r.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let header_names = |op: &Value, status: &str| -> Vec<String> {
+        op["responses"][status]["headers"]
+            .as_object()
+            .map(|h| h.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let first_content = |holder: &Value| -> Value {
+        holder["content"]
+            .as_object()
+            .and_then(|c| c.values().next())
+            .cloned()
+            .unwrap_or_default()
+    };
+    let require = |op: &Value, path: &str, method: &str, expected: &[&str]| {
+        let present = codes(op);
+        for want in expected {
+            assert!(
+                present.iter().any(|c| c == want),
+                "{method} {path} must document {want}; has {present:?}"
+            );
+        }
+    };
+
+    for (segment, rm_type) in KINDS {
+        // ── create: every branch, both Prefer bodies, the full header set ────
+        let path = format!("{BASE}/{segment}");
+        let op = doc["paths"][&path]["post"].clone();
+        assert!(op.is_object(), "POST {path} must be documented");
+        require(
+            &op,
+            &path,
+            "POST",
+            &["201", "400", "404", "406", "415", "422"],
+        );
+        let headers = header_names(&op, "201");
+        for want in [
+            "ETag",
+            "Location",
+            "Last-Modified",
+            "Preference-Applied",
+            "openehr-item-tag",
+            "openehr-version-item-tag",
+        ] {
+            assert!(
+                headers.iter().any(|h| h == want),
+                "POST {path} 201 must document the {want} header; has {headers:?}"
+            );
+        }
+        let examples = first_content(&op["responses"]["201"])["examples"].clone();
+        assert_eq!(
+            examples["representation"]["value"]["_type"], *rm_type,
+            "POST {path} 201 must carry the `representation` RM {rm_type} example"
+        );
+        assert!(
+            examples["identifier"]["value"]["uid"].is_string(),
+            "POST {path} 201 must carry the `identifier` single-uid example"
+        );
+        let body = first_content(&op["requestBody"])["example"].clone();
+        assert_eq!(body["_type"], *rm_type, "POST {path} request-body example");
+        assert!(
+            body["identities"].as_array().is_some_and(|i| !i.is_empty()),
+            "POST {path} body example must satisfy PARTY.Identities_valid"
+        );
+        assert_eq!(
+            body["name"]["value"], *rm_type,
+            "POST {path} body example must satisfy PARTY.Type_valid (type = name)"
+        );
+
+        // ── get: the deleted-at-time 204, ETag + Last-Modified, no Location ──
+        let path = format!("{BASE}/{segment}/{{uid_based_id}}");
+        let op = doc["paths"][&path]["get"].clone();
+        assert!(op.is_object(), "GET {path} must be documented");
+        require(
+            &op,
+            &path,
+            "GET",
+            &["200", "204", "400", "404", "406", "415"],
+        );
+        let headers = header_names(&op, "200");
+        for want in [
+            "ETag",
+            "Last-Modified",
+            "openehr-item-tag",
+            "openehr-version-item-tag",
+        ] {
+            assert!(
+                headers.iter().any(|h| h == want),
+                "GET {path} 200 must document the {want} header; has {headers:?}"
+            );
+        }
+        assert!(
+            !headers.iter().any(|h| h == "Location"),
+            "GET {path} 200 must NOT declare Location (§Location: creation only)"
+        );
+        assert_eq!(
+            first_content(&op["responses"]["200"])["example"]["_type"],
+            *rm_type,
+            "GET {path} 200 must carry the served RM {rm_type} example"
+        );
+
+        // ── update: If-Match + 412 with its ETag, both Prefer statuses ───────
+        let op = doc["paths"][&path]["put"].clone();
+        assert!(op.is_object(), "PUT {path} must be documented");
+        require(
+            &op,
+            &path,
+            "PUT",
+            &["200", "204", "400", "404", "406", "412", "415", "422"],
+        );
+        assert!(
+            documented_params(&op, "header")
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case("if-match")),
+            "PUT {path} must document the required If-Match precondition"
+        );
+        for status in ["200", "204"] {
+            let headers = header_names(&op, status);
+            for want in ["ETag", "Location", "Last-Modified", "Preference-Applied"] {
+                assert!(
+                    headers.iter().any(|h| h == want),
+                    "PUT {path} {status} must document the {want} header; has {headers:?}"
+                );
+            }
+        }
+        let headers = header_names(&op, "412");
+        assert!(
+            headers.iter().any(|h| h == "ETag"),
+            "PUT {path} 412 must echo the latest version_uid in ETag; has {headers:?}"
+        );
+        assert!(
+            !headers.iter().any(|h| h == "Location"),
+            "PUT {path} 412 must NOT declare Location (§Location: creation only)"
+        );
+
+        // ── delete: the deleted-version ETag, 409 with the latest ETag ───────
+        let op = doc["paths"][&path]["delete"].clone();
+        assert!(op.is_object(), "DELETE {path} must be documented");
+        require(
+            &op,
+            &path,
+            "DELETE",
+            &["204", "400", "404", "406", "409", "415"],
+        );
+        let headers = header_names(&op, "204");
+        assert!(
+            headers.iter().any(|h| h == "ETag"),
+            "DELETE {path} 204 must document the deleted version's ETag; has {headers:?}"
+        );
+        assert!(
+            !headers.iter().any(|h| h == "Location"),
+            "DELETE {path} 204 must NOT declare Location (§\"Deprecated headers\")"
+        );
+        assert!(
+            header_names(&op, "409").iter().any(|h| h == "ETag"),
+            "DELETE {path} 409 must echo the latest version_uid in ETag"
+        );
+    }
+
+    // ── the four versioned_party reads: ETag, no Location, 400/404/406 ───────
+    let versioned = [
+        format!("{BASE}/versioned_party/{{versioned_object_uid}}"),
+        format!("{BASE}/versioned_party/{{versioned_object_uid}}/revision_history"),
+        format!("{BASE}/versioned_party/{{versioned_object_uid}}/version"),
+        format!("{BASE}/versioned_party/{{versioned_object_uid}}/version/{{version_uid}}"),
+    ];
+    for path in &versioned {
+        let op = doc["paths"][path]["get"].clone();
+        assert!(op.is_object(), "GET {path} must be documented");
+        require(&op, path, "GET", &["200", "400", "404", "406"]);
+        let headers = header_names(&op, "200");
+        assert!(
+            headers.iter().any(|h| h == "ETag"),
+            "GET {path} 200 must document the weak ETag; has {headers:?}"
+        );
+        assert!(
+            !headers.iter().any(|h| h == "Location"),
+            "GET {path} 200 must NOT declare Location (§Location: creation only)"
+        );
+    }
+    // The container exposes no commit audit, the other three do.
+    assert!(
+        !header_names(&doc["paths"][&versioned[0]]["get"], "200")
+            .iter()
+            .any(|h| h == "Last-Modified"),
+        "the VERSIONED_PARTY container has no commit audit to derive Last-Modified from"
+    );
+    for path in &versioned[1..] {
+        assert!(
+            header_names(&doc["paths"][path]["get"], "200")
+                .iter()
+                .any(|h| h == "Last-Modified"),
+            "GET {path} 200 must document Last-Modified (§\"ETag and Last-Modified\")"
+        );
+    }
+
+    // ── the demographic CONTRIBUTION pair ────────────────────────────────────
+    let path = format!("{BASE}/contribution");
+    let op = doc["paths"][&path]["post"].clone();
+    assert!(op.is_object(), "POST {path} must be documented");
+    require(&op, &path, "POST", &["201", "400", "406", "409", "415"]);
+    let headers = header_names(&op, "201");
+    for want in ["ETag", "Location", "Preference-Applied"] {
+        assert!(
+            headers.iter().any(|h| h == want),
+            "POST {path} 201 must document the {want} header; has {headers:?}"
+        );
+    }
+    let body = first_content(&op["requestBody"])["example"].clone();
+    assert!(
+        body["versions"].as_array().is_some_and(|v| !v.is_empty()) && body["audit"].is_object(),
+        "POST {path} body example must be a NewContribution (versions + audit)"
+    );
+
+    let path = format!("{BASE}/contribution/{{contribution_uid}}");
+    let op = doc["paths"][&path]["get"].clone();
+    assert!(op.is_object(), "GET {path} must be documented");
+    require(&op, &path, "GET", &["200", "400", "404", "406"]);
+    assert!(
+        !header_names(&op, "200").iter().any(|h| h == "Location"),
+        "GET {path} 200 must NOT declare Location (§Location: creation only)"
+    );
+    assert_eq!(
+        first_content(&op["responses"]["200"])["example"]["_type"],
+        "CONTRIBUTION",
+        "GET {path} 200 must carry the served CONTRIBUTION example"
+    );
+}
+
+/// The eight `PARTY_RELATIONSHIP` operations are OUR OWN EXTENSION: the
+/// released Demographic API defines no `party_relationship` path, so every one
+/// of them must say so in its description and none may be counted towards a
+/// conformance-profile claim.
+#[tokio::test]
+async fn party_relationship_operations_are_flagged_as_an_extension() {
+    const BASE: &str = "/ehrbase/rest/openehr/v1/demographic";
+    let doc = served_document().await;
+
+    let mut seen = 0;
+    for (path, method, op) in operations(&doc) {
+        if !path.starts_with(&format!("{BASE}/party_relationship"))
+            && !path.starts_with(&format!("{BASE}/versioned_party_relationship"))
+        {
+            continue;
+        }
+        seen += 1;
+        let text = format!(
+            "{} {}",
+            op.get("summary")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            op.get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        );
+        assert!(
+            text.contains("no ITS-REST operation governs this"),
+            "{} {path} must carry the our-own-extension flag; has: {text}",
+            method.to_uppercase()
+        );
+    }
+    assert_eq!(
+        seen, 8,
+        "the PARTY_RELATIONSHIP extension serves eight operations"
+    );
+}
