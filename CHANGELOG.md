@@ -75,6 +75,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the six Query operations**
+  (#482). The two ad-hoc and four stored AQL executions now document what
+  the wire actually does. Every `200` declares the weak RESULT_SET `ETag`
+  (an identifier of the result set — ours is a deterministic content digest,
+  since the released `ResultSet` schema carries no id field) and carries a
+  canonical RESULT_SET example: `columns[]` with the `#N` unaliased-column
+  convention, rows whose cells are JSON primitives *and* canonical
+  `_type`-tagged RM objects, and the optional `meta` (`_type`,
+  `_schema_version`, `_created` in extended ISO 8601, and `_executed_aql` =
+  the parameter-SUBSTITUTED text, with `q` keeping the query as submitted).
+  The parameters now carry the released semantics: the named-`$parameter`
+  binding law and its un-prefixed rule, the `ehr_id` duality (query
+  parameter or `openehr-ehr-id` header, deprecated MixedCase spelling
+  accepted, a conflict 400), `offset`'s default of 0 and `fetch`'s
+  implementation-defined default with the one released prohibition
+  (`fetch` cannot be combined with AQL `TOP`), the qualified-query-name
+  grammar including the reserved `aql`, and the version exact/prefix
+  matching law. Also declared: `415` on the three POSTs, request-body
+  examples, and the `Prefer`-scope reason no query response carries
+  `Location` or `Preference-Applied`. Where the released text is silent the
+  declarations say so explicitly — the reserved protocol keys that never
+  bind as AQL parameters, REST paging composing over AQL `LIMIT`/`OFFSET`,
+  the URL-vs-body precedence on the POSTs, and the `ehr_id`-scope 404.
+  Document only — no wire change.
+
 - **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
   operations** (#475). The EHR-wide read, the two per-target reads, the two
   collection replaces and the two key-scoped deletes now document what the
