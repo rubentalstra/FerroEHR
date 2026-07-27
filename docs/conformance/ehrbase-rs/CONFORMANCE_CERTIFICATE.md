@@ -58,6 +58,7 @@ Result column: ITS its-rest (canonical-json)
 | Platform | MessageApi | OPT | excused (unrealized on this technology profile) |
 | Platform | Signing | OPT | pass |
 | Platform | SimplifiedFormats | OPT | pass |
+| Platform | SmartAppLaunch | OPT | no cases |
 | Security | EhrDemographicSeparation | Y | pass |
 | Security | AuthenticatedAccess | Y | pass |
 | Security | AuthorizationSeparation | Y | pass |
