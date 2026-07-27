@@ -1,14 +1,24 @@
-# Official master04 case: retrieve a specific (non-latest) version of a
-# versioned OPT. A full/versioned template_id addresses a specific version
-# (parameters/path/template_id.yaml). Versioning follows AMB-4
-# (option: adl14-duplicate-versioned).
+# Retrieval by a FULL template_id addresses exactly that template — even when
+# a higher-versioned sibling of the same family is also loaded, no implicit
+# latest-resolution overrides an id that names a member.
+#
+# This is the half of ADL 1.4 retrieval that carries NO latitude: the released
+# parameter admits "Template identifier or partial reference"
+# (specifications/parameters/path/template_id.yaml), and a complete identifier
+# is not a partial reference under any reading — so this case gates for every
+# server. RE-ADJUDICATED 2026-07-27 (group-10 audit): it used to carry
+# `option: adl14-duplicate-versioned` and ran for nobody; the latitude belongs
+# to the PARTIAL-id siblings alone (register AMB-104).
+#
+# The equivalence assertion also exercises retrieval FIDELITY: the served OPT
+# is compared against the uploaded fixture, which is the verbatim position
+# registered as AMB-111.
 id: I_DEFINITION_ADL14.get_opt-retrieve_specific_version
 kind: functional
 component: DEFINITION_ADL14
 sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [Adl14OptProvisioning]
 profiles: [CORE]
-option: adl14-duplicate-versioned
 test_purpose: "Retrieving a versioned OPT by a specific (non-latest) version returns exactly that version."
 description: "retrieve a specific version (not last) of versioned OPT"
 spec_refs:
@@ -25,4 +35,5 @@ flow:
     with: { template_id: "test_versioned.en.v1" }   # full/versioned template_id -> the requested (non-latest) version
     expect: ok                           # "the correct OPT will be returned, and will be the requested version"
     assert:
-      - { assert: equivalent, to: "${ds:cnf.opt.versioned.v1}" }
+      - { assert: equivalent, to: "${ds:cnf.opt.versioned.v1}" }   # verbatim retrieval — AMB-111
+ambiguities: [AMB-111]
