@@ -31,6 +31,18 @@ workflow refuses a tag that has no matching section here.
   `text/plain` body type with `415 Unsupported Media Type` (an absent
   `Content-Type` remains accepted).
 
+- **The published API reference now describes the stored-query endpoints in
+  full** (#499). The four stored-query operations in the served OpenAPI
+  document gained the `Location` response header both stores actually send,
+  the bodyless shape of their `200`, the status branches they actually
+  answer (`400` everywhere, `406` on the reads, `409` on the versioned
+  store, `404` on the version read), the qualified-name and `version`
+  grammars (including the reserved `aql` name and the read-side
+  prefix-resolution rule), request and response examples, and a spec
+  citation on every branch. The bare "list every stored query" route is now
+  labelled for what it is — an extension of this server, not a released
+  openEHR operation.
+
 - **Template rejection statuses are coherent across both upload routes**
   (#493). An ADL2 source with grammar-level syntax errors now answers
   `400 Bad Request` (the released "syntactically invalid … content" branch)
