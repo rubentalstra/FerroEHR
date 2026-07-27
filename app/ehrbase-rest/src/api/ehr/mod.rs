@@ -117,25 +117,6 @@ pub(super) fn read_resp(ehr_id: &str, body: Value) -> ServiceResponse {
     }
 }
 
-/// A `ServiceResponse` for a `REVISION_HISTORY` read: `ETag` from the
-/// versioned object's uid (the container the history belongs to — ITS-REST
-/// overview `Requests_and_responses.md` §`ETag` and `Last-Modified` names
-/// "`VERSIONED_OBJECT.uid.value`" as an `ETag` source) and `Last-Modified` from
-/// the most recent item's commit audit (`REVISION_HISTORY.items` is
-/// most-recent-last, RM common `revision_history.adoc`).
-pub(super) fn revision_history_resp(ehr_id: &str, vo_uid: &str, body: Value) -> ServiceResponse {
-    let mut meta = ResourceMeta::new(ehr_id.to_owned(), vo_uid.to_owned());
-    if let Some(at) = body["items"]
-        .as_array()
-        .and_then(|items| items.last())
-        .and_then(|item| item["audits"][0]["time_committed"]["value"].as_str())
-        .and_then(|raw| raw.parse::<jiff::Timestamp>().ok())
-    {
-        meta = meta.with_last_modified(at);
-    }
-    ServiceResponse::new(body, meta)
-}
-
 /// An `openehr` terminology code (the audit change type / lifecycle state).
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {

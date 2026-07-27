@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **`Last-Modified` on VERSIONED_OBJECT container and revision-history
+  reads** (#442). `GET …/versioned_ehr_status`,
+  `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
+  now carry `Last-Modified` derived from the newest held version's commit
+  instant, alongside the existing container-uid weak `ETag` (ITS-REST
+  overview *Requests and responses* §"ETag and Last-Modified": both headers
+  SHOULD accompany a VERSIONED_OBJECT response).
+
 ### Changed
 
 - **Stored top-level objects now carry their copied `uid` at commit time**

@@ -98,6 +98,36 @@ pub async fn time_created(
     .map(jiff_sqlx::Timestamp::to_jiff))
 }
 
+/// The commit instants bounding an object's held versions in one scalar read:
+/// the earliest (`VERSIONED_OBJECT.time_created` — RM common master06
+/// §Versioned Objects; earliest **held**, so a latest-only import clone starts
+/// above version 1) and the latest (the container resource's last-modified
+/// instant — ITS-REST overview `Requests_and_responses.md` §"`ETag` and
+/// Last-Modified" derives `Last-Modified` from
+/// `VERSION.commit_audit.time_committed.value`, and for a `VERSIONED_OBJECT`
+/// response the newest held version carries that instant). `None` when the
+/// object does not exist.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn commit_bounds(
+    pool: &PgPool,
+    vo_id: VoId,
+) -> Result<Option<(jiff::Timestamp, jiff::Timestamp)>, StorageError> {
+    let row = sqlx::query(
+        "SELECT min(a.time_committed) AS created, max(a.time_committed) AS modified \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id WHERE v.vo_id = $1",
+    )
+    .bind(vo_id)
+    .fetch_one(pool)
+    .await?;
+    let created: Option<jiff_sqlx::Timestamp> = row.try_get("created")?;
+    let modified: Option<jiff_sqlx::Timestamp> = row.try_get("modified")?;
+    Ok(created
+        .zip(modified)
+        .map(|(c, m)| (c.to_jiff(), m.to_jiff())))
+}
+
 /// The stored `template_id` of one version of an object — the current open
 /// trunk version when `tree` is `None`, else the addressed `VERSION_TREE_ID`.
 /// A scalar `vo_version` read: the column is promoted at commit, so resolving
