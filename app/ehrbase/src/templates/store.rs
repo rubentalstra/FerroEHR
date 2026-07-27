@@ -83,8 +83,8 @@ impl EhrbaseService {
         crate::validation::validate_opt_structure(xml)?;
 
         // The AOM2/08 standalone-artefact validity catalogue (VCOC/VACMCO,
-        // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying
-        // the AOM2 rule code) is owned by the validation layer
+        // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `422` carrying
+        // the AOM2 rule code in `validationErrors[]`) is owned by the validation layer
         // (`crate::validation::opt`; spec `AM/docs/AOM2/master08-validation.adoc`).
         crate::validation::validate_opt_artefact(&opt)?;
 

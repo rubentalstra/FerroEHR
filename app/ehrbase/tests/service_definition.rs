@@ -788,7 +788,11 @@ async fn adl2_errors() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
-    // Invalid ADL2 (unrecognised header) → 422 invalid_artefact.
+    // Unparseable ADL2 (unrecognised header) is *syntactically invalid
+    // content* — the released 400 branch (ITS-REST `responses/400.yaml`:
+    // "could not be parsed or is invalid (e.g. ... syntactically invalid ...
+    // content)"), not the semantic 422 that AOM2 validation-phase failures
+    // carry.
     let bad = svc
         .upload_artefact("concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0".to_owned())
         .await
@@ -797,14 +801,14 @@ async fn adl2_errors() {
         matches!(
             bad,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
         "got {bad:?}"
     );
 
-    // Recognised header but a malformed HRID → 422.
+    // Recognised header but a malformed HRID fails the grammar → 400 too.
     let bad_hrid = svc
         .upload_artefact("archetype\nnot-an-hrid".to_owned())
         .await
@@ -813,7 +817,7 @@ async fn adl2_errors() {
         matches!(
             bad_hrid,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
@@ -1089,9 +1093,10 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
     // The SM-native upload still replaces.
     svc.upload_artefact(tmpl).await.expect("native replace");
 
-    // Invalid source → a 422 validation failure carrying the rule codes (an
-    // unparseable source is an invalid artefact, AOM2 master04.6 §Syntax
-    // Validity Rules), not a distinct wire status.
+    // A source that fails the ADL2 grammar (missing mandatory sections →
+    // S-codes) is *syntactically invalid content* — the released 400 branch
+    // declared on the upload (ITS-REST `responses/400.yaml`), not the
+    // semantic 422 that AOM2 validation-phase failures (V-codes) carry.
     let bad = svc
         .template_adl2_upload(
             "template (adl_version=2.0.6)\nopenEHR-EHR-COMPOSITION.t_bad.v1\n".to_owned(),
@@ -1099,7 +1104,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .await
         .expect_err("invalid source rejected");
     assert!(
-        matches!(&bad, ServiceError::ValidationFailed(v) if !v.is_empty()),
+        matches!(&bad, ServiceError::BadRequest(m) if m.contains("syntactically invalid")),
         "got {bad:?}"
     );
 }
