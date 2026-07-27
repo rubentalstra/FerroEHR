@@ -1854,3 +1854,215 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   EHR it destroys; that is our own design/extension, not conformance, and it
   lives in a separate store precisely because the cascade empties the one the RM
   would have used.)
+
+### UPR-109 — the discovery example advertises scopes the scope grammar cannot parse
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master04-service_discovery.adoc` §Service Discovery, `master08-scopes.adoc` §Resource Scopes, `master07-authorization.adoc` §Context Selection)
+- **Register:** AMB-145 (fixed_handling)
+- **Facts:** master04's example configuration document advertises
+  `"scopes_supported": ["openid", "profile", "launch", "launch/patient",
+  "patient/*.rs", "user/*.rs", "offline_access"]`. Two of those seven —
+  `patient/*.rs` and `user/*.rs` — cannot be parsed by master08's own grammar.
+  §Resource Scopes gives the syntax `<compartment>/<resource>.<permission>` and
+  then closes the `<resource>` position to exactly three nouns
+  (`template-<templateId>`, `composition-<templateId>`, `aql-<queryName>`:
+  "The following openEHR REST APIs `<resource>` types are supported for use in
+  scopes"). The wildcards the chapter defines are for the id TAIL, not for the
+  noun: every one of the five pattern-table rows is a `<templateId>`/
+  `<queryName>` pattern, and every one of the eight maximal-table rows spells a
+  noun out. The example puts a bare `*` where the noun must be, so the
+  specification simultaneously advertises and forbids the same two strings. The
+  master07 NOTE that standard SMART scopes "may be used in parallel" but "their
+  use is not normative" covers the LAUNCH scopes, not the resource-scope
+  grammar, and so does not license these. Nothing anywhere says what a Platform
+  does with a scope it cannot parse.
+- **Ask:** resolve the conflict in one direction — either extend the grammar to
+  admit a `<compartment>/*.<permission>` "all resources" form (and give it a
+  pattern-table row and a maximal-table row like every other form), or correct
+  the example to advertise grammar-parseable scopes. Either way, state what a
+  Platform must do with a `scopes_supported` entry or a granted scope that the
+  grammar does not accept. (Ours: the one shared parser is total and demotes an
+  unparseable scope to an inert value that neither grants nor denies — the
+  example stays servable and the grammar stays enforced; in fail-closed mode an
+  inert scope behaves exactly like no scope. What this server advertises by
+  default is restricted to grammar-parseable forms, with an operator override
+  for deployments whose Authorization Server does issue the example forms.)
+
+### UPR-110 — §Authentication Endpoints names the wrong well-known document
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master04-service_discovery.adoc` §Authentication Endpoints, §Service Discovery, §Services, §Capabilities)
+- **Register:** AMB-146 (editorial)
+- **Facts:** the sentence reads "The following attributes in the
+  `.well-known/openid-configuration` must match those defined in the OAuth 2.0
+  + OpenID Connect Discovery specification as well as the FHIR SMART metadata
+  specification", and the 14-item list it introduces ends with `capabilities` —
+  not an OpenID Provider Metadata member, but a SMART-configuration member that
+  master04's own §Capabilities section defines three sections later ("The
+  `capabilities` section advertises supported SMART features as an array
+  value"). The whole surrounding chapter is about the other document: it opens
+  by extending "the FHIR `.well-known/smart-configuration` endpoint
+  definition", the example block the list annotates is introduced as "Responses
+  to `/.well-known/smart-configuration` endpoint", and the sibling §Services
+  section requires a `services` member that is likewise no part of OpenID
+  Provider Metadata.
+- **Ask:** replace `.well-known/openid-configuration` with
+  `.well-known/smart-configuration` in that sentence (or, if the intent was to
+  say that the OAuth/OIDC-derived subset must agree across the two documents,
+  say that explicitly and move `capabilities` out of the list). (Ours: the
+  sentence is read as governing `.well-known/smart-configuration`, the document
+  the chapter defines and the only one that can carry `capabilities` and
+  `services`; this server publishes no `.well-known/openid-configuration`,
+  that being an Authorization-Server document.)
+
+### UPR-111 — `**` is named twice in the scope grammar and defined nowhere
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master08-scopes.adoc` §Resource Scopes)
+- **Register:** AMB-147 (fixed_handling)
+- **Facts:** §Resource Scopes says the `<templateId>` and `<queryName>`
+  "support wildcard and pattern-based matching using `*` and `**`, as follows:"
+  and then gives a five-row table — `MyHospital::Template.v0`,
+  `org.openehr::bloodpressure.v1`, `*::Template.v0`, `MyHospital::*`, `*` — in
+  which `**` never appears. The chapter's wildcard NOTE names it a second time
+  ("Wildcard-based scopes (e.g., `*` or `**`) should be used cautiously and
+  only when absolutely necessary"), so the token is load-bearing in the prose
+  while the table that is supposed to define it defines only `*`. Two readings
+  both survive the text: `**` as a synonym of `*`, or `**` as the wildcard that
+  crosses the `::` namespace delimiter which `*` does not.
+- **Ask:** give `**` a row in the pattern table (or delete the token from both
+  sentences if it was never meant to be a distinct wildcard), and state whether
+  `*` is segment-local with respect to `::`. (Ours: `*` is segment-local and
+  `**` crosses `::` — the only reading under which the table's own
+  `*::Template.v0` and `MyHospital::*` rows say something a bare `*` does not
+  already say; a pattern that is exactly `*` or exactly `**` still matches
+  every id, per the table's own top-level row.)
+
+### UPR-112 — two editorial defects in master08's normative sentences
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master08-scopes.adoc` §Scopes, §Resource Scopes)
+- **Register:** AMB-148 (editorial)
+- **Facts:** (1) the scope syntax is stated singular —
+  `<compartment>/<resource>.<permission>` — and explained plural: the third
+  bullet of the very list that explains the syntax reads "`<permissions>`
+  specifies the allowed operations". The syntax line's `<permission>` appears
+  nowhere in the bullet list and the bullet's `<permissions>` appears nowhere
+  in the syntax line, while the component is in fact a set of letters (the
+  chapter's own `crud` / `cruds` / `rs` examples). (2) the chapter's one
+  validation obligation is a comma splice: "The _Platform_ must validate
+  requested scopes against the _Application_ registration metadata, applicable
+  access control policies, the authenticated user's permissions." — three
+  coordinated objects with no conjunction, leaving both the sentence structure
+  and the conjunctive-vs-alternative reading open.
+- **Ask:** make the placeholder consistent across the syntax line and the
+  bullet, and repair the validation sentence with a conjunction that also
+  settles whether all three sources must permit. (Ours: the tail is read as a
+  set of `c`/`r`/`u`/`d`/`s` letters, which satisfies both spellings; and the
+  validation sentence is read conjunctively — the SMART gate is composed as an
+  AND onto the RBAC/ABAC decision, so it can only narrow.)
+
+### UPR-113 — the discovery document is specified as content, never as an HTTP resource
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master04-service_discovery.adoc` §Service Discovery + §Services, `master07-authorization.adoc` §Embedded iFrame Launch, `docs/overview/Requests_and_responses.md` §"HTTP status codes")
+- **Register:** AMB-149 (fixed_handling)
+- **Facts:** master04 fixes the document's path relative to the Platform base
+  URL and its `application/json` media type, and stops. Across all nine
+  chapters there is not one status code, not one caching statement, not one
+  error shape and not one sentence on whether the document is publicly readable
+  (grep-verified: no occurrence of 200/201/400/401/403/404, `Cache-Control`,
+  `max-age`, `ETag`, `cache` or `error` anywhere in the tree). Three questions
+  follow. Whether `/.well-known/smart-configuration` may be protected is only
+  INFERABLE, from master07's Embedded iFrame Launch, where the Application
+  fetches it in order to learn the `authorization_endpoint` — i.e. before it
+  can hold any token; that is an argument, not a rule. Whether and for how long
+  the document may be cached is unaddressed. And "the root of the API" in
+  "`baseUrl`: Absolute URL to the root of the API `*(required)*`" is left
+  undefined against the chapter's own examples, which give `org.openehr.rest` a
+  version segment (`https://platform.example.com/openehr/rest/v1`) and
+  `org.fhir.rest` none (`https://platform.example.com/`).
+- **Ask:** state the discovery endpoint's HTTP contract — that it is
+  unauthenticated (or under what conditions it may be protected), its success
+  and not-found statuses, and whatever freshness/caching expectation clients may
+  rely on — and say whether the `org.openehr.rest` `baseUrl` includes the
+  ITS-REST version segment. (Ours: the document is served unauthenticated
+  outside the auth layer, because master07's pre-authorization fetch is
+  otherwise impossible and the document carries no clinical content — the
+  inference is the spec's own launch sequence, the decision is ours where the
+  text is silent; no caching directives are emitted, since inventing freshness
+  semantics for an unspecified contract would be worse than none; and the
+  served `org.openehr.rest` `baseUrl` includes the version segment, matching
+  the only released example of that exact key.)
+
+### UPR-114 — the scope grammar is never connected to the API it governs
+
+- **Components:** ITS-REST (`docs/smart_app_launch/master08-scopes.adoc` §Scopes + §Resource Scopes, `master07-authorization.adoc` §Context Selection, `docs/overview/Requests_and_responses.md` §"Authentication and authorization" + §"HTTP status codes"), RM ehr (`EHR_STATUS` §Attributes)
+- **Register:** AMB-150 (fixed_handling)
+- **Facts:** master08 defines a scope grammar and leaves six enforcement
+  questions unanswered. (1) No scope-to-operation mapping exists anywhere: the
+  nine chapters name no openEHR REST route, no HTTP method and no operation
+  identifier (grep-verified), so which CRUDS letter an operation consumes and
+  which noun it belongs to is entirely unassigned — the maximal table grants
+  "Full access to user-permitted AQL definitions or ad-hoc queries" without
+  ever saying that executing a query is `s` rather than `r`. (2) The noun list
+  is closed to templates, compositions and AQL, so EHR, EHR_STATUS,
+  CONTRIBUTION, DIRECTORY, the demographic resources and the admin routes have
+  no expressible scope at all, and the text never says whether that leaves them
+  ungoverned, granted or denied. (3) The permission tail has no
+  well-formedness rule: nothing on ordering, repetition, or an unrecognised
+  letter. (4) The Platform "must validate requested scopes" and no status is
+  assigned to a refusal. (5) `ehrId` is only permissive in the token response
+  ("may be included"), so a `patient/` scope can arrive with no resolvable EHR
+  and nothing says what happens. (6) Nothing says how several granted scopes
+  compose when more than one could permit a request, nor by what value the
+  `patient` compartment is matched to a request's EHR.
+- **Ask:** publish the scope-to-operation mapping (resource family and CRUDS
+  letter per released REST operation) — without it, two conformant Platforms
+  can enforce the same token differently, which defeats the point of a
+  standardized scope grammar; say what governs the resources the noun list
+  cannot express; give the permission tail a well-formedness rule; assign the
+  refusal status; say what a `patient/` scope means with no resolvable context;
+  and state the multi-scope composition and compartment-matching rules.
+  (Ours, all flagged as our own design where the spec is silent: the mapping is
+  implementer-invented and marked as such wherever it is cited; out-of-noun
+  operations are SMART-ungoverned and left to RBAC/ABAC; the tail is order-free
+  over `c`/`r`/`u`/`d`/`s` and any other character makes the whole scope inert
+  rather than partially honoured; the refusal is the base spec's 403 — the only
+  released assignment available; a `patient/` scope with no resolvable
+  `ehrId`/`patient` claim is denied fail-closed; composition is
+  broadest-compartment-wins; and the patient compartment is matched against the
+  EHR's `EHR_STATUS.subject.external_ref`, the only value the RM gives an EHR
+  that identifies its patient.)
+
+### UPR-115 — SMART on openEHR has no conformance surface and no CDR/Authorization-Server split
+
+- **Components:** ITS-REST (`docs/smart_app_launch/` — `manifest_vars.adoc`, `master02-overview.adoc` §Glossary, `master03`, `master04`, `master05`, `master06` §Deprecated Flows, `master07`, `master08`), the released OAS group set, CNF (`docs/profiles/master03-profiles.adoc` §Functional)
+- **Register:** AMB-151 (statement_declared)
+- **Facts:** the specification is `:spec_status: DEVELOPMENT`; it contains
+  exactly ONE RFC 2119 uppercase keyword in all nine chapters (master06
+  §Deprecated Flows, "MUST NOT be used" on the Implicit and ROPC grants), every
+  other obligation being lowercase prose; it is the only API area of the
+  release with no OpenAPI artifact (the released set has seven groups — admin,
+  definition, demographic, ehr, overview, query, system — and none is SMART)
+  and no schemas; the CNF corpus does not mention SMART anywhere
+  (grep-verified) and the Profiles book's REST-APIs capability table has no
+  SMART row; and ITS-REST `docs/overview/Preface.md` §Conformance is literally
+  "tbd.". On top of that the subject of nearly every obligation is the
+  *Platform*, defined as "a software ecosystem comprising at minimum an
+  Authorization Server, an openEHR Clinical Data Repository (CDR), and a FHIR
+  Server" — so a deployment with an external Authorization Server has no way to
+  tell, from the text, which obligations fall on the CDR.
+- **Ask:** mark the requirement force with RFC 2119 keywords, and split the
+  obligations by component — say which of them a CDR (resource server) must
+  meet on its own, versus which belong to the Authorization Server — so that a
+  CDR can be tested against SMART at all. A capability row in the CNF Profiles
+  book and a machine-readable definition of the discovery document would make
+  the surface testable. (Ours: the CDR's enforceable share is taken to be
+  exactly three behaviours — the discovery document, the master08 grammar, and
+  the 403-on-scope-deny discipline; the launch flows, token issuance,
+  registration and the application typology are Authorization-Server behaviour
+  and this server claims nothing about them. The nine points where the
+  specification itself delegates to HL7 or to the implementer are recorded as
+  scope statements on AMB-151, not as defects. No CNF case is authored for
+  SMART: it is config-gated off by default so the composed conformance SUT
+  serves no discovery document, and every scope case would need a per-case
+  Bearer token from an Authorization Server the conformance stack does not run
+  — the three behaviours are registered as wire-surface elements and proven by
+  the server's own HTTP and grammar tests instead.)

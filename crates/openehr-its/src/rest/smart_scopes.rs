@@ -394,6 +394,37 @@ mod tests {
         );
     }
 
+    /// master04 §Service Discovery's own example document advertises
+    /// `"scopes_supported": [… "patient/*.rs", "user/*.rs" …]`, but master08
+    /// §Resource Scopes closes the `<resource>` position to `template-` /
+    /// `composition-` / `aql-` — a bare `*` there is not a resource noun, so
+    /// neither form is parseable under the grammar the same specification
+    /// defines. NOTE: released-vs-released conflict; the total parser demotes
+    /// both to inert `Other` (retained verbatim, granting and denying nothing),
+    /// which is the only reading that neither rejects the spec's own example
+    /// nor invents authority its grammar never wrote.
+    #[test]
+    fn master04_example_wildcard_resource_is_inert() {
+        for raw in ["patient/*.rs", "user/*.rs"] {
+            assert_eq!(SmartScope::parse(raw), SmartScope::Other(raw.to_owned()));
+        }
+        // The whole master04 example scope set still parses end to end: the
+        // grammatical members keep their meaning, the two ungrammatical ones
+        // ride along inert.
+        let parsed = SmartScope::parse_all(
+            "openid profile launch launch/patient patient/*.rs user/*.rs offline_access",
+        );
+        assert_eq!(parsed.len(), 7);
+        assert_eq!(
+            parsed
+                .iter()
+                .filter(|s| matches!(s, SmartScope::Other(_)))
+                .count(),
+            2
+        );
+        assert!(!parsed.iter().any(|s| matches!(s, SmartScope::Resource(_))));
+    }
+
     // ── compartments (master08 §Resource Scopes) ──────────────────────────────
 
     #[test]
