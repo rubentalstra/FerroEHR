@@ -142,37 +142,60 @@ pub(super) async fn run(
     }
 }
 
-/// Persist any `openehr-item-tag` request-header `ITEM_TAGs` against the
-/// just-written party and reflect the stored set on the response metadata seam
-/// so the response headers echo them (`person_create.yaml` /
-/// `person_update.yaml`). The party must already exist (`item_tag.target_vo_id` FK), so this runs
-/// after the create/update write. A present-but-empty header clears all tags
-/// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
-// TODO: `person_update.yaml` (and the four sibling updates) declare
-// `openehr-version-item-tag` as the update's ITEM_TAG request header, but only
-// `openehr-item-tag` is read below — a client that sets tags on an update the
-// way the released operation documents gets nothing stored. Read both headers
-// here (they address the same VERSIONED_PARTY-anchored set on this surface) and
-// cover the update path with a CNF case.
+/// Apply the `openehr-item-tag` / `openehr-version-item-tag` write-wrapper
+/// request headers to the just-written party, mirroring the EHR side
+/// (`Requests_and_responses.md` §"openehr-item-tag and openehr-version-item-tag"
+/// §Usage in Requests): the two headers address DISTINCT collections —
+/// `openehr-item-tag` replaces the `VERSIONED_OBJECT` container's tags
+/// (addressed by the bare object id) and `openehr-version-item-tag` the
+/// just-committed VERSION's own tags (addressed by the full `version_uid`).
+/// A present-but-empty header clears its collection; an absent header leaves
+/// its collection untouched and echoes nothing. The stored sets ride the
+/// response metadata per header so the echo confirms exactly what each target
+/// now holds. Both headers are accepted on create AND update — the released
+/// update declares `openehr-version-item-tag` and its own prose says
+/// "`openehr-item-tag` or `openehr-version-item-tag`" (register-documented).
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,
     h: &HeaderMap,
     resp: &mut ServiceResponse,
 ) -> Result<(), RestError> {
-    let Some(entries) =
-        crate::overview::params::parse_item_tag_header(h, crate::overview::params::H_ITEM_TAG)
-    else {
+    let object_entries =
+        crate::overview::params::parse_item_tag_header(h, crate::overview::params::H_ITEM_TAG);
+    let version_entries = crate::overview::params::parse_item_tag_header(
+        h,
+        crate::overview::params::H_VERSION_ITEM_TAG,
+    );
+    if object_entries.is_none() && version_entries.is_none() {
+        return Ok(());
+    }
+    let Some(version_uid) = resp.meta.as_ref().map(|m| m.uid.clone()) else {
         return Ok(());
     };
-    let Some(uid) = resp.meta.as_ref().map(|m| m.uid.clone()) else {
-        return Ok(());
-    };
-    let tags = crate::overview::params::item_tags_from_header_entries(&entries);
-    // Full-collection PUT semantics via the same machinery as `party_tags_update`.
-    let stored = state.backend().party_tags_update(kind, uid, tags).await?;
-    if let Some(meta) = resp.meta.as_mut() {
-        meta.item_tags = Some(stored.body);
+    let container_uid = version_uid
+        .split_once("::")
+        .map_or(version_uid.as_str(), |(object_id, _)| object_id)
+        .to_owned();
+    if let Some(entries) = object_entries {
+        let tags = crate::overview::params::item_tags_from_header_entries(&entries);
+        let stored = state
+            .backend()
+            .party_tags_update(kind, container_uid, tags)
+            .await?;
+        if let Some(meta) = resp.meta.as_mut() {
+            meta.item_tags = Some(stored.body);
+        }
+    }
+    if let Some(entries) = version_entries {
+        let tags = crate::overview::params::item_tags_from_header_entries(&entries);
+        let stored = state
+            .backend()
+            .party_tags_update(kind, version_uid, tags)
+            .await?;
+        if let Some(meta) = resp.meta.as_mut() {
+            meta.version_item_tags = Some(stored.body);
+        }
     }
     Ok(())
 }

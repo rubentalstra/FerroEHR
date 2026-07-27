@@ -124,9 +124,23 @@ impl EhrbaseService {
         if resp.meta.is_none() {
             return Ok(());
         }
-        let tags = self.party_tags(vo_id).await?;
+        // The two response headers carry DISTINCT collections (overview
+        // §"openehr-item-tag and openehr-version-item-tag"): the container's
+        // set rides `openehr-item-tag`, the served VERSION's own set rides
+        // `openehr-version-item-tag`. The version tail comes from the response
+        // metadata's own OBJECT_VERSION_ID.
+        let container = self.party_tags(vo_id, None).await?;
+        let version_tail = resp
+            .meta
+            .as_ref()
+            .and_then(|m| m.uid.split_once("::").map(|(_, tail)| tail.to_owned()));
+        let version = match version_tail.as_deref() {
+            Some(tail) => Some(self.party_tags(vo_id, Some(tail)).await?),
+            None => None,
+        };
         if let Some(meta) = resp.meta.as_mut() {
-            meta.item_tags = Some(Value::Array(tags));
+            meta.item_tags = Some(Value::Array(container));
+            meta.version_item_tags = version.map(Value::Array);
         }
         Ok(())
     }
@@ -603,11 +617,15 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault reading the tag store.
     pub async fn party_tags_get(
         &self,
-        _kind: PartyKind,
+        kind: PartyKind,
         uid_based_id: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
-        Ok(tags_response(self.party_tags(vo_id).await?))
+        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
+        // The released 404 trigger ("when the `uid_based_id` does not exist")
+        // plus the kind-checked-routes law: the guard runs on the GET too; an
+        // existing target with no tags stays an empty 200 list.
+        self.ensure_party_tag_target(kind, vo_id, tail).await?;
+        Ok(tags_response(self.party_tags(vo_id, tail).await?))
     }
 
     /// Replace the whole `ITEM_TAG` collection of a party (PUT full-collection
@@ -625,9 +643,9 @@ impl EhrbaseService {
         uid_based_id: String,
         body: Vec<Value>,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
         Ok(tags_response(
-            self.replace_party_tags(kind, vo_id, body).await?,
+            self.replace_party_tags(kind, vo_id, tail, body).await?,
         ))
     }
 
@@ -639,12 +657,12 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault during the delete.
     pub async fn party_tags_delete(
         &self,
-        _kind: PartyKind,
+        kind: PartyKind,
         uid_based_id: String,
         key: String,
     ) -> Result<ServiceResponse, SmError> {
-        let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
-        self.delete_party_tag(vo_id, &key).await?;
+        let (vo_id, tail) = crate::service::ehr::tags::parse_tag_target(&uid_based_id)?;
+        self.delete_party_tag(kind, vo_id, tail, &key).await?;
         Ok(ServiceResponse::plain(Value::Null))
     }
 
