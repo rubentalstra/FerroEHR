@@ -37,7 +37,7 @@ outcomes:
     status: 412                             # 412_EHR_STATUS.yaml, stale If-Match
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }     # If-Match absent -> SHOULD 400 (Requests_and_responses)
-  validation_failed: { status: 400, body: error_loose }   # 400.yaml
+  validation_failed: { status: 422, body: error_loose }   # semantic (RM-invariant) rejection of a well-formed body — ITS-REST overview Requests_and_responses.md §HTTP status codes, the 422 row ("The request was well-formed but was unable to be followed due to semantic errors"), permitted per-op by the additional-codes sentence; the identical invalid EHR_STATUS fixtures already map to 422 on I_EHR_SERVICE.create_ehr. Structurally unreachable on this variant-less read-modify-write realization (wire_surface variant_of) — reachable via the invalid_body variant.
   not_found: { status: 404 }                # 404_unknown_ehr_id.yaml
 captures:
   status_version_uid:
