@@ -4953,3 +4953,497 @@ AMB-151:
     party's statement does NOT claim it. Reported upstream (UPR-115).
   disposition: statement_declared
   upstream_ref: "UPR-115"
+
+AMB-152:
+  ambiguity: >-
+    The Simplified Formats are PROMISED for EHR_STATUS and FOLDER by a released
+    sentence and DEFINED for neither. The CONTRIBUTION commit's own description
+    prose — released text, not an OAS enum — states that when a Simplified MIME
+    type is used "Only the inner versioned payload - each `versions[i].data`
+    (the embedded `COMPOSITION`, `EHR_STATUS`, or `FOLDER`) - is serialized in
+    the chosen FLAT or STRUCTURED form", naming all three classes explicitly;
+    and the same two MIME types are offered on the standalone resources too —
+    four DIRECTORY operations (`directory_create`, `directory_update`,
+    `directory_get_at_time`, `directory_get_by_version_id`) and three EHR_STATUS
+    operations (`ehr_status_update`, `ehr_status_get_at_time`,
+    `ehr_status_get_by_version_id`). Yet the Simplified Formats
+    sub-specification defines no EHR_STATUS shape and no FOLDER shape anywhere.
+    Its RM-mapping chapter has 43 class sections and exactly ONE versioned-object
+    root among them, `== COMPOSITION` (every other section is a class contained
+    inside a composition — ENTRY subtypes, EVENT_CONTEXT, CLUSTER/ELEMENT — or a
+    data type); and the whole field-identifier space is OPT-derived by
+    definition: "__Template-specific__: Field identifiers are specific to each
+    operational template" and "__Operational Templates (OPT)__: field
+    identifiers are generated from OPT definitions". Neither an EHR_STATUS nor a
+    directory FOLDER has an operational template, so there is no source from
+    which either resource's field identifiers could be generated, and no table
+    saying what their suffixes would mean if there were. A THIRD, asymmetric
+    variant of the same silence sits on EHR creation: `ehr_create` and
+    `ehr_create_with_id` pair a request-side `ContentType_LOCATABLE` (which
+    admits both Simplified types on the EHR_STATUS request body) with a
+    response-side `Accept_canonical` (JSON + XML only), so the declaration would
+    have a service READ an EHR_STATUS in a form it is never allowed to WRITE
+    back — a receive-but-not-return asymmetry no sentence explains. This is the
+    non-demographic half of the scope problem AMB-128 registers for the PARTY
+    routes, and it rests on STRONGER evidence: there the only offer was a
+    negotiation enum, here a released prose sentence names the two classes.
+  source: >-
+    ITS-REST specifications/operations/contribution_create.yaml §"Simplified
+    Formats (FLAT / STRUCTURED)" (the released description prose, quoted above,
+    naming `COMPOSITION`, `EHR_STATUS` and `FOLDER`) + ITS-REST
+    docs/simplified_formats/master05-rm_mapping.adoc (43 class sections; the only
+    versioned-object root mapped is `== COMPOSITION` — no EHR_STATUS section, no
+    FOLDER section) + master02-overview.adoc §Introduction ("__Template-specific__:
+    Field identifiers are specific to each operational template") and
+    §"Relationship to Other Specifications" ("__Operational Templates (OPT)__:
+    field identifiers are generated from OPT definitions"; "serialized instances
+    represent valid RM structures (e.g. COMPOSITION)") +
+    specifications/operations/{directory_create,directory_update,directory_get_at_time,directory_get_by_version_id}.yaml
+    and {ehr_status_update,ehr_status_get_at_time,ehr_status_get_by_version_id}.yaml
+    (each referencing parameters/header/Accept_LOCATABLE.yaml and/or
+    ContentType_LOCATABLE.yaml, whose enums carry
+    `application/openehr.wt.flat+json` and
+    `application/openehr.wt.structured+json`) +
+    specifications/operations/{ehr_create,ehr_create_with_id}.yaml
+    (ContentType_LOCATABLE on the request against
+    parameters/header/Accept_canonical.yaml — enum `application/json`,
+    `application/xml` — on the response) + specifications/docs/overview/Resources.md
+    §Simplified Formats ("If the service cannot process the request payload as
+    the simplified format is not supported, it MUST respond with HTTP status
+    code `415 Unsupported Media Type`"; "If the service cannot fulfill this
+    aspect of the request, it MUST respond with HTTP status code `406 Not
+    Acceptable`") and §"Data representation" ("Services MUST support at least
+    one of the openEHR **XML** or **JSON** canonical formats for resource
+    representation. Additionally, the **Simplified Formats** format SHOULD be
+    supported") + RM ehr §EHR_STATUS and RM common §FOLDER (neither is a
+    templated, OPT-derived structure) — all CONFIRMED first-hand. The
+    negotiation-enum half is OAS shape (stalled, never an oracle); the
+    load-bearing evidence is the released contribution_create prose plus the
+    Simplified Formats chapters' own scope.
+  handling: >-
+    Fixed handling: EHR, EHR_STATUS and DIRECTORY (FOLDER) are CANONICAL-ONLY,
+    and both refusals are the ones the negotiation section already mandates
+    rather than invented ones. A request declaring `Content-Type:
+    application/openehr.wt.flat+json` (or `…structured…`, or
+    `application/openehr.wt+json`) on any of these resources is answered `415
+    Unsupported Media Type`; a read whose `Accept` admits only a Simplified type
+    is answered `406 Not Acceptable`. Serving canonical JSON and XML satisfies
+    the §"Data representation" MUST outright, and the Simplified SHOULD in the
+    same sentence is a SHOULD over a serialization that has no EHR_STATUS or
+    FOLDER shape to produce: honouring it would require this service to invent
+    both the mapping tables and a template-naming channel for resources that
+    have no template — exactly the private resolution the attribution law
+    forbids. The single refusal point is
+    `app/ehrbase-rest/src/formats/dispatch.rs::guard_non_templated`, applied
+    uniformly at the head of the EHR, EHR_STATUS, DIRECTORY and demographic
+    handler groups, and its code NOTE carries the same citation. The
+    `ehr_create`/`ehr_create_with_id` asymmetry collapses under the same rule:
+    the request body is an EHR_STATUS, so a Simplified `Content-Type` there is
+    `415` and the response side never arises. The CONTRIBUTION arm follows from
+    the same silence: the envelope stays canonical JSON (AMB-134) and each
+    `versions[i].data` is read/written in the negotiated Simplified form ONLY
+    when it is a COMPOSITION — an EHR_STATUS or FOLDER member has no Simplified
+    shape, so a Simplified CONTRIBUTION carrying one is refused rather than
+    guessed (AMB-57 carries the read half). Nothing is silently narrowed: the
+    refusals are declared, exercised branches, gated by
+    SF-SCOPE-directory_no_simplified (406) and SF-SCOPE-ehr_status_no_simplified
+    (406), with AMB-128 gating the demographic sibling. Reported upstream
+    (UPR-116): either give EHR_STATUS and FOLDER real Simplified mappings plus a
+    field-identifier source that does not require an OPT, or strike the two
+    classes from the contribution_create sentence and drop the Simplified MIME
+    types from those seven operations' negotiation enums; and either way say
+    what `ehr_create`'s receive-but-not-return asymmetry means.
+  disposition: fixed_handling
+  upstream_ref: "UPR-116"
+
+AMB-153:
+  ambiguity: >-
+    The STRUCTURED format's own syntax rules contradict each other on instance
+    indices, and both released worked examples take the side the rules forbid.
+    master04 §"Structured format" states as Syntax Rule 2 that "Instance indices
+    MUST remain in property names", repeats it as step 6 of the §"Conversion
+    Between Formats" Structured-to-Flat algorithm ("Preserve instance indices in
+    property names"), and prefaces both with the descriptive bullet "Instance
+    indices remain in property names (e.g., `body_temperature`)" — whose own
+    parenthetical example carries no index. Syntax Rule 5 of the SAME list then
+    requires "Arrays MUST be used for data values, even when cardinality is
+    `0..1` or `1..1`". The two are irreconcilable for a repeating node: an array
+    already carries position, so keeping `:i` in the property name of every
+    element either duplicates the index or forces one property per occurrence,
+    which is not an array. Both worked examples resolve it against Rule 2. The
+    master04 §"Structured format" example renders the FLAT keys
+    `…/body_temperature:0/any_event:0/temperature|magnitude` as
+    `"body_temperature": [ { "any_event": [ { "temperature": [ … ] } ] } ]` —
+    array elements, no `:i` anywhere. The master03 §"Structured format" example
+    is decisive because it is a rendering of an adjacent FLAT example that
+    genuinely repeats: the FLAT block has `blood_pressure/any_event:0/…` AND
+    `blood_pressure/any_event:1/…`, and the STRUCTURED block renders them as two
+    elements of one `"any_event"` array, again with no index in the property
+    name. So the normative MUST is contradicted by the only two instances the
+    specification itself provides, and a reader cannot tell whether a producer
+    that emits `"any_event:0"` is conformant, non-conformant, or both.
+  source: >-
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §"Structured
+    format" (the descriptive bullet "Instance indices remain in property names
+    (e.g., `body_temperature`)"; Syntax Rule 2 "Instance indices MUST remain in
+    property names"; Syntax Rule 5 "Arrays MUST be used for data values, even
+    when cardinality is `0..1` or `1..1`"; the worked JSON example, whose
+    `body_temperature` / `any_event` / `temperature` properties are arrays with
+    no `:i`) + the same file's §"Conversion Between Formats" Structured-to-Flat
+    step 6 ("Preserve instance indices in property names") and Flat-to-Structured
+    step 3d ("If attribute suffix exists, create an array containing an object
+    with suffix as property") + §"Instance Indexing" (the FLAT `:i` grammar the
+    rules refer back to) + master03-design_rationale.adoc §"Flat format" and
+    §"Structured format" (the paired example: FLAT `any_event:0` + `any_event:1`
+    rendered as a two-element `"any_event"` array with unindexed property names)
+    — the conflict CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, resolved toward the examples and lenient toward the rule.
+    ON INPUT both forms are accepted: a STRUCTURED property name may carry an
+    explicit `:i` (Rule 2's literal reading) and it folds into array position,
+    and a single occurrence may arrive without its array wrapper — so a producer
+    written to either half of the contradiction is read losslessly
+    (`crates/openehr-its/src/flat/sim/structured.rs`, `parse_child_property`).
+    ON OUTPUT the index is ALWAYS array position and never appears in a property
+    name, because that is what both released worked examples show and because it
+    is the only form that satisfies Rule 5 at the same time; every child is
+    array-wrapped even at `0..1`/`1..1` cardinality, and interior index holes are
+    kept as empty array elements so FLAT round-trips preserve their numbering
+    (`emit_structured`/`emit_node`). Accepting both and emitting one keeps the
+    round-trip total in both directions: a FLAT document converted to STRUCTURED
+    and back reproduces its `:i` numbering exactly, which is the property
+    §"Conversion Between Formats" actually needs. Gated by SF-STRUCT-style_rules
+    (the syntax-rule witness on a live read-back) with SF-STRUCT-arrays_single_
+    cardinality and SF-STRUCTURED-commit_roundtrip either side of it. Reported
+    upstream (UPR-117): reconcile Syntax Rule 2 and Structured-to-Flat step 6
+    with Syntax Rule 5 and with the master04/master03 worked examples — state
+    explicitly that STRUCTURED carries the instance index as array POSITION, and
+    either delete the "indices remain in property names" sentences or restate
+    them as an accepted-on-input alternative.
+  disposition: fixed_handling
+  upstream_ref: "UPR-117"
+
+AMB-154:
+  ambiguity: >-
+    A bundle of editorial defects in the STABLE Simplified Formats chapters,
+    each re-verified first-hand against the vendored .adoc before listing. None
+    changes what a conformant server does, because in every case the RM or the
+    chapter's own worked example settles the reading — but several are
+    behaviour-relevant on a literal reading, and all of them are wrong as
+    published. IN master05-rm_mapping.adoc: (E-1) PHANTOM `/territory` ROWS —
+    the ADMIN_ENTRY, INSTRUCTION, ACTION, EVALUATION and OBSERVATION mapping
+    tables each carry a `/territory` → RM path `territory` row marked Required
+    "Yes", copied from the COMPOSITION table; RM ENTRY declares no `territory`
+    attribute at all, so a literal reading makes a non-existent RM attribute
+    MANDATORY on five ENTRY types. (E-2) THE MANDATORY `/encoding` ROW IS
+    MISSING from those same five tables, which list `/language` (Required "Yes")
+    and stop, although RM ENTRY.encoding is 1..1 and every one of the chapter's
+    own examples for those five types emits `…/encoding|code` +
+    `…/encoding|terminology`. (E-3) `/provider` AND `/_other_participation:i`
+    HAVE NO ROWS in any ENTRY table, although the examples emit both
+    (`…/_provider|name`, `…/_other_participation:0|function`) and RM ENTRY
+    declares provider 0..1 and other_participations 0..1. (E-4) THE DV_QUANTITY
+    FLAT TYPES ARE SWAPPED — `|magnitude` is typed String and `|unit` is typed
+    Real, the inverse of RM DV_QUANTITY (magnitude: Real, units: String) and of
+    the table's own example (`65.9` / `"unit"`); the same table also omits rows
+    for `|precision`, `|units_system` and `|units_display_name`, all three of
+    which its second example emits. (E-5) `|id_scheme` IS TYPED Integer IN THREE
+    TABLES — PARTY_SELF, PARTY_IDENTIFIED and PARTY_RELATED all type the suffix
+    that maps to `external_ref.id.scheme` as Integer, while BASE GENERIC_ID.scheme
+    is String, the PARTICIPATION table types the same suffix String, and every
+    example writes a string ("UUID", "HOSPITAL-NS"). (E-6) `dta` TYPO — the
+    DV_MULTIMEDIA `|data` row gives its RM path as `dta`. (E-7) MALFORMED
+    `\meaning` CELL — the REFERENCE_RANGE table's last Flat-Path cell reads
+    `\meaning`, which is neither the escaped-pipe suffix form (`\|meaning`) its
+    sibling rows use nor the sub-path form; both of the chapter's own
+    REFERENCE_RANGE examples write it as a SUB-PATH with DV_TEXT/DV_CODED_TEXT
+    suffixes (`…/_other_reference_ranges:0/meaning|value`), and the row's Flat
+    type is DV_TEXT, so the intended cell is `/meaning`. (E-8) THE FLAT SPELLING
+    LEAKED INTO THE RM-PATH COLUMN EIGHT TIMES — DV_ORDINAL, DV_QUANTITY,
+    DV_PROPORTION, DV_COUNT, DV_DATE, DV_DATE_TIME, DV_TIME and DV_DURATION each
+    give the RM path of their reference-range row as `_other_reference_ranges`,
+    underscore and all; the RM attribute is DV_ORDERED.other_reference_ranges,
+    and the underscore is the master04 §"RM Attributes prefix" marker that
+    belongs only in the Flat Path column. (E-9) FEEDER_AUDIT DOUBLE-MAPPING,
+    WRONG TYPE AND TYPO — `/original_content` and `/original_content_multimedia`
+    are given the SAME RM path `original_content` with no discriminator beyond a
+    Note, and that Note is the ungrammatical "one one of original_content and
+    original_content_multimedia can be set", repeated verbatim on both rows;
+    in the same table `/originating_system_audit` is typed PARTY_IDENTIFIED
+    where RM common FEEDER_AUDIT.originating_system_audit is FEEDER_AUDIT_DETAILS
+    1..1 (the sibling `/feeder_system_audit` row types it correctly). (E-10)
+    `/_expiry_time` IS MARKED Required "Yes" in the INSTRUCTION table, although
+    RM INSTRUCTION.expiry_time is 0..1 and master04 §"RM Attributes prefix"
+    defines the leading underscore precisely as the marker for optional RM
+    attributes not constrained in the template. (E-11) DV_IDENTIFIER'S `|id` ROW
+    CONTRADICTS ITSELF — Required "Yes" with the Note "For the input \|id might
+    be left out." (E-12) SIX SECTIONS OPEN WITH A LINK TO THE WRONG RM CLASS —
+    ACTION points at EVALUATION, OBSERVATION at COMPOSITION, ISM_TRANSITION at
+    ACTIVITY, OBJECT_REF at EVENT_CONTEXT, POINT_EVENT at EVENT_CONTEXT and
+    DV_IDENTIFIER at DV_QUANTITY. (E-13) THE OBJECT_REF SUFFIX SPELLING SPLITS —
+    the OBJECT_REF table's third row is `|scheme` (→ `id.scheme`) while every
+    OBJECT_REF example in the chapter writes `|id_scheme`
+    (`_guideline_id|id_scheme`, `_work_flow_id|id_scheme`), as does master06
+    §"Workflow ID"; the same table marks all four suffixes Required "yes",
+    including a `scheme` that exists only on BASE GENERIC_ID and not on the
+    generic OBJECT_ID an OBJECT_REF may carry. (E-14) THE DV_INTERVAL
+    `|lower_unbounded` ROW puts the FLAT suffix in its RM-Path cell
+    (`\|lower_unbounded`) where its three sibling rows carry the bare attribute
+    name. IN master06-context_information.adoc: (D-04) A GHOST `ctx` KEY —
+    §"Workflow ID" says "`work_flow_id|namespace` can be left out if
+    `ctx/namespace` is set", but no `ctx/namespace` key exists anywhere in the
+    chapter; the defined key is `ctx/id_namespace`. ACROSS master05: (D-06)
+    VENDOR COMMENTARY AND A SPELLING SPLIT IN A STABLE CHAPTER — the
+    §"PARTY_RELATED performer" sub-section closes with a NOTE naming two
+    implementations and prescribing which flows to use until "parity is
+    established", which is implementation status inside normative text; and that
+    same sub-section spells the relationship path `/relationship` while the
+    PARTY_RELATED class table spells it `/_relationship`, for the same RM
+    attribute at what is structurally the same position. (D-07) THE TERMINOLOGY
+    SUFFIX HAS TWO DIFFERENT REQUIREDNESSES — CODE_PHRASE marks `|terminology`
+    (→ `terminology_id.value`) unconditionally Required "yes", while
+    DV_CODED_TEXT marks the same suffix (→ `defining_code.terminology_id.value`)
+    "(yes)" with "only required for external terminologies"; a DV_CODED_TEXT's
+    `defining_code` IS a CODE_PHRASE, so the two rows state different
+    obligations for the same RM slot, and "external terminologies" is defined
+    nowhere in the specification.
+  source: >-
+    ITS-REST docs/simplified_formats/master05-rm_mapping.adoc §ADMIN_ENTRY,
+    §INSTRUCTION, §ACTION, §EVALUATION, §OBSERVATION (the five mapping tables:
+    the `/territory` rows; the absent `/encoding`, `/provider` and
+    `_other_participation:i` rows; the JSON examples that emit all three) +
+    §DV_QUANTITY (`\|magnitude` → Flat type String, `\|unit` → Flat type Real;
+    no `\|precision`/`\|units_system`/`\|units_display_name` rows against the
+    second example, which emits all three) + §PARTY_SELF, §PARTY_IDENTIFIED,
+    §PARTY_RELATED (`\|id_scheme` → Flat type Integer) CONTRASTED with
+    §PARTICIPATION (`\|id_scheme` → String) + §DV_MULTIMEDIA (the `\|data` row's
+    RM Path cell `dta`) + §REFERENCE_RANGE (the `\meaning` Flat-Path cell; both
+    examples writing `_other_reference_ranges:i/meaning|value`) + §DV_ORDINAL,
+    §DV_QUANTITY, §DV_PROPORTION, §DV_COUNT, §DV_DATE, §DV_DATE_TIME, §DV_TIME,
+    §DV_DURATION (the eight `_other_reference_ranges` RM-Path cells) +
+    §FEEDER_AUDIT (`/original_content` and `/original_content_multimedia` both →
+    `original_content`; "one one of …" ×2; `/originating_system_audit` typed
+    PARTY_IDENTIFIED) + §INSTRUCTION (`/_expiry_time` Required "Yes") +
+    §DV_IDENTIFIER (`\|id` Required "Yes" + "For the input \|id might be left
+    out.") + the opening "See RM specification of the …" links of §ACTION,
+    §OBSERVATION, §ISM_TRANSITION, §OBJECT_REF, §POINT_EVENT and §DV_IDENTIFIER
+    + §OBJECT_REF (the `\|scheme` row) against §INSTRUCTION/§ACTION's
+    `_guideline_id|id_scheme` and `_work_flow_id|id_scheme` example keys +
+    §DV_INTERVAL (the `\|lower_unbounded` RM-Path cell) + §"PARTY_RELATED
+    performer" (the `/relationship` row and the implementation-status NOTE)
+    against §PARTY_RELATED (the `/_relationship` row) + §CODE_PHRASE
+    (`\|terminology` Required "yes") against §DV_CODED_TEXT (`\|terminology`
+    Required "(yes)", "only required for external terminologies") +
+    master06-context_information.adoc §"Workflow ID" ("`work_flow_id|namespace`
+    can be left out if `ctx/namespace` is set") against §"ID Namespace and
+    Scheme" ("`id_namespace`: default namespace for external references:
+    `OBJECT_REF.namespace`") + master04-basic_concepts.adoc §"RM Attributes
+    prefix" (the underscore marks "optional RM attributes not explicitly
+    constrained in the template") — ADJUDICATED against RM composition
+    §ENTRY (language 1..1, encoding 1..1, subject 1..1, provider 0..1,
+    other_participations 0..1 — no `territory`), RM composition §INSTRUCTION
+    (expiry_time 0..1), RM common §FEEDER_AUDIT (originating_system_audit:
+    FEEDER_AUDIT_DETAILS 1..1; original_content: DV_ENCAPSULATED 0..1), RM
+    data_types §DV_QUANTITY (magnitude: Real, units: String), §DV_MULTIMEDIA
+    (`data`: Array<Octet>), §DV_ORDERED (other_reference_ranges),
+    §REFERENCE_RANGE (meaning: DV_TEXT 1..1) and BASE base_types §GENERIC_ID
+    (scheme: String) — every defect CONFIRMED first-hand.
+  handling: >-
+    Editorial: the RM and the chapters' own worked examples settle every reading,
+    and this implementation follows them, so no wire behaviour turns on any of
+    these cells. Concretely: no ENTRY-level `territory` is accepted or emitted —
+    `territory` is a COMPOSITION leaf only (E-1); `/encoding` is treated as the
+    mandatory ENTRY leaf RM makes it and is emitted on every ENTRY (E-2);
+    `_provider` and `_other_participation:i` are supported as the examples spell
+    them (E-3); `|magnitude` is a number and `|unit` a string, and
+    `|precision`/`|units_system`/`|units_display_name` are carried (E-4);
+    `|id_scheme` is a string everywhere (E-5); `|data` maps to DV_MULTIMEDIA.data
+    (E-6); the reference-range meaning is the sub-path `/meaning` (E-7); the RM
+    attribute is `other_reference_ranges` without the FLAT underscore (E-8);
+    `/original_content` and `/original_content_multimedia` are the DV_PARSABLE
+    and DV_MULTIMEDIA arms of the one 0..1 `original_content` slot and are
+    mutually exclusive, and `originating_system_audit` is a FEEDER_AUDIT_DETAILS
+    (E-9 — SF-MAP-events_audit already carries this one as a case guard);
+    `_expiry_time` is optional (E-10); `|id` is required on output and may be
+    absent on input exactly as the Note says (E-11); the mis-targeted class
+    links are read through to the section's own class (E-12); the OBJECT_REF
+    scheme suffix is `|id_scheme`, matching every example and master06, and is
+    optional because `scheme` exists only on a GENERIC_ID (E-13); the
+    DV_INTERVAL RM path is `lower_unbounded` (E-14); `ctx/id_namespace` is the
+    only namespace default key (D-04); the PARTY_RELATED relationship is
+    accepted under both spellings and emitted as the class table's
+    `/_relationship`, and the vendor-parity NOTE governs nothing here — no
+    vendor implementation is an oracle (D-06); and `|terminology` is required
+    whenever a DV_CODED_TEXT is emitted, the CODE_PHRASE row's unconditional
+    reading, since an undefined "external terminologies" exemption cannot narrow
+    a stated MUST (D-07). Each of these is proven row-by-row by the master05
+    semantic battery (`crates/openehr-its/tests/master05_tables.rs`), which
+    asserts the Flat Path, Flat type and RM landing of every mapping row rather
+    than the published cell. Reported upstream (UPR-118) as one editorial
+    docket.
+  disposition: editorial
+  upstream_ref: "UPR-118"
+
+AMB-155:
+  ambiguity: >-
+    The STRUCTURED variant is specified by ONE worked example plus six syntax
+    rules, and three forms that master04 defines only in FLAT have no stated
+    STRUCTURED rendering at all. (1) THE BARE VALUE ALONGSIDE SUFFIXED PARTS.
+    Rule 3 says attribute suffixes become `"|suffix"` properties, and the
+    examples show suffix-less leaves as bare scalars inside their array
+    (`"time": [ "2022-02-03T04:05:06" ]`). Neither says what happens when a leaf
+    carries BOTH a bare value and suffixed parts — which seven master05 tables
+    require by giving their value row an EMPTY Flat-Path cell alongside `\|…`
+    suffix rows: DV_COUNT, DV_DATE, DV_DATE_TIME, DV_TIME, DV_DURATION,
+    DV_MULTIMEDIA (the URI plus `|mediatype`/`|size`) and DV_PROPORTION (the
+    calculated magnitude), with DV_PARSABLE's own example showing the same shape
+    (`…/dv_parsable` + `…/dv_parsable|formalism`). A scalar cannot also hold
+    properties, so the object form needs a property name for the bare part and
+    the specification never supplies one. (2) THE
+    COMPOUND `ctx` ENTRIES. Rule 4 groups context under a `ctx` object, and the
+    only STRUCTURED example shows four scalar members (language, territory,
+    composer_name, time). master06 defines seventeen `ctx` sections, several of
+    which are NOT scalar in FLAT: `ctx/work_flow_id|id` and its three siblings
+    (suffixed), `ctx/participation_name:0` … `ctx/participation_identifiers:1|id:1`
+    (indexed AND suffixed AND indexed again), `ctx/link:0|type` (indexed +
+    suffixed) and `ctx/health_care_facility|name` (suffixed). No example, rule or
+    algorithm step says how any of those nest inside the `ctx` object. (3) `|raw`
+    IN STRUCTURED. §"Raw canonical JSON" defines the `|raw` bypass with a FLAT
+    example only, and never says whether the bypass exists in STRUCTURED, nor —
+    if it does — whether the embedded canonical object sits under a `"|raw"`
+    property of the leaf's array element or somewhere else. The §"Conversion
+    Between Formats" algorithms do not mention `|raw` in either direction.
+  source: >-
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §"Structured
+    format" (the six Syntax Rules and the single worked example: nested objects,
+    `"|suffix"` properties, a scalar-only `ctx`, arrays throughout, and bare
+    scalars as array elements for `time`) + §"Conversion Between Formats" (both
+    algorithms; Flat-to-Structured step 3c/3d speaks only of the case where "an
+    attribute suffix exists", Structured-to-Flat step 3 only of "properties with
+    a pipe prefix" — neither names the suffix-less part) + §"Raw canonical JSON"
+    (the `|raw` bypass, FLAT example only, no STRUCTURED form) + the same file's
+    §"Field Identifiers" (the six-component list introduced as what "The
+    Simplified Formats use", item 6 being the `|raw` bypass — variant-neutral) +
+    master03-design_rationale.adoc §"Structured format" (the second worked
+    example, likewise showing bare scalars as array elements —
+    `"clinical_interpretation": [ "…" ]`, `"_uid": [ "…" ]` — and likewise never
+    combining a bare value with suffixed parts) +
+    master05-rm_mapping.adoc §DV_COUNT, §DV_DATE,
+    §DV_DATE_TIME, §DV_TIME, §DV_DURATION, §DV_MULTIMEDIA, §DV_PROPORTION (the
+    seven tables whose value row is an EMPTY Flat-Path cell alongside `\|…`
+    suffix rows) and §DV_PARSABLE (the same shape in its example) +
+    master06-context_information.adoc §"Workflow ID", §Participation, §link,
+    §health_care_facility (the compound `ctx` keys) — the silences CONFIRMED
+    first-hand.
+  handling: >-
+    Fixed handling on all three; each is lossless against the FLAT forms the
+    specification DOES define, and each is flagged where the choice is ours. (1)
+    THE BARE VALUE USES THE EMPTY-STRING PROPERTY `""`. A leaf whose only datum
+    is the bare value stays a bare scalar in its array element (matching both
+    worked examples); a leaf that carries a bare value AND suffixed parts becomes
+    an object in which the suffixed parts are `"|suffix"` properties per Rule 3
+    and the bare part is the `""` property — the one property name that cannot
+    collide with a suffix (`|`-prefixed) or a child segment (a node id, which
+    master04 §"Node ID Generation Rules" guarantees is non-empty). No openEHR
+    spec governs this key; it is our own design/extension, and it is also the
+    ecosystem's established wire
+    (`crates/openehr-its/src/flat/sim/mod.rs`, `sim::structured::emit_node`).
+    (2) A `ctx` MEMBER TAKES THE SAME THREE SHAPES AS A DATA NODE, one level
+    deep: a scalar (bare single), an object of `"|suffix"` properties (suffixed
+    single), or an array of either (an indexed member) — so `work_flow_id`
+    becomes an object, `participation_name` an array, `link` an array of objects,
+    and the master04 example's four scalars are unchanged. This is a direct
+    transposition of Rules 3 and 5 onto the `ctx` subtree, chosen because it is
+    lossless in both directions against every FLAT `ctx/` form master06 defines;
+    no openEHR spec governs the nesting itself (`sim::structured::parse_ctx`).
+    (3) `|raw` IS LEGAL IN STRUCTURED, as a `"|raw"` property of the leaf's array
+    element. Two released grounds, neither of them an invention: master04
+    §"Field Identifiers" lists "**Raw canonical JSON**: Use of `|raw` attribute
+    to embed openEHR canonical JSON" as component 6 of the field-identifier
+    syntax the sub-specification defines as a whole — the list is introduced as
+    what "The Simplified Formats use", not as what one variant uses —, and
+    Rule 3 already
+    says that an attribute suffix becomes a pipe-prefixed property, which is what
+    `|raw` is. The payload rule is the variant-independent one master04 states:
+    the embedded value MUST carry `_type`, and it is taken verbatim onto the RM
+    leaf (`crates/openehr-its/src/flat/map/mod.rs` — the bypass is applied at the
+    datum level, so both codecs reach it identically). Gated by
+    SF-RAW-structured_embedding (the STRUCTURED `|raw` commit) with
+    SF-RAW-embedding and SF-RAW-missing_type on the FLAT side, and by
+    SF-STRUCT-style_rules / SF-STRUCTURED-commit_roundtrip for the `ctx` and
+    bare-value shapes. Reported upstream (UPR-119): give the STRUCTURED variant
+    a stated property name for the bare value, a worked `ctx` example covering
+    the suffixed and indexed master06 members, and one sentence saying whether
+    `|raw` applies in STRUCTURED.
+  disposition: fixed_handling
+  upstream_ref: "UPR-119"
+
+AMB-156:
+  ambiguity: >-
+    The field-identifier grammar leaves two of its own dimensions unassigned.
+    (1) THE INSTANCE INDEX HAS NO UPPER BOUND. master04 §"Instance Indexing"
+    defines `:i` as a zero-based index appended to a node id "When a node can
+    occur multiple times (max > 1 or max = -1)" and stops: no maximum, no
+    statement about what a receiver does with an index far beyond the occurrences
+    actually present, and no rule about sparse or out-of-order indices. Since a
+    single short key can name an arbitrarily large index, an implementation that
+    materialises occurrences positionally has an unbounded allocation in its
+    parser with nothing in the specification to bound it. (2) POLYMORPHIC CHOICE
+    ALTERNATIVES HAVE NO NAMES. §"Node ID Generation Rules" derives a node id
+    from an archetype node NAME; where a template constrains one ELEMENT's
+    `value` to several alternative DV_ types (the RM's `ELEMENT.value: DATA_VALUE`
+    slot narrowed to a choice), the alternatives share one ELEMENT and therefore
+    one name, so the algorithm's step 7 ("Append a numeric suffix if needed to
+    ensure uniqueness among siblings") is the only thing standing between them —
+    and it says nothing about which alternative gets which suffix, nor in what
+    order the alternatives are enumerated. Two implementations following the
+    seven steps literally can assign the same client's data to different
+    alternatives, and the specification names no discriminator (the `|other`
+    suffix of §"Open Value-Sets" covers only the DV_CODED_TEXT/DV_TEXT case).
+  source: >-
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §"Instance
+    Indexing" (the whole section: the `:i` grammar, "The index is appended after
+    the node ID and before the next path separator", and the two indexing
+    examples — no bound, no sparse/ordering rule) + §"Node ID Generation Rules"
+    (the seven steps, step 7 being "__Uniqueness__: Append a numeric suffix if
+    needed to ensure uniqueness among siblings"; the examples table's
+    `blood_pressure` / `blood_pressure_1` duplicate pair is the only worked
+    instance of step 7, and it is a duplicate NAME case, not a choice case) +
+    §"Field Identifiers" (the six components of an identifier; nothing on
+    polymorphic alternatives) + §"Open Value-Sets and the `|other` Suffix" (the
+    one discriminator the chapter does define, scoped to a DV_CODED_TEXT leaf
+    with `listOpen: true`) + master05-rm_mapping.adoc (43 class sections, none of
+    which is a choice/alternative mapping) + RM data_structures §ELEMENT
+    (`value: DATA_VALUE 0..1` — the polymorphic slot a template narrows) — the
+    silences CONFIRMED first-hand.
+  handling: >-
+    Fixed handling on both; both choices are ours where the text is silent and
+    are flagged as such at their definitions. (1) THE PARSER BOUNDS `:i` AT
+    65,535 and rejects anything larger as a malformed path
+    (`crates/openehr-its/src/flat/path.rs`, `MAX_INSTANCE_INDEX`). No openEHR
+    spec governs this — it is our own resource-safety bound, chosen so that the
+    limit sits orders of magnitude above any clinically plausible repetition
+    while making an unbounded allocation from one short key impossible; a
+    rejection is a typed malformed-path error, never a truncation or a silent
+    reindex, so nothing is accepted and quietly altered. Sparse and out-of-order
+    indices ARE accepted below the bound and preserved: an interior hole stays an
+    empty occurrence so FLAT⇄STRUCTURED round-trips keep their numbering
+    (AMB-153). (2) CHOICE ALTERNATIVES ARE NAMED FROM THEIR RM TYPE, with a
+    positional `value`/`value2`/`value3` alias — again our own design/extension
+    (`crates/openehr-its/src/flat/webtemplate/id.rs`). The alternative's own
+    identifier is derived from its DV type name through the same seven steps, so
+    it is stable, self-describing and independent of enumeration order, which is
+    what the specification's silence actually costs a client; the positional
+    alias exists only so that a producer written against the ordering convention
+    still resolves. Both forms are accepted on input and the type-derived form is
+    what a generated Web Template advertises, so a client that reads the Web
+    Template — which master02 §"Relationship to Other Specifications" makes the
+    source of field identifiers — never has to guess. Gated by
+    SF-NODEID-generation_rules and SF-NODEID-web_template_ids (the node-id
+    algorithm and the advertised ids) and by SF-INDEX-semantics /
+    SF-INDEX-multi_event_commit (the index grammar). Reported upstream (UPR-120):
+    state an instance-index bound (or say explicitly that there is none and what
+    a receiver must do), define the sparse/out-of-order case, and give
+    polymorphic choice alternatives a named, order-independent identifier rule.
+  disposition: fixed_handling
+  upstream_ref: "UPR-120"

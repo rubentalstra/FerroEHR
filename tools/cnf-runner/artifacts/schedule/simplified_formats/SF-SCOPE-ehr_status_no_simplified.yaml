@@ -1,13 +1,19 @@
 # The simplified formats define mappings for COMPOSITION content only —
 # EHR_STATUS has no simplified representation, so requesting one is an
 # unfulfillable Accept (406). Re-adjudicated 2026-07-21 from the retired ECC
-# simplified-formats battery against the STABLE Simplified Formats spec.
+# simplified-formats battery against the STABLE Simplified Formats spec; the
+# silence itself is adjudicated in register AMB-152 (the released
+# contribution_create prose promises FLAT/STRUCTURED for an embedded
+# EHR_STATUS while master05 defines no EHR_STATUS mapping and field
+# identifiers are OPT-derived, which an EHR_STATUS has no OPT to derive from;
+# the same entry carries ehr_create's receive-but-not-return asymmetry).
 id: SF-SCOPE-ehr_status_no_simplified
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_STATUS.get_ehr_status
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]
+ambiguities: [AMB-152]
 test_purpose: >-
   Requesting an EHR_STATUS in a simplified format is refused: no simplified
   mapping exists for non-COMPOSITION resources.
