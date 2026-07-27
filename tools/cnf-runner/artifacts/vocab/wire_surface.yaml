@@ -287,47 +287,14 @@ branches:
     outcome: missing_template_id
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the missing_template_id branch of I_EHR_COMPOSITION.create_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.delete_composition
-    outcome: already_deleted
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the already_deleted branch of I_EHR_COMPOSITION.delete_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.delete_composition
-    outcome: conflict
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the conflict branch of I_EHR_COMPOSITION.delete_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.get_composition_at_time
-    outcome: ok_empty
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_at_time is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.get_composition_at_version
-    outcome: ok_empty
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_at_version is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.get_composition_latest
-    outcome: ok_empty
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_latest is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.get_versioned_composition
-    variant: version
-    outcome: not_found
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_COMPOSITION.get_versioned_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
-  - binding: I_EHR_COMPOSITION.update_composition
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
   - binding: I_EHR_COMPOSITION.update_composition
     outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_COMPOSITION.update_composition-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
   - binding: I_EHR_COMPOSITION.update_composition
     outcome: version_not_found
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_COMPOSITION.update_composition
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
   - binding: I_EHR_CONTRIBUTION.commit_contribution
     outcome: not_found
     reason: coverage_gap
@@ -794,6 +761,9 @@ elements:
       # The UPDATE half of the preference: 200 (never 204) and the identifier
       # of the version the update created.
       - I_EHR_STATUS.set_ehr_queryable-return_identifier
+      # The docs text's own worked example of the preference is a COMPOSITION
+      # PUT (§Prefer only identifier), exercised here.
+      - I_EHR_COMPOSITION.update_composition-return_identifier
   - id: header-preference-applied
     description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
@@ -809,6 +779,11 @@ elements:
       # `preceding_version_uid` is not part of the endpoint path segment").
       - I_EHR_STATUS.set_ehr_queryable-stale_if_match
       - I_EHR_STATUS.set_ehr_queryable-missing_if_match
+      # The same two halves on the COMPOSITION PUT — the other operation the
+      # scope sentence covers (its path carries the version CONTAINER id, not
+      # the preceding VERSION uid).
+      - I_EHR_COMPOSITION.update_composition-stale_if_match
+      - I_EHR_COMPOSITION.update_composition-missing_if_match
   - id: header-if-match-weak-form
     description: "If-Match supplied in the weak entity-tag form W/\"<uid>\" — the shape the server itself emits as the ETag — is decoded and evaluated as a precondition: a current value passes the write, a stale value is 412 (never a malformed-syntax rejection)."
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (the ETag \"is considered to be of weak-type and should have a weakness indicator W/ prefix\") + §Deprecated headers (\"all ETag headers that hold a resource identifier MUST include a weakness indicator W/\") + §If-Match and accidental overwrites (412 only when \"the condition evaluates to false\")"
@@ -863,6 +838,9 @@ elements:
       - I_EHR_DIRECTORY.delete_directory-ehr_with_directory
       - I_EHR_STATUS.get_versioned_ehr_status-container_shape
       - I_EHR_STATUS.get_ehr_status_at_version-addressed_version
+      - I_EHR_COMPOSITION.get_versioned_composition-container_shape
+      - I_EHR_COMPOSITION.get_versioned_composition-at_time_omitted
+      - I_EHR_COMPOSITION.delete_composition-etag_names_new_version
       - I_EHR_CONTRIBUTION.get_contribution-existing
       - I_DEMOGRAPHIC_SERVICE.get_party-aaaa
       - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
@@ -882,6 +860,9 @@ elements:
       # half of the SHOULD, named outright by the sentence.
       - I_EHR_STATUS.get_versioned_ehr_status-container_shape
       - I_EHR_STATUS.get_ehr_status_at_version-addressed_version
+      # The VERSIONED_COMPOSITION container — the same half of the SHOULD on
+      # the version container that is addressed by uid.
+      - I_EHR_COMPOSITION.get_versioned_composition-container_shape
   # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
   - id: negotiation-canonical-json
     description: "Canonical-JSON representation negotiated and returned (the default representation)."

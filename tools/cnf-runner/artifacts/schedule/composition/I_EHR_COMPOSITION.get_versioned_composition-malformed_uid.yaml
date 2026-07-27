@@ -1,0 +1,51 @@
+# A versioned_object_uid path segment that is not an identifier at all: the
+# request is refused for its SHAPE, before any lookup.
+#
+# SPEC SILENCE, adjudicated as AMB-76 (fixed_handling): the released glossary
+# types `versioned_object_uid` as a HIER_OBJECT_ID (ITS-REST overview
+# Glossary_and_conventions.md), BASE base_types master05 gives UID "three
+# subtypes [with] mutually exclusive string patterns" but no rejecting lexical
+# invariant, and no per-operation branch is assigned to a malformed segment.
+# The register's repo-wide handling: an identifier segment that parses as none
+# of this repository's minted identifier forms is a syntactically invalid
+# parameter, which ITS-REST overview Requests_and_responses.md §HTTP status
+# codes places in the 400 row — "The service cannot or will not process the
+# request due to something that is perceived to be a client error (e.g.,
+# malformed request syntax, syntactically invalid content)" — while
+# well-formed-but-unknown identifiers keep the 404 the sibling
+# non_existent case pins.
+#
+# The two cases are deliberately adjacent: same route, same EHR, one garbage
+# token and one well-formed miss, so the boundary between 400 and 404 is
+# exercised rather than assumed.
+id: I_EHR_COMPOSITION.get_versioned_composition-malformed_uid
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.get_versioned_composition
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+ambiguities: [AMB-76]
+test_purpose: >-
+  A versioned-COMPOSITION container read whose versioned_object_uid is not a
+  well-formed identifier is rejected as a client error rather than answered as
+  a miss.
+description: "Get VERSIONED_COMPOSITION with a malformed versioned_object_uid"
+spec_refs:
+  - "ITS-REST overview Glossary_and_conventions (versioned_object_uid as HIER_OBJECT_ID)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "BASE base_types §identification (mutually exclusive UID string patterns)"
+  - "SM openehr_platform §I_EHR_COMPOSITION.get_versioned_composition"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes (the 400 row) covers 'syntactically invalid content' generally but assigns no branch to a malformed identifier segment, and BASE base_types master05 §Identification carries no rejecting lexical invariant; a server answering 404 for a garbage token breaches no quoted rule"
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+flow:
+  - step: 1
+    call: get_versioned_composition
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "not-a-uid"
+    expect: validation_failed

@@ -2479,9 +2479,7 @@ pub(crate) async fn composition_get(
                                       not a well-formed version-container id, the \
                                       COMPOSITION payload could not be parsed, \
                                       `If-Match` is missing/empty/not a \
-                                      well-formed OBJECT_VERSION_ID, a body \
-                                      `COMPOSITION.uid` names a different \
-                                      versioned object than the path, or a \
+                                      well-formed OBJECT_VERSION_ID, or a \
                                       committal `change_type` names a legal \
                                       audit_change_type code that contradicts an \
                                       update (`Requests_and_responses.md` §\"HTTP \
@@ -2489,7 +2487,11 @@ pub(crate) async fn composition_get(
                                       request syntax, syntactically invalid \
                                       content\"; §\"If-Match and accidental \
                                       overwrites\" for the missing-`If-Match` \
-                                      case).",
+                                      case). A body `COMPOSITION.uid` naming a \
+                                      different versioned object than the path is \
+                                      a semantic 422, not a 400 (no released \
+                                      sentence assigns the rejection — our \
+                                      register-documented handling).",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`; no COMPOSITION with \
                                       `uid_based_id` in this EHR; or the \
@@ -2556,7 +2558,13 @@ pub(crate) async fn composition_get(
                                       failed, a committal `lifecycle_state` is not \
                                       a member of its openEHR terminology group, a \
                                       Simplified-Format body arrived without the \
-                                      `openehr-template-id` header, or the body \
+                                      `openehr-template-id` header, the body's \
+                                      `COMPOSITION.uid` names a different \
+                                      versioned object than the request path (a \
+                                      well-formed body whose contradiction with \
+                                      the URL cannot be followed — no released \
+                                      sentence assigns this rejection; our \
+                                      register-documented handling), or the body \
                                       declares a DIFFERENT `template_id` than the \
                                       stored composition it supersedes \
                                       (`Requests_and_responses.md` §\"HTTP status \

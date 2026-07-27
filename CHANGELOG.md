@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **COMPOSITION update body-uid mismatch is 422, not 400** (#451). A PUT
+  whose body `COMPOSITION.uid` names a different versioned object than the
+  request path is now rejected 422 Unprocessable Entity — the body is
+  well-formed and the contradiction is semantic (ITS-REST *Requests and
+  responses* §HTTP status codes, the 422 row; no released sentence assigns
+  the rejection — register-documented).
+
 - **Versioned-composition version-by-id reads are container-scoped** (#449).
   `GET …/versioned_composition/{versioned_object_uid}/version/{version_uid}`
   previously ignored the container segment and served any version the
