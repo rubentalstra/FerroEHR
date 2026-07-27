@@ -727,3 +727,64 @@ async fn composition_version_serves_xml_with_signature() {
     assert!(body.contains("<signature"), "signature element: {body}");
     assert!(body.contains("sha256:"), "digest signature value: {body}");
 }
+
+/// The versioned-composition by-id read is container-scoped: a well-formed,
+/// EXISTING `version_uid` whose `object_id` names a DIFFERENT container than
+/// the path's `{versioned_object_uid}` names no version of that resource -> `404` (ITS-REST overview `Resources.md` §Identifier types: "the `object_id`
+/// matches the `VERSIONED_OBJECT` identifier"; RM common `version.adoc`
+/// invariant `Owner_id_valid`). The coherent pair still serves 200.
+#[tokio::test]
+async fn versioned_composition_version_by_id_is_container_scoped() {
+    let (_pg, app) = app().await;
+    // Two independent compositions in the same EHR: the second create gives a
+    // second container in the same EHR (the IPS OPT is event-category, so a
+    // second create is allowed).
+    let (ehr_id, v_a) = commit_ips_composition(&app).await;
+    let (status, h, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(canonical_composition().to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "second commit: {body}");
+    let v_b = etag_uid(&h);
+    let container_a = vo_of(&v_a).to_owned();
+    let container_b = vo_of(&v_b).to_owned();
+    assert_ne!(container_a, container_b, "two distinct version containers");
+
+    // Incoherent pair: container A's URL, container B's version → 404.
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{container_a}/version/{v_b}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "a foreign container's version is not a version of this resource"
+    );
+
+    // Coherent pair unchanged.
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{container_a}/version/{v_a}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "coherent read: {body}");
+}

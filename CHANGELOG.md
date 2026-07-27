@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Versioned-composition version-by-id reads are container-scoped** (#449).
+  `GET …/versioned_composition/{versioned_object_uid}/version/{version_uid}`
+  previously ignored the container segment and served any version the
+  `version_uid` named; a `version_uid` whose `object_id` does not match the
+  path's container now answers 404 (ITS-REST overview *Resources*
+  §Identifier types; RM `Owner_id_valid`).
+
 ### Added
 
 - **Served OpenAPI: complete documentation for the seven EHR_STATUS and

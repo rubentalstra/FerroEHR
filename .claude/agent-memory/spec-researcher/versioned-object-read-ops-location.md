@@ -1,6 +1,6 @@
 ---
 name: versioned-object-read-ops-location
-description: Where the VERSIONED_* read-op requirements live (ITS-REST ops/responses/schemas, RM VERSIONED_OBJECT/REVISION_HISTORY/VERSION class tables, SM I_EHR_STATUS) + the REVISION_HISTORY ordering defect and the wrapped-vs-bare-array body question
+description: Where the VERSIONED_* read-op requirements live (ITS-REST ops/responses/schemas, RM VERSIONED_OBJECT/REVISION_HISTORY/VERSION class tables, SM I_EHR_STATUS + I_EHR_COMPOSITION) + the REVISION_HISTORY ordering defect, the wrapped-vs-bare-array body question, and the versioned_composition delta (path-param container uid, logical deletion / missing 204 branch, OAS `data` required conflict)
 metadata:
   type: reference
 ---
@@ -80,6 +80,42 @@ Applies to all four read shapes: `GET .../versioned_X`, `.../revision_history`,
   parameter its precondition uses; `get_versioned_ehr_status` carries a
   spurious `Pre_has_ehr_status_version` referencing an absent `a_version_uid`;
   `a_version_uid` is typed `UUID` though the wire id is an OBJECT_VERSION_ID.
+
+## COMPOSITION-specific delta (vs the EHR_STATUS shape)
+- Container uid is a **PATH param** here:
+  `parameters/path/versioned_object_uid_COMPOSITION.yaml` (`format: uuid`) +
+  `parameters/path/version_uid_COMPOSITION.yaml` (plain string). The three
+  404 response files are `404_unknown_ehr_id_or_versioned_object_uid[_or_no_version_at_time|_or_version_uid].yaml`.
+  Ops declare ONLY 200 + 404 — no 400, no 204.
+- RM class: `RM/docs/UML/classes/org.openehr.rm.ehr.versioned_composition.adoc`
+  — adds NO attributes, adds `is_persistent()` (function) + 2 invariants
+  (`Archetype_node_id_valid`, `Persistent_validity`) that quantify over
+  `all_versions` (never wire fields).
+- Logical deletion: RM `common/master06-change_control_package.adoc`
+  §Logical Deletion + §Version Lifecycle (523|deleted|, TERM
+  `SupportTerminology/codesets/openehr_terminology-vocabularies.adoc`
+  L41 audit-change-type 523 / L192 lifecycle-state 523).
+  **The sibling `composition_get` op HAS a `204` branch
+  (`responses/204_deleted_at_time.yaml`); the four versioned_composition
+  ops have NONE** — the deleted-version read behaviour is a spec silence.
+- **OAS-vs-RM/ITS-JSON conflict:** `schemas/ehr/Version.yaml` (and
+  `VersionOfComposition.yaml`) put `data` in `required`, but RM
+  `original_version.adoc` types `data` 0..1 and ITS-JSON
+  `ORIGINAL_VERSION.json` required = contribution/commit_audit/uid/
+  lifecycle_state (no data) → a logically-deleted ORIGINAL_VERSION is
+  unrepresentable in the OAS schema only.
+- SM: `SM/docs/UML/classes/i_ehr_composition.adoc` (included by
+  `openehr_platform/master05-ehr_service.adoc`). Only `get_versioned_composition`
+  maps 1:1; the version-envelope routes have no SM counterpart (the at_time/
+  at_version functions return bare COMPOSITION = the `/composition/...` routes).
+- `ITS-REST .../docs/overview/Resources.md` §Multiple identifiers is about the
+  **`/composition/{uid_based_id}`** route, not the versioned_composition routes;
+  its explicit-version example URL has a typo (`...example.com:5`, single colon).
+- CNF: schedule `master07-func_tc_ehr_composition.adoc` §Get VERSIONED
+  COMPOSITION = 3 cases for the container read only (none for
+  revision_history / version-at-time / version-by-id); its `Test runners`
+  links name robot files that do NOT exist (the vendored dir has
+  `I_EHR_COMPOSITION/get_versioned_composition/C.6__A–D*.robot`).
 
 ## CNF
 - Schedule `CNF/docs/platform_test_schedule/master06-func_tc_ehr.adoc`
