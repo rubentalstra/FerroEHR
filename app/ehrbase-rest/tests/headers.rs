@@ -1036,3 +1036,86 @@ async fn ehr_status_update_identifier_is_never_204() {
         "overview §\"Prefer only identifier\": a single JSON object with a single uid attribute"
     );
 }
+
+/// The CONTRIBUTION GET carries the contribution-uid weak `ETag` (the same
+/// identity the 201's `ETag` carries) and a `Last-Modified` equal to the
+/// contribution audit's commit instant — overview §"`ETag` and Last-Modified"
+/// (both SHOULD accompany resources with "versioning or unique state
+/// identifiers"); the released `200_CONTRIBUTION` declares neither, so the
+/// reach of the SHOULD is the register-documented reading.
+#[tokio::test]
+async fn contribution_get_carries_etag_and_last_modified() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    let (mut status_body, v1) = current_ehr_status(&app, &ehr_id).await;
+    status_body.as_object_mut().unwrap().remove("uid");
+
+    let committer = serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "test" });
+    let contribution = serde_json::json!({
+        "versions": [{
+            "data": status_body,
+            "preceding_version_uid": { "_type": "OBJECT_VERSION_ID", "value": v1 },
+            "lifecycle_state": {
+                "_type": "DV_CODED_TEXT", "value": "complete",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "532" }
+            },
+            "commit_audit": {
+                "change_type": {
+                    "_type": "DV_CODED_TEXT", "value": "modification",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "251" }
+                },
+                "committer": committer
+            }
+        }],
+        "audit": {
+            "change_type": {
+                "_type": "DV_CODED_TEXT", "value": "modification",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "251" }
+            },
+            "committer": committer
+        }
+    });
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/contribution"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(contribution.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "commit: {body}");
+    let contribution_uid = etag_uid(&h);
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/ehr/{ehr_id}/contribution/{contribution_uid}"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "get: {body}");
+    assert_eq!(
+        etag(&h),
+        Some(format!("W/\"{contribution_uid}\"").as_str()),
+        "the GET's ETag is the contribution uid, weak form"
+    );
+    let v: Value = serde_json::from_str(&body).expect("json CONTRIBUTION");
+    assert_eq!(
+        last_modified(&h),
+        Some(
+            imf_fixdate(
+                v["audit"]["time_committed"]["value"]
+                    .as_str()
+                    .expect("instant")
+            )
+            .as_str()
+        ),
+        "Last-Modified is the contribution audit's commit instant"
+    );
+}

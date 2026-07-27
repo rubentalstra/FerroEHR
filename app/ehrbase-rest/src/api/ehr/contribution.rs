@@ -134,18 +134,41 @@ pub(super) async fn run(
             } else {
                 state.backend().get_contribution(ehr_id, cid).await?
             };
+            // Weak ETag (the contribution uid — the same identity the 201's
+            // ETag carries) + Last-Modified from `audit.time_committed`
+            // (overview §"ETag and Last-Modified": both SHOULD accompany
+            // resources with "versioning or unique state identifiers"; the
+            // released 200_CONTRIBUTION declares neither — our
+            // register-documented reading of the SHOULD's reach).
+            let meta = {
+                let mut m = ehrbase::service::response::ResourceMeta::new(
+                    p.ehr_id.clone(),
+                    cid.to_string(),
+                );
+                if let Some(at) = body["audit"]["time_committed"]["value"]
+                    .as_str()
+                    .and_then(|raw| raw.parse::<jiff::Timestamp>().ok())
+                {
+                    m = m.with_last_modified(at);
+                }
+                m
+            };
             // The envelope stays canonical JSON; a Simplified `Accept`
             // serializes each present `versions[i].data` COMPOSITION into the
             // requested inner form (`contribution_get.yaml` §Simplified Formats).
             // A non-COMPOSITION inner payload → 406; canonical JSON (or an
             // unfulfillable Accept, e.g. XML) is answered by `respond`.
-            match negotiate::resolve_accept(h, CONTRIBUTION_FORMATS, WireFormat::CanonicalJson) {
-                Some(fmt @ (WireFormat::Flat | WireFormat::Structured)) => {
-                    crate::formats::dispatch::contribution_to_simplified(&state, ok, &body, fmt)
-                        .await
-                }
-                _ => Ok(negotiate::respond(h, ok, &body)),
-            }
+            let mut out =
+                match negotiate::resolve_accept(h, CONTRIBUTION_FORMATS, WireFormat::CanonicalJson)
+                {
+                    Some(fmt @ (WireFormat::Flat | WireFormat::Structured)) => {
+                        crate::formats::dispatch::contribution_to_simplified(&state, ok, &body, fmt)
+                            .await?
+                    }
+                    _ => negotiate::respond(h, ok, &body),
+                };
+            negotiate::set_versioning_headers(&mut out, &meta);
+            Ok(out)
         }
         "contribution_list" => {
             // OUR OWN EXTENSION — the ITS-REST contract defines only the by-uid
