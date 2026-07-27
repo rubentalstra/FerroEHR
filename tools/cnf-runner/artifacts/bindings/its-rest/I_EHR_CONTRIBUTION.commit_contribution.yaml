@@ -54,18 +54,13 @@ outcomes:
     # §"If-Match and accidental overwrites" scopes its 412 to the `If-Match`
     # header, which this route does not carry at all: the precondition travels
     # inside the member body (`preceding_version_uid`). Register AMB-54(b)
-    # carries the adjudicated fixed handling — 412 with the current-latest weak
-    # ETag, the same shape the direct routes' precondition family answers, the
-    # ETag half mirroring the same section's "SHOULD return also latest
-    # `version_uid` in the `ETag` response headers".
+    # carries the adjudicated fixed handling — 412, with the response BEYOND
+    # the status unconstrained: the §If-Match ETag SHOULD is conditioned on
+    # the service RECEIVING If-Match ("If a service receives this header …"),
+    # which this operation has no parameter for, and CONTRIBUTION.versions is
+    # a list over "any number of versionable items" (RM contribution.adoc), so
+    # no single latest version_uid exists for an ETag to name.
     status: 412
-    headers:
-      # The entity tag names the CURRENT latest version of the addressed
-      # container. The `<name>` placeholder resolves from the case's own
-      # `latest_version_uid` capture; a case that captured none wildcards it and
-      # the matcher then asserts the weak-tag SHAPE alone (the
-      # §Deprecated-headers `W/` MUST).
-      ETag: 'pattern:W/"<latest_version_uid>"'
     body: error_loose
 captures:
   contribution_uid:

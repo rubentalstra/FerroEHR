@@ -10,16 +10,12 @@
 # on the server") and §"If-Match and accidental overwrites" scopes its 412 to
 # that header, while the contribution's precondition travels inside
 # `UpdateVersion.preceding_version_uid`. No released sentence assigns the
-# branch. The register's fixed handling is the 412 the direct routes answer for
-# the identical semantic failure, carrying the current-latest version uid in
-# the weak `ETag` — mirroring the same section's "SHOULD return also latest
-# `version_uid` in the `ETag` response headers".
-#
-# WHY the version identity in the tag is assertable here: step 2 commits the
-# second version and its uid is captured as `latest_version_uid`, which the
-# binding's ETag pattern resolves. Step 3 then names the SUPERSEDED first
-# version — so a server echoing the request's own stale uid, or omitting the
-# header, is a red row rather than a silent pass.
+# branch. The register's fixed handling is the 412 alone — the response
+# BEYOND the status is unconstrained: the §If-Match ETag SHOULD is
+# conditioned on the service RECEIVING If-Match, which this operation has no
+# parameter for, and CONTRIBUTION.versions spans "any number of versionable
+# items" (RM contribution.adoc), so no single latest version_uid exists for
+# an ETag to name on a multi-member commit.
 #
 # Contrast kept honest by the siblings: a CREATION member that names a
 # preceding version is 422, not 412 (-creation_with_preceding_version), and a
@@ -35,8 +31,7 @@ profiles: [CORE]
 ambiguities: [AMB-54]
 test_purpose: >-
   A CONTRIBUTION member whose preceding_version_uid names a superseded version
-  fails its precondition, the response names the container's current latest
-  version, and nothing is committed.
+  fails its precondition and nothing is committed.
 description: "Commit CONTRIBUTION with a stale preceding_version_uid"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
@@ -76,7 +71,7 @@ flow:
         - data: "${ds:cnf.composition.minimal_event.v2}"
           change_type: modification
           preceding_version_uid: "${stale_version_uid}"
-    expect: precondition_failed          # ETag = W/"${latest_version_uid}" (asserted by the binding)
+    expect: precondition_failed          # 412 alone — the response beyond the status is unconstrained (AMB-54)
 postconditions:
   - assert: state
     text: >-
