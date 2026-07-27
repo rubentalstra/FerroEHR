@@ -5305,7 +5305,7 @@ pub(crate) async fn role_delete(
 /// Retrieve the `VERSIONED_PARTY` container
 /// (`GET /demographic/versioned_party/{versioned_object_uid}`).
 ///
-/// "Retrieves a VERSIONED_PARTY identified by `versioned_object_uid`."
+/// "Retrieves a `VERSIONED_PARTY` identified by `versioned_object_uid`."
 /// (ITS-REST `specifications/operations/versioned_party_get.yaml`). The four
 /// `versioned_party_*` reads are canonical-JSON-only on this server: the
 /// released operations reference `parameters/header/Accept_canonical.yaml`
@@ -5424,7 +5424,7 @@ pub(crate) async fn versioned_party_get(
 /// Retrieve the party's `REVISION_HISTORY`
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/revision_history`).
 ///
-/// "Retrieves revision history of the VERSIONED_PARTY identified by
+/// "Retrieves revision history of the `VERSIONED_PARTY` identified by
 /// `versioned_object_uid`." (ITS-REST
 /// `specifications/operations/versioned_party_revision_history.yaml`).
 #[utoipa::path(
@@ -5521,7 +5521,7 @@ pub(crate) async fn versioned_party_revision_history(
 /// Retrieve the party VERSION at a point in time
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version`).
 ///
-/// "Retrieves a VERSION from the VERSIONED_PARTY identified by
+/// "Retrieves a VERSION from the `VERSIONED_PARTY` identified by
 /// `versioned_object_uid`." … "If `version_at_time` is supplied, retrieves the
 /// VERSION extant _at specified time_, otherwise retrieves the _latest_
 /// VERSION." (ITS-REST
@@ -5624,7 +5624,7 @@ pub(crate) async fn versioned_party_version_get_at_time(
 /// Retrieve a specific party VERSION by version uid
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`).
 ///
-/// "Retrieves a VERSION identified by `version_uid` of a VERSIONED_PARTY
+/// "Retrieves a VERSION identified by `version_uid` of a `VERSIONED_PARTY`
 /// identified by `versioned_object_uid`." (ITS-REST
 /// `specifications/operations/versioned_party_version_get_by_id.yaml`).
 #[utoipa::path(

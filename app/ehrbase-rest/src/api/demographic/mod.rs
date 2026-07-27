@@ -218,31 +218,36 @@ fn read_versioned(h: &HeaderMap, versioned_object_uid: &str, body: &serde_json::
 /// are rendered through [`crate::overview::params::emit_item_tag_header`]
 /// (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
 ///
-/// Demographic `ITEM_TAGs` are stored against the `VERSIONED_OBJECT`
-/// (`item_tag.target_vo_id`, no version anchor), so the full set is emitted for
-/// both headers: `openehr-item-tag` (all tags on the `VERSIONED_OBJECT`) and
-/// `openehr-version-item-tag` (all tags on the current VERSION) coincide here.
+/// Each header carries its OWN target's collection (overview §"openehr-item-tag
+/// and openehr-version-item-tag": `openehr-item-tag` applies to the
+/// `VERSIONED_OBJECT`, `openehr-version-item-tag` to a specific VERSION within
+/// it) — the container's set from [`ResourceMeta::item_tags`], the served
+/// VERSION's own set from [`ResourceMeta::version_item_tags`]; the two are
+/// never merged.
 fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
     let Some(meta) = resp.meta.as_ref() else {
         return;
     };
-    let Some(serde_json::Value::Array(tags)) = meta.item_tags.as_ref() else {
-        return;
-    };
-    let entries: Vec<ItemTagHeaderEntry> = tags
-        .iter()
-        .filter_map(crate::overview::params::item_tag_to_header_entry)
-        .collect();
-    if entries.is_empty() {
-        return;
+    for (name, tags) in [
+        (crate::overview::params::H_ITEM_TAG, meta.item_tags.as_ref()),
+        (
+            crate::overview::params::H_VERSION_ITEM_TAG,
+            meta.version_item_tags.as_ref(),
+        ),
+    ] {
+        let Some(serde_json::Value::Array(tags)) = tags else {
+            continue;
+        };
+        let entries: Vec<ItemTagHeaderEntry> = tags
+            .iter()
+            .filter_map(crate::overview::params::item_tag_to_header_entry)
+            .collect();
+        if entries.is_empty() {
+            continue;
+        }
+        let value = crate::overview::params::emit_item_tag_header(&entries);
+        resp_out.headers_mut().insert(name, value);
     }
-    let value = crate::overview::params::emit_item_tag_header(&entries);
-    resp_out
-        .headers_mut()
-        .insert(crate::overview::params::H_ITEM_TAG, value.clone());
-    resp_out
-        .headers_mut()
-        .insert(crate::overview::params::H_VERSION_ITEM_TAG, value);
 }
 
 /// Render an error, additionally echoing the latest version in the `ETag` the

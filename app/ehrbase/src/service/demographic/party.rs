@@ -90,23 +90,6 @@ impl EhrbaseService {
             .ok_or_else(miss)
     }
 
-    /// Confirm a live party of the expected kind exists (not deleted) — the
-    /// SM `has_party` precondition (`i_party.adoc`).
-    pub(super) async fn ensure_party(
-        &self,
-        kind: PartyKind,
-        vo_id: VoId,
-    ) -> Result<(), ServiceError> {
-        let read = self.load_party_version(kind, vo_id, None, None).await?;
-        if read.deleted() {
-            return Err(ServiceError::sm(
-                CallStatusType::VersionedObjectDoesNotExist,
-                format!("{} {vo_id} is deleted", kind.rm_type()),
-            ));
-        }
-        Ok(())
-    }
-
     /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
     /// `I_PARTY` calls (which address parties by versioned-object id only). A
     /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`

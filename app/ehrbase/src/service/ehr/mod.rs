@@ -49,7 +49,7 @@ mod directory;
 pub(in crate::service) mod meta;
 pub(in crate::service) mod service;
 mod status;
-mod tags;
+pub(in crate::service) mod tags;
 mod uri;
 pub(crate) mod validation;
 
