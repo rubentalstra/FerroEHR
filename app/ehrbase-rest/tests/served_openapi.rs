@@ -178,13 +178,11 @@ async fn every_operation_documents_an_error_outcome() {
         "/health",
         "/health/liveness",
         "/ehrbase/rest/status",
-        // List endpoints whose OAS contract is 200-only (an unmatched
-        // filter/prefix yields an empty list, never an error):
-        // definition_query_list.yaml / definition_template_adl*_list.yaml.
+        // Stored-query list endpoints whose released contract is 200-only (an
+        // unmatched name prefix yields an empty list, never an error):
+        // definition_query_list.yaml.
         "/ehrbase/rest/openehr/v1/definition/query",
         "/ehrbase/rest/openehr/v1/definition/query/{qualified_query_name}",
-        "/ehrbase/rest/openehr/v1/definition/template/adl1.4",
-        "/ehrbase/rest/openehr/v1/definition/template/adl2",
     ];
     let doc = served_document().await;
     let mut findings = Vec::new();
