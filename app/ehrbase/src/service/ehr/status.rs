@@ -733,8 +733,10 @@ impl EhrbaseService {
         Ok(self.replace_ehr_status_meta(an_ehr_id, a_status).await?.uid)
     }
 
-    /// SM `I_EHR_STATUS.get_revision_history` — the `REVISION_HISTORY` of the
-    /// EHR's `EHR_STATUS`.
+    /// The `REVISION_HISTORY` of the EHR's `EHR_STATUS`. SM defines no
+    /// revision-history operation (the abstract counterpart is RM common
+    /// `versioned_object.adoc` `revision_history()`); the wire is the
+    /// ITS-REST revision_history route.
     ///
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or

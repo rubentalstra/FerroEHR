@@ -554,3 +554,81 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** extend the Resources.md §Identifier types note (or the RM
   master03 section) to state the wire expectation for ALL top-level types,
   with an RFC keyword.
+
+### UPR-30 — RM REVISION_HISTORY class table contradicts itself on item ordering
+
+- **Component:** RM common (revision_history)
+- **Register:** AMB-68 (fixed_handling)
+- **Facts:** `org.openehr.rm.common.revision_history.adoc` Purpose: "The list
+  is in most-recent-first order"; the `items` attribute Meaning: "in
+  most-recent-last order"; both `most_recent_version` and
+  `most_recent_version_time_committed` postconditions read `items.last`.
+- **Problem:** the Purpose sentence and the attribute Meaning cannot both
+  hold; implementations picking by the Purpose sentence serve the reverse
+  order.
+- **Ask:** correct the Purpose sentence to most-recent-last (the order the
+  postconditions require).
+
+### UPR-31 — VERSIONED_OBJECT.owner_id wire values are unstated
+
+- **Components:** RM common (versioned_object), BASE (object_ref), ITS-REST
+- **Register:** AMB-69 (fixed_handling)
+- **Facts:** `owner_id` is OBJECT_REF 1..1 ("the id of the containing EHR or
+  other relevant owning entity"); BASE bounds `namespace` lexically; no
+  released sentence assigns `namespace`/`type` values for a served
+  VERSIONED_* container, while the reverse edge (EHR.ehr_status.type =
+  "VERSIONED_EHR_STATUS") IS an RM invariant.
+- **Problem:** clients cannot rely on the served `owner_id` shape, and
+  conformance instruments cannot test it beyond OBJECT_REF well-formedness.
+- **Ask:** state the expected `owner_id.namespace`/`type` for EHR-owned
+  version containers (e.g. `local`/`EHR`) in the RM or the ITS-REST docs
+  text.
+
+### UPR-32 — "version extant at time T" has no defined semantics
+
+- **Components:** RM common (versioned_object), SM (i_ehr_status), ITS-REST
+- **Register:** AMB-70 (fixed_handling)
+- **Facts:** RM gives only `version_at_time (a_time)` with
+  `Pre: has_version_at_time`; no released text defines the anchoring
+  instant, interval closure, branch participation, future-time behaviour, or
+  whether the no-parameter "latest" is `latest_version()` or
+  `latest_trunk_version()`.
+- **Problem:** two conformant servers can return different versions for the
+  same `version_at_time` request; the behaviour is untestable beyond
+  self-consistency.
+- **Ask:** define extant-at-time (anchor = commit_audit.time_committed,
+  closure, branch rule, future-time = latest) and name the "latest"
+  function for the parameterless read.
+
+### UPR-33 — §Location and §Prefer disagree on Location for updates
+
+- **Component:** ITS-REST (overview Requests_and_responses.md)
+- **Register:** AMB-71 (fixed_handling)
+- **Facts:** §Location: "The `Location` header MUST ONLY be used for
+  resource creation (e.g., `201 Created`) or redirect responses." §Prefer
+  (return=minimal): the response "SHOULD include a `Location` header
+  pointing to the newly created or updated resource." Updates return
+  200/204, never 201.
+- **Problem:** a server cannot satisfy both sentences on an update
+  response; conformance instruments cannot gate Location on updates either
+  way.
+- **Ask:** reconcile the two sentences (e.g. restate §Location as
+  "creation, change-controlled writes, or redirects").
+
+### UPR-34 — five editorial defects in SM I_EHR_STATUS
+
+- **Component:** SM (i_ehr_status.adoc)
+- **Register:** AMB-72 (editorial)
+- **Facts/Problems:** (1) `get_versioned_ehr_status` carries
+  `Pre_has_ehr_status_version (an_ehr_id, a_version_uid)` — `a_version_uid`
+  is not a parameter; (2) `get_ehr_status_at_time` omits the `an_ehr_id`
+  its precondition uses; (3) version identifiers are typed `UUID` where the
+  value is an OBJECT_VERSION_ID; (4) the at-time/at-version functions
+  return EHR_STATUS while the ITS-REST versioned_ehr_status/version routes
+  serve the VERSION envelope (approximate realization); (5)
+  `clear_ehr_modifiable` says "this ensures it is treated as active",
+  contradicting its own postcondition `not …is_modifiable` (and misspells
+  `_is_modifable_`). SM also defines no revision-history operation, leaving
+  the REST route anchored only by RM `VERSIONED_OBJECT.revision_history()`.
+- **Ask:** correct the preconditions/signatures/typing/wording; consider
+  adding container + revision-history read operations to I_EHR_STATUS.
