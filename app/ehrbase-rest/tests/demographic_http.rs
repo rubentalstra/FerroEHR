@@ -893,3 +893,97 @@ async fn person_create_identifier_returns_the_uid_body() {
         "overview §\"Prefer only identifier\": a single JSON object with a single uid attribute"
     );
 }
+
+// ── group-12 close triage: the two header-echo defects ───────────────────────
+
+/// The stale-version DELETE answers `409` AND echoes the latest `version_uid`
+/// in `ETag` (`responses/409_PERSON_with_uid_based_id.yaml`: "Returns also
+/// latest `version_uid` in the `ETag` header").
+#[tokio::test]
+async fn stale_delete_conflict_echoes_latest_version_etag() {
+    let (_pg, app) = app().await;
+    let v1 = create(&app, "person", &person_body()).await;
+    // Supersede v1 with an update.
+    let put = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/demographic/person/{}", vo_of(&v1)))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("If-Match", format!("\"{v1}\""))
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, put).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "{body}");
+    let v2 = etag_uid(&h);
+    // Delete at the superseded uid → 409 + the latest version's ETag.
+    let del = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/demographic/person/{v1}"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, del).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(
+        etag_uid(&h),
+        v2,
+        "the 409 returns the latest version_uid in ETag \
+         (409_PERSON_with_uid_based_id.yaml)"
+    );
+}
+
+/// The demographic CONTRIBUTION read carries the weak `ETag` (the contribution
+/// uid — the same identity the 201's ETag carries) and `Last-Modified` from
+/// `audit.time_committed`, mirroring the EHR sibling's register-documented
+/// reading of the overview §"ETag and Last-Modified" SHOULD.
+#[tokio::test]
+async fn demographic_contribution_get_carries_etag_and_last_modified() {
+    let (_pg, app) = app().await;
+    let commit = serde_json::json!({
+        "versions": [{
+            "data": person_body(),
+            "lifecycle_state": {
+                "_type": "DV_CODED_TEXT",
+                "value": "complete",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "532" }
+            },
+            "commit_audit": {
+                "change_type": {
+                    "_type": "DV_CODED_TEXT",
+                    "value": "creation",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249" }
+                },
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "committer" }
+            }
+        }],
+        "audit": {
+            "change_type": {
+                "_type": "DV_CODED_TEXT",
+                "value": "creation",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "249" }
+            },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "committer" }
+        }
+    });
+    let post = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/contribution"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(commit.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, post).await;
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    let cid = etag_uid(&h);
+    let (status, h, body) = get_json(&app, format!("{BASE}/demographic/contribution/{cid}")).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(etag_uid(&h), cid, "ETag = the contribution uid");
+    assert!(
+        h.get(header::LAST_MODIFIED).is_some(),
+        "Last-Modified from audit.time_committed"
+    );
+    assert!(location(&h).is_none(), "no Location on a GET");
+}

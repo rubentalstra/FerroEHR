@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Demographic header echoes** (#388). The stale-version party DELETE's
+  `409 Conflict` now returns the latest `version_uid` in `ETag` (the released
+  response requires it); and the demographic CONTRIBUTION read now carries
+  the weak `ETag` (the contribution uid) and `Last-Modified` from the
+  committal instant, matching its EHR sibling.
+
 - **The published API reference now describes the demographic endpoints in
   full** (#505). The 26 person / agent / group / organisation / role,
   versioned-party and demographic-contribution operations in the served
