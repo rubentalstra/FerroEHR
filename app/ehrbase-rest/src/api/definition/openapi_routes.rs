@@ -1704,6 +1704,21 @@ pub(crate) async fn definition_query_list(
                                       validity requirement); an unsupported \
                                       non-AQL `query_type`; or a body that is not \
                                       UTF-8 text.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a payload media type \
+                                      the service cannot process as this \
+                                      operation's `text/plain` AQL body: a \
+                                      payload the service cannot process in the \
+                                      declared format \"MUST respond with HTTP \
+                                      status code `415 Unsupported Media Type`\" \
+                                      (`Resources.md` §format rules — the same \
+                                      cross-cutting MUST that grounds the \
+                                      template-upload guards). An absent \
+                                      `Content-Type` declares nothing to refuse \
+                                      and is accepted. The released operation \
+                                      does not enumerate `415`; the MUST is \
+                                      cross-cutting (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `415` row).",
          body = serde_json::Value)
     )
 )]
@@ -2005,6 +2020,21 @@ pub(crate) async fn definition_query_version_get(
                                       insert is race-safe, so two concurrent \
                                       stores of the same pair yield one `200` and \
                                       one `409`.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a payload media type \
+                                      the service cannot process as this \
+                                      operation's `text/plain` AQL body: a \
+                                      payload the service cannot process in the \
+                                      declared format \"MUST respond with HTTP \
+                                      status code `415 Unsupported Media Type`\" \
+                                      (`Resources.md` §format rules — the same \
+                                      cross-cutting MUST that grounds the \
+                                      template-upload guards). An absent \
+                                      `Content-Type` declares nothing to refuse \
+                                      and is accepted. The released operation \
+                                      does not enumerate `415`; the MUST is \
+                                      cross-cutting (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `415` row).",
          body = serde_json::Value)
     )
 )]
