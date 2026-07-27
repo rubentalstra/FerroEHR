@@ -4550,7 +4550,7 @@ pub(crate) async fn directory_get_by_version_id(
 ///
 /// One CONTRIBUTION is one atomic change-set: `versions[]` MAY mix creations,
 /// modifications, logical deletions and attestations of COMPOSITION /
-/// EHR_STATUS / FOLDER, and either all of them commit or none ("Contributions
+/// `EHR_STATUS` / FOLDER, and either all of them commit or none ("Contributions
 /// are similar to nested transactions. An attempt to commit a Contribution
 /// should only succeed if each Version and/or Attestation in the Contribution
 /// is committed successfully" — RM common master06 §"Committal and Audits";
@@ -4873,12 +4873,6 @@ pub(crate) async fn directory_get_by_version_id(
                 (serde_json::Value = "application/openehr.wt.structured+json")
             )
         ),
-        // TODO: the released `400_CONTRIBUTION` trigger "first version of a
-        // MODIFICATION" currently splits across two codes on this wire — a
-        // member naming a target that does not exist answers 400, while a
-        // member with no `preceding_version_uid` at all answers 422 (the
-        // classify pass in `app/ehrbase/src/versioning/contribution.rs`). Move
-        // the second shape to 400 and fold it back into this description.
         (status = 400, description = "The released trigger, verbatim: `400 Bad \
                                       Request` \"is returned when the request \
                                       could not be parsed or is invalid (e.g. \
@@ -4890,22 +4884,22 @@ pub(crate) async fn directory_get_by_version_id(
                                       version of a MODIFICATION)\" (ITS-REST \
                                       `specifications/responses/400_CONTRIBUTION.yaml`). \
                                       Here that is: `ehr_id` is not a UUID; the \
-                                      envelope is not parseable JSON; a member \
-                                      names a `preceding_version_uid` whose \
+                                      envelope is not parseable JSON; a \
+                                      non-creation change type \
+                                      (`250`/`251`/`252`/`253`/`816`/`817`, or \
+                                      `523`/`666`) on a member with NO \
+                                      `preceding_version_uid` — the released \
+                                      first-version-of-a-MODIFICATION trigger \
+                                      itself; or a member names a \
+                                      `preceding_version_uid` whose \
                                       VERSIONED_OBJECT does not exist (the \
                                       modification matches no stored object — a \
                                       body-referenced target, which is why it \
                                       is not the `404` reserved for the URI's \
-                                      `ehr_id`); a member carries \
-                                      `249|creation|` TOGETHER with a \
-                                      `preceding_version_uid` (creation makes a \
-                                      NEW VERSIONED_OBJECT — RM common master06 \
-                                      §Contributions); or a `666|attestation|` \
-                                      member omits the `preceding_version_uid` \
-                                      that identifies the ORIGINAL_VERSION it \
-                                      attests. A non-creation change type on a \
-                                      member with NO `preceding_version_uid` at \
-                                      all is answered `422`, not `400` — see \
+                                      `ehr_id`). A `249|creation|` member \
+                                      carrying a `preceding_version_uid` is the \
+                                      UNASSIGNED mirror of the directional \
+                                      released trigger and answers `422` — see \
                                       that branch.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id` (the released trigger, \
@@ -5014,18 +5008,21 @@ pub(crate) async fn directory_get_by_version_id(
                                       not a code of the openEHR \
                                       `audit_change_type` group \
                                       (`AUDIT_DETAILS.Change_type_valid`); a \
-                                      non-creation change type on a member with \
-                                      no `preceding_version_uid` at all (the \
-                                      first-version-of-a-MODIFICATION shape, \
-                                      which the released text puts under `400` \
-                                      when the member names a target); `data` \
+                                      `249|creation|` member carrying a \
+                                      `preceding_version_uid` (the UNASSIGNED \
+                                      mirror of the released directional `400` \
+                                      trigger — creation makes a NEW \
+                                      VERSIONED_OBJECT, RM common master06 \
+                                      §Contributions); `data` \
                                       on a `523|deleted|` member (its data \
                                       \"is set to Void\", RM common master06 \
                                       §Contributions) or on a `666|attestation|` \
                                       member (an attestation adds no content); \
                                       missing `data` on a creation or \
-                                      modification member; a `523` member with \
-                                      no `preceding_version_uid`; a `666` \
+                                      modification member (a `523`/`666` \
+                                      member with no `preceding_version_uid` \
+                                      is the released first-version `400`); a \
+                                      `666` \
                                       member with no `commit_audit`; a member \
                                       whose object kind is out of the \
                                       contribution's scope (a demographic PARTY \
@@ -5073,7 +5070,7 @@ pub(crate) async fn contribution_create(
 ///
 /// The response is `{ "rows": [ { uid, time_committed, committer, change_type,
 /// change_type_rubric } ], "total" }`. `committer` is the audit committer's
-/// name only (a summary string — the by-uid GET returns the full PARTY_PROXY),
+/// name only (a summary string — the by-uid GET returns the full `PARTY_PROXY`),
 /// `change_type` the stored `audit_change_type` code and `change_type_rubric`
 /// its display rubric from the same terminology bundle the by-uid GET's
 /// `DV_CODED_TEXT.value` uses, so consumers never map codes locally. `total`
@@ -5162,14 +5159,14 @@ pub(crate) async fn contribution_list(
 /// (`GET /ehr/{ehr_id}/contribution/{contribution_uid}`).
 ///
 /// The served body is the COMMITTED change-set: the CONTRIBUTION's own
-/// AUDIT_DETAILS plus `versions` — by default the OBJECT_REFs of the versions
+/// `AUDIT_DETAILS` plus `versions` — by default the `OBJECT_REFs` of the versions
 /// it affected ("a `CONTRIBUTION` object will be created, listing the affected
 /// `VERSION` objects, and including its own audit object" — RM common master06
 /// §Contributions), or, with `Prefer: return=representation, resolve_refs`, the
-/// full ORIGINAL_VERSIONs those refs point at.
+/// full `ORIGINAL_VERSIONs` those refs point at.
 ///
 /// A `666|attestation|` member commits no new version, yet still affects the
-/// ORIGINAL_VERSION it attests, so that version appears in `versions` too
+/// `ORIGINAL_VERSION` it attests, so that version appears in `versions` too
 /// (master06 §Contributions lists the affected versions, and §Attestation makes
 /// an attestation a change to an existing one).
 #[utoipa::path(
