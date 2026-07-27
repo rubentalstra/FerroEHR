@@ -3352,27 +3352,159 @@ pub(crate) async fn versioned_composition_version_get_by_id(
 
 /// Retrieve the directory (FOLDER) at a point in time
 /// (`GET /ehr/{ehr_id}/directory`).
+///
+/// The served body is the BARE FOLDER: the directory root, or — when `path` is
+/// supplied — only the sub-FOLDER that path addresses. The directory is the
+/// EHR's first folder hierarchy (`EHR.directory` = `folders.item(1)`, RM ehr
+/// master04 §Folders) and is change-controlled like any other versioned
+/// object, so the read carries the weak `ETag`/`Last-Modified` of the version
+/// it served (`Requests_and_responses.md` §"ETag and Last-Modified").
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; absent means the latest \
-                        version. The timezone is optional — server-local when \
-                        omitted."),
+         description = "A time in the extended ISO 8601 format; the directory \
+                        version extant at that time is returned. Absent means \
+                        the latest version (ITS-REST \
+                        `specifications/operations/directory_get_at_time.yaml`: \
+                        \"If `version_at_time` is supplied, retrieves the \
+                        version extant _at specified time_, otherwise retrieves \
+                        the _latest_ directory FOLDER version\"). The timezone \
+                        is optional — server-local when omitted \
+                        (`Resources.md` §\"Datetime format\": query parameters \
+                        \"MUST always use the _extended_ ISO 8601 format\" and \
+                        \"Timezone SHOULD be only supplied when needed, \
+                        otherwise the local timezone is assumed\"). No released \
+                        text defines the extancy algorithm itself, so the \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue: a version is extant from its own \
+                        commit instant (inclusive) until the next commit, so a \
+                        time at or after the newest commit serves that newest \
+                        version — a future time is `200`, never `404` — and a \
+                        time before the first held commit is `404`.",
+         example = "2026-07-26T09:12:44.512Z"),
         ("path" = Option<String>, Query,
-         description = "Slash-separated FOLDER names addressing a sub-folder; \
-                        only that subtree is returned.")
+         description = "A path to a sub-folder. The released definition is one \
+                        sentence — the path \"consists of slash-separated \
+                        values of the name attribute of FOLDERs in the \
+                        directory\" (ITS-REST \
+                        `specifications/parameters/query/path.yaml`; SM \
+                        `i_ehr_directory.adoc` `has_path` repeats it) — and \
+                        only the addressed sub-FOLDER is returned. The \
+                        resolution grammar beyond that sentence is OUR OWN \
+                        DESIGN, register-documented in the conformance \
+                        catalogue: the path is rooted at the directory root, \
+                        which is implicit and is never named by a segment; a \
+                        leading slash is tolerated and empty segments are \
+                        skipped, so `a/b`, `/a/b` and `a//b` address the same \
+                        node; each segment matches a child `FOLDER.name.value` \
+                        under `folders` — the `items` OBJECT_REFs are never \
+                        traversed, since they are references to other objects, \
+                        not folders (RM common master05 §Overview); and where \
+                        sibling names repeat, the first match wins. An empty \
+                        `path` (or a bare `/`) addresses the root itself. A \
+                        path that does not resolve is `404`.",
+         example = "episodes/a/b/c")
     ),
     responses(
-        (status = 200, description = "The directory FOLDER (or the addressed \
-                                      sub-folder).", body = serde_json::Value),
-        (status = 204, description = "The directory was deleted at the \
-                                      specified time."),
-        (status = 400, description = "Malformed `version_at_time`.",
+        (status = 200, description = "The directory FOLDER extant at that time \
+                                      — or, when `path` is supplied, only the \
+                                      sub-FOLDER it addresses (canonical \
+                                      JSON/XML per `Accept`). The version \
+                                      headers always describe the DIRECTORY \
+                                      version served, also when the body is a \
+                                      sub-folder inside it. No `Location`: \
+                                      `Requests_and_responses.md` §Location \
+                                      forbids it on a `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version uid>\"` of the \
+                             directory version served (§\"ETag and \
+                             Last-Modified\": the value \"is usually taken from \
+                             e.g. … VERSION.uid.value\"; the `W/` weakness \
+                             indicator is required since Release 1.1.0)."),
+             ("Last-Modified" = String,
+              description = "That version's commit instant as an HTTP-date — \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\": both headers \
+                             \"SHOULD be included in responses for VERSION, \
+                             VERSIONED_OBJECT, or other resources that have \
+                             versioning or unique state identifiers\")."),
+         ),
+         example = json!({
+             "_type": "FOLDER",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+             "name": { "_type": "DV_TEXT", "value": "root" },
+             "folders": [ {
+                 "_type": "FOLDER",
+                 "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                 "name": { "_type": "DV_TEXT", "value": "episodes" },
+                 "items": [ {
+                     "_type": "OBJECT_REF",
+                     "namespace": "local",
+                     "type": "COMPOSITION",
+                     "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                 } ]
+             } ]
+         })),
+        (status = 204, description = "The addressed directory version is \
+                                      logically deleted, so there is no FOLDER \
+                                      to serve: a logical delete commits a new \
+                                      version whose `data` is removed and whose \
+                                      `lifecycle_state` is `523|deleted|` (RM \
+                                      common master06 §\"Logical Deletion\"). \
+                                      This server answers `204` for BOTH \
+                                      addressing forms of this route — the \
+                                      version extant at `version_at_time` and \
+                                      the implicit latest. Only the first is \
+                                      covered by released text (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`: \
+                                      \"`204 No Content` is returned when the \
+                                      resource identified by the request \
+                                      parameters (at specified \
+                                      `version_at_time`) time has been \
+                                      deleted\"); the implicit-latest branch has \
+                                      no released assignment at all, so \
+                                      extending the same outcome to it is OUR \
+                                      OWN reading, register-documented in the \
+                                      conformance catalogue."),
+        (status = 400, description = "`ehr_id` is not a UUID, or \
+                                      `version_at_time` is not an extended ISO \
+                                      8601 datetime (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `400` row: \
+                                      \"malformed request syntax, syntactically \
+                                      invalid content\"). A syntactically valid \
+                                      but unknown id is `404`, not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "Unknown EHR, no version at that time, \
-                                      or the path does not resolve.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when an EHR with \
+                                      `ehr_id` does not exist, or when a \
+                                      directory does not exist at the specified \
+                                      `version_at_time`, or when `path` does \
+                                      not exist within the directory\" (ITS-REST \
+                                      `specifications/responses/404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml`). \
+                                      An EHR that never had a directory falls \
+                                      under the middle clause — there is no \
+                                      directory to serve at any time.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the DIRECTORY resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      defined for templated COMPOSITION \
+                                      content, and a FOLDER is not templated).",
          body = serde_json::Value)
     )
 )]
@@ -3391,32 +3523,362 @@ pub(crate) async fn directory_get_at_time(
 }
 
 /// Update the directory (FOLDER) (`PUT /ehr/{ehr_id}/directory`).
+///
+/// The whole hierarchy is replaced by the submitted FOLDER tree: a new version
+/// of the EHR's directory versioned object is committed inside a new
+/// CONTRIBUTION (SM `i_ehr_directory.adoc` `update_directory`: "Create or
+/// update a directory from a complete structure … Causes server-side creation
+/// of a new `ORIGINAL_VERSION` and a new `CONTRIBUTION`"). The committal
+/// headers `openehr-version` / `openehr-audit-details` are accepted and merged
+/// into that commit (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("If-Match" = String, Header,
-         description = "The latest directory version uid, double-quoted \
-                        (weak `W/` form also accepted). Required."),
+         description = "The latest directory version uid (which becomes the new \
+                        version's `preceding_version_uid`), double-quoted; the \
+                        weak `W/\"…\"` form the server emits is also accepted. \
+                        Required, and this route is exactly the case the rule \
+                        is written for: `/ehr/{ehr_id}/directory` carries NO \
+                        version segment, so — per \
+                        `Requests_and_responses.md` §\"If-Match and accidental \
+                        overwrites\" — the header is required \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" and IS the precondition (ITS-REST \
+                        `specifications/operations/directory_update.yaml`: \"The \
+                        existing latest `version_uid` of directory FOLDER \
+                        resource (i.e. the `preceding_version_uid`) must be \
+                        specified in the `If-Match` header\"). A missing header \
+                        is `400` (\"the service SHOULD respond with `400 Bad \
+                        Request`\"); a value that is not the latest version MUST \
+                        be `412`, never `409` — the opposite style from the \
+                        COMPOSITION `DELETE`, whose precondition travels in the \
+                        path.",
+         example = "W/\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`.")
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens: \
+                        `return=minimal` — no body, `204 No Content`; \
+                        `return=identifier` — the body is only \
+                        `{ \"uid\": \"<new version uid>\" }` at `200 OK`, never \
+                        `204` (§\"Prefer only identifier\": \"a variant of \
+                        preference that implies minimal response semantics, but \
+                        with a non-empty response body\"); `return=representation` \
+                        — the committed directory FOLDER at `200 OK`. An absent \
+                        header means `return=minimal`; the token actually \
+                        applied is echoed in `Preference-Applied`.",
+         example = "return=representation"),
+        ("openehr-version" = Option<String>, Header,
+         description = "Committal metadata for the new FOLDER VERSION, as an \
+                        attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"553\"`; the default is \
+                        `532|complete|` (RM common master06 §\"Version \
+                        Lifecycle\"). Merged with the server defaults \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\": the committal headers are \
+                        required on `PUT`, `POST` and `DELETE` for all \
+                        change-controlled resources, FOLDER named explicitly, \
+                        and whatever is provided \"MUST be merged with the \
+                        default VERSION and VERSION.audit_details attributes on \
+                        commit runtime\"). The released directory operations \
+                        declare neither header — an OAS-side omission the docs \
+                        text overrides."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat — e.g. `description.value=\"Episode folder \
+                        added\"`, `committer.name=\"John Doe\",\
+                        committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+                        committer.external_ref.namespace=\"demographic\",\
+                        committer.external_ref.type=\"PERSON\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` defaults to `251|modification|` and is \
+                        client-overridable to any audit_change_type code \
+                        consistent with a content-carrying new version of an \
+                        existing object — `250|amendment|` and the other \
+                        modification-class codes — but never `249|creation|` or \
+                        `523|deleted|`, which belong to the `POST` and `DELETE` \
+                        (RM common master06 §Contributions). `time_committed` \
+                        \"is always set by the server\", and an omitted \
+                        `system_id` defaults to the server's configured \
+                        identifier."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the directory's VERSIONED_OBJECT \
+                        target; an empty value removes all \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", \"Usage in Requests\"). MAY \
+                        be echoed back in the response header of the same name."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the new FOLDER VERSION; an empty \
+                        value removes all (same section, \"Usage in Requests\"). \
+                        MAY be echoed back in the response header of the same \
+                        name.")
     ),
-    request_body(content = serde_json::Value,
-                 description = "The new directory FOLDER."),
+    request_body(
+        content(
+            (serde_json::Value = "application/json", example = json!({
+                "_type": "FOLDER",
+                "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                "name": { "_type": "DV_TEXT", "value": "root" },
+                "folders": [ {
+                    "_type": "FOLDER",
+                    "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                    "name": { "_type": "DV_TEXT", "value": "episodes" },
+                    "items": [ {
+                        "_type": "OBJECT_REF",
+                        "namespace": "local",
+                        "type": "COMPOSITION",
+                        "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                    } ]
+                } ]
+            })),
+            (serde_json::Value = "application/xml")
+        ),
+        description = "The COMPLETE new directory FOLDER tree — the update \
+                       replaces the hierarchy, it does not patch it (SM \
+                       `update_directory`: \"Directory structure with which to \
+                       replace current structure\"). Canonical JSON or XML per \
+                       `Content-Type`; the two Simplified Formats do NOT apply \
+                       — they are defined for templated COMPOSITION content \
+                       (`Resources.md` §\"Simplified Formats\") and a FOLDER is \
+                       not templated, so a simplified `Content-Type` is `415` \
+                       here. Sub-folders nest under `folders`; the contents of \
+                       a folder are `items`, a list of OBJECT_REFs — \"Folder \
+                       structures do not contain Compositions, only references \
+                       to them\" (RM ehr master04 §Folders), so an inline \
+                       LOCATABLE is `422`."
+    ),
     responses(
-        (status = 200, description = "Updated; body per `Prefer` \
-                                      (representation or identifier).",
+        (
+            status = 200, description = "Updated, with a body: the committed \
+                                        directory FOLDER for \
+                                        `Prefer: return=representation` (the \
+                                        `representation` example) or the \
+                                        single-`uid` object for \
+                                        `return=identifier` (the `identifier` \
+                                        example) — `Requests_and_responses.md` \
+                                        §\"Prefer minimal, identifier or full \
+                                        representation response\"; the released \
+                                        `200_directory_updated` response says \
+                                        the same. `ETag`, `Last-Modified` and \
+                                        `Location` describe the newly committed \
+                                        version, and `Preference-Applied` \
+                                        declares the token honoured.",
+            headers(
+                ("ETag" = String,
+                 description = "The weak entity tag `W/\"<new version uid>\"` \
+                                (§\"ETag and Last-Modified\": the value \"is \
+                                usually taken from e.g. … VERSION.uid.value\" \
+                                and \"changes as soon as the resource \
+                                changes\")."),
+                ("Location" = String,
+                 description = "The URL of the newly committed version, \
+                                `<base_path>/ehr/<ehr_id>/directory/<version_uid>` \
+                                (§\"Prefer minimal, identifier or full \
+                                representation response\": the response \"SHOULD \
+                                include a `Location` header pointing to the \
+                                newly created or updated resource\"; the \
+                                released `Location_directory` header \"indicates \
+                                the URL of the directory FOLDER resource\")."),
+                ("Last-Modified" = String,
+                 description = "The commit instant of the new version as an \
+                                HTTP-date — \"derived from \
+                                VERSION.commit_audit.time_committed.value\" \
+                                (§\"ETag and Last-Modified\")."),
+                ("Preference-Applied" = String,
+                 description = "`return=minimal` | `return=identifier` | \
+                                `return=representation` — the preference the \
+                                service honoured (§\"Representation details \
+                                negotiation\")."),
+                ("openehr-item-tag" = String,
+                 description = "Echo of the ITEM_TAG list now stored on the \
+                                directory's VERSIONED_OBJECT, present only when \
+                                the request carried the header \
+                                (§\"openehr-item-tag and \
+                                openehr-version-item-tag\", \"Usage in \
+                                Responses\")."),
+                ("openehr-version-item-tag" = String,
+                 description = "Echo of the ITEM_TAG list now stored on the new \
+                                FOLDER VERSION, present only when the request \
+                                carried the header (same section, \"Usage in \
+                                Responses\")."),
+            ),
+            content(
+                (serde_json::Value = "application/json", examples(
+                    ("representation" = (summary = "Prefer: return=representation — the committed directory FOLDER",
+                     value = json!({
+                        "_type": "FOLDER",
+                        "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                        "name": { "_type": "DV_TEXT", "value": "root" },
+                        "folders": [ {
+                            "_type": "FOLDER",
+                            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                            "name": { "_type": "DV_TEXT", "value": "episodes" },
+                            "items": [ {
+                                "_type": "OBJECT_REF",
+                                "namespace": "local",
+                                "type": "COMPOSITION",
+                                "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                            } ]
+                        } ]
+                     }))),
+                    ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+                     value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+                )),
+                (serde_json::Value = "application/xml")
+            )
+        ),
+        (status = 204, description = "Updated with no body — the default \
+                                      `Prefer: return=minimal` \
+                                      (`Requests_and_responses.md` §\"Prefer \
+                                      minimal, identifier or full representation \
+                                      response\": \"If no response body is \
+                                      returned, the service SHOULD use `204 No \
+                                      Content`\"). The version headers are \
+                                      carried exactly as on the `200`.",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<new version uid>\"` \
+                             (§\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "The URL of the newly committed version, \
+                             `<base_path>/ehr/<ehr_id>/directory/<version_uid>` \
+                             (§\"Prefer minimal, identifier or full \
+                             representation response\")."),
+             ("Last-Modified" = String,
+              description = "The commit instant of the new version as an \
+                             HTTP-date (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (§\"Representation details \
+                             negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the \
+                             directory's VERSIONED_OBJECT, present only when the \
+                             request carried the header (§\"openehr-item-tag and \
+                             openehr-version-item-tag\", \"Usage in \
+                             Responses\")."),
+             ("openehr-version-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the new \
+                             FOLDER VERSION, present only when the request \
+                             carried the header (same section, \"Usage in \
+                             Responses\")."),
+         )),
+        (status = 400, description = "`ehr_id` is not a UUID, the FOLDER payload \
+                                      could not be parsed, `If-Match` is \
+                                      missing/empty/not a well-formed \
+                                      OBJECT_VERSION_ID, or a committal \
+                                      `change_type` names a legal \
+                                      audit_change_type code that contradicts an \
+                                      update (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `400` row: \
+                                      \"malformed request syntax, syntactically \
+                                      invalid content\"; §\"If-Match and \
+                                      accidental overwrites\" for the missing-\
+                                      `If-Match` case).",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag` carries the new version uid."),
-        (status = 400, description = "Invalid FOLDER or missing `If-Match`.",
+        (status = 404, description = "Unknown `ehr_id` (the released trigger, \
+                                      `404_unknown_ehr_id`) — or the EHR exists \
+                                      but indexes NO directory, so there is \
+                                      nothing to update. The second branch has \
+                                      no released assignment: \
+                                      `404_unknown_ehr_id` does not cover it and \
+                                      SM `update_directory`'s \
+                                      `Pre_has_directory: has_directory(ehr_id)` \
+                                      states the rule without a status code, so \
+                                      answering `404` (the addressed resource \
+                                      does not exist) is OUR OWN DESIGN, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "Unknown EHR or no directory.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the DIRECTORY resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": an unfulfillable `Accept` MUST \
+                                      be `406`; the Simplified Formats are \
+                                      defined for templated COMPOSITION content, \
+                                      and a FOLDER is not templated).",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current \
-                                      latest version uid.",
+        (status = 409, description = "The EHR is not modifiable \
+                                      (`EHR_STATUS.is_modifiable = false`), so \
+                                      its contents — the directory included — \
+                                      cannot be updated (RM ehr master04 §\"EHR \
+                                      Active Status\": the flag \"is used to \
+                                      indicate whether the contents of an EHR \
+                                      are modifiable\"). The refusal is \
+                                      spec-required; the status code is OUR OWN \
+                                      DESIGN — no released ITS-REST text assigns \
+                                      a branch to it — chosen for the `409` \
+                                      row's \"conflict\" meaning (§\"HTTP status \
+                                      codes\").",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not name the latest \
+                                      directory version, so the update was not \
+                                      performed (`Requests_and_responses.md` \
+                                      §\"If-Match and accidental overwrites\": \
+                                      the service \"MUST NOT perform the \
+                                      requested method\" and \"MUST respond with \
+                                      HTTP status code `412 Precondition \
+                                      Failed`\"; ITS-REST \
+                                      `specifications/responses/412_directory.yaml` \
+                                      says the same and adds the `ETag`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<current latest version \
+                             uid>\"` — `412_directory`: \"Returns also latest \
+                             `version_uid` in the `ETag` header\" (the same \
+                             SHOULD as §\"If-Match and accidental \
+                             overwrites\")."),
+             ("Last-Modified" = String,
+              description = "The commit instant of that current latest version \
+                             as an HTTP-date, carried alongside the `ETag` \
+                             (§\"ETag and Last-Modified\")."),
+         )),
+        (status = 415, description = "The request `Content-Type` is not one this \
+                                      resource can process — anything outside \
+                                      canonical JSON/XML, the Simplified Formats \
+                                      included (`Resources.md` §\"Simplified \
+                                      Formats\": \"If the service cannot process \
+                                      the request payload as the simplified \
+                                      format is not supported, it MUST respond \
+                                      with HTTP status code `415 Unsupported \
+                                      Media Type`\"; §\"XML Format\"/§\"JSON \
+                                      Format\" carry the same MUST for the \
+                                      canonical types). A FOLDER is not \
+                                      templated, so no simplified form of it \
+                                      exists.",
+         body = serde_json::Value),
+        (status = 422, description = "The request was well-formed and converted \
+                                      to a FOLDER tree, but the tree cannot be \
+                                      followed as a directory \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row: \"The \
+                                      request was well-formed but was unable to \
+                                      be followed due to semantic errors\"). The \
+                                      shape rules are RM, checked at every node \
+                                      of the tree: `FOLDER.name` is mandatory \
+                                      and `archetype_node_id` mandatory and \
+                                      non-empty (LOCATABLE, RM common \
+                                      master03), and every `items` member must \
+                                      be an OBJECT_REF (`id` + `namespace` + \
+                                      `type`, and never an inline LOCATABLE) — \
+                                      \"Folder structures do not contain \
+                                      Compositions, only references to them\" \
+                                      (RM ehr master04 §Folders; RM common \
+                                      master05 §Overview types `FOLDER.items` \
+                                      `List<OBJECT_REF>`). A committal \
+                                      `change_type`/`lifecycle_state` that is \
+                                      not a member of its openEHR terminology \
+                                      group is `422` too.",
          body = serde_json::Value)
     )
 )]
@@ -3435,26 +3897,275 @@ pub(crate) async fn directory_update(
 }
 
 /// Create the directory (FOLDER) (`POST /ehr/{ehr_id}/directory`).
+///
+/// Creates the EHR's directory hierarchy from a complete FOLDER tree: a new
+/// VERSIONED_OBJECT, its first ORIGINAL_VERSION and a new CONTRIBUTION (SM
+/// `i_ehr_directory.adoc` `create_directory`). The committal headers
+/// `openehr-version` / `openehr-audit-details` are accepted and merged into
+/// that commit (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`.")
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens: \
+                        `return=minimal` — empty body; `return=identifier` — \
+                        the body is only `{ \"uid\": \"<new version uid>\" }`; \
+                        `return=representation` — the created directory FOLDER. \
+                        An absent header means `return=minimal` (\"If no \
+                        `Prefer` header is provided, the default behavior is \
+                        assumed to be `return=minimal`\"), which the released \
+                        `201_directory` response repeats; the token actually \
+                        applied is echoed in `Preference-Applied`.",
+         example = "return=representation"),
+        ("openehr-version" = Option<String>, Header,
+         description = "Committal metadata for the first FOLDER VERSION, as an \
+                        attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"553\"`; the default is \
+                        `532|complete|` (RM common master06 §\"Version \
+                        Lifecycle\"). Merged with the server defaults \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\": the committal headers are \
+                        required on `PUT`, `POST` and `DELETE` for all \
+                        change-controlled resources — FOLDER named explicitly — \
+                        and whatever is provided \"MUST be merged with the \
+                        default VERSION and VERSION.audit_details attributes on \
+                        commit runtime\"). The released directory operations \
+                        declare neither header — an OAS-side omission the docs \
+                        text overrides."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
+                        creation commits, as an attribute-path list; the header \
+                        MAY repeat — e.g. `description.value=\"Initial episode \
+                        index\"`, `committer.name=\"John Doe\",\
+                        committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+                        committer.external_ref.namespace=\"demographic\",\
+                        committer.external_ref.type=\"PERSON\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` is constrained to `249|creation|` (a \
+                        create commits a first version — RM common master06 \
+                        §Contributions); `time_committed` \"is always set by the \
+                        server\", and an omitted `system_id` defaults to the \
+                        server's configured identifier."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the directory's VERSIONED_OBJECT \
+                        target; an empty value removes all \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", \"Usage in Requests\"). MAY \
+                        be echoed back in the response header of the same name."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the created FOLDER VERSION; an empty \
+                        value removes all (same section, \"Usage in Requests\"). \
+                        MAY be echoed back in the response header of the same \
+                        name.")
     ),
-    request_body(content = serde_json::Value,
-                 description = "The directory FOLDER."),
+    request_body(
+        content(
+            (serde_json::Value = "application/json", example = json!({
+                "_type": "FOLDER",
+                "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                "name": { "_type": "DV_TEXT", "value": "root" },
+                "folders": [ {
+                    "_type": "FOLDER",
+                    "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                    "name": { "_type": "DV_TEXT", "value": "episodes" },
+                    "items": [ {
+                        "_type": "OBJECT_REF",
+                        "namespace": "local",
+                        "type": "COMPOSITION",
+                        "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                    } ]
+                } ]
+            })),
+            (serde_json::Value = "application/xml")
+        ),
+        description = "The directory FOLDER tree, canonical JSON or XML per \
+                       `Content-Type`. The two Simplified Formats do NOT apply \
+                       — they are defined for templated COMPOSITION content \
+                       (`Resources.md` §\"Simplified Formats\") and a FOLDER is \
+                       not templated, so a simplified `Content-Type` is `415` \
+                       here. Sub-folders nest under `folders`; the contents of \
+                       a folder are `items`, a list of OBJECT_REFs \
+                       (`{ id, namespace, type }`) — \"Folder structures do not \
+                       contain Compositions, only references to them\" (RM ehr \
+                       master04 §Folders), so an inline LOCATABLE is `422`."
+    ),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new \
-                                      version uid (weak form), `Location` \
-                                      the version URL. Body per `Prefer`.",
+        (
+            status = 201, description = "Created. `ETag` (weak `W/` form) \
+                                        carries the new version uid, \
+                                        `Last-Modified` its commit instant, \
+                                        `Location` the directory version URL, \
+                                        and `Preference-Applied` the `Prefer` \
+                                        token actually honoured. The body is \
+                                        `Prefer`-conditional (ITS-REST \
+                                        `specifications/responses/201_directory.yaml`: \
+                                        \"If `Prefer` header is \
+                                        `return=representation`, the full \
+                                        resource is included in the response \
+                                        body; if is `return=identifier`, only \
+                                        its unique identifier is included. If \
+                                        the `Prefer` header is missing or set to \
+                                        `return=minimal`, the body is empty\").",
+            headers(
+                ("ETag" = String,
+                 description = "The weak entity tag `W/\"<new version uid>\"` \
+                                (§\"ETag and Last-Modified\": the value \"is \
+                                usually taken from e.g. … VERSION.uid.value\"; \
+                                the `W/` weakness indicator is required since \
+                                Release 1.1.0)."),
+                ("Location" = String,
+                 description = "The URL of the newly created directory version, \
+                                `<base_path>/ehr/<ehr_id>/directory/<version_uid>` \
+                                (§Location: used \"in `201 Created` responses \
+                                when a new resource is successfully created\"; \
+                                the released `Location_directory` header \
+                                \"indicates the URL of the directory FOLDER \
+                                resource\")."),
+                ("Last-Modified" = String,
+                 description = "The creating CONTRIBUTION's commit instant as an \
+                                HTTP-date — \"derived from \
+                                VERSION.commit_audit.time_committed.value\" \
+                                (§\"ETag and Last-Modified\")."),
+                ("Preference-Applied" = String,
+                 description = "`return=minimal` | `return=identifier` | \
+                                `return=representation` — the preference the \
+                                service honoured (§\"Representation details \
+                                negotiation\")."),
+                ("openehr-item-tag" = String,
+                 description = "Echo of the ITEM_TAG list now stored on the \
+                                directory's VERSIONED_OBJECT, present only when \
+                                the request carried the header \
+                                (§\"openehr-item-tag and \
+                                openehr-version-item-tag\", \"Usage in \
+                                Responses\": servers \"MAY include\" it \"to \
+                                confirm the actual list of ITEM_TAGs stored on \
+                                the server side\")."),
+                ("openehr-version-item-tag" = String,
+                 description = "Echo of the ITEM_TAG list now stored on the \
+                                created FOLDER VERSION, present only when the \
+                                request carried the header (same section, \
+                                \"Usage in Responses\")."),
+            ),
+            content(
+                (serde_json::Value = "application/json", examples(
+                    ("representation" = (summary = "Prefer: return=representation — the created directory FOLDER",
+                     value = json!({
+                        "_type": "FOLDER",
+                        "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                        "name": { "_type": "DV_TEXT", "value": "root" },
+                        "folders": [ {
+                            "_type": "FOLDER",
+                            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                            "name": { "_type": "DV_TEXT", "value": "episodes" },
+                            "items": [ {
+                                "_type": "OBJECT_REF",
+                                "namespace": "local",
+                                "type": "COMPOSITION",
+                                "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                            } ]
+                        } ]
+                     }))),
+                    ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+                     value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+                )),
+                (serde_json::Value = "application/xml")
+            )
+        ),
+        (status = 400, description = "`ehr_id` is not a UUID, the FOLDER payload \
+                                      could not be parsed, or a committal \
+                                      `change_type` names a legal \
+                                      audit_change_type code that contradicts a \
+                                      creation (only `249|creation|` is \
+                                      compatible — RM common master06 \
+                                      §Contributions) \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `400` row: \"malformed \
+                                      request syntax, syntactically invalid \
+                                      content\").",
          body = serde_json::Value),
-        (status = 400, description = "Invalid FOLDER.",
+        (status = 404, description = "Unknown `ehr_id` (ITS-REST \
+                                      `specifications/responses/404_unknown_ehr_id.yaml`).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown EHR.", body = serde_json::Value),
-        (status = 409, description = "A directory already exists for this \
-                                      EHR.", body = serde_json::Value)
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the DIRECTORY resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": an unfulfillable `Accept` MUST \
+                                      be `406`; the Simplified Formats are \
+                                      defined for templated COMPOSITION content, \
+                                      and a FOLDER is not templated).",
+         body = serde_json::Value),
+        (status = 409, description = "The creation conflicts with the EHR's \
+                                      current state (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `409` row: the \
+                                      request \"might generate a duplicate or a \
+                                      conflict\"). Two triggers, both of which \
+                                      are OUR OWN DESIGN — no released ITS-REST \
+                                      text assigns either a status, and both are \
+                                      register-documented in the conformance \
+                                      catalogue: (1) the EHR already holds a \
+                                      LIVE directory — the rule itself is SM \
+                                      `i_ehr_directory.adoc` `create_directory` \
+                                      `Pre_no_directory: not has_directory \
+                                      (ehr_id)`, which states the precondition \
+                                      without a wire code; after a logical \
+                                      delete the version container survives but \
+                                      the directory slot is vacant (RM common \
+                                      master06 §\"Logical Deletion\"), so a \
+                                      re-create then opens a new hierarchy \
+                                      rather than conflicting; (2) the EHR is \
+                                      not modifiable (`EHR_STATUS.is_modifiable \
+                                      = false`, RM ehr master04 §\"EHR Active \
+                                      Status\": the flag \"is used to indicate \
+                                      whether the contents of an EHR are \
+                                      modifiable\") — the refusal is \
+                                      spec-required, the status choice is ours.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not one this \
+                                      resource can process — anything outside \
+                                      canonical JSON/XML, the Simplified Formats \
+                                      included (`Resources.md` §\"Simplified \
+                                      Formats\": \"If the service cannot process \
+                                      the request payload as the simplified \
+                                      format is not supported, it MUST respond \
+                                      with HTTP status code `415 Unsupported \
+                                      Media Type`\"; §\"XML Format\"/§\"JSON \
+                                      Format\" carry the same MUST for the \
+                                      canonical types). A FOLDER is not \
+                                      templated, so no simplified form of it \
+                                      exists.",
+         body = serde_json::Value),
+        (status = 422, description = "The request was well-formed and converted \
+                                      to a FOLDER tree, but the tree cannot be \
+                                      followed as a directory \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row: \"The \
+                                      request was well-formed but was unable to \
+                                      be followed due to semantic errors\"). The \
+                                      shape rules are RM, checked at every node \
+                                      of the tree: `FOLDER.name` is mandatory \
+                                      and `archetype_node_id` mandatory and \
+                                      non-empty (LOCATABLE, RM common \
+                                      master03), and every `items` member must \
+                                      be an OBJECT_REF (`id` + `namespace` + \
+                                      `type`, and never an inline LOCATABLE) — \
+                                      \"Folder structures do not contain \
+                                      Compositions, only references to them\" \
+                                      (RM ehr master04 §Folders; RM common \
+                                      master05 §Overview types `FOLDER.items` \
+                                      `List<OBJECT_REF>`). A committal \
+                                      `change_type`/`lifecycle_state` that is \
+                                      not a member of its openEHR terminology \
+                                      group is `422` too.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn directory_create(
@@ -3472,25 +4183,167 @@ pub(crate) async fn directory_create(
 }
 
 /// Delete the directory (FOLDER) (`DELETE /ehr/{ehr_id}/directory`).
+///
+/// Deletion is LOGICAL: a new `523|deleted|` version of the directory with no
+/// `data` is committed (RM common master06 §"Logical Deletion"; SM
+/// `i_ehr_directory.adoc` `delete_directory`: "Logically delete the directory
+/// by creating a new version in which the contents are removed"), and the
+/// `204` reports THAT version in `ETag`/`Last-Modified`.
+///
+/// The precondition travels in the `If-Match` HEADER, not in the path — this
+/// route has no version segment — so a stale precondition is `412`, never the
+/// `409` the COMPOSITION `DELETE` answers (`Requests_and_responses.md`
+/// §"If-Match and accidental overwrites"). The operation exchanges no body in
+/// either direction, so nothing is content-negotiated here.
 #[utoipa::path(
     delete, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("If-Match" = String, Header,
-         description = "The latest directory version uid, double-quoted \
-                        (weak `W/` form also accepted). Required.")
+         description = "The latest directory version uid — the \
+                        `preceding_version_uid` the deletion supersedes — \
+                        double-quoted; the weak `W/\"…\"` form the server emits \
+                        is also accepted. Required: `/ehr/{ehr_id}/directory` \
+                        carries no version segment, so \
+                        `Requests_and_responses.md` §\"If-Match and accidental \
+                        overwrites\" makes the header the precondition (\"when \
+                        the `preceding_version_uid` is not part of the endpoint \
+                        path segment\"), which ITS-REST \
+                        `specifications/operations/directory_delete.yaml` \
+                        repeats. A missing header is `400` (\"the service SHOULD \
+                        respond with `400 Bad Request`\") and a value that is \
+                        not the latest version is `412` — CONTRAST the \
+                        COMPOSITION `DELETE`, which addresses the preceding \
+                        version in the path and answers `409` for a non-latest \
+                        uid.",
+         example = "W/\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2\""),
+        ("openehr-version" = Option<String>, Header,
+         description = "Accepted for uniformity — `Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\" requires \
+                        the committal headers on `PUT`, `POST` **and** `DELETE` \
+                        for every change-controlled resource, FOLDER named \
+                        explicitly. The deleting version's `lifecycle_state` is \
+                        not client-selectable, though: a logical deletion sets \
+                        it to `523|deleted|` by definition (RM common master06 \
+                        §\"Logical Deletion\"), so a supplied `lifecycle_state` \
+                        does not override it."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this \
+                        deletion commits, as an attribute-path list; the header \
+                        MAY repeat — e.g. `description.value=\"Index no longer \
+                        maintained\"`, `committer.name=\"John Doe\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` is constrained to `523|deleted|` (RM \
+                        common master06 §Contributions: a deletion commits a \
+                        deleted version); `time_committed` is always server-set, \
+                        and an omitted `system_id` defaults to the server's \
+                        configured identifier.")
     ),
     responses(
-        (status = 204, description = "Logically deleted (a new deleted \
-                                      version is committed)."),
-        (status = 400, description = "Missing or malformed `If-Match`.",
+        (status = 204, description = "Logically deleted. Deletion is never \
+                                      physical: a NEW version of the directory \
+                                      is committed whose `data` is removed and \
+                                      whose `lifecycle_state` — and whose \
+                                      `commit_audit.change_type` — is \
+                                      `523|deleted|` (RM common master06 \
+                                      §\"Logical Deletion\": \"create a new \
+                                      Version in the normal way; delete its \
+                                      `data`…; set the `lifecycle_state` value \
+                                      to the code for `deleted`; commit in the \
+                                      normal way\"), inside a new CONTRIBUTION; \
+                                      the version container survives, so the \
+                                      directory slot is merely vacated. No \
+                                      `Location`: `Requests_and_responses.md` \
+                                      §\"HTTP headers\" records that \"the \
+                                      `Location` response header was deprecated \
+                                      from responses of `DELETE` methods\".",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<new deleted version \
+                             uid>\"` — the identity of the version the deletion \
+                             just committed, not the superseded one named in \
+                             `If-Match`. The released `204_deleted` response \
+                             declares no headers at all, but §\"ETag and \
+                             Last-Modified\" SHOULDs both for versioned \
+                             resources, so serving them is the docs text's rule; \
+                             WHICH of the two identities the tag carries is \
+                             unstated, and picking the new one is OURS, \
+                             register-documented in the conformance catalogue — \
+                             it follows from the same section (the tag \"changes \
+                             as soon as the resource changes\", and the \
+                             resource's current version is now the deleted \
+                             one)."),
+             ("Last-Modified" = String,
+              description = "The deleting version's commit instant as an \
+                             HTTP-date — \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\"); a logical delete is \
+                             a commit, so it IS the resource's last \
+                             modification."),
+         )),
+        (status = 400, description = "`ehr_id` is not a UUID, or `If-Match` is \
+                                      missing, empty, or not a well-formed \
+                                      OBJECT_VERSION_ID \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `400` row: \"malformed \
+                                      request syntax, syntactically invalid \
+                                      content\"; §\"If-Match and accidental \
+                                      overwrites\" for the missing-header case).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown EHR or no directory.",
+        (status = 404, description = "Unknown `ehr_id` (the released trigger, \
+                                      `404_unknown_ehr_id`) — or the EHR exists \
+                                      but indexes NO directory, so there is \
+                                      nothing to delete. The second branch has \
+                                      no released assignment: \
+                                      `404_unknown_ehr_id` does not cover it and \
+                                      SM `delete_directory`'s \
+                                      `Pre_has_directory: has_directory(ehr_id)` \
+                                      states the rule without a status code, so \
+                                      answering `404` (the addressed resource \
+                                      does not exist) is OUR OWN DESIGN, \
+                                      register-documented in the conformance \
+                                      catalogue. It is evaluated before the \
+                                      `If-Match` precondition — there is no \
+                                      resource whose version could match.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current \
-                                      latest version uid.",
-         body = serde_json::Value)
+        (status = 409, description = "The EHR is not modifiable \
+                                      (`EHR_STATUS.is_modifiable = false`), so \
+                                      its contents — the directory included — \
+                                      cannot be changed, and a logical delete is \
+                                      a content write (RM ehr master04 §\"EHR \
+                                      Active Status\": the flag \"is used to \
+                                      indicate whether the contents of an EHR \
+                                      are modifiable\"). The refusal is \
+                                      spec-required; the status code is OUR OWN \
+                                      DESIGN — no released ITS-REST text assigns \
+                                      a branch to it — chosen for the `409` \
+                                      row's \"conflict\" meaning (§\"HTTP status \
+                                      codes\").",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not name the latest \
+                                      directory version, so the deletion was not \
+                                      performed (`Requests_and_responses.md` \
+                                      §\"If-Match and accidental overwrites\": \
+                                      the service \"MUST NOT perform the \
+                                      requested method\" and \"MUST respond with \
+                                      HTTP status code `412 Precondition \
+                                      Failed`\"; ITS-REST \
+                                      `specifications/responses/412_directory.yaml` \
+                                      says the same and adds the `ETag`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<current latest version \
+                             uid>\"` — `412_directory`: \"Returns also latest \
+                             `version_uid` in the `ETag` header\"."),
+             ("Last-Modified" = String,
+              description = "The commit instant of that current latest version \
+                             as an HTTP-date, carried alongside the `ETag` \
+                             (§\"ETag and Last-Modified\")."),
+         ))
     )
 )]
 pub(crate) async fn directory_delete(
@@ -3509,18 +4362,148 @@ pub(crate) async fn directory_delete(
 
 /// Retrieve the directory (FOLDER) by version id
 /// (`GET /ehr/{ehr_id}/directory/{version_uid}`).
+///
+/// The served body is the BARE FOLDER of that version — the directory root, or
+/// only the sub-FOLDER `path` addresses. Unlike `/composition/{uid_based_id}`,
+/// this segment has NO implicit-latest form: `Resources.md` §"Multiple
+/// identifiers for the same resource" is scoped to the COMPOSITION route, and
+/// the latest directory is read from `/ehr/{ehr_id}/directory` instead.
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/directory/{version_uid}", tag = "DIRECTORY",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("version_uid" = String, Path, description = "The version uid."),
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
+        ("version_uid" = String, Path,
+         description = "VERSION identifier, taken from VERSION.uid.value — an \
+                        OBJECT_VERSION_ID \
+                        `{object_id}::{creating_system_id}::{version_tree_id}` \
+                        (`Resources.md` §\"Identifier types\"; ITS-REST \
+                        `specifications/parameters/path/version_uid.yaml`). \
+                        This route takes ONLY the full three-part form — there \
+                        is no implicit-latest addressing here, and a bare \
+                        container id is `400`. The addressed uid must name the \
+                        served version's FULL identity: a fabricated \
+                        `creating_system_id` on an existing version tree names \
+                        no VERSION in this repository and is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"),
         ("path" = Option<String>, Query,
-         description = "Slash-separated FOLDER names addressing a sub-folder; \
-                        only that subtree is returned.")
+         description = "A path to a sub-folder. The released definition is one \
+                        sentence — the path \"consists of slash-separated \
+                        values of the name attribute of FOLDERs in the \
+                        directory\" (ITS-REST \
+                        `specifications/parameters/query/path.yaml`) — and only \
+                        the addressed sub-FOLDER is returned (the operation \
+                        adds: \"If `path` is supplied, retrieves from the \
+                        directory only the sub-FOLDER that is associated with \
+                        that path\"). The resolution grammar beyond that \
+                        sentence is OUR OWN DESIGN, register-documented in the \
+                        conformance catalogue: the path is rooted at the \
+                        directory root, which is implicit and is never named by \
+                        a segment; a leading slash is tolerated and empty \
+                        segments are skipped, so `a/b`, `/a/b` and `a//b` \
+                        address the same node; each segment matches a child \
+                        `FOLDER.name.value` under `folders` — the `items` \
+                        OBJECT_REFs are never traversed (RM common master05 \
+                        §Overview); and where sibling names repeat, the first \
+                        match wins. An empty `path` (or a bare `/`) addresses \
+                        the root itself. A path that does not resolve is `404`.",
+         example = "episodes/a/b/c")
     ),
     responses(
-        (status = 200, description = "The DIRECTORY.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The directory FOLDER at that version — \
+                                      or, when `path` is supplied, only the \
+                                      sub-FOLDER it addresses (canonical \
+                                      JSON/XML per `Accept`). The version \
+                                      headers describe the addressed DIRECTORY \
+                                      version, also when the body is a \
+                                      sub-folder inside it. No `Location`: \
+                                      `Requests_and_responses.md` §Location \
+                                      forbids it on a `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` \
+                             (§\"ETag and Last-Modified\": the value \"is \
+                             usually taken from e.g. … VERSION.uid.value\"; the \
+                             `W/` weakness indicator is required since Release \
+                             1.1.0)."),
+             ("Last-Modified" = String,
+              description = "That version's own `commit_audit.time_committed` \
+                             as an HTTP-date — \"For openEHR resources, this \
+                             value should be derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\")."),
+         ),
+         example = json!({
+             "_type": "FOLDER",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+             "name": { "_type": "DV_TEXT", "value": "root" },
+             "folders": [ {
+                 "_type": "FOLDER",
+                 "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+                 "name": { "_type": "DV_TEXT", "value": "episodes" },
+                 "items": [ {
+                     "_type": "OBJECT_REF",
+                     "namespace": "local",
+                     "type": "COMPOSITION",
+                     "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                 } ]
+             } ]
+         })),
+        (status = 204, description = "The addressed version is logically \
+                                      deleted, so there is no FOLDER to serve: \
+                                      the deleting commit removes `data` and \
+                                      sets `lifecycle_state` to `523|deleted|` \
+                                      (RM common master06 §\"Logical \
+                                      Deletion\"). The released text assigns no \
+                                      branch to an explicitly addressed deleted \
+                                      version — its one deleted branch \
+                                      (`204_deleted_at_time`) is textually \
+                                      scoped to \"at specified \
+                                      `version_at_time`\" — so answering the \
+                                      same `204` here is OUR OWN reading, \
+                                      register-documented in the conformance \
+                                      catalogue."),
+        (status = 400, description = "`ehr_id` is not a UUID, or `version_uid` \
+                                      is not a well-formed OBJECT_VERSION_ID — a \
+                                      bare container id included, since this \
+                                      route defines no implicit-latest form \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `400` row: \"malformed \
+                                      request syntax, syntactically invalid \
+                                      content\"). A syntactically valid but \
+                                      unknown id is `404`, not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when an EHR with \
+                                      `ehr_id` does not exist, or when a \
+                                      directory with `version_uid` does not \
+                                      exist, or when `path` does not exist \
+                                      within the directory\" (ITS-REST \
+                                      `specifications/responses/404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml`). \
+                                      \"Does not exist\" is judged on the FULL \
+                                      three-part identity: a `version_uid` whose \
+                                      `creating_system_id` does not match the \
+                                      stored version's names no VERSION here \
+                                      (`Resources.md` §\"Identifier types\"), \
+                                      and neither does one whose `object_id` \
+                                      belongs to another EHR's directory.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the DIRECTORY resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      defined for templated COMPOSITION \
+                                      content, and a FOLDER is not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn directory_get_by_version_id(
