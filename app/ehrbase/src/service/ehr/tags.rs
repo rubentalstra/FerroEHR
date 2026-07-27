@@ -374,7 +374,9 @@ impl EhrbaseService {
 /// tail (RM `item_tag.adoc`: `target` "may be a `VERSIONED_OBJECT<T>` or a
 /// `VERSION<T>`"). The tail is validated as a well-formed `OBJECT_VERSION_ID`
 /// before it is kept verbatim.
-fn parse_tag_target(uid_based_id: &str) -> Result<(VoId, Option<&str>), SmError> {
+pub(in crate::service) fn parse_tag_target(
+    uid_based_id: &str,
+) -> Result<(VoId, Option<&str>), SmError> {
     let (vo_id, tree) = parse_uid_based_id(uid_based_id)?;
     if tree.is_none() {
         return Ok((vo_id, None));
