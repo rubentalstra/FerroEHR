@@ -415,10 +415,11 @@ branches:
     outcome: invalid_query
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the invalid_query branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_QUERY_SERVICE.execute_stored_query
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_found branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gap: the stored-execution not_found branch is now exercised
+  # — I_QUERY_SERVICE.execute_stored_query-reserved_name on the variant-less
+  # binding, and -version_unknown_major / -version_malformed_selector on the
+  # version variant — so the exception is gone rather than reworded (coverage
+  # only ratchets up).
   - binding: I_QUERY_SERVICE.execute_stored_query
     outcome: timeout
     reason: coverage_gap
@@ -953,6 +954,69 @@ elements:
       reason: coverage_gap
       register: AMB-59
       note: "server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/query_ehr_id_header.rs: matching forms execute, conflicting forms are 400, on GET and POST, ad-hoc and stored). Not authorable as a case today: the rejection is a self-contradictory REQUEST, and the closed outcome taxonomy (vocab/outcomes.yaml) has no kind for it — `invalid_query` means malformed AQL, which this is not. Closes when the outcome vocabulary gains a malformed-request kind (extension only by schedule release)."
+  - id: query-unknown-ehr-scope-not-found
+    description: "A query execution scoped to a well-formed but non-existent ehr_id reports the EHR does not exist rather than answering an empty result set."
+    source: "SM i_query_service.adoc §execute_ad_hoc_query and §execute_stored_query (both declare the error `ehr_id_does_not_exist`; `_ehr_ids_` is \"Specific set of EHRs on which to execute the query\") vs the released ITS-REST query API, which gives that error no wire branch — docs/query/Request.md §About the ehr_id parameter says only that the scope \"MAY be used by the underlying backend to perform routing, optimizations or similar\". Adjudicated in register AMB-101 (fixed handling: 404, realizing the SM error), on Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
+    covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope]
+  # Query paging: the URL/body duality and the composition with in-query AQL
+  # clauses (ITS-REST docs/query/Request.md §Common Headers and Query Parameters).
+  - id: query-post-url-paging-forms
+    description: "The URL paging parameters are honoured on the POST execution forms: fetch supplied only in the query string windows the result, and the same value carried in both the URL and the body is accepted."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters (\"All query execution requests SHOULD support at least the following parameters\" — `offset`/`fetch` among them, with no GET/POST distinction drawn) + §GET vs POST (the body form: \"a mostly self-documented AQL query in a request body\"). The both-places precedence is unlegislated and adjudicated in register AMB-99 (fixed handling: equal values accepted)"
+    covered_by:
+      - I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_only
+      - I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_and_body
+  - id: query-post-paging-parameter-conflict
+    description: "A query POST carrying DIFFERENT values for the same paging parameter in the URL and in the body is rejected rather than silently resolved to one of them."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters offers the URL forms for all execution requests while the POSTs carry the same parameters in the body, and no released sentence assigns precedence when both are supplied — the released text is SILENT, adjudicated in register AMB-99 (a disagreement is 400, per Requests_and_responses.md §HTTP status codes row 400 / generic client-side error)"
+    exception:
+      reason: coverage_gap
+      register: AMB-99
+      note: "Not authorable as a case today, for the closed-vocabulary reason already recorded on query-ehr-id-parameter-header-conflict: the rejection is a self-contradictory REQUEST and the outcome taxonomy (vocab/outcomes.yaml) has no kind for it — `invalid_query` means malformed AQL, which this is not, and `validation_failed` means semantically invalid CONTENT. The ACCEPTED half of the same duality is gated (query-post-url-paging-forms). Closes when the outcome taxonomy gains a malformed-request kind (extension only by schedule release)."
+  - id: query-paging-composes-over-aql-limit
+    description: "REST paging composes OVER an in-query AQL LIMIT: the AQL clause shapes the logical result set, then offset/fetch window it."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters states the one exclusion on `fetch` against the DEPRECATED TOP only (\"cannot be combined with AQL-top\") and says nothing about its replacement — QUERY AQL master03-syntax.adoc §LIMIT — so the relation of REST paging to LIMIT/OFFSET is unlegislated; adjudicated in register AMB-98 (fixed handling: composition)"
+    covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-fetch_over_limit]
+  - id: query-protocol-parameter-names-reserved
+    description: "The protocol parameter names (q, ehr_id, offset, fetch) are reserved in the URL: such a parameter is always the protocol parameter, and an AQL $parameter of the same name is bound only through the body's query_parameters object."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters (the protocol parameters) vs §Query parameters (\"other parameter(s) to replace placeholder(s) within the query … in the real request they will have specific names … according to their names in the query definition\") — no released sentence resolves a collision between the two namespaces, and the spec collides with itself (the QueryParameters example binds `ehr_id` while §About the ehr_id parameter defines it as the EHR scope). Adjudicated in register AMB-100 (fixed handling: the four names are reserved)"
+    covered_by: [I_QUERY_SERVICE.execute_stored_query-protocol_fetch_reserved]
+  # Stored-query identity: the qualified name + version selector
+  # (ITS-REST docs/query/Qualified_query_name.md).
+  - id: query-stored-version-selector-matching
+    description: "A stored query is addressable at a version: an exact major.minor.patch selector executes that definition, a {major} prefix the highest version inside that major, and a {major}.{minor} prefix the highest inside that minor line."
+    source: "ITS-REST query Qualified_query_name.md §version identifier (\"The `version` identifier is in the format specified by SEMVER style (i.e. `major.minor.patch`)\"; \"When only a partial `version` pattern is supplied, or when `version` is not supplied at all, the system must use the latest `version` with the supplied prefix - i.e. if only `major` or `major.minor` is used, then the latest query version matching supplied prefix will be used\")"
+    covered_by:
+      - I_QUERY_SERVICE.execute_stored_query-version_exact
+      - I_QUERY_SERVICE.execute_stored_query-version_major_prefix
+      - I_QUERY_SERVICE.execute_stored_query-version_minor_prefix
+  - id: query-stored-version-unmatchable-selector
+    description: "A version selector that matches no stored version — an out-of-range major, or a token that is neither an exact SEMVER nor a legal {major}/{major}.{minor} prefix — is not found, and never falls back to another version."
+    source: "ITS-REST query Qualified_query_name.md §version identifier admits exactly the exact-SEMVER and the {major}/{major}.{minor} prefix shapes and assigns nothing to any other token; adjudicated in register AMB-102 (fixed handling: an unmatchable selector IS a version that does not exist), on Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
+    covered_by:
+      - I_QUERY_SERVICE.execute_stored_query-version_unknown_major
+      - I_QUERY_SERVICE.execute_stored_query-version_malformed_selector
+  - id: query-reserved-query-name-unresolvable
+    description: "The reserved query-name `aql` never identifies a stored query: it is refused on store, and a stored execution addressing it (behind any namespace) is not found."
+    source: "ITS-REST query Qualified_query_name.md §NOTE (\"The `query-name` value must not be `aql` (case-insensitive), as that is a reserved name\") + Query_types.md §Ad-hoc queries (the bare `aql` segment IS the ad-hoc execution endpoint) + Requests_and_responses.md §HTTP status codes row 404; the read-side reading is register AMB-102's (\"covering malformed versions, out-of-class names, and the reserved name alike\")"
+    covered_by:
+      - I_DEFINITION_QUERY.store_query-reserved_name
+      - I_QUERY_SERVICE.execute_stored_query-reserved_name
+  # Query response headers (ITS-REST docs/query/Request.md §Common Headers and
+  # Query Parameters, related response headers).
+  - id: query-result-set-etag-identifier
+    description: "A query execution answers with an ETag identifying the resultSet, in the mandatory weak form; the identifier inside the tag is the service's own choice and is not constrained."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters (\"Related response headers: `ETag` - A unique identifier of the resultSet\") + Requests_and_responses.md §ETag and Last-Modified (\"Both `ETag` and `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; \"the `ETag` value is independent of its resource serialization format (JSON/XML) … Therefore, the `ETag` is considered to be of weak-type and should have a weakness indicator `W/` prefix\") + §Deprecated headers (\"all `ETag` headers that hold a resource identifier MUST include a weakness indicator `W/`\")"
+    covered_by:
+      - I_QUERY_SERVICE.execute_ad_hoc_query-result_set_etag
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_get
+      - I_QUERY_SERVICE.execute_stored_query-ehr_id_header
+      - I_QUERY_SERVICE.execute_stored_query-version_exact
+  # Stored-query execution request shapes (ITS-REST docs/query/Request.md).
+  - id: query-stored-post-body-optional
+    description: "Every field of the stored-execution POST body is an optional parameter with a released default, so a parameterless stored query executes on an empty JSON object."
+    source: "ITS-REST query Request.md §Common Headers and Query Parameters (\"`offset` - used for paging: the row number in result to start result-set from (`0`-based); default `0`\"; \"`fetch` - used for paging: the number of rows to fetch (i.e. limit); default depends on the implementation\") + §Query parameters (query_parameters are per query definition) + §GET vs POST (\"we recommend clients using the `POST` method instead of `GET`\", unqualified by execution form); the body-borne carriage of those parameters is recorded first-hand in register AMB-99"
+    covered_by: [I_QUERY_SERVICE.execute_stored_query-post_empty_body]
   # Datetime request parameters (ITS-REST Resources.md §Datetime format).
   - id: datetime-param-timezone-optional
     description: "A datetime request parameter (version_at_time on every at-time read; the contribution time_range bounds) supplied in the extended ISO 8601 form WITHOUT a timezone is valid and is resolved in the server's local timezone, never rejected 400 — while the basic format, a bare date, and malformed values stay 400."
