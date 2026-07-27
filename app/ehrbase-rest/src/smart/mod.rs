@@ -9,17 +9,19 @@
 //!
 //! - [`discovery`] — the `/.well-known/smart-configuration` document
 //!   (master04 §Service Discovery), served pre-auth;
-//! - [`scope`] — the master08 resource-scope grammar
-//!   (`compartment/resource.permission`, `*`/`**`/`ns::*` patterns) parsed
-//!   from the validated token's `scope` claim;
+//! - the master08 resource-scope grammar
+//!   (`compartment/resource.permission`, `*`/`**`/`ns::*` patterns) —
+//!   `openehr_its::rest::smart_scopes`, parsed from the validated token's
+//!   `scope` claim;
 //! - [`enforce`] — scope enforcement riding the existing ABAC PEP
 //!   ([`crate::extensions::access::pep`]), AND-composed after RBAC/Cedar, plus the
 //!   `ehrId`/`patient` launch-context binding (master07/master09).
 //!
 //! Registration (master03), token issuance/grants/PKCE (master06), and
 //! launch-sequence UI (master07) are Authorization-Server/Launcher duties —
-//! out of scope for a CDR, recorded as NOTEs in the register.
-//! Config-gated ([`config`]): off by default, zero wire drift when disabled.
+//! out of scope for a CDR, recorded in the conformance register.
+//! Config-gated (`ehrbase::config::smart::SmartConfig`): off by default, zero
+//! wire drift when disabled.
 
 pub mod discovery;
 pub mod enforce;

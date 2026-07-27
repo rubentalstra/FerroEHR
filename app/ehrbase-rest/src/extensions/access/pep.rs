@@ -170,6 +170,13 @@ pub(crate) async fn pre_check(
     op: &'static str,
     parts: &RequestParts,
 ) -> Result<(), Response> {
+    // The SMART gate for the ABAC-`Skip` resource families (template + AQL,
+    // master08 §Resource Scopes) runs FIRST and independently of the ABAC
+    // wiring: those operations never reach the ABAC-integrated `smart_gate`
+    // below (query authz lives in the query path, template ops are RBAC-only),
+    // so their fine-grained scopes are enforced here, with the resource id
+    // resolved from the route's own path parameters.
+    smart_skip_family_gate(state, op, parts)?;
     let Some(handle) = state.authz() else {
         return Ok(());
     };
@@ -636,18 +643,54 @@ fn smart_decide(
         })
 }
 
-// NOTE (SMART coverage boundary, master08 §Resource Scopes): the SMART
-// gate above rides the ABAC pre/post checks, which cover the COMPOSITION family
-// (`mode_of` → `Pre`/`Post`). The AQL and template families are ABAC-`Skip`
-// (query is handled in the query path via `query_pre`/`query_post`; template
-// ops are RBAC-only, carrying no `ResourceKind`), so their SMART resource-scope
-// enforcement (`aql-<name>`, `template-<id>`) is applied at their own dispatch
-// call sites, not here: those dispatchers hold the resolved resource id (the
-// stored `qualified_query_name`, the `{template_id}` path param) and are the
-// point that would call the pure `smart_decide` for those families. That wiring
-// lives in `crate::api::query` / `crate::api::definition` (outside this module);
-// the COMPOSITION family — the one master08 example that flows through ABAC — is
-// fully gated here.
+/// The SMART resource-scope gate for the ABAC-`Skip` families — template and
+/// AQL (master08 §Resource Scopes: `template-…`, `aql-…`). The COMPOSITION
+/// family rides the ABAC-integrated [`smart_gate`] (it needs the ABAC-resolved
+/// template id + the launch-context subject binding); these two families carry
+/// their resource id in the route itself, so the gate runs directly off the
+/// path parameters, before and independently of any ABAC wiring:
+///
+/// - template ops → the `{template_id}` path parameter (uploads and lists have
+///   none — an unresolved id matches only a broad `*`/`**` scope, the
+///   documented fail-closed reading of [`enforce::evaluate`]);
+/// - AQL definition/stored-execution ops → `{qualified_query_name}` (ad-hoc
+///   execution has none — same broad-scope rule).
+///
+/// A `patient/` compartment permit needs no per-request EHR binding here:
+/// templates are unscoped and queries are cross-EHR — per-row patient scoping
+/// stays with the ABAC query subject-scope pre-filter (register-documented),
+/// exactly as the ABAC-integrated gate treats target-less operations.
+fn smart_skip_family_gate(
+    state: &AppState,
+    op: &str,
+    parts: &RequestParts,
+) -> Result<(), Response> {
+    let Some(cfg) = smart_config(state) else {
+        return Ok(());
+    };
+    let family = enforce::family_of_op(op);
+    if !matches!(
+        family,
+        Some(
+            openehr_its::rest::smart_scopes::ResourceFamily::Template
+                | openehr_its::rest::smart_scopes::ResourceFamily::Aql
+        )
+    ) {
+        return Ok(());
+    }
+    let principal = current_principal().unwrap_or_else(fallback_principal);
+    let resource_id = parts
+        .path
+        .get("template_id")
+        .or_else(|| parts.path.get("qualified_query_name"))
+        .map(String::as_str);
+    match smart_decide(cfg, &principal, op, resource_id) {
+        Err(reason) => Err(forbidden(&principal, &reason)),
+        // Permitted — including through a `patient/` compartment, whose EHR
+        // binding is vacuous for these target-less families (see the doc).
+        Ok(_) => Ok(()),
+    }
+}
 
 #[cfg(test)]
 #[allow(
