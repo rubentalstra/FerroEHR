@@ -1,0 +1,66 @@
+# The BULK physical delete with an `ehr_id` SUBSET selector: exactly the named
+# EHRs are destroyed and every other EHR survives. The released ground is the
+# operation's own sentence — operations/admin_ehr_delete_all.yaml: "Deletes all
+# or multiple EHRs, or a specified subset of EHRs identified using the `ehr_id`
+# query parameter" — plus parameters/query/ehr_id_Admin.yaml: "An optional
+# parameter to perform the operation on a subset of EHRs". The SURVIVOR probe
+# is what makes this a subset test rather than a second all-EHRs test.
+#
+# ONE id, deliberately. The released parameter's RFC 6570 `{?ehr_id*}` REPEATED
+# form (`?ehr_id=a&ehr_id=b`) is NOT expressible in the binding request model —
+# `request.query` is a name→single-value map (tools/cnf-runner/src/exec/driver.rs
+# `build_url`), so a repeated parameter cannot be authored — and the released
+# docs text fixes no serialization form for the selector anyway. A one-member
+# subset is unambiguous under every reading and proves the whole law the text
+# states: the named EHR goes, the unnamed one stays. The multi-id form is
+# carried as the cited wire_surface element `admin-bulk-delete-subset-form`
+# with its server-side test.
+#
+# `requires.server: any` — unlike the unfiltered sibling this call destroys only
+# what it names, so it needs no exclusively owned instance.
+id: I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset
+kind: functional
+component: ADMIN
+sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
+capabilities: [PhysicalDeletion, AdminApi]
+profiles: [OPTIONS]
+test_purpose: >-
+  The bulk delete called with an ehr_id subset selector deletes exactly the
+  named EHR and leaves an unnamed EHR retrievable.
+description: "Physically delete an ehr_id subset (the unnamed EHR survives)"
+spec_refs:
+  - "SM openehr_platform §I_ADMIN_SERVICE.physical_ehr_delete"
+  - "ITS-REST admin §admin_ehr_delete_all (DELETE /admin/ehr/all?ehr_id= — the subset selector)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "ITS-REST Admin API is DEVELOPMENT-stage — docs/admin/Description.md §Status: \"This specification is in the `DEVELOPMENT` state\", and docs/overview/Preface.md §Conformance is \"tbd.\"; guarded until the Admin API stabilises"
+  - "admin_ehr_delete_all realizes NO SM operation — SM i_admin_service.adoc §physical_ehr_delete takes a single `an_ehr_id: UUID [1]` and the I_ADMIN_ARCHIVE list operations archive rather than delete (register AMB-33); the `delete_all` variant anchor is a catalogue naming convention, never an SM claim"
+  - "the subset is one id: the RFC 6570 repeated `?ehr_id=a&ehr_id=b` form is not expressible in the binding query model and the released docs text fixes no serialization form — wire_surface element admin-bulk-delete-subset-form"
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id} — the EHR to delete
+flow:
+  - step: 1                              # the EHR that must SURVIVE the call
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { survivor_ehr_id: created.ehr_id }
+  - step: 2
+    call: physical_ehr_delete
+    variant: delete_all                  # DELETE /admin/ehr/all?ehr_id=${ehr_id}
+    on: admin                            # ADMIN-role principal (ixit)
+    with: { ehr_id_subset: "${ehr_id}" }
+    expect: ok_empty                     # 204 No Content (202 Accepted absorbed — AMB-139)
+  - step: 3                              # the named EHR is gone
+    call: I_EHR_SERVICE.has_ehr
+    with: { ehr_id: "${ehr_id}" }
+    expect: not_found
+  - step: 4                              # the unnamed EHR is untouched — this is the subset law
+    call: I_EHR_SERVICE.has_ehr
+    with: { ehr_id: "${survivor_ehr_id}" }
+    expect: ok
+postconditions:
+  - assert: state
+    text: >-
+      The selector deleted exactly the EHR it named and nothing else — the
+      unnamed EHR is still retrievable (verified by steps 3 and 4).
