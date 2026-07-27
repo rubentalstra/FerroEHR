@@ -731,3 +731,57 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   client replaying a fetched COMPOSITION at the wrong URL).
 - **Ask:** state the rule in the docs text and assign its branch (suggested:
   reject with 422 — the request is well-formed but cannot be followed).
+
+### UPR-41 — create-on-existing-directory has no wire branch
+
+- **Components:** ITS-REST (directory_create), SM (i_ehr_directory)
+- **Register:** AMB-79 (fixed_handling)
+- **Facts:** SM `Pre_no_directory` establishes the rule; the operation
+  declares 201/400/404 only; the stalled Robot suite asserts 409 with the
+  in-file admission "NOTE: @PABLO this is not (yet) in the SPEC".
+- **Ask:** bind the branch (suggested: 409).
+
+### UPR-42 — update/delete of a nonexistent directory has no wire branch
+
+- **Components:** ITS-REST (directory_update/delete), SM (i_ehr_directory)
+- **Register:** AMB-80 (fixed_handling)
+- **Facts:** the only 404 is scoped "when an EHR with ehr_id does not
+  exist"; 412 requires a latest version to mismatch; SM Pre_has_directory
+  has no error code.
+- **Ask:** widen the 404 scoping or bind another branch.
+
+### UPR-43 — the directory `path` parameter grammar is under-specified
+
+- **Components:** ITS-REST (parameters/query/path), SM (has_path), RM
+  (master05 §Paths — a different grammar)
+- **Register:** AMB-81 (fixed_handling)
+- **Facts:** one released sentence; leading slash, root-implicitness,
+  duplicate-sibling disambiguation, and escaping are all unstated; the
+  RM's bracket uniqueness-modifier path convention is never adopted.
+- **Ask:** define the grammar (root-implicit, encoding, disambiguation).
+
+### UPR-44 — the is_modifiable refusal has no status code
+
+- **Components:** RM (master04 §EHR Active Status), ITS-REST
+- **Register:** AMB-82 (fixed_handling)
+- **Facts:** RM requires content writes (Compositions AND Folders) to be
+  refused on a deactivated EHR; no released wire text mentions
+  is_modifiable outside the EHR-creation defaults.
+- **Ask:** assign the refusal branch (suggested: 409).
+
+### UPR-45 — I_EHR_DIRECTORY editorial defects + two response-file contract defects
+
+- **Components:** SM (i_ehr_directory, i_validity_checker), ITS-REST
+- **Register:** AMB-83 (editorial)
+- **Facts:** ehr_id/an_ehr_id spelling mixed across one interface; UUID
+  typing of version/ehr ids; valid_content vs content_valid recurring in a
+  third interface; update_directory "Create or update" vs its own
+  Pre_has_directory + no preceding_version_uid parameter;
+  get_directory_at_version with no preconditions and the wrong error set;
+  inconsistent error declaration on the boolean probes; write operations
+  typed 0..1 with no return; no SM counterpart for 412; three boolean
+  probes with no route. ITS-REST: the update's 200/204 branches select
+  different Location/ETag header contracts; 412_directory declares a
+  Location solely to deprecate it.
+- **Ask:** normalize the interface; align the update response header
+  contracts; drop the deprecated Location declaration from 412.
