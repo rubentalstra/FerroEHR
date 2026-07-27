@@ -430,6 +430,86 @@ async fn version_read_last_modified_is_the_commit_audit_instant() {
     );
 }
 
+/// The `VERSIONED_OBJECT` container read (`…/versioned_ehr_status`) and its
+/// `REVISION_HISTORY` sibling both carry the container-uid weak `ETag` AND a
+/// `Last-Modified` equal to the newest held version's commit instant —
+/// overview §"`ETag` and Last-Modified": "Both `ETag` and `Last-Modified`
+/// SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
+/// resources that have versioning or unique state identifiers", the value
+/// "derived from `VERSION.commit_audit.time_committed.value`".
+#[tokio::test]
+async fn container_reads_carry_etag_and_newest_commit_last_modified() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+
+    // A second EHR_STATUS version, so "newest" is distinguishable from v1.
+    let (status_body, ovid) = current_ehr_status(&app, &ehr_id).await;
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
+        .header("content-type", "application/json")
+        .header("if-match", format!("\"{ovid}\""))
+        .body(Body::from(status_body.to_string()))
+        .unwrap();
+    let (status, _, _) = send(&app, req).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+
+    // The newest version's commit instant, read off the served envelope.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{ehr_id}/versioned_ehr_status/version"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    let latest: Value = serde_json::from_str(&body).expect("json ORIGINAL_VERSION");
+    assert!(
+        latest["uid"]["value"]
+            .as_str()
+            .is_some_and(|v| v.ends_with("::2")),
+        "the update committed version 2"
+    );
+    let newest_instant = imf_fixdate(commit_instant(&latest));
+    let container_uid = vo_of(latest["uid"]["value"].as_str().expect("uid")).to_owned();
+
+    // The VERSIONED_EHR_STATUS container read.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{ehr_id}/versioned_ehr_status"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    let v: Value = serde_json::from_str(&body).expect("json VERSIONED_EHR_STATUS");
+    assert_eq!(v["_type"], "VERSIONED_EHR_STATUS");
+    assert_eq!(
+        etag(&h),
+        Some(format!("W/\"{container_uid}\"").as_str()),
+        "overview §\"ETag and Last-Modified\": \"VERSIONED_OBJECT.uid.value\" is an ETag source"
+    );
+    assert_eq!(
+        last_modified(&h),
+        Some(newest_instant.as_str()),
+        "overview §\"ETag and Last-Modified\": a VERSIONED_OBJECT response SHOULD carry \
+         Last-Modified, derived from the newest version's commit_audit.time_committed"
+    );
+
+    // The REVISION_HISTORY read — same container identity, same newest instant.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/ehr/{ehr_id}/versioned_ehr_status/revision_history"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    let rh: Value = serde_json::from_str(&body).expect("json REVISION_HISTORY");
+    assert_eq!(rh["_type"], "REVISION_HISTORY");
+    assert_eq!(etag(&h), Some(format!("W/\"{container_uid}\"").as_str()));
+    assert_eq!(last_modified(&h), Some(newest_instant.as_str()));
+}
+
 /// The COMPOSITION VERSION read (`…/versioned_composition/{vo}/version/{uid}`)
 /// and the bare COMPOSITION reads/writes all carry the same `Last-Modified`:
 /// the commit instant of the version served. The bare COMPOSITION body has no

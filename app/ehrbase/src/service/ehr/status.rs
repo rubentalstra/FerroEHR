@@ -213,7 +213,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn versioned_status(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
@@ -223,7 +223,12 @@ impl EhrbaseService {
                     format!("EHR_STATUS for EHR {ehr_id}"),
                 )
             })?;
-        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await
+        let (body, last_modified) =
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await?;
+        Ok(ServiceResponse::new(
+            body,
+            super::meta::container_meta(ehr_id, vo_id, last_modified),
+        ))
     }
 
     /// The `REVISION_HISTORY` of an EHR's `EHR_STATUS`.
@@ -234,7 +239,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn status_revision_history(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
@@ -244,7 +249,11 @@ impl EhrbaseService {
                     format!("EHR_STATUS for EHR {ehr_id}"),
                 )
             })?;
-        revision_history(&self.pool, ehr_id, vo_id).await
+        let (body, last_modified) = revision_history(&self.pool, ehr_id, vo_id).await?;
+        Ok(ServiceResponse::new(
+            body,
+            super::meta::container_meta(ehr_id, vo_id, last_modified),
+        ))
     }
 
     /// An `ORIGINAL_VERSION` of an `EHR_STATUS` at a specific version.
@@ -621,7 +630,7 @@ impl EhrbaseService {
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
     /// a read fails.
     pub async fn get_versioned_ehr_status(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
-        Ok(self.versioned_status(an_ehr_id).await?)
+        Ok(self.versioned_status(an_ehr_id).await?.body)
     }
 
     /// SM `I_EHR_STATUS.set_ehr_queryable` — commit a new `EHR_STATUS` version
@@ -731,7 +740,7 @@ impl EhrbaseService {
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
     /// a read fails.
     pub async fn ehr_status_revision_history(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
-        Ok(self.status_revision_history(an_ehr_id).await?)
+        Ok(self.status_revision_history(an_ehr_id).await?.body)
     }
 
     /// The `ORIGINAL_VERSION` of the EHR's `EHR_STATUS` extant at `a_time`, or
@@ -814,6 +823,37 @@ impl EhrbaseService {
         Ok(self
             .status_by_version(an_ehr_id, a_version_uid, tree)
             .await?)
+    }
+
+    /// [`Self::get_versioned_ehr_status`] with the container metadata the
+    /// wire's `ETag`/`Last-Modified` need: the container uid identity plus the
+    /// newest held version's commit instant (ITS-REST overview
+    /// `Requests_and_responses.md` §"`ETag` and Last-Modified" — both headers
+    /// SHOULD accompany a `VERSIONED_OBJECT` response).
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
+    /// a read fails.
+    pub async fn versioned_ehr_status_response(
+        &self,
+        an_ehr_id: EhrId,
+    ) -> Result<ServiceResponse, SmError> {
+        Ok(self.versioned_status(an_ehr_id).await?)
+    }
+
+    /// [`Self::ehr_status_revision_history`] with the container metadata the
+    /// wire's `ETag`/`Last-Modified` need (container uid + newest commit
+    /// instant — same derivation as
+    /// [`Self::versioned_ehr_status_response`]).
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
+    /// a read fails.
+    pub async fn ehr_status_revision_history_response(
+        &self,
+        an_ehr_id: EhrId,
+    ) -> Result<ServiceResponse, SmError> {
+        Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
     /// [`Self::replace_ehr_status`] returning the committed version's

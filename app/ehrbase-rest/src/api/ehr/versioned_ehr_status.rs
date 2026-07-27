@@ -34,13 +34,17 @@ pub(super) async fn run(
         "versioned_ehr_status_get" => {
             let p = params::build::<VersionedEhrStatusGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            let body = state.backend().get_versioned_ehr_status(ehr_id).await?;
             // VERSIONED_OBJECT container — canonical JSON or XML
             // (ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
             // `ToXml` for the concrete `VERSIONED_*` class serves it).
-            // Container-uid ETag (§ETag and Last-Modified); no commit instant
-            // on the container body, so Last-Modified is honestly absent.
-            let resp = super::read_resp(&p.ehr_id, body);
+            // Container-uid ETag + Last-Modified from the newest held version's
+            // commit instant (§"ETag and Last-Modified": both headers SHOULD
+            // accompany a VERSIONED_OBJECT response), carried in the service
+            // metadata.
+            let resp = state
+                .backend()
+                .versioned_ehr_status_response(ehr_id)
+                .await?;
             Ok(negotiate::read_rm::<VersionedEhrStatus>(
                 h,
                 &base,
@@ -52,20 +56,14 @@ pub(super) async fn run(
         "versioned_ehr_status_revision_history" => {
             let p = params::build::<VersionedEhrStatusRevisionHistoryParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            let body = state.backend().ehr_status_revision_history(ehr_id).await?;
-            // The status container's uid is not in the path — take it from the
-            // history read's owning EHR: derive via the versioned-status read
-            // is an extra round trip, so the ETag uses the EHR-scoped history
-            // identity the body itself provides (the last item's version uid's
-            // object id), falling back to header-less when absent.
-            let vo_uid = body["items"]
-                .as_array()
-                .and_then(|items| items.last())
-                .and_then(|item| item["version_id"]["value"].as_str())
-                .and_then(|uid| uid.split("::").next())
-                .unwrap_or_default()
-                .to_owned();
-            let resp = super::revision_history_resp(&p.ehr_id, &vo_uid, body);
+            // Container-uid ETag + newest-commit Last-Modified from the service
+            // metadata (the same container identity the versioned-object read
+            // serves — §"ETag and Last-Modified" names
+            // "VERSIONED_OBJECT.uid.value" as an ETag source).
+            let resp = state
+                .backend()
+                .ehr_status_revision_history_response(ehr_id)
+                .await?;
             Ok(negotiate::read_rm::<RevisionHistory>(
                 h,
                 &base,
@@ -81,17 +79,18 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_version_at_time(ehr_id, p.version_at_time)
                 .await?;
-            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION,
-            // plus Last-Modified from the envelope's
-            // commit_audit.time_committed (§"ETag and Last-Modified": the
-            // value "should be derived from
-            // VERSION.commit_audit.time_committed.value"); body is an
+            // 200_VERSION_at_time: ETag(version_uid) + Last-Modified from the
+            // envelope's commit_audit.time_committed (§"ETag and
+            // Last-Modified": the value "should be derived from
+            // VERSION.commit_audit.time_committed.value"); no Location — a GET
+            // never carries one (§Location: "It MUST NOT be used to indicate
+            // an alternate representation of an existing resource"). Body is an
             // ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
                 h,
                 &base,
-                Some("versioned_ehr_status/version"),
+                None,
                 &resp,
                 "original_version",
             ))

@@ -370,7 +370,7 @@ impl EhrbaseService {
 
         // uid / owner_id / time_created are the VERSIONED_OBJECT's own — reuse
         // the shared read builder so they match the /versioned_* surface.
-        let vo = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
+        let (vo, _) = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
         let mut x = json!({
             "_type": x_versioned_type(kind),
             "uid": vo["uid"].clone(),
@@ -385,7 +385,7 @@ impl EhrbaseService {
         {
             map.insert(
                 "revision_history".to_owned(),
-                revision_history(&self.pool, ehr_id, vo_id).await?,
+                revision_history(&self.pool, ehr_id, vo_id).await?.0,
             );
         }
 
