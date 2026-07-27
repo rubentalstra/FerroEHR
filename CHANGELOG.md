@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the seven EHR_STATUS and
+  VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes), canonical examples, and the 406/415 negotiation
+  branches; the EHR_STATUS update documents the `openehr-version` /
+  `openehr-audit-details` committal headers and the
+  `Prefer: return=identifier` response shape. Document only — no wire
+  change.
+
 - **`Last-Modified` on VERSIONED_OBJECT container and revision-history
   reads** (#442). `GET …/versioned_ehr_status`,
   `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
