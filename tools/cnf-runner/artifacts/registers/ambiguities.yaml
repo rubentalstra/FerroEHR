@@ -1239,7 +1239,10 @@ AMB-75:
 AMB-76:
   ambiguity: >-
     The rejection status for a lexically malformed identifier path segment
-    (ehr_id, versioned_object_uid) is unassigned. The released glossary
+    (ehr_id, versioned_object_uid; scope extended 2026-07-27 to
+    contribution_uid, which the glossary does not type at all — AMB-90 — and
+    which the path-parameter declaration types only as string/uuid) is
+    unassigned. The released glossary
     types both as HIER_OBJECT_ID with no per-operation 400 branch; the
     overview 400 row covers "syntactically invalid header, parameter or
     content"; BASE gives UID three subtypes with "mutually exclusive
@@ -1249,7 +1252,10 @@ AMB-76:
     nothing is arguably a plain miss (404).
   source: >-
     ITS-REST specifications/docs/overview/Glossary_and_conventions.md
-    (ehr_id / versioned_object_uid as HIER_OBJECT_ID);
+    (ehr_id / versioned_object_uid as HIER_OBJECT_ID; contribution_uid
+    absent from the table entirely) +
+    specifications/parameters/path/contribution_uid.yaml ("The CONTRIBUTION
+    uid", type string / format uuid — the only place the segment is typed);
     Requests_and_responses.md §HTTP status codes (the 400 row); BASE
     base_types master05-identification_package.adoc ("all three subtypes
     have mutually exclusive string patterns") + the UID/HIER_OBJECT_ID

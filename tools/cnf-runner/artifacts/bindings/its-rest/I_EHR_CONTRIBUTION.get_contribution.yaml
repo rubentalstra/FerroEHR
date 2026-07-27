@@ -15,16 +15,46 @@ formats: [canonical-json, canonical-xml]
 # "The `Location` header MUST ONLY be used for resource creation (e.g.,
 # `201 Created`) or redirect responses"; §Deprecated headers deprecates it on
 # `GET` and `DELETE` responses alike.
+#
+# ETag + Last-Modified on this READ are SPEC-SILENT, adjudicated in register
+# AMB-87: the overview SHOULDs both headers "for VERSION, VERSIONED_OBJECT, or
+# other resources that have versioning or unique state identifiers", while
+# Resources.md classifies CONTRIBUTION among the NON-versioned resources — so no
+# docs-text sentence settles whether the SHOULD reaches this response. The
+# register's fixed handling: the CONTRIBUTION is immutable and has a unique
+# identifier, so the entity tag is that identifier (the same one the create's
+# 201 already carries) and Last-Modified is its one modification instant, the
+# committal. The ETag payload is asserted against the case's own
+# `contribution_uid` capture; an unresolved placeholder wildcards, leaving the
+# weak-tag SHAPE (the §Deprecated-headers `W/` MUST) as the assertion.
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 outcomes:
   ok:
     status: 200                           # 200_CONTRIBUTION.yaml — the existing CONTRIBUTION
     headers:
+      ETag: 'pattern:W/"<contribution_uid>"'   # register AMB-87 + §Deprecated headers (the `W/` MUST)
+      Last-Modified: present              # register AMB-87 — the committal instant (§ETag and Last-Modified: "derived from VERSION.commit_audit.time_committed.value")
       Content-Type: negotiated
       Location: absent                    # read — overview §Location / §Deprecated headers
     body: present
   not_found:
     status: 404                           # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
+  validation_failed:
+    # A `contribution_uid` path segment that is not a well-formed identifier at
+    # all. DOCS TEXT (overview §HTTP status codes, the 400 row verbatim): "The
+    # service cannot or will not process the request due to something that is
+    # perceived to be a client error (e.g., malformed request syntax,
+    # syntactically invalid content)" — and, below the table, "Status code `400`
+    # indicates normally a bad request, as well as a generic client-side error,
+    # used when no other `4xx` error code is appropriate". WHICH of the 400/404
+    # rows a malformed identifier segment takes is assigned by no released
+    # sentence; register AMB-76 carries the repo-wide fixed handling (malformed
+    # identifier segments are 400, well-formed-but-unknown ones stay 404) and
+    # its scope names `contribution_uid`.
+    status: 400
+    body: error_loose
 # The CONTRIBUTION carries server-assigned identity + the server-set audit time
 # (contribution_create.yaml: "audit.time_committed: server will always set it").
 server_assigned: [uid, "audit.time_committed"]

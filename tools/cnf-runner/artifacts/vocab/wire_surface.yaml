@@ -77,7 +77,7 @@ sm_operations:
     source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
   - operation: I_EHR_CONTRIBUTION.contribution_count
     reason: off_wire
-    source: "SM i_ehr_contribution.adoc vs released ITS-REST 1.1.0 — no contribution-count wire (single-CONTRIBUTION GET only; cf. register AMB-22 for list_contributions)"
+    source: "SM i_ehr_contribution.adoc vs released ITS-REST 1.1.0 — no contribution-count wire, and none INFERABLE either: with no collection GET on /ehr/{ehr_id}/contribution there is nothing to count against (the single-CONTRIBUTION GET answers only existence). Register AMB-22, widened 2026-07-27 from list_contributions to this operation and to has_contribution, records all three; has_contribution alone IS inferable (the by-uid GET's 200/404) and therefore carries a realized binding rather than an exception here"
   - operation: I_EHR_INDEX.add_ehr_subject
     reason: off_wire
     source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
@@ -295,10 +295,12 @@ branches:
     outcome: version_not_found
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_CONTRIBUTION.commit_contribution
-    outcome: not_found
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_found branch of I_EHR_CONTRIBUTION.commit_contribution is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gap: the commit route's not_found branch is now exercised
+  # by I_EHR_CONTRIBUTION.commit_contribution-non_existing_ehr, so the
+  # exception is gone rather than reworded (coverage only ratchets up). The
+  # new precondition_failed and the get_contribution validation_failed branches
+  # are exercised by -stale_preceding_version and
+  # -malformed_contribution_uid respectively, so neither needs an entry.
   - binding: I_EHR_DIRECTORY.create_directory
     outcome: validation_failed
     reason: coverage_gap
@@ -717,6 +719,12 @@ elements:
       # inside it is the newly committed deleted version (register AMB-75).
       - I_EHR_DIRECTORY.delete_directory-etag_names_new_version
       - I_EHR_CONTRIBUTION.commit_contribution-valid_composition
+      # The CONTRIBUTION READ's tag as well — a non-versioned resource whose
+      # unique identifier the register (AMB-87) reads as a unique state
+      # identifier; the identifier-preference commit is the same tag on the
+      # write side.
+      - I_EHR_CONTRIBUTION.get_contribution-header_identity
+      - I_EHR_CONTRIBUTION.commit_contribution-return_identifier
       - SIG-VERSION-signature_present
   - id: header-location-on-create
     description: "Location header on 201 Created pointing at the new resource URL."
@@ -746,6 +754,10 @@ elements:
       # §Logical Deletion), so the SHOULD reaches it and the instant is that
       # commit's own (register AMB-75).
       - I_EHR_DIRECTORY.delete_directory-etag_names_new_version
+      # The CONTRIBUTION read: whether the SHOULD reaches a resource
+      # Resources.md classifies as non-versioned is register AMB-87, whose
+      # fixed handling supplies the committal instant.
+      - I_EHR_CONTRIBUTION.get_contribution-header_identity
       - SIG-VERSION-signature_present
   - id: header-prefer-return-representation
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
@@ -767,6 +779,10 @@ elements:
       # The docs text's own worked example of the preference is a COMPOSITION
       # PUT (§Prefer only identifier), exercised here.
       - I_EHR_COMPOSITION.update_composition-return_identifier
+      # The CHANGE-SET half: the affected resource of a native commit is the
+      # CONTRIBUTION itself, and the case reads it back through the returned
+      # identifier.
+      - I_EHR_CONTRIBUTION.commit_contribution-return_identifier
   - id: header-preference-applied
     description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
@@ -857,6 +873,7 @@ elements:
       - I_EHR_COMPOSITION.get_versioned_composition-at_time_omitted
       - I_EHR_COMPOSITION.delete_composition-etag_names_new_version
       - I_EHR_CONTRIBUTION.get_contribution-existing
+      - I_EHR_CONTRIBUTION.get_contribution-header_identity
       - I_DEMOGRAPHIC_SERVICE.get_party-aaaa
       - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
       - I_DEMOGRAPHIC_SERVICE.delete_party-aaaa
@@ -1021,9 +1038,18 @@ elements:
   - id: header-prefer-resolve-refs
     description: "Prefer: return=representation, resolve_refs asks the service to resolve OBJECT_REFs into full or partial representations."
     source: "ITS-REST Requests_and_responses.md §Prefer resolving Object references (\"Clients MAY request that object references (e.g., OBJECT_REF) be resolved into full or partial representations by specifying: `Prefer: return=representation, resolve_refs`\"; \"This is particularly useful when retrieving lists of COMPOSITION resources within an EHR, where the default behavior is to return only reference links\")"
-    exception:
-      reason: coverage_gap
-      note: "The released text states the CLIENT side only — what a client may ask for. It assigns the service no obligation to honour the token, names no status, no `Preference-Applied` value, no failure mode, and no resource on which resolution is defined (the one worked example, \"lists of COMPOSITION resources within an EHR\", is not an ITS-REST 1.1.0 operation). There is therefore no docs-text sentence that assigns an observable outcome to a resolve_refs request, and asserting one — even 'the read still succeeds' — would be catalogue invention rather than a spec expectation. Registered as an honest boundary rather than covered by a case that pins nothing; the sibling preferences ARE covered (header-prefer-return-representation, header-prefer-return-identifier). Closes when a future ITS-REST release states a server obligation for the token."
+    # The generic token remains a bare CLIENT sentence: it assigns the service
+    # no obligation, names no status, no `Preference-Applied` value and no
+    # failure mode, and its one worked example ("lists of COMPOSITION resources
+    # within an EHR") is not an ITS-REST 1.1.0 operation — so no case gates it
+    # in general, and none should. What IS gated is the ONE resource on which a
+    # released paragraph makes the resolution observable: the CONTRIBUTION
+    # read, whose §Simplified Formats paragraph promises a
+    # `versions[i].data` serialization its OBJECT_REF-typed body cannot express
+    # (register AMB-57 binds that promise to this token). The exception is
+    # therefore retired in favour of the case, and coverage only ratchets up.
+    covered_by:
+      - I_EHR_CONTRIBUTION.get_contribution-resolve_refs
   # Deprecated custom-header spellings (ITS-REST Requests_and_responses.md
   # §Deprecated headers — the five-row rename table). Each deprecated name is a
   # genuinely DIFFERENT HTTP field name after case-insensitive folding (the
@@ -1113,11 +1139,52 @@ elements:
       - I_EHR_DIRECTORY.has_path-folder_structure
   # Deactivated-EHR content refusal (RM ehr master04 §EHR Active Status).
   - id: ehr-not-modifiable-refuses-content-writes
-    description: "While EHR_STATUS.is_modifiable is false the EHR refuses content writes — on BOTH content kinds the rule enumerates, Compositions and hierarchical Folders — while EHR_STATUS itself stays writable so the EHR can be reactivated."
+    description: "While EHR_STATUS.is_modifiable is false the EHR refuses content writes — on BOTH content kinds the rule enumerates (Compositions and hierarchical Folders) AND through the native CONTRIBUTION commit, the primary write route, which a route-scoped guard would leave open — while EHR_STATUS itself stays writable so the EHR can be reactivated."
     source: "RM ehr master04-ehr_package.adoc §EHR Active Status: \"The `EHR_STATUS._is_modifiable_` attribute is used to indicate whether _the contents of an EHR_ are modifiable, and is set to `True` if the EHR is considered _active_. An EHR's 'contents' consist of everything other than the `EHR_STATUS` object, i.e. its Compositions (Versioned objects referred to by the `_compositions_` attribute), its hierarchical Folders (Versioned objects referred to by the `_folders_` attribute) and any other content that may be added in later releases of this specification\" — the ITS-REST docs text never mentions is_modifiable outside the EHR-creation defaults (grep of specifications/docs/**: zero hits) and assigns the refusal no status code, so the 409 is adjudicated in register AMB-82 against Requests_and_responses.md §HTTP status codes row 409 (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\")"
     covered_by:
       - I_EHR_DIRECTORY.create_directory-ehr_not_modifiable
       - I_EHR_COMPOSITION.create_composition-ehr_not_modifiable
+      # The native change-set route (register AMB-82's scope extension).
+      - I_EHR_CONTRIBUTION.commit_contribution-ehr_not_modifiable
+  # The CONTRIBUTION change-set surface (SM i_ehr_contribution.adoc; RM common
+  # master06 §Contributions; the ITS-REST contribution routes).
+  - id: contribution-client-supplied-envelope-uid
+    description: "The CONTRIBUTION envelope's optional client-supplied uid is ACCEPTED when free — the committed resource is addressable under it — and a second commit naming a uid already in use is refused as a duplicate identifier."
+    source: "ITS-REST specifications/operations/contribution_create.yaml, the relaxed-envelope list, verbatim: \"`uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned\" — the only released sentence governing the attribute. WHICH error comes from Requests_and_responses.md §HTTP status codes, the 409 row (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"), the only row that describes a colliding identifier"
+    covered_by:
+      - I_EHR_CONTRIBUTION.commit_contribution-client_uid_in_use
+  - id: contribution-preceding-version-precondition
+    description: "A member's preceding_version_uid is a real precondition, not decoration: naming a superseded version fails the commit and the response names the container's current latest version — the lost-update guard on a route that carries no If-Match at all."
+    source: "RM common master06-change_control_package.adoc §Version tree (a new Version supersedes the one it names as preceding) + RM common UML/classes/org.openehr.rm.common.version.adoc (Preceding_version_uid_validity) vs ITS-REST Requests_and_responses.md §HTTP status codes, whose 412 row is written for HEADER preconditions (\"One or more conditions given in the request header fields evaluated to false\") while this route's precondition travels in the member body — the code and the ETag echo are adjudicated in register AMB-54(b), the ETag half mirroring §\"If-Match and accidental overwrites\" (\"SHOULD return also latest `version_uid` in the `ETag` response headers\")"
+    covered_by:
+      - I_EHR_CONTRIBUTION.commit_contribution-stale_preceding_version
+  - id: contribution-change-kind-rejection-families
+    description: "The three distinct change-control failures a commit can carry, each answered differently: a first-version MODIFICATION (the released 400 trigger), a CREATION that names a preceding version, and an out-of-group change_type/lifecycle token."
+    source: "ITS-REST specifications/responses/400_CONTRIBUTION.yaml assigns exactly ONE of them — \"or the modification type does not match the operation - i.e. first version of a MODIFICATION\" — and nothing released assigns the other two; RM common master06 §Contributions (the change-kind law) + UML/classes/org.openehr.rm.common.version.adoc (Preceding_version_uid_validity) + master04 (AUDIT_DETAILS Change_type_valid) ground the REJECTIONS, and register AMB-54(a)/(c) adjudicates their codes into the Requests_and_responses.md §HTTP status codes 422 row (\"The request was well-formed but was unable to be followed due to semantic errors\")"
+    covered_by:
+      - I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types
+      - I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types_persistent
+      - I_EHR_CONTRIBUTION.commit_contribution-creation_with_preceding_version
+      - I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation
+  - id: contribution-rejection-status-discrimination
+    description: "WHICH of 400 and 422 a given commit rejection carries — the released 400 for a first-version MODIFICATION versus the register-adjudicated 422 for the remaining change-control and change-set failures — is a real distinction on the wire that the catalogue cannot currently pin."
+    source: "ITS-REST specifications/responses/400_CONTRIBUTION.yaml (the one assigned trigger) vs Requests_and_responses.md §HTTP status codes rows 400 and 422, read together with register AMB-54 (the narrowed entry: the first-version-MODIFICATION half IS assigned, the creation-with-preceding and out-of-group halves are not) and AMB-84 (the empty change set)"
+    exception:
+      reason: coverage_gap
+      register: AMB-54
+      note: "Not authorable today for a closed-vocabulary reason, the same blocker recorded on ehr-id-path-segment-malformed-rejection and query-ehr-id-parameter-header-conflict: the outcome taxonomy (vocab/outcomes.yaml) carries ONE rejection kind for both codes (`validation_failed`), and the commit binding's `validation_failed` therefore declares `alt_status: [400]` so the kind spans the family. A case can say a rejection happened, not which code it wore. Splitting the two would need either a second rejection kind in the closed taxonomy or a per-case status override, both of which are extensions only a schedule release may make; a variant binding cannot do it, because the two branches differ in the BODY's change kind, not in the request shaping a variant expresses. What IS gated meanwhile is the rejection itself on every branch (contribution-change-kind-rejection-families) plus the two branches that DO have distinct kinds — 412 (contribution-preceding-version-precondition) and 409 (contribution-client-supplied-envelope-uid). Closes when the outcome taxonomy gains the second rejection kind."
+  - id: contribution-deletion-member-shape
+    description: "A deletion member is data-LESS: committing 523|deleted| with the data omitted performs the logical delete, and a 523|deleted| member that carries data is refused rather than committed."
+    source: "RM common master06-change_control_package.adoc §Logical Deletion, the procedure verbatim: \"create a new Version in the normal way; delete its `_data_`; set the `_lifecycle_state_` value to the code for `deleted`; commit in the normal way\" + UML/classes/org.openehr.rm.common.original_version.adoc (data 0..1, which is what lets a deletion version carry none) — CONTRADICTED by the released commit schema, which makes the member's data required with no null form; adjudicated in register AMB-85 in favour of the RM, with the refusal in the Requests_and_responses.md §HTTP status codes 422 row"
+    covered_by:
+      - I_EHR_CONTRIBUTION.commit_contribution-delete_directory
+      - I_EHR_CONTRIBUTION.commit_contribution-deleted_member_with_data
+  - id: contribution-versions-ref-shape
+    description: "A served CONTRIBUTION's versions[i] reference carries the committed DATA class (COMPOSITION / EHR_STATUS / FOLDER) as its type, the local namespace, and the full three-part OBJECT_VERSION_ID of the version that caused the change — and resolves to the full ORIGINAL_VERSION when the client asks for reference resolution."
+    source: "RM common UML/classes/org.openehr.rm.common.contribution.adoc (versions: \"Set of references to Versions causing changes\", then \"items of types such as COMPOSITION and FOLDER\") + BASE UML/classes/org.openehr.base.base_types.object_ref.adoc (type: \"Name of the class ... of object to which this identifier type refers\") + RM common master06 (VERSION objects \"are identified by a `_uid_` attribute of type `OBJECT_VERSION_ID`\"); the RM-vs-BASE tension over which class name belongs in `type` is adjudicated in register AMB-88 in favour of the released schema example (the DATA class)"
+    covered_by:
+      - I_EHR_CONTRIBUTION.get_contribution-version_ref_shape
+      - I_EHR_CONTRIBUTION.get_contribution-resolve_refs
   - id: versioned-object-addressing-is-ehr-scoped
     description: "A version_uid resolves only within the EHR whose route addresses it: a live version identifier belonging to another EHR's container is not served, so version ids are not a global namespace."
     source: "RM ehr UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (`ehr_status` is THIS EHR's VERSIONED_EHR_STATUS) + RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (`version_with_id`, `Pre: has_version_id (a_ver_id)` — membership of the addressed container) + ITS-REST Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
