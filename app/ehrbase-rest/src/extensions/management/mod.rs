@@ -256,8 +256,13 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
 
 /// Build/spec provenance — version, git, spec pins (`GET /management/info`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `info` endpoint's configured [`AccessLevel`];
-/// absent (a router `404`) unless opted in. Body: the [`BuildInfo`] record.
+/// absent (a router `404`) unless opted in — and that `404` is answered
+/// **before authentication**, because a non-opted-in endpoint is simply not a
+/// route. Body: the [`BuildInfo`] record.
 #[utoipa::path(
     get, path = "/management/info", tag = "management",
     responses(
@@ -273,9 +278,13 @@ async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
 
 /// Prometheus text exposition (`GET /management/prometheus`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `prometheus` endpoint's configured [`AccessLevel`];
 /// the live [`router`] mounts this route only when the endpoint is opted in AND
-/// the metrics recorder is installed (otherwise it is absent — a router `404`).
+/// the metrics recorder is installed (otherwise it is absent — a router `404`,
+/// answered before authentication).
 #[utoipa::path(
     get, path = "/management/prometheus", tag = "management",
     responses(
@@ -295,9 +304,13 @@ async fn prometheus_text(State(s): State<ManagementState>) -> Response {
 
 /// Actuator-style JSON list of known metric names (`GET /management/metrics`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `metrics` endpoint's configured [`AccessLevel`];
 /// the live [`router`] mounts this route only when the endpoint is opted in AND
-/// the metrics recorder is installed (otherwise it is absent — a router `404`).
+/// the metrics recorder is installed (otherwise it is absent — a router `404`,
+/// answered before authentication).
 #[utoipa::path(
     get, path = "/management/metrics", tag = "management",
     responses(
@@ -317,9 +330,13 @@ async fn metrics_list(State(s): State<ManagementState>) -> Response {
 
 /// Actuator-style JSON detail for one metric (`GET /management/metrics/{name}`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `metrics` endpoint's configured [`AccessLevel`];
 /// the live [`router`] mounts this route only when the endpoint is opted in AND
-/// the metrics recorder is installed (otherwise it is absent — a router `404`).
+/// the metrics recorder is installed (otherwise it is absent — a router `404`,
+/// answered before authentication).
 #[utoipa::path(
     get, path = "/management/metrics/{name}", tag = "management",
     params(("name" = String, Path, description = "The metric name to inspect.")),
@@ -341,9 +358,12 @@ async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) ->
 
 /// The redacted effective-configuration snapshot (`GET /management/env`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `env` endpoint's configured [`AccessLevel`]; absent
-/// (a router `404`) unless opted in. Body: the effective config with secrets
-/// redacted at render.
+/// (a router `404`, answered before authentication) unless opted in. Body: the
+/// effective config with secrets redacted at render.
 #[utoipa::path(
     get, path = "/management/env", tag = "management",
     responses(
@@ -359,10 +379,13 @@ async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
 
 /// The effective log-filter directives + boot filter (`GET /management/loggers`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `loggers` endpoint's configured [`AccessLevel`];
 /// the live [`router`] mounts the `loggers` routes only when the endpoint is
 /// opted in AND a reloadable filter is installed (otherwise absent — a router
-/// `404`).
+/// `404`, answered before authentication).
 #[utoipa::path(
     get, path = "/management/loggers", tag = "management",
     responses(
@@ -382,10 +405,14 @@ async fn loggers_get(State(s): State<ManagementState>) -> Response {
 
 /// Swap the live log filter (`POST /management/loggers`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Body: `{"filter": "ehrbase=debug,sqlx=warn"}`. Access-level gated by the
 /// `loggers` endpoint's configured [`AccessLevel`]; the live [`router`] mounts
 /// this route only when the endpoint is opted in AND a reloadable filter is
-/// installed (otherwise absent — a router `404`).
+/// installed (otherwise absent — a router `404`, answered before
+/// authentication).
 #[utoipa::path(
     post, path = "/management/loggers", tag = "management",
     request_body(content = serde_json::Value, description = "`{\"filter\": \"<env-filter directives>\"}`"),
@@ -410,9 +437,13 @@ async fn loggers_post(
 
 /// Reset the log filter to the boot filter (`DELETE /management/loggers`).
 ///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
 /// Access-level gated by the `loggers` endpoint's configured [`AccessLevel`];
 /// the live [`router`] mounts this route only when the endpoint is opted in AND
-/// a reloadable filter is installed (otherwise absent — a router `404`).
+/// a reloadable filter is installed (otherwise absent — a router `404`,
+/// answered before authentication).
 #[utoipa::path(
     delete, path = "/management/loggers", tag = "management",
     responses(

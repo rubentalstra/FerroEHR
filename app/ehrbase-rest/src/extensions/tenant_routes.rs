@@ -49,11 +49,15 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 ///
 /// Config-gated: `404` when `tenancy.enabled` is off (the route stays mounted
 /// but the backend is never consulted).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/tenant", tag = "tenancy",
     responses(
         (status = 200, description = "The tenant records.", body = serde_json::Value),
-        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off).", body = serde_json::Value)
+        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_list(
@@ -65,6 +69,10 @@ pub(crate) async fn tenant_list(
 }
 
 /// Create a tenant (`POST /admin/tenant`). Body: `{name, system_id}`.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
 #[utoipa::path(
     post, path = "/admin/tenant", tag = "tenancy",
     request_body(content = serde_json::Value, description = "The tenant definition `{name, system_id}` (canonical JSON)."),
@@ -73,7 +81,7 @@ pub(crate) async fn tenant_list(
         (status = 400, description = "`name`/`system_id` is missing or empty, or the body is not valid JSON.", body = serde_json::Value),
         (status = 409, description = "A tenant with that name already exists.", body = serde_json::Value),
         (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
-        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off).", body = serde_json::Value)
+        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_create(
@@ -85,13 +93,17 @@ pub(crate) async fn tenant_create(
 }
 
 /// Read one tenant by id (`GET /admin/tenant/{tenant_id}`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
     responses(
         (status = 200, description = "The tenant record.", body = serde_json::Value),
         (status = 400, description = "`tenant_id` is not a valid UUID.", body = serde_json::Value),
-        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_get(
@@ -103,6 +115,10 @@ pub(crate) async fn tenant_get(
 }
 
 /// Update one tenant's name/`system_id` (`PUT /admin/tenant/{tenant_id}`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
 #[utoipa::path(
     put, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
@@ -112,7 +128,7 @@ pub(crate) async fn tenant_get(
         (status = 400, description = "`tenant_id` is not a valid UUID, a field is missing/empty, or the body is not valid JSON.", body = serde_json::Value),
         (status = 409, description = "A tenant with that name already exists.", body = serde_json::Value),
         (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
-        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_update(
@@ -125,6 +141,10 @@ pub(crate) async fn tenant_update(
 
 /// Delete one tenant — only when empty and not the reserved default
 /// (`DELETE /admin/tenant/{tenant_id}`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: multi-tenancy has no SM
+/// or ITS-REST governance at all, so the whole group (paths, payloads, status
+/// codes) is our own design.
 #[utoipa::path(
     delete, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
@@ -132,7 +152,7 @@ pub(crate) async fn tenant_update(
         (status = 204, description = "Deleted."),
         (status = 400, description = "`tenant_id` is not a valid UUID.", body = serde_json::Value),
         (status = 409, description = "The tenant is the reserved default, or still owns data (purge it first).", body = serde_json::Value),
-        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_delete(
