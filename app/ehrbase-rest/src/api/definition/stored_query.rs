@@ -14,7 +14,7 @@
 //! (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`).
 
 use axum::response::Response;
-use http::{HeaderMap, StatusCode};
+use http::StatusCode;
 
 use openehr_its::rest::generated::definition::{
     DefinitionQueryListParams, DefinitionQueryStoreYamlParams, DefinitionQueryVersionGetParams,
@@ -75,30 +75,32 @@ pub(super) async fn store(state: &AppState, parts: &RequestParts) -> Result<Resp
     let query_type = p
         .query_type
         .unwrap_or_else(|| DEFAULT_QUERY_TYPE.to_owned());
+    // The store's single declared body type is `text/plain`
+    // (`operations/definition_query_store.yaml`); a payload DECLARING another
+    // media type is refused 415 before parsing (`Resources.md` §format rules
+    // MUST), an absent `Content-Type` declares nothing to refuse.
+    negotiate::require_text_plain(h)?;
     let body = negotiate::text_body(&parts.body)?;
     // The `DefinitionAdapter::query_store` impl honours `query_type`: an
     // AQL formalism runs the syntactic check, while an unsupported non-AQL
     // formalism is rejected as a distinct unsupported-formalism `400`
     // (not a blanket "invalid AQL"). See `QUERY_DESCRIPTOR.formalism`,
     // `parameters/query/query_type.yaml`.
-    state
+    //
+    // The store returns the SEMVER it actually wrote at, and the `Location`
+    // names exactly that resource (`headers/Location_Query.yaml`: the header
+    // "indicates the URL of the Stored Query resource") — never a
+    // neighbouring version recovered by a post-hoc lookup, which could name
+    // a higher version this PUT did not touch.
+    let version = state
         .backend()
         .query_store(name.clone(), None, query_type, body)
         .await?;
-    // The no-version store auto-assigns the SEMVER but the generated trait
-    // method is bodyless (`()`), so the assigned version is recovered through
-    // the list seam: exact-name rows come back ordered by version ascending, so
-    // the last one is the version this store just wrote (or upserted).
-    match stored_version_of(state, &name, h).await {
-        Some(version) => {
-            let location = format!(
-                "{}/definition/query/{name}/{version}",
-                state.config().server.base_path
-            );
-            Ok(negotiate::empty_with_location(StatusCode::OK, &location))
-        }
-        None => Ok(negotiate::empty(StatusCode::OK)),
-    }
+    let location = format!(
+        "{}/definition/query/{name}/{version}",
+        state.config().server.base_path
+    );
+    Ok(negotiate::empty_with_location(StatusCode::OK, &location))
 }
 
 /// `GET …/definition/query/{qualified_query_name}/{version}` — the registered
@@ -121,7 +123,8 @@ pub(super) async fn version_get(
 }
 
 /// `PUT …/definition/query/{qualified_query_name}/{version}` — store a query at
-/// a specified SEMVER (stored verbatim); `409` on an existing `(name, version)`.
+/// a specified SEMVER (an exact `major.minor.patch`; a prefix or malformed
+/// segment is the released `400` branch); `409` on an existing `(name, version)`.
 ///
 /// as [`store`], the `query_type` parameter is read and threaded through.
 pub(super) async fn version_store(
@@ -139,31 +142,24 @@ pub(super) async fn version_store(
     let query_type = p
         .query_type
         .unwrap_or_else(|| DEFAULT_QUERY_TYPE.to_owned());
+    // Same `text/plain`-only body type as the version-less store (the released
+    // operation omits the Content-Type parameter but carries the identical
+    // text/plain body) — a declared foreign media type is 415 (`Resources.md`
+    // §format rules MUST).
+    negotiate::require_text_plain(h)?;
     let body = negotiate::text_body(&parts.body)?;
     // As in `store`, the `query_store` impl honours `query_type`: the AQL
     // syntactic check runs only for the AQL formalism, and an unsupported
-    // non-AQL formalism is an honest unsupported-formalism reject.
-    state
+    // non-AQL formalism is an honest unsupported-formalism reject. The
+    // returned SEMVER is the exact path version (the store requires an exact
+    // `major.minor.patch`; a prefix or malformed value is its `400`).
+    let stored = state
         .backend()
-        .query_store(name.clone(), Some(version.clone()), query_type, body)
+        .query_store(name.clone(), Some(version), query_type, body)
         .await?;
     let location = format!(
-        "{}/definition/query/{name}/{version}",
+        "{}/definition/query/{name}/{stored}",
         state.config().server.base_path
     );
     Ok(negotiate::empty_with_location(StatusCode::OK, &location))
-}
-
-/// The stored SEMVER of the stored query `name` after a no-version store: the
-/// exact-name entries from the list seam (ordered by version ascending), taking
-/// the highest. `None` when the lookup fails or finds nothing — the store itself
-/// already succeeded, so the response degrades to Location-less rather than
-/// failing the request.
-async fn stored_version_of(state: &AppState, name: &str, _headers: &HeaderMap) -> Option<String> {
-    let list = state.backend().query_list(name.to_owned()).await.ok()?;
-    list.iter()
-        .filter(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(name))
-        .filter_map(|entry| entry.get("version").and_then(|v| v.as_str()))
-        .next_back()
-        .map(str::to_owned)
 }
