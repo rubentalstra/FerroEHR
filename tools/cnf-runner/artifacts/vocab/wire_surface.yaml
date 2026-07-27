@@ -233,6 +233,11 @@ branches:
     outcome: not_found
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: version_prefix
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes only the distinctive prefix-resolution branch of parameters/path/version.yaml (register AMB-113)"
   - binding: I_EHR_COMPOSITION.create_composition
     variant: deprecated_media_type
     outcome: not_found
@@ -1254,3 +1259,27 @@ elements:
     source: "RM ehr UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (`ehr_status` is THIS EHR's VERSIONED_EHR_STATUS) + RM common UML/classes/org.openehr.rm.common.versioned_object.adoc §Functions (`version_with_id`, `Pre: has_version_id (a_ver_id)` — membership of the addressed container) + ITS-REST Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
     covered_by:
       - I_EHR_STATUS.get_versioned_ehr_status-version_of_other_ehr
+  # Definition / TEMPLATE surface (group-10 audit, 2026-07-27). The list-filter
+  # semantics and the ADL2 rejection-phase boundary the released text leaves
+  # open — registered rather than silently omitted.
+  - id: template-list-filter-conjunction
+    description: "Supplying more than one list filter narrows the result set: a template must satisfy every supplied filter to be listed, so adding a filter can never widen a result."
+    source: "ITS-REST specifications/parameters/query/filter_template_id.yaml + concept.yaml + filter_version.yaml (each described alone — \"Pattern for matching …\" / \"Filter by version …\") + operations/definition_template_adl1.4_list.yaml and definition_template_adl2_list.yaml (both declare a single 200 branch); the released text never describes the parameters AS A QUERY and assigns no combination rule — adjudicated in register AMB-114 as conjunction, the only reading under which a filter filters"
+    exception:
+      reason: coverage_gap
+      register: AMB-114
+      note: "The single-filter glob half IS gated (I_DEFINITION_ADL2.list_matching_artefacts-filter). The COMBINATION is not authorable as a discriminating case today: the closed assertion vocabulary offers no membership or cardinality predicate over a JSON list body (`field` addresses RM paths, `result_set` is AQL-only), so a two-filter case could assert only that the request was fulfilled — which conjunction, disjunction and last-wins all satisfy equally. Closes when the assertion vocabulary gains a list-membership form (extension only by schedule release), or when a released sentence assigns the combination."
+  - id: template-list-offset-past-end
+    description: "An offset at or beyond the end of the filtered template list is a fulfilled request answering an EMPTY list — not a client error, and not the last page."
+    source: "ITS-REST specifications/parameters/query/offset.yaml (\"The row number in result-set to start result-set from (`0`-based), default is `0`\") + operations/definition_template_adl1.4_list.yaml and definition_template_adl2_list.yaml (a single declared 200 branch — no rejection exists to reach); the released text assigns no outcome to a past-the-end offset — adjudicated in register AMB-114 as the empty page"
+    exception:
+      reason: coverage_gap
+      register: AMB-114
+      note: "Same closed-vocabulary blocker as template-list-filter-conjunction. The empty-list positive is already gated on an empty server (I_DEFINITION_ADL2.list_opts-empty, I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts), but telling an empty PAGE from a non-empty one on a POPULATED server needs a list-cardinality assertion the vocabulary does not have, so a past-the-end case could assert only fulfilment. Closes when the assertion vocabulary gains a list-cardinality form."
+  - id: template-upload-section-boundary-phase
+    description: "A rejection for a MISSING mandatory ADL2 section (language / description / definition / terminology / component_terminologies) may wear either upload rejection status, because AM places the defect in the grammar and in the validity catalogue at once."
+    source: "AM docs/OPT2/master03-opt_raw.adoc §Artefact Structure (the `adl_operational_template` Antlr4 rule makes each section a production, so a source lacking one fails to parse) vs AM docs/AOM2/master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks (\"any missing mandatory parts, e.g. `terminology` section (STCNT)\", so a validator may equally report it); neither says which phase owns it, and the two phases carry different wire statuses under register AMB-110"
+    exception:
+      reason: coverage_gap
+      register: AMB-116
+      note: "A deliberate hold-out, not an omission. Both rejection STATUSES are gated on phase-unambiguous fixtures — 400 by I_DEFINITION_ADL2.upload_artefact-unparseable_artefact and I_DEFINITION_ADL14.upload_opt-unparseable_opt, 422 by I_DEFINITION_ADL2.upload_artefact-invalid_artefacts (a VARDT violation) and I_DEFINITION_ADL14.upload_opt-invalid_opt — so the split law itself is covered. What is NOT pinned is which status a SECTION-level defect wears; the corpus keeps cnf.adl2.opt.invalid.missing_description and .missing_definition referenced by no case for exactly that reason. Closes when AM assigns the phase (UPR-80)."
