@@ -42,6 +42,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the five DIRECTORY
+  operations** (#457). Every response now declares its headers (weak `ETag`,
+  `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
+  reads and writes carry canonical FOLDER examples (nested `folders`, `items`
+  as OBJECT_REFs); the writes document the `If-Match` precondition — carried
+  in the header because these routes have no version segment, so a stale
+  value is `412`, never `409` — plus `Prefer`, the `openehr-version` /
+  `openehr-audit-details` committal headers and the item-tag headers, and the
+  canonical-JSON/XML-only request bodies (a Simplified-Format `Content-Type`
+  is `415`, an unfulfillable simplified `Accept` `406`: a FOLDER is not
+  templated). The `version_at_time` and `path` query parameters are described
+  with the released sentence plus our register-documented resolution rules
+  (root-implicit, leading-slash tolerant, folders-only, first-match; a future
+  time serves the latest version, a time before the first commit is `404`),
+  and every branch the wire serves is documented — the deleted-directory
+  `204` on both reads, the `DELETE`'s `204` carrying the new deleted version's
+  identity, the `404`s (including an EHR with no directory), the `412`s with
+  the latest-uid `ETag`, `400`/`406`/`415`/`422`, and the `409`s that are our
+  own design (creating a directory when one already exists, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
 - **Served OpenAPI: complete documentation for the eight COMPOSITION and
   VERSIONED_COMPOSITION operations** (#450). Every response now declares its
   headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
