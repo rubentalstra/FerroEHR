@@ -34,7 +34,7 @@ use ehrbase::config::smart::SmartConfig;
 
 /// The `/.well-known/smart-configuration` document (master04 §Authentication
 /// Endpoints + §Services + §Capabilities). Unset optional endpoints are omitted.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct SmartConfiguration {
     /// The token/OIDC issuer (master04 §Authentication Endpoints).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,7 +85,7 @@ pub struct SmartConfiguration {
 }
 
 /// One `services` entry (master04 §Services).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct Service {
     /// Absolute URL to the root of the API (required).
     #[serde(rename = "baseUrl")]
@@ -306,19 +306,70 @@ fn discovery_response(body: Bytes) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The SMART App Launch service-discovery document
-/// (`GET /ehrbase/rest/.well-known/smart-configuration`, master04 §Service
-/// Discovery).
+/// The SMART App Launch service-discovery document — **our SMART Platform
+/// surface, DEVELOPMENT status** (`GET
+/// /ehrbase/rest/.well-known/smart-configuration`; the openEHR SMART sub-spec
+/// `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`
+/// is `:spec_status: DEVELOPMENT` — a release-pinned reporting qualifier, per
+/// the conformance register).
 ///
-/// Unauthenticated (served pre-auth) and always `200 application/json` (R-02).
-/// Config-gated: when SMART is disabled the [`router`] is empty and the path is
-/// absent (a router `404`). This handler carries the `#[utoipa::path]` metadata
-/// that documents the endpoint (via [`openapi`]); the **live** route serves the
-/// document pre-serialized once at assembly ([`router`]), so this body runs only
-/// if the endpoint is mounted directly.
+/// Served **pre-auth** (public): the *Application* fetches this document from
+/// the launch `iss` BEFORE any OAuth exchange (master04 §Service Discovery;
+/// master07 §SMART Authorization Flow — the posture inference is
+/// register-documented, the text never states it). Config-gated: when SMART is
+/// disabled the [`router`] is empty and the path is absent (a router `404`,
+/// zero wire drift). A configured `smart.platform_base_url` moves the served
+/// path; [`openapi`] re-homes this declaration to match. The **live** route
+/// serves the document pre-serialized once at assembly ([`router`]); this body
+/// runs only if the endpoint is mounted directly.
 #[utoipa::path(
     get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
-    responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))
+    responses(
+        (status = 200,
+         description = "The SMART configuration document, always \
+                        `application/json` (master04 §Service Discovery: \
+                        'Responses to `/.well-known/smart-configuration` \
+                        endpoint must be served with the `application/json` \
+                        MIME type'). The `services` map always carries \
+                        `org.openehr.rest` ('At a minimum, the `services` \
+                        section must include the openEHR REST API using the \
+                        key `org.openehr.rest`') with an ABSOLUTE `baseUrl` \
+                        (§Services: 'Absolute URL to the root of the API \
+                        (required)', built from `smart.public_base_url`); \
+                        `org.fhir.rest` appears when the FHIR connector is \
+                        enabled (recommended). `capabilities` advertises only \
+                        what this server enforces: `context-openehr-ehr` \
+                        always, `openehr-permission-v1` only in fail-closed \
+                        mode (`require_smart_scopes`), the experimental pair \
+                        only when their flags are on, plus any operator \
+                        `smart.endpoints.capabilities`. The \
+                        Authorization-Server endpoints are the operator's, \
+                        verbatim; `issuer` falls back to the OIDC bearer \
+                        issuer. This route exists only when SMART is enabled \
+                        (disabled => absent => `404`).",
+         body = SmartConfiguration,
+         content_type = "application/json",
+         example = json!({
+             "issuer": "https://as.example",
+             "jwks_uri": "https://as.example/jwks",
+             "authorization_endpoint": "https://as.example/authorize",
+             "token_endpoint": "https://as.example/token",
+             "grant_types_supported": ["authorization_code", "client_credentials"],
+             "scopes_supported": [
+                 "openid", "profile", "launch", "launch/patient",
+                 "patient/composition-*.cruds", "user/aql-*.cruds"
+             ],
+             "response_types_supported": ["code"],
+             "code_challenge_methods_supported": ["S256"],
+             "capabilities": ["context-openehr-ehr", "openehr-permission-v1"],
+             "services": {
+                 "org.openehr.rest": {
+                     "baseUrl": "https://cdr.example.com/ehrbase/rest/openehr/v1",
+                     "description": "The openEHR REST API baseUrl"
+                 }
+             }
+         }))
+    )
 )]
 async fn smart_configuration(State(state): State<AppState>) -> Json<SmartConfiguration> {
     let cfg = state.config();
