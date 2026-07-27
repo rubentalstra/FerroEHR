@@ -711,3 +711,23 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** correct the signatures/preconditions/typing/error names and the
   three examples; consider adding the missing concurrency/conflict error
   vocabulary.
+
+### UPR-40 — the docs text never states the body-uid vs URL rule for a COMPOSITION update
+
+- **Component:** ITS-REST (overview Resources.md + Requests_and_responses.md)
+- **Register:** AMB-78 (report_only)
+- **Facts:** `Resources.md` §Identifier types derives the container from the
+  served identifier ("which also implies that the VERSIONED_OBJECT identifier
+  is `8849182c-…`") and calls populating a COMPOSITION's inherited `uid`
+  "strongly recommended"/"should"; RM types `LOCATABLE.uid` 0..1. The
+  normative prose never says what a service does when an update body's
+  `uid` names a DIFFERENT container than the addressed one — the requirement
+  exists only as an API-definition operation description.
+- **Problem:** the rule that clients are actually held to is invisible in the
+  normative text, and its branch is unassigned: 422 (well-formed but
+  unfollowable), 400 (client error), or silent acceptance with the
+  server's own uid are all defensible, so implementations diverge on a
+  request that is trivially easy to send by accident (a read-modify-write
+  client replaying a fetched COMPOSITION at the wrong URL).
+- **Ask:** state the rule in the docs text and assign its branch (suggested:
+  reject with 422 — the request is well-formed but cannot be followed).

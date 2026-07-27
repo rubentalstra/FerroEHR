@@ -1288,6 +1288,48 @@ AMB-77:
   disposition: editorial
   upstream_ref: "UPR-39"
 
+AMB-78:
+  ambiguity: >-
+    Whether a COMPOSITION update whose request body carries a `uid` naming a
+    DIFFERENT version container than the URL's `uid_based_id` must be
+    REJECTED — and with which status — is stated by NO released docs text.
+    The match requirement appears only in the API definition's operation
+    description ("If the request body already contains a COMPOSITION.uid.value,
+    it must match the `uid_based_id` in the URL"), which is the stalled OAS
+    layer and never an oracle. The docs text says only that a
+    COMPOSITION.uid.value "implies that the VERSIONED_OBJECT identifier is
+    …", and that copying the enclosing VERSION uid into the contained object
+    is "strongly recommended"/"should" — recommendation strength, so a server
+    that accepts the commit and stamps its own uid breaches nothing released.
+    Neither the 400 row nor the 422 row of the status table is assigned to
+    this case.
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §Identifier types (the
+    "implies that the VERSIONED_OBJECT identifier is `8849182c-…`" derivation
+    + the "strongly recommended … should be copied" NOTE);
+    Requests_and_responses.md §HTTP status codes (rows 400 "malformed request
+    syntax, syntactically invalid content" and 422 "well-formed but … unable
+    to be followed due to semantic errors" — neither assigned to a
+    body-vs-URL identifier contradiction); RM common
+    UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (uid 0..1) —
+    the silence confirmed first-hand across the whole ITS-REST docs tree (the
+    only "must match the `uid_based_id`" sentence lives in the OAS operation
+    file).
+  handling: >-
+    Report-only: the update_composition-body_uid_mismatch case exercises the
+    branch and records the outcome without gating any tier. This server
+    REJECTS the self-contradictory request as its own design convention, and
+    the catalogue expects the SEMANTIC-error branch because the 422 row is
+    the only row that describes the exchange — the body is well-formed JSON
+    and a well-formed COMPOSITION; what cannot be followed is the
+    contradiction between body and URL — while the 400 row is scoped to
+    malformed syntax. A conformant server answering 400 instead, or accepting
+    the commit outright, breaches nothing released, so the case never gates.
+    Reported upstream (UPR-40): state the rule and its branch in the docs
+    text.
+  disposition: report_only
+  upstream_ref: "UPR-40"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
