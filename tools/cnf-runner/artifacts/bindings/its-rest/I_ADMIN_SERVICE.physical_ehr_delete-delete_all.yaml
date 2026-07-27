@@ -1,0 +1,68 @@
+# Wire realization of the BULK physical EHR delete —
+# DELETE /admin/ehr/all{?ehr_id*} (admin_ehr_delete_all) — as the `delete_all`
+# variant of I_ADMIN_SERVICE.physical_ehr_delete.
+#
+# ANCHORING NOTE: this released route realizes NO SM operation. The only
+# candidate, I_ADMIN_SERVICE.physical_ehr_delete, takes `an_ehr_id: UUID [1]` —
+# one mandatory id, no list form and no all-EHRs form — so it can express
+# neither the unfiltered call nor a multi-id subset; the two I_ADMIN_ARCHIVE
+# operations do take `List<UUID> [0..1]` with the same optional-means-all shape,
+# but they ARCHIVE ("Move selected EHRs to archival storage"), which is the
+# opposite of destroying. Nothing else in SM is set-scoped. Anchoring the route
+# to the single-EHR delete under an explicit variant — what the route performs
+# on each targeted EHR IS that operation — is a CATALOGUE NAMING CONVENTION,
+# not a claim that SM defines a set-scoped delete; the same device register
+# AMB-127 uses for the stored-query single-definition read and AMB-136 for the
+# demographic contribution routes. Register AMB-33 carries the gap.
+#
+# THE DELETE IS PHYSICAL, and the success kind is therefore `ok_empty`, never
+# `deleted`. The closed vocabulary defines `deleted` as "Logical delete
+# performed (a new version, lifecycle_state = openehr::523|deleted|)" — exactly
+# what a hard delete does not produce. Register AMB-10 carries the released
+# RM-vs-SM/ITS contradiction and the route-family split that decides it.
+#
+# STATUS GROUNDS (the released ITS-REST text for THIS operation,
+# specifications/operations/admin_ehr_delete_all.yaml, quoted verbatim):
+#   "The server may execute this operation asynchronously (e.g. in batches), in
+#    which case returns status `202 Accepted`. If the deletion is processed
+#    synchronously and completes successfully, the server returns status
+#    `204 No Content`."
+#   and responses/204_deleted_hard.yaml: "`204 No Content` is returned when the
+#   requested operation succeeded and the resource(s) identified by the request
+#   parameters has been physically deleted (i.e. hard-delete)".
+# The 202 is carried as `alt_status` of the same logical kind (fulfilled, no
+# content) because the closed outcome vocabulary has no `accepted` kind — stated
+# openly in register AMB-139, which also records that 202 is absent from the
+# overview's own status-code table and legalized by that table's
+# "Additional status codes MAY be used" clause.
+#
+# THE `ehr_id` QUERY PARAMETER IS OPTIONAL AND MEANS "SUBSET":
+#   operations/admin_ehr_delete_all.yaml: "Deletes all or multiple EHRs, or a
+#   specified subset of EHRs identified using the `ehr_id` query parameter."
+#   parameters/query/ehr_id_Admin.yaml: "An optional parameter to perform the
+#   operation on a subset of EHRs."
+# So an ABSENT parameter is the whole set and a present one names the subset.
+# The template below is the optional binding form, so a step that binds
+# `${ehr_id_subset}` sends `?ehr_id=<uuid>` and a step that does not sends no
+# query at all. The RFC 6570 `{?ehr_id*}` REPEATED form (`?ehr_id=a&ehr_id=b`)
+# is not expressible in the binding query model — a name→single-value map — and
+# is carried as the cited wire_surface element `admin-bulk-delete-subset-form`.
+#
+# THE 405-WHEN-DISABLED BRANCH IS NOT DECLARED HERE: the closed outcome
+# taxonomy has no method_not_allowed kind (the standing `method-405-allow-header`
+# boundary), so it is carried as the wire_surface element
+# `admin-bulk-delete-disabled-405` rather than as an unassertable outcome.
+sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
+its: its-rest
+variant: delete_all
+request:
+  method: DELETE
+  path: /admin/ehr/all
+  query:
+    ehr_id: "${ehr_id_subset?}"           # absent -> the full set; present -> that subset
+outcomes:
+  ok_empty:
+    status: 204                           # 204_deleted_hard.yaml (synchronous hard delete)
+    alt_status: [202]                     # the operation's own async sentence; same logical kind (register AMB-139)
+  not_found:
+    status: 404                           # responses/404.yaml — the GENERIC 404 (not 404_unknown_ehr_id)

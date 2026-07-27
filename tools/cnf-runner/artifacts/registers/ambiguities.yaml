@@ -113,17 +113,85 @@ AMB-9:
   upstream_ref: "SPECPR-368"
 AMB-10:
   ambiguity: >-
-    Deleting a VERSIONED_OBJECT is under-specified: "needs further
-    specification at the openEHR Service Model".
+    Physical deletion is DEFINED by two released components and FORBIDDEN by a
+    third, in absolutes on both sides. RM common states the prohibition twice:
+    §Contributions — "Since a versioned repository (i.e. a collection of
+    `VERSIONED_OBJECTs`) is by definition indelible, all logical changes
+    including deletions, additions, modifications … are achieved by physically
+    committing new Versions" — and §Logical Deletion — "Medicolegal and
+    traceability requirements mean that information cannot be literally removed,
+    since it must always be possible to revert back to a previous state of the
+    record in which the deleted information is intact. Accordingly, information
+    can only ever be logically deleted." Against that, SM declares an operation
+    whose entire Meaning is "Physical deletion of specified EHR."
+    (`physical_ehr_delete`; `physical_party_delete` is its party twin), and the
+    released ITS-REST admin routes wire it in prose that admits no logical
+    reading: the success response is "`204 No Content` is returned when the
+    requested operation succeeded and the resource(s) identified by the request
+    parameters has been physically deleted (i.e. hard-delete)", and both admin
+    operation descriptions say every owned resource "(such as COMPOSITION,
+    EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also
+    be **permanently** and physically deleted, in compliance with applicable
+    data protection regulations (e.g., the GDPR in the European Union)". That
+    justification is the ONLY invocation of a data-protection regulation
+    anywhere in the vendored spec tree — grep-verified: exactly two sentences,
+    in `operations/admin_ehr_delete.yaml` and `operations/admin_ehr_delete_all.yaml`
+    (plus the three assembled `computable/OAS/admin-*.openapi.yaml` bundles,
+    which carry those same two sentences verbatim), and nowhere else in RM,
+    BASE, AM, QUERY, TERM, SM, CNF or the rest of ITS-REST. So the RM's
+    indelibility principle — stated as a medicolegal requirement — is overridden
+    by an aside in an ITS operation description, and no released text reconciles
+    the two. RE-ADJUDICATED 2026-07-27 (group-14 audit): the earlier framing,
+    "deleting a VERSIONED_OBJECT is under-specified", understated the defect.
+    This is not a silence to be filled; it is a head-on contradiction between
+    released components, and the released text that resolves it in the admin
+    routes' favour is the only text that describes those routes at all.
   source: >-
-    RM common master06-change_control_package.adoc §Change Control (a versioned
-    repository is "by definition indelible", all changes achieved by committing
-    new Versions) + §Logical Deletion (information "can only ever be logically
-    deleted" — a new Version with data set to Void and lifecycle_state deleted);
-    no physical deletion of a whole VERSIONED_OBJECT container is defined —
-    silence CONFIRMED first-hand
-  handling: "No normative cases; statement-declared behaviour only."
-  disposition: statement_declared
+    RM common master06-change_control_package.adoc §Contributions (the
+    indelibility sentence quoted above) and §Logical Deletion (the "cannot be
+    literally removed" / "can only ever be logically deleted" sentences and the
+    four-step logical-deletion procedure: new Version, delete its `_data_`,
+    `_lifecycle_state_` to `deleted`, commit) CONTRASTED with SM
+    UML/classes/i_admin_service.adoc §physical_ehr_delete ("Physical deletion of
+    specified EHR."; `an_ehr_id: UUID [1]`; `Pre_has_ehr: has_ehr (an_ehr_id)`;
+    error `ehr_id_does_not_exist`) and §physical_party_delete ("Physical delete
+    of specified Party, along with related Party relationships.") + ITS-REST
+    specifications/responses/204_deleted_hard.yaml (the quoted hard-delete
+    sentence) + specifications/operations/admin_ehr_delete.yaml and
+    admin_ehr_delete_all.yaml (the quoted permanent/physical/GDPR sentence; the
+    grep for GDPR and "data protection" over the whole of
+    docs/specs/openehr/ hits only those two files and the three assembled OAS
+    bundles) — ALL CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, split by ROUTE FAMILY, because the two readings govern
+    disjoint surfaces and each is grounded on the text that actually describes
+    its surface. (1) THE TWO ADMIN ROUTES ARE PHYSICAL. `DELETE
+    /admin/ehr/{ehr_id}` and `DELETE /admin/ehr/all` destroy the EHR and every
+    resource it owns, leaving no VERSION and no version container behind; the
+    admin operation descriptions plus `204_deleted_hard.yaml` are the ONLY
+    released text that says what these operations do, and reading them logically
+    would leave two released operations with no defined behaviour whatsoever.
+    (2) EVERY NON-ADMIN DELETE STAYS RM-LOGICAL. A COMPOSITION, FOLDER,
+    EHR_STATUS or PARTY delete on its own resource route commits a new VERSION
+    whose `change_type`/`lifecycle_state` is `523|deleted|` and leaves the
+    container standing — including where SM says otherwise: AMB-135 defect (7)
+    decides `I_PARTY.delete_party`'s physical `Post_party_deleted` against the
+    SM and in favour of the RM, precisely because no ITS-REST text describes
+    that route as a hard delete. The dividing line is therefore not a
+    preference: it is whether a released ITS operation description says
+    "physically deleted". (3) THE ADMIN SUCCESS KIND IS `ok_empty`, NEVER
+    `deleted`. The closed outcome vocabulary defines `deleted` as "Logical
+    delete performed (a new version, lifecycle_state =
+    openehr::523|deleted|)" — exactly what a physical delete does NOT produce —
+    so both admin bindings map success to `ok_empty` ("Fulfilled with no
+    content"), with the async `202` carried as its `alt_status` (AMB-139).
+    Reported upstream (UPR-04): reconcile the RM's indelibility absolutes with
+    the SM/ITS physical-delete operations — state in RM common that a
+    regulator-compelled erasure is an exception to §Logical Deletion, or state
+    in SM/ITS-REST that physical deletion is an out-of-model administrative
+    facility — and put the data-protection justification somewhere normative
+    rather than in two operation descriptions.
+  disposition: fixed_handling
   upstream_ref: "UPR-04"
 AMB-17:
   ambiguity: >-
@@ -306,25 +374,57 @@ AMB-32:
   upstream_ref: "UPR-11"
 AMB-33:
   ambiguity: >-
-    The SM ADMIN component is almost entirely unrealized in ITS-REST 1.1.0:
-    the only realized admin operations are physical EHR deletion
-    (admin_ehr_delete / admin_ehr_delete_all). I_ADMIN_SERVICE
-    list_contributions / contribution_count / versioned_composition_count /
-    composition_version_count / physical_party_delete, I_ADMIN_DUMP_LOAD
-    export_ehrs, and I_ADMIN_ARCHIVE archive_ehrs / archive_parties have no
-    wire.
+    The ADMIN surface has realization gaps in BOTH directions. SM→ITS: of the
+    ten operations the three SM admin interfaces declare, the released wire
+    realizes ONE. `I_ADMIN_SERVICE` `list_contributions` / `contribution_count`
+    / `versioned_composition_count` / `composition_version_count` /
+    `physical_party_delete`, `I_ADMIN_DUMP_LOAD` `export_ehrs` / `load_ehrs`,
+    and `I_ADMIN_ARCHIVE` `archive_ehrs` / `archive_parties` have no endpoint at
+    all. ITS→SM (WIDENED 2026-07-27, group-14 audit): the released
+    `admin_ehr_delete_all` — `DELETE /admin/ehr/all{?ehr_id*}`, half the whole
+    released Admin API — realizes NO SM operation, and this direction was
+    previously invisible because the surface gate is keyed on SM operations.
+    The only SM operation it could plausibly answer to is
+    `physical_ehr_delete`, which takes `an_ehr_id: UUID [1]` — exactly one
+    mandatory id, no list form and no all-EHRs form — so it cannot express
+    either the unfiltered call or the multi-id subset. The two `I_ADMIN_ARCHIVE`
+    operations DO take `List<UUID> [0..1]` with the same optional-means-all
+    shape, but they ARCHIVE ("Move selected EHRs to archival storage"), which is
+    the opposite of destroying them. Nothing else in SM is set-scoped. This is
+    an ITS→SM gap of the AMB-136 class: a released wire behaviour with no
+    service-model anchor to name it by.
   source: >-
-    SM i_admin_service.adoc / i_admin_dump_load.adoc / i_admin_archive.adoc
-    (list_contributions, contribution_count, versioned_composition_count,
-    composition_version_count, physical_party_delete, export_ehrs, archive_ehrs,
-    archive_parties — define the operations) vs released ITS-REST 1.1.0 (only
-    physical EHR deletion realized; no wire for the rest)
+    SM UML/classes/i_admin_service.adoc (six operations, incl.
+    §physical_ehr_delete's single `an_ehr_id: UUID [1]` parameter),
+    i_admin_dump_load.adoc (export_ehrs, load_ehrs), i_admin_archive.adoc
+    (§archive_ehrs "Move selected EHRs to archival storage", `ehr_ids:
+    List<UUID> [0..1]`; §archive_parties) and
+    docs/openehr_platform/master15-admin_service.adoc (the chapter includes
+    exactly i_admin_service, i_admin_archive, i_admin_dump_load,
+    dump_load_fail_report, export_spec — there is no set-scoped delete
+    interface anywhere in SM) vs the released ITS-REST 1.1.0 admin API —
+    specifications/admin.openapi.yaml (exactly two paths:
+    `/admin/ehr/{ehr_id}` and `/admin/ehr/all{?ehr_id*}`) +
+    operations/admin_ehr_delete.yaml + operations/admin_ehr_delete_all.yaml
+    ("Deletes all or multiple EHRs, or a specified subset of EHRs identified
+    using the `ehr_id` query parameter") + parameters/query/ehr_id_Admin.yaml
+    ("An optional parameter to perform the operation on a subset of EHRs") —
+    ALL CONFIRMED first-hand.
   handling: >-
-    The its-rest binding declares each unwired admin operation unrealized;
-    the master12 cases anchored to them are not-applicable WITH CITATION on
-    ITS-REST 1.1.0 and activate when a later ITS release adds the endpoints.
-    The one realized operation (physical_ehr_delete -> admin_ehr_delete)
-    carries a full binding. SM/ITS alignment candidate.
+    Report both directions; neither is silently absorbed. SM→ITS: the its-rest
+    binding declares each unwired admin operation `unrealized`, so the master12
+    cases anchored to them are NOT-APPLICABLE WITH CITATION on this ITS and
+    activate unchanged when a later release adds the endpoints (the AMB-17
+    pattern). ITS→SM: the bulk route is anchored to `I_ADMIN_SERVICE.physical_ehr_delete`
+    under `variant: delete_all` — the closest SM operation, since what the route
+    performs on each targeted EHR is exactly that operation — and that is a
+    CATALOGUE NAMING CONVENTION, NOT a claim that SM defines a set-scoped
+    delete, exactly as AMB-127 anchors the stored-query single-definition read
+    and AMB-136 the demographic contribution routes. The variant binding carries
+    its own outcome map and its own cases, so the route is exercised and visible
+    on the SM-keyed surface gate instead of falling through it. The one fully
+    realized operation (`physical_ehr_delete` → `admin_ehr_delete`) keeps its
+    variant-less binding. Reported upstream (UPR-12).
   disposition: fixed_handling
   upstream_ref: "UPR-12"
 AMB-34:
@@ -4020,3 +4120,392 @@ AMB-138:
     answer.
   disposition: fixed_handling
   upstream_ref: "UPR-102"
+
+AMB-139:
+  ambiguity: >-
+    `202 Accepted` is a declared success of both released admin operations and
+    is ABSENT from the specification's own status-code table. Each admin
+    operation states the async branch in prose — "The server may execute this
+    operation asynchronously (e.g. in batches), in which case returns status
+    `202 Accepted`. If the deletion is processed synchronously and completes
+    successfully, the server returns status `204 No Content`." — and enumerates
+    a `202` response whose description reads "`202 Accepted` is returned when
+    the requested operation has been accepted for processing, but processing has
+    not been completed or may not have started (i.e. when requests are processed
+    asynchronously)." The overview's §HTTP status codes table, which opens "The
+    following subset is used in this specification", lists 200, 201, 204, 400,
+    401, 403, 404, 405, 406, 408, 409, 412, 415, 422, 500 and 501 — and no 202.
+    So the two admin operations are the only released operations whose success
+    can be a code the specification's own subset does not contain.
+  source: >-
+    ITS-REST specifications/operations/admin_ehr_delete.yaml and
+    admin_ehr_delete_all.yaml (the quoted async/sync paragraph; both enumerate
+    `202`) + specifications/responses/202.yaml (the quoted description) vs
+    docs/overview/Requests_and_responses.md §"HTTP status codes" (the sixteen-row
+    table and its lead-in "The following subset is used in this specification",
+    with no 202 row) and its closing clause "To indicate the status of a request
+    or operation, an appropriate HTTP status code MUST be used as described
+    above. Additional status codes MAY be used as long as they do not conflict
+    with the predefined codes" — CONFIRMED first-hand.
+  handling: >-
+    Editorial — the table RESOLVES ITS OWN OMISSION. The closing clause permits
+    "additional status codes … as long as they do not conflict with the
+    predefined codes", and `202` conflicts with nothing in the sixteen rows: no
+    listed code claims the accepted-for-later-processing meaning, and `204`,
+    the row it sits beside, is the completed-synchronously answer the same
+    paragraph distinguishes it from. This is the AMB-60 device applied the
+    other way round: there the MAY clause let 405 stand against a competing
+    SHOULD; here it lets 202 stand against a table that simply does not list
+    it. No wire consequence and nothing to adjudicate — the branch is legal.
+    HOW THE CATALOGUE CARRIES IT, stated plainly rather than hidden: the closed
+    outcome vocabulary (vocab/outcomes.yaml) has no `accepted` kind, so the
+    async branch is NOT AUTHORABLE as a case of its own; both admin bindings
+    absorb it as `alt_status: [202]` under `ok_empty` ("Fulfilled with no
+    content"), which is the honest logical reading — a bodyless success — but
+    which also means a case expecting `ok_empty` passes on either code and no
+    case can require or distinguish the asynchronous branch. That is a
+    deliberate, recorded limit of the instrument, not coverage: it closes when
+    the outcome taxonomy gains an `accepted` kind, which is extensible only by
+    schedule release. This SUT is synchronous and always answers `204`.
+    Reported upstream (UPR-103).
+  disposition: editorial
+  upstream_ref: "UPR-103"
+
+AMB-140:
+  ambiguity: >-
+    The bulk delete's partial-failure semantics are entirely unstated, and its
+    declared 404 has no trigger. `admin_ehr_delete_all` accepts a subset of ids
+    ("Deletes all or multiple EHRs, or a specified subset of EHRs identified
+    using the `ehr_id` query parameter") and declares 202/204/404/405, but the
+    404 it declares is the GENERIC `responses/404.yaml` ("returned when, based
+    on the request parameters, the server did not find a current representation
+    of a target resource"), not the single-route's `404_unknown_ehr_id.yaml` —
+    and nothing says what a MIXED list of known and unknown ids does. Three
+    distinct questions have no released answer: (a) does one unknown id in a
+    list of ten fail the whole call, delete the nine, or fail with the generic
+    404; (b) does an unfiltered call against an EMPTY repository succeed or
+    404, given that "all EHRs" then names nothing; (c) is the operation atomic
+    at all — the same paragraph says it "may execute this operation
+    asynchronously (e.g. in batches)", which makes any all-or-nothing claim
+    unobservable from the client's side, since a `202` client cannot see where
+    the batches stopped. The single-EHR route has none of this ambiguity: one
+    id, `Pre_has_ehr`, and a dedicated `404_unknown_ehr_id`.
+  source: >-
+    ITS-REST specifications/operations/admin_ehr_delete_all.yaml (the quoted
+    subset sentence; the quoted asynchronous/batches sentence; responses
+    202/204/404/405, with the 404 resolving to responses/404.yaml) +
+    specifications/responses/404.yaml (the generic wording quoted above)
+    CONTRASTED with operations/admin_ehr_delete.yaml (responses 202/204/404,
+    the 404 resolving to responses/404_unknown_ehr_id.yaml, "returned when an
+    EHR with `ehr_id` does not exist") + parameters/query/ehr_id_Admin.yaml
+    ("An optional parameter to perform the operation on a subset of EHRs") + SM
+    UML/classes/i_admin_service.adoc §physical_ehr_delete (single-id only, so
+    SM supplies no set-level failure rule either) + docs/overview/Requests_and_responses.md
+    §"HTTP status codes" row 400 ("malformed request syntax, syntactically
+    invalid content"; "Status code `400` indicates normally a bad request, as
+    well as a generic client-side error, used when no other `4xx` error code is
+    appropriate") — the silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, three positions, each landing on released ground and none
+    inventing a status the operation does not declare. (a) A SUBSET LIST IS
+    DELETE-WHAT-EXISTS → `204`. Every id the caller named that resolves to an
+    EHR is deleted; an id that resolves to nothing contributes nothing and does
+    not fail the call. Grounds: the operation's only stated purpose is to delete
+    the named subset, and its postcondition — those EHRs are gone — is satisfied
+    for an id that already named no EHR; reaching for the generic 404 would put
+    an error on a request whose entire effect the released text describes as
+    achieved. This makes the bulk route IDEMPOTENT, which the single-EHR route
+    deliberately is not (`Pre_has_ehr` + a dedicated 404): the two differ
+    because one addresses a resource in its path and the other names a
+    selection in its query. (b) AN UNFILTERED CALL AGAINST AN EMPTY REPOSITORY
+    IS `204`, by the same reading — "all EHRs" over an empty set is a fulfilled
+    request with nothing to do. (c) MALFORMED IDS ARE REFUSED BEFORE ANY
+    DELETION, with `400`. A query value that is not a well-formed identifier is
+    not a subset selector at all, and the released 400 row covers it verbatim
+    ("syntactically invalid content" / the generic-client-error clause); the
+    whole request is rejected and NOTHING is deleted, so a typo in one id can
+    never silently destroy the others in the same call. That ordering — validate
+    the entire list, then act — is the shipped behaviour and is documented at
+    its seam (`app/ehrbase/src/service/admin/delete.rs`,
+    `admin_ehr_delete_all` → `parse_uuid_list`: "Parse a whole id list,
+    rejecting the entire request on the first malformed id (a bulk call is
+    validated before any work runs)"). The atomicity question (c above) is left
+    unasserted rather than resolved: with the async branch released, no
+    client-observable test can distinguish an atomic bulk delete from a batched
+    one, so asserting either would test a property the wire does not expose.
+    Reported upstream (UPR-104).
+  disposition: fixed_handling
+  upstream_ref: "UPR-104"
+
+AMB-141:
+  ambiguity: >-
+    The SM ADMIN interfaces carry a bundle of editorial defects, in the AMB-77 /
+    AMB-135 pattern. (1) The `ENCODING_FORMAT` enumeration is EMPTY — its class
+    table has a Description row with no text and no Attributes section at all,
+    so an enumeration referenced by two signatures has zero members. (2) FOUR
+    class files the admin chapter's own cross-references point at are included
+    by NO chapter in the whole SM docs tree — `platform_service.adoc`,
+    `export_format.adoc`, `compression_format.adoc` and `encoding_format.adoc`
+    (grep-verified across every `include::{uml_export_dir}/classes/…` in
+    docs/openehr_platform, docs/serial_data_formats and docs/simplified_im_b) —
+    so every `<<_platform_service_enumeration,PLATFORM_SERVICE>>`,
+    `<<_export_format_enumeration,EXPORT_FORMAT>>`,
+    `<<_compression_format_enumeration,COMPRESSION_FORMAT>>` and
+    `<<_encoding_format_enumeration,ENCODING_FORMAT>>` reference in
+    `i_admin_service.adoc`, `i_admin_dump_load.adoc` and `export_spec.adoc`
+    resolves to an anchor the rendered document does not contain. `PLATFORM_SERVICE`
+    is the worst case: it is the first parameter of four `I_ADMIN_SERVICE`
+    operations. (3) `EXPORT_SPEC` and `DUMP_LOAD_FAIL_REPORT` are included by
+    master15 and listed in the class index but are referenced by NO signature
+    anywhere in SM: `export_ehrs` takes the three format enumerations flattened
+    into its parameter list instead of the `EXPORT_SPEC` that exists to carry
+    them (and never sees `EXPORT_SPEC.segment_split_size`, its only mandatory
+    attribute), and no operation returns or takes a `DUMP_LOAD_FAIL_REPORT`,
+    although both dump/load operations are exactly the ones that would report
+    per-entity failures. (4) `load_ehrs` — a READ from the file system into the
+    repository — declares the error `file_not_writable`, copy-pasted from its
+    `export_ehrs` sibling; the failure it can actually suffer (an unreadable or
+    malformed archive, or the duplicate-id case its own Meaning names: "import
+    EHRs with duplicate EHR ids will fail") has no error at all. (5) The
+    precondition pair is inconsistent in both directions:
+    `physical_ehr_delete` declares `Pre_has_ehr: has_ehr (an_ehr_id)`, naming a
+    function declared on `I_EHR_SERVICE` and NOT on `I_ADMIN_SERVICE` (a
+    cross-interface precondition — grep-verified: `has_ehr` is declared in
+    i_ehr_service.adoc alone), while its twin `physical_party_delete` declares
+    NO precondition at all even though it carries the matching
+    `party_id_does_not_exist` error.
+  source: >-
+    SM UML/classes/encoding_format.adoc (the empty enumeration) +
+    export_format.adoc + compression_format.adoc + platform_service.adoc (the
+    four chapter-orphaned files) + export_spec.adoc and dump_load_fail_report.adoc
+    (the two unreferenced classes) + i_admin_service.adoc (the four
+    `PLATFORM_SERVICE`-taking operations; §physical_ehr_delete's `Pre_has_ehr`;
+    §physical_party_delete with no precondition and the
+    `party_id_does_not_exist` error) + i_admin_dump_load.adoc (§export_ehrs'
+    flattened `logical_fmt`/`comp_fmt`/`enc_format` parameters and its
+    `file_not_writable`; §load_ehrs with the same `file_not_writable`) +
+    i_ehr_service.adoc (the sole declaration of `has_ehr`) +
+    docs/openehr_platform/master15-admin_service.adoc (its five `include::`
+    lines) + UML/class_index.adoc (which lists EXPORT_SPEC and
+    DUMP_LOAD_FAIL_REPORT) — ALL CONFIRMED first-hand.
+  handling: >-
+    Editorial: the catalogue keeps the SM operation NAMES as case anchors and
+    adjudicates BEHAVIOUR from the ITS-REST docs text plus the RM wherever the
+    SM typing, preconditions or enumerations are defective — the AMB-77
+    disposition, applied to the admin interfaces. None of the five defects
+    reaches the released wire, because the only realized admin operation is
+    `physical_ehr_delete`: defects (1)–(3) touch dump/load and the statistics
+    operations, all of them off-wire (AMB-33); (4) touches `load_ehrs`, which
+    has no endpoint and no CNF master12 section either (the schedule's chapter
+    covers nine of the ten SM admin operations and omits `load_ehrs` outright —
+    recorded on the `I_ADMIN_DUMP_LOAD.load_ehrs` entry in
+    vocab/wire_surface.yaml). Defect (5) is the only one with a case-visible
+    consequence, and it is benign in both halves: `has_ehr` is exactly the probe
+    the delete cases already use to verify the postcondition (the cross-interface
+    reference is a rendering defect, not a semantic one), and the missing
+    precondition on `physical_party_delete` costs nothing while that operation
+    is unrealized. Reported upstream (UPR-105).
+  disposition: editorial
+  upstream_ref: "UPR-105"
+
+AMB-142:
+  ambiguity: >-
+    The most destructive operations in the whole released API have NO
+    authorization contract. `admin.openapi.yaml` declares `security: []` — the
+    OpenAPI form of "no security applies" — exactly as every other API group
+    does, so nothing distinguishes the admin group's requirements from the
+    clinical read that fetches one EHR. Neither admin operation declares a 401
+    or a 403 response: `admin_ehr_delete` declares 202/204/404 and
+    `admin_ehr_delete_all` 202/204/404/405, so an authorizing service refusing
+    an unprivileged caller answers with a status neither operation enumerates.
+    The only released text on the subject is scheme-agnostic and
+    resource-neutral — "Services SHOULD implement and support an HTTP
+    Authentication and Authorization framework, though this specification does
+    not mandate a specific authentication scheme", plus the conditional "If
+    authentication and authorization are required, services MUST properly use
+    the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers,
+    returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy
+    Authentication` as applicable" — which fixes the CODES an authorizing
+    service returns while assigning no privilege level to any resource. So the
+    released specification never says that permanently destroying every EHR on
+    a server requires more privilege than reading one composition. The only
+    access-related sentence anywhere near these routes is a deployment hint,
+    not an authorization rule: "This functionality is intended primarily for
+    **development** or **testing** purposes and may be disabled in
+    **production** environments, in which case server may respond with `405
+    Method Not Allowed`" — and it is on the bulk route only, never on the
+    single-EHR delete.
+  source: >-
+    ITS-REST specifications/admin.openapi.yaml (`security: []`; identical to
+    definition/demographic/ehr/overview/query/system.openapi.yaml — all seven
+    groups carry the same empty declaration, grep-verified) +
+    operations/admin_ehr_delete.yaml (responses 202/204/404 — no 401, no 403)
+    and admin_ehr_delete_all.yaml (responses 202/204/404/405 — no 401, no 403;
+    the quoted development/testing NOTE) + responses/405.yaml ("`405 Method Not
+    Allowed` is returned when the service knows the request method, but the
+    target resource doesn't support this method (e.g. due to security
+    concerns)") + docs/overview/Requests_and_responses.md §"Authentication and
+    authorization" (both quoted sentences) and §"HTTP status codes" (the 401 and
+    403 rows) — the silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, and the position is explicitly OURS. NO openEHR SPEC GOVERNS
+    THE PRIVILEGE LEVEL OF THE ADMIN ROUTES — our own design/extension: this
+    server classifies both released admin operations as
+    `OperationClass::Admin` and requires the configured admin role for them,
+    while every other generated operation is `OperationClass::Clinical` (any
+    authenticated principal with a role) — the classification and its
+    total-coverage guard live in
+    `app/ehrbase-rest/src/extensions/access/authz/classify.rs`. That is a
+    deployment decision grounded in what the operations DO (AMB-10: permanent,
+    physical, cascading destruction), not in any released sentence, and it is
+    flagged as such rather than presented as conformance. Two consequences are
+    kept honest. First, the refusal STATUSES we emit are the released ones —
+    the §"Authentication and authorization" MUST fixes 401/403 for an
+    authorizing service, so the codes are spec-grounded even though the trigger
+    is not. Second, no CNF case asserts an admin authorization branch: the
+    catalogue drives the admin routes with the ixit's `admin` principal only,
+    because a case asserting that an unprivileged caller is refused would gate a
+    privilege boundary the released specification never draws. The
+    role-separation behaviour is covered by our own HTTP tests instead, and the
+    SEC-BASIC capabilities `AuthenticatedAccess`/`AuthorizationSeparation`
+    remain grounded on the generic 401/403 rows, not on the admin surface.
+    Reported upstream (UPR-106).
+  disposition: fixed_handling
+  upstream_ref: "UPR-106"
+
+AMB-143:
+  ambiguity: >-
+    Nothing released says what a physically deleted EHR looks like AFTERWARDS,
+    and the list of what goes with it is explicitly open-ended. Both admin
+    operations describe the deletion and stop: no sentence states that a
+    subsequent read of the deleted `ehr_id` is a 404 rather than, say, a 410 or
+    a tombstone; none states whether the same `ehr_id` may be created again
+    (`ehr_create_with_id` declares its 409 for "a conflict with an already
+    existing EHR with the same subject id, namespace pair", which says nothing
+    about an id that used to exist); and none states whether a deleted EHR's
+    ids may be reused by the server. The cascade itself is given by EXAMPLE, not
+    by extension: "All resources associated with or owned by the specified EHR
+    (**such as** COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their
+    historical versions) will also be permanently and physically deleted" — a
+    "such as" list, so a client cannot tell from the released text whether
+    anything outside those four classes (an EHR_ACCESS, a FOLDER/directory
+    tree, an attestation, an externalized multimedia blob, an audit record)
+    survives the delete.
+  source: >-
+    ITS-REST specifications/operations/admin_ehr_delete.yaml and
+    admin_ehr_delete_all.yaml (the quoted "such as" cascade sentence; no
+    post-delete or re-creation statement in either) +
+    specifications/responses/204_deleted_hard.yaml (the hard-delete sentence,
+    which describes the response and not the subsequent state) +
+    operations/ehr_create_with_id.yaml + responses/409_EHR.yaml (the quoted
+    subject-conflict wording — the only 409 the create declares) +
+    responses/404_unknown_ehr_id.yaml ("`404 Not Found` is returned when an EHR
+    with `ehr_id` does not exist") + SM UML/classes/i_admin_service.adoc
+    §physical_ehr_delete (`Pre_has_ehr` and the error `ehr_id_does_not_exist` —
+    a PREcondition, with no stated postcondition; contrast
+    SM i_definition_query.adoc §delete_query, which does state
+    `Post_query_deleted`) + RM UML/classes/org.openehr.rm.ehr.ehr.adoc
+    §Attributes (the aggregate the delete destroys: `compositions`,
+    `ehr_status`, `directory`, `contributions`, `tags`, `ehr_access`) — the
+    silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, derived from what the delete IS rather than from a missing
+    postcondition. (1) SUBSEQUENT READS ARE 404. After a physical delete the
+    EHR does not exist, and `404_unknown_ehr_id.yaml` assigns that exact
+    situation — "returned when an EHR with `ehr_id` does not exist" — so the
+    generic read branch already covers it and no new status is invented; the SM
+    `Pre_has_ehr` of a second delete is likewise false, giving the same 404.
+    This is also the only reading consistent with the operation's own purpose:
+    a tombstone that still answered would defeat the data-protection
+    justification the same description gives (AMB-10). (2) RE-CREATION UNDER
+    THE SAME `ehr_id` IS PERMITTED. `ehr_create_with_id`'s only conflict branch
+    is the subject/namespace duplicate, and after a physical delete there is no
+    EHR with that id to conflict with; refusing would require the server to
+    remember an id it was told to destroy, which contradicts the delete.
+    (3) THE CASCADE IS TOTAL, not the four named classes. The "such as" list is
+    exemplary, and the sentence that governs is "All resources associated with
+    or owned by the specified EHR", so everything the EHR owns in our storage
+    goes: every versioned object and all of its versions and nodes (COMPOSITION,
+    EHR_STATUS, the directory FOLDER tree), attestations, ITEM_TAGs,
+    CONTRIBUTIONs, the audit records those referenced, archive markers, and any
+    externalized multimedia blob no surviving node still references. That
+    closure is documented at its seam (`app/ehrbase/src/service/admin/delete.rs`
+    — `delete_ehr`: the FK cascade plus the explicit orphan-audit sweep, since
+    `audit` has no foreign key from `ehr`, plus the reference-counted blob GC),
+    and the storage graph it walks is our own design — no openEHR spec governs
+    the FK graph. Gated by three cases:
+    I_ADMIN_SERVICE.physical_ehr_delete-delete_existing_cascade (the single-EHR
+    route) and -delete_all_cascade (the bulk route) commit a COMPOSITION and a
+    CONTRIBUTION into an EHR and assert both are unreachable after the delete —
+    the postcondition the released text omits — while -delete_existing_recreate
+    reads the deleted id as absent and then creates a new EHR under it, gating
+    positions (1) and (2). What no case can observe is stated openly on the
+    wire_surface element `admin-physical-delete-owned-resource-cascade`: every
+    released read of an owned resource is EHR-scoped by path, so a 404 for the
+    composition of a destroyed EHR cannot be told apart from the EHR's own
+    absence — unreachability is the strongest observable form of the promise,
+    and the storage-level closure is proven by DB-backed tests instead.
+    Reported upstream (UPR-107).
+  disposition: fixed_handling
+  upstream_ref: "UPR-107"
+
+AMB-144:
+  ambiguity: >-
+    The one operation medicolegal traceability would most demand an audit
+    record of is the one operation with no audit requirement anywhere in the
+    released specification — and its cascade destroys the records that would
+    have carried the history. The ITS-REST audit obligation is scoped away from
+    it by construction: "In order to allow clients to provide committal
+    metadata, services MUST accept `openehr-version` and `openehr-audit-details`
+    custom request headers" appears in a paragraph whose subject is "committing
+    content to an openEHR system, for all change-controlled resources (e.g.
+    COMPOSITION, EHR_STATUS, FOLDER, etc.)", and a physical delete commits
+    nothing and produces no VERSION. Neither admin operation declares an
+    `openehr-audit-details` parameter, and neither description mentions an audit
+    record, a log, or an actor. SM offers nothing either: the platform overview
+    promises an "IHE ATNA-compliant system log" component, but the
+    `I_SYSTEM_LOG` interface it stands on is an EMPTY class table — no
+    description, no functions — and it is included by no chapter in the SM docs
+    tree, appearing only as a link in the class index. Meanwhile the cascade
+    named in the same admin descriptions removes "CONTRIBUTION, and their
+    historical versions", i.e. precisely the RM structures that hold each
+    change's `AUDIT_DETAILS` — so a physical delete both leaves no required
+    trace of itself and destroys the traces of everything that came before it,
+    in a model whose §Logical Deletion rule exists because "Medicolegal and
+    traceability requirements mean that information cannot be literally
+    removed".
+  source: >-
+    ITS-REST docs/overview/Requests_and_responses.md §"openehr-version and
+    openehr-audit-details" (the quoted MUST and its change-controlled-resource
+    framing) vs specifications/operations/admin_ehr_delete.yaml and
+    admin_ehr_delete_all.yaml (parameters: the path `ehr_id` / the query
+    `ehr_id` and nothing else — no audit header, no audit prose; the quoted
+    CONTRIBUTION-destroying cascade sentence) + SM
+    docs/openehr_platform/master02-overview.adoc (the component table row
+    "System Log | IHE ATNA-compliant system log.") vs SM
+    UML/classes/i_system_log.adoc (an empty interface table — no Description
+    text, no Functions section — included by no chapter, grep-verified, and
+    reachable only from UML/class_index.adoc) + RM common
+    master06-change_control_package.adoc §Logical Deletion (the quoted
+    medicolegal sentence) and §Contributions (each change carries its
+    `commit_audit`) — the silence CONFIRMED first-hand.
+  handling: >-
+    Report only. The gap is upstream's to close and the catalogue does not
+    paper over it: no case asserts that a physical delete is audited, because
+    no released sentence requires it and asserting one would test servers
+    against a rule openEHR has not written. What this server does is recorded
+    here as an our-own-design extension rather than as conformance — no openEHR
+    spec governs it: the admin delete is emitted to the system log
+    (`ehrbase::system_log`, the DICOM PS3.15 + FHIR `AuditEvent`/BALP renderings
+    into the local Audit Record Repository), so the erasure itself leaves a
+    trace outside the EHR it destroys. That record lives in a different store
+    precisely because the cascade empties the one the RM would have used. The
+    entry is deliberately NOT `fixed_handling`: there is no wire behaviour to
+    fix, only an obligation that ought to exist. Reported upstream (UPR-108):
+    require an audit record for physical deletion — the actor, the time, the
+    ids destroyed — and say where it lives, given that the operation's own
+    cascade removes the CONTRIBUTIONs and AUDIT_DETAILS that carry every other
+    change's history; and either populate `I_SYSTEM_LOG` or drop the ATNA claim
+    from the platform overview.
+  disposition: report_only
+  upstream_ref: "UPR-108"
