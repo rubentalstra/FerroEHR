@@ -756,6 +756,8 @@ async fn demographic_item_tag_operations_are_fully_documented() {
             );
         }
     };
+    // Whitespace-normalized (doc comments hard-wrap, so a released sentence
+    // may span a line break in the served description).
     let text = |op: &Value| -> String {
         format!(
             "{} {}",
@@ -766,6 +768,9 @@ async fn demographic_item_tag_operations_are_fully_documented() {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
         )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
     };
     let param_doc = |op: &Value, name: &str| -> String {
         op.get("parameters")
@@ -1011,6 +1016,8 @@ async fn admin_operations_are_fully_documented() {
             );
         }
     };
+    // Whitespace-normalized (doc comments hard-wrap, so a released sentence
+    // may span a line break in the served description).
     let text = |op: &Value| -> String {
         format!(
             "{} {}",
@@ -1021,6 +1028,9 @@ async fn admin_operations_are_fully_documented() {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
         )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
     };
     let param_doc = |op: &Value, name: &str| -> String {
         op.get("parameters")

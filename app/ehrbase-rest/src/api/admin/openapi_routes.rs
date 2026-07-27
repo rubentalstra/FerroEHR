@@ -245,7 +245,7 @@ pub(crate) async fn admin_config(
 /// > in which case server may respond with `405 Method Not Allowed`.
 ///
 /// "All resources associated with or owned by the targeted EHRs (such as
-/// COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical
+/// `COMPOSITION`, `EHR_STATUS`, `ITEM_TAG`, `CONTRIBUTION`, and their historical
 /// versions) will also be **permanently** and physically deleted, in compliance
 /// with applicable data protection regulations (e.g., the GDPR in the European
 /// Union)."
@@ -375,7 +375,7 @@ pub(crate) async fn admin_ehr_delete_all(
 /// "Delete EHR by id"): "Deletes the EHR identified by `ehr_id`."
 ///
 /// "All resources associated with or owned by the specified EHR (such as
-/// COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical
+/// `COMPOSITION`, `EHR_STATUS`, `ITEM_TAG`, `CONTRIBUTION`, and their historical
 /// versions) will also be **permanently** and physically deleted, in compliance
 /// with applicable data protection regulations (e.g., the GDPR in the European
 /// Union)."
