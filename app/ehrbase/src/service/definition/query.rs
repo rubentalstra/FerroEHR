@@ -456,6 +456,25 @@ impl EhrbaseService {
             return Ok(DEFAULT_QUERY_VERSION.to_owned());
         };
 
+        // The versioned store requires an EXACT numeric `major.minor.patch`.
+        // The prefix grammar of `parameters/path/version.yaml` is a READ-
+        // resolution semantic ("the highest (latest) version matching the
+        // prefix will be considered") and no released sentence assigns a
+        // status to a prefix or malformed version on the write, so the
+        // rejection is the released 400 branch (`responses/400.yaml`:
+        // "syntactically invalid … parameter") — register-adjudicated.
+        // Accepting the value verbatim is untenable: a non-numeric segment
+        // (`1.0.0-rc.1`) breaks the surface's SEMVER ordering
+        // (`string_to_array(semver, '.')::int[]`) and a stored prefix (`1`)
+        // collides with the read-side resolution algebra.
+        if !is_exact_semver(v) {
+            return Err(ServiceError::BadRequest(format!(
+                "`{v}` is not an exact SEMVER version: the versioned store requires \
+                 `major.minor.patch` (the {{major}}/{{major}}.{{minor}} prefix forms are \
+                 read-side resolution patterns, parameters/path/version.yaml)"
+            )));
+        }
+
         // Versioned store: insert-only, immutable pair. A case-insensitive match
         // at this version is a 409 (BASE master05 §Composite Identifiers and
         // Case). The exact-case insert stays race-safe via `ON CONFLICT (rdn,
@@ -757,6 +776,18 @@ pub(super) fn is_aql_v1(a_type: &str) -> bool {
 fn is_partial_semver(version: &str) -> bool {
     let segments: Vec<&str> = version.split('.').collect();
     segments.len() < 3
+        && segments
+            .iter()
+            .all(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit()))
+}
+
+/// Whether a `version` value is an EXACT numeric `major.minor.patch` triple —
+/// the only form the versioned store accepts (the prefix forms of
+/// `parameters/path/version.yaml` are read-side resolution patterns; see
+/// [`EhrbaseService::store_query_version`]).
+fn is_exact_semver(version: &str) -> bool {
+    let segments: Vec<&str> = version.split('.').collect();
+    segments.len() == 3
         && segments
             .iter()
             .all(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit()))

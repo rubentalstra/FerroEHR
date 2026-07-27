@@ -257,16 +257,19 @@ impl EhrbaseService {
     /// build can only validate + store AQL, so a non-AQL formalism is an
     /// honest *unsupported-formalism* reject (a distinct `400`, not a blanket
     /// "invalid AQL"). AQL bodies fall through to the store-time AQL
-    /// syntactic check. The effective version is recovered by the dispatcher
-    /// through the list seam for the `Location` header; the store itself is
-    /// bodyless.
+    /// syntactic check. Returns the **effective SEMVER the store wrote at**,
+    /// so the dispatcher's `Location` names exactly the stored resource
+    /// (`headers/Location_Query.yaml`: the header "indicates the URL of the
+    /// Stored Query resource") — never a neighbouring version recovered by a
+    /// lookup. The store response itself is bodyless.
     ///
     /// # Errors
     ///
     /// - A non-AQL `query_type` → `precondition_violation` (`400`).
     /// - A body that fails the AQL parse → `precondition_violation` (`400`).
-    /// - With an explicit `version`, an already-existing `(name, version)`
-    ///   pair → conflict (`409`, `409_StoredQuery_version.yaml`).
+    /// - With an explicit `version`, a non-exact SEMVER → `precondition_violation`
+    ///   (`400`), and an already-existing `(name, version)` pair → conflict
+    ///   (`409`, `409_StoredQuery_version.yaml`).
     /// - A database failure (`exception` → `500`).
     pub async fn query_store(
         &self,
@@ -274,16 +277,16 @@ impl EhrbaseService {
         version: Option<String>,
         query_type: String,
         body: String,
-    ) -> Result<(), SmError> {
+    ) -> Result<String, SmError> {
         if !is_aql_v1(&query_type) {
             return Err(SmError::precondition(format!(
                 "unsupported query formalism `{query_type}`: only AQL is supported for \
                  stored queries (parameters/query/query_type.yaml)"
             )));
         }
-        self.store_query_version(&qualified_query_name, version.as_deref(), body)
-            .await?;
-        Ok(())
+        Ok(self
+            .store_query_version(&qualified_query_name, version.as_deref(), body)
+            .await?)
     }
 }
 
