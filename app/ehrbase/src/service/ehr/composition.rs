@@ -161,7 +161,7 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         // Ownership gate only — one scalar read (`vo_version.ehr_id`), never
         // the full current-version reassembly this metadata-shaped response
         // would immediately discard.
@@ -174,7 +174,12 @@ impl EhrbaseService {
                     format!("COMPOSITION {vo_id}"),
                 )
             })?;
-        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await
+        let (body, last_modified) =
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await?;
+        Ok(ServiceResponse::new(
+            body,
+            super::meta::container_meta(ehr_id, vo_id, last_modified),
+        ))
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.
@@ -186,8 +191,12 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
-    ) -> Result<Value, ServiceError> {
-        revision_history(&self.pool, ehr_id, vo_id).await
+    ) -> Result<ServiceResponse, ServiceError> {
+        let (body, last_modified) = revision_history(&self.pool, ehr_id, vo_id).await?;
+        Ok(ServiceResponse::new(
+            body,
+            super::meta::container_meta(ehr_id, vo_id, last_modified),
+        ))
     }
 
     /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
@@ -694,6 +703,26 @@ impl EhrbaseService {
     ) -> Result<Value, SmError> {
         Ok(self
             .versioned_composition(an_ehr_id, a_versioned_object_uid)
+            .await?
+            .body)
+    }
+
+    /// [`Self::get_versioned_composition`] with the container metadata the
+    /// wire's `ETag`/`Last-Modified` need: the container uid identity plus the
+    /// newest held version's commit instant (ITS-REST overview
+    /// `Requests_and_responses.md` §"`ETag` and Last-Modified" — both headers
+    /// SHOULD accompany a `VERSIONED_OBJECT` response).
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
+    pub async fn versioned_composition_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
+    ) -> Result<ServiceResponse, SmError> {
+        Ok(self
+            .versioned_composition(an_ehr_id, a_versioned_object_uid)
             .await?)
     }
 
@@ -708,6 +737,25 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
+        Ok(self
+            .composition_revision_history_value(an_ehr_id, a_versioned_object_uid)
+            .await?
+            .body)
+    }
+
+    /// [`Self::composition_revision_history`] with the container metadata the
+    /// wire's `ETag`/`Last-Modified` need (container uid + newest commit
+    /// instant — same derivation as
+    /// [`Self::versioned_composition_response`]).
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
+    pub async fn composition_revision_history_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
+    ) -> Result<ServiceResponse, SmError> {
         Ok(self
             .composition_revision_history_value(an_ehr_id, a_versioned_object_uid)
             .await?)

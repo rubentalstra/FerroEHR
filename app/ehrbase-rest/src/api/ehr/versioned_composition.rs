@@ -35,15 +35,16 @@ pub(super) async fn run(
             let p = params::build::<VersionedCompositionGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
-            let body = state
-                .backend()
-                .get_versioned_composition(ehr_id, ehrbase::ids::VoId(vo_id))
-                .await?;
             // VERSIONED_OBJECT container — canonical JSON or XML, with the
             // container-uid ETag (Requests_and_responses.md §ETag and
-            // Last-Modified: "VERSIONED_OBJECT.uid.value"); the container body
-            // carries no commit instant, so Last-Modified is honestly absent.
-            let resp = super::read_resp(&p.ehr_id, body);
+            // Last-Modified: "VERSIONED_OBJECT.uid.value") + Last-Modified from
+            // the newest held version's commit instant (both headers SHOULD
+            // accompany a VERSIONED_OBJECT response), carried in the service
+            // metadata.
+            let resp = state
+                .backend()
+                .versioned_composition_response(ehr_id, ehrbase::ids::VoId(vo_id))
+                .await?;
             Ok(negotiate::read_rm::<VersionedComposition>(
                 h,
                 &base,
@@ -56,13 +57,13 @@ pub(super) async fn run(
             let p = params::build::<VersionedCompositionRevisionHistoryParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
-            let body = state
+            // ETag from the container uid + Last-Modified from the newest
+            // version's commit instant (§ETag and Last-Modified SHOULD on
+            // versioned reads), carried in the service metadata.
+            let resp = state
                 .backend()
-                .composition_revision_history(ehr_id, ehrbase::ids::VoId(vo_id))
+                .composition_revision_history_response(ehr_id, ehrbase::ids::VoId(vo_id))
                 .await?;
-            // ETag from the container uid + Last-Modified from the most
-            // recent item (§ETag and Last-Modified SHOULD on versioned reads).
-            let resp = super::revision_history_resp(&p.ehr_id, &p.versioned_object_uid, body);
             Ok(negotiate::read_rm::<RevisionHistory>(
                 h,
                 &base,

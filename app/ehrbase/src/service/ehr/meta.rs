@@ -285,3 +285,20 @@ impl EhrbaseService {
         Ok(self.directory_meta(an_ehr_id).await?)
     }
 }
+
+/// The [`ResourceMeta`] of a version-CONTAINER read (a `VERSIONED_OBJECT` body
+/// or its `REVISION_HISTORY`): the `ETag` identity is the container uid
+/// (ITS-REST overview `Requests_and_responses.md` §"`ETag` and Last-Modified"
+/// names "`VERSIONED_OBJECT.uid.value`" as an `ETag` source) and the
+/// `Last-Modified` instant is the newest held version's commit time (same §:
+/// both headers "SHOULD be included in responses for VERSION,
+/// `VERSIONED_OBJECT`, or other resources that have versioning or unique
+/// state identifiers"; the value is "derived from
+/// `VERSION.commit_audit.time_committed.value`").
+pub(in crate::service) fn container_meta(
+    ehr_id: EhrId,
+    vo_id: VoId,
+    last_modified: jiff::Timestamp,
+) -> ResourceMeta {
+    ResourceMeta::new(ehr_id.to_string(), vo_id.to_string()).with_last_modified(last_modified)
+}
