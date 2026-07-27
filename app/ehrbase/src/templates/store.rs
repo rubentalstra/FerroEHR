@@ -61,9 +61,12 @@ impl EhrbaseService {
     ///
     /// # Errors
     ///
-    /// - [`ServiceError::Unprocessable`] (→ `422`) — the XML does not decode as
-    ///   an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
-    ///   `concept`.
+    /// - [`ServiceError::BadRequest`] (→ `400`) — the payload is not
+    ///   well-formed XML (ITS-REST `responses/400.yaml`: "syntactically
+    ///   invalid … content").
+    /// - [`ServiceError::Unprocessable`] (→ `422`) — well-formed XML that does
+    ///   not decode as an OPT 1.4 document, or a decoded OPT with an empty
+    ///   `template_id` or `concept`.
     /// - The structural gate
     ///   (`crate::validation::validate_opt_structure`) and the
     ///   AOM2/08 artefact-validity catalogue

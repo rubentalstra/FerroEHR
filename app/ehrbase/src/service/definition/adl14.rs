@@ -248,8 +248,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     ///
-    /// - Unparseable / structurally invalid OPT XML → `invalid_template`
-    ///   (`422`).
+    /// - Not well-formed XML → bad request (`400` — the released
+    ///   "syntactically invalid … content" branch,
+    ///   ITS-REST `responses/400.yaml`).
+    /// - Well-formed but undecodable / structurally invalid OPT XML →
+    ///   `invalid_template` (`422`).
     /// - A template with the same `template_id` already stored → conflict
     ///   (`409`).
     /// - A database failure (`exception` → `500`).

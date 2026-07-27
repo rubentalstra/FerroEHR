@@ -412,6 +412,31 @@ pub(crate) fn require_content_type(
     }
 }
 
+/// Refuse a request whose `Content-Type` DECLARES a media type other than
+/// `text/plain` — the single body type of the ADL2 template upload
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/
+/// definition_template_adl2_upload.yaml` declares `text/plain` as the only
+/// request content type). The mirror of [`require_content_type`] for the one
+/// route whose body type is outside the [`WireFormat`] vocabulary; an ABSENT
+/// `Content-Type` is accepted for the same Resources.md client-MAY reason.
+///
+/// # Errors
+/// [`ApiError::UnsupportedMediaType`] when the declared media type is not
+/// `text/plain` (`Resources.md` §format rules: a payload the service cannot
+/// process as the operation's format "MUST respond with HTTP status code
+/// `415 Unsupported Media Type`").
+pub(crate) fn require_text_plain(headers: &HeaderMap) -> Result<(), ApiError> {
+    let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
+        return Ok(());
+    };
+    if media_token(&declared).eq_ignore_ascii_case("text/plain") {
+        return Ok(());
+    }
+    Err(ApiError::UnsupportedMediaType(format!(
+        "this operation accepts text/plain only, got {declared}"
+    )))
+}
+
 fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
     serde_json::from_slice(body)
         .map_err(|e| ApiError::BadRequest(format!("invalid JSON body: {e}")))
@@ -1157,6 +1182,32 @@ mod tests {
                 matches!(err, ApiError::UnsupportedMediaType(_)),
                 "Resources.md §XML Format: a payload the service cannot process as \
                  XML MUST be 415, got {err:?} for {refused}"
+            );
+        }
+    }
+
+    /// The `text/plain` mirror of [`require_content_type`] for the ADL2
+    /// upload: absent header accepted (client MAY), parameters ignored,
+    /// any other declared type → `415` (Resources.md §format rules).
+    #[test]
+    fn require_text_plain_refuses_only_a_declared_foreign_type() {
+        assert!(
+            require_text_plain(&HeaderMap::new()).is_ok(),
+            "an absent Content-Type declares nothing to refuse"
+        );
+        for accepted in ["text/plain", "text/plain; charset=utf-8", "Text/Plain"] {
+            assert!(
+                require_text_plain(&headers(&[("content-type", accepted)])).is_ok(),
+                "{accepted} declares the operation's single body type"
+            );
+        }
+        for refused in ["application/xml", "application/json", "text/html"] {
+            let err =
+                require_text_plain(&headers(&[("content-type", refused)])).expect_err("refused");
+            assert!(
+                matches!(err, ApiError::UnsupportedMediaType(_)),
+                "a payload the service cannot process as text/plain MUST be \
+                 415, got {err:?} for {refused}"
             );
         }
     }
