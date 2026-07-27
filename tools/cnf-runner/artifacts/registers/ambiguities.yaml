@@ -1008,6 +1008,140 @@ AMB-67:
     statement for the non-COMPOSITION top-level types.
   disposition: report_only
   upstream_ref: "UPR-29"
+AMB-68:
+  ambiguity: >-
+    The released RM contradicts itself on REVISION_HISTORY item ordering
+    inside one class table: the Purpose row says "The list is in
+    most-recent-first order" while the `items` attribute Meaning says "The
+    items in this history in most-recent-last order". The two function
+    postconditions in the same table settle it — `most_recent_version`:
+    `Result.is_equal (items.last.version_id.value)` and
+    `most_recent_version_time_committed`:
+    `Result.is_equal (items.last.audits.first.time_committed.value)` — the
+    most recent item is `items.last`, so the order is most-recent-LAST and
+    the Purpose sentence is the defect.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.revision_history.adoc —
+    Purpose row vs `items` Meaning row vs the two `items.last`
+    postconditions; confirmed first-hand.
+  handling: >-
+    Fixed handling: the wire serves `items` oldest-first
+    (most-recent-last), per the postconditions; the revision-history cases
+    assert that order. Reported upstream (UPR-30): correct the Purpose
+    sentence.
+  disposition: fixed_handling
+  upstream_ref: "UPR-30"
+
+AMB-69:
+  ambiguity: >-
+    The wire values of `VERSIONED_OBJECT.owner_id.namespace` and
+    `.type` are stated by NO released text. RM types `owner_id` as
+    OBJECT_REF 1..1 and says only that it refers to "the id of the
+    containing EHR or other relevant owning entity"; BASE constrains the
+    namespace lexically ("local", "unknown", or the identifier regex) but
+    assigns no value; the ITS-REST docs text never mentions owner_id. The
+    reverse edge IS normative (EHR.ehr_status.type must equal
+    "VERSIONED_EHR_STATUS"), but nothing released fixes the forward one.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.versioned_object.adoc
+    §Attributes (owner_id meaning); BASE
+    UML/classes/org.openehr.base.base_types.object_ref.adoc (namespace
+    legal values); RM UML/classes/org.openehr.rm.ehr.ehr.adoc §Invariants
+    (Ehr_status_valid, the reverse direction) — confirmed first-hand.
+  handling: >-
+    Fixed handling: this server (and the container-shape cases) serve
+    `owner_id` as `{namespace: "local", type: "EHR", id: HIER_OBJECT_ID of
+    the owning ehr_id}` — the only concrete shape any openEHR artifact
+    shows, and consistent with BASE's namespace vocabulary. Reported
+    upstream (UPR-31): state the owner_id wire values normatively.
+  disposition: fixed_handling
+  upstream_ref: "UPR-31"
+
+AMB-70:
+  ambiguity: >-
+    "The version extant at time T" has no released algorithm. RM gives only
+    the signature `version_at_time (a_time): VERSION` with
+    `Pre: has_version_at_time (a_time)`; nothing released states (a) which
+    instant anchors a version's extancy interval (commit_audit.time_committed
+    is cited only as the Last-Modified source), (b) whether the interval is
+    closed or open at the commit instant, (c) how branch versions
+    participate, (d) what a future-dated T returns, or (e) which function
+    "latest" means for the no-parameter read — `latest_version()` ("most
+    recently added … on trunk or any branch") vs `latest_trunk_version()`
+    are both defined and neither ITS-REST nor SM picks one.
+  source: >-
+    RM common UML/classes/org.openehr.rm.common.versioned_object.adoc
+    §Functions (version_at_time, latest_version, latest_trunk_version); SM
+    UML/classes/i_ehr_status.adoc get_ehr_status_at_time ("If no time
+    supplied, get the latest."); ITS-REST overview Resources.md §Datetime
+    format (offset-less values resolve in the local timezone) — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling: extancy anchors on the version's commit instant,
+    inclusive at commit (a version is extant from its own commit instant
+    until the next commit); a T at or after the newest commit returns that
+    newest version (a future T is 200, never 404); a T before the first
+    held commit is no-version-at-time (404); "latest" is the current trunk
+    version; offset-less T resolves in the server-local timezone. The
+    at-time cases pin these choices. Reported upstream (UPR-32): define
+    the extant-at-time semantics normatively.
+  disposition: fixed_handling
+  upstream_ref: "UPR-32"
+
+AMB-71:
+  ambiguity: >-
+    Two released ITS-REST prose sentences conflict on Location for
+    updates: §Location says "The `Location` header MUST ONLY be used for
+    resource creation (e.g., `201 Created`) or redirect responses", while
+    §"Prefer return minimal" says the response "SHOULD include a `Location`
+    header pointing to the newly created or updated resource" — an update
+    returns 200/204, never 201, so the two cannot both hold.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §Location (L140) vs §Representation details negotiation, return=minimal
+    paragraph (L288: "newly created or updated resource") — confirmed
+    first-hand, same released document.
+  handling: >-
+    Fixed handling: change-controlled writes (create AND update) carry
+    Location pointing at the resulting version, per the §Prefer sentence;
+    reads, deletes, and 4xx responses never do, per §Location (the
+    wire_surface `header-location-only-on-create` entry scopes the
+    prohibition to those). Reported upstream (UPR-33): reconcile the two
+    sentences.
+  disposition: fixed_handling
+  upstream_ref: "UPR-33"
+
+AMB-72:
+  ambiguity: >-
+    The SM I_EHR_STATUS interface carries five editorial defects: (1)
+    get_versioned_ehr_status declares a precondition
+    `Pre_has_ehr_status_version: has_ehr_status_version (an_ehr_id,
+    a_version_uid)` referencing `a_version_uid`, which is not a parameter
+    of that operation; (2) get_ehr_status_at_time declares only `a_time`
+    yet its precondition uses the undeclared `an_ehr_id`; (3) version
+    identifiers are typed UUID where the wire value is an
+    OBJECT_VERSION_ID (three-part); (4) get_ehr_status_at_time /
+    get_ehr_status_at_version return EHR_STATUS while the ITS-REST
+    versioned_ehr_status/version routes serve the VERSION envelope, so the
+    mappings are approximate; (5) clear_ehr_modifiable's meaning reads
+    "this ensures it is treated as active", contradicting its own
+    postcondition `not …is_modifiable` (and misspells `_is_modifable_`).
+    None of these change conformant wire behaviour; they distort the
+    SM-operation vocabulary the case cores speak.
+  source: >-
+    SM UML/classes/i_ehr_status.adoc (all five, confirmed first-hand);
+    BASE UML/classes/org.openehr.base.base_types.object_version_id.adoc
+    (the version-uid form for defect 3); SM has no revision-history
+    operation at all (grep across SM/docs = zero hits) — the REST
+    revision-history route's abstract counterpart is RM
+    VERSIONED_OBJECT.revision_history().
+  handling: >-
+    Editorial: the catalogue keeps the SM operation names and treats the
+    ITS-REST docs text + RM as the behavioural authority where the SM
+    typing/preconditions are defective. Reported upstream (UPR-34).
+  disposition: editorial
+  upstream_ref: "UPR-34"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
