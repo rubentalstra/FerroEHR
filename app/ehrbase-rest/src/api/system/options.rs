@@ -254,12 +254,19 @@ fn options_documented() {}
 /// document by `crate::extensions::openapi` — the live route is a closure
 /// mounted outside `OpenApiRouter`, so the twin above carries the
 /// documentation.
-pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
+///
+/// The documented path is derived from the SAME `base_path` the live mount uses
+/// (`crate::router::router` mounts the manifest at the API base-path root), so a
+/// redeployed base path moves the served declaration with the route; the
+/// `#[utoipa::path]` literal is only the default spelling.
+pub(crate) fn openapi(base_path: &str) -> utoipa::openapi::OpenApi {
     use utoipa::OpenApi;
     #[derive(OpenApi)]
     #[openapi(paths(options_documented), components(schemas(Options<'_>)))]
     struct SystemApiDoc;
-    SystemApiDoc::openapi()
+    let mut doc = SystemApiDoc::openapi();
+    crate::extensions::openapi::rehome_path(&mut doc, "/ehrbase/rest/openehr/v1", base_path);
+    doc
 }
 
 #[cfg(test)]

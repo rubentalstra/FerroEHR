@@ -54,11 +54,15 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 ///
 /// Config-gated: `404` when `events_admin_api` is off (the route stays mounted
 /// but the backend is never consulted).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines eventing or a subscription resource, so the whole group
+/// (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/event_subscription", tag = "event-subscription",
     responses(
         (status = 200, description = "The subscription records.", body = serde_json::Value),
-        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off).", body = serde_json::Value)
+        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_list(
@@ -73,6 +77,10 @@ pub(crate) async fn event_subscription_list(
 ///
 /// Body: `{name, kind?, change_type?, template_id?, archetype?, enabled?}`
 /// (`enabled` defaults to `true`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines eventing or a subscription resource, so the whole group
+/// (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     post, path = "/admin/event_subscription", tag = "event-subscription",
     request_body(content = serde_json::Value, description = "The subscription definition (canonical JSON)."),
@@ -81,7 +89,7 @@ pub(crate) async fn event_subscription_list(
         (status = 400, description = "`name` is missing/empty or not matching `[A-Za-z0-9_.-]`, or the body is not valid JSON.", body = serde_json::Value),
         (status = 409, description = "A subscription with that name already exists.", body = serde_json::Value),
         (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
-        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off).", body = serde_json::Value)
+        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off). With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_create(
@@ -94,13 +102,17 @@ pub(crate) async fn event_subscription_create(
 
 /// Read one subscription by id
 /// (`GET /admin/event_subscription/{subscription_id}`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines eventing or a subscription resource, so the whole group
+/// (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     get, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
     responses(
         (status = 200, description = "The subscription record.", body = serde_json::Value),
         (status = 400, description = "`subscription_id` is not a valid UUID.", body = serde_json::Value),
-        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_get(
@@ -116,6 +128,10 @@ pub(crate) async fn event_subscription_get(
 ///
 /// The `name` is immutable (it is the queue key); only the predicates and the
 /// `enabled` flag are replaced.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines eventing or a subscription resource, so the whole group
+/// (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     put, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
@@ -124,7 +140,7 @@ pub(crate) async fn event_subscription_get(
         (status = 200, description = "Updated; the stored subscription record is returned.", body = serde_json::Value),
         (status = 400, description = "`subscription_id` is not a valid UUID, or the body is not valid JSON.", body = serde_json::Value),
         (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
-        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_update(
@@ -137,13 +153,17 @@ pub(crate) async fn event_subscription_update(
 
 /// Delete one subscription
 /// (`DELETE /admin/event_subscription/{subscription_id}`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: neither the SM nor
+/// ITS-REST defines eventing or a subscription resource, so the whole group
+/// (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     delete, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
     responses(
         (status = 204, description = "Deleted."),
         (status = 400, description = "`subscription_id` is not a valid UUID.", body = serde_json::Value),
-        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled. With authentication enabled, an unauthenticated request to a disabled group is answered `401` first (the group gate sits behind authentication).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_delete(

@@ -32,7 +32,9 @@ struct ServerStatus {
 ///
 /// OUR OWN SURFACE — no openEHR spec governs an operational status endpoint.
 /// Reports the server version and the tested ITS-REST contract identity.
-/// Unauthenticated (mounted outside the auth layer).
+/// Unauthenticated (mounted outside the auth layer). The path above is the
+/// DEFAULT deployment spelling: a non-default `server.base_path` moves the live
+/// mount ([`router`]) and the served document follows it ([`openapi`]).
 #[utoipa::path(
     get, path = "/ehrbase/rest/status", tag = "status",
     responses(
@@ -55,12 +57,20 @@ pub(crate) fn router(rest_root: &str) -> Router<AppState> {
     Router::new().route(&format!("{rest_root}/status"), get(status))
 }
 
-/// The public status surface's `OpenAPI` document (the path is at the default
-/// REST root; a non-default base path shifts it uniformly). The operation is
-/// unauthenticated (mounted outside the auth layer). No openEHR spec governs an
-/// operational status endpoint — our own surface.
-pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState>::new()
+/// The public status surface's `OpenAPI` document, its path derived from the
+/// SAME `rest_root` the live [`router`] mounts under — a non-default
+/// `server.base_path` moves the served path, and the published document must
+/// follow (the `#[utoipa::path]` literal is only the default-root spelling).
+/// The operation is unauthenticated (mounted outside the auth layer). No
+/// openEHR spec governs an operational status endpoint — our own surface.
+pub(crate) fn openapi(rest_root: &str) -> utoipa::openapi::OpenApi {
+    let mut doc = OpenApiRouter::<AppState>::new()
         .routes(routes!(status))
-        .into_openapi()
+        .into_openapi();
+    crate::extensions::openapi::rehome_path(
+        &mut doc,
+        "/ehrbase/rest/status",
+        &format!("{rest_root}/status"),
+    );
+    doc
 }
