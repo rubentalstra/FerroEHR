@@ -1,0 +1,35 @@
+---
+name: runner-nonstring-with-values-dropped
+description: RUNNER defect pattern — numeric/bool `with:` values are never promoted into the VarStore, so ${var?} in a binding query/header template silently drops the parameter; only a with-key literally named like the parameter survives (build_url backfill)
+metadata:
+  type: project
+---
+
+`HttpDriver::merge_with_vars` (`tools/cnf-runner/src/exec/driver.rs`) promotes a
+step's `with:` entries into the template VarStore **only when the JSON value is a
+`Value::String`**. A numeric/bool `with:` value (e.g. `url_fetch: 4`) is therefore
+unbound when `build_url`/`build_headers` render `"${url_fetch?}"`; the ref is
+optional, so the parameter is **silently omitted** from the wire — no error, no
+inconclusive row. The structured-BODY path does not have this bug
+(`select_body` → `RequestBody::Structured` promotes non-strings as
+`Captured::Body`), so body forms of the same value work — the asymmetry is the
+tell.
+
+Why most numeric query params still work: `build_url` has a second loop that
+backfills `with.get(<query-param-name>)` (stringifying any JSON scalar). So a case
+binding `fetch: 100` reaches `?fetch=100` **by name coincidence**, while a case
+binding `url_fetch: 4` for a query slot named `fetch` sends nothing.
+
+**Why:** first confirmed 2026-07-27 triaging
+`I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_only` (row count 10 != 4) —
+attribution: runner machinery, not the app; the app's
+`merge_body_and_url_i64` (`app/ehrbase-rest/src/api/query/response.rs`) reads
+`?fetch=` on both POST arms correctly.
+
+**How to apply:** on any red row where the SUT "ignored" a URL/header parameter,
+first check whether the case's `with:` key name differs from the binding's
+parameter name AND the value is non-string — that combination means the parameter
+never left the runner. Same fault silently hollows
+`execute_stored_query-protocol_fetch_reserved` (its URL `fetch=5` is never sent;
+the case passes on the body half alone). Related:
+[[runner-driver-gaps]].

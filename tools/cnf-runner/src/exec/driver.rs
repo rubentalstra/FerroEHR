@@ -215,8 +215,21 @@ impl<'a> HttpDriver<'a> {
             for (name, template) in query {
                 match assertions::render_template(template, vars) {
                     Ok(value) => params.push((name.clone(), value)),
-                    // optional refs that are unbound omit the parameter
-                    Err(_) if template_is_optional(template) => {}
+                    // An optional ref that is genuinely unbound omits the
+                    // parameter — but a name the step's `with:` DOES carry
+                    // (just not as a renderable scalar) is a case-authoring
+                    // or promotion defect and must be loud, never a silent
+                    // drop (the group-9 triage: a dropped bound parameter
+                    // masqueraded as a SUT failure).
+                    Err(e) if template_is_optional(template) => {
+                        if let Some(referenced) = template_ref_name(template)
+                            && with.contains_key(referenced)
+                        {
+                            return Err(format!(
+                                "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
+                            ));
+                        }
+                    }
                     Err(e) => return Err(format!("query {name}: {e}")),
                 }
             }
@@ -785,6 +798,15 @@ fn template_is_optional(template: &Template) -> bool {
     template
         .as_single_ref()
         .is_some_and(|r| matches!(r, ValueRef::Capture { optional: true, .. }))
+}
+
+/// The capture name an optional single-ref template references (`${name?}`
+/// → `name`), for the bound-but-unrendered diagnostic.
+fn template_ref_name(template: &Template) -> Option<&str> {
+    template.as_single_ref().and_then(|r| match r {
+        ValueRef::Capture { name, .. } => Some(name.as_str()),
+        _ => None,
+    })
 }
 
 /// Minimal base64 (standard alphabet, padding) — avoids a crypto dep for
@@ -1483,11 +1505,24 @@ impl HttpDriver<'_> {
     fn merge_with_vars(vars: &VarStore, with: &BTreeMap<String, Value>) -> VarStore {
         let mut merged = vars.clone();
         for (key, value) in with {
-            if let Value::String(s) = value
+            // Every SCALAR `with:` value is promoted into the template vars —
+            // numbers and booleans render as their wire text exactly like the
+            // structured-body path does (a number-typed `url_fetch: 4` must
+            // reach a `${url_fetch?}` URL slot; silently skipping non-strings
+            // turned a runner gap into a fake SUT failure — the group-9
+            // triage). Objects/arrays stay out: they have no scalar wire
+            // text.
+            let text = match value {
+                Value::String(s) => Some(s.clone()),
+                Value::Number(n) => Some(n.to_string()),
+                Value::Bool(b) => Some(b.to_string()),
+                _ => None,
+            };
+            if let Some(text) = text
                 && let Ok(name) = CaptureName::parse(key)
                 && merged.scalar(&name).is_none()
             {
-                merged.set(name, Captured::Scalar(s.clone()));
+                merged.set(name, Captured::Scalar(text));
             }
         }
         merged
@@ -1983,6 +2018,44 @@ mod tests {
             }
         }))
         .unwrap()
+    }
+
+    /// The group-9 triage regression: a NUMBER-typed `with:` value must
+    /// promote into the template vars and render on an optional URL slot —
+    /// `url_fetch: 4` reaching `${url_fetch?}` emits `?fetch=4`; silently
+    /// skipping non-string scalars dropped the parameter and masqueraded as
+    /// a SUT failure.
+    #[test]
+    fn numeric_with_values_render_on_optional_url_slots() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_QUERY_SERVICE.execute_ad_hoc_query",
+            "its": "its-rest",
+            "request": {
+                "method": "POST",
+                "path": "/query/aql",
+                "query": { "fetch": "${url_fetch?}" }
+            },
+            "outcomes": { "ok": { "status": 200 } }
+        }))
+        .unwrap();
+        let mut with = BTreeMap::new();
+        with.insert("url_fetch".to_owned(), serde_json::json!(4));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        let url = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap();
+        assert_eq!(url, "http://sut/query/aql?fetch=4");
+
+        // An unbound optional slot still omits the parameter.
+        let empty = BTreeMap::new();
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &empty);
+        let url = HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap();
+        assert_eq!(url, "http://sut/query/aql");
+
+        // A bound-but-unrenderable (object) value is LOUD, never a drop.
+        let mut with = BTreeMap::new();
+        with.insert("url_fetch".to_owned(), serde_json::json!({"n": 4}));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
+        assert!(err.contains("did not render as a scalar"), "{err}");
     }
 
     #[test]
