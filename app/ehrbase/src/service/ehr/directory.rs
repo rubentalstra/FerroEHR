@@ -199,9 +199,14 @@ impl EhrbaseService {
     pub(in crate::service) async fn versioned_directory(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Value, ServiceError> {
+    ) -> Result<ServiceResponse, ServiceError> {
         let vo_id = self.directory_vo(ehr_id).await?;
-        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_FOLDER").await
+        let (body, last_modified) =
+            versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_FOLDER").await?;
+        Ok(ServiceResponse::new(
+            body,
+            super::meta::container_meta(ehr_id, vo_id, last_modified),
+        ))
     }
 
     /// Whether `version` of the directory versioned object `vo_id` exists for
@@ -611,6 +616,22 @@ impl EhrbaseService {
     /// [`SmError`] when the EHR has no directory (404-equivalent) or a read
     /// fails.
     pub async fn get_versioned_directory(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
+        Ok(self.versioned_directory(an_ehr_id).await?.body)
+    }
+
+    /// [`Self::get_versioned_directory`] with the container metadata the
+    /// wire's `ETag`/`Last-Modified` need: the container uid identity plus the
+    /// newest held version's commit instant (ITS-REST overview
+    /// `Requests_and_responses.md` §"`ETag` and Last-Modified" — both headers
+    /// SHOULD accompany a `VERSIONED_OBJECT` response).
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR has no directory (404-equivalent) or a read
+    /// fails.
+    pub async fn versioned_directory_response(
+        &self,
+        an_ehr_id: EhrId,
+    ) -> Result<ServiceResponse, SmError> {
         Ok(self.versioned_directory(an_ehr_id).await?)
     }
 }

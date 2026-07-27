@@ -42,7 +42,7 @@ pub(crate) async fn revision_history(
     pool: &sqlx::PgPool,
     ehr_id: EhrId,
     vo_id: VoId,
-) -> Result<Value, ServiceError> {
+) -> Result<(Value, jiff::Timestamp), ServiceError> {
     let rows = crate::storage::version_repo::meta::all_version_meta(pool, vo_id).await?;
     let first = rows.first().ok_or_else(|| {
         ServiceError::sm(
@@ -65,6 +65,15 @@ pub(crate) async fn revision_history(
     for (sys_version, data) in att_rows {
         attestations.entry(sys_version).or_default().push(data);
     }
+
+    // The newest held version's commit instant — the history resource's
+    // `Last-Modified` value (ITS-REST overview `Requests_and_responses.md`
+    // §"`ETag` and Last-Modified": derived from
+    // `VERSION.commit_audit.time_committed.value`). Rows are ordered by
+    // storage ordinal, so the last row is the newest.
+    let last_modified = rows
+        .last()
+        .map_or(first.time_committed, |row| row.time_committed);
 
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
@@ -91,7 +100,10 @@ pub(crate) async fn revision_history(
             "audits": audits
         }));
     }
-    Ok(json!({ "_type": "REVISION_HISTORY", "items": items }))
+    Ok((
+        json!({ "_type": "REVISION_HISTORY", "items": items }),
+        last_modified,
+    ))
 }
 
 /// A versioned-object wire body for `vo_id` owned by `ehr_id`, carrying the
@@ -110,23 +122,32 @@ pub(crate) async fn revision_history(
 /// earliest version this repository received.
 ///
 /// # Errors
+/// Returns the wire body plus the newest held version's commit instant — the
+/// container resource's `Last-Modified` value (ITS-REST overview
+/// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
+/// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
+/// resources that have versioning or unique state identifiers", the value
+/// "derived from `VERSION.commit_audit.time_committed.value`").
+///
+/// # Errors
 /// [`ServiceError::NotFound`] when the object has no stored version; the
-/// storage read error of `version_repo::meta::time_created`.
+/// storage read error of `version_repo::meta::commit_bounds`.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: VoId,
     ehr_id: EhrId,
     rm_type: &str,
-) -> Result<Value, ServiceError> {
-    let time_created = crate::storage::version_repo::meta::time_created(pool, vo_id)
-        .await?
-        .ok_or_else(|| {
-            ServiceError::sm(
-                CallStatusType::VersionedObjectDoesNotExist,
-                format!("versioned object {vo_id}"),
-            )
-        })?;
-    Ok(json!({
+) -> Result<(Value, jiff::Timestamp), ServiceError> {
+    let (time_created, last_modified) =
+        crate::storage::version_repo::meta::commit_bounds(pool, vo_id)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("versioned object {vo_id}"),
+                )
+            })?;
+    let body = json!({
         "_type": rm_type,
         "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
         "owner_id": {
@@ -136,7 +157,8 @@ pub(crate) async fn versioned_object(
             "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
         },
         "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
-    }))
+    });
+    Ok((body, last_modified))
 }
 
 /// An `ORIGINAL_VERSION` wrapping a loaded version, with read-time signature
