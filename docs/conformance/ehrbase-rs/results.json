@@ -42,6 +42,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_QUERY.queries_count-count",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "I_DEFINITION_QUERY.queries_count: AMB-127"
+    },
+    {
       "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_selected",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -1932,7 +1939,27 @@
       "rows_total": 2
     },
     {
+      "case": "I_DEFINITION_QUERY.delete_query-delete_existing",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "I_DEFINITION_QUERY.delete_query: AMB-127"
+    },
+    {
       "case": "I_DEFINITION_QUERY.has_query-xxx",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_matching_queries-id_pattern",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "I_DEFINITION_QUERY.list_matching_queries: AMB-121"
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-no_match_empty_list",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1944,7 +1971,61 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_QUERY.list_queries-prefix_all_versions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_QUERY.list_queries-select_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-version_get_exact",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-version_get_major_prefix",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-version_get_minor_prefix",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-version_get_unknown",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-version_get_xml_not_acceptable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.list_queries-xml_not_acceptable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-default_slot_with_higher_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-default_version_slot",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1963,6 +2044,54 @@
     },
     {
       "case": "I_DEFINITION_QUERY.store_query-unqualified_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-update_in_place",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_duplicate_case_variant_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_duplicate_conflict",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_malformed_rejected",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_prefix_rejected",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_prerelease_rejected",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-version_stored",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-wrong_media",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
