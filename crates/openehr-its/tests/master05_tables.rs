@@ -73,7 +73,12 @@
     clippy::doc_markdown,
     clippy::expect_used,
     clippy::too_many_lines,
-    clippy::unwrap_used
+    clippy::unwrap_used,
+    // Fixture builders take `Value` by value so call sites read as the JSON
+    // they build (`element(json!({…}))`); `json!` interpolation borrows, which
+    // trips needless_pass_by_value on every builder.
+    clippy::needless_pass_by_value,
+    clippy::assigning_clones
 )]
 
 use indexmap::IndexMap;
