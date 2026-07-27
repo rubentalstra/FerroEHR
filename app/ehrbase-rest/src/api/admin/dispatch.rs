@@ -1,14 +1,16 @@
-//! HTTP dispatch for the `admin` API group (physical EHR delete) over the
-//! [`AdminService`](ehrbase::service::AdminService) seam.
+//! HTTP dispatch for the `admin` API group, over the concrete
+//! `ehrbase::service::EhrbaseService` admin methods.
 //!
-//! Maturity: the ITS-REST Admin API is **`DEVELOPMENT`** (`admin.openapi.yaml`
-//! `info.version: development`, `x-status: DEVELOPMENT`). It mounts exactly two
-//! operations — both physical EHR delete — and both are dispatched here; there
-//! are **no extension routes** in this group (the other SM admin capabilities —
-//! party delete, statistics, archive, dump/load — have no ITS-REST binding and
-//! stay native-API-only on the `ehrbase-sm` seam).
+//! Maturity: the ITS-REST Admin API is **`DEVELOPMENT`**
+//! (`specifications/docs/admin/Description.md` §Status: "This specification is
+//! in the `DEVELOPMENT` state"). It mounts exactly two operations — both
+//! physical EHR delete — and both are dispatched here, alongside three of OUR
+//! OWN extension routes (template delete, stored-query-version delete, the
+//! redacted config read), which no ITS-REST operation governs. The remaining SM
+//! admin capabilities (party delete, statistics, archive, dump/load) have no
+//! ITS-REST binding and are not surfaced by this group at all.
 //!
-//! Spec grounding (both operations are vendored — `admin.openapi.yaml:24-30`,
+//! Spec grounding (both operations are vendored — `admin.openapi.yaml`,
 //! `security: []` so auth is out of band, SM master02):
 //! - `admin_ehr_delete` — `operations/admin_ehr_delete.yaml`: `DELETE
 //!   /admin/ehr/{ehr_id}`, physical cascade of every owned resource (COMPOSITION,
@@ -28,7 +30,14 @@
 //!   inconsistency.
 //!
 //! The group is config-gated (`AppConfig::admin.enabled`, default false): when
-//! disabled every admin route answers `404` without touching the backend.
+//! disabled every admin route answers **`405 Method Not Allowed`** with an
+//! empty `Allow`, without touching the backend. The ground differs per route —
+//! `admin_ehr_delete_all` has its own released NOTE + `responses/405.yaml`,
+//! while the single-EHR delete and the three extensions rest on the
+//! cross-cutting rule "If a method is recognized but not allowed for the target
+//! resource, the response SHOULD be `405 Method Not Allowed` status code"
+//! (`docs/overview/Requests_and_responses.md` §"HTTP Methods"). See the gate
+//! comment in `run` below and the declarations in [`super::openapi_routes`].
 
 use axum::Json;
 use axum::response::{IntoResponse, Response};
@@ -57,11 +66,19 @@ async fn run(
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     // Config gate: the ADMIN API is opt-in. When disabled every admin route
-    // answers `405 Method Not Allowed` — the status the ITS-REST OAS itself
-    // declares for a disabled admin operation
-    // (`operations/admin_ehr_delete_all.yaml`: "may be disabled in production
-    // environments, in which case server may respond with 405", with
-    // `responses/405.yaml` enumerated), rendered with the openEHR error body.
+    // answers `405 Method Not Allowed`, rendered with the openEHR error body.
+    // Two grounds, one wire:
+    // - `admin_ehr_delete_all` has its OWN released provenance — its NOTE ("may
+    //   be disabled in production environments, in which case server may
+    //   respond with 405", `operations/admin_ehr_delete_all.yaml`) with
+    //   `responses/405.yaml` enumerated.
+    // - Every OTHER route here (the single-EHR delete, and the three
+    //   extensions, which have no released file at all) rests on the
+    //   cross-cutting rule instead: "If a method is recognized but not allowed
+    //   for the target resource, the response SHOULD be `405 Method Not
+    //   Allowed` status code" (`docs/overview/Requests_and_responses.md`
+    //   §"HTTP Methods"). The bulk route's NOTE governs only that operation and
+    //   is not their ground.
     //
     // This `405` comes from a MATCHED handler, so axum's allow-header machinery
     // (which only decorates a *method fallback*) never runs and the `Allow`

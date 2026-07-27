@@ -32,6 +32,26 @@ workflow refuses a tag that has no matching section here.
   the template and query routes (previously only the composition family
   was gated).
 
+- **The published API reference now describes the admin endpoints in full,
+  and the disabled-admin answer is documented correctly** (#513). The five
+  admin operations — the released `DELETE /admin/ehr/{ehr_id}` and
+  `DELETE /admin/ehr/all`, plus the template-delete, stored-query-version-
+  delete and effective-config extensions — gained the branches they actually
+  answer (`400` for a malformed EHR id, `401`/`403` from the admin role gate,
+  `404`, the template `409`), the mandatory empty `Allow` header on every
+  disabled-group `405`, and worked request/response examples. They now carry
+  the released operation text verbatim, including the permanent-physical-
+  delete cascade and its data-protection (GDPR) sentence, the
+  development/testing note on the bulk route, and the fact that this server
+  deletes synchronously (`204` only — the specification's optional
+  asynchronous `202` is never returned). The bulk route documents both
+  accepted query forms (`?ehr_id=a&ehr_id=b` and `?ehr_id=a,b`) and that an
+  absent or empty list deletes every EHR; the three extension routes are
+  flagged plainly as our own, governed by no openEHR operation. Reference
+  documentation and configuration docs that claimed a disabled admin API
+  answers `404` were corrected: it answers `405 Method Not Allowed` with an
+  empty `Allow` header.
+
 - **Demographic ITEM_TAG collections honour the released dual-form
   addressing** (#509). A version-addressed `uid_based_id` on the demographic
   tag routes now reads, replaces, and deletes that VERSION's own distinct
