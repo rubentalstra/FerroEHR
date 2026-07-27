@@ -331,7 +331,7 @@ pub(super) async fn run(
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let tags = state
                 .backend()
-                .target_tags_get(ehr_id, p.uid_based_id)
+                .target_tags_get(ehr_id, p.uid_based_id, "COMPOSITION")
                 .await?;
             Ok(negotiate::respond(h, ok, &Value::Array(tags)))
         }
@@ -359,7 +359,7 @@ pub(super) async fn run(
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             state
                 .backend()
-                .target_tag_delete(ehr_id, p.uid_based_id, p.key)
+                .target_tag_delete(ehr_id, p.uid_based_id, "COMPOSITION", p.key)
                 .await?;
             Ok(negotiate::empty(no_content))
         }
