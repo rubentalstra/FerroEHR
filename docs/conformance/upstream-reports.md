@@ -785,3 +785,92 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   Location solely to deprecate it.
 - **Ask:** normalize the interface; align the update response header
   contracts; drop the deprecated Location declaration from 412.
+
+### UPR-46 — empty CONTRIBUTION versions list has no released rejection ground
+
+- **Components:** ITS-REST (NewContribution schema), RM (contribution class)
+- **Register:** AMB-84 (fixed_handling)
+- **Facts:** the commit schema has no minItems (the read schema does); RM
+  CONTRIBUTION declares no invariants; no branch covers the case.
+- **Ask:** add minItems to the commit schema or a non-empty invariant.
+
+### UPR-47 — three contribution commit rejections remain unassigned (AMB-54 residue)
+
+- **Component:** ITS-REST (contribution_create)
+- **Register:** AMB-54 (fixed_handling, narrowed 2026-07-27)
+- **Facts:** `400_CONTRIBUTION` assigns first-version-of-a-MODIFICATION →
+  400; creation-with-preceding, stale/unknown preceding (no If-Match/412 on
+  this op), and out-of-group tokens remain unassigned.
+- **Ask:** assign the three residual branches.
+
+### UPR-48 — contribution GET's simplified promise contradicts its declared schema
+
+- **Component:** ITS-REST (contribution_get / 200_CONTRIBUTION / Contribution schema)
+- **Register:** AMB-57 (fixed_handling, corrected 2026-07-27)
+- **Facts:** the §Simplified Formats paragraphs promise `versions[i].data`
+  serialization; the declared read body carries OBJECT_REFs with no data;
+  no Prefer parameter binds resolve_refs.
+- **Ask:** align the paragraph with the schema or bind
+  `Prefer: return=representation, resolve_refs` explicitly.
+
+### UPR-49 — the commit schema has no deletion shape
+
+- **Components:** ITS-REST (UpdateVersion/Version schemas), RM (master06 §Logical Deletion)
+- **Register:** AMB-85 (fixed_handling)
+- **Facts:** RM deletion commits a data-less version; both released
+  schemas make `data` required.
+- **Ask:** make `data` conditional (absent/Void on `523|deleted|` members).
+
+### UPR-50 — committal-header scope on the native contribution POST is unstated
+
+- **Component:** ITS-REST (Requests_and_responses §openehr-version…)
+- **Register:** AMB-86 (fixed_handling)
+- **Facts:** the MUST-accept sentence is scoped in context to the
+  convenience methods; the native body carries the audit; no precedence
+  rule exists for header-vs-body conflict.
+- **Ask:** state the header scope on the native route.
+
+### UPR-51 — ETag/Last-Modified on the contribution GET is unassigned
+
+- **Component:** ITS-REST (200_CONTRIBUTION vs the ETag/Last-Modified SHOULD)
+- **Register:** AMB-87 (fixed_handling)
+- **Facts:** the SHOULD names "unique state identifiers"; Resources.md
+  classifies CONTRIBUTION non-versioned; the 200 declares neither header;
+  the 201 carries the uid ETag.
+- **Ask:** declare the headers on the 200 or scope the SHOULD.
+
+### UPR-52 — CONTRIBUTION.versions ref type: RM wording vs the released example
+
+- **Components:** RM (contribution class), BASE (object_ref), ITS-REST (Contribution schema)
+- **Register:** AMB-88 (fixed_handling)
+- **Facts:** RM: refs to "Versions"; the released example emits the data
+  class as `type` with an OBJECT_VERSION_ID id; the RM's own second
+  sentence leans to the data-class reading.
+- **Ask:** reconcile.
+
+### UPR-53 — IMPORTED_VERSION cannot be committed through the released wire
+
+- **Components:** RM (master06 §Copying/§Contributions), ITS-REST (NewContribution), SM (i_ehr_contribution)
+- **Register:** AMB-89 (fixed_handling)
+- **Facts:** RM mandates import "as part of a Contribution"; the commit
+  schema is UpdateVersion-only (no item/uid/oneOf); the SM envelope
+  likewise; ImportedVersion appears only in read unions.
+- **Ask:** define the import commit shape (with foreign-identity
+  preservation).
+
+### UPR-54 — I_EHR_CONTRIBUTION + commit-DTO editorial defect bundle
+
+- **Components:** SM (i_ehr_contribution, update_version, update_audit, master03), ITS-REST, RM
+- **Register:** AMB-90 (editorial)
+- **Facts/Asks:** precondition/postcondition arity and undeclared
+  identifiers; both error-name and parameter spellings in one interface;
+  no SM validation/conflict/precondition errors (wire 400/409/412/422
+  unmapped); audit-vs-commit_audit naming; missing SM signature +
+  system_id (contradicted by released SPECITS-95/SPECPR-472); stale
+  Terminology_code typing with a .defining_code-dereferencing invariant;
+  description String/DV_TEXT/UDvText three-way divergence; no envelope uid
+  parameter. Plus the minor silences: system_id validation criterion,
+  glossary omission of contribution_uid, the 204-only Content-Type
+  exemption vs the minimal 201, cross-EHR 404 by implication, atomicity as
+  an unrestated "should", copy-down vs per-member committer. Normalize the
+  interface and DTOs to the released ITS-REST 1.1.0 typing.
