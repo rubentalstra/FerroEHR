@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 499 |
+| passed | 517 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 67 |
-| total | 566 |
+| not_applicable | 70 |
+| total | 587 |
 
 ## By chapter
 
@@ -24,7 +24,7 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_ADMIN_SERVICE | 2 | 0 | 0 | 0 | 10 |
 | I_DEFINITION_ADL14 | 19 | 0 | 0 | 0 | 6 |
 | I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
-| I_DEFINITION_QUERY | 10 | 0 | 0 | 0 | 0 |
+| I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
 | I_DEMOGRAPHIC_SERVICE | 16 | 0 | 0 | 0 | 12 |
 | I_EHR_COMPOSITION | 65 | 0 | 0 | 0 | 0 |
 | I_EHR_CONTRIBUTION | 47 | 0 | 0 | 0 | 5 |
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 499 of 566 selected cases driven.
+Coverage: 517 of 587 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -109,6 +109,9 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_ADL2.list_artefacts-unrealized | I_DEFINITION_ADL2.list_artefacts: AMB-37 |
 | I_DEFINITION_ADL2.opts_count-unrealized | I_DEFINITION_ADL2.opts_count: AMB-37 |
 | I_DEFINITION_ADL2.templates_count-unrealized | I_DEFINITION_ADL2.templates_count: AMB-37 |
+| I_DEFINITION_QUERY.delete_query-delete_existing | I_DEFINITION_QUERY.delete_query: AMB-127 |
+| I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
+| I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
 | I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa | I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb | I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa | I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32 |
