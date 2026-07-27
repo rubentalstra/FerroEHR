@@ -26,6 +26,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the eight COMPOSITION and
+  VERSIONED_COMPOSITION operations** (#450). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes) and a canonical example; the commits document the
+  `openehr-version` / `openehr-audit-details` / `openehr-template-id` request
+  headers and the four negotiable media types (canonical JSON/XML plus
+  `application/openehr.wt.flat+json` and
+  `application/openehr.wt.structured+json`); and every branch the wire
+  actually serves is described — the `GET`'s deleted-version `204` for all
+  addressing forms, the `DELETE` quartet (`204` carrying the NEW deleted
+  version's identity, `400` already-deleted, `404`, `409` not-latest with the
+  latest-uid `ETag`), `412`/`415`/`406`/`422`, and the `409`s that are our own
+  design (duplicate live persistent COMPOSITION per template, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
 - **Served OpenAPI: complete documentation for the seven EHR_STATUS and
   VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
   headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
