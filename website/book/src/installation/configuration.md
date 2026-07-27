@@ -320,7 +320,7 @@ enum{organization,patient,template}).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | bool | `false` | Mount the ADMIN API (physical, irreversible delete). Off ⇒ routes are absent (404), never 403. |
+| `enabled` | bool | `false` | Mount the ADMIN API (physical, irreversible delete). Off ⇒ every admin route answers `405 Method Not Allowed` with an empty `Allow` header, never 403. |
 
 ## `[tenancy]`
 
