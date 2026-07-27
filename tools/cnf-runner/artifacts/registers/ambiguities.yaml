@@ -2908,18 +2908,21 @@ AMB-120:
     query-name — which is also what puts the reserved-name rule on the right
     segment (AMB-123). A dot inside a name stays part of the query-name, per
     the ITS charset, and is never a separator. Formalism values compare
-    case-insensitively per §Query Formalism. The `type` member is served AS
-    STORED rather than normalized: the schema default and every worked
-    example disagree about its casing, so normalizing to either would pick a
-    side the released text does not, while echoing the declared value is
-    lossless and leaves the question open for a later ruling. The NAME halves
+    case-insensitively per §Query Formalism, so the server keys and serves
+    the `type` member in ONE canonical spelling — the `QueryType` schema
+    default `AQL` — regardless of the casing the client declared (`aql`,
+    `AQL` and `AQL::1` are "all equivalent" per §Query Formalism, so the
+    normalization is semantically lossless; which spelling the released text
+    itself prefers remains contradictory — schema `default: "AQL"` against
+    every worked example's `"aql"` — and is carried upstream rather than
+    resolved here). The NAME halves
     are exercised — I_DEFINITION_QUERY.store_query-unqualified_name and
     -dotted_name (the namespace-less and dotted forms store and resolve back)
     and list_queries-prefix_all_versions (the prefix list over the canonical
-    key). The CASING half is deliberately NOT gated: pinning it would assert a
-    spelling the released text declares two ways at once (schema `default:
-    "AQL"` against every example's `"aql"`), so the position is carried here
-    and left for the upstream ruling. Reported upstream (UPR-84).
+    key). The CASING half is deliberately NOT gated: pinning either spelling
+    would assert what the released text declares two ways at once, so the
+    served canonical `AQL` is carried here and left for the upstream ruling.
+    Reported upstream (UPR-84).
   disposition: fixed_handling
   upstream_ref: "UPR-84"
 
