@@ -178,6 +178,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-ehr_not_modifiable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-event",
       "status": "passed",
       "rows_driven": 1,
@@ -2030,6 +2036,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-ehr_not_modifiable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-ehr_with_directory",
       "status": "passed",
       "rows_driven": 1,
@@ -2060,7 +2072,31 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.delete_directory-etag_names_new_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.delete_directory-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.delete_directory-stale_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.get_directory-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory-deleted_head",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2084,7 +2120,31 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.get_directory-path_sub_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory-path_unresolved",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.get_directory_at_time-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_time-before_first_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_time-deleted_at_time",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2126,6 +2186,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.get_directory_at_time-future",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first",
       "status": "passed",
       "rows_driven": 1,
@@ -2138,6 +2204,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.get_directory_at_version-deleted_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions",
       "status": "passed",
       "rows_driven": 1,
@@ -2145,6 +2217,30 @@
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory_at_version-empty_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_version-foreign_system_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_version-malformed_version_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_version-path_sub_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory_at_version-path_unresolved",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2244,6 +2340,18 @@
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-empty_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-stale_if_match",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
