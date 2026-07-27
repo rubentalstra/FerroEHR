@@ -29,9 +29,21 @@
 #   `200 OK`: "The request succeeded, payload sent in a 200 response depends on
 #   the request method".
 # - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
-#   "Related response headers: `ETag` - A unique identifier of the resultSet"
-#   (declared soft, `present?`, exactly as on the variant-less binding: the
-#   docs text names the header without a MUST).
+#   "Related response headers: `ETag` - A unique identifier of the resultSet";
+#   its FORM by docs/overview/Requests_and_responses.md §"Deprecated headers":
+#   "all `ETag` headers that hold a resource identifier MUST include a weakness
+#   indicator `W/`". Only the weak wrapper is asserted — the identifier inside
+#   is the service's choice ("usually taken from e.g. VERSIONED_OBJECT.uid.value,
+#   VERSION.uid.value, EHR.ehr_id.value, etc.").
+# - `404` on a well-formed but UNKNOWN `ehr_id` — the released ad-hoc operation
+#   declares no not-found branch of its own, and docs/query/Request.md §"About
+#   the ehr_id parameter" says only that the scope "MAY be used by the underlying
+#   backend to perform routing, optimizations or similar". The branch is
+#   adjudicated in register AMB-101 (fixed handling), which realizes the SM's
+#   declared `ehr_id_does_not_exist` error (SM i_query_service.adoc) on
+#   docs/overview/Requests_and_responses.md §"HTTP status codes", row `404 Not
+#   Found`: "The origin service did not find the target resource or is not
+#   willing to disclose that one exists".
 #
 # Identical to the variant-less binding except for the method and where the
 # scope travels, so a red row localizes to the header realization on GET alone.
@@ -55,5 +67,6 @@ formats: [canonical-json]
 outcomes:
   ok:
     status: 200                           # Requests_and_responses.md §HTTP status codes, row 200
-    headers: { ETag: "present?" }         # Request.md §Common Headers and Query Parameters (related response headers)
+    headers: { ETag: 'pattern:W/"[^"]+"' } # Request.md §Common Headers and Query Parameters + overview §Deprecated headers
     body: result_set_body
+  not_found: { status: 404 }              # Requests_and_responses.md §HTTP status codes, row 404 (register AMB-101)
