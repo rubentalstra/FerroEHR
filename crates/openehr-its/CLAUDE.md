@@ -88,6 +88,12 @@ model.
   `_type` tagging); never re-models the RM. Carries the crate's ITS 1.1.0
   spec version (the Simplified Formats spec is part of ITS-REST 1.1.0; no
   separate pin).
-- Fidelity gates for it live in the crate's `tests/` (the `simplified_formats`
-  spec-example vectors, `insta` goldens, the OPT-corpus round-trips) — never
-  weaken or skip one.
+- Fidelity gates for it live in the crate's `tests/` — never weaken or skip
+  one. Two complementary ones: `spec_vectors.rs` replays every
+  `simplified_formats` example block for **syntax** + FLAT⇄STRUCTURED
+  stability, and `master05_tables.rs` is the **semantic** battery — one test
+  per `master05` section, one assertion per mapping-table row (Flat Path +
+  Flat type against a minimal RM value through `composition_to_flat`), with
+  every row the implementation relocates or does not emit recorded explicitly
+  rather than skipped. Plus the `insta` goldens and the OPT-corpus
+  round-trips. A new/changed `master05` row lands with its battery row.
