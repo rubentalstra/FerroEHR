@@ -336,6 +336,61 @@ pub(crate) fn class_binding(class: &str) -> BTreeMap<String, String> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REST DTO required-list overrides (docs-text-wins corrections)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One REST-contract required-list correction: `(dto, field)` is emitted as
+/// OPTIONAL although the vendored OAS schema lists it under `required`. Used
+/// only where the ITS-REST **docs text** (the wire oracle — owner ruling
+/// 2026-07-24) contradicts the stalled OAS shape.
+pub(crate) struct RestOptionalOverride {
+    pub dto: &'static str,
+    pub field: &'static str,
+    pub citation: &'static str,
+    pub reason: &'static str,
+}
+
+/// The docs-text-wins required-list corrections for the generated ITS-REST
+/// contract (`emit-rest`).
+pub(crate) const REST_OPTIONAL_OVERRIDES: &[RestOptionalOverride] = &[
+    RestOptionalOverride {
+        dto: "Query",
+        field: "offset",
+        citation: "ITS-REST docs/query/Request.md §Common Headers and Query Parameters — \
+                   \"`offset` … default `0`\"",
+        reason: "A required member cannot default; the stored-query execute body must \
+                 accept `{}` (a parameterless stored query).",
+    },
+    RestOptionalOverride {
+        dto: "Query",
+        field: "fetch",
+        citation: "ITS-REST docs/query/Request.md §Common Headers and Query Parameters — \
+                   \"`fetch` … default depends on the implementation\"",
+        reason: "A required member cannot default; the stored-query execute body must \
+                 accept `{}`.",
+    },
+    RestOptionalOverride {
+        dto: "Query",
+        field: "query_parameters",
+        citation: "ITS-REST docs/query/Request.md §Query parameters — parameters exist \
+                   \"Depending on each query definition\"; a parameterless stored query \
+                   binds none",
+        reason: "A stored query with no $parameters must be executable with an empty body.",
+    },
+];
+
+/// The docs-text-wins correction for `(dto, field)`, or `None` — the field is
+/// emitted optional and the generated code carries the citation.
+pub(crate) fn rest_optional_override(
+    dto: &str,
+    field: &str,
+) -> Option<&'static RestOptionalOverride> {
+    REST_OPTIONAL_OVERRIDES
+        .iter()
+        .find(|o| o.dto == dto && o.field == field)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Field-level type overrides
 // ─────────────────────────────────────────────────────────────────────────────
 
