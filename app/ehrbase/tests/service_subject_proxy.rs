@@ -382,14 +382,26 @@ async fn subject_proxy_preconditions_and_reset() {
 // hermetic `wiremock` FHIR server stands in for the remote system (no network).
 
 /// A subject-proxy service wired to a single FHIR system `name` → `base_url`.
+///
+/// NOTE: the deadlines are deliberately far longer than any loopback exchange
+/// needs, because no test in this file asserts timeout *behaviour* and a missed
+/// deadline here is silent rather than loud: a retrieve that fails after being
+/// dispatched is an unavailable `SAMPLE`
+/// (`SM/docs/UML/classes/sample.adoc` — "Every retrieval attempt will generate
+/// a new Sample object, regardless of whether data was actually available or
+/// not"), which `extract_value` maps to the empty `VARIABLE_VALUE`. A deadline
+/// short enough to be reachable under parallel-run host contention therefore
+/// turns a scheduling hiccup into a wrong-value assertion failure that passes
+/// on rerun. Deadlines that must actually fire belong in a test that delays the
+/// response on purpose.
 fn service_with_fhir(pool: PgPool, name: &str, base_url: &str) -> EhrbaseService {
     let mut systems = std::collections::BTreeMap::new();
     systems.insert(
         name.to_owned(),
         SpFhirSystem {
             base_url: base_url.to_owned(),
-            connect_timeout_ms: 500,
-            request_timeout_ms: 1_500,
+            connect_timeout_ms: 30_000,
+            request_timeout_ms: 30_000,
         },
     );
     let fhir = SubjectProxyConfig { systems }
