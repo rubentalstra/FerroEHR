@@ -4545,47 +4545,502 @@ pub(crate) async fn directory_get_by_version_id(
 
 // ── CONTRIBUTION ──────────────────────────────────────────────────────────────
 
-/// Create a CONTRIBUTION (`POST /ehr/{ehr_id}/contribution`).
+/// Create a CONTRIBUTION — the NATIVE change-set commit
+/// (`POST /ehr/{ehr_id}/contribution`).
+///
+/// One CONTRIBUTION is one atomic change-set: `versions[]` MAY mix creations,
+/// modifications, logical deletions and attestations of COMPOSITION /
+/// EHR_STATUS / FOLDER, and either all of them commit or none ("Contributions
+/// are similar to nested transactions. An attempt to commit a Contribution
+/// should only succeed if each Version and/or Attestation in the Contribution
+/// is committed successfully" — RM common master06 §"Committal and Audits";
+/// the legal mixture is master06 §Contributions: "there might be any
+/// combination of the logical change types in a single commit"). The
+/// per-resource `POST`/`PUT`/`DELETE` routes are convenience wrappers over
+/// exactly this operation — they "MUST internally be executed using the
+/// 'native' way" (`Requests_and_responses.md` §"openehr-version and
+/// openehr-audit-details").
+///
+/// Which is why this route declares NO `openehr-version` /
+/// `openehr-audit-details` parameters: those headers exist to carry committal
+/// metadata for the convenience methods, and here that metadata is IN the body
+/// — `versions[i].lifecycle_state`, `versions[i].commit_audit` and the
+/// envelope `audit`. The section's merge MUST is scoped to the convenience
+/// methods, and the released text states no precedence for those headers
+/// arriving on the native route, so answering from the body alone is OUR OWN
+/// reading, register-documented in the conformance catalogue.
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`."),
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens, and \
+                        each names the CONTRIBUTION — never a member version: \
+                        `return=minimal` — empty body; `return=identifier` — \
+                        the body is only `{ \"uid\": \"<contribution_uid>\" }`; \
+                        `return=representation` — the committed CONTRIBUTION. \
+                        An absent header means `return=minimal` (\"If no \
+                        `Prefer` header is provided, the default behavior is \
+                        assumed to be `return=minimal`\", which ITS-REST \
+                        `specifications/responses/201_CONTRIBUTION.yaml` \
+                        repeats: \"If the `Prefer` header is missing or set to \
+                        `return=minimal`, the body is empty\"); the token \
+                        actually applied is echoed in `Preference-Applied`. \
+                        CONTRAST the COMPOSITION commit: a Simplified-Format \
+                        `Accept` does NOT force a body here — it only selects \
+                        the inner `versions[i].data` form of a body `Prefer` \
+                        already asked for (`201_CONTRIBUTION`: \"When the \
+                        request `Accept` header selects a Simplified Formats \
+                        MIME type … and `Prefer: return=representation`\").",
+         example = "return=representation"),
         ("openehr-template-id" = Option<String>, Header,
-         description = "The template id; required when an inner \
-                        `versions[].data` uses a Simplified Format (which \
-                        carries no template_id).")
+         description = "The operational-template id the inner \
+                        `versions[i].data` payloads are validated against — \
+                        REQUIRED when the request `Content-Type` is one of the \
+                        two Simplified Formats. `Requests_and_responses.md` \
+                        §openehr-template-id: the header \"MUST be used \
+                        whenever committing COMPOSITION (via `PUT` or `POST` \
+                        methods) using a Simplified Format which does not \
+                        support TEMPLATE_ID value under an equivalent \
+                        `LOCATABLE.archetype_details.template_id` attribute of \
+                        contained data\". A canonical-JSON envelope carries \
+                        each COMPOSITION's own `archetype_details.template_id`, \
+                        so the header is not needed there; a simplified commit \
+                        without it cannot be resolved to a template and is \
+                        `422` (the released text assigns the missing header no \
+                        status — the code choice is ours). ONE template id \
+                        applies to every simplified member of the change-set.",
+         example = "problem_list.v1")
     ),
     request_body(
-
         // The envelope is always canonical JSON; a Simplified media type selects
-        // the inner `versions[i].data` COMPOSITION form (contribution_create.yaml
-        // §Simplified Formats). No canonical-XML CONTRIBUTION wire shape exists.
-        content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json")),
-        description = "A CONTRIBUTION (canonical JSON envelope; inner versions[].data \
-                       may be a Simplified Format with the `openehr-template-id` header)."
+        // ONLY the inner `versions[i].data` COMPOSITION form (SPECITS-84, the
+        // Amendment_record entry of 27 Apr 2026 + `contribution_create.yaml`
+        // §Simplified Formats). No canonical-XML CONTRIBUTION wire shape exists,
+        // so `application/xml` is not offered (a canonical-XML `Content-Type` is
+        // `415`).
+        content(
+            (serde_json::Value = "application/json", example = json!({
+                "versions": [ {
+                    "lifecycle_state": {
+                        "_type": "DV_CODED_TEXT", "value": "complete",
+                        "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "532" }
+                    },
+                    "data": {
+                        "_type": "COMPOSITION",
+                        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+                        "archetype_details": {
+                            "_type": "ARCHETYPED",
+                            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.encounter.v1" },
+                            "template_id": { "_type": "TEMPLATE_ID", "value": "problem_list.v1" },
+                            "rm_version": "1.2.0"
+                        },
+                        "name": { "_type": "DV_TEXT", "value": "Encounter" },
+                        "language": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" },
+                        "territory": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" }, "code_string": "NL" },
+                        "category": {
+                            "_type": "DV_CODED_TEXT", "value": "event",
+                            "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "433" }
+                        },
+                        "composer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" },
+                        "context": {
+                            "_type": "EVENT_CONTEXT",
+                            "start_time": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                            "setting": {
+                                "_type": "DV_CODED_TEXT", "value": "other care",
+                                "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "238" }
+                            }
+                        },
+                        "content": [ {
+                            "_type": "EVALUATION",
+                            "archetype_node_id": "openEHR-EHR-EVALUATION.problem_diagnosis.v1",
+                            "name": { "_type": "DV_TEXT", "value": "Problem/Diagnosis" },
+                            "language": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" },
+                            "encoding": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "IANA_character-sets" }, "code_string": "UTF-8" },
+                            "subject": { "_type": "PARTY_SELF" },
+                            "data": {
+                                "_type": "ITEM_TREE",
+                                "archetype_node_id": "at0001",
+                                "name": { "_type": "DV_TEXT", "value": "Tree" },
+                                "items": [ {
+                                    "_type": "ELEMENT",
+                                    "archetype_node_id": "at0002",
+                                    "name": { "_type": "DV_TEXT", "value": "Problem/Diagnosis name" },
+                                    "value": { "_type": "DV_TEXT", "value": "Asthma" }
+                                } ]
+                            }
+                        } ]
+                    },
+                    "commit_audit": {
+                        "_type": "UPDATE_AUDIT",
+                        "change_type": {
+                            "_type": "DV_CODED_TEXT", "value": "creation",
+                            "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "249" }
+                        },
+                        "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" }
+                    }
+                }, {
+                    "preceding_version_uid": { "_type": "OBJECT_VERSION_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31::openEHRSys.example.com::1" },
+                    "lifecycle_state": {
+                        "_type": "DV_CODED_TEXT", "value": "complete",
+                        "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "532" }
+                    },
+                    "data": {
+                        "_type": "EHR_STATUS",
+                        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                        "archetype_details": {
+                            "_type": "ARCHETYPED",
+                            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                            "rm_version": "1.2.0"
+                        },
+                        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                        "subject": {
+                            "_type": "PARTY_SELF",
+                            "external_ref": {
+                                "_type": "PARTY_REF",
+                                "namespace": "demographic",
+                                "type": "PERSON",
+                                "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                            }
+                        },
+                        "is_queryable": true,
+                        "is_modifiable": true
+                    },
+                    "commit_audit": {
+                        "_type": "UPDATE_AUDIT",
+                        "change_type": {
+                            "_type": "DV_CODED_TEXT", "value": "modification",
+                            "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" }
+                        },
+                        "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" }
+                    }
+                } ],
+                "audit": {
+                    "_type": "UPDATE_AUDIT",
+                    "change_type": {
+                        "_type": "DV_CODED_TEXT", "value": "modification",
+                        "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" }
+                    },
+                    "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" },
+                    "description": { "_type": "DV_TEXT", "value": "Encounter recorded at triage; EHR status refreshed" }
+                }
+            })),
+            (serde_json::Value = "application/openehr.wt.flat+json"),
+            (serde_json::Value = "application/openehr.wt.structured+json")
+        ),
+        description = "The un-committed CONTRIBUTION — the RELAXED envelope the \
+                       released operation defines (ITS-REST \
+                       `specifications/operations/contribution_create.yaml`): \
+                       `versions[]` of UPDATE_VERSION \
+                       (`preceding_version_uid`?, `signature`?, \
+                       `lifecycle_state`, `attestations`?, `data`, \
+                       `commit_audit`) plus the change-set `audit` \
+                       (UPDATE_AUDIT: `change_type`, `committer`, \
+                       `description`?, `system_id`?), and an OPTIONAL `uid` \
+                       — the three relaxations quoted verbatim: `uid` \"when \
+                       provided, it will be accepted in case is not in-use, \
+                       otherwise error will be returned\"; \
+                       `audit.time_committed` \"server will always set it\"; \
+                       `audit.system_id` \"when provided, it will be \
+                       validated\" (an omitted one defaults to the server's \
+                       configured identifier). `audit` and each \
+                       `versions[i].commit_audit` are UPDATE_AUDIT objects — \
+                       \"Clients SHOULD send `_type: \"UPDATE_AUDIT\"`; for \
+                       interoperability servers SHOULD additionally accept \
+                       `_type: \"AUDIT_DETAILS\"` or an omitted `_type`\", \
+                       and all three are accepted here. The CONTRIBUTION \
+                       audit's `system_id`/`committer` are copied down into \
+                       every member that omits them (RM common master06 \
+                       §\"Committal and Audits\": those attributes \"should be \
+                       copied into the corresponding attributes of the \
+                       `commit_audit` of each VERSION included in the \
+                       CONTRIBUTION\"), and the envelope `change_type` is the \
+                       aggregate of the members' — \"This may sometimes be \
+                       approximate, and is not expected to be used as a \
+                       computable value\" (master06 §Contributions), so it is \
+                       NOT cross-checked against them. `preceding_version_uid` \
+                       is the OBJECT_VERSION_ID object shown; a bare string is \
+                       also accepted. A `523|deleted|` member carries NO `data` \
+                       — logical deletion \"delete its `data`… set the \
+                       `lifecycle_state` value to the code for `deleted`\" (RM \
+                       common master06 §\"Logical Deletion\"), which is why \
+                       this server does not enforce the released UpdateVersion \
+                       schema's `data: required` on such a member \
+                       (register-documented in the conformance catalogue: we \
+                       follow RM). The example is canonical JSON with two \
+                       members (a COMPOSITION creation + an EHR_STATUS \
+                       modification). Under a Simplified-Format \
+                       `Content-Type`, SPECITS-84 fixes what changes: \"the \
+                       CONTRIBUTION envelope itself remains canonical JSON \
+                       (i.e. `uid`, `versions[]` metadata, and `audit` follow \
+                       the canonical RM serialization). Only the inner \
+                       versioned payload - each `versions[i].data` (the \
+                       embedded `COMPOSITION`, `EHR_STATUS`, or `FOLDER`) - is \
+                       serialized in the chosen FLAT or STRUCTURED form\" — and \
+                       such a body additionally requires the \
+                       `openehr-template-id` header."
     ),
     responses(
         (
-            status = 201, description = "Created; `ETag` (weak `W/` form) carries \
-                                        the new `contribution_uid`, `Location` \
-                                        the CONTRIBUTION URL. Body per `Prefer` \
-                                        (representation or identifier; empty for \
-                                        minimal).",
-            content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+            status = 201, description = "Created — every member version and \
+                                        attestation committed, or none of them \
+                                        (RM common master06 §\"Committal and \
+                                        Audits\"). `ETag` (weak `W/` form) \
+                                        carries the new `contribution_uid` \
+                                        (NOT a version uid), `Location` the \
+                                        CONTRIBUTION URL, and \
+                                        `Preference-Applied` the `Prefer` token \
+                                        actually honoured. The body is \
+                                        `Prefer`-conditional \
+                                        (`Requests_and_responses.md` §\"Prefer \
+                                        minimal, identifier or full \
+                                        representation response\"; ITS-REST \
+                                        `specifications/responses/201_CONTRIBUTION.yaml`): \
+                                        the committed CONTRIBUTION for \
+                                        `return=representation` — its \
+                                        `versions` are the OBJECT_REFs of the \
+                                        versions this commit MINTED, so the \
+                                        client learns each new version uid from \
+                                        them (the `representation` example) —, \
+                                        the single-`uid` object carrying the \
+                                        CONTRIBUTION uid for \
+                                        `return=identifier` (the `identifier` \
+                                        example), and no body at all for the \
+                                        default `return=minimal`.",
+            headers(
+                ("ETag" = String,
+                 description = "The weak entity tag `W/\"<contribution_uid>\"` \
+                                — ITS-REST \
+                                `specifications/headers/ETag_CONTRIBUTION.yaml`: \
+                                \"the `ETag` (i.e. entity tag) response header \
+                                is the `contribution_uid` identifier\", whose \
+                                own example already shows the `W/` form \
+                                (required since Release 1.1.0, §\"ETag and \
+                                Last-Modified\"). It is NOT a version uid: a \
+                                CONTRIBUTION may have minted several."),
+                ("Location" = String,
+                 description = "The URL of the newly created CONTRIBUTION, \
+                                `<base_path>/ehr/<ehr_id>/contribution/<contribution_uid>` \
+                                (ITS-REST \
+                                `specifications/headers/Location_CONTRIBUTION.yaml`; \
+                                §Location: used \"in `201 Created` responses \
+                                when a new resource is successfully \
+                                created\")."),
+                ("Preference-Applied" = String,
+                 description = "`return=minimal` | `return=identifier` | \
+                                `return=representation` — the preference the \
+                                service honoured (§\"Representation details \
+                                negotiation\")."),
+            ),
+            content(
+                (serde_json::Value = "application/json", examples(
+                    ("representation" = (summary = "Prefer: return=representation — the committed CONTRIBUTION",
+                     value = json!({
+                        "_type": "CONTRIBUTION",
+                        "uid": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" },
+                        "audit": {
+                            "_type": "AUDIT_DETAILS",
+                            "system_id": "openEHRSys.example.com",
+                            "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                            "change_type": {
+                                "_type": "DV_CODED_TEXT", "value": "modification",
+                                "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" }
+                            },
+                            "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" },
+                            "description": { "_type": "DV_TEXT", "value": "Encounter recorded at triage; EHR status refreshed" }
+                        },
+                        "versions": [ {
+                            "_type": "OBJECT_REF",
+                            "namespace": "local",
+                            "type": "COMPOSITION",
+                            "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                        }, {
+                            "_type": "OBJECT_REF",
+                            "namespace": "local",
+                            "type": "EHR_STATUS",
+                            "id": { "_type": "OBJECT_VERSION_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31::openEHRSys.example.com::2" }
+                        } ]
+                     }))),
+                    ("identifier" = (summary = "Prefer: return=identifier — only the CONTRIBUTION uid",
+                     value = json!({ "uid": "0826851c-c4c2-4d61-92b9-410fb8275ff0" })))
+                )),
+                (serde_json::Value = "application/openehr.wt.flat+json"),
+                (serde_json::Value = "application/openehr.wt.structured+json")
+            )
         ),
-        (status = 400, description = "The CONTRIBUTION could not be parsed or is \
-                                      invalid (e.g. a version's modification type \
-                                      does not match — a MODIFICATION as first \
-                                      version).",
+        // TODO: the released `400_CONTRIBUTION` trigger "first version of a
+        // MODIFICATION" currently splits across two codes on this wire — a
+        // member naming a target that does not exist answers 400, while a
+        // member with no `preceding_version_uid` at all answers 422 (the
+        // classify pass in `app/ehrbase/src/versioning/contribution.rs`). Move
+        // the second shape to 400 and fold it back into this description.
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content, or the modification type does \
+                                      not match the operation - i.e. first \
+                                      version of a MODIFICATION)\" (ITS-REST \
+                                      `specifications/responses/400_CONTRIBUTION.yaml`). \
+                                      Here that is: `ehr_id` is not a UUID; the \
+                                      envelope is not parseable JSON; a member \
+                                      names a `preceding_version_uid` whose \
+                                      VERSIONED_OBJECT does not exist (the \
+                                      modification matches no stored object — a \
+                                      body-referenced target, which is why it \
+                                      is not the `404` reserved for the URI's \
+                                      `ehr_id`); a member carries \
+                                      `249|creation|` TOGETHER with a \
+                                      `preceding_version_uid` (creation makes a \
+                                      NEW VERSIONED_OBJECT — RM common master06 \
+                                      §Contributions); or a `666|attestation|` \
+                                      member omits the `preceding_version_uid` \
+                                      that identifies the ORIGINAL_VERSION it \
+                                      attests. A non-creation change type on a \
+                                      member with NO `preceding_version_uid` at \
+                                      all is answered `422`, not `400` — see \
+                                      that branch.",
          body = serde_json::Value),
-        (status = 404, description = "Unknown `ehr_id`.",
+        (status = 404, description = "Unknown `ehr_id` (the released trigger, \
+                                      `404_unknown_ehr_id`) — the target EHR \
+                                      must exist before a change-set can be \
+                                      committed to it (SM \
+                                      `i_ehr_contribution.adoc` \
+                                      `commit_contribution` `Pre_has_ehr`). \
+                                      Content the committed CONTRIBUTION merely \
+                                      REFERS to is not covered by this branch \
+                                      (see `400`/`412`).",
          body = serde_json::Value),
-        (status = 409, description = "A CONTRIBUTION with the supplied `uid` \
-                                      already exists.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      a CONTRIBUTION envelope is served as \
+                                      canonical `application/json` only, \
+                                      optionally with its inner \
+                                      `versions[i].data` payloads in \
+                                      `application/openehr.wt.flat+json` / \
+                                      `application/openehr.wt.structured+json` \
+                                      — there is no canonical-XML CONTRIBUTION \
+                                      shape, so `application/xml` is refused \
+                                      (`Resources.md` §\"JSON \
+                                      Format\"/§\"Simplified Formats\": \"If the \
+                                      service cannot fulfill this aspect of the \
+                                      request, it MUST respond with HTTP status \
+                                      code `406 Not Acceptable`\").",
+         body = serde_json::Value),
+        (status = 409, description = "The commit conflicts with existing state \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `409` row: the \
+                                      request \"might generate a duplicate or a \
+                                      conflict\"). The released trigger is the \
+                                      client-supplied envelope `uid`: it \"will \
+                                      be accepted in case is not in-use, \
+                                      otherwise error will be returned\" \
+                                      (`contribution_create.yaml`), and \
+                                      `409.yaml` is that error — \"returned when \
+                                      a resource with same identifier(s) \
+                                      already exists\". The other three \
+                                      triggers are OUR OWN DESIGN, \
+                                      register-documented in the conformance \
+                                      catalogue, because no released text \
+                                      assigns them a code: the EHR is not \
+                                      modifiable (`EHR_STATUS.is_modifiable = \
+                                      false` and the change-set touches \
+                                      something other than the EHR_STATUS — RM \
+                                      ehr master04 §\"EHR Active Status\", the \
+                                      refusal is spec-required, the code is \
+                                      ours); a member would create a SECOND \
+                                      EHR_STATUS / EHR_ACCESS or re-create an \
+                                      existing root FOLDER hierarchy (RM ehr, \
+                                      EHR class: `ehr_status` 1..1); and a \
+                                      `523|deleted|` member targeting the \
+                                      EHR_STATUS, which the same 1..1 \
+                                      cardinality forbids.",
+         body = serde_json::Value),
+        (status = 412, description = "A member's `preceding_version_uid` names \
+                                      an EXISTING VERSIONED_OBJECT but a \
+                                      version that does not exist or has \
+                                      already been superseded, so the change-set \
+                                      was not committed. No released text \
+                                      assigns this branch a code — the \
+                                      `400_CONTRIBUTION` trigger is about the \
+                                      change TYPE, not a stale target — so the \
+                                      choice is OURS, register-documented in \
+                                      the conformance catalogue: the member's \
+                                      `preceding_version_uid` is the same \
+                                      lost-update precondition the direct \
+                                      routes carry in `If-Match`, which \
+                                      §\"If-Match and accidental overwrites\" \
+                                      answers with `412 Precondition Failed`. A \
+                                      target VERSIONED_OBJECT that does not \
+                                      exist at all is `400`, not `412`.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not one \
+                                      this resource can process — anything \
+                                      outside `application/json` and the two \
+                                      Simplified Formats, `application/xml` \
+                                      included (a CONTRIBUTION has no canonical \
+                                      XML wire shape), or a deprecated \
+                                      `…schema+json` variant (`Resources.md` \
+                                      §\"JSON Format\": \"If the service cannot \
+                                      process the request payload as JSON \
+                                      format, it MUST respond with HTTP status \
+                                      code `415 Unsupported Media Type`\"; \
+                                      §\"Simplified Formats\" carries the same \
+                                      MUST for the simplified types).",
+         body = serde_json::Value),
+        (status = 422, description = "The CONTRIBUTION was well-formed but \
+                                      cannot be followed \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row: \"The \
+                                      request was well-formed but was unable to \
+                                      be followed due to semantic errors\"). \
+                                      Every trigger below is OUR OWN \
+                                      assignment, register-documented in the \
+                                      conformance catalogue — the released \
+                                      operation declares only \
+                                      `400`/`404`/`409`: an empty `versions: \
+                                      []` (NewContribution sets no `minItems` \
+                                      and RM CONTRIBUTION declares no \
+                                      invariant, so the rejection itself is \
+                                      ours); a malformed envelope `uid` (not a \
+                                      HIER_OBJECT_ID UUID); a `change_type` — \
+                                      on a member or on the envelope — that is \
+                                      not a code of the openEHR \
+                                      `audit_change_type` group \
+                                      (`AUDIT_DETAILS.Change_type_valid`); a \
+                                      non-creation change type on a member with \
+                                      no `preceding_version_uid` at all (the \
+                                      first-version-of-a-MODIFICATION shape, \
+                                      which the released text puts under `400` \
+                                      when the member names a target); `data` \
+                                      on a `523|deleted|` member (its data \
+                                      \"is set to Void\", RM common master06 \
+                                      §Contributions) or on a `666|attestation|` \
+                                      member (an attestation adds no content); \
+                                      missing `data` on a creation or \
+                                      modification member; a `523` member with \
+                                      no `preceding_version_uid`; a `666` \
+                                      member with no `commit_audit`; a member \
+                                      whose object kind is out of the \
+                                      contribution's scope (a demographic PARTY \
+                                      in an EHR CONTRIBUTION); a `commit_audit` \
+                                      failing the AUDIT_DETAILS invariants \
+                                      (empty `system_id`, an invalid \
+                                      committer); a Simplified-Format body \
+                                      without the `openehr-template-id` header \
+                                      or not fitting that template; and any \
+                                      member failing template or RM-invariant \
+                                      validation — each member is validated \
+                                      exactly as the direct commit route would \
+                                      validate it, relaxed for a \
+                                      `553|incomplete|` lifecycle (master06 \
+                                      §\"Incomplete Content\").",
          body = serde_json::Value)
     )
 )]
@@ -4606,31 +5061,86 @@ pub(crate) async fn contribution_create(
 /// List an EHR's CONTRIBUTIONs, newest-first, paged
 /// (`GET /ehr/{ehr_id}/contribution`).
 ///
-/// OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST contract defines
-/// only the by-uid CONTRIBUTION GET). Returns
-/// `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }`;
-/// `offset` defaults to 0, `fetch` to 20 (capped at 100).
+/// **OUR OWN EXTENSION — no openEHR spec governs this route.** ITS-REST 1.1.0
+/// defines exactly one CONTRIBUTION read, the by-uid GET
+/// (`specifications/operations/contribution_get.yaml`); there is no collection
+/// GET on `/ehr/{ehr_id}/contribution`, so nothing about the shape below is
+/// spec-derived. The SM does declare a `list_contributions` operation (SM
+/// `i_ehr_contribution.adoc`) that the released REST API never surfaced — the
+/// unrealized-operation gap is register-documented in the conformance
+/// catalogue — but this route is not a binding of it either: it answers a
+/// SUMMARY row per CONTRIBUTION rather than the ids that operation returns.
+///
+/// The response is `{ "rows": [ { uid, time_committed, committer, change_type,
+/// change_type_rubric } ], "total" }`. `committer` is the audit committer's
+/// name only (a summary string — the by-uid GET returns the full PARTY_PROXY),
+/// `change_type` the stored `audit_change_type` code and `change_type_rubric`
+/// its display rubric from the same terminology bundle the by-uid GET's
+/// `DV_CODED_TEXT.value` uses, so consumers never map codes locally. `total`
+/// counts ALL of the EHR's CONTRIBUTIONs, not the returned window.
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\"). The one part of \
+                        this route that is spec-shaped.",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("offset" = Option<i64>, Query,
-         description = "OUR EXTENSION — row offset into the newest-first list \
-                        (default 0)."),
+         description = "OUR EXTENSION (no openEHR spec governs it) — row offset \
+                        into the newest-first list; default 0. A negative or \
+                        unparseable value is CLAMPED to the default rather than \
+                        rejected, so this parameter never produces a `400`.",
+         example = json!(0)),
         ("fetch" = Option<i64>, Query,
-         description = "OUR EXTENSION — maximum rows to return (default 20, \
-                        capped at 100).")
+         description = "OUR EXTENSION (no openEHR spec governs it) — maximum \
+                        rows to return; default 20, hard-capped at 100. A \
+                        non-positive or unparseable value falls back to the \
+                        default and a larger one is capped, so this parameter \
+                        never produces a `400`.",
+         example = json!(20))
     ),
     responses(
-        (status = 200, description = "The EHR's CONTRIBUTIONs, newest first: \
-                                      `{ rows: [{ uid, time_committed, committer, \
-                                      change_type }], total }`.",
+        (status = 200, description = "The EHR's CONTRIBUTIONs, newest first — \
+                                      OUR OWN payload shape, canonical \
+                                      `application/json` only. No `ETag` / \
+                                      `Last-Modified`: a paged list is not a \
+                                      resource with a version or a unique state \
+                                      identifier (§\"ETag and Last-Modified\" \
+                                      scopes the SHOULD to those).",
+         body = serde_json::Value,
+         example = json!({
+             "rows": [ {
+                 "uid": "0826851c-c4c2-4d61-92b9-410fb8275ff0",
+                 "time_committed": "2026-07-26T09:12:44.512331Z",
+                 "committer": "Dr Jane Roe",
+                 "change_type_rubric": "modification",
+                 "change_type": "251"
+             } ],
+             "total": 1
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID \
+                                      (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `400` row: \"malformed \
+                                      request syntax, syntactically invalid \
+                                      content\"). `offset`/`fetch` never reach \
+                                      this branch — they are clamped, not \
+                                      rejected.",
          body = serde_json::Value),
-        (status = 400, description = "Malformed `offset` or `fetch` query \
-                                      parameter.",
+        (status = 404, description = "Unknown `ehr_id` — the EHR is checked \
+                                      before the page is read, so a missing EHR \
+                                      is a clean `404` rather than an empty \
+                                      list.",
          body = serde_json::Value),
-        (status = 404, description = "Unknown `ehr_id`.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      this extension DTO is served as \
+                                      `application/json` only — it is not an RM \
+                                      type, so it has neither a canonical-XML \
+                                      shape nor a Simplified-Format mapping \
+                                      (`Resources.md` §\"JSON Format\": \"If the \
+                                      service cannot fulfill this aspect of the \
+                                      request, it MUST respond with HTTP status \
+                                      code `406 Not Acceptable`\").",
          body = serde_json::Value)
     )
 )]
@@ -4650,24 +5160,192 @@ pub(crate) async fn contribution_list(
 
 /// Retrieve a CONTRIBUTION
 /// (`GET /ehr/{ehr_id}/contribution/{contribution_uid}`).
+///
+/// The served body is the COMMITTED change-set: the CONTRIBUTION's own
+/// AUDIT_DETAILS plus `versions` — by default the OBJECT_REFs of the versions
+/// it affected ("a `CONTRIBUTION` object will be created, listing the affected
+/// `VERSION` objects, and including its own audit object" — RM common master06
+/// §Contributions), or, with `Prefer: return=representation, resolve_refs`, the
+/// full ORIGINAL_VERSIONs those refs point at.
+///
+/// A `666|attestation|` member commits no new version, yet still affects the
+/// ORIGINAL_VERSION it attests, so that version appears in `versions` too
+/// (master06 §Contributions lists the affected versions, and §Attestation makes
+/// an attestation a change to an existing one).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/contribution/{contribution_uid}", tag = "CONTRIBUTION",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("contribution_uid" = String, Path,
-         description = "The CONTRIBUTION uid (a UUID).")
+         description = "The CONTRIBUTION uid — a PLAIN UUID (ITS-REST \
+                        `specifications/parameters/path/contribution_uid.yaml`: \
+                        `type: string, format: uuid`), i.e. the HIER_OBJECT_ID \
+                        under `CONTRIBUTION.uid.value`. A CONTRIBUTION is not \
+                        change-controlled, so this segment is NEVER the \
+                        three-part `{object_id}::{creating_system_id}::{version_tree_id}` \
+                        form and has no implicit-latest reading: a token that \
+                        is not a UUID is syntactically invalid content and is \
+                        `400` (`Requests_and_responses.md` §\"HTTP status \
+                        codes\", the `400` row; the released text assigns the \
+                        malformed-identifier case no branch of its own, so the \
+                        400/404 split is OUR OWN policy, register-documented in \
+                        the conformance catalogue).",
+         example = "0826851c-c4c2-4d61-92b9-410fb8275ff0"),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=representation, resolve_refs` asks for the \
+                        member OBJECT_REFs to be resolved in place: \"Clients \
+                        MAY request that object references (e.g., OBJECT_REF) \
+                        be resolved into full or partial representations\" \
+                        (`Requests_and_responses.md` §\"Prefer resolving Object \
+                        references\"). Each `versions[i]` is then the full \
+                        ORIGINAL_VERSION — envelope, `commit_audit`, \
+                        `lifecycle_state`, `signature`, and the `data` payload \
+                        — instead of a reference. Without the token the members \
+                        stay OBJECT_REFs and carry no `data` at all. That \
+                        binding is also what makes a Simplified-Format `Accept` \
+                        meaningful on this read: the released operation \
+                        promises the simplified serialization of \
+                        `versions[i].data` while the declared `200` body \
+                        (`schemas/common/Contribution.yaml`) has no `data` \
+                        anywhere, and resolving the refs is the only state in \
+                        which both hold — OUR resolution of that released \
+                        conflict, register-documented in the conformance \
+                        catalogue.",
+         example = "return=representation, resolve_refs")
     ),
     responses(
         (
-            status = 200, description = "The CONTRIBUTION (canonical JSON \
-                                        envelope; when a Simplified Format is \
-                                        requested, only each `versions[].data` \
-                                        payload uses that form).",
-            content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+            status = 200, description = "The CONTRIBUTION. The envelope is \
+                                        ALWAYS canonical JSON — SPECITS-84 \
+                                        (Amendment_record, 27 Apr 2026) and \
+                                        ITS-REST \
+                                        `specifications/responses/200_CONTRIBUTION.yaml`: \
+                                        \"the response body is still a \
+                                        canonical CONTRIBUTION envelope; only \
+                                        each `versions[i].data` payload is \
+                                        serialized in the requested FLAT or \
+                                        STRUCTURED form\" — so a simplified \
+                                        `Accept` changes only resolved inner \
+                                        COMPOSITIONs; unresolved OBJECT_REF \
+                                        members have no `data` and pass through \
+                                        untouched, and a resolved non-COMPOSITION \
+                                        payload (EHR_STATUS, FOLDER) is `406`, \
+                                        the Simplified Formats being defined \
+                                        for templated COMPOSITION content only. \
+                                        The example is the default, canonical, \
+                                        unresolved form: `versions` as \
+                                        OBJECT_REFs whose `id` is an \
+                                        OBJECT_VERSION_ID, `namespace` is \
+                                        `local` and `type` is the affected DATA \
+                                        class (COMPOSITION / EHR_STATUS / \
+                                        FOLDER — the discipline of the released \
+                                        `Contribution.yaml` example, even \
+                                        though RM common master06 describes the \
+                                        list as the affected VERSION objects), \
+                                        with the full AUDIT_DETAILS whose \
+                                        `description` is optional (0..1 in RM, \
+                                        so it is absent when the committer sent \
+                                        none).",
+            headers(
+                ("ETag" = String,
+                 description = "The weak entity tag `W/\"<contribution_uid>\"` \
+                                — the same identity the creating `201` \
+                                declared (ITS-REST \
+                                `specifications/headers/ETag_CONTRIBUTION.yaml`). \
+                                The released `200_CONTRIBUTION` declares only \
+                                `Content-Type`; serving the tag here follows \
+                                §\"ETag and Last-Modified\", whose SHOULD \
+                                covers \"resources that have versioning or \
+                                unique state identifiers\" — a CONTRIBUTION is \
+                                immutable and has exactly one such identifier. \
+                                Reading that SHOULD as reaching this resource \
+                                is OURS, register-documented in the conformance \
+                                catalogue."),
+                ("Last-Modified" = String,
+                 description = "The commit instant as an HTTP-date, taken from \
+                                the CONTRIBUTION `audit.time_committed` — the \
+                                same instant §\"ETag and Last-Modified\" points \
+                                at for openEHR resources (\"derived from \
+                                VERSION.commit_audit.time_committed.value\"), \
+                                which for a CONTRIBUTION is the committal act \
+                                its own audit records (RM common master06 \
+                                §\"Committal and Audits\"). A CONTRIBUTION is \
+                                never rewritten, so this value never changes."),
+            ),
+            content(
+                (serde_json::Value = "application/json", example = json!({
+                    "_type": "CONTRIBUTION",
+                    "uid": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" },
+                    "audit": {
+                        "_type": "AUDIT_DETAILS",
+                        "system_id": "openEHRSys.example.com",
+                        "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                        "change_type": {
+                            "_type": "DV_CODED_TEXT", "value": "modification",
+                            "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "251" }
+                        },
+                        "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr Jane Roe" },
+                        "description": { "_type": "DV_TEXT", "value": "Encounter recorded at triage; EHR status refreshed" }
+                    },
+                    "versions": [ {
+                        "_type": "OBJECT_REF",
+                        "namespace": "local",
+                        "type": "COMPOSITION",
+                        "id": { "_type": "OBJECT_VERSION_ID", "value": "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::1" }
+                    }, {
+                        "_type": "OBJECT_REF",
+                        "namespace": "local",
+                        "type": "EHR_STATUS",
+                        "id": { "_type": "OBJECT_VERSION_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31::openEHRSys.example.com::2" }
+                    } ]
+                })),
+                (serde_json::Value = "application/openehr.wt.flat+json"),
+                (serde_json::Value = "application/openehr.wt.structured+json")
+            )
         ),
-        (status = 404, description = "Unknown `ehr_id`, or no CONTRIBUTION with \
-                                      `contribution_uid`.",
+        (status = 400, description = "`ehr_id` or `contribution_uid` is not a \
+                                      UUID (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `400` row: \
+                                      \"malformed request syntax, syntactically \
+                                      invalid content\") — including a \
+                                      three-part OBJECT_VERSION_ID in the \
+                                      `contribution_uid` segment, which names \
+                                      no CONTRIBUTION identity. A well-formed \
+                                      UUID that matches nothing is `404`, not \
+                                      `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when an EHR with \
+                                      `ehr_id` does not exist, or when a \
+                                      CONTRIBUTION with `contribution_uid` does \
+                                      not exist\" (ITS-REST \
+                                      `specifications/responses/404_CONTRIBUTION.yaml`). \
+                                      \"Does not exist\" is judged WITHIN the \
+                                      addressed EHR: a CONTRIBUTION uid that \
+                                      belongs to another EHR does not exist \
+                                      under this `ehr_id` and is `404` too — \
+                                      the released sentence does not spell the \
+                                      cross-EHR case out, so reading it that \
+                                      way is ours, and it follows from the \
+                                      resource being addressed as a \
+                                      sub-resource of the EHR.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the CONTRIBUTION envelope is served as \
+                                      canonical `application/json` only \
+                                      (there is no canonical-XML CONTRIBUTION \
+                                      shape, so `application/xml` is refused), \
+                                      and a Simplified-Format `Accept` is \
+                                      refused when a resolved member payload is \
+                                      not a COMPOSITION (`Resources.md` \
+                                      §\"JSON Format\"/§\"Simplified Formats\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\").",
          body = serde_json::Value)
     )
 )]

@@ -56,6 +56,36 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Served OpenAPI: complete documentation for the three CONTRIBUTION
+  operations** (#464). The native change-set commit now declares the whole
+  `NewContribution` envelope — `versions[]` of UPDATE_VERSION
+  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
+  `data`, `commit_audit`) plus the change-set `audit`, the accepted `_type`
+  spellings (`UPDATE_AUDIT` / `AUDIT_DETAILS` / omitted), the server-set
+  `time_committed`, the honoured-if-unused client `uid`, and the
+  committer/`system_id` copy-down — with a canonical two-member example (a
+  COMPOSITION creation plus an EHR_STATUS modification) and the SPECITS-84
+  rule quoted: the envelope stays canonical JSON, only each
+  `versions[i].data` takes the FLAT/STRUCTURED form. Every branch is
+  documented: `201` with the weak `ETag` carrying the *contribution* uid (not
+  a version uid), `Location`, `Preference-Applied` and the `Prefer`-conditional
+  bodies (the representation lists the minted version OBJECT_REFs, the
+  identifier body the contribution uid, minimal an empty `201`); `400` with
+  the released first-version-of-a-MODIFICATION trigger; `404`; `406`; `409`
+  (client uid in use — released — plus the non-modifiable EHR, duplicate
+  singletons and an EHR_STATUS delete member, flagged as ours); `412` for a
+  stale member `preceding_version_uid`; `415`; and the full `422` family
+  (empty `versions`, out-of-group change types, data on a delete/attestation
+  member, missing data, template and RM-invariant failures). The by-uid `GET`
+  documents the plain-UUID `contribution_uid`, `Prefer: return=representation,
+  resolve_refs` (members resolved to full ORIGINAL_VERSIONs, which is also
+  what makes a simplified `Accept` meaningful), its `200` headers and
+  canonical example (members as OBJECT_REFs, full AUDIT_DETAILS with optional
+  `description`), and `400`/`404`/`406`. The contribution-list route is
+  prominently flagged as our own extension with no openEHR spec behind it,
+  and its `offset`/`fetch` clamping (0 / 20, capped at 100 — never a `400`)
+  and row shape are now described accurately. Document only — no wire change.
+
 - **Served OpenAPI: complete documentation for the five DIRECTORY
   operations** (#457). Every response now declares its headers (weak `ETag`,
   `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
