@@ -1142,6 +1142,152 @@ AMB-72:
   disposition: editorial
   upstream_ref: "UPR-34"
 
+AMB-73:
+  ambiguity: >-
+    Whether the template of a VERSIONED_COMPOSITION may change between
+    versions is stated by NO released text: RM composition/common classes
+    carry no template-stability invariant (VERSIONED_COMPOSITION's own
+    invariants pin archetype_node_id and is_persistent across versions —
+    versioned_composition.adoc §Invariants — but not
+    archetype_details.template_id), and ITS-REST/SM say nothing. The CNF
+    schedule's update_composition-wrong_template case expects rejection,
+    but the schedule is a stalled guide, never the correctness authority.
+    A server accepting a template change breaches nothing released.
+  source: >-
+    RM UML/classes/org.openehr.rm.ehr.versioned_composition.adoc
+    §Invariants (Archetype_node_id_valid + Persistent_validity only); RM
+    common master06-change_control_package.adoc §Contributions (no
+    content-stability rule); SM i_ehr_composition.adoc update_composition
+    (silent); CNF platform_test_schedule master07
+    §update_composition-wrong_template (guide only) — silence confirmed
+    first-hand.
+  handling: >-
+    Report-only: this server REJECTS a template change across versions of
+    one VERSIONED_COMPOSITION (422) as its own design convention —
+    consistent with the versioned container's archetype-stability
+    invariants — and the wrong_template case records the outcome without
+    gating any tier. Reported upstream (UPR-35): state whether
+    template_id is version-stable.
+  disposition: report_only
+  upstream_ref: "UPR-35"
+
+AMB-74:
+  ambiguity: >-
+    The read branches for a logically deleted COMPOSITION are only
+    partially assigned. The bare route's one deleted branch
+    (204_deleted_at_time) is textually scoped to "at specified
+    version_at_time"; a GET addressing a deleted version by its explicit
+    version_uid, or the implicit latest when the trunk head is deleted,
+    has NO released branch, and the four versioned_composition routes
+    declare nothing for deleted versions at all (the overview docs never
+    mention logical deletion).
+  source: >-
+    ITS-REST specifications/operations/composition_get.yaml +
+    responses/204_deleted_at_time.yaml (the scoping parenthetical);
+    specifications/operations/versioned_composition_version_get_{at_time,
+    by_id}.yaml (200/404 only); RM common
+    master06-change_control_package.adoc §Logical Deletion + RM
+    original_version.adoc (data 0..1) — confirmed first-hand.
+  handling: >-
+    Fixed handling: the bare route serves 204 No Content for a deleted
+    version under ALL THREE addressing forms (explicit version_uid,
+    implicit latest, version_at_time) — the deleted version has no data to
+    represent; the VERSION-envelope routes serve 200 with the data-less
+    ORIGINAL_VERSION (lifecycle_state 523|deleted|, commit_audit and
+    provenance preserved — the RM-consistent reading, since 204 would
+    suppress exactly what the envelope routes exist to expose). Reported
+    upstream (UPR-36): assign the deleted-read branches explicitly.
+  disposition: fixed_handling
+  upstream_ref: "UPR-36"
+
+AMB-75:
+  ambiguity: >-
+    Which version identity the composition DELETE's 204 carries in ETag is
+    unstated: the response file references the generic ETag header ("an
+    identifier … for a specific version of a resource") and no released
+    sentence says whether that is the NEW 523|deleted| version's uid or
+    the addressed (preceding) uid.
+  source: >-
+    ITS-REST specifications/responses/204_version_deleted.yaml +
+    headers/ETag.yaml (generic wording); RM common
+    master06-change_control_package.adoc §Logical Deletion (the delete
+    COMMITS a new version — the resource's newest state) — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling: the 204 carries the NEW deleted version's uid (weak
+    form) with Last-Modified at its commit instant — the delete commits a
+    new version, and the ETag names the resource's current state (overview
+    §"ETag and Last-Modified": the value "changes as soon as the resource
+    changes (i.e. when a new version is created)"). Reported upstream
+    (UPR-37): name the identity explicitly.
+  disposition: fixed_handling
+  upstream_ref: "UPR-37"
+
+AMB-76:
+  ambiguity: >-
+    The rejection status for a lexically malformed identifier path segment
+    (ehr_id, versioned_object_uid) is unassigned. The released glossary
+    types both as HIER_OBJECT_ID with no per-operation 400 branch; the
+    overview 400 row covers "syntactically invalid header, parameter or
+    content"; BASE gives UID three subtypes with "mutually exclusive
+    string patterns" but no rejecting regex on any class. A token
+    matching no UID subtype is syntactically invalid (400); a
+    lexically-valid non-UUID UID (an OID / INTERNET_ID) that names
+    nothing is arguably a plain miss (404).
+  source: >-
+    ITS-REST specifications/docs/overview/Glossary_and_conventions.md
+    (ehr_id / versioned_object_uid as HIER_OBJECT_ID);
+    Requests_and_responses.md §HTTP status codes (the 400 row); BASE
+    base_types master05-identification_package.adoc ("all three subtypes
+    have mutually exclusive string patterns") + the UID/HIER_OBJECT_ID
+    class tables (no lexical invariant beyond non-empty) — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling (repo-wide): identifier path segments that do not parse
+    as this repository's UUID identifier form are rejected 400 as
+    syntactically invalid parameters — every identifier this server MINTS
+    is a UUID, so a non-UUID token can never name a resource here and the
+    400 names the defect closest to its cause. Cases address unknown
+    resources with well-formed UUIDs, malformed-identifier cases expect
+    400. Reported upstream (UPR-38): assign the malformed-identifier
+    branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-38"
+
+AMB-77:
+  ambiguity: >-
+    The SM I_EHR_COMPOSITION interface carries editorial defects beyond
+    the AMB-72 pattern: (1) get_composition_latest declares
+    Pre_has_composition (an_ehr_id, a_version_uid) over an undeclared —
+    and for its purpose type-wrong — parameter; (2)
+    get_composition_at_version names its errors ehr_does_not_exist /
+    object_version_does_not_exist while every sibling uses
+    ehr_id_does_not_exist / composition_does_not_exist; (3) that same
+    operation declares no preconditions at all; (4) delete_composition
+    types a_version_uid as UUID while its own Meaning says it identifies
+    "the current top Composition Version" (an OBJECT_VERSION_ID); (5)
+    update_composition has no preceding_version_uid parameter — the CNF
+    schedule itself flags this (master07 L475); (6) the preconditions call
+    valid_content(...) while i_validity_checker.adoc declares
+    content_valid(...); (7) the 412/409/400-already-deleted wire outcomes
+    and create's composition_already_exists error have no SM/wire
+    counterparts respectively. Three released-doc typos travel with the
+    same report: the ETag_COMPOSITION.yaml example closes W/"…' with a
+    single quote; composition_get.yaml reads "is be used"; the Resources.md
+    §Multiple identifiers example writes a single colon before the
+    version_tree_id.
+  source: >-
+    SM UML/classes/i_ehr_composition.adoc + i_validity_checker.adoc;
+    ITS-REST specifications/headers/ETag_COMPOSITION.yaml,
+    operations/composition_get.yaml, docs/overview/Resources.md §Multiple
+    identifiers — all confirmed first-hand.
+  handling: >-
+    Editorial: the catalogue keeps the SM operation names and adjudicates
+    behaviour from the ITS-REST docs text + RM where the SM
+    typing/preconditions are defective. Reported upstream (UPR-39).
+  disposition: editorial
+  upstream_ref: "UPR-39"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
