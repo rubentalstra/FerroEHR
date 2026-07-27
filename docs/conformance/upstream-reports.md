@@ -876,3 +876,57 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   exemption vs the minimal 201, cross-EHR 404 by implication, atomicity as
   an unrestated "should", copy-down vs per-member committer. Normalize the
   interface and DTOs to the released ITS-REST 1.1.0 typing.
+
+### UPR-55 — wrong-kind uid on a typed tag route is unassigned
+
+- **Component:** ITS-REST (the typed tag routes' 404 file)
+- **Register:** AMB-91 (fixed_handling)
+- **Ask:** state whether a kind mismatch is the "does not exist" 404 (our
+  reading) or a 400.
+
+### UPR-56 — return=identifier on a tag PUT cannot satisfy the identifier contract
+
+- **Components:** ITS-REST (Prefer enum + §Prefer only identifier), RM (item_tag)
+- **Register:** AMB-92 (fixed_handling)
+- **Ask:** assign the branch or exclude the token for collection
+  resources without a uid.
+
+### UPR-57 — RM-invariant violations on the tag PUT have no status
+
+- **Components:** RM (item_tag invariants), ITS-REST (tag update responses)
+- **Register:** AMB-93 (fixed_handling)
+- **Ask:** assign 422 (our handling) or 400 explicitly.
+
+### UPR-58 — the ehr_tags_get filter grammar is undefined
+
+- **Component:** ITS-REST (ehr_tags_get + the three query params)
+- **Register:** AMB-94 (fixed_handling)
+- **Ask:** define repeatability, combination, match mode, and
+  absent-path matching; reconcile "one or more" with the scalar schemas.
+
+### UPR-59 — duplicate identity pairs in one tag PUT body
+
+- **Component:** ITS-REST (UpdateItemTag array)
+- **Register:** AMB-95 (fixed_handling)
+- **Ask:** uniqueItems or a merge rule (ours: last-wins).
+
+### UPR-60 — empty-string vs absent target_path splits the tag identity
+
+- **Components:** RM (item_tag target_path 0..1), ITS-REST (the "" example)
+- **Register:** AMB-96 (fixed_handling)
+- **Ask:** pick one representation (ours: "" normalizes to absent).
+
+### UPR-61 — the ITEM_TAG editorial defect bundle
+
+- **Components:** RM (item_tag, is_justified), BASE (String), ITS-REST, ITS-XML
+- **Register:** AMB-97 (editorial)
+- **Facts/Asks:** define `is_justified` (or restate the invariant on the
+  prose rule); fix the "(logically) deleted" wording; add an EHR-wide
+  ItemTagList schema; fix the copy-pasted _updated descriptions; either
+  add a canonical-XML ITEM_TAG type or drop XML from the tag enums; fix
+  the HIER_OBJECT_ID-with-type-COMPOSITION example and add a
+  VERSION-targeted example; align the DELETE descriptions' "tag_key" with
+  the {key} parameter; give FOLDER tags a route (or scope the overview);
+  define {key} encoding, list ordering/paging, and the
+  optional-feature refusal branch; state tag lifecycle vs target
+  lifecycle; note the development-RM provenance of the whole class.

@@ -641,7 +641,7 @@ elements:
     source: "RM common master07-tags.adoc ITEM_TAG.target (may be a VERSIONED_OBJECT<T> or a VERSION<T>); ITS-REST Requests_and_responses.md §item-tag headers"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#365); the disjointness now also holds through the wrapper-header write/echo path (#398, app/ehrbase-rest/tests/headers.rs reads both collections back through composition_tags_get after a two-header write); runner tag verbs land with the #288 derivation fix"
+      note: "server behaviour fixed + DB-tested (#365); the disjointness now also holds through the wrapper-header write/echo path (#398, app/ehrbase-rest/tests/headers.rs reads both collections back through composition_tags_get after a two-header write); the group-8 audit (#384) added the target-guard 404s (nonexistent/foreign/wrong-kind — AMB-91), the EHR-wide listing guard, the empty-target_path normalization (AMB-96), and the register set AMB-91..97 with wire tests (headers.rs tag_* batteries); runner tag verbs land with the #288 derivation fix"
   - id: item-tag-rm-target-shape
     description: "ITEM_TAG.target is emitted as the RM UID_BASED_ID (HIER_OBJECT_ID container / OBJECT_VERSION_ID version), never an OBJECT_REF wrapper."
     source: "RM common master07-tags.adoc ITEM_TAG (target: UID_BASED_ID); the RELEASED RM wins over the stalled OAS ItemTag schema"
