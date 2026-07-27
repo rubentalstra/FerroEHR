@@ -1691,6 +1691,174 @@ AMB-90:
   disposition: editorial
   upstream_ref: "UPR-54"
 
+AMB-91:
+  ambiguity: >-
+    A wrong-kind uid on a typed tag route (an EHR_STATUS container's uid
+    presented on /composition/{uid_based_id}/tags, or vice versa) has no
+    assigned outcome: the only released 404 text is "when the
+    `uid_based_id` does not exist", which never says whether a kind
+    mismatch is that miss or a 400.
+  source: >-
+    ITS-REST specifications/responses/404_unknown_ehr_id_or_uid_based_id.yaml
+    (the whole trigger set); the route-typed operation descriptions
+    (operations/{composition,ehr_status}_tags_*.yaml) — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling: a wrong-kind uid is 404 — it is not "the
+    uid_based_id" of that route's resource family (the same route-kind
+    discipline the version routes carry). Enforced on GET, PUT and DELETE
+    alike. Reported upstream (UPR-55): assign the branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-55"
+
+AMB-92:
+  ambiguity: >-
+    "Prefer: return=identifier" is a legal enum value on the tag PUTs, but
+    the released identifier contract cannot apply: it requires a non-204
+    response whose body is "a single JSON object with a single `uid`
+    attribute" — an ITEM_TAG has NO uid (its identity is the (key,
+    target_path) pair) and the affected resource is a collection. No
+    released text assigns the branch.
+  source: >-
+    ITS-REST specifications/parameters/header/Prefer.yaml (the enum) +
+    docs/overview/Requests_and_responses.md §"Prefer only identifier" (the
+    uid-body contract) vs RM
+    UML/classes/org.openehr.rm.common.item_tag.adoc (no uid attribute) —
+    confirmed first-hand.
+  handling: >-
+    Fixed handling: return=identifier on a tag PUT resolves to the APPLIED
+    default return=minimal (204, Preference-Applied: return=minimal) —
+    there is no identifier to return, and claiming the identifier
+    preference was applied would be false. Reported upstream (UPR-56):
+    assign or exclude the token for collection resources.
+  disposition: fixed_handling
+  upstream_ref: "UPR-56"
+
+AMB-93:
+  ambiguity: >-
+    The rejection status for an ITEM_TAG violating its RM invariants
+    (Inv_key_valid: non-empty, no leading/trailing whitespace;
+    Inv_value_valid: a set value non-empty) is unassigned: the tag PUTs
+    declare only 400 ("syntactically invalid ... content") while such a
+    body is well-formed JSON satisfying the schema — the overview's own
+    422 row ("well-formed but was unable to be followed due to semantic
+    errors") describes it.
+  source: >-
+    RM UML/classes/org.openehr.rm.common.item_tag.adoc §Invariants;
+    ITS-REST operations/{composition,ehr_status}_tags_update.yaml
+    (responses 200/204/400/404 only) + Requests_and_responses.md §HTTP
+    status codes (the 422 row) — confirmed first-hand.
+  handling: >-
+    Fixed handling: RM-invariant violations answer 422; syntactic
+    failures (non-array body, non-string key, unparseable JSON) stay 400.
+    Reported upstream (UPR-57): assign the branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-57"
+
+AMB-94:
+  ambiguity: >-
+    The ehr_tags_get filter semantics are unstated in four ways: the
+    description says "filtered by the given one or more tag_key,
+    tag_value, tag_target_path" while all three params are scalar strings
+    (explode:true on a non-array schema is meaningless); how repeats of
+    one param combine and how different params combine is unsaid; the
+    match mode (exact/prefix/substring, case sensitivity) is unsaid; and
+    matching tag_target_path against a tag with no target_path is unsaid.
+  source: >-
+    ITS-REST operations/ehr_tags_get.yaml (the description) vs
+    parameters/query/tag_{key,value,target_path}.yaml (scalar schemas, no
+    description fields at all) — confirmed first-hand.
+  handling: >-
+    Fixed handling: the filters are scalar, AND-combined across
+    parameters, exact-match, case-sensitive; a tag_target_path filter
+    matches only tags carrying exactly that path (an absent path matches
+    no path filter). Reported upstream (UPR-58): define the filter
+    grammar.
+  disposition: fixed_handling
+  upstream_ref: "UPR-58"
+
+AMB-95:
+  ambiguity: >-
+    Duplicate (key, target_path) pairs inside ONE tag-PUT body have no
+    released rule: identity is the pair, but the array schema carries no
+    uniqueItems and no sentence assigns rejection or a merge order.
+  source: >-
+    ITS-REST operations/*_tags_update.yaml requestBody +
+    schemas/common/UpdateItemTag.yaml; Requests_and_responses.md §item-tag
+    headers (the identity sentence) — confirmed first-hand.
+  handling: >-
+    Fixed handling: last-wins — the posted set is deduped on the identity
+    pair with the final occurrence kept, mirroring a full-replace applied
+    left to right. Reported upstream (UPR-59): assign uniqueItems or a
+    merge rule.
+  disposition: fixed_handling
+  upstream_ref: "UPR-59"
+
+AMB-96:
+  ambiguity: >-
+    Empty-string vs absent target_path is identity-affecting and the two
+    released artifacts model it differently: RM types target_path 0..1
+    (absent = no path) with NO non-empty invariant, while the released
+    EHR_STATUS response example writes target_path: "" — under the (key,
+    target_path) identity those would be two distinct tags.
+  source: >-
+    RM UML/classes/org.openehr.rm.common.item_tag.adoc (target_path 0..1;
+    invariants cover key and value only) vs ITS-REST
+    specifications/schemas/ehr/ItemTagOfEhrStatus.yaml (the "" example);
+    the ...OfComposition example uses a real path — confirmed first-hand.
+  handling: >-
+    Fixed handling: "" normalizes to ABSENT at the service seam — one
+    identity, not two; served tags never carry an empty target_path.
+    Reported upstream (UPR-60): pick one representation.
+  disposition: fixed_handling
+  upstream_ref: "UPR-60"
+
+AMB-97:
+  ambiguity: >-
+    The ITEM_TAG released surface carries an editorial defect bundle: the
+    RM invariant Inv_key_valid calls key.is_justified, a function defined
+    NOWHERE (the BASE String class has no is_justified; the enforceable
+    rule must be read off the prose Meaning column, whose "whitespace" is
+    itself undefined); the DELETE 204 reuses "(logically) deleted" wording
+    from the change-control family though an ITEM_TAG has no
+    lifecycle_state; the EHR-wide aggregate declares the
+    COMPOSITION-specific list schema for a response spanning kinds (no
+    200_EHR_ItemTagList file exists); both _updated response files are
+    byte-copies of the _retrieved text ("successfully retrieved" on a
+    PUT); XML is enumerated on every tag Accept/Content-Type while no
+    ITEM_TAG canonical-XML type exists anywhere in ITS-XML and every
+    content block is application/json-only; the released examples pair a
+    HIER_OBJECT_ID target id with type COMPOSITION (a container id with
+    the data-class name) and NO released example anywhere shows a
+    VERSION-targeted tag — the form half the surface exists for; the
+    DELETE descriptions name the parameter "tag_key" while the path
+    declares {key}; the overview names FOLDER as a tag target but no
+    /directory tag route exists and the released directory operations
+    declare no item-tag headers (the wrapper prose is the only channel);
+    the {key} path segment is an unconstrained string with no encoding
+    rule; result ordering and paging are undefined on all three GETs (the
+    EHR-wide list is unbounded); the optional-feature sentence ("If the
+    server does not support ITEM_TAGs...") scopes only the headers and no
+    tag route declares a refusal branch; nothing states tag persistence
+    across new target versions, container-tag reach, or cascade on target
+    deletion; and the whole class is development-RM-only (SPECRM-87) —
+    the one surface in the released ITS-REST whose class link points at
+    RM/development.
+  source: >-
+    RM UML/classes/org.openehr.rm.common.item_tag.adoc + BASE
+    foundation_types string.adoc; ITS-REST specifications/
+    (operations/*tags*.yaml, responses/200_*_ItemTagList_*.yaml,
+    204_deleted.yaml, schemas/ehr/ItemTagOf*.yaml,
+    parameters/path/key.yaml, ehr.openapi.yaml L148-150) +
+    docs/overview/Requests_and_responses.md §item-tag headers; ITS-XML
+    (grep: no ITEM_TAG) — all confirmed first-hand.
+  handling: >-
+    Editorial: the wire follows the RM class + the operation descriptions
+    where they are the only released text; the served OpenAPI documents
+    each defect in place. Reported upstream (UPR-61).
+  disposition: editorial
+  upstream_ref: "UPR-61"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on

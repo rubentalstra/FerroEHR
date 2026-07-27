@@ -1283,3 +1283,89 @@ async fn ehr_wide_tag_listing_guards_the_ehr() {
         "unknown EHR is the released 404"
     );
 }
+
+/// The remaining group-8 tag disciplines in one battery: `[]` clear-all (the
+/// released sentence), `Prefer: return=identifier` resolving to the applied
+/// minimal default (an `ITEM_TAG` has no uid — AMB-92), delete-by-key as a
+/// SET delete (the released "resource(s)" plural — every `target_path` under
+/// the key goes, and the second delete is the released non-idempotent 404),
+/// and the `ehr_tags_get` filters (AND-combined, exact — AMB-94).
+#[tokio::test]
+async fn tag_collection_disciplines() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let version_uid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&version_uid).to_owned();
+    let put = |body: Value, prefer: Option<&'static str>| {
+        let mut b = Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags"))
+            .header(header::CONTENT_TYPE, "application/json");
+        if let Some(p) = prefer {
+            b = b.header("Prefer", p);
+        }
+        b.body(Body::from(body.to_string())).unwrap()
+    };
+
+    // Seed: one key on two paths + a second key.
+    let seed = serde_json::json!([
+        { "key": "flag", "value": "a", "target_path": "/content[0]" },
+        { "key": "flag", "value": "b", "target_path": "/content[1]" },
+        { "key": "workflow", "value": "open" }
+    ]);
+    let (status, h, _b) = send(&app, put(seed, Some("return=identifier"))).await;
+    // return=identifier resolves to the APPLIED minimal default (AMB-92).
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(
+        h.get("preference-applied").and_then(|v| v.to_str().ok()),
+        Some("return=minimal"),
+        "identifier resolves to the applied minimal default"
+    );
+
+    // ehr_tags_get filters: AND-combined, exact.
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/tags?tag_key=flag&tag_target_path=/content%5B1%5D"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let filtered: Value = serde_json::from_str(&body).expect("filtered list");
+    assert_eq!(
+        filtered.as_array().map(Vec::len),
+        Some(1),
+        "AND + exact: {body}"
+    );
+    assert_eq!(filtered[0]["value"], "b");
+
+    // DELETE by key is a SET delete: both /content paths go; workflow stays.
+    let del = |key: &str| {
+        Request::builder()
+            .method("DELETE")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags/{key}"))
+            .body(Body::empty())
+            .unwrap()
+    };
+    let (status, _h, _b) = send(&app, del("flag")).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let keys = stored_tag_keys(&app, &ehr_id, &vo).await;
+    assert_eq!(keys, vec!["workflow"], "both flag paths gone in one delete");
+    // The released third 404 trigger — deliberately non-idempotent.
+    let (status, _h, _b) = send(&app, del("flag")).await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "second delete is 404");
+
+    // [] clear-all (the released sentence) with the representation split.
+    let (status, _h, body) = send(
+        &app,
+        put(serde_json::json!([]), Some("return=representation")),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body.trim(), "[]", "an empty list clears all: {body}");
+}
