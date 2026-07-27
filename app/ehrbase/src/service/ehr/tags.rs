@@ -33,6 +33,10 @@ impl EhrbaseService {
         value: Option<&str>,
         target_path: Option<&str>,
     ) -> Result<Vec<Value>, ServiceError> {
+        // The released 404 trigger ("when an EHR with `ehr_id` does not
+        // exist", 404_unknown_ehr_id) — an unknown EHR is 404, never an
+        // empty 200 list; an EXISTING EHR with no matching tags is [].
+        self.ensure_ehr_exists(ehr_id).await?;
         let rows = crate::storage::tag_repo::list_tags(
             &self.pool,
             Some(ehr_id),
@@ -45,7 +49,10 @@ impl EhrbaseService {
         Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
     }
 
-    /// Tags on one target object (a COMPOSITION or `EHR_STATUS`).
+    /// Tags on one target object (a COMPOSITION or `EHR_STATUS`). The caller
+    /// runs [`Self::ensure_tag_target`] first — this reads the collection of
+    /// an already-verified target (an existing target with no tags is an
+    /// empty list, never an error).
     ///
     /// # Errors
     /// [`ServiceError::Database`] if the tag listing fails.
@@ -112,7 +119,15 @@ impl EhrbaseService {
                     "item tag {key:?}: a value, if set, may not be empty"
                 )));
             }
-            let target_path = tag.get("target_path").and_then(Value::as_str);
+            // `target_path: ""` normalizes to ABSENT: RM models target_path
+            // 0..1 (absent = no path) with no non-empty invariant, while the
+            // released EHR_STATUS example writes "" — one identity, not two
+            // (the (key, target_path) pair IS the ITEM_TAG identity;
+            // register-documented).
+            let target_path = tag
+                .get("target_path")
+                .and_then(Value::as_str)
+                .filter(|p| !p.is_empty());
             new_tags.push(crate::storage::tag_repo::NewTag {
                 target_type,
                 key,
@@ -199,8 +214,16 @@ impl EhrbaseService {
         ehr_id: EhrId,
         target_vo_id: VoId,
         target_version: Option<&str>,
+        target_type: &str,
         key: &str,
     ) -> Result<(), ServiceError> {
+        // The target guard runs on the DELETE too: the released 404 trigger
+        // covers "when the `uid_based_id` does not exist", the collection is
+        // EHR-scoped ("owned by EHR identified by `ehr_id`"), and the route
+        // family is kind-checked — a composition-route DELETE must not touch
+        // an EHR_STATUS container's tags (register-documented).
+        self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
+            .await?;
         if !crate::storage::tag_repo::delete_tag(
             &self.pool,
             Some(ehr_id),
@@ -295,8 +318,15 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         uid_based_id: String,
+        target_type: &str,
     ) -> Result<Vec<Value>, SmError> {
         let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
+        // The released 404 trigger — "when the `uid_based_id` does not
+        // exist" — plus the EHR scope and the route-kind discipline
+        // (register-documented): the guard runs on the GET too; an existing
+        // target with no tags stays an empty 200 list.
+        self.ensure_tag_target(an_ehr_id, vo_id, tail, target_type)
+            .await?;
         Ok(self.target_tags(an_ehr_id, vo_id, tail).await?)
     }
 
@@ -329,10 +359,12 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         uid_based_id: String,
+        target_type: &str,
         key: String,
     ) -> Result<(), SmError> {
         let (vo_id, tail) = parse_tag_target(&uid_based_id)?;
-        self.delete_tag(an_ehr_id, vo_id, tail, &key).await?;
+        self.delete_tag(an_ehr_id, vo_id, tail, target_type, &key)
+            .await?;
         Ok(())
     }
 }

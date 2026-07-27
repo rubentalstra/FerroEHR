@@ -1119,3 +1119,167 @@ async fn contribution_get_carries_etag_and_last_modified() {
         "Last-Modified is the contribution audit's commit instant"
     );
 }
+
+/// The tag target guard runs on GET and DELETE too: the released 404 trigger
+/// ("…or when the `uid_based_id` does not exist") covers a nonexistent
+/// target, a foreign EHR's target, and a wrong-kind target on a typed route
+/// (route-kind discipline, register-documented) — while an EXISTING target
+/// with no tags stays an empty `200 []`.
+#[tokio::test]
+async fn tag_get_and_delete_guard_the_target() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let version_uid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&version_uid).to_owned();
+    let (_status_body, status_uid) = current_ehr_status(&app, &ehr_id).await;
+    let status_vo = vo_of(&status_uid).to_owned();
+
+    // Existing target, no tags → 200 [].
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body.trim(), "[]", "an existing target with no tags is []");
+
+    // Nonexistent target → 404 (the released trigger).
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/composition/00000000-0000-4000-8000-000000000000/tags"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "nonexistent target");
+
+    // Wrong-kind target on a typed route → 404 (an EHR_STATUS container on
+    // the composition route).
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{status_vo}/tags"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "wrong-kind target");
+
+    // Foreign EHR's target → 404 ("owned by EHR identified by ehr_id").
+    let other_ehr = create_ehr(&app).await;
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{other_ehr}/composition/{vo}/tags"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "foreign EHR's target");
+
+    // DELETE is kind-checked too: the composition-route DELETE must not
+    // touch an EHR_STATUS container's tags.
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("DELETE")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/composition/{status_vo}/tags/anykey"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "wrong-kind DELETE");
+}
+
+/// `target_path: ""` on a PUT normalizes to ABSENT (RM models `target_path`
+/// 0..1 with no non-empty invariant while the released `EHR_STATUS` example
+/// writes "" — one identity, register-documented): a "" tag and an absent-path
+/// tag with the same key are ONE tag, last-wins.
+#[tokio::test]
+async fn tag_empty_target_path_normalizes_to_absent() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let version_uid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&version_uid).to_owned();
+
+    let body = serde_json::json!([
+        { "key": "flag", "value": "first", "target_path": "" },
+        { "key": "flag", "value": "second" }
+    ]);
+    let (status, _h, resp) = send(
+        &app,
+        Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("Prefer", "return=representation")
+            .body(Body::from(body.to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "tag put: {resp}");
+    let tags: Value = serde_json::from_str(&resp).expect("tag list");
+    let list = tags.as_array().expect("array");
+    assert_eq!(
+        list.len(),
+        1,
+        "\"\" and absent are ONE identity — last wins: {resp}"
+    );
+    assert_eq!(list[0]["value"], "second");
+    assert!(
+        list[0].get("target_path").is_none(),
+        "the normalized tag carries no target_path: {resp}"
+    );
+}
+
+/// The EHR-wide tag listing guards the EHR itself: an unknown `ehr_id` is
+/// the released 404 (`404_unknown_ehr_id`), while an existing EHR with no
+/// matching tags stays `200 []`.
+#[tokio::test]
+async fn ehr_wide_tag_listing_guards_the_ehr() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}/tags"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body.trim(), "[]", "an existing EHR with no tags is []");
+
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/00000000-0000-4000-8000-00000000dead/tags"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "unknown EHR is the released 404"
+    );
+}
