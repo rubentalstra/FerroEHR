@@ -2127,6 +2127,54 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-client_supplied_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_agent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_group",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_organisation",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-kind_parity_role",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -2147,7 +2195,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.delete_party-already_deleted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-bbbb",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.delete_party-stale_version_conflict",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2179,6 +2239,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.get_party-wrong_kind_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa",
       "status": "passed",
       "rows_driven": 1,
@@ -2186,6 +2252,12 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-bbbb",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.get_party_at_time-deleted_current",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2263,6 +2335,24 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-invalid_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-unknown_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_accepted",
       "status": "passed",
       "rows_driven": 1,
@@ -2289,7 +2379,43 @@
       "citation": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_at_time",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_read",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_unknown",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_client_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-demographic_invalid_change_types",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-demographic_unknown",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
