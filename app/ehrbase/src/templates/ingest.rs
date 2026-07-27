@@ -35,16 +35,55 @@ use crate::service::error::ServiceError;
 
 /// Parse OPT 1.4 canonical XML into an [`OperationalTemplate`].
 ///
-/// A codec failure is a semantic error on the artefact, not a transport error:
-/// the XML negotiated fine at the REST edge but does not decode as a
-/// well-formed OPT — ITS-REST `responses/422.yaml` ("semantic validation
-/// errors" on a syntactically convertible payload).
+/// Failure classification follows the ITS-REST status split: a payload that is
+/// not well-formed XML at all is *syntactically invalid content* — the released
+/// `400` branch (`docs/specs/openehr/ITS-REST/specifications/responses/400.yaml`:
+/// "the request could not be parsed or is invalid (e.g. … syntactically
+/// invalid … content)") — while well-formed XML that does not decode as an OPT
+/// is a semantic error on the artefact (the overview status table's `422` row,
+/// `docs/specs/openehr/ITS-REST/specifications/docs/overview/
+/// Requests_and_responses.md` §HTTP status codes; no template operation
+/// declares `422`, so the semantic branch is register-adjudicated).
 ///
 /// # Errors
 ///
-/// [`ServiceError::Unprocessable`] (→ ITS-REST `422`) when the XML does not
-/// decode as an OPT 1.4 `OPERATIONAL_TEMPLATE` document.
+/// - [`ServiceError::BadRequest`] (→ ITS-REST `400`) when the payload is not
+///   well-formed XML (including an empty document).
+/// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`) when well-formed XML
+///   does not decode as an OPT 1.4 `OPERATIONAL_TEMPLATE` document.
 pub(crate) fn parse_opt(xml: &str) -> Result<OperationalTemplate, ServiceError> {
+    require_well_formed_xml(xml)?;
     openehr_its::opt14::from_xml(xml)
         .map_err(|e| ServiceError::Unprocessable(format!("invalid OPT 1.4 XML: {e}")))
+}
+
+/// The well-formedness gate ahead of the OPT decode: scan the document with a
+/// bare `quick_xml::Reader` and reject anything that is not one well-formed
+/// XML document with a root element. This isolates the released `400` branch
+/// (syntactically invalid content) from the semantic `422` branch the tolerant
+/// codec reports past it.
+fn require_well_formed_xml(xml: &str) -> Result<(), ServiceError> {
+    let mut reader = quick_xml::Reader::from_str(xml);
+    let mut saw_root = false;
+    loop {
+        match reader.read_event() {
+            Ok(quick_xml::events::Event::Eof) => break,
+            Ok(quick_xml::events::Event::Start(_) | quick_xml::events::Event::Empty(_)) => {
+                saw_root = true;
+            }
+            Ok(_) => {}
+            Err(e) => {
+                return Err(ServiceError::BadRequest(format!(
+                    "syntactically invalid XML content: {e}"
+                )));
+            }
+        }
+    }
+    if saw_root {
+        Ok(())
+    } else {
+        Err(ServiceError::BadRequest(
+            "syntactically invalid XML content: the document has no root element".to_owned(),
+        ))
+    }
 }

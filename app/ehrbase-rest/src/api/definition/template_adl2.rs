@@ -88,8 +88,13 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
     // off the header map through the shared negotiation predicates, so every
     // write route resolves (and declares) it the same way.
     params::build::<DefinitionTemplateAdl2UploadParams>(&parts.path, parts.query.as_deref(), h)?;
-    // ADL2 arrives as text/plain source (dev-OAS: Content-Type text/plain, body
-    // `OperationalTemplateV2` | string).
+    // ADL2 arrives as text/plain source — the operation's single declared body
+    // type (`operations/definition_template_adl2_upload.yaml`). A payload
+    // DECLARING another media type cannot be processed as that type, so it is
+    // refused 415 before parsing (`Resources.md` §format rules), exactly as
+    // the ADL 1.4 sibling refuses non-XML; an absent `Content-Type` declares
+    // nothing to refuse (the header is a client MAY).
+    negotiate::require_text_plain(h)?;
     let source = negotiate::text_body(&parts.body)?;
     // The engine validates: an unparseable source is a `400` (BadRequest), an
     // AOM2-invalid one a `422` carrying the rule codes (ValidationFailed), a

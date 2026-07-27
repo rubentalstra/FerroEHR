@@ -270,3 +270,67 @@ async fn opt_upload_without_content_type_is_created() {
     let (status, body) = upload(&app, None).await;
     assert_eq!(status, StatusCode::CREATED, "{body}");
 }
+
+// ── POST: the 400-vs-422 invalid-payload split ───────────────────────────────
+// `responses/400.yaml`: "400 Bad Request is returned when the request could
+// not be parsed or is invalid (e.g. … syntactically invalid … content)" — the
+// released branch for a payload that is not well-formed XML. A WELL-FORMED
+// document that is not a valid OPT is a semantic error (overview
+// `Requests_and_responses.md` §HTTP status codes, the 422 row; no template
+// operation declares 422, so the semantic branch is register-adjudicated).
+
+/// `POST /definition/template/adl1.4` with an arbitrary body under
+/// `Content-Type: application/xml`.
+async fn upload_body(app: &Router, body: &str) -> (StatusCode, String) {
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("{BASE}/definition/template/adl1.4"))
+                .header(header::CONTENT_TYPE, XML_MIME)
+                .body(Body::from(body.to_owned()))
+                .unwrap(),
+        )
+        .await
+        .expect("response");
+    let status = resp.status();
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    (status, String::from_utf8_lossy(&bytes).into_owned())
+}
+
+#[tokio::test]
+async fn opt_upload_malformed_xml_is_400() {
+    let (_pg, app) = empty_app().await;
+    let (status, body) = upload_body(&app, "<template><language></template>").await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "mismatched tags are syntactically invalid content — the released 400 \
+         branch (responses/400.yaml), never 422: {body}"
+    );
+}
+
+#[tokio::test]
+async fn opt_upload_empty_body_is_400() {
+    let (_pg, app) = empty_app().await;
+    let (status, body) = upload_body(&app, "").await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "an empty document has no root element — not well-formed XML, the \
+         released 400 branch (responses/400.yaml): {body}"
+    );
+}
+
+#[tokio::test]
+async fn opt_upload_well_formed_non_opt_is_422() {
+    let (_pg, app) = empty_app().await;
+    let (status, body) = upload_body(&app, "<not_an_opt/>").await;
+    assert_eq!(
+        status,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "well-formed XML that does not decode as an OPT is the semantic 422 \
+         branch (overview §HTTP status codes), not the syntactic 400: {body}"
+    );
+}
