@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 485 |
+| passed | 499 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 69 |
-| total | 554 |
+| not_applicable | 67 |
+| total | 566 |
 
 ## By chapter
 
@@ -22,8 +22,8 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
 | I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
 | I_ADMIN_SERVICE | 2 | 0 | 0 | 0 | 10 |
-| I_DEFINITION_ADL14 | 10 | 0 | 0 | 0 | 8 |
-| I_DEFINITION_ADL2 | 16 | 0 | 0 | 0 | 8 |
+| I_DEFINITION_ADL14 | 19 | 0 | 0 | 0 | 6 |
+| I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 10 | 0 | 0 | 0 | 0 |
 | I_DEMOGRAPHIC_SERVICE | 16 | 0 | 0 | 0 | 12 |
 | I_EHR_COMPOSITION | 65 | 0 | 0 | 0 | 0 |
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 485 of 554 selected cases driven.
+Coverage: 499 of 566 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -99,10 +99,8 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_ADL14.delete_opt-delete_latest_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_non_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_specific_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
-| I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEFINITION_ADL14.get_opt-retrieve_specific_version | option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL14.list_archetypes-unrealized | I_DEFINITION_ADL14.list_archetypes: AMB-41 |
-| I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict | option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL2.archetypes_count-unrealized | I_DEFINITION_ADL2.archetypes_count: AMB-37 |
 | I_DEFINITION_ADL2.artefacts_count-unrealized | I_DEFINITION_ADL2.artefacts_count: AMB-37 |
 | I_DEFINITION_ADL2.delete_artefact-existing | I_DEFINITION_ADL2.delete_artefact: AMB-37 |
