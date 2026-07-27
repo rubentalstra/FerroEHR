@@ -13,7 +13,7 @@
 //! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master06-authentication.adoc`
 //! §Supported Authentication Flows; the deprecated Implicit and
 //! Resource-Owner-Password grants that a CDR must never advertise are rejected
-//! by `crate::smart::config::SmartConfig::validate`).
+//! by `ehrbase::config::smart::SmartConfig::validate`).
 
 use std::sync::Arc;
 use std::time::Duration;

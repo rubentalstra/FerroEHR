@@ -5,9 +5,10 @@
 //! *Platform* base URL, master04 §Service Discovery ¶3-4), advertising the
 //! external Authorization-Server endpoints, the `services` map (with the
 //! required `org.openehr.rest`), the SMART `capabilities`, and the enforced
-//! scope set. The document is **assembled from [`super::config::SmartConfig`]**
+//! scope set. The document is **assembled from [`SmartConfig`]**
 //! — the CDR advertises only what it (or its configured AS) actually offers; it
-//! implements none of the `OAuth2` endpoints (`smart.md` §1/§6 NOTEs).
+//! implements none of the `OAuth2` endpoints (those are Authorization-Server
+//! duties — master02 §Glossary, master06/master07).
 //!
 //! The response is `application/json` (master04 §Service Discovery, R-02) and is
 //! served **pre-auth**, on the same seam as the status router
@@ -105,11 +106,16 @@ pub struct Service {
 
 /// Build the discovery document from configuration.
 ///
-/// - `openehr_base_url` is the CDR's openEHR REST base (the one value the CDR
-///   authoritatively owns — `services.org.openehr.rest.baseUrl`, R-04).
+/// - `openehr_base_url` is the CDR's openEHR REST base path (the one value the
+///   CDR authoritatively owns — `services.org.openehr.rest.baseUrl`, R-04).
 /// - `fhir_base_url` populates `org.fhir.rest` when present (recommended).
 /// - `issuer_fallback` is used for `issuer` when `endpoints.issuer` is unset
 ///   (the configured OIDC bearer issuer, `auth.oidc.issuer`).
+///
+/// Every `services.*.baseUrl` is emitted ABSOLUTE (master04 §Services:
+/// "Absolute URL to the root of the API `*(required)*`"): a relative base path
+/// is prefixed with the configured external origin
+/// (`SmartConfig::public_base_url`, boot-required when SMART is enabled).
 #[must_use]
 pub fn build_document(
     cfg: &SmartConfig,
@@ -124,7 +130,7 @@ pub fn build_document(
     services.insert(
         "org.openehr.rest".to_owned(),
         Service {
-            base_url: openehr_base_url.to_owned(),
+            base_url: absolute_base(cfg, openehr_base_url),
             description: Some("The openEHR REST API baseUrl".to_owned()),
             version: None,
             documentation: None,
@@ -136,7 +142,7 @@ pub fn build_document(
         services.insert(
             "org.fhir.rest".to_owned(),
             Service {
-                base_url: fhir.to_owned(),
+                base_url: absolute_base(cfg, fhir),
                 description: Some("The FHIR APIs baseUrl".to_owned()),
                 version: None,
                 documentation: None,
@@ -168,22 +174,47 @@ pub fn build_document(
 }
 
 /// The advertised capabilities — **only** those the CDR actually enforces
-/// (master04 §Capabilities, R-05). `context-openehr-ehr` + `openehr-permission-v1`
-/// are always present (the CDR binds the `ehrId` launch context and enforces the
-/// fine-grained resource scopes); the two experimental capabilities are gated on
-/// their sub-flags.
+/// (master04 §Capabilities, R-05/R-07). `context-openehr-ehr` is always present
+/// (the CDR binds the `ehrId` launch context); `openehr-permission-v1` is
+/// advertised ONLY in fail-closed mode (`require_smart_scopes`) — the
+/// capability "Indicates support for fine-grained scopes and authorization
+/// scheme over openEHR resources", and advisory mode does not enforce against
+/// a scope-less caller, so advertising it there would over-claim. The two
+/// experimental capabilities are gated on their sub-flags, and the operator's
+/// `endpoints.capabilities` (the HL7-defined base capabilities the external
+/// framework owns — "In addition to those scopes defined in the original SMART
+/// App Launch framework") are appended, deduplicated.
 fn capabilities(cfg: &SmartConfig) -> Vec<String> {
-    let mut caps = vec![
-        "context-openehr-ehr".to_owned(),
-        "openehr-permission-v1".to_owned(),
-    ];
+    let mut caps = vec!["context-openehr-ehr".to_owned()];
+    if cfg.require_smart_scopes {
+        caps.push("openehr-permission-v1".to_owned());
+    }
     if cfg.episode.enabled {
         caps.push("context-openehr-episode".to_owned());
     }
     if cfg.launch_base64_json {
         caps.push("launch-base64-json".to_owned());
     }
+    for extra in &cfg.endpoints.capabilities {
+        if !caps.contains(extra) {
+            caps.push(extra.clone());
+        }
+    }
     caps
+}
+
+/// Make a base path absolute by prefixing the configured external origin
+/// (master04 §Services: `baseUrl` is an "Absolute URL"). An already-absolute
+/// value passes through; a missing origin (impossible on a validated enabled
+/// config) leaves the path as-is rather than fabricating one.
+fn absolute_base(cfg: &SmartConfig, base: &str) -> String {
+    if base.starts_with("http://") || base.starts_with("https://") {
+        return base.to_owned();
+    }
+    match cfg.public_base_url.as_deref() {
+        Some(origin) => format!("{}{base}", origin.trim_end_matches('/')),
+        None => base.to_owned(),
+    }
 }
 
 /// The advertised `scopes_supported` — the operator override when set, else a
@@ -304,13 +335,24 @@ async fn smart_configuration(State(state): State<AppState>) -> Json<SmartConfigu
     ))
 }
 
-/// The SMART discovery document's `OpenAPI` (path at the default REST root;
-/// config-gated: `EHRBASE_REST_SMART__ENABLED`). Served pre-auth. Spec:
-/// ITS-REST `smart_app_launch/master04`.
-pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState>::new()
+/// The SMART discovery document's `OpenAPI`, its path derived from the SAME
+/// [`discovery_path`] the live mount uses (a configured `platform_base_url`
+/// moves the served path, and the published document must follow — the
+/// `#[utoipa::path]` literal is only the default-root spelling). Config-gated:
+/// `EHRBASE_REST_SMART__ENABLED`. Served pre-auth. Spec: ITS-REST
+/// `smart_app_launch/master04`.
+pub(crate) fn openapi(cfg: &AppConfig, rest_root: &str) -> utoipa::openapi::OpenApi {
+    let mut doc = OpenApiRouter::<AppState>::new()
         .routes(routes!(smart_configuration))
-        .into_openapi()
+        .into_openapi();
+    let live = discovery_path(&cfg.smart, rest_root);
+    let declared = "/ehrbase/rest/.well-known/smart-configuration";
+    if live != declared
+        && let Some(item) = doc.paths.paths.remove(declared)
+    {
+        doc.paths.paths.insert(live, item);
+    }
+    doc
 }
 
 #[cfg(test)]
@@ -326,6 +368,7 @@ mod tests {
     fn enabled_cfg() -> SmartConfig {
         let mut c = SmartConfig {
             enabled: true,
+            public_base_url: Some("https://cdr.example.com".to_owned()),
             ..SmartConfig::default()
         };
         c.endpoints.authorization_endpoint = Some("https://as.example/authorize".to_owned());
@@ -351,15 +394,21 @@ mod tests {
             .services
             .get("org.openehr.rest")
             .expect("openehr service");
-        assert_eq!(openehr.base_url, "/ehrbase/rest/openehr/v1");
+        // master04 §Services: baseUrl is an ABSOLUTE URL.
+        assert_eq!(
+            openehr.base_url,
+            "https://cdr.example.com/ehrbase/rest/openehr/v1"
+        );
         // fhir.rest omitted when no FHIR base configured.
         assert!(!doc.services.contains_key("org.fhir.rest"));
         // issuer falls back to the OIDC issuer.
         assert_eq!(doc.issuer.as_deref(), Some("https://as.example"));
         // R-05 baseline capabilities.
         assert!(doc.capabilities.contains(&"context-openehr-ehr".to_owned()));
+        // Advisory mode (require_smart_scopes = false) must NOT claim the
+        // fine-grained enforcement capability (master04 §Capabilities).
         assert!(
-            doc.capabilities
+            !doc.capabilities
                 .contains(&"openehr-permission-v1".to_owned())
         );
         // experimental caps are off by default.
@@ -380,7 +429,7 @@ mod tests {
             None,
         );
         let fhir = doc.services.get("org.fhir.rest").expect("fhir service");
-        assert_eq!(fhir.base_url, "/fhir/r4");
+        assert_eq!(fhir.base_url, "https://cdr.example.com/fhir/r4");
     }
 
     #[test]
@@ -412,6 +461,37 @@ mod tests {
         c.endpoints.scopes_supported = vec!["openid".to_owned(), "patient/*.rs".to_owned()];
         let doc = build_document(&c, "/openehr", None, None);
         assert_eq!(doc.scopes_supported, vec!["openid", "patient/*.rs"]);
+    }
+
+    #[test]
+    fn permission_capability_rides_fail_closed_mode() {
+        let mut c = enabled_cfg();
+        c.require_smart_scopes = true;
+        let doc = build_document(&c, "/openehr", None, None);
+        assert!(
+            doc.capabilities
+                .contains(&"openehr-permission-v1".to_owned())
+        );
+    }
+
+    #[test]
+    fn operator_capabilities_append_deduplicated() {
+        let mut c = enabled_cfg();
+        c.endpoints.capabilities = vec![
+            "launch-ehr".to_owned(),
+            "sso-openid-connect".to_owned(),
+            "context-openehr-ehr".to_owned(), // duplicate of a derived one
+        ];
+        let doc = build_document(&c, "/openehr", None, None);
+        assert!(doc.capabilities.contains(&"launch-ehr".to_owned()));
+        assert!(doc.capabilities.contains(&"sso-openid-connect".to_owned()));
+        assert_eq!(
+            doc.capabilities
+                .iter()
+                .filter(|c| *c == "context-openehr-ehr")
+                .count(),
+            1
+        );
     }
 
     #[test]
@@ -448,7 +528,7 @@ mod tests {
         // master04 uses the camelCase `baseUrl` key.
         assert_eq!(
             json["services"]["org.openehr.rest"]["baseUrl"],
-            serde_json::json!("/openehr")
+            serde_json::json!("https://cdr.example.com/openehr")
         );
         // deprecated grant flows never appear (they're rejected at validate()).
         assert_eq!(

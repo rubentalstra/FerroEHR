@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **SMART App Launch conformance** (#519). The discovery document's
+  `services.*.baseUrl` values are now absolute URLs built from the new
+  required `smart.public_base_url` origin (the specification requires
+  absolute URLs); the `openehr-permission-v1` capability is advertised only
+  in fail-closed mode (`require_smart_scopes = true`) so advisory
+  deployments no longer over-claim fine-grained enforcement; operators can
+  advertise the HL7 base capabilities via `smart.endpoints.capabilities`;
+  enabling SMART now boot-validates the origin plus the
+  authorization/token endpoints; the published OpenAPI's discovery path
+  follows a configured `platform_base_url`; and — the substantive gap —
+  the **template and AQL scope families now enforce**: in fail-closed mode
+  a token without a matching `template-…`/`aql-…` scope is denied `403` on
+  the template and query routes (previously only the composition family
+  was gated).
+
 - **Demographic ITEM_TAG collections honour the released dual-form
   addressing** (#509). A version-addressed `uid_based_id` on the demographic
   tag routes now reads, replaces, and deletes that VERSION's own distinct
