@@ -125,9 +125,9 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 
 /// Create an `AGENT` (`POST /demographic/agent`).
 ///
-/// "Creates the first version of a new AGENT." (ITS-REST
+/// "Creates the first version of a new `AGENT`." (ITS-REST
 /// `specifications/operations/agent_create.yaml`). The `uid` is server-minted:
-/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// a PARTY's `uid` is the containing `VERSION`'s `OBJECT_VERSION_ID`, which the
 /// client cannot know at create time, so a `uid` in the submitted body does not
 /// survive the write and the invariant `Uid_mandatory` (RM
 /// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
@@ -215,11 +215,12 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
          description = "\"The list of all ITEM_TAG to be set and associated with \
                         the current VERSION\" (ITS-REST \
                         `specifications/parameters/header/openehr-version-item-tag.yaml`). \
-                        Demographic ITEM_TAGs are stored against the \
-                        VERSIONED_PARTY with no version anchor, so the two tag \
-                        sets coincide on this surface and this build takes the \
-                        list to store from `openehr-item-tag` only; both response \
-                        headers then carry that one set.",
+                        The two wrapper headers address DISTINCT collections \
+                        (overview §\"openehr-item-tag and \
+                        openehr-version-item-tag\"): this one replaces the \
+                        just-committed VERSION's own tag set, `openehr-item-tag` \
+                        the `VERSIONED_PARTY` container's; each response header \
+                        echoes its own stored set.",
          example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
@@ -324,8 +325,10 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          examples(
              ("representation" = (summary = "Prefer: return=representation — the created AGENT",
@@ -439,7 +442,7 @@ pub(crate) async fn agent_create(
 /// Retrieve an `AGENT` by uid-based id
 /// (`GET /demographic/agent/{uid_based_id}`).
 ///
-/// "Retrieves a version of the AGENT identified by `uid_based_id`." (ITS-REST
+/// "Retrieves a version of the `AGENT` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/agent_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
@@ -518,8 +521,10 @@ pub(crate) async fn agent_create(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          example = json!({
              "_type": "AGENT",
@@ -626,8 +631,8 @@ pub(crate) async fn agent_get(
 
 /// Update an `AGENT` (`PUT /demographic/agent/{uid_based_id}`).
 ///
-/// "Updates AGENT identified by `uid_based_id`." … "The existing latest
-/// `version_uid` of AGENT resource (i.e. the `preceding_version_uid`) must be
+/// "Updates `AGENT` identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of `AGENT` resource (i.e. the `preceding_version_uid`) must be
 /// specified in the `If-Match` header." (ITS-REST
 /// `specifications/operations/agent_update.yaml`).
 #[utoipa::path(
@@ -1001,9 +1006,9 @@ pub(crate) async fn agent_update(
 
 /// Delete an `AGENT` (`DELETE /demographic/agent/{uid_based_id}`).
 ///
-/// "Deletes the AGENT identified by `uid_based_id`." (ITS-REST
+/// "Deletes the `AGENT` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/agent_delete.yaml`). The delete is LOGICAL: it
-/// commits a new deletion VERSION rather than removing history — RM
+/// commits a new deletion `VERSION` rather than removing history — RM
 /// `common/master06` §Change Control keeps every committed version, and a
 /// subsequent read of the deleted current version answers `204`
 /// (`responses/204_deleted_at_time.yaml`).
@@ -1158,9 +1163,9 @@ pub(crate) async fn agent_delete(
 
 /// Create a `GROUP` (`POST /demographic/group`).
 ///
-/// "Creates the first version of a new GROUP." (ITS-REST
+/// "Creates the first version of a new `GROUP`." (ITS-REST
 /// `specifications/operations/group_create.yaml`). The `uid` is server-minted:
-/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// a PARTY's `uid` is the containing `VERSION`'s `OBJECT_VERSION_ID`, which the
 /// client cannot know at create time, so a `uid` in the submitted body does not
 /// survive the write and the invariant `Uid_mandatory` (RM
 /// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
@@ -1248,11 +1253,12 @@ pub(crate) async fn agent_delete(
          description = "\"The list of all ITEM_TAG to be set and associated with \
                         the current VERSION\" (ITS-REST \
                         `specifications/parameters/header/openehr-version-item-tag.yaml`). \
-                        Demographic ITEM_TAGs are stored against the \
-                        VERSIONED_PARTY with no version anchor, so the two tag \
-                        sets coincide on this surface and this build takes the \
-                        list to store from `openehr-item-tag` only; both response \
-                        headers then carry that one set.",
+                        The two wrapper headers address DISTINCT collections \
+                        (overview §\"openehr-item-tag and \
+                        openehr-version-item-tag\"): this one replaces the \
+                        just-committed VERSION's own tag set, `openehr-item-tag` \
+                        the `VERSIONED_PARTY` container's; each response header \
+                        echoes its own stored set.",
          example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
@@ -1357,8 +1363,10 @@ pub(crate) async fn agent_delete(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          examples(
              ("representation" = (summary = "Prefer: return=representation — the created GROUP",
@@ -1472,7 +1480,7 @@ pub(crate) async fn group_create(
 /// Retrieve a `GROUP` by uid-based id
 /// (`GET /demographic/group/{uid_based_id}`).
 ///
-/// "Retrieves a version of the GROUP identified by `uid_based_id`." (ITS-REST
+/// "Retrieves a version of the `GROUP` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/group_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
@@ -1551,8 +1559,10 @@ pub(crate) async fn group_create(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          example = json!({
              "_type": "GROUP",
@@ -1659,8 +1669,8 @@ pub(crate) async fn group_get(
 
 /// Update a `GROUP` (`PUT /demographic/group/{uid_based_id}`).
 ///
-/// "Updates GROUP identified by `uid_based_id`." … "The existing latest
-/// `version_uid` of GROUP resource (i.e. the `preceding_version_uid`) must be
+/// "Updates `GROUP` identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of `GROUP` resource (i.e. the `preceding_version_uid`) must be
 /// specified in the `If-Match` header." (ITS-REST
 /// `specifications/operations/group_update.yaml`).
 #[utoipa::path(
@@ -2034,9 +2044,9 @@ pub(crate) async fn group_update(
 
 /// Delete a `GROUP` (`DELETE /demographic/group/{uid_based_id}`).
 ///
-/// "Deletes the GROUP identified by `uid_based_id`." (ITS-REST
+/// "Deletes the `GROUP` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/group_delete.yaml`). The delete is LOGICAL: it
-/// commits a new deletion VERSION rather than removing history — RM
+/// commits a new deletion `VERSION` rather than removing history — RM
 /// `common/master06` §Change Control keeps every committed version, and a
 /// subsequent read of the deleted current version answers `204`
 /// (`responses/204_deleted_at_time.yaml`).
@@ -2191,9 +2201,9 @@ pub(crate) async fn group_delete(
 
 /// Create an `ORGANISATION` (`POST /demographic/organisation`).
 ///
-/// "Creates the first version of a new ORGANISATION." (ITS-REST
+/// "Creates the first version of a new `ORGANISATION`." (ITS-REST
 /// `specifications/operations/organisation_create.yaml`). The `uid` is server-minted:
-/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// a PARTY's `uid` is the containing `VERSION`'s `OBJECT_VERSION_ID`, which the
 /// client cannot know at create time, so a `uid` in the submitted body does not
 /// survive the write and the invariant `Uid_mandatory` (RM
 /// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
@@ -2281,11 +2291,12 @@ pub(crate) async fn group_delete(
          description = "\"The list of all ITEM_TAG to be set and associated with \
                         the current VERSION\" (ITS-REST \
                         `specifications/parameters/header/openehr-version-item-tag.yaml`). \
-                        Demographic ITEM_TAGs are stored against the \
-                        VERSIONED_PARTY with no version anchor, so the two tag \
-                        sets coincide on this surface and this build takes the \
-                        list to store from `openehr-item-tag` only; both response \
-                        headers then carry that one set.",
+                        The two wrapper headers address DISTINCT collections \
+                        (overview §\"openehr-item-tag and \
+                        openehr-version-item-tag\"): this one replaces the \
+                        just-committed VERSION's own tag set, `openehr-item-tag` \
+                        the `VERSIONED_PARTY` container's; each response header \
+                        echoes its own stored set.",
          example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
@@ -2390,8 +2401,10 @@ pub(crate) async fn group_delete(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          examples(
              ("representation" = (summary = "Prefer: return=representation — the created ORGANISATION",
@@ -2511,7 +2524,7 @@ pub(crate) async fn organisation_create(
 /// Retrieve an `ORGANISATION` by uid-based id
 /// (`GET /demographic/organisation/{uid_based_id}`).
 ///
-/// "Retrieves a version of the ORGANISATION identified by `uid_based_id`." (ITS-REST
+/// "Retrieves a version of the `ORGANISATION` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/organisation_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
@@ -2590,8 +2603,10 @@ pub(crate) async fn organisation_create(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          example = json!({
              "_type": "ORGANISATION",
@@ -2698,8 +2713,8 @@ pub(crate) async fn organisation_get(
 
 /// Update an `ORGANISATION` (`PUT /demographic/organisation/{uid_based_id}`).
 ///
-/// "Updates ORGANISATION identified by `uid_based_id`." … "The existing latest
-/// `version_uid` of ORGANISATION resource (i.e. the `preceding_version_uid`) must be
+/// "Updates `ORGANISATION` identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of `ORGANISATION` resource (i.e. the `preceding_version_uid`) must be
 /// specified in the `If-Match` header." (ITS-REST
 /// `specifications/operations/organisation_update.yaml`).
 #[utoipa::path(
@@ -3079,9 +3094,9 @@ pub(crate) async fn organisation_update(
 
 /// Delete an `ORGANISATION` (`DELETE /demographic/organisation/{uid_based_id}`).
 ///
-/// "Deletes the ORGANISATION identified by `uid_based_id`." (ITS-REST
+/// "Deletes the `ORGANISATION` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/organisation_delete.yaml`). The delete is LOGICAL: it
-/// commits a new deletion VERSION rather than removing history — RM
+/// commits a new deletion `VERSION` rather than removing history — RM
 /// `common/master06` §Change Control keeps every committed version, and a
 /// subsequent read of the deleted current version answers `204`
 /// (`responses/204_deleted_at_time.yaml`).
@@ -3242,9 +3257,9 @@ pub(crate) async fn organisation_delete(
 
 /// Create a `PERSON` (`POST /demographic/person`).
 ///
-/// "Creates the first version of a new PERSON." (ITS-REST
+/// "Creates the first version of a new `PERSON`." (ITS-REST
 /// `specifications/operations/person_create.yaml`). The `uid` is server-minted:
-/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// a PARTY's `uid` is the containing `VERSION`'s `OBJECT_VERSION_ID`, which the
 /// client cannot know at create time, so a `uid` in the submitted body does not
 /// survive the write and the invariant `Uid_mandatory` (RM
 /// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
@@ -3332,11 +3347,12 @@ pub(crate) async fn organisation_delete(
          description = "\"The list of all ITEM_TAG to be set and associated with \
                         the current VERSION\" (ITS-REST \
                         `specifications/parameters/header/openehr-version-item-tag.yaml`). \
-                        Demographic ITEM_TAGs are stored against the \
-                        VERSIONED_PARTY with no version anchor, so the two tag \
-                        sets coincide on this surface and this build takes the \
-                        list to store from `openehr-item-tag` only; both response \
-                        headers then carry that one set.",
+                        The two wrapper headers address DISTINCT collections \
+                        (overview §\"openehr-item-tag and \
+                        openehr-version-item-tag\"): this one replaces the \
+                        just-committed VERSION's own tag set, `openehr-item-tag` \
+                        the `VERSIONED_PARTY` container's; each response header \
+                        echoes its own stored set.",
          example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
@@ -3441,8 +3457,10 @@ pub(crate) async fn organisation_delete(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          examples(
              ("representation" = (summary = "Prefer: return=representation — the created PERSON",
@@ -3556,7 +3574,7 @@ pub(crate) async fn person_create(
 /// Retrieve a `PERSON` by uid-based id
 /// (`GET /demographic/person/{uid_based_id}`).
 ///
-/// "Retrieves a version of the PERSON identified by `uid_based_id`." (ITS-REST
+/// "Retrieves a version of the `PERSON` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/person_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
@@ -3635,8 +3653,10 @@ pub(crate) async fn person_create(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          example = json!({
              "_type": "PERSON",
@@ -3743,8 +3763,8 @@ pub(crate) async fn person_get(
 
 /// Update a `PERSON` (`PUT /demographic/person/{uid_based_id}`).
 ///
-/// "Updates PERSON identified by `uid_based_id`." … "The existing latest
-/// `version_uid` of PERSON resource (i.e. the `preceding_version_uid`) must be
+/// "Updates `PERSON` identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of `PERSON` resource (i.e. the `preceding_version_uid`) must be
 /// specified in the `If-Match` header." (ITS-REST
 /// `specifications/operations/person_update.yaml`).
 #[utoipa::path(
@@ -4118,9 +4138,9 @@ pub(crate) async fn person_update(
 
 /// Delete a `PERSON` (`DELETE /demographic/person/{uid_based_id}`).
 ///
-/// "Deletes the PERSON identified by `uid_based_id`." (ITS-REST
+/// "Deletes the `PERSON` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/person_delete.yaml`). The delete is LOGICAL: it
-/// commits a new deletion VERSION rather than removing history — RM
+/// commits a new deletion `VERSION` rather than removing history — RM
 /// `common/master06` §Change Control keeps every committed version, and a
 /// subsequent read of the deleted current version answers `204`
 /// (`responses/204_deleted_at_time.yaml`).
@@ -4275,9 +4295,9 @@ pub(crate) async fn person_delete(
 
 /// Create a `ROLE` (`POST /demographic/role`).
 ///
-/// "Creates the first version of a new ROLE." (ITS-REST
+/// "Creates the first version of a new `ROLE`." (ITS-REST
 /// `specifications/operations/role_create.yaml`). The `uid` is server-minted:
-/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// a PARTY's `uid` is the containing `VERSION`'s `OBJECT_VERSION_ID`, which the
 /// client cannot know at create time, so a `uid` in the submitted body does not
 /// survive the write and the invariant `Uid_mandatory` (RM
 /// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
@@ -4365,11 +4385,12 @@ pub(crate) async fn person_delete(
          description = "\"The list of all ITEM_TAG to be set and associated with \
                         the current VERSION\" (ITS-REST \
                         `specifications/parameters/header/openehr-version-item-tag.yaml`). \
-                        Demographic ITEM_TAGs are stored against the \
-                        VERSIONED_PARTY with no version anchor, so the two tag \
-                        sets coincide on this surface and this build takes the \
-                        list to store from `openehr-item-tag` only; both response \
-                        headers then carry that one set.",
+                        The two wrapper headers address DISTINCT collections \
+                        (overview §\"openehr-item-tag and \
+                        openehr-version-item-tag\"): this one replaces the \
+                        just-committed VERSION's own tag set, `openehr-item-tag` \
+                        the `VERSIONED_PARTY` container's; each response header \
+                        echoes its own stored set.",
          example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
@@ -4474,8 +4495,10 @@ pub(crate) async fn person_delete(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          examples(
              ("representation" = (summary = "Prefer: return=representation — the created ROLE",
@@ -4589,7 +4612,7 @@ pub(crate) async fn role_create(
 /// Retrieve a `ROLE` by uid-based id
 /// (`GET /demographic/role/{uid_based_id}`).
 ///
-/// "Retrieves a version of the ROLE identified by `uid_based_id`." (ITS-REST
+/// "Retrieves a version of the `ROLE` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/role_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
@@ -4668,8 +4691,10 @@ pub(crate) async fn role_create(
               description = "\"The list of all ITEM_TAG associated with the \
                              current VERSION\" (ITS-REST \
                              `specifications/headers/openehr-version-item-tag.yaml`); \
-                             demographic tags have no version anchor, so this \
-                             carries the same set as `openehr-item-tag`.")
+                             the served VERSION's own collection, distinct from \
+                             the container set `openehr-item-tag` carries \
+                             (overview §\"openehr-item-tag and \
+                             openehr-version-item-tag\").")
          ),
          example = json!({
              "_type": "ROLE",
@@ -4776,8 +4801,8 @@ pub(crate) async fn role_get(
 
 /// Update a `ROLE` (`PUT /demographic/role/{uid_based_id}`).
 ///
-/// "Updates ROLE identified by `uid_based_id`." … "The existing latest
-/// `version_uid` of ROLE resource (i.e. the `preceding_version_uid`) must be
+/// "Updates `ROLE` identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of `ROLE` resource (i.e. the `preceding_version_uid`) must be
 /// specified in the `If-Match` header." (ITS-REST
 /// `specifications/operations/role_update.yaml`).
 #[utoipa::path(
@@ -5151,9 +5176,9 @@ pub(crate) async fn role_update(
 
 /// Delete a `ROLE` (`DELETE /demographic/role/{uid_based_id}`).
 ///
-/// "Deletes the ROLE identified by `uid_based_id`." (ITS-REST
+/// "Deletes the `ROLE` identified by `uid_based_id`." (ITS-REST
 /// `specifications/operations/role_delete.yaml`). The delete is LOGICAL: it
-/// commits a new deletion VERSION rather than removing history — RM
+/// commits a new deletion `VERSION` rather than removing history — RM
 /// `common/master06` §Change Control keeps every committed version, and a
 /// subsequent read of the deleted current version answers `204`
 /// (`responses/204_deleted_at_time.yaml`).
@@ -5522,13 +5547,13 @@ pub(crate) async fn versioned_party_revision_history(
     .await
 }
 
-/// Retrieve the party VERSION at a point in time
+/// Retrieve the party `VERSION` at a point in time
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version`).
 ///
-/// "Retrieves a VERSION from the `VERSIONED_PARTY` identified by
+/// "Retrieves a `VERSION` from the `VERSIONED_PARTY` identified by
 /// `versioned_object_uid`." … "If `version_at_time` is supplied, retrieves the
-/// VERSION extant _at specified time_, otherwise retrieves the _latest_
-/// VERSION." (ITS-REST
+/// `VERSION` extant _at specified time_, otherwise retrieves the _latest_
+/// `VERSION`." (ITS-REST
 /// `specifications/operations/versioned_party_version_get_at_time.yaml`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/version", tag = "VERSIONED_PARTY",
@@ -5625,10 +5650,10 @@ pub(crate) async fn versioned_party_version_get_at_time(
     .await
 }
 
-/// Retrieve a specific party VERSION by version uid
+/// Retrieve a specific party `VERSION` by version uid
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`).
 ///
-/// "Retrieves a VERSION identified by `version_uid` of a `VERSIONED_PARTY`
+/// "Retrieves a `VERSION` identified by `version_uid` of a `VERSIONED_PARTY`
 /// identified by `versioned_object_uid`." (ITS-REST
 /// `specifications/operations/versioned_party_version_get_by_id.yaml`).
 #[utoipa::path(
@@ -6142,27 +6167,21 @@ pub(crate) async fn contribution_get(
 // `Location`. The only response header on the whole family is
 // `Preference-Applied`, on the five PUTs.
 //
-// `owner_id` is our own design. RM `item_tag.adoc` types it `OBJECT_REF` —
-// "Identifier of owner object, such as EHR" — and a demographic party has no
-// EHR; no demographic RM class declares a `tags` containment either, so nothing
-// released fixes the owner of an EHR-less tag. This build names the owning
-// VERSIONED_PARTY; the position is register-documented in the conformance
-// catalogue. The released `ItemTagOf*` examples instead show
-// `{namespace: local, type: SYSTEM}`, which no released sentence requires.
-//
-// TODO: serve `target` as the bare `UID_BASED_ID` the RM declares
-// (`item_tag.adoc`: `target: UID_BASED_ID`, "which may be a
-// `VERSIONED_OBJECT<T>` or a `VERSION<T>`") instead of the `OBJECT_REF`
-// envelope this family currently emits. The EHR-side tag family already serves
-// the RM shape; the RM is the RELEASED component and wins over the stalled OAS
-// `ItemTag`/`UObjectRefOfUidBasedId` schema the envelope follows. Until that
-// lands, the declarations below describe the envelope actually served.
+// `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`: `target:
+// UID_BASED_ID`, "which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") — a
+// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
+// VERSION target; the RELEASED RM wins over the stalled OAS
+// `ItemTag`/`UObjectRefOfUidBasedId` envelope. `owner_id` follows the five
+// released `ItemTagOf*` examples' unanimous `{namespace: local, type: SYSTEM}`
+// shape carrying the server's system identifier — no demographic RM class
+// declares a `tags` containment, so nothing released fixes the owner of an
+// EHR-less tag; the position is register-documented (AMB-137).
 
 /// List `ITEM_TAG`s across the whole Demographic space
 /// (`GET /demographic/tags`).
 ///
-/// "Retrieves the list of ITEM_TAG resources associated with any target VERSION
-/// or VERSIONED_PARTY within the Demographic space." (ITS-REST
+/// "Retrieves the list of `ITEM_TAG` resources associated with any target `VERSION`
+/// or `VERSIONED_PARTY` within the Demographic space." (ITS-REST
 /// `specifications/operations/demographic_tags_get.yaml`).
 ///
 /// The ONLY tag route on the whole surface with NO scoping parameter: its
@@ -6294,16 +6313,16 @@ pub(crate) async fn contribution_get(
                     "_type": "ITEM_TAG",
                     "key": "flag",
                     "value": "follow-up",
-                    "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                    "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                    "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                 },
                 {
                     "_type": "ITEM_TAG",
                     "key": "reviewed",
                     "value": "true",
                     "target_path": "/details/items[at0001]/value",
-                    "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31" } },
-                    "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31" } }
+                    "target": { "_type": "HIER_OBJECT_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31" },
+                    "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                 }
             ])))
         ),
@@ -6359,8 +6378,8 @@ pub(crate) async fn demographic_tags_get(
 /// Retrieve an `AGENT`'s `ITEM_TAG`s
 /// (`GET /demographic/agent/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// AGENT version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `AGENT` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/agent_tags_get.yaml`).
 ///
 /// The two `uid_based_id` forms address DISJOINT tag collections — see the
@@ -6469,16 +6488,16 @@ pub(crate) async fn demographic_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -6550,8 +6569,8 @@ pub(crate) async fn agent_tags_get(
 /// Replace an `AGENT`'s `ITEM_TAG`s
 /// (`PUT /demographic/agent/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// AGENT version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `AGENT` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/agent_tags_update.yaml`). It is a FULL COLLECTION
 /// REPLACE of the ADDRESSED collection — the container's or one version's,
 /// never both.
@@ -6751,16 +6770,16 @@ pub(crate) async fn agent_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -6879,11 +6898,11 @@ pub(crate) async fn agent_tags_update(
 /// Delete an `AGENT`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/agent/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target AGENT version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `AGENT` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/agent_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the (`key`,
 /// `target_path`) pair, the route carries no `target_path` selector, and the
 /// released text says "resource(s)" — so every tag under `key` on the addressed
 /// collection goes, however many paths they carry.
@@ -7016,8 +7035,8 @@ pub(crate) async fn agent_tags_delete(
 /// Retrieve a `GROUP`'s `ITEM_TAG`s
 /// (`GET /demographic/group/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// GROUP version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `GROUP` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/group_tags_get.yaml`).
 ///
 /// The two `uid_based_id` forms address DISJOINT tag collections — see the
@@ -7126,16 +7145,16 @@ pub(crate) async fn agent_tags_delete(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -7207,8 +7226,8 @@ pub(crate) async fn group_tags_get(
 /// Replace a `GROUP`'s `ITEM_TAG`s
 /// (`PUT /demographic/group/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// GROUP version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `GROUP` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/group_tags_update.yaml`). It is a FULL COLLECTION
 /// REPLACE of the ADDRESSED collection — the container's or one version's,
 /// never both.
@@ -7408,16 +7427,16 @@ pub(crate) async fn group_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -7535,11 +7554,11 @@ pub(crate) async fn group_tags_update(
 /// Delete a `GROUP`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/group/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target GROUP version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `GROUP` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/group_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the (`key`,
 /// `target_path`) pair, the route carries no `target_path` selector, and the
 /// released text says "resource(s)" — so every tag under `key` on the addressed
 /// collection goes, however many paths they carry.
@@ -7672,8 +7691,8 @@ pub(crate) async fn group_tags_delete(
 /// Retrieve an `ORGANISATION`'s `ITEM_TAG`s
 /// (`GET /demographic/organisation/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `ORGANISATION` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/organisation_tags_get.yaml`).
 ///
 /// The two `uid_based_id` forms address DISJOINT tag collections — see the
@@ -7782,16 +7801,16 @@ pub(crate) async fn group_tags_delete(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -7869,8 +7888,8 @@ pub(crate) async fn organisation_tags_get(
 /// Replace an `ORGANISATION`'s `ITEM_TAG`s
 /// (`PUT /demographic/organisation/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `ORGANISATION` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/organisation_tags_update.yaml`). It is
 /// a FULL COLLECTION REPLACE of the ADDRESSED collection — the container's or
 /// one version's, never both.
@@ -8070,16 +8089,16 @@ pub(crate) async fn organisation_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -8204,12 +8223,12 @@ pub(crate) async fn organisation_tags_update(
 /// Delete an `ORGANISATION`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/organisation/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target ORGANISATION version or VERSIONED_PARTY identified by
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `ORGANISATION` version or `VERSIONED_PARTY` identified by
 /// `uid_based_id`" (ITS-REST
 /// `specifications/operations/organisation_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the (`key`,
 /// `target_path`) pair, the route carries no `target_path` selector, and the
 /// released text says "resource(s)" — so every tag under `key` on the addressed
 /// collection goes, however many paths they carry.
@@ -8348,8 +8367,8 @@ pub(crate) async fn organisation_tags_delete(
 /// Retrieve a `PERSON`'s `ITEM_TAG`s
 /// (`GET /demographic/person/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// PERSON version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `PERSON` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/person_tags_get.yaml`).
 ///
 /// The two `uid_based_id` forms address DISJOINT tag collections — see the
@@ -8458,16 +8477,16 @@ pub(crate) async fn organisation_tags_delete(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -8539,8 +8558,8 @@ pub(crate) async fn person_tags_get(
 /// Replace a `PERSON`'s `ITEM_TAG`s
 /// (`PUT /demographic/person/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// PERSON version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `PERSON` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/person_tags_update.yaml`). It is a FULL
 /// COLLECTION REPLACE of the ADDRESSED collection — the container's or one
 /// version's, never both.
@@ -8740,16 +8759,16 @@ pub(crate) async fn person_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -8874,11 +8893,11 @@ pub(crate) async fn person_tags_update(
 /// Delete a `PERSON`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/person/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target PERSON version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `PERSON` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/person_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the (`key`,
 /// `target_path`) pair, the route carries no `target_path` selector, and the
 /// released text says "resource(s)" — so every tag under `key` on the addressed
 /// collection goes, however many paths they carry.
@@ -9017,8 +9036,8 @@ pub(crate) async fn person_tags_delete(
 /// Retrieve a `ROLE`'s `ITEM_TAG`s
 /// (`GET /demographic/role/{uid_based_id}/tags`).
 ///
-/// "Retrieves the list of all ITEM_TAG resources associated with a given target
-/// ROLE version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Retrieves the list of all `ITEM_TAG` resources associated with a given target
+/// `ROLE` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/role_tags_get.yaml`).
 ///
 /// The two `uid_based_id` forms address DISJOINT tag collections — see the
@@ -9127,16 +9146,16 @@ pub(crate) async fn person_tags_delete(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -9208,8 +9227,8 @@ pub(crate) async fn role_tags_get(
 /// Replace a `ROLE`'s `ITEM_TAG`s
 /// (`PUT /demographic/role/{uid_based_id}/tags`).
 ///
-/// "Updates the list of all ITEM_TAG resources associated with a given target
-/// ROLE version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// "Updates the list of all `ITEM_TAG` resources associated with a given target
+/// `ROLE` version or `VERSIONED_PARTY` identified by `uid_based_id`" (ITS-REST
 /// `specifications/operations/role_tags_update.yaml`). It is a FULL COLLECTION
 /// REPLACE of the ADDRESSED collection — the container's or one version's,
 /// never both.
@@ -9409,16 +9428,16 @@ pub(crate) async fn role_tags_get(
                         "_type": "ITEM_TAG",
                         "key": "flag",
                         "value": "follow-up",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     },
                     {
                         "_type": "ITEM_TAG",
                         "key": "reviewed",
                         "value": "true",
                         "target_path": "/details/items[at0001]/value",
-                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
-                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                        "target": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "local", "type": "SYSTEM", "id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" } }
                     }
                 ])
             ))
@@ -9536,11 +9555,11 @@ pub(crate) async fn role_tags_update(
 /// Delete a `ROLE`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/role/{uid_based_id}/tags/{key}`).
 ///
-/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
-/// given target ROLE version or VERSIONED_PARTY identified by `uid_based_id`"
+/// "Deletes the `ITEM_TAG` resource(s) identified by `tag_key`, associated with a
+/// given target `ROLE` version or `VERSIONED_PARTY` identified by `uid_based_id`"
 /// (ITS-REST `specifications/operations/role_tags_delete.yaml`).
 ///
-/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// A SET delete, not a single-resource delete: `ITEM_TAG` identity is the (`key`,
 /// `target_path`) pair, the route carries no `target_path` selector, and the
 /// released text says "resource(s)" — so every tag under `key` on the addressed
 /// collection goes, however many paths they carry.
