@@ -27,7 +27,7 @@ use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
 use openehr_its::rest::smart_scopes::{Compartment, Permission, ResourceFamily, SmartScope};
 
-/// Configuration the gate needs (a slice of [`super::config::SmartConfig`]).
+/// Configuration the gate needs (a slice of `ehrbase::config::smart::SmartConfig`).
 #[derive(Debug, Clone, Copy)]
 pub struct GateConfig {
     /// Fail-closed when the token carries no matching SMART resource scope for a
@@ -80,10 +80,11 @@ impl ScopeOutcome {
 /// §Resource Scopes: `template-…`, `composition-…`, `aql-…`).
 ///
 /// `None` for operation families the master08 grammar defines **no** resource
-/// scope for — EHR, `EHR_STATUS`, CONTRIBUTION, DIRECTORY. NOTE
-/// (`smart.md` §6): master08 lists only three resource types, so those
-/// operations are governed by the compartment binding + the existing RBAC/ABAC
-/// layers, not by a SMART resource scope; the SMART gate does not deny them.
+/// scope for — EHR, `EHR_STATUS`, CONTRIBUTION, DIRECTORY. NOTE: master08
+/// §Resource Scopes lists exactly three resource types, so those operations
+/// are governed by the compartment binding + the existing RBAC/ABAC layers,
+/// not by a SMART resource scope; the SMART gate does not deny them
+/// (register-documented — the out-of-noun silence).
 #[must_use]
 pub fn family_of_op(op: &str) -> Option<ResourceFamily> {
     if op.starts_with("composition_") || op.starts_with("versioned_composition_") {
@@ -243,7 +244,7 @@ pub fn launch_context_ehr_id(
 
 /// Whether the caller requested a `launch/patient` context (master07). Advisory:
 /// context *selection* is an Authorization-Server/Launcher duty (out of CDR
-/// scope, `smart.md` §1); the CDR only observes the marker.
+/// scope — master07 §SMART Authorization Flow); the CDR only observes the marker.
 #[must_use]
 pub fn requests_patient_context(scopes: &[SmartScope]) -> bool {
     use openehr_its::rest::smart_scopes::LaunchContext;

@@ -38,6 +38,14 @@ pub struct SmartConfig {
     #[serde(default)]
     pub platform_base_url: Option<String>,
 
+    /// The server's externally-reachable origin (scheme + host [+ port]), e.g.
+    /// `https://cdr.example.com`. master04 §Services makes every `services.*`
+    /// entry's `baseUrl` an **"Absolute URL to the root of the API (required)"**,
+    /// so the discovery document prefixes this origin onto the served base
+    /// paths. REQUIRED when SMART is enabled ([`Self::validate`]).
+    #[serde(default)]
+    pub public_base_url: Option<String>,
+
     /// The token claim carrying the resolved openEHR `EHR` id for the launch
     /// context (master07 §Context Selection token-response table: `ehrId`).
     /// Default `ehrId`.
@@ -65,7 +73,7 @@ pub struct SmartConfig {
     /// `context-openehr-episode` and accepts the `launch/episode` scope +
     /// `episodeId` claim, but applies **no** episode-scoped filtering (openEHR
     /// has no first-class Episode resource yet; master09 states the semantics
-    /// are "currently implementation-defined"). NOTE, `smart.md` §6.
+    /// are "currently implementation-defined").
     #[serde(default)]
     pub episode: EpisodeConfig,
 
@@ -143,6 +151,14 @@ pub struct SmartEndpoints {
     /// list reflecting the scopes the CDR actually enforces.
     #[serde(default)]
     pub scopes_supported: Vec<String>,
+    /// `capabilities` the operator additionally advertises (the HL7-defined base
+    /// capabilities — `launch-ehr`, `sso-openid-connect`, `client-public`, … —
+    /// live in the external SMART App Launch framework; master04 §Capabilities:
+    /// the openEHR list is "In addition to those scopes defined in the original
+    /// SMART App Launch framework"). Appended to the openEHR capabilities the
+    /// CDR derives itself; duplicates are dropped.
+    #[serde(default)]
+    pub capabilities: Vec<String>,
 }
 
 impl Default for SmartConfig {
@@ -150,6 +166,7 @@ impl Default for SmartConfig {
         Self {
             enabled: false,
             platform_base_url: None,
+            public_base_url: None,
             ehr_id_claim: default_ehr_id_claim(),
             patient_claim: default_patient_claim(),
             require_smart_scopes: false,
@@ -161,13 +178,21 @@ impl Default for SmartConfig {
 }
 
 impl SmartConfig {
-    /// Boot validation (master06 §Deprecated Flows): the CDR must never advertise
-    /// the Implicit or Resource-Owner-Password grants. Returns the offending
-    /// grant name.
+    /// Boot validation.
+    ///
+    /// - master06 §Deprecated Flows: the CDR must never advertise the Implicit
+    ///   or Resource-Owner-Password grants.
+    /// - When SMART is enabled: `public_base_url` is required (master04
+    ///   §Services — `baseUrl` is an "Absolute URL … (required)", buildable
+    ///   only from a known external origin), and the three core
+    ///   Authorization-Server endpoints must be present — `issuer`,
+    ///   `authorization_endpoint`, `token_endpoint` (master04 §Authentication
+    ///   Endpoints delegates their requiredness to OIDC Discovery / the HL7
+    ///   SMART metadata, both of which require them; an enabled Platform
+    ///   without them serves an unusable document).
     ///
     /// # Errors
-    /// A message naming a deprecated grant type present in
-    /// `endpoints.grant_types_supported`.
+    /// A message naming the offending grant type or the missing required field.
     pub fn validate(&self) -> Result<(), String> {
         for grant in &self.endpoints.grant_types_supported {
             let g = grant.to_ascii_lowercase();
@@ -176,6 +201,27 @@ impl SmartConfig {
                     "grant type '{grant}' is deprecated and MUST NOT be advertised \
                      (master06 §Deprecated Flows)"
                 ));
+            }
+        }
+        if self.enabled {
+            let origin = self.public_base_url.as_deref().unwrap_or("");
+            if !(origin.starts_with("http://") || origin.starts_with("https://")) {
+                return Err("smart.public_base_url (an absolute http(s) origin, e.g. \
+                     'https://cdr.example.com') is required when SMART is \
+                     enabled — master04 §Services makes every services.*.baseUrl \
+                     an absolute URL"
+                    .to_owned());
+            }
+            if self.endpoints.authorization_endpoint.is_none()
+                || self.endpoints.token_endpoint.is_none()
+            {
+                return Err(
+                    "smart.endpoints.authorization_endpoint and .token_endpoint \
+                     are required when SMART is enabled (master04 \
+                     §Authentication Endpoints via OIDC Discovery / HL7 SMART \
+                     metadata requiredness)"
+                        .to_owned(),
+                );
             }
         }
         Ok(())
@@ -219,6 +265,8 @@ mod tests {
         let c = SmartConfig::default();
         assert!(!c.enabled);
         assert!(c.platform_base_url.is_none());
+        assert!(c.public_base_url.is_none());
+        assert!(c.endpoints.capabilities.is_empty());
         assert_eq!(c.ehr_id_claim, "ehrId");
         assert_eq!(c.patient_claim, "patient");
         assert!(!c.require_smart_scopes);
@@ -237,6 +285,25 @@ mod tests {
         assert!(c.validate().is_err());
 
         c.endpoints.grant_types_supported = vec!["PASSWORD".to_owned()];
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn enabled_requires_origin_and_core_endpoints() {
+        let mut c = SmartConfig {
+            enabled: true,
+            ..SmartConfig::default()
+        };
+        // Missing everything → the origin requirement fires first.
+        assert!(c.validate().is_err());
+        c.public_base_url = Some("https://cdr.example.com".to_owned());
+        // Origin present but no AS endpoints → still an error.
+        assert!(c.validate().is_err());
+        c.endpoints.authorization_endpoint = Some("https://as.example/authorize".to_owned());
+        c.endpoints.token_endpoint = Some("https://as.example/token".to_owned());
+        assert!(c.validate().is_ok());
+        // A relative origin is not an absolute URL.
+        c.public_base_url = Some("/ehrbase".to_owned());
         assert!(c.validate().is_err());
     }
 }
