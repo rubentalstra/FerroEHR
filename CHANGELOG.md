@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Directory by-version reads verify the full addressed identity; the
+  directory DELETE 204 carries the deleted version's identity** (#456).
+  `GET …/directory/{version_uid}` now answers 404 when the addressed
+  `creating_system_id` does not match the stored identity (ITS-REST
+  overview *Resources* §Identifier types), and
+  `DELETE …/directory` answers 204 with the NEW `523|deleted|` version's
+  weak `ETag` + `Last-Modified` (previously header-less), matching the
+  composition DELETE.
+
 - **COMPOSITION update body-uid mismatch is 422, not 400** (#451). A PUT
   whose body `COMPOSITION.uid` names a different versioned object than the
   request path is now rejected 422 Unprocessable Entity — the body is

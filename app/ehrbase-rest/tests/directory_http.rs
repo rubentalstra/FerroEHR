@@ -1122,3 +1122,61 @@ async fn update_with_a_fetched_body_round_trips() {
     let v2 = etag_uid(&h);
     assert!(v2.ends_with("::2"), "trunk v2, got {v2}");
 }
+
+/// The directory DELETE 204 carries the NEW `523|deleted|` version's weak
+/// `ETag` + `Last-Modified` (overview §"`ETag` and Last-Modified": both
+/// SHOULD accompany versioned resources; RM common master06 §Logical
+/// Deletion: the delete commits a new version).
+#[tokio::test]
+async fn delete_204_carries_the_deleted_versions_identity() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let (status, h, _b) = create_directory(&app, &ehr, &folder_json("root", vec![]), None).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let v1 = etag_uid(&h);
+
+    let (status, h, _b) = delete_directory(&app, &ehr, Some(&quoted(&v1))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let deleted_uid = etag_uid(&h);
+    assert_ne!(deleted_uid, v1, "the 204 names the NEW deleted version");
+    assert!(
+        deleted_uid.ends_with("::2"),
+        "the delete committed the next trunk version: {deleted_uid}"
+    );
+    assert!(
+        header_str(&h, http::header::LAST_MODIFIED).is_some(),
+        "Last-Modified accompanies the deleted version's identity"
+    );
+}
+
+/// The by-version read verifies the FULL addressed identity: a fabricated
+/// `creating_system_id` names no VERSION in this repository → 404
+/// (Resources.md §Identifier types; BASE master05 case rule) — while the
+/// stored identity still serves 200.
+#[tokio::test]
+async fn by_version_read_rejects_fabricated_creating_system_id() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let (status, h, _b) = create_directory(&app, &ehr, &folder_json("root", vec![]), None).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let v1 = etag_uid(&h);
+
+    let (status, _h, _b) = send(&app, get(format!("{BASE}/ehr/{ehr}/directory/{v1}"), None)).await;
+    assert_eq!(status, StatusCode::OK, "the stored identity serves");
+
+    let (vo, tree) = (
+        v1.split("::").next().unwrap(),
+        v1.rsplit("::").next().unwrap(),
+    );
+    let fabricated = format!("{vo}::not.this.system::{tree}");
+    let (status, _h, _b) = send(
+        &app,
+        get(format!("{BASE}/ehr/{ehr}/directory/{fabricated}"), None),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "a fabricated creating_system_id names no VERSION"
+    );
+}
