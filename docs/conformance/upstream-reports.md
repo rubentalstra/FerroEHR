@@ -891,10 +891,20 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 
 ### UPR-55 — wrong-kind uid on a typed tag route is unassigned
 
-- **Component:** ITS-REST (the typed tag routes' 404 file)
-- **Register:** AMB-91 (fixed_handling)
+- **Component:** ITS-REST (the 404 files of all seven typed tag families —
+  `404_unknown_ehr_id_or_uid_based_id{,_or_key}.yaml` on the EHR side,
+  `404_unknown_uid_based_id{,_or_key}.yaml` on the demographic side)
+- **Register:** AMB-91 (fixed_handling, widened 2026-07-27)
+- **Facts:** the released surface has seven typed tag families, not two — the
+  EHR-side composition/ehr_status pair plus the five demographic party routes
+  (byte-identical modulo the type name). The only released 404 text is "when
+  the `uid_based_id` does not exist", so neither the within-space mismatch (a
+  PERSON's uid on `/demographic/organisation/{uid_based_id}/tags`) nor the
+  cross-space one (a COMPOSITION uid on a party tag route, or the reverse) is
+  assigned an outcome.
 - **Ask:** state whether a kind mismatch is the "does not exist" 404 (our
-  reading) or a 400.
+  reading, applied on GET/PUT/DELETE across all seven families and in both
+  directions) or a 400.
 
 ### UPR-56 — return=identifier on a tag PUT cannot satisfy the identifier contract
 
@@ -905,16 +915,32 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 
 ### UPR-57 — RM-invariant violations on the tag PUT have no status
 
-- **Components:** RM (item_tag invariants), ITS-REST (tag update responses)
-- **Register:** AMB-93 (fixed_handling)
-- **Ask:** assign 422 (our handling) or 400 explicitly.
+- **Components:** RM (item_tag invariants), ITS-REST (the seven tag update
+  responses + the five party updates that DO declare 422)
+- **Register:** AMB-93 (fixed_handling, widened 2026-07-27)
+- **Facts:** all seven tag PUTs carry the identical 200/204/400/404 set and
+  none declares 422, although an invariant-violating body is well-formed JSON
+  satisfying the schema — the case the overview's own 422 row describes. The
+  party PUTs sharpen it: their `<t>_update.yaml` siblings on the same resource
+  DO declare 422, so one service answers semantic invalidity two ways
+  depending on whether the body is a PARTY or its tags.
+- **Ask:** assign 422 (our handling, on all seven) or 400 explicitly.
 
-### UPR-58 — the ehr_tags_get filter grammar is undefined
+### UPR-58 — the tag-list filter grammar is undefined
 
-- **Component:** ITS-REST (ehr_tags_get + the three query params)
-- **Register:** AMB-94 (fixed_handling)
+- **Component:** ITS-REST (`ehr_tags_get` and `demographic_tags_get` + the
+  three shared query params)
+- **Register:** AMB-94 (fixed_handling, widened 2026-07-27)
+- **Facts:** both released list routes reference the SAME three parameter
+  files and repeat the same "filtered by the given one or more" sentence
+  verbatim, while the three schemas are scalar strings with no `description`
+  field at all — so the mismatch, the combination rule, the match mode and
+  the absent-path case are unstated identically on both.
 - **Ask:** define repeatability, combination, match mode, and
   absent-path matching; reconcile "one or more" with the scalar schemas.
+  (Ours: scalar, AND-combined, exact, case-sensitive, one rule for both
+  routes. The demographic route's unbounded SCOPE is reported separately —
+  UPR-102.)
 
 ### UPR-59 — duplicate identity pairs in one tag PUT body
 
@@ -924,24 +950,52 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 
 ### UPR-60 — empty-string vs absent target_path splits the tag identity
 
-- **Components:** RM (item_tag target_path 0..1), ITS-REST (the "" example)
-- **Register:** AMB-96 (fixed_handling)
-- **Ask:** pick one representation (ours: "" normalizes to absent).
+- **Components:** RM (item_tag target_path 0..1), ITS-REST (six of the seven
+  `ItemTagOf<T>` examples)
+- **Register:** AMB-96 (fixed_handling, widened 2026-07-27)
+- **Facts:** `target_path: ""` is the released MAJORITY, not a stray: the
+  EHR_STATUS example and all five demographic examples (Person, Agent, Group,
+  Organisation, Role) carry it, and only the COMPOSITION example uses a real
+  path. No released example omits the attribute — so an example-following
+  client emits `""` for an unpathed tag as a matter of course, while the RM
+  types the attribute 0..1 with no non-empty invariant, making `""` and
+  absent two distinct identities under the (key, target_path) rule.
+- **Ask:** pick one representation (ours: "" normalizes to absent, on both
+  families — the only reading under which such a client's tags stay
+  addressable by the DELETE-by-key route).
 
 ### UPR-61 — the ITEM_TAG editorial defect bundle
 
 - **Components:** RM (item_tag, is_justified), BASE (String), ITS-REST, ITS-XML
-- **Register:** AMB-97 (editorial)
+- **Register:** AMB-97 (editorial, widened 2026-07-27)
 - **Facts/Asks:** define `is_justified` (or restate the invariant on the
-  prose rule); fix the "(logically) deleted" wording; add an EHR-wide
-  ItemTagList schema; fix the copy-pasted _updated descriptions; either
+  prose rule); fix the "(logically) deleted" wording; give BOTH space-wide
+  lists a spanning schema — the EHR-wide list declares the
+  COMPOSITION-specific one and `/demographic/tags` declares
+  `200_PERSON_ItemTagList_retrieved` for a response spanning all five party
+  kinds, so a conformant ROLE tag contradicts the declared schema; drop the
+  "associated with any target within given EHR" sentence from
+  `demographic_tags_get`, the one tag route with no EHR (a copy-paste from
+  `ehr_tags_get`); settle the container-form wording inside the party tag
+  family, whose get/delete say the HIER_OBJECT_ID is "taken from
+  `VERSIONED_PARTY.uid.value`" while the update in the same family says
+  "`VERSIONED_OBJECT.uid.value`" for the resource its next sentence calls
+  "the target VERSIONED_PARTY container"; fix the copy-pasted `_updated`
+  descriptions (all seven are byte-identical to their `_retrieved`
+  sibling — "successfully retrieved" on a PUT); either
   add a canonical-XML ITEM_TAG type or drop XML from the tag enums; fix
   the HIER_OBJECT_ID-with-type-COMPOSITION example and add a
   VERSION-targeted example; align the DELETE descriptions' "tag_key" with
   the {key} parameter; give FOLDER tags a route (or scope the overview);
-  define {key} encoding, list ordering/paging, and the
+  define {key} encoding, list ordering/paging across all nine GETs, and the
   optional-feature refusal branch; state tag lifecycle vs target
   lifecycle; note the development-RM provenance of the whole class.
+  Not a spec defect, noted for the same reader: the five party
+  `<t>_update.yaml` omit the `openehr-item-tag` request parameter while
+  their own prose says "a `openehr-item-tag` or `openehr-version-item-tag`
+  request header can be set" (their `<t>_create.yaml` siblings declare
+  both) — an API-definition omission against released prose, which the
+  prose wins; we accept both headers there.
 
 ### UPR-62 — REST paging vs AQL LIMIT/OFFSET is unlegislated
 
@@ -1531,3 +1585,54 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   uses for the stored-query read; the container get and `revision_history` stay
   a cited honest boundary; the existence probes are bound to the 200/404 of
   their corresponding reads.)
+
+### UPR-101 — a demographic tag's mandatory `owner_id` has no owner to name
+
+- **Components:** RM common (`UML/classes/org.openehr.rm.common.item_tag.adoc`, `master07-tags.adoc`), RM ehr (`UML/classes/org.openehr.rm.ehr.ehr.adoc` §Attributes), RM demographic (`docs/demographic/master02-demographic_package.adoc` + every `org.openehr.rm.demographic.*` class), ITS-REST (`schemas/demographic/ItemTagOf*.yaml`, `schemas/ehr/ItemTagOf*.yaml`)
+- **Register:** AMB-137 (fixed_handling)
+- **Facts:** `ITEM_TAG.owner_id` is mandatory (1..1 `OBJECT_REF`) and its whole
+  definition is the gloss "Identifier of owner object, such as EHR" — an
+  example, not a rule. On the EHR side the RM supplies the missing rule
+  itself: `EHR.tags` declares the containment and confines the reach ("Tag
+  `_target_` values can only be within the same EHR"), and both EHR-side
+  examples set `owner_id.type: EHR`. The demographic side has no analogue at
+  all — no class in the RM demographic package declares a `tags` containment
+  (the chapter and all thirteen class files mention no tag attribute; the only
+  "tag" hits are the substrings in "stage names"/"stagename") — so a mandatory
+  attribute is left with no derivable value on five released route families.
+  The single released signal is the five demographic `ItemTagOf<T>` examples,
+  unanimous on `owner_id: {namespace: local, type: SYSTEM}` — neither the
+  party nor an EHR nor any resource the demographic API addresses.
+- **Ask:** state who owns a tag that lives outside an EHR — either declare a
+  demographic `tags` containment (the `EHR.tags` analogue) or say in
+  `item_tag.adoc` what `owner_id` names when there is no owning aggregate.
+  (Ours: exactly the released examples' shape — an `OBJECT_REF` with
+  `namespace: local`, `type: SYSTEM`, whose `id` carries the server's system
+  identifier; naming the tagged party would duplicate `target` and contradict
+  "owner", and naming an EHR would invent a containment the RM does not have.)
+
+### UPR-102 — the space-wide demographic tag list has no scope, no page and no bound
+
+- **Components:** ITS-REST (`operations/demographic_tags_get.yaml`, `operations/ehr_tags_get.yaml`, the five party tag gets, `docs/overview/Requests_and_responses.md` §"Authentication and authorization" + §"HTTP status codes")
+- **Register:** AMB-138 (fixed_handling)
+- **Facts:** `GET /demographic/tags` is the only tag route in the released
+  surface with no scoping parameter of any kind. Its EHR twin is bounded by
+  construction (`ehr_id` in the path, plus a 404 for an unknown one), and each
+  typed party route is bounded by one `uid_based_id`; this one takes no path
+  parameter, requires no filter ("In case no such parameter is provided then
+  all ITEM_TAG resources will be retrieved"), declares no paging parameter and
+  carries only a 200/400 response set. The released reading of an unfiltered
+  call is therefore every ITEM_TAG on every party in the whole demographic
+  space, with no maximum, no page, no continuation and no ordering — and no
+  access-scope rule to fall back on, since the only released text on
+  authorization is scheme-agnostic and resource-neutral, fixing which status
+  codes an authorizing service returns without assigning scope to any
+  resource.
+- **Ask:** bound the space-wide read — a required filter, a paging pair, or an
+  explicit statement that the whole space is the intended answer. (Ours: served
+  whole, one unpaged list of what the caller is entitled to see, under the
+  deployment's authorization layer, which is where the released text puts
+  access control; the operation's only client-error branch is 400, so refusing
+  an unfiltered call would refuse a request the text calls valid, and a
+  silently truncated list would be a wrong answer rather than a loud one. What
+  a supplied filter MEANS is UPR-58; this report is about the missing scope.)
