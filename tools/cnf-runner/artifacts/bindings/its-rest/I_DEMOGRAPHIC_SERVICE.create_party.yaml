@@ -28,6 +28,18 @@ outcomes:
   validation_failed:
     status: 422                           # 422.yaml — content_invalid / definition_unknown
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
+  unsupported_media:
+    # A request payload declared in one of the two Simplified Formats MIME
+    # types. DOCS TEXT (overview Resources.md §Simplified Formats): "If the
+    # service cannot process the request payload as the simplified format is
+    # not supported, it MUST respond with HTTP status code `415 Unsupported
+    # Media Type`." A party HAS no simplified representation — the format is
+    # template-derived and its RM mapping is COMPOSITION-rooted, and the party
+    # commits declare no `openehr-template-id` channel — so this service cannot
+    # process such a payload at all. Register AMB-128 carries the adjudication;
+    # the read-side twin (a Simplified-only `Accept` -> 406) is the
+    # `not_acceptable` outcome of the I_PARTY.get_party binding.
+    status: 415
 captures:
   version_uid:
     from: header ETag
