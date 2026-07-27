@@ -1,0 +1,51 @@
+# Wire realization of I_QUERY_SERVICE.execute_ad_hoc_query, variant
+# `post_fetch_url`: the POST form with the paging parameter available in the
+# URL as well as the body — the duality register AMB-99 adjudicates.
+#
+# Ground (ITS-REST DOCS TEXT, the released oracle), quoted:
+#
+# - the URL forms applying to POST — docs/query/Request.md §"Common Headers and
+#   Query Parameters" opens "All query execution requests SHOULD support at
+#   least the following parameters" and lists `ehr_id`, `offset`, `fetch`,
+#   `query_parameters`. The sentence says ALL query execution requests and
+#   draws no GET/POST distinction, so the URL forms are not a GET-only surface.
+# - the body form — §"GET vs POST" ("a mostly self-documented AQL query in a
+#   request body"), with register AMB-99 recording first-hand that the query
+#   POSTs carry `offset`/`fetch`/`query_parameters` in the body.
+# - the both-places case — no released sentence assigns precedence when a value
+#   is carried in the URL and the body at once; register AMB-99's fixed handling
+#   accepts AGREEING values (a disagreement is a rejection the closed outcome
+#   taxonomy cannot yet name — recorded in vocab/wire_surface.yaml). The
+#   binding places the SAME `${fetch}` in both slots, so a case that binds it
+#   exercises the agreeing form by construction, while a case that binds only
+#   `url_fetch` exercises the URL-only form.
+# - `200` — docs/overview/Requests_and_responses.md §"HTTP status codes", row
+#   `200 OK`.
+# - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
+#   "Related response headers: `ETag` - A unique identifier of the resultSet";
+#   its FORM by docs/overview/Requests_and_responses.md §"Deprecated headers":
+#   "all `ETag` headers that hold a resource identifier MUST include a weakness
+#   indicator `W/`".
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+its: its-rest
+variant: post_fetch_url
+request:
+  method: POST
+  path: /query/aql
+  query:
+    ehr_id: "${ehr_id?}"                     # Request.md §About the ehr_id parameter (URL form, available on POST)
+    fetch: "${url_fetch?}"                   # Request.md §Common Headers and Query Parameters (the URL paging form)
+  body:
+    q: "${q}"                                # Request.md §GET vs POST (the body-borne query)
+    query_parameters: "${query_parameters?}" # Request.md §Query parameters
+    offset: "${offset?}"                     # Request.md §Common Headers and Query Parameters
+    fetch: "${fetch?}"                       # the body paging form; bound only by the both-places case
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                              # Requests_and_responses.md §HTTP status codes, row 200
+    headers: { ETag: 'pattern:W/"[^"]+"' }   # Request.md §Common Headers and Query Parameters + overview §Deprecated headers
+    body: result_set_body

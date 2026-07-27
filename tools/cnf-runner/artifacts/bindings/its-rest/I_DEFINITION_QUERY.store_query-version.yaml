@@ -1,0 +1,33 @@
+# Wire realization of I_DEFINITION_QUERY.store_query, variant `version`: the
+# stored-query PUT that names the VERSION the definition is registered under.
+#
+# Ground (ITS-REST DOCS TEXT, the released oracle):
+#
+# - the version coordinate itself — docs/query/Qualified_query_name.md: "Stored
+#   queries are identified by their name, used as `qualified_query_name`, and an
+#   optional `version` number", and "The `version` identifier is in the format
+#   specified by SEMVER style (i.e. `major.minor.patch`)". A stored query
+#   therefore has a version-addressed identity, and the store route carries it
+#   as the trailing path segment alongside the name.
+# - `200` on a successful store — docs/overview/Requests_and_responses.md §"HTTP
+#   status codes", row `200 OK`: "The request succeeded, payload sent in a 200
+#   response depends on the request method". The stored-query PUT is the
+#   `stored` outcome kind (wire 200, not 201), exactly as on the variant-less
+#   binding.
+#
+# Identical to the variant-less store binding except for the version segment, so
+# a red row localizes to the version-addressed store alone. Only the branches a
+# case exercises are declared (the same discipline the other variant bindings
+# follow).
+sm_operation: I_DEFINITION_QUERY.store_query
+its: its-rest
+variant: version
+request:
+  method: PUT
+  path: /definition/query/{qualified_query_name}/{version}   # Qualified_query_name.md (name + version identity)
+  body: aql_text
+  headers:
+    Content-Type: text/plain                  # the AQL body is query text, not a resource
+    Accept: application/json
+outcomes:
+  stored: { status: 200 }                     # Requests_and_responses.md §HTTP status codes, row 200
