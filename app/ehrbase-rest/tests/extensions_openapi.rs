@@ -47,6 +47,24 @@ const HTTP_METHODS: &[&str] = &[
     "get", "put", "post", "delete", "patch", "head", "options", "trace",
 ];
 
+/// The spec-selector family slugs offered by `FAMILIES` in
+/// `extensions::openapi` (private there; the selector URLs are the stable
+/// public contract).
+const FAMILY_SLUGS: &[&str] = &[
+    "ehr",
+    "query",
+    "definition",
+    "demographic",
+    "admin",
+    "management",
+    "terminology",
+    "relationships",
+    "events",
+    "tenancy",
+    "fhir",
+    "smart",
+];
+
 // ── Test 1: the document is non-empty and covers the extension surface ────────
 
 #[test]
@@ -88,6 +106,70 @@ fn extensions_doc_is_non_empty() {
         assert!(
             paths.contains_key(expected),
             "extension document is missing the path {expected}"
+        );
+    }
+}
+
+// ── Test 1b: a non-default base path moves every documented path ──────────────
+
+/// The served document must describe the paths THIS deployment serves. A
+/// `#[utoipa::path]` literal can only spell the default deployment, so the
+/// endpoints that hang off the REST root rather than the API base path —
+/// `/status`, the three OAS meta-endpoint paths, the SMART discovery document —
+/// and the System `OPTIONS` manifest at the base-path root are all re-homed
+/// from the same configuration the live router mounts from. A non-default
+/// `server.base_path` therefore moves the document with the routes.
+#[test]
+fn a_non_default_base_path_moves_the_documented_paths() {
+    const BASE: &str = "/gateway/v1/openehr/v1";
+    const ROOT: &str = "/gateway/v1";
+
+    let mut cfg = app_config();
+    cfg.server.base_path = BASE.to_owned();
+    let doc = serde_json::to_value(extensions_document(&cfg)).expect("serialise doc");
+    let paths = doc["paths"].as_object().expect("paths object");
+
+    for expected in [
+        // The endpoints whose declaration literal is the default spelling.
+        format!("{ROOT}/status"),
+        format!("{ROOT}/api-docs/openapi.json"),
+        format!("{ROOT}/api-docs/ehrbase-{{family}}.openapi.json"),
+        format!("{ROOT}/swagger-ui"),
+        format!("{ROOT}/.well-known/smart-configuration"),
+        // The System Options manifest sits at the API base-path root itself.
+        BASE.to_owned(),
+        // …and the nested API groups follow the base path as they always did.
+        format!("{BASE}/ehr"),
+        format!("{BASE}/terminology"),
+    ] {
+        assert!(
+            paths.contains_key(&expected),
+            "a non-default base path must move the documented path to {expected}; \
+             document has: {:?}",
+            paths.keys().collect::<Vec<_>>()
+        );
+    }
+
+    // …and nothing may still be documented at the DEFAULT deployment paths.
+    for stale in [
+        "/ehrbase/rest/status",
+        "/ehrbase/rest/api-docs/openapi.json",
+        "/ehrbase/rest/api-docs/ehrbase-{family}.openapi.json",
+        "/ehrbase/rest/swagger-ui",
+        "/ehrbase/rest/.well-known/smart-configuration",
+        "/ehrbase/rest/openehr/v1",
+    ] {
+        assert!(
+            !paths.contains_key(stale),
+            "{stale} is the DEFAULT spelling and must not survive a non-default base path"
+        );
+    }
+
+    // The process-root health family is base-path-independent by design.
+    for always in ["/health", "/health/liveness", "/health/readiness"] {
+        assert!(
+            paths.contains_key(always),
+            "the health family is mounted at the process root and must not move"
         );
     }
 }
@@ -153,22 +235,7 @@ async fn every_documented_path_routes() {
 #[tokio::test]
 async fn every_family_document_is_non_empty() {
     let app = full_app().await;
-    // The family slugs offered by `FAMILIES` in `extensions::openapi` (private
-    // there; the selector URLs are the stable public contract).
-    for slug in [
-        "ehr",
-        "query",
-        "definition",
-        "demographic",
-        "admin",
-        "management",
-        "terminology",
-        "relationships",
-        "events",
-        "tenancy",
-        "fhir",
-        "smart",
-    ] {
+    for slug in FAMILY_SLUGS {
         let uri = format!("/ehrbase/rest/api-docs/ehrbase-{slug}.openapi.json");
         let resp = app
             .clone()
@@ -188,6 +255,62 @@ async fn every_family_document_is_non_empty() {
             "family {slug} document has no paths (its selector criterion matched nothing)"
         );
     }
+}
+
+// ── Test 3b: the family documents COVER the complete document ─────────────────
+
+/// The spec selector must be able to reach every operation the server serves:
+/// each operation of the complete composed document appears in at least one
+/// family document. A tag or path root that belongs to no family is a hole —
+/// the operation would be visible only in the complete document, which is not
+/// what a reader browsing the selector sees.
+#[tokio::test]
+async fn every_operation_appears_in_a_family_document() {
+    let app = full_app().await;
+
+    let mut covered: std::collections::BTreeSet<(String, String)> =
+        std::collections::BTreeSet::new();
+    for slug in FAMILY_SLUGS {
+        let uri = format!("/ehrbase/rest/api-docs/ehrbase-{slug}.openapi.json");
+        let resp = app
+            .clone()
+            .oneshot(get(&uri))
+            .await
+            .expect("family response");
+        assert_eq!(resp.status(), StatusCode::OK, "family {slug} must serve");
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let v: Value = serde_json::from_slice(&bytes).expect("family json");
+        for (path, method) in document_operations(&v) {
+            covered.insert((path, method));
+        }
+    }
+
+    let full = serde_json::to_value(extensions_document(&app_config())).expect("serialise doc");
+    let missing: Vec<String> = document_operations(&full)
+        .into_iter()
+        .filter(|op| !covered.contains(op))
+        .map(|(path, method)| format!("{} {path}", method.to_uppercase()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "these served operations belong to no spec-selector family document:\n{}",
+        missing.join("\n")
+    );
+}
+
+/// Every `(path, method)` pair of an `OpenAPI` document value.
+fn document_operations(doc: &Value) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    if let Some(paths) = doc["paths"].as_object() {
+        for (path, item) in paths {
+            if let Some(item) = item.as_object() {
+                for method in item.keys().filter(|k| is_method(k)) {
+                    out.push((path.clone(), method.clone()));
+                }
+            }
+        }
+    }
+    out
 }
 
 // ── Test 4: the once-built served document equals a fresh extensions_document ─
@@ -223,9 +346,10 @@ fn is_method(key: &str) -> bool {
 }
 
 /// Substitute `{param}` template segments with a value that routes: the real
-/// metric name for `{name}` (so `/management/metrics/{name}` resolves), any
-/// non-empty token otherwise (malformed uuids yield `400`, never a routing
-/// `404`).
+/// metric name for `{name}` (so `/management/metrics/{name}` resolves), a real
+/// family slug for `{family}` (the per-family OAS documents are twelve static
+/// routes, so only a known slug resolves), any non-empty token otherwise
+/// (malformed uuids yield `400`, never a routing `404`).
 fn concretize(template: &str, metric_name: &str) -> String {
     let mut out = String::with_capacity(template.len());
     let mut rest = template;
@@ -233,7 +357,11 @@ fn concretize(template: &str, metric_name: &str) -> String {
         out.push_str(&rest[..open]);
         let close = rest[open..].find('}').expect("closing brace") + open;
         let param = &rest[open + 1..close];
-        out.push_str(if param == "name" { metric_name } else { "x" });
+        out.push_str(match param {
+            "name" => metric_name,
+            "family" => FAMILY_SLUGS[0],
+            _ => "x",
+        });
         rest = &rest[close + 1..];
     }
     out.push_str(rest);

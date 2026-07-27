@@ -15,10 +15,9 @@ urlencoding.workspace = true
 openehr-base = { path = "../../crates/openehr-base" }
 openehr-rm = { path = "../../crates/openehr-rm" }
 openehr-its = { path = "../../crates/openehr-its" }
-# The SM Platform Service Model native API (ADR-010): the service traits +
-# response/query types this crate dispatches to (moved here at SM-1). The audit
-# tower layer emits through the platform's SM `SystemLog` component; the ATNA
-# event model + `EmitOutcome` come from here (ADR-011, ehrbase-audit dissolved).
+# The platform library: the SM-shaped service this crate dispatches to, plus its
+# response/query types. The audit tower layer emits through the platform's SM
+# `SystemLog` component; the ATNA event model + `EmitOutcome` come from here.
 ehrbase = { path = "../ehrbase" }
 
 # Web framework & HTTP core.
@@ -64,17 +63,19 @@ openidconnect = { workspace = true }
 moka = { workspace = true }
 sha2 = { workspace = true }
 
-# Authorization (RBAC + ABAC), folded in from the former ehrbase-authz crate
-# (ADR-011): the embedded Cedar policy engine, the v1-compatible remote-PDP
+# Authorization (RBAC + ABAC), folded in from the former ehrbase-authz crate:
+# the embedded Cedar policy engine, the v1-compatible remote-PDP
 # HTTP client, and the hot-reload policy swap. (`serde`/`serde_json`/
 # `thiserror`/`tracing`/`metrics`/`async-trait`/`tokio` are already deps above.)
 cedar-policy = { workspace = true }
 reqwest = { workspace = true }
 arc-swap = { workspace = true }
 
-# OpenAPI / Swagger UI (a drift-check against the vendored OAS, not the source).
-# utoipa-axum single-sources each extension operation's route + OpenAPI path
-# metadata (OpenApiRouter + routes!()); utoipa-swagger-ui serves the UI shell.
+# OpenAPI / Swagger UI. This server serves ONLY the document it generates from
+# its own handlers; the vendored ITS-REST OAS is `emit-rest` codegen input and
+# is never imported or served here. utoipa-axum single-sources each operation's
+# route + OpenAPI path metadata (OpenApiRouter + routes!()); utoipa-swagger-ui
+# serves the UI shell.
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }

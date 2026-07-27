@@ -396,13 +396,11 @@ pub(crate) fn openapi(cfg: &AppConfig, rest_root: &str) -> utoipa::openapi::Open
     let mut doc = OpenApiRouter::<AppState>::new()
         .routes(routes!(smart_configuration))
         .into_openapi();
-    let live = discovery_path(&cfg.smart, rest_root);
-    let declared = "/ehrbase/rest/.well-known/smart-configuration";
-    if live != declared
-        && let Some(item) = doc.paths.paths.remove(declared)
-    {
-        doc.paths.paths.insert(live, item);
-    }
+    crate::extensions::openapi::rehome_path(
+        &mut doc,
+        "/ehrbase/rest/.well-known/smart-configuration",
+        &discovery_path(&cfg.smart, rest_root),
+    );
     doc
 }
 

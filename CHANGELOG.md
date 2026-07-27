@@ -44,6 +44,25 @@ workflow refuses a tag that has no matching section here.
   vendor-only `DV_QUANTITY` suffixes; that feature was removed long ago.
   There is one behaviour — the one the specification prescribes.
 
+- **The published API reference is now honest about the non-openEHR surface,
+  and follows a non-default base path** (#526). Every operation this server
+  serves outside the standardised openEHR ITS-REST resource set — the
+  management, terminology, event-subscription, multi-tenancy and FHIR R4
+  groups, plus the IHE ITI-81 audit retrieval — now states in its own
+  published description that no openEHR specification governs it (the flag
+  previously lived only in source-module comments the document never
+  carried), and each disabled-group `404` now says that an unauthenticated
+  caller is answered `401` first, which is what the server actually does. The
+  `/status`, `openapi.json`, Swagger-UI and System-`OPTIONS` declarations now
+  follow a configured `server.base_path` instead of always printing the
+  default deployment's paths. The twelve per-family
+  `ehrbase-{family}.openapi.json` documents are documented, the ITI-81 and
+  admin-extension operations now appear in a family document (previously in
+  none), and the document itself declares a `servers` block, a link to the
+  implemented ITS-REST release, descriptions for every tag it uses, and the
+  implemented ITS-REST contract version as `x-openehr-its-rest` (distinct
+  from `info.version`, which is the product version).
+
 - **SMART App Launch conformance** (#519). The discovery document's
   `services.*.baseUrl` values are now absolute URLs built from the new
   required `smart.public_base_url` origin (the specification requires

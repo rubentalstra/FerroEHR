@@ -20,14 +20,17 @@
 //! bundle provider's convention), which the adapter maps to HTTP `404`.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
+use argon2::Argon2;
+use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
+use base64::Engine;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase::config::server::ServerConfig;
 use ehrbase_rest::config::AppConfig;
 
@@ -94,6 +97,91 @@ async fn disabled_terminology_is_404() {
     let (_pg, app) = app(false).await;
     let (status, _) = send(app, get(format!("{BASE}/terminology"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+/// With authentication ENABLED, an unauthenticated caller hitting a **disabled**
+/// in-API extension group is answered `401`, not the `404` the group's own gate
+/// would produce: the group gate is in-handler, and the authentication layer
+/// wraps the whole API subtree, so authn runs first. That ordering is the
+/// ITS-REST discipline — an unauthenticated request is `401`
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/
+/// Requests_and_responses.md` §Authentication and authorization) — and it also
+/// keeps the group's enabled/disabled state from leaking to an anonymous
+/// prober. The served declarations document exactly this (each disabled-group
+/// `404` says a `401` comes first); this test pins the wire so document and
+/// behaviour cannot drift apart.
+#[tokio::test]
+async fn disabled_group_answers_401_before_404_when_unauthenticated() {
+    let mut cfg = config(false);
+    cfg.auth = AuthConfig {
+        enabled: true,
+        basic: Some(BasicConfig {
+            users: vec![BasicUser {
+                username: "alice".to_owned(),
+                password_hash: ehrbase::config::secret::Secret::new(argon2_hash("pw")),
+                roles: vec!["USER".to_owned()],
+            }],
+        }),
+        oidc: None,
+        admin_scope: None,
+        ..AuthConfig::default()
+    };
+    let (_pg, service) = common::test_service().await;
+    let app = ehrbase_rest::build_with(cfg, service).expect("router builds");
+
+    let (status, _) = send(app, get(format!("{BASE}/terminology"))).await;
+    assert_eq!(
+        status,
+        StatusCode::UNAUTHORIZED,
+        "authentication runs before the in-handler group gate, so an \
+         unauthenticated request to a disabled group is 401, never 404"
+    );
+}
+
+/// An AUTHENTICATED caller gets the group gate's own `404` — the disabled-group
+/// outcome the declarations document, once authentication is satisfied.
+#[tokio::test]
+async fn disabled_group_answers_404_when_authenticated() {
+    let mut cfg = config(false);
+    cfg.auth = AuthConfig {
+        enabled: true,
+        basic: Some(BasicConfig {
+            users: vec![BasicUser {
+                username: "alice".to_owned(),
+                password_hash: ehrbase::config::secret::Secret::new(argon2_hash("pw")),
+                roles: vec!["USER".to_owned()],
+            }],
+        }),
+        oidc: None,
+        admin_scope: None,
+        ..AuthConfig::default()
+    };
+    let (_pg, service) = common::test_service().await;
+    let app = ehrbase_rest::build_with(cfg, service).expect("router builds");
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/terminology"))
+        .header(
+            http::header::AUTHORIZATION,
+            format!(
+                "Basic {}",
+                base64::engine::general_purpose::STANDARD.encode("alice:pw")
+            ),
+        )
+        .body(Body::empty())
+        .unwrap();
+    let (status, _) = send(app, req).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+/// Argon2 hash of a test password (the Basic-auth user store stores hashes).
+fn argon2_hash(pw: &str) -> String {
+    let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").unwrap();
+    Argon2::default()
+        .hash_password(pw.as_bytes(), &salt)
+        .unwrap()
+        .to_string()
 }
 
 #[tokio::test]

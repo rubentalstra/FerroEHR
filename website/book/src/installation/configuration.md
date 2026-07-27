@@ -114,7 +114,7 @@ system_id = "ehrbase-rs.local"
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `bind` | string | `0.0.0.0:8080` | Socket address the API listener binds. |
-| `base_path` | string | `/ehrbase/rest/openehr/v1` | ITS-REST base path all API routes hang off. |
+| `base_path` | string | `/ehrbase/rest/openehr/v1` | ITS-REST base path all API routes hang off. The status, health-adjacent and documentation routes hang off its parent (`/ehrbase/rest` by default), and the served OpenAPI document describes whatever paths this setting produces — never the defaults. |
 | `max_in_flight` | int | `256` | Concurrent-request admission cap (not per second). Requests beyond it are shed immediately with `503` + `Retry-After` — never queued — so offered load beyond capacity cannot exhaust memory. Status/health/discovery routes are never limited. `0` disables shedding. |
 | `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON at the REST root. Consider `false` in production. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
