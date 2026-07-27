@@ -42,11 +42,19 @@ fn parse(xml: &str) -> OperationalTemplate {
     opt14::from_xml(xml).expect("minimal OPT parses")
 }
 
-/// Assert the artefact is rejected with the given AOM2 rule code in the message.
+/// Assert the artefact is rejected with the given AOM2 rule code carried in the
+/// `ValidationFailed` payload (the ITS-REST 422 `validationErrors[]` rendering).
 fn expect_code(opt: &OperationalTemplate, code: &str) {
     let err = validate_opt_artefact(opt).expect_err("expected a violation");
-    let msg = err.to_string();
-    assert!(msg.contains(code), "expected `{code}` in error, got: {msg}");
+    let ServiceError::ValidationFailed(violations) = &err else {
+        panic!("expected ValidationFailed (422), got {err:?}");
+    };
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.path == code || v.message.contains(code)),
+        "expected `{code}` in violations, got: {violations:?}"
+    );
 }
 
 /// Replace the first `from` occurring *after* `marker` with `to`.
@@ -131,9 +139,13 @@ fn corpus_all_valid_opts_pass() {
 }
 
 #[test]
-fn rejection_is_400_bad_request() {
-    // VCARM path — assert the wire status is 400 (CNF `validate_opt-invalid_opt`
-    // asserts "status code 400"; `ServiceError::BadRequest` → ITS-REST 400).
+fn rejection_is_422_validation_failed() {
+    // VCARM path — an AOM2 rule violation on a successfully PARSED artefact is
+    // a semantic error: the ITS-REST overview status table's 422 row
+    // (`Requests_and_responses.md` §HTTP status codes, "well-formed but …
+    // semantic errors"), rendered as the `Error` object with the rule code in
+    // `validationErrors[]`. The syntactic 400 branch (`responses/400.yaml`)
+    // owns only content that fails to parse.
     let xml = minimal_xml().replace(
         "<rm_attribute_name>category</rm_attribute_name>",
         "<rm_attribute_name>bogus_attr</rm_attribute_name>",
@@ -141,8 +153,8 @@ fn rejection_is_400_bad_request() {
     let opt = parse(&xml);
     let err = validate_opt_artefact(&opt).unwrap_err();
     assert!(
-        matches!(err, ServiceError::BadRequest(_)),
-        "expected BadRequest (400), got {err:?}"
+        matches!(err, ServiceError::ValidationFailed(_)),
+        "expected ValidationFailed (422), got {err:?}"
     );
 }
 

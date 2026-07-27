@@ -620,10 +620,12 @@ fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
     }
 }
 
-/// Map an ADL 1.4 parse failure to a [`ServiceError::ValidationFailed`] carrying
-/// the S-code mnemonics — an unparseable source is an invalid archetype
-/// (`422`), not a distinct wire status (`AOM2/master04.6` §Syntax Validity
-/// Rules; SM `i_definition_adl14.adoc` `upload_archetype` `invalid_archetype`).
+/// Map an ADL 1.4 archetype parse failure to a [`ServiceError::ValidationFailed`]
+/// carrying the S-code mnemonics — the archetype-provisioning operations are
+/// SM-only (`i_definition_adl14.adoc` `upload_archetype` `invalid_archetype`;
+/// ITS-REST 1.1.0 surfaces no archetype route — the registered realization
+/// gap), so no released wire status attaches and the SM error is the whole
+/// contract.
 fn archetype_syntax_failure(errs: Vec<SyntaxError>) -> ServiceError {
     ServiceError::ValidationFailed(
         errs.into_iter()

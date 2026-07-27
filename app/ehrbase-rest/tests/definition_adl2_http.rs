@@ -611,3 +611,43 @@ async fn adl2_upload_with_charset_parameter_is_created() {
         "media-type parameters do not change the declared type: {body}"
     );
 }
+
+#[tokio::test]
+async fn upload_unparseable_source_is_400() {
+    let (_pg, app) = app().await;
+    // Content that fails the ADL2 grammar outright is *syntactically invalid
+    // content* — the released 400 branch declared on the upload
+    // (`responses/400.yaml`: "the request could not be parsed or is invalid
+    // (e.g. ... syntactically invalid ... content)") — never the semantic 422
+    // that AOM2 validation-phase failures (V-codes) carry.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl2"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from("this is not adl2 at all {{{"))
+        .unwrap();
+    let (status, _headers, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "an unparseable ADL2 source is the syntactic 400 branch: {body}"
+    );
+}
+
+#[tokio::test]
+async fn upload_empty_source_is_400() {
+    let (_pg, app) = app().await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl2"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _headers, body) = send(&app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "an empty body matches no ADL2 production — syntactically invalid \
+         content (responses/400.yaml): {body}"
+    );
+}
