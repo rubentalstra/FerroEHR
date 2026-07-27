@@ -325,7 +325,7 @@ impl EhrbaseService {
             )?,
             None => self.audit(change_type::DELETED, "DIRECTORY delete"),
         };
-        delete(
+        let committed = delete(
             &mut tx,
             Some(ehr_id),
             vo_id,
@@ -337,7 +337,12 @@ impl EhrbaseService {
         )
         .await?;
         tx.commit().await?;
-        Ok(ServiceResponse::plain(Value::Null))
+        // The 204's identity: the NEW 523|deleted| version the delete
+        // committed (RM common master06 §Logical Deletion) — the resource's
+        // current state, carried so the wire serves the weak ETag +
+        // Last-Modified the overview §"ETag and Last-Modified" SHOULDs on
+        // versioned resources.
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// The current directory FOLDER version metadata (for a `412`
@@ -543,7 +548,10 @@ impl EhrbaseService {
 
     /// SM `I_EHR_DIRECTORY.delete_directory` — logically delete the EHR's
     /// directory (a new `523|deleted|` version, RM common master06 §Logical
-    /// Deletion).
+    /// Deletion). Returns the committed deleted version's metadata (uid +
+    /// commit instant) so the wire 204 carries the weak `ETag`/`Last-Modified`
+    /// the overview §"`ETag` and Last-Modified" SHOULDs on versioned
+    /// resources.
     ///
     /// # Errors
     /// [`SmError`] when the EHR has no directory (404-equivalent), the
@@ -554,7 +562,7 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         preceding_version_uid: Option<ObjectVersionId>,
         update_audit: Option<&crate::service::version_update::UpdateAudit>,
-    ) -> Result<(), SmError> {
+    ) -> Result<ServiceResponse, SmError> {
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {
             return Err(ServiceError::sm(
@@ -568,9 +576,10 @@ impl EhrbaseService {
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
-        self.delete_directory_at(an_ehr_id, vo_id, expected, is_modifiable, update_audit)
+        let resp = self
+            .delete_directory_at(an_ehr_id, vo_id, expected, is_modifiable, update_audit)
             .await?;
-        Ok(())
+        Ok(resp)
     }
 
     /// The directory FOLDER at the named version
@@ -588,9 +597,18 @@ impl EhrbaseService {
         a_path: Option<&str>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
-        Ok(self
+        let resp = self
             .directory_version(an_ehr_id, vo_id, version, a_path)
-            .await?)
+            .await?;
+        // The addressed version_uid must equal the stored full three-part
+        // identity (ITS-REST overview Resources.md §Identifier types; BASE
+        // master05 case rule) — a fabricated creating_system_id names no
+        // VERSION here. A deleted read carries no metadata (204 body-less),
+        // so there is nothing to verify against.
+        if let Some(meta) = resp.meta.as_ref() {
+            super::ensure_addressed_version(&a_version_uid, &meta.uid)?;
+        }
+        Ok(resp)
     }
 
     /// SM `I_EHR_DIRECTORY.has_directory_version` — whether the named
