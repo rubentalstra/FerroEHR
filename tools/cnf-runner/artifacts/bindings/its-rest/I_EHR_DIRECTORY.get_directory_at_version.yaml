@@ -23,6 +23,30 @@ outcomes:
     headers:
       Content-Type: negotiated
       Location: absent                    # read — overview §Location / §Deprecated headers
+  ok_empty:
+    # The addressed version is a logically deleted one. The by-version route
+    # declares no deleted branch at all (the operation lists 200/404 only) —
+    # register AMB-74 carries the adjudicated fixed handling, which the
+    # sibling at-time route states outright for the same resource
+    # (directory_get_at_time's 204) and the overview §HTTP status codes gives
+    # its meaning: "204 | No Content | The request has been fulfilled and
+    # there is no additional content to send in the response payload body".
+    # There is nothing to send because RM common master06 §Logical Deletion
+    # deletes the version's `_data_`; the version itself is present, so 404
+    # would deny a resource the service holds.
+    status: 204
   version_not_found: { status: 404 }      # unknown version_uid (404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml)
   not_found: { status: 404 }              # unknown ehr_id — same 404 family
+  validation_failed:
+    # A `version_uid` path segment that parses as no OBJECT_VERSION_ID form at
+    # all is a syntactically invalid parameter, the overview §HTTP status codes
+    # 400 row: "The service cannot or will not process the request due to
+    # something that is perceived to be a client error (e.g., malformed
+    # request syntax, syntactically invalid content)". WHICH branch a
+    # malformed identifier takes is assigned by no released sentence —
+    # register AMB-76 carries the adjudicated repo-wide fixed handling
+    # (malformed identifier segments are 400; unknown-but-well-formed
+    # identifiers stay 404).
+    status: 400
+    body: error_loose
 server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks
