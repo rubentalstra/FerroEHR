@@ -131,6 +131,7 @@ claim = "tenant"
 [smart]
 enabled = false
 #? platform_base_url = "/gateway/v1"
+#? public_base_url = "https://cdr.example.com"   # REQUIRED when enabled: the external origin the absolute services.*.baseUrl values are built from (master04 §Services)
 ehr_id_claim = "ehrId"
 patient_claim = "patient"
 require_smart_scopes = false
@@ -145,6 +146,7 @@ grant_types_supported = []
 response_types_supported = []
 code_challenge_methods_supported = []
 scopes_supported = []
+capabilities = []   # extra (HL7 base) capabilities to advertise, e.g. ["launch-ehr", "sso-openid-connect"]
 #? issuer = "https://as.example"
 #? jwks_uri = "https://as.example/jwks"
 #? authorization_endpoint = "https://as.example/authorize"

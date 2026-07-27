@@ -131,7 +131,12 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     // discovery, the OAS meta-endpoints.
     doc.merge(health::openapi());
     doc.merge(status::openapi());
-    doc.merge(smart_discovery::openapi());
+    let rest_root = cfg
+        .server
+        .base_path
+        .strip_suffix("/openehr/v1")
+        .unwrap_or(&cfg.server.base_path);
+    doc.merge(smart_discovery::openapi(cfg, rest_root));
     // The System API's OPTIONS operation — a closure route mounted outside
     // OpenApiRouter (above CORS), documented via its twin (#418).
     doc.merge(crate::api::system::options::openapi());

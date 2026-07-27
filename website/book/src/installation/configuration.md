@@ -338,16 +338,26 @@ SMART App Launch. Off by default; when off the discovery document is not served
 and the scope gate is inert. See [SMART App Launch](../smart-app-launch.md).
 
 `[smart]`: `enabled` (bool, `false`), `platform_base_url` (string, unset ⇒ REST
-root), `ehr_id_claim` (string, `ehrId`), `patient_claim` (string, `patient`),
-`require_smart_scopes` (bool, `false`), `launch_base64_json` (bool, `false`).
+root), `public_base_url` (string, **required when enabled** — the external
+origin, e.g. `https://cdr.example.com`, from which the discovery document's
+absolute `services.*.baseUrl` values are built), `ehr_id_claim` (string,
+`ehrId`), `patient_claim` (string, `patient`), `require_smart_scopes` (bool,
+`false` — when `true` the SMART resource-scope gate is fail-closed across the
+composition, template, and AQL families, and the `openehr-permission-v1`
+capability is advertised; when `false` the gate is advisory and the capability
+is not claimed), `launch_base64_json` (bool, `false`).
 `[smart.episode]`: `enabled` (bool, `false`).
 `[smart.endpoints]`: `issuer`, `jwks_uri`, `authorization_endpoint`,
 `token_endpoint`, `registration_endpoint`, `introspection_endpoint`,
 `revocation_endpoint`, `management_endpoint` (all string, unset ⇒ omitted from
 the discovery document); `token_endpoint_auth_methods_supported`,
 `grant_types_supported`, `response_types_supported`,
-`code_challenge_methods_supported`, `scopes_supported` (all list of string,
-`[]`). Deprecated grant types (`implicit`/password) are rejected at boot.
+`code_challenge_methods_supported`, `scopes_supported`, `capabilities` (all
+list of string, `[]` — `capabilities` appends operator-advertised HL7 base
+capabilities such as `launch-ehr`/`sso-openid-connect` to the derived openEHR
+set). Deprecated grant types (`implicit`/password) are rejected at boot;
+`enabled = true` additionally requires `public_base_url`,
+`authorization_endpoint`, and `token_endpoint` at boot.
 
 ## `[management]`
 
