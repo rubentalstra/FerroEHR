@@ -17,6 +17,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Tag GET/DELETE verify the addressed target; empty `target_path`
+  normalizes to absent** (#474). `GET`/`DELETE` on the per-target tag
+  routes now answer 404 for a nonexistent, foreign-EHR, or wrong-kind
+  `uid_based_id` (the released trigger: "when the `uid_based_id` does not
+  exist"; previously the GET answered `200 []` and the DELETE was not
+  kind-checked), and a `target_path: ""` on the tag PUT is normalized to
+  the absent path so `""` and absent are one `(key, target_path)`
+  identity. The EHR-wide tag listing likewise answers 404 for an unknown
+  `ehr_id` (previously `200 []`).
+
 - **Contribution change-type mismatch statuses follow the released
   assignment** (#467). A non-creation `change_type` committed as the FIRST
   version of a versioned object (the released `400_CONTRIBUTION` trigger:
