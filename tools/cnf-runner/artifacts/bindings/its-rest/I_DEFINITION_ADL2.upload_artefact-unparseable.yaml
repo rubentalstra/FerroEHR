@@ -1,0 +1,46 @@
+# Wire realization of I_DEFINITION_ADL2.upload_artefact, variant `unparseable`:
+# the SYNTACTIC rejection branch of the ADL2 upload, as opposed to the semantic
+# one the variant-less binding carries at 422. The exact mirror of
+# I_DEFINITION_ADL14.upload_opt#unparseable on the other Definition interface.
+#
+# DOCS TEXT (ITS-REST overview `Requests_and_responses.md` §HTTP status codes,
+# row 400 — the wire oracle): "The service cannot or will not process the
+# request due to something that is perceived to be a client error (e.g.,
+# malformed request syntax, syntactically invalid content)". An ADL2 source
+# that does not parse against the AM `adl_operational_template` grammar IS
+# syntactically invalid content, so it falls in that row and not in row 422,
+# which the same table confines to a request that "was well-formed but was
+# unable to be followed due to semantic errors". The operation declares the 400
+# branch, whose response component states the same trigger in the same words
+# (specifications/responses/400.yaml).
+#
+# The phase boundary this binding rests on is the AM one: a defect the ADL2
+# GRAMMAR rejects is syntax, a defect the AOM2 validation catalogue names is
+# semantics (AM `OPT2/master03-opt_raw.adoc` §Artefact Structure — the
+# `adl_operational_template` Antlr4 rule; AM `AOM2/master08-validation.adoc`
+# §Phase 1 - Basic Integrity). Defects the two catalogues BOTH cover — a
+# missing mandatory section is a missing production and a named validation
+# check at once — are register entry AMB-116 and are deliberately not pinned by
+# any case.
+#
+# The two branches cannot share one binding because the closed outcome taxonomy
+# (vocab/outcomes.yaml) has no dedicated syntactic-rejection kind — the same
+# closed-vocabulary limit recorded on `ehr-id-path-segment-malformed-rejection`
+# in vocab/wire_surface.yaml. `validation_failed` is the kind the catalogue
+# already uses at 400 wherever a released sentence puts malformed input there
+# (I_EHR_COMPOSITION.get_composition_at_time, I_DEFINITION_QUERY.store_query),
+# and the variant discriminator keeps the two statuses apart per case.
+# Register: AMB-110 (the branch split), AMB-116 (the boundary).
+sm_operation: I_DEFINITION_ADL2.upload_artefact
+its: its-rest
+variant: unparseable
+request:
+  method: POST
+  path: /definition/template/adl2
+  body: opt_adl2
+  headers:
+    Content-Type: text/plain              # the declared body type is correct; only the CONTENT is unparseable
+outcomes:
+  validation_failed:
+    status: 400                           # §HTTP status codes row 400 — "syntactically invalid content"
+    body: error_loose                     # §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

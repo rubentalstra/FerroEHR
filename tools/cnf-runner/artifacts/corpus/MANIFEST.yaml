@@ -283,6 +283,20 @@ cnf.opt.time_series.v2:
   validity: { verdict: valid }
   template_id: "time_series.en.v2"
   provenance: "derived from cnf.opt.time_series by bumping only the template_id version suffix (time_series.en.v1 -> time_series.en.v2) so the commit-flow contribution case owns a template_id distinct from the master04 upload_opt-valid_opt DEFINITION exemplar, which owns the canonical time_series.en.v1; mirrors the cnf.opt.versioned.v3/v4 precedent (each upload-flow case owns a fresh id under the shared-SUT run model)"
+cnf.opt.time_series.v3:
+  source: fixtures/opt/valid/time_series.v3.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v3"
+  provenance: "derived 2026-07-27 from cnf.opt.time_series by bumping only the template_id version suffix (time_series.en.v1 -> time_series.en.v3) so the Prefer: return=identifier upload case owns a template_id no other upload-flow case claims (the cnf.opt.versioned.v3/v4 precedent: each upload-flow case owns a fresh id under the shared-SUT run model)"
+cnf.opt.time_series.v4:
+  source: fixtures/opt/valid/time_series.v4.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v4"
+  provenance: "derived 2026-07-27 from cnf.opt.time_series by bumping only the template_id version suffix (time_series.en.v1 -> time_series.en.v4) so the Prefer: return=minimal upload case owns a template_id no other upload-flow case claims (the cnf.opt.versioned.v3/v4 precedent)"
 cnf.opt.vital_signs:
   source: fixtures/opt/valid/vital_signs.opt
   format: opt-xml
@@ -1370,6 +1384,34 @@ cnf.adl2.opt.minimal_d:
   validity: { verdict: valid }
   template_id: "openEHR-EHR-COMPOSITION.cnf_minimal_d.v1.0.0"
   provenance: "derived 2026-07-22 from cnf.adl2.opt.minimal by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world"
+cnf.adl2.opt.minimal_g:
+  source: fixtures/adl2/opt/minimal_g.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_minimal_g.v1.0.0"
+  provenance: "derived 2026-07-27 from cnf.adl2.opt.minimal_b by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world (the Prefer: return=identifier upload case)"
+cnf.adl2.opt.minimal_h:
+  source: fixtures/adl2/opt/minimal_h.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_minimal_h.v1.0.0"
+  provenance: "derived 2026-07-27 from cnf.adl2.opt.minimal_b by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world (the Prefer: return=minimal upload case)"
+cnf.adl2.opt.versioned_v100:
+  source: fixtures/adl2/opt/versioned.v1_0_0.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.0.0"
+  provenance: "derived 2026-07-27 from cnf.adl2.opt.minimal_b by renaming the archetype HRID to a dedicated versioned family — the lower member of the pair the {version} prefix-resolution case ranks (AM AOM2 ARCHETYPE_HRID: release_version is the artefact's SEMVER)"
+cnf.adl2.opt.versioned_v110:
+  source: fixtures/adl2/opt/versioned.v1_1_0.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_versioned.v1.1.0"
+  provenance: "derived 2026-07-27 from cnf.adl2.opt.versioned_v100 by bumping only the HRID release_version (1.0.0 -> 1.1.0) — the higher member of the pair, so a `{major}` / `{major}.{minor}` prefix has a genuine highest match to resolve to"
 cnf.adl2.opt.vitals:
   source: fixtures/adl2/opt/vitals.adls
   format: adl2-text
@@ -1419,7 +1461,7 @@ cnf.adl2.opt.invalid.missing_description:
     verdict: invalid
     defect: "missing mandatory description (RESOURCE_DESCRIPTION) section"
     spec_ref: "AM AOM2 (AUTHORED_RESOURCE.description is mandatory)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity (AUTHORED_RESOURCE.description mandatory); ADL2 operational_template SOURCE"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity (AUTHORED_RESOURCE.description mandatory); ADL2 operational_template SOURCE. HELD OUT of the catalogue 2026-07-27: a missing mandatory section is both a missing `adl_operational_template` grammar production and a named AOM2 Phase-1 validation check (STCNT), so its rejection PHASE — and therefore its wire status under AMB-110 — is not settled by released text; register AMB-116. Referenced by no case on purpose"
 cnf.adl2.opt.invalid.missing_definition:
   source: fixtures/adl2/opt/invalid/missing_definition.adls
   format: adl2-text
@@ -1428,7 +1470,16 @@ cnf.adl2.opt.invalid.missing_definition:
     verdict: invalid
     defect: "missing mandatory definition (root C_COMPLEX_OBJECT) section"
     spec_ref: "AM AOM2 (ARCHETYPE.definition is mandatory)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity (ARCHETYPE.definition mandatory); ADL2 operational_template SOURCE"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity (ARCHETYPE.definition mandatory); ADL2 operational_template SOURCE. HELD OUT of the catalogue 2026-07-27 for the same reason as cnf.adl2.opt.invalid.missing_description — the section-boundary phase is unsettled (register AMB-116). Referenced by no case on purpose"
+cnf.adl2.opt.invalid.rm_type_mismatch:
+  source: fixtures/adl2/opt/invalid/rm_type_mismatch.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "root RM type contradicts the RM type in the artefact identifier (VARDT)"
+    spec_ref: "AM AOM2 master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks — 'check match of root RM type with RM type mentioned in identifier (VARDT)'"
+  provenance: "authored 2026-07-27 as the phase-UNAMBIGUOUS semantic defect for the ADL2 upload's 422 branch: the source is grammatically well-formed (every production of the adl_operational_template rule is present and parses) and fails a named AOM2 Phase-1 VALIDATION check, so no reading puts it in the syntax phase — the boundary cases (missing mandatory sections) are register entry AMB-116"
 cnf.adl2.opt.invalid.empty:
   source: fixtures/adl2/opt/invalid/empty.adls
   format: adl2-text

@@ -10,19 +10,63 @@
 # mention is a coverage guide, never the ground for a verdict.
 AMB-4:
   ambiguity: >-
-    ADL 1.4 templates have no formal versioning — duplicate template_id
-    handling is implementation-defined: conflict vs version-parameter.
+    A second ADL 1.4 OPT upload under an EXISTING template_id has two
+    conformant answers and no released sentence picks one: refuse it as a
+    conflict, or accept it and replace the stored template. The ITS-REST
+    upload declares the conflict branch, but declaring a status is not
+    requiring it — nothing says a service MUST reach that branch rather than
+    overwrite —, and the SM operation that anchors the upload is silent on
+    duplicates in a way its own siblings are not: `upload_archetype` ("If an
+    archetype with the same id already exists, replace it") and the ADL2
+    `upload_artefact` ("If an artefact with the same physical identifier and
+    namespace exists, replace it") both state the replace rule, while
+    `upload_opt` states nothing at all. Under AM ADL 1.4 an OPT has no formal
+    version either, so there is no third "new version" answer to reach for.
+    RE-ADJUDICATED 2026-07-27 (group-10 audit): the earlier framing —
+    conflict vs a VERSION-PARAMETER branch, grounded in the CNF master04 NOTE
+    ("the OPT upload service needs to handle a version parameter, for
+    instance this is the solution on the openEHR REST API") — is FALSE for
+    Release-1.1.0 and has been dropped. The released ADL 1.4 upload declares
+    no version parameter at all (its parameters are Prefer, Accept and
+    Content-Type), and the only such parameter ever released — the ADL2
+    upload's `version` query parameter — is `deprecated: true`, deprecated by
+    the same ticket that deprecated the ADL2 "Get template at version"
+    endpoint. The CNF schedule is a stalled guide, never authority, so its
+    NOTE cannot ground a branch the released ITS does not have.
   source: >-
-    AM ADL 1.4 master02-overview.adoc §Templates (templates are defined at a
-    local level in the dADL formalism and "do not introduce any new semantics
-    to archetypes"; no template versioning or duplicate-template_id handling is
-    defined) — silence CONFIRMED first-hand
+    SM i_definition_adl14.adoc §upload_opt (`Pre_valid`, error
+    `invalid_template` — no duplicate rule) CONTRASTED with the same file's
+    §upload_archetype ("If an archetype with the same id already exists,
+    replace it") and SM i_definition_adl2.adoc §upload_artefact ("If an
+    artefact with the same physical identifier and namespace exists, replace
+    it") + ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
+    (responses 201/400/409; parameters Prefer + Accept_Template +
+    Content-Type — no version parameter) + responses/409_template_already_exists.yaml
+    ("`409 Conflict` is returned when a template with same `template_id`
+    already exists") + AM ADL 1.4 master02-overview.adoc §Templates (templates
+    are defined at a local level in the dADL formalism and "do not introduce
+    any new semantics to archetypes"; no template versioning) + ITS-REST
+    docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get
+    template at version' and the version query parameter from upload
+    template") — all CONFIRMED first-hand.
   handling: >-
     Two sibling cases carry option tags; the ICS options declaration selects
     which applies — at least the declared behaviour MUST pass; the undeclared
-    sibling is not-applicable.
+    sibling is not-applicable. `adl14-duplicate-conflict` is gated by
+    I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict (the declared 409
+    branch); `adl14-duplicate-replace` has no sibling case on this ITS yet —
+    a replace-on-duplicate server answers a success status the released 201
+    text describes and leaves exactly one template loaded, but no released
+    sentence assigns that status, so the option stands declared and
+    unexercised rather than pinned by an authored expectation (the AMB-8
+    pattern). The distinct-template_id upload pair is NOT part of this
+    latitude: two different template_id strings never collide under either
+    branch, so I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict is
+    universally green and carries no option tag. Partial-template_id
+    RESOLUTION on retrieval — the other half the retired version-parameter
+    framing used to carry — is its own entry, AMB-104.
   disposition: option_select
-  options: [adl14-duplicate-conflict, adl14-duplicate-versioned]
+  options: [adl14-duplicate-conflict, adl14-duplicate-replace]
   upstream_ref: "UPR-01"
 AMB-5:
   ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
@@ -2060,3 +2104,598 @@ AMB-66:
     defect. Revisits when the SM drops or restates the precondition.
   disposition: fixed_handling
   upstream_ref: "UPR-28"
+
+AMB-104:
+  ambiguity: >-
+    Partial-template_id resolution is PROMISED for the ADL 1.4 template routes
+    but is underivable there, because no released component defines a grammar
+    for an ADL 1.4 `template_id`. The path parameter states the behaviour — "A
+    partial `template_id` will resolve to 'latest' major version of that
+    template" — and illustrates it with two legacy examples ("Vital Signs",
+    "vital_signs.v1") beside the HRID ones, but a partial id can only be
+    resolved against a grammar that says which part of the id is the artefact
+    and which the version. For the ADL2 routes that grammar exists (AM AOM2
+    ARCHETYPE_HRID, whose `release_version` is a SEMVER, plus the released
+    `{version}` selector spelling out the `{major}` / `{major}.{minor}` prefix
+    forms). For ADL 1.4 nothing does: AM ADL 1.4 gives templates no
+    identification or versioning semantics at all. So a server has two
+    conformant readings of a GET for `test_versioned` when
+    `test_versioned.en.v1` and `test_versioned.en.v2` are loaded — resolve it
+    as a partial id to the latest, or treat every supplied id as complete and
+    answer not-found, because no template is called `test_versioned`.
+  source: >-
+    ITS-REST specifications/parameters/path/template_id.yaml (the promise + the
+    `legacy` / `legacy_version` / `hrid` / `partial` examples) +
+    specifications/operations/definition_template_adl1.4_get.yaml (the ADL 1.4
+    route that consumes it) CONTRASTED with
+    parameters/path/template_id_adl2.yaml (HRID examples only) and
+    parameters/path/version.yaml (the SEMVER prefix rule, which exists only for
+    ADL2) + AM ADL 1.4 master02-overview.adoc §Templates (templates "do not
+    introduce any new semantics to archetypes"; no template identification or
+    versioning defined) — the absence of a legacy template_id grammar CONFIRMED
+    first-hand.
+  handling: >-
+    Sibling cases carry option tags; the ICS options declaration selects.
+    `adl14-partial-id-latest` takes the promise at face value: a server that
+    imposes its own template-id convention resolves the partial id to the
+    latest version (I_DEFINITION_ADL14.get_opt-retrieve_latest_version).
+    `adl14-partial-id-exact` is the reading this CDR declares: with no released
+    grammar there is nothing to decompose, so every supplied template_id is
+    COMPLETE, an exact match is the only match, and an id matching no stored
+    template is not-found — which also keeps the promise vacuously, since no id
+    is identifiable as partial
+    (I_DEFINITION_ADL14.get_opt-partial_template_id_no_match). Retrieval by a
+    FULL template_id is not part of the latitude and gates for every server
+    (I_DEFINITION_ADL14.get_opt-retrieve_specific_version reads the non-latest
+    member of a two-version family back by its exact id). Distinct from AMB-4:
+    that entry governs what a duplicate UPLOAD does, this one what a partial id
+    RESOLVES to on retrieval.
+  disposition: option_select
+  options: [adl14-partial-id-latest, adl14-partial-id-exact]
+  upstream_ref: "UPR-68"
+
+AMB-105:
+  ambiguity: >-
+    The two released oracles give OPPOSITE answers for a duplicate ADL2
+    artefact upload. SM `upload_artefact` commands replacement — "If an
+    artefact with the same physical identifier and namespace exists, replace
+    it" — while the ITS-REST ADL2 upload declares a conflict branch for exactly
+    that request: "`409 Conflict` is returned when a template with same
+    `template_id` already exists". Both are RELEASED components and the
+    outcomes are mutually exclusive: a replacement is a success leaving one
+    artefact with NEW content, a conflict is a refusal leaving the original
+    content intact.
+  source: >-
+    SM i_definition_adl2.adoc §upload_artefact ("Upload an ADL2 artefact, i.e.
+    archetype, template or operational_template. If an artefact with the same
+    physical identifier and namespace exists, replace it.") vs ITS-REST
+    specifications/operations/definition_template_adl2_upload.yaml (response
+    '409') + responses/409_template_already_exists.yaml — released-vs-released
+    contradiction CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: the WIRE follows ITS-REST. A duplicate ADL2 upload is
+    refused 409 and the stored artefact is untouched — the ITS binds the
+    operation to HTTP and is the component a REST client can observe, while the
+    SM sentence is design authority for a service model that need not be
+    reached over this transport (the precedence the whole catalogue applies
+    when SM and the ITS-REST docs text disagree on a wire fact). Gated by
+    I_DEFINITION_ADL2.upload_artefact-duplicate_conflict. Distinct from AMB-4,
+    which is a genuine SILENCE on the ADL 1.4 side (SM `upload_opt` says
+    nothing about duplicates at all) rather than a contradiction. Reported
+    upstream (UPR-69): reconcile the SM replace rule with the ITS 409, in
+    either direction.
+  disposition: fixed_handling
+  upstream_ref: "UPR-69"
+
+AMB-106:
+  ambiguity: >-
+    The SM keys ADL 1.4 OPTs by a UUID the released wire never carries.
+    `has_opt`, `get_opt` and `delete_opt` all take `an_opt_id: UUID`, and
+    `list_opts` returns `List<UUID>`; the odd sibling `list_matching_opts`
+    returns `List<ARCHETYPE_ID>` instead, so the interface disagrees with
+    itself about what an OPT is even called. The ITS-REST surface knows neither
+    identifier: every ADL 1.4 route is keyed by the `template_id` string, and
+    the listed metadata object carries template_id / concept / archetype_id /
+    created_timestamp and NO uid at all — so the SM's key is not merely
+    unrealized, it is unobtainable from the wire. (An OPT does carry a `uid`
+    element inside the canonical XML the GET serves, but no released sentence
+    connects it to the SM key or makes it addressable.)
+  source: >-
+    SM i_definition_adl14.adoc §has_opt / §get_opt / §delete_opt (`an_opt_id:
+    UUID [1]`), §list_opts (`List<UUID>`), §list_matching_opts
+    (`List<ARCHETYPE_ID>`) vs ITS-REST
+    specifications/parameters/path/template_id.yaml (the only ADL 1.4 key),
+    schemas/definition/TemplateMetadata.yaml (required template_id, concept,
+    archetype_id, created_timestamp; optional deprecated version; no uid) and
+    schemas/definition/TemplateList.yaml — CONFIRMED first-hand.
+  handling: >-
+    Report only. The wire keys ADL 1.4 templates by `template_id`, the only
+    identifier the released ITS defines for them, and the catalogue's ADL 1.4
+    cases address templates that way throughout; no case asserts a UUID key,
+    and none is authorable, because the released list response gives a client
+    nothing to read one from. The divergence is carried, never resolved
+    privately, and is reported upstream (UPR-70) rather than absorbed. It sits
+    beside AMB-37 (the ADL2 interface's artefact-generic operations vs the
+    OPT-only ADL2 wire) — same family, different axis: AMB-37 is about which
+    OPERATIONS exist, this entry about which IDENTIFIER they take.
+  disposition: report_only
+  upstream_ref: "UPR-70"
+
+AMB-107:
+  ambiguity: >-
+    The two oracles specify DIFFERENT pattern languages for the same
+    match-by-pattern behaviour, and only one of them defines a failure. SM
+    `list_matching_opts` / `list_matching_archetypes` /
+    `list_matching_artefacts` all take an `id_pattern` matched as a REGEX
+    ("List all artefacts whose identifiers match a regex pattern") and each
+    declares an `invalid_id_pattern` error. The ITS-REST list operations that
+    realize them take `template_id` and `concept` query filters described as
+    "Pattern for matching … (supports wildcards `*`)" — a glob, not a regex —
+    and declare a single 200 response with no rejection branch, so a
+    syntactically impossible pattern has no assigned outcome on the wire. The
+    two languages are not interchangeable: `*` is a valid regex fragment with a
+    different meaning (repeat the preceding atom) than its glob meaning (any
+    run of characters), so one filter string selects different sets under the
+    two readings.
+  source: >-
+    SM i_definition_adl14.adoc §list_matching_opts + §list_matching_archetypes
+    and SM i_definition_adl2.adoc §list_matching_artefacts (regex + error
+    `invalid_id_pattern`) vs ITS-REST
+    specifications/parameters/query/filter_template_id.yaml ("Pattern for
+    matching `template_id` (supports wildcards `*`)", example `vital*`),
+    parameters/query/concept.yaml (same wording, example `*signs*`) and
+    operations/definition_template_adl1.4_list.yaml +
+    definition_template_adl2_list.yaml (a single '200' response, no 400) —
+    CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: the wire language is the ITS-REST one — `*` is a WILDCARD
+    standing for any run of characters, the filter matches the whole candidate
+    value, and no other character is special. Consequently no filter string is
+    syntactically invalid, so the SM's `invalid_id_pattern` error has no wire
+    realization and no rejection case is authorable (it would have to invent
+    both the grammar and the status). The glob reading is exercised by
+    I_DEFINITION_ADL2.list_matching_artefacts-filter. The remaining
+    filter/paging semantics the released text leaves open are AMB-114.
+    Reported upstream (UPR-71): state one pattern language for both
+    components, and either bind the invalid-pattern error to a status or drop
+    it.
+  disposition: fixed_handling
+  upstream_ref: "UPR-71"
+
+AMB-108:
+  ambiguity: >-
+    The ADL 1.4 OPT sub-surface has realization gaps in BOTH directions.
+    SM→ITS: four of the interface's OPT operations have no wire under
+    /definition/template/adl1.4 — `valid_opt` (no validation endpoint),
+    `has_opt` (no existence probe), `opts_count` (no count resource) and
+    `list_matching_opts` as an operation of its own. ITS→SM: the `/example`
+    sub-resource added in Release-1.1.0 (SPECITS-58) exists on BOTH template
+    routes and realizes NO SM operation — the platform service model defines no
+    example-generation function anywhere, so a released wire behaviour has no
+    service-model anchor to name it by.
+  source: >-
+    SM i_definition_adl14.adoc (§valid_opt, §has_opt, §opts_count,
+    §list_matching_opts — all defined) vs released ITS-REST 1.1.0 (the
+    /definition/template/adl1.4 route set: list / upload / get / example only)
+    + ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml
+    and definition_template_adl2_example_get.yaml vs the SM Definition
+    interfaces (i_definition_adl14.adoc, i_definition_adl2.adoc — no
+    example-generation operation) + ITS-REST
+    docs/overview/Amendment_record.md SPECITS-58 ("Add support for /example
+    sub-resource under template-definition endpoint") — CONFIRMED first-hand.
+  handling: >-
+    Report only, both directions carried. SM→ITS: `valid_opt` is exercised
+    through the upload (validation happens at commit — the
+    I_DEFINITION_ADL14.validate_opt-* cases), while `has_opt`, `opts_count` and
+    `list_matching_opts` have no wire and are recorded as honest boundaries in
+    vocab/wire_surface.yaml rather than asserted. ITS→SM: the example routes
+    are anchored to the closest SM read (`get_opt` / `get_artefact`) with
+    `variant: example`, which is a CATALOGUE convention and not a claim that
+    the SM defines them — the catalogue's naming law needs an SM anchor and the
+    released service model supplies none. Reference, not duplication: the
+    neighbouring families are already registered — AMB-17 (delete_opt has no
+    wire), AMB-41 (ADL 1.4 archetype provisioning has no wire), AMB-37 (the
+    artefact-generic ADL2 operations vs the OPT-only ADL2 wire, including
+    `valid_artefact` and `has_artefact`). Reported upstream (UPR-72): realize
+    or retire the four OPT operations, and give example generation an SM
+    operation.
+  disposition: report_only
+  upstream_ref: "UPR-72"
+
+AMB-109:
+  ambiguity: >-
+    The TEMPLATE surface carries an editorial defect bundle. (1) The released
+    ADL2 upload's request example is not a legal OPT: its second clause is a
+    `specialize` statement (`specialize openEHR-EHR-COMPOSITION.discharge.v1`)
+    in a body the operation types as an `OperationalTemplateV2`, while AM says
+    an OPT has "no specialisation statement - an OPT is considered a
+    'top-level' standalone artefact" and the `adl_operational_template` ANTLR
+    rule that fixes the artefact's outer structure has no `specialize`
+    production at all — so the example cannot parse against the grammar it
+    illustrates. (2) The Web Template metadata example in the Simplified
+    Formats chapter carries a `semVer` member the released `WebTemplate` schema
+    does not declare — the schema requires templateId / version /
+    defaultLanguage / languages / tree and lists no `semVer` property — so the
+    one worked example of the format shows a member no schema admits, and
+    nothing says whether `semVer` and `version` are two spellings of one fact
+    or two different facts.
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl2_upload.yaml
+    (the requestBody example, second clause `specialize`) vs AM
+    docs/OPT2/master02-overview.adoc §Types of OPT ("no specialisation
+    statement - an OPT is considered a 'top-level' standalone artefact") and
+    docs/OPT2/master03-opt_raw.adoc §Artefact Structure (the
+    `adl_operational_template` Antlr4 rule: `'operational_template' '('
+    qualifiers? ')' ARCHETYPE_HRID 'language' … — no specialize production) +
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §Web Template
+    Metadata (the example's `"semVer": "0.2.0"` beside `"version": "2.3"`) vs
+    specifications/schemas/web_template/WebTemplate.yaml (required
+    templateId/version/defaultLanguage/languages/tree; the properties list
+    carries no semVer) — all CONFIRMED first-hand.
+  handling: >-
+    Editorial: the wire follows the NORMATIVE side of each pair. The ADL2
+    upload corpus is authored to the AM grammar (top-level
+    `operational_template` artefacts, no specialize clause), so the released
+    example's defect is documented rather than reproduced — a source carrying a
+    specialize clause is an invalid artefact under AM, not a template the
+    upload must accept. The Web Template document is served to the released
+    schema, and `semVer` is neither required of a client nor asserted by any
+    case. Reported upstream (UPR-73).
+  disposition: editorial
+  upstream_ref: "UPR-73"
+
+AMB-110:
+  ambiguity: >-
+    Both template uploads leave response branches unassigned. (a) The SEMANTIC
+    rejection has no status: the operations declare 201 / 400 / 409 only, the
+    400 trigger is explicitly SYNTACTIC ("the request could not be parsed or is
+    invalid (e.g. malformed request URL syntax, missing required header or
+    parameter, or syntactically invalid header, parameter or content)"), and a
+    body that parses perfectly but is not a valid operational template — a
+    well-formed OPT XML with mandatory elements removed, an ADL2 source missing
+    its `description` section — is by construction not that. The SM says such
+    an upload must fail (`Pre_valid`: `valid_opt(an_opt)` /
+    `valid_artefact(an_arch)`, errors `invalid_template` / `invalid artefact`)
+    but assigns no code, being transport-neutral. (b) The `Prefer:
+    return=minimal` branch — also the assumed default when no Prefer is sent —
+    IS assigned by the operations' own 201 text ("If the `Prefer` header is
+    missing or set to `return=minimal`, the body is empty"), while the overview
+    says the opposite for the same exchange ("If no response body is returned,
+    the service SHOULD use `204 No Content`").
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl1.4_upload.yaml
+    and definition_template_adl2_upload.yaml (responses 201/400/409 only) +
+    responses/400.yaml (the syntactic trigger) +
+    responses/201_Template_adl1_4_upload.yaml and
+    201_Template_adl2_upload.yaml (identical text: representation → the full
+    resource, identifier → only its unique identifier, "If the `Prefer` header
+    is missing or set to `return=minimal`, the body is empty") +
+    docs/overview/Requests_and_responses.md §HTTP status codes (row 422 "The
+    request was well-formed but was unable to be followed due to semantic
+    errors"; "Additional status codes MAY be used as long as they do not
+    conflict with the predefined codes") + §"Prefer minimal, identifier or full
+    representation response" (the SHOULD-204 sentence) + SM
+    i_definition_adl14.adoc §upload_opt and i_definition_adl2.adoc
+    §upload_artefact (preconditions + errors, no codes) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, one position per branch. (a) THE SPLIT LAW, identical on
+    both upload routes: content that fails its OWN SYNTAX answers the released
+    **400** branch the operations declare — the docs-text trigger is
+    "syntactically invalid content" (§HTTP status codes row 400) and the
+    response component states it in the same words (responses/400.yaml: "the
+    request could not be parsed or is invalid (e.g. … syntactically invalid
+    header, parameter or content)") — while content that PARSES and is then
+    invalid as a template artefact answers **422**, which is ADJUDICATED, not
+    declared: no template operation lists 422 at all, and the position rests on
+    the overview's own table defining 422 as "The request was well-formed but
+    was unable to be followed due to semantic errors" plus its explicit "Additional
+    status codes MAY be used as long as they do not conflict with the
+    predefined codes". The semantic branch must NOT be folded into 400, whose
+    trigger the released text confines to input that does not parse. The phase
+    boundary is read off AM: a defect the artefact GRAMMAR rejects is syntax
+    (AM `OPT2/master03-opt_raw.adoc` §Artefact Structure — the
+    `adl_operational_template` Antlr4 rule; for ADL 1.4, XML well-formedness),
+    a defect the AOM2 VALIDATION catalogue names is semantics (AM
+    `AOM2/master08-validation.adoc` §Phase 1 - Basic Integrity). Both halves
+    are exercised on both routes: 400 by
+    I_DEFINITION_ADL14.upload_opt-unparseable_opt (an empty file is not
+    well-formed XML) and I_DEFINITION_ADL2.upload_artefact-unparseable_artefact
+    (a truncated cADL block, an empty source); 422 by the -invalid_opt and
+    -invalid_artefacts fixture sweeps. Defects the two AM catalogues BOTH claim
+    — a missing mandatory SECTION is a missing grammar production and a named
+    validation check at once — are AMB-116 and are pinned by no case.
+    (b) The minimal branch is **201 with an empty body**: the operation-level
+    201 text is specific to these two operations and states the outcome
+    directly, while the SHOULD-204 sentence is a general default in the
+    overview and a SHOULD in any case; the specific released statement governs.
+    That RESOLVES AMB-62's unassigned minimal status FOR THESE TWO OPERATIONS
+    ONLY — AMB-62 continues to govern every write whose operation text assigns
+    nothing. Gated by I_DEFINITION_ADL14.upload_opt-prefer_minimal and
+    I_DEFINITION_ADL2.upload_artefact-prefer_minimal; the sibling identifier
+    preference by -prefer_identifier on both. Reported upstream (UPR-74): add
+    the semantic-rejection status to both uploads, and reconcile the 201-empty
+    text with the overview's SHOULD-204.
+  disposition: fixed_handling
+  upstream_ref: "UPR-74"
+
+AMB-111:
+  ambiguity: >-
+    No released sentence says how faithfully a template must be served back.
+    The ADL 1.4 GET describes what it returns as "the original (canonical)
+    `XML` based OPT format", which reads as verbatim but stops short of saying
+    so, and the ADL2 GET says only "Retrieves the latest version of the ADL2
+    operational template". Neither states whether the served artefact must be
+    byte-identical to the uploaded one, semantically equivalent after a
+    parse/re-serialize round trip, or merely a template of the same identity —
+    a real difference, since a re-serialized OPT can reorder attributes,
+    normalize whitespace, drop unrecognized elements or expand defaults, and a
+    re-generated ADL2 source can renumber terminology codes.
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl1.4_get.yaml
+    ("Note that this can return either the original (canonical) `XML` based OPT
+    format (if called with the `Accept: application/xml` request header)…") +
+    definition_template_adl2_get.yaml ("Retrieves the latest version of the
+    ADL2 operational template identified by `template_id` identifier.") +
+    responses/200_Template_adl1_4_retrieved.yaml and
+    200_Template_adl2_retrieved.yaml (representation only; no fidelity rule) +
+    SM i_definition_adl14.adoc §get_opt and i_definition_adl2.adoc
+    §get_artefact ("Get the … artefact with id `_an_id_`" — no fidelity rule) —
+    silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: retrieval is VERBATIM. What was uploaded is what is stored
+    and what is served — the ADL 1.4 OPT as the canonical XML document the
+    client sent, the ADL2 artefact as the source text it sent. This is the only
+    reading under which "the original (canonical) XML based OPT format" means
+    anything ("original" is otherwise redundant), and the only one a client can
+    rely on when the OPT is its own contract for the data it commits: a
+    re-serialization that silently normalized the template would change the
+    constraints the client validated against without changing the template_id.
+    The position is asserted rather than merely declared — the equivalence
+    assertions on I_DEFINITION_ADL14.get_opt-retrieve_single and
+    -retrieve_specific_version compare the served OPT against the uploaded
+    fixture. Reported upstream (UPR-75): state the fidelity rule on both
+    retrievals.
+  disposition: fixed_handling
+  upstream_ref: "UPR-75"
+
+AMB-112:
+  ambiguity: >-
+    Whether the conditional-request headers apply to a TEMPLATE resource is
+    left open. The overview scopes them by resource kind — "Both `ETag` and
+    `Last-Modified` SHOULD be included in responses for VERSION,
+    VERSIONED_OBJECT, or other resources that have versioning or unique state
+    identifiers" — and a template is neither of the two named kinds, so the
+    question turns entirely on the undefined trailing clause. A template does
+    have a unique IDENTITY (its template_id, or the ARCHETYPE_HRID for ADL2)
+    but no state that changes: the released uploads mint templates and neither
+    route offers an update, so nothing a `Last-Modified` would track ever
+    moves. No released sentence resolves either half, and no template operation
+    declares a `Last-Modified` header or an `If-Match` / `If-None-Match`
+    parameter.
+  source: >-
+    ITS-REST docs/overview/Requests_and_responses.md §"ETag and Last-Modified"
+    (the SHOULD sentence; "The `ETag` value is usually taken from e.g.
+    VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc. It
+    changes as soon as the resource changes"; "Servers MAY add additional
+    `ETag` response headers"; the weak-`W/` MUST) +
+    specifications/responses/201_Template_adl1_4_upload.yaml and
+    201_Template_adl2_upload.yaml (Location + ETag + Content-Type; no
+    Last-Modified) + 200_Template_adl1_4_retrieved.yaml and
+    200_Template_adl2_retrieved.yaml + the template operations' parameter lists
+    (no conditional-request headers) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, both halves. A template DOES carry a unique state
+    identifier for the purposes of the trailing clause — its resolved identity,
+    `template_id` for ADL 1.4 and the resolved ARCHETYPE_HRID for ADL2 — so an
+    `ETag` is served on the template responses, weak-prefixed per the
+    §Deprecated-headers MUST and naming the RESOLVED identity rather than the
+    (possibly partial) addressed one. `Last-Modified` is NOT served: it reports
+    when a resource last changed, and a released template resource never
+    changes after creation, so any value would be an invention. No
+    conditional-request precondition is honoured on the template routes,
+    because none is declared there. The ETag declarations execute on the upload
+    and retrieval bindings; nothing asserts the ABSENCE of Last-Modified, which
+    stays a documented boundary rather than a claim. Reported upstream
+    (UPR-76): say whether templates fall under the conditional-header SHOULD,
+    and if so what `Last-Modified` means for an immutable resource.
+  disposition: fixed_handling
+  upstream_ref: "UPR-76"
+
+AMB-113:
+  ambiguity: >-
+    The deprecated ADL2 "Get template at version" endpoint leaves two things
+    open. (a) DEPRECATION SIGNALLING: the operation is marked deprecated
+    (SPECITS-87) and remains fully specified — a description, a 200 with a
+    representation, a 404 — but the release defines no way for a server to TELL
+    a client that; there is no `Deprecation` or `Sunset` response header
+    anywhere in the overview, and no sentence saying whether a conformant
+    server may withdraw the route or must keep serving it. Deprecated-but-
+    served and withdrawn-with-404 are equally consistent with every released
+    sentence. (b) PRE-RELEASE SEMVER: the `{version}` selector is described as
+    "A SEMVER version number… an exact version (e.g. `1.7.1`), or a pattern as
+    partial prefix, in a form of `{major}` or `{major}.{minor}`", which covers
+    neither the SEMVER pre-release forms (`1.0.0-rc.1`, `1.0.0-alpha`) that AM's
+    own versioning chapter admits, nor how a prefix should treat them — whether
+    `1.0` selects `1.0.0-rc.1` when that is the highest match, and whether a
+    pre-release ever counts as "the highest (latest) version matching the
+    prefix".
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl2_version_get.yaml
+    (`deprecated: true`; responses 200/400/404) +
+    docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get template
+    at version' and the version query parameter from upload template") +
+    docs/overview/Requests_and_responses.md §HTTP headers (no
+    Deprecation/Sunset header defined anywhere) +
+    specifications/parameters/path/version.yaml (the two legal forms) + AM
+    docs/Identification/master04-versioning.adoc (the SEMVER model, including
+    pre-release versions) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, both halves. (a) The deprecated route is SERVED, because it
+    is released text with a fully specified success branch and the release
+    provides no mechanism to signal or schedule its withdrawal; no deprecation
+    header is emitted, since none is defined and inventing one would put a
+    non-released header on the wire. The case that exercises it carries a guard
+    so a SUT that has withdrawn the surface is not failed for it
+    (I_DEFINITION_ADL2.get_artefact-version_get). (b) The `{version}` selector
+    matches EXACT STRINGS outside the two released forms: a pre-release
+    selector resolves only to the artefact whose version string equals it, and
+    prefix resolution ranks only the release forms the parameter defines, so a
+    pre-release never wins a `{major}` / `{major}.{minor}` prefix over a
+    release version. Prefix resolution over the released forms IS gated
+    (I_DEFINITION_ADL2.get_artefact-version_prefix). Reported upstream
+    (UPR-77): define deprecation signalling and the withdrawal contract, and
+    extend the version selector to the SEMVER pre-release forms.
+  disposition: fixed_handling
+  upstream_ref: "UPR-77"
+
+AMB-114:
+  ambiguity: >-
+    The template list filters are described one parameter at a time and never
+    as a query. Three questions have no released answer: how MULTIPLE filters
+    combine (`?template_id=vital*&concept=*signs*` — conjunction, disjunction,
+    or last-wins), what an `offset` at or beyond the end of the result set
+    returns (an empty list, the last page, or a client error), and what the
+    `version` filter means for an ADL 1.4 id whose version substring has no
+    defined grammar (AMB-104). The one sentence that does more than name a
+    parameter is the version filter's default — "if missing, then only the
+    latest version will be returned" — which raises a fourth: it makes the
+    UNFILTERED list version-suppressed, while the release's own example
+    response shows a flat list of templates carrying no version field at all
+    and the metadata schema marks `version` deprecated.
+  source: >-
+    ITS-REST specifications/parameters/query/filter_template_id.yaml,
+    concept.yaml, filter_version.yaml ("Filter by version (e.g. `1.2.*` or use
+    `*` for all versions), taken from `template_id`; if missing, then only the
+    latest version will be returned"), offset.yaml ("The row number in
+    result-set to start result-set from (`0`-based), default is `0`") and
+    fetch.yaml + operations/definition_template_adl1.4_list.yaml and
+    definition_template_adl2_list.yaml (a single '200' branch) +
+    responses/200_TemplateList_adl1_4.yaml (the example list) +
+    schemas/definition/TemplateMetadata.yaml (`version` present but
+    deprecated) — silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling. Filters CONJOIN: each supplied filter narrows the result
+    set, so a template must satisfy every one of them to be listed — the only
+    reading under which adding a filter cannot widen a result, which is what
+    "filter" means. Each filter matches the WHOLE candidate value with `*`
+    standing for any run of characters (AMB-107). Paging applies AFTER
+    filtering, and an `offset` at or beyond the end of the filtered set yields
+    an EMPTY list rather than an error: the released 200 branch is the only one
+    either list operation declares, an empty page is a fulfilled request, and
+    the 0-based row-number wording makes the empty result the arithmetic
+    answer. The glob half is exercised
+    (I_DEFINITION_ADL2.list_matching_artefacts-filter); the conjunction and
+    past-the-end halves are recorded as coverage gaps in
+    vocab/wire_surface.yaml (`template-list-filter-conjunction`,
+    `template-list-offset-past-end`) rather than claimed. Reported upstream
+    (UPR-78): define filter combination, the past-the-end page, and the
+    interaction of the version filter with an id whose version grammar is
+    undefined.
+  disposition: fixed_handling
+  upstream_ref: "UPR-78"
+
+AMB-115:
+  ambiguity: >-
+    The example-generation routes offer an explicit either/or and assign it to
+    nobody, and only one of the two routes carries the sentence at all. The ADL
+    1.4 operation says: "When the server does not support the requested `type`
+    or `detail_level`, it will fall back to the closest supported level, or it
+    may return an error (typically `400 Bad Request`)" — two conformant
+    behaviours, no rule for choosing, and "typically" attached to the only code
+    named. The ADL2 operation describes the same two parameters with the same
+    enums and the same defaults but carries NO such sentence, so whether the
+    latitude extends to it is itself unstated. Nor does either say what happens
+    for a value OUTSIDE the declared enums (`detail_level=verbose`), as opposed
+    to an enum value the server does not implement.
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml
+    (the fall-back-or-error sentence + the `required` / `medium` / `complete`
+    meanings + the NOTE "The implementation and completeness of these examples
+    are not specified, and vendors may produce different results") vs
+    definition_template_adl2_example_get.yaml (the same parameters, no such
+    sentence) + parameters/query/example_type.yaml (enum input|output, default
+    input) + parameters/query/example_detail_level.yaml (enum
+    required|medium|complete, default required) + responses/400.yaml (the
+    syntactic trigger, which an out-of-enum parameter value DOES meet:
+    "syntactically invalid header, parameter or content") — CONFIRMED
+    first-hand.
+  handling: >-
+    Fixed handling, applied UNIFORMLY to both routes: the ADL2 operation
+    declares the identical parameters with the identical enums and the same 400
+    response, and nothing suggests the two routes were meant to behave
+    differently, so the ADL 1.4 prose is read as the surface's rule rather than
+    one route's. This CDR takes the ERROR branch of the either/or: a request
+    naming a `type` or `detail_level` it cannot produce answers 400 rather than
+    silently substituting a different one, because a silent fall-back returns
+    an example the client did not ask for with nothing on the wire saying so,
+    and the released text names 400 as the code for that branch. An out-of-enum
+    value is 400 under the released 400 trigger directly (a syntactically
+    invalid parameter), independently of the either/or, so
+    I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates for every
+    server: a value outside the enum has no "closest supported level" to fall
+    back to, which makes the fall-back branch unreachable there.
+    THE ONE RESIDUAL, recorded rather than hidden: the two cases that exercise
+    the declared non-default enum members
+    (I_DEFINITION_ADL14.get_opt-example_type_output and
+    -example_detail_levels) expect the request to be FULFILLED. That holds for
+    a server implementing the member and for one taking the FALL-BACK branch
+    (which also answers 200 with the closest level); the only permitted
+    configuration it would fail is a server that neither implements the member
+    nor falls back. Those cases carry no option tag because their capability
+    (Adl14OptProvisioning) is a CORE-tier capability and the case model ties
+    profiles to capability tier, so an OPTIONS scoping is not expressible for
+    them; the residual is therefore carried here instead of being silently
+    asserted away. It closes when the released text assigns the branch (UPR-79)
+    or the two enum members are made mandatory.
+    Reported upstream (UPR-79): assign the unsupported-value branch, and give
+    the ADL2 operation the same prose as its ADL 1.4 twin.
+  disposition: fixed_handling
+  upstream_ref: "UPR-79"
+
+AMB-116:
+  ambiguity: >-
+    A MISSING MANDATORY SECTION of an ADL2 artefact belongs to both AM phases
+    at once, so AMB-110's syntax-vs-semantics split law cannot place it. The
+    `adl_operational_template` production makes `language`, `description`,
+    `definition`, `terminology` and `component_terminologies` obligatory parts
+    of the artefact's grammar, which puts a source lacking one in the SYNTAX
+    phase; but the AOM2 validation catalogue's very first list also owns the
+    same defect — "any missing mandatory parts, e.g. `terminology` section
+    (STCNT)" appears under Phase 1 Basic checks, alongside genuinely semantic
+    checks like VARDT — which puts it in the VALIDATION phase. AM never says
+    which phase reports it, and the two phases carry different wire statuses
+    (AMB-110: syntax → the released 400 branch, semantics → the adjudicated
+    422). The same question covers the ADL 1.4 side for any defect an XML
+    parser could reject as schema-invalid but an OPT validator could equally
+    report as a semantic error.
+  source: >-
+    AM docs/OPT2/master03-opt_raw.adoc §Artefact Structure (the
+    `adl_operational_template` Antlr4 rule: `'operational_template' '('
+    qualifiers? ')' ARCHETYPE_HRID 'language' odin_text 'description'
+    odin_text 'definition' cadl_text … 'terminology' odin_text …
+    'component_terminologies' odin_text` — the sections are grammar
+    productions, not optional decorations) vs AM
+    docs/AOM2/master08-validation.adoc §Phase 1 - Basic Integrity §Basic checks
+    ("any missing mandatory parts, e.g. `terminology` section (STCNT)"),
+    listed among the validation checks; neither says which phase reports a
+    missing section, and AM defines no phase-assignment rule — CONFIRMED
+    first-hand.
+  handling: >-
+    Fixed handling: the wire status follows the phase in which the artefact
+    engine actually detects the defect — 400 when the parse fails on the
+    missing production, 422 when the source parses and the validator reports
+    it. Both answers are released-grounded under AMB-110's split law, so
+    neither is a divergence, and the CATALOGUE pins neither: every rejection
+    case uses a fixture whose phase is unambiguous — an unparseable or empty
+    source for 400 (I_DEFINITION_ADL2.upload_artefact-unparseable_artefact,
+    I_DEFINITION_ADL14.upload_opt-unparseable_opt), a parseable source failing
+    a NAMED AOM2 validity check for 422
+    (I_DEFINITION_ADL2.upload_artefact-invalid_artefacts, whose fixture
+    violates VARDT). The section-boundary fixtures
+    (cnf.adl2.opt.invalid.missing_description /
+    cnf.adl2.opt.invalid.missing_definition) stay in the corpus, referenced by
+    no case, precisely because pinning them would author a status the released
+    text does not settle. Reported upstream (UPR-80): say which phase owns a
+    missing mandatory section, or make the two catalogues disjoint.
+  disposition: fixed_handling
+  upstream_ref: "UPR-80"
