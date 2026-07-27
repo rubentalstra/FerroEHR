@@ -198,6 +198,66 @@ fn stable_uuid(bytes: &[u8]) -> Uuid {
     Uuid::from_u64_pair(high.finish(), low.finish())
 }
 
+/// Merge a paging value carried in the POST body with the same-named URL
+/// query parameter. The docs-text SHOULD-list ("All query execution requests
+/// SHOULD support at least the following parameters", `Request.md` §Common
+/// Headers and Query Parameters) draws no GET/POST distinction, so the URL
+/// forms are accepted on the POSTs too; released text assigns no precedence,
+/// so a value carried in BOTH places must agree — a conflict is a `400` (the
+/// AMB-59 pattern, register-documented).
+pub(super) fn merge_body_and_url_i64(
+    body: Option<i64>,
+    query: Option<&str>,
+    key: &str,
+) -> Result<Option<i64>, RestError> {
+    let url = crate::params::query_param(query, key)
+        .map(|raw| {
+            raw.parse::<i64>().map_err(|_| {
+                RestError(ApiError::BadRequest(format!(
+                    "the `{key}` query parameter is not an integer: {raw:?}"
+                )))
+            })
+        })
+        .transpose()?;
+    match (body, url) {
+        (Some(b), Some(u)) if b != u => Err(RestError(ApiError::BadRequest(format!(
+            "`{key}` is {b} in the request body but {u} in the URL — a request may \
+             carry the value in either place, not two disagreeing ones"
+        )))),
+        (b, u) => Ok(b.or(u)),
+    }
+}
+
+/// Merge the body `query_parameters` object with the URL's named
+/// `$parameter` binds (the same named-binding law the GETs follow,
+/// `Request.md` §Query parameters). A parameter carried in BOTH places must
+/// agree — a conflict is a `400` (the AMB-59 pattern, register-documented).
+pub(super) fn merge_body_and_url_parameters(
+    body: std::collections::BTreeMap<String, serde_json::Value>,
+    query: Option<&str>,
+) -> Result<std::collections::BTreeMap<String, serde_json::Value>, RestError> {
+    let url_only = crate::params::named_query_parameters(
+        query,
+        std::collections::BTreeMap::new(),
+        crate::params::QUERY_RESERVED_KEYS,
+    );
+    // A disagreement between the two carriers is loud, never silently won.
+    for (key, url_value) in &url_only {
+        if let Some(body_value) = body.get(key)
+            && body_value != url_value
+        {
+            return Err(RestError(ApiError::BadRequest(format!(
+                "query parameter `{key}` differs between the request body and the URL"
+            ))));
+        }
+    }
+    let mut merged = body;
+    for (key, url_value) in url_only {
+        merged.insert(key, url_value);
+    }
+    Ok(merged)
+}
+
 #[cfg(test)]
 #[allow(
     clippy::panic,

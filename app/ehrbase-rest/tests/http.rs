@@ -626,3 +626,63 @@ async fn authenticated_write_attributes_the_default_committer() {
         "identifier records the mechanism"
     );
 }
+
+/// The group-9 POST-body disciplines (#481): a stored-query POST accepts `{}`
+/// (all three body members are OPTIONAL — the stalled OAS required-list loses
+/// to the docs text: offset defaults 0, fetch is implementation-default), the
+/// POSTs accept the URL parameter forms (the docs-text SHOULD-list draws no
+/// GET/POST distinction), and a body-vs-URL conflict is a 400 (the AMB-59
+/// pattern, register-documented).
+#[tokio::test]
+async fn query_post_body_optionality_and_url_forms() {
+    let (_pg, app) = app(false).await;
+
+    // Store a parameterless query, then execute it with `{}`.
+    let store = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/definition/query/org.test::everything"))
+        .header(header::CONTENT_TYPE, "text/plain")
+        .body(Body::from("SELECT e/ehr_id/value FROM EHR e"))
+        .unwrap();
+    let (status, _h, body) = send(app.clone(), store).await;
+    assert_eq!(status, StatusCode::OK, "store: {body}");
+
+    let exec_empty = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/query/org.test::everything"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from("{}"))
+        .unwrap();
+    let (status, _h, body) = send(app.clone(), exec_empty).await;
+    assert_eq!(status, StatusCode::OK, "empty body executes: {body}");
+
+    // URL forms on the POST: fetch from the URL applies.
+    let exec_url = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/query/org.test::everything?fetch=1"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from("{}"))
+        .unwrap();
+    let (status, _h, body) = send(app.clone(), exec_url).await;
+    assert_eq!(status, StatusCode::OK, "URL fetch on POST: {body}");
+
+    // Conflict: the same key in both places with different values → 400.
+    let exec_conflict = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/query/org.test::everything?fetch=1"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"fetch": 2}"#))
+        .unwrap();
+    let (status, _h, _b) = send(app.clone(), exec_conflict).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "body-vs-URL conflict");
+
+    // Equal values in both places are accepted (the AMB-59 pattern).
+    let exec_equal = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/query/org.test::everything?fetch=2"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"fetch": 2}"#))
+        .unwrap();
+    let (status, _h, body) = send(app.clone(), exec_equal).await;
+    assert_eq!(status, StatusCode::OK, "equal values agree: {body}");
+}
