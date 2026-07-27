@@ -58,9 +58,15 @@ pub struct AdhocQueryExecute {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Query {
-    pub offset: Offset,
-    pub fetch: Fetch,
-    pub query_parameters: QueryParameters,
+    /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`offset` … default `0`"
+    /// (A required member cannot default; the stored-query execute body must accept `{}` (a parameterless stored query).)
+    pub offset: Option<Offset>,
+    /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`fetch` … default depends on the implementation"
+    /// (A required member cannot default; the stored-query execute body must accept `{}`.)
+    pub fetch: Option<Fetch>,
+    /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Query parameters — parameters exist "Depending on each query definition"; a parameterless stored query binds none
+    /// (A stored query with no $parameters must be executable with an empty body.)
+    pub query_parameters: Option<QueryParameters>,
 }
 
 /// Parameters for `query_execute_adhoc_query` (path/query/header).

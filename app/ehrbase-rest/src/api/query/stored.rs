@@ -121,14 +121,27 @@ fn stored_body_request(
     h: &HeaderMap,
     body: &bytes::Bytes,
 ) -> Result<AqlQueryRequest, RestError> {
+    // All three body members are OPTIONAL (`Request.md` §Common Headers:
+    // offset defaults 0, fetch is implementation-default — the stalled OAS
+    // required-list loses to the docs text): `{}` executes a parameterless
+    // stored query.
     let parsed: StoredQueryBody = response::decode_body(h, body)?;
+    // The docs-text SHOULD-list draws no GET/POST distinction ("All query
+    // execution requests SHOULD support at least the following parameters"),
+    // so the URL forms are accepted on the POSTs too; a value carried in BOTH
+    // places must agree — a conflict is a 400 (the AMB-59 pattern,
+    // register-documented).
+    let offset = response::merge_body_and_url_i64(parsed.offset, q, "offset")?;
+    let fetch = response::merge_body_and_url_i64(parsed.fetch, q, "fetch")?;
+    let parameters =
+        response::merge_body_and_url_parameters(parsed.query_parameters.unwrap_or_default(), q)?;
     Ok(AqlQueryRequest {
         ehr_ids: response::ehr_id_from_request(params::query_param(q, "ehr_id"), h)?
             .into_iter()
             .collect(),
-        offset: Some(parsed.offset),
-        fetch: Some(parsed.fetch),
-        parameters: parsed.query_parameters,
+        offset,
+        fetch,
+        parameters,
         ..Default::default()
     })
 }

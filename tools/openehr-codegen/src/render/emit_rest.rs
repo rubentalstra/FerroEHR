@@ -236,12 +236,19 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
     if schema.get("type").and_then(Value::as_str) == Some("object")
         && let Some(props) = schema.get("properties").and_then(Value::as_object)
     {
+        let ty_name = dto_type(name);
+        // The vendored OAS `required` list, minus the docs-text-wins
+        // corrections (`plan::overrides::REST_OPTIONAL_OVERRIDES` — the
+        // ITS-REST docs text is the wire oracle; where it contradicts the
+        // stalled OAS shape, the field is emitted optional).
         let required: BTreeSet<&str> = schema
             .get("required")
             .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(Value::as_str).collect())
-            .unwrap_or_default();
-        let ty_name = dto_type(name);
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .filter(|f| crate::plan::overrides::rest_optional_override(&ty_name, f).is_none())
+            .collect();
         let _ = write!(
             b,
             "#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {ty_name} {{\n"
@@ -251,6 +258,13 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             let mut ty = ctx.rust_type(pschema);
             if !required.contains(pname.as_str()) {
                 ty = format!("Option<{ty}>");
+            }
+            // A docs-text-wins correction carries its citation into the
+            // generated code (the OAS lists the field as required; the
+            // ITS-REST docs text wins).
+            if let Some(ov) = crate::plan::overrides::rest_optional_override(&ty_name, pname) {
+                let _ = writeln!(b, "    /// OPTIONAL by the docs text — {}", ov.citation);
+                let _ = writeln!(b, "    /// ({})", ov.reason);
             }
             if let Some(rename) = naming::serde_rename(pname, &ident) {
                 let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");

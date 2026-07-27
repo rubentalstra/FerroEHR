@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Stored-query POST bodies accept `{}`; the query POSTs accept the URL
+  parameter forms** (#481). The three body members of the stored-execute
+  body are optional (the docs text gives `offset` a default and makes
+  `fetch` implementation-default — the stalled required-list loses), so a
+  parameterless stored query executes with an empty body; and all three
+  POSTs now accept `offset`/`fetch`/named `$parameters` from the URL (the
+  docs-text SHOULD-list draws no GET/POST distinction), with a body-vs-URL
+  disagreement rejected 400.
+
 - **Tag GET/DELETE verify the addressed target; empty `target_path`
   normalizes to absent** (#474). `GET`/`DELETE` on the per-target tag
   routes now answer 404 for a nonexistent, foreign-EHR, or wrong-kind
