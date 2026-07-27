@@ -1,8 +1,31 @@
 # delete_directory on an EHR with no directory errors: there is no directory to
-# delete (SM Pre_has_directory). Realized as a 404. The wire-required If-Match
-# IS sent (a synthetic value; the OAS marks the header required) — RFC 9110
-# §13.2.2 precedence makes the missing-resource 404 win over precondition
-# evaluation (RM ehr §EHR.directory 0..1; ITS-REST overview §HTTP status codes (404)).
+# delete.
+#
+# The RULE is SM — I_EHR_DIRECTORY.delete_directory declares `Pre_has_directory`
+# — and RM ehr ehr.adoc types `EHR.directory` 0..1, so the absence is a
+# representable state the operation forbids.
+#
+# SPEC SILENCE on the CODE, adjudicated as AMB-80 (fixed_handling): the
+# released 404 file this operation selects (404_unknown_ehr_id.yaml) is scoped
+# "when an EHR with `ehr_id` does not exist" — which is NOT this case, the EHR
+# exists — and 412 is scoped to an If-Match mismatch against the latest
+# version, of which there is none. SM's only declared error here is
+# `ehr_id_does_not_exist`, which likewise does not fit. The register's fixed
+# handling is 404: the directory resource the request addresses does not exist,
+# the closest released semantics (ITS-REST overview Requests_and_responses.md
+# §HTTP status codes: "404 | Not Found | The origin service did not find the
+# target resource or is not willing to disclose that one exists").
+# fixed_handling, so the case GATES.
+#
+# The wire-required If-Match IS sent (a synthetic value), so the exchange is a
+# well-formed request rather than a missing-precondition one; RFC 9110 §13.2.2
+# precedence makes the missing-resource answer win over precondition
+# evaluation.
+#
+# GROUNDING NOTE: this case previously cited the CNF platform test schedule as
+# the authority for its 404. The schedule never released stable and is a GUIDE
+# to which behaviours to cover, never the correct answer, so the expectation is
+# re-grounded on SM + RM + the register.
 id: I_EHR_DIRECTORY.delete_directory-empty_ehr
 kind: functional
 component: EHR_DIRECTORY
@@ -13,10 +36,12 @@ test_purpose: >-
   delete_directory on an EHR that has no directory is rejected: there is no
   directory to delete.
 description: "Test delete_directory on empty EHR"
+ambiguities: [AMB-80]
 spec_refs:
-  - "SM openehr_platform §I_EHR_DIRECTORY.delete_directory"
-  - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.delete_directory-empty_ehr"
-applies: { rm: ">=1.0.2" }
+  - "SM openehr_platform §I_EHR_DIRECTORY.delete_directory (Pre_has_directory)"
+  - "RM ehr §EHR (directory 0..1)"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
   ehr: { commits: none }                 # EHR exists, no directory — mints ${ehr_id}
