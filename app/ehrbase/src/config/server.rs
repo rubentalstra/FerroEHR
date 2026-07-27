@@ -213,15 +213,19 @@ impl Default for TenancyConfig {
 
 /// Configuration of the ADMIN API group (`[admin]`, §3.7; SM `I_ADMIN_SERVICE`).
 ///
-/// NOTE: gating the admin surface behind an opt-in flag — when inactive
-/// the admin controllers are not registered, so the routes are absent (`404`),
-/// never a `403`. Physical, irreversible deletion is dangerous, so the group
-/// stays off by default. No openEHR spec governs this gate — our own design.
+/// NOTE: gating the admin surface behind an opt-in flag — when inactive every
+/// admin route answers `405 Method Not Allowed` with an empty `Allow`
+/// ("If a method is recognized but not allowed for the target resource, the
+/// response SHOULD be `405 Method Not Allowed` status code" —
+/// `docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §"HTTP Methods"), never a `403`. Physical, irreversible deletion is
+/// dangerous, so the group stays off by default. No openEHR spec governs the
+/// gate itself — our own design.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct AdminConfig {
     /// Whether the ADMIN API group is active. When `false`, every admin route
-    /// answers `404` without touching the backend.
+    /// answers `405 Method Not Allowed` without touching the backend.
     pub enabled: bool,
 }
 

@@ -756,6 +756,8 @@ async fn demographic_item_tag_operations_are_fully_documented() {
             );
         }
     };
+    // Whitespace-normalized (doc comments hard-wrap, so a released sentence
+    // may span a line break in the served description).
     let text = |op: &Value| -> String {
         format!(
             "{} {}",
@@ -766,6 +768,9 @@ async fn demographic_item_tag_operations_are_fully_documented() {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
         )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
     };
     let param_doc = |op: &Value, name: &str| -> String {
         op.get("parameters")
@@ -967,6 +972,333 @@ async fn demographic_item_tag_operations_are_fully_documented() {
         "the Demographic API serves sixteen released ITEM_TAG operations \
          (five typed quintets + the space-wide list)"
     );
+}
+
+/// The Admin API group's five served operations are documented to full step-6
+/// completeness: every branch this server actually emits, the `Allow` header on
+/// every config-gate `405`, worked examples, and NO `Location` anywhere.
+///
+/// The branches are the RELEASED ITS-REST text, not the stalled OAS. The two
+/// released operations (`operations/admin_ehr_delete.yaml`,
+/// `operations/admin_ehr_delete_all.yaml`) `$ref` only description-carrying
+/// response files (`responses/{202,204_deleted_hard,404,404_unknown_ehr_id,405}.yaml`
+/// declare no `headers:` at all), so the only response header this group may
+/// declare is the `Allow` RFC 9110 §15.5.6 makes mandatory on a `405`.
+/// `Requests_and_responses.md` §"Deprecated headers" deprecates `Location` on
+/// `GET` and `DELETE` responses — which is every route here — and §"HTTP
+/// Methods" is the ground for the `405` on every route EXCEPT
+/// `admin_ehr_delete_all`, whose own NOTE covers it.
+#[tokio::test]
+#[allow(clippy::too_many_lines)] // one regression test per audited group keeps the pins together
+async fn admin_operations_are_fully_documented() {
+    const BASE: &str = "/ehrbase/rest/openehr/v1/admin";
+
+    let doc = served_document().await;
+
+    let codes = |op: &Value| -> Vec<String> {
+        op["responses"]
+            .as_object()
+            .map(|r| r.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let header_names = |op: &Value, status: &str| -> Vec<String> {
+        op["responses"][status]["headers"]
+            .as_object()
+            .map(|h| h.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let require = |op: &Value, path: &str, method: &str, expected: &[&str]| {
+        let present = codes(op);
+        for want in expected {
+            assert!(
+                present.iter().any(|c| c == want),
+                "{method} {path} must document {want}; has {present:?}"
+            );
+        }
+    };
+    // Whitespace-normalized (doc comments hard-wrap, so a released sentence
+    // may span a line break in the served description).
+    let text = |op: &Value| -> String {
+        format!(
+            "{} {}",
+            op.get("summary")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            op.get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        )
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+    };
+    let param_doc = |op: &Value, name: &str| -> String {
+        op.get("parameters")
+            .and_then(Value::as_array)
+            .and_then(|params| {
+                params
+                    .iter()
+                    .find(|p| p.get("name").and_then(Value::as_str) == Some(name))
+            })
+            .and_then(|p| p.get("description").and_then(Value::as_str))
+            .unwrap_or_default()
+            .to_owned()
+    };
+
+    // ── every route: the RBAC pair, the gated 405 with its Allow, no Location ─
+    let all: [(String, &str); 5] = [
+        (format!("{BASE}/ehr/all"), "delete"),
+        (format!("{BASE}/ehr/{{ehr_id}}"), "delete"),
+        (format!("{BASE}/template/{{template_id}}"), "delete"),
+        (
+            format!("{BASE}/query/{{qualified_query_name}}/{{version}}"),
+            "delete",
+        ),
+        (format!("{BASE}/config"), "get"),
+    ];
+    for (path, method) in &all {
+        let op = doc["paths"][path][method].clone();
+        assert!(op.is_object(), "{method} {path} must be documented");
+        require(&op, path, method, &["401", "403", "405"]);
+        // The one response header this group emits: `Allow` on the config-gate
+        // 405 (RFC 9110 §15.5.6 makes it mandatory; the value is empty per
+        // §10.2.1 — a resource "temporarily disabled by configuration").
+        assert!(
+            header_names(&op, "405").iter().any(|h| h == "Allow"),
+            "{method} {path} 405 must document the mandatory Allow header; has {:?}",
+            header_names(&op, "405")
+        );
+        // No response of this group may declare Location: §"Deprecated headers"
+        // deprecates it on both GET and DELETE responses.
+        for status in codes(&op) {
+            assert!(
+                !header_names(&op, &status).iter().any(|h| h == "Location"),
+                "{method} {path} {status} must NOT declare Location \
+                 (§\"Deprecated headers\": deprecated on GET and DELETE)"
+            );
+        }
+    }
+
+    // ── the two RELEASED operations ──────────────────────────────────────────
+    // The single-EHR delete: its own 404 file, the UUID path parameter, the
+    // GDPR cascade sentence, and the §"HTTP Methods" ground for its 405.
+    let path = format!("{BASE}/ehr/{{ehr_id}}");
+    let op = doc["paths"][&path]["delete"].clone();
+    require(&op, &path, "DELETE", &["204", "400", "404"]);
+    assert!(
+        header_names(&op, "204").is_empty(),
+        "DELETE {path} 204 carries no header at all (no released response file \
+         declares one, and the EHR is gone); has {:?}",
+        header_names(&op, "204")
+    );
+    let body = text(&op);
+    assert!(
+        body.contains("GDPR in the European Union"),
+        "DELETE {path} must carry the released GDPR cascade sentence; has: {body}"
+    );
+    assert!(
+        body.contains("202 Accepted") && body.contains("SYNCHRONOUS"),
+        "DELETE {path} must document the released async 202 branch AND say this \
+         server is synchronous; has: {body}"
+    );
+    assert!(
+        !codes(&op).iter().any(|c| c == "202"),
+        "DELETE {path} must NOT declare a 202 it never emits"
+    );
+    let not_found = op["responses"]["404"]["description"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        not_found.contains("`404 Not Found` is returned when an EHR with `ehr_id` does not exist."),
+        "DELETE {path} 404 must carry the verbatim 404_unknown_ehr_id.yaml trigger; has: {not_found}"
+    );
+    let gate = op["responses"]["405"]["description"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        gate.contains("HTTP Methods"),
+        "DELETE {path} 405 must cite overview §\"HTTP Methods\" — the bulk \
+         route's NOTE does not govern it; has: {gate}"
+    );
+    let ehr_id = param_doc(&op, "ehr_id");
+    assert!(
+        ehr_id.contains("EHR.ehr_id.value") && ehr_id.contains("UUID"),
+        "DELETE {path} must carry the released ehr_id prose and its uuid format; has: {ehr_id}"
+    );
+
+    // The bulk delete: the generic-404 binding, both query forms, the
+    // dev/testing NOTE that is its own 405 provenance.
+    let path = format!("{BASE}/ehr/all");
+    let op = doc["paths"][&path]["delete"].clone();
+    require(&op, &path, "DELETE", &["204", "400"]);
+    assert!(
+        header_names(&op, "204").is_empty(),
+        "DELETE {path} 204 carries no header at all; has {:?}",
+        header_names(&op, "204")
+    );
+    let body = text(&op);
+    assert!(
+        body.contains("development") && body.contains("testing"),
+        "DELETE {path} must carry the released dev/testing NOTE; has: {body}"
+    );
+    assert!(
+        body.contains("GDPR in the European Union"),
+        "DELETE {path} must carry the released GDPR cascade sentence; has: {body}"
+    );
+    assert!(
+        body.contains("responses/404.yaml") && body.contains("UNREACHABLE"),
+        "DELETE {path} must record that it binds the GENERIC 404 and why that \
+         branch is unreachable here (delete-what-exists); has: {body}"
+    );
+    assert!(
+        !codes(&op).iter().any(|c| c == "404"),
+        "DELETE {path} must NOT declare a 404 it never emits"
+    );
+    assert!(
+        body.contains("202 Accepted") && body.contains("SYNCHRONOUS"),
+        "DELETE {path} must document the released async 202 branch AND say this \
+         server is synchronous; has: {body}"
+    );
+    assert!(
+        !codes(&op).iter().any(|c| c == "202"),
+        "DELETE {path} must NOT declare a 202 it never emits"
+    );
+    let gate = op["responses"]["405"]["description"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        gate.contains("responses/405.yaml"),
+        "DELETE {path} 405 must cite its OWN released provenance (the NOTE + \
+         responses/405.yaml); has: {gate}"
+    );
+    let ehr_id = param_doc(&op, "ehr_id");
+    assert!(
+        ehr_id.contains("?ehr_id=a&ehr_id=b") && ehr_id.contains("?ehr_id=a,b"),
+        "DELETE {path} must document BOTH accepted query forms; has: {ehr_id}"
+    );
+    assert!(
+        ehr_id.contains("OPTIONAL") && ehr_id.contains("ALL EHRs"),
+        "DELETE {path} must state that an absent/empty list deletes ALL EHRs; has: {ehr_id}"
+    );
+    assert!(
+        documented_params(&op, "path").is_empty(),
+        "DELETE {path} takes no path parameter — the RFC 6570 `{{?ehr_id*}}` \
+         suffix is normalized away, it is not a path segment"
+    );
+
+    // ── the template-delete extension: the in-use 409 guard ──────────────────
+    let path = format!("{BASE}/template/{{template_id}}");
+    let op = doc["paths"][&path]["delete"].clone();
+    require(&op, &path, "DELETE", &["204", "404", "409"]);
+    let conflict = op["responses"]["409"]["description"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        conflict.contains("orphan"),
+        "DELETE {path} 409 must state the never-orphan-committed-data guard; has: {conflict}"
+    );
+    assert!(
+        text(&op).contains("delete_opt"),
+        "DELETE {path} must name the SM I_DEFINITION_ADL14.delete_opt relation"
+    );
+
+    // ── the stored-query-version delete: NOT SM delete_query ─────────────────
+    let path = format!("{BASE}/query/{{qualified_query_name}}/{{version}}");
+    let op = doc["paths"][&path]["delete"].clone();
+    require(&op, &path, "DELETE", &["204", "404"]);
+    let body = text(&op);
+    assert!(
+        body.contains("delete_query") && body.contains("NOT"),
+        "DELETE {path} must state that it does NOT realize SM delete_query; has: {body}"
+    );
+    assert!(
+        body.contains("(name, version)"),
+        "DELETE {path} must state that it deletes exactly one (name, version) \
+         row while SM delete_query deletes by name alone; has: {body}"
+    );
+
+    // ── the config read: 200 with a redacted tree, no versioning headers ─────
+    let path = format!("{BASE}/config");
+    let op = doc["paths"][&path]["get"].clone();
+    require(&op, &path, "GET", &["200"]);
+    for banned in ["ETag", "Last-Modified"] {
+        assert!(
+            !header_names(&op, "200").iter().any(|h| h == banned),
+            "GET {path} 200 must NOT declare {banned}: the config tree is not a \
+             versioned resource"
+        );
+    }
+    assert!(
+        op["responses"]["200"]["content"]
+            .as_object()
+            .and_then(|c| c.values().next())
+            .map(|c| c["example"].clone())
+            .is_some_and(|e| e["admin"]["enabled"].is_boolean()),
+        "GET {path} 200 must carry a worked redacted-config example"
+    );
+}
+
+/// The three admin extension routes are OUR OWN EXTENSION: the released Admin
+/// API defines exactly two operations, both EHR deletes, so every other admin
+/// route must say so in its description and none may be counted towards a
+/// conformance-profile claim.
+#[tokio::test]
+async fn admin_extension_operations_are_flagged_as_an_extension() {
+    const BASE: &str = "/ehrbase/rest/openehr/v1/admin";
+
+    let doc = served_document().await;
+
+    // The three routes of the ADMIN group that no released operation governs
+    // (the other `/admin/*` surfaces — event subscriptions, tenants — belong to
+    // their own extension groups and carry their own flags).
+    let extensions: [(String, &str); 3] = [
+        (format!("{BASE}/template/{{template_id}}"), "delete"),
+        (
+            format!("{BASE}/query/{{qualified_query_name}}/{{version}}"),
+            "delete",
+        ),
+        (format!("{BASE}/config"), "get"),
+    ];
+    for (path, method) in &extensions {
+        let op = doc["paths"][path][method].clone();
+        assert!(op.is_object(), "{method} {path} must be documented");
+        let text = format!(
+            "{} {}",
+            op.get("summary")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            op.get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        );
+        assert!(
+            text.contains("no ITS-REST operation governs this"),
+            "{} {path} must carry the our-own-extension flag; has: {text}",
+            method.to_uppercase()
+        );
+    }
+
+    // …and the released half of the group is exactly two operations, both EHR
+    // deletes (`specifications/admin.openapi.yaml`), so nothing else may claim
+    // released status.
+    let released = [format!("{BASE}/ehr/all"), format!("{BASE}/ehr/{{ehr_id}}")];
+    for path in &released {
+        let op = doc["paths"][path]["delete"].clone();
+        assert!(op.is_object(), "DELETE {path} must be documented");
+        let text = format!(
+            "{} {}",
+            op.get("summary")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            op.get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        );
+        assert!(
+            !text.contains("no ITS-REST operation governs this"),
+            "DELETE {path} is a RELEASED operation and must not be flagged as an extension"
+        );
+    }
 }
 
 /// The eight `PARTY_RELATIONSHIP` operations are OUR OWN EXTENSION: the
