@@ -31,12 +31,52 @@ outcomes:
   template_not_found:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors ("the underlying template is not known"); kind distinguished by fixture
     body: error_loose
-  not_found: { status: 404 }
-  conflict: { status: 409 }
+  not_found: { status: 404 }              # 404_unknown_ehr_id.yaml — the EHR the route addresses does not exist
+  conflict:
+    # DOCS TEXT (overview `Requests_and_responses.md` §HTTP status codes, the
+    # 409 row verbatim): "Indicates that the request could not be processed
+    # because it might generate a duplicate or a conflict". Two request shapes
+    # on this operation land in that row. (1) A duplicate: the CONTRIBUTION
+    # envelope carries an optional client-supplied `uid`, and a second commit
+    # naming a uid already in use would generate exactly the duplicate the row
+    # names. (2) A conflict with the resource's current state: a content write
+    # into an EHR whose `EHR_STATUS.is_modifiable` is false (RM ehr master04
+    # §EHR Active Status) — code adjudicated in register AMB-82, whose scope was
+    # extended to the native CONTRIBUTION commit.
+    status: 409
+    body: error_loose
+  precondition_failed:
+    # A member naming a STALE or unknown `preceding_version_uid`.
+    #
+    # SPEC SILENCE — no docs-text sentence assigns this branch a code. The
+    # overview's 412 row reads "One or more conditions given in the request
+    # HEADER FIELDS evaluated to false when tested on the server" and
+    # §"If-Match and accidental overwrites" scopes its 412 to the `If-Match`
+    # header, which this route does not carry at all: the precondition travels
+    # inside the member body (`preceding_version_uid`). Register AMB-54(b)
+    # carries the adjudicated fixed handling — 412 with the current-latest weak
+    # ETag, the same shape the direct routes' precondition family answers, the
+    # ETag half mirroring the same section's "SHOULD return also latest
+    # `version_uid` in the `ETag` response headers".
+    status: 412
+    headers:
+      # The entity tag names the CURRENT latest version of the addressed
+      # container. The `<name>` placeholder resolves from the case's own
+      # `latest_version_uid` capture; a case that captured none wildcards it and
+      # the matcher then asserts the weak-tag SHAPE alone (the
+      # §Deprecated-headers `W/` MUST).
+      ETag: 'pattern:W/"<latest_version_uid>"'
+    body: error_loose
 captures:
   contribution_uid:
     from: body "uid.value"
     fallback: header Location last-segment
+  contribution_etag_uid:
+    # The SAME identity read from the OTHER channel, so a case can assert the
+    # two agree instead of trusting either alone. Grounded in the create's own
+    # entity-tag contract (register AMB-87 anchors the read side on it).
+    from: header ETag
+    strip: weak-quotes
   version_uids:
     from: body "versions[*].id.value"     # list capture: one element per committed VERSION
   first_version_uid:

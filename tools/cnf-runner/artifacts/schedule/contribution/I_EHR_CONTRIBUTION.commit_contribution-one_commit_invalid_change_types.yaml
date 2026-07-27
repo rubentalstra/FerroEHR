@@ -29,6 +29,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
   - "CNF platform_test_schedule master08 §Combinations of data sets ([[one_commit]] matrix)"
   - "RM common §change_control (VERSION.commit_audit.change_type; lifecycle_state)"
+  - "ITS-REST specifications §responses/400_CONTRIBUTION (the assigned trigger: 'the modification type does not match the operation - i.e. first version of a MODIFICATION')"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any

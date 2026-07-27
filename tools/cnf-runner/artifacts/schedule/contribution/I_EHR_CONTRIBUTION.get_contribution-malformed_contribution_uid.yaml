@@ -1,0 +1,49 @@
+# A contribution_uid path segment that is not an identifier at all: the request
+# is refused for its SHAPE, before any lookup.
+#
+# SPEC SILENCE, adjudicated as AMB-76 (fixed_handling), whose scope was
+# extended to `contribution_uid`. The overview glossary types `ehr_id` and
+# `versioned_object_uid` but never mentions `contribution_uid` at all (a
+# released omission travelling in AMB-90); the only place the segment is typed
+# is its path-parameter declaration ("The CONTRIBUTION uid", string/uuid), and
+# no operation declares a branch for a malformed one. The register's repo-wide
+# handling puts a segment that parses as none of this repository's identifier
+# forms in the overview's 400 row (`Requests_and_responses.md` §HTTP status
+# codes, verbatim): "The service cannot or will not process the request due to
+# something that is perceived to be a client error (e.g., malformed request
+# syntax, syntactically invalid content)" — while a well-formed-but-unknown uid
+# keeps the 404 the -bad_contribution case pins.
+#
+# The token fails on both counts: not a UUID, and not any composite identifier
+# form. The sibling -bad_contribution case supplies the other side of the
+# boundary (a well-formed uid naming nothing), so the 400/404 split is
+# exercised rather than assumed.
+id: I_EHR_CONTRIBUTION.get_contribution-malformed_contribution_uid
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.get_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+ambiguities: [AMB-76]
+test_purpose: >-
+  A CONTRIBUTION read whose contribution_uid segment is not a well-formed
+  identifier is rejected as a client error rather than answered as a miss.
+description: "Get CONTRIBUTION with a malformed contribution_uid"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "ITS-REST overview Glossary_and_conventions (the identifier table; contribution_uid absent from it)"
+  - "BASE base_types §identification (mutually exclusive UID string patterns)"
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes offers both the 400 row ('syntactically invalid content') and the 404 row ('did not find the target resource') and assigns neither to a malformed segment; a server answering 404 for a garbage token breaches no quoted rule"
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: any }                  # mints ${ehr_id}
+  commit: [cnf.composition.minimal_event.v1]   # the EHR HAS contributions, so the refusal is the token alone
+flow:
+  - step: 1
+    call: get_contribution
+    with: { ehr_id: "${ehr_id}", contribution_uid: "not-a-contribution-uid" }
+    expect: validation_failed
