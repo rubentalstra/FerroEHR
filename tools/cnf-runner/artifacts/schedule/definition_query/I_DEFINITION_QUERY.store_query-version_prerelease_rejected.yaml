@@ -1,0 +1,46 @@
+# A SEMVER PRE-RELEASE version is not a version this store writes.
+#
+# The released version grammar for a stored query is three numeric parts —
+# ITS-REST docs/query/Qualified_query_name.md: "The `version` identifier is in
+# the format specified by SEMVER style (i.e. `major.minor.patch`)" — and the
+# `{version}` parameter admits only that exact form plus the `{major}` /
+# `{major}.{minor}` READ prefixes. Nothing in the release admits a pre-release
+# suffix on this surface (the sibling question for the ADL2 read is register
+# AMB-113), and nothing assigns the write an outcome for one, so register
+# AMB-122 refuses it on the operation's own declared 400 —
+# docs/overview/Requests_and_responses.md §"HTTP status codes", row `400 Bad
+# Request`: "…(e.g., malformed request syntax, syntactically invalid content)".
+# Accepting it would also place an unorderable version inside a surface whose
+# reads must rank versions numerically.
+id: I_DEFINITION_QUERY.store_query-version_prerelease_rejected
+kind: functional
+component: DEFINITION_QUERY
+sm_operation: I_DEFINITION_QUERY.store_query
+capabilities: [QueryProvisioning]
+profiles: [STANDARD]
+test_purpose: >-
+  A versioned store whose version segment carries a SEMVER pre-release suffix
+  is refused, and nothing is registered under it.
+description: "versioned store: a pre-release version (1.0.0-rc.1) is refused"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_QUERY.store_query"
+  - "ITS-REST query Qualified_query_name.md §version identifier"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires: { server: any }
+flow:
+  - step: 1
+    call: store_query
+    variant: version
+    with:
+      qualified_query_name: "org.openehr.cnf::version_prerelease_write"
+      version: "1.0.0-rc.1"              # outside the released major.minor.patch form
+      query: "SELECT c/uid/value AS v_rc FROM EHR e CONTAINS COMPOSITION c"
+    expect: validation_failed
+  - step: 2
+    call: list_queries
+    with: { qualified_query_name: "org.openehr.cnf::version_prerelease_write" }
+    expect: ok
+    assert:
+      - { assert: returns, equals: [] }  # the refusal registered nothing
+ambiguities: [AMB-122]

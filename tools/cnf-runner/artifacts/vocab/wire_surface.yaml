@@ -60,21 +60,15 @@ sm_operations:
     reason: variant_of
     source: "SM i_definition_adl2.adoc + register AMB-37 — valid_artefact realizes via upload_artefact (commit-time validation), no separate validate wire"
     note: "realized via I_DEFINITION_ADL2.upload_artefact"
-  - operation: I_DEFINITION_QUERY.delete_query
-    reason: off_wire
-    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
-  - operation: I_DEFINITION_QUERY.list_matching_queries
-    reason: off_wire
-    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
-  - operation: I_DEFINITION_QUERY.queries_count
-    reason: off_wire
-    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
-  - operation: I_DEFINITION_QUERY.store_query_set
-    reason: off_wire
-    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  # delete_query / list_matching_queries / queries_count / store_query_set no
+  # longer appear here: since the group-11 audit each carries an explicit
+  # `unrealized` its-rest binding + an SM-anchored case, so the gap is
+  # not-applicable WITH CITATION rather than an exception row (register
+  # AMB-127; AMB-121 for list_matching_queries).
   - operation: I_DEFINITION_QUERY.valid_query
-    reason: off_wire
-    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+    reason: variant_of
+    source: "SM i_definition_query.adoc §valid_query + §store_query (`Pre_valid_query`) vs released ITS-REST 1.1.0 — no validation endpoint exists; validity is checked AT THE STORE, so the operation is realized through the store rather than being off the wire (register AMB-123)"
+    note: "realized via I_DEFINITION_QUERY.store_query (the I_DEFINITION_QUERY.valid_query-* cases drive it)"
   - operation: I_EHR_CONTRIBUTION.contribution_count
     reason: off_wire
     source: "SM i_ehr_contribution.adoc vs released ITS-REST 1.1.0 — no contribution-count wire, and none INFERABLE either: with no collection GET on /ehr/{ehr_id}/contribution there is nothing to count against (the single-CONTRIBUTION GET answers only existence). Register AMB-22, widened 2026-07-27 from list_contributions to this operation and to has_contribution, records all three; has_contribution alone IS inferable (the by-uid GET's 200/404) and therefore carries a realized binding rather than an exception here"
@@ -1283,3 +1277,68 @@ elements:
       reason: coverage_gap
       register: AMB-116
       note: "A deliberate hold-out, not an omission. Both rejection STATUSES are gated on phase-unambiguous fixtures — 400 by I_DEFINITION_ADL2.upload_artefact-unparseable_artefact and I_DEFINITION_ADL14.upload_opt-unparseable_opt, 422 by I_DEFINITION_ADL2.upload_artefact-invalid_artefacts (a VARDT violation) and I_DEFINITION_ADL14.upload_opt-invalid_opt — so the split law itself is covered. What is NOT pinned is which status a SECTION-level defect wears; the corpus keeps cnf.adl2.opt.invalid.missing_description and .missing_definition referenced by no case for exactly that reason. Closes when AM assigns the phase (UPR-80)."
+  # Definition / STORED QUERY surface (group-11 audit, 2026-07-27). The
+  # version-slot, immutability, write-grammar, listing and fidelity positions
+  # the released text leaves open, plus the conditional-header posture —
+  # registered rather than silently omitted.
+  - id: query-stored-default-version-slot
+    description: "A version-less stored-query store writes one constant default version slot (1.0.0) and its Location names the version WRITTEN, not the name's latest; a second version-less store updates that same slot in place."
+    source: "ITS-REST specifications/operations/definition_query_store.yaml (\"Stores a new query, or updates an existing query on the system\"; no conflict branch, and no version parameter) + docs/query/Qualified_query_name.md (the version is optional and its absent/partial rule is stated for USE — \"the system must use the latest `version` with the supplied prefix\" — not for a write) + docs/overview/Requests_and_responses.md §\"Representation details negotiation\" (\"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + §\"Prefer minimal, identifier or full representation response\" (\"The response SHOULD include a `Location` header pointing to the newly created or updated resource\"); the minted version itself is spec-silent and adjudicated in register AMB-117"
+    covered_by:
+      - I_DEFINITION_QUERY.store_query-default_version_slot
+      - I_DEFINITION_QUERY.store_query-update_in_place
+      - I_DEFINITION_QUERY.store_query-default_slot_with_higher_version
+  - id: query-stored-version-immutability
+    description: "A version-ADDRESSED stored query is immutable: re-storing an existing (name, version) pair — in any letter case — is refused and the stored definition is untouched."
+    source: "ITS-REST specifications/tags/StoredQuery_schema.md (\"Stored queries provide a reusable, immutable way to identify a specific AQL statement\") + responses/409_StoredQuery_version.yaml (\"`409 Conflict` is returned when a query with the given `qualified_query_name` and `version` already exists on the server\") reading on docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 409 (\"the request could not be processed because it might generate a duplicate or a conflict\") + BASE base_types master05 §\"Composite Identifiers and Case\" (\"two identifiers identical apart from case are considered to be identical\"); the coexistence with the version-less store's overwrite sentence is register AMB-117"
+    covered_by:
+      - I_DEFINITION_QUERY.store_query-version_duplicate_conflict
+      - I_DEFINITION_QUERY.store_query-version_duplicate_case_variant_name
+  - id: query-stored-write-version-grammar
+    description: "The versioned store accepts only an exact numeric major.minor.patch version segment: a {major}/{major}.{minor} prefix, a SEMVER pre-release, and any malformed token are refused and register nothing."
+    source: "ITS-REST specifications/parameters/path/version.yaml (its prefix semantics are RESOLUTION semantics — \"the highest (latest) version matching the prefix will be considered\" — which cannot apply to a write) + docs/query/Qualified_query_name.md (\"The `version` identifier is in the format specified by SEMVER style (i.e. `major.minor.patch`)\") + docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 400 (\"malformed request syntax, syntactically invalid content\"); the write-side grammar is adjudicated in register AMB-122"
+    covered_by:
+      - I_DEFINITION_QUERY.store_query-version_prefix_rejected
+      - I_DEFINITION_QUERY.store_query-version_prerelease_rejected
+      - I_DEFINITION_QUERY.store_query-version_malformed_rejected
+  - id: query-stored-list-order-and-empty-result
+    description: "The stored-query listing matches the qualified name as a prefix and returns every version of every match, ordered by name then SEMVER ascending; a prefix matching nothing is a fulfilled request answering an empty list, not a not-found."
+    source: "ITS-REST specifications/operations/definition_query_list.yaml (\"Retrieves list of all stored queries on the system matched by `qualified_query_name` as pattern\"; \"will list all versions of all queries with names starting with `org.openehr`\"; a single declared 200) + schemas/definition/QueryList.yaml (the example's two versions of one name, ascending) + docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 404 (a missing TARGET RESOURCE — which the list resource is not); the order and the empty-result branch are spec-silent and adjudicated in register AMB-124"
+    covered_by:
+      - I_DEFINITION_QUERY.list_queries-prefix_all_versions
+      - I_DEFINITION_QUERY.list_queries-no_match_empty_list
+      - I_DEFINITION_QUERY.list_queries-empty
+  - id: query-stored-definition-read-fidelity
+    description: "A stored query's definition text is served back VERBATIM — the bytes the client stored, not a re-printed or normalized equivalent."
+    source: "ITS-REST specifications/operations/definition_query_version_get.yaml (\"Retrieves the definition of a particular stored query (at specified version) and its associated metadata\") + schemas/query/StoredQuery.yaml (`q` is the AQL text) — neither states a fidelity rule, so the position is adjudicated in register AMB-126 (verbatim, as for template retrieval in AMB-111)"
+    covered_by:
+      - I_DEFINITION_QUERY.list_queries-version_get_exact
+  - id: query-stored-version-selector-read
+    description: "The stored-query DEFINITION read resolves its version selector exactly as the execution read does: an exact SEMVER serves that definition, a {major} prefix the highest inside that major, a {major}.{minor} prefix the highest inside that minor, and a selector matching nothing is not found."
+    source: "ITS-REST docs/query/Qualified_query_name.md §version identifier (\"When only a partial `version` pattern is supplied, or when `version` is not supplied at all, the system must use the latest `version` with the supplied prefix - i.e. if only `major` or `major.minor` is used, then the latest query version matching supplied prefix will be used\") + docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 404; the same rule is exercised on the EXECUTION surface by query-stored-version-selector-matching"
+    covered_by:
+      - I_DEFINITION_QUERY.list_queries-version_get_exact
+      - I_DEFINITION_QUERY.list_queries-version_get_major_prefix
+      - I_DEFINITION_QUERY.list_queries-version_get_minor_prefix
+      - I_DEFINITION_QUERY.list_queries-version_get_unknown
+  - id: query-stored-negotiation-branches
+    description: "The stored-query routes carry the general negotiation MUSTs: a request declaring a payload media type the store cannot process is 415, and an Accept the JSON-only reads cannot satisfy is 406."
+    source: "ITS-REST docs/overview/Resources.md §\"JSON Format\" (\"If the service cannot process the request payload as JSON format, it MUST respond with HTTP status code `415 Unsupported Media Type`\") + §\"XML Format\" (\"The client SHOULD use the `Accept: application/xml` request header … If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code `406 Not Acceptable`\") — no stored-query operation declares either branch itself, so both are assembled from the general MUSTs (register AMB-127 records the surface's realization picture)"
+    covered_by:
+      - I_DEFINITION_QUERY.store_query-wrong_media
+      - I_DEFINITION_QUERY.list_queries-xml_not_acceptable
+      - I_DEFINITION_QUERY.list_queries-version_get_xml_not_acceptable
+  - id: query-stored-conditional-headers
+    description: "No ETag, Last-Modified or If-Match is emitted or honoured on the stored-query routes, although a stored query is version-addressed and carries a `saved` timestamp."
+    source: "ITS-REST docs/overview/Requests_and_responses.md §\"ETag and Last-Modified\" (\"Both `ETag` and `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\") + §\"If-Match and accidental overwrites\" (\"This is only required by a small set of versioned resources in this specification, when the `preceding_version_uid` is not part of the endpoint path segment\") vs the four stored-query operations, none of which declares a conditional-request parameter and none of whose responses declares either header — adjudicated in register AMB-125"
+    exception:
+      reason: coverage_gap
+      register: AMB-125
+      note: "Deliberately unasserted in BOTH directions. Asserting the headers would demand of a server what no released stored-query response declares; asserting their ABSENCE would read a SHOULD as a MUST NOT — the same restraint AMB-112 applies to Last-Modified on templates. Closes when a released sentence says whether stored queries fall under the conditional-header SHOULD and whether the overwriting version-less store takes If-Match (UPR-89)."
+  - id: query-stored-list-wildcard-unreachable
+    description: "The listing's empty-pattern wildcard clause names a request the released API cannot express, so no case exercises it."
+    source: "ITS-REST specifications/operations/definition_query_list.yaml (\"If pattern should given be in the format of `[{namespace}::]{query-name}`, and when is empty, it will be treated as \\\"wildcard\\\" in the search\") vs parameters/path/qualified_query_name.yaml (`required: true`) and definition.openapi.yaml, which declares only `/definition/query/{qualified_query_name}` and `…/{version}` — there is no bare `/definition/query` path for an empty name to address; adjudicated in register AMB-124(d)"
+    exception:
+      reason: off_wire
+      register: AMB-124
+      note: "Unreachable as released, so nothing in the catalogue may depend on it. Our own bare GET /definition/query serves the whole registry as the empty prefix of the same rule — an extension no openEHR spec governs — and is deliberately exercised by no case, so no verdict rests on the unreachable clause. Closes if a release declares the wildcard route."

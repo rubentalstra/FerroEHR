@@ -1168,3 +1168,180 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** state which phase reports a missing mandatory section, or make the
   grammar and validity catalogues disjoint (ours: whichever phase detects it —
   so the conformance catalogue pins only phase-unambiguous fixtures).
+
+### UPR-81 — a stored query is overwritable and immutable, and the minted version is unstated
+
+- **Components:** ITS-REST (`operations/definition_query_store.yaml`, `tags/StoredQuery_schema.md`, `responses/409_StoredQuery_version.yaml`, `docs/query/Qualified_query_name.md`, `headers/Location_Query.yaml`)
+- **Register:** AMB-117 (fixed_handling)
+- **Facts:** the version-less store "Stores a new query, or updates an existing
+  query on the system" and declares no conflict branch, while the resource tag
+  says stored queries are an "immutable way to identify a specific AQL
+  statement" and the versioned store declares the 409 immutability implies.
+  Separately, nothing says which `version` a version-less store writes: the
+  operation takes none, and `Qualified_query_name.md`'s absent/partial-version
+  rule is a rule for USING a stored query, not for creating one. The only
+  illustration is the Location example's `…/1.0.1`.
+- **Ask:** say that the version-less store is the overwriting form and the
+  versioned store the immutable one (or assign the conflict), and state the
+  version a version-less store mints (ours: a constant `1.0.0` default slot,
+  updated in place, even when higher versions exist).
+
+### UPR-82 — SM `store_query` returns a descriptor and permits a nameless store; the wire does neither
+
+- **Components:** SM (`i_definition_query.adoc` §store_query, `query_descriptor.adoc`), ITS-REST (`parameters/path/qualified_query_name.yaml`, `responses/200_StoredQuery_stored.yaml`, `schemas/query/StoredQuery.yaml`)
+- **Register:** AMB-118 (report_only)
+- **Facts:** SM types the store as returning a `QUERY_DESCRIPTOR` and says "If
+  no name is provided, one is created in the service. Return a Query descriptor
+  containing the query name and unique identifier." The wire makes the name a
+  required path segment (so the nameless form cannot be requested and a minted
+  name could not be delivered) and answers a bodyless 200 (so no descriptor is
+  returned). The promised "unique identifier" is in neither model:
+  `QUERY_DESCRIPTOR` declares no identifier attribute, and the wire
+  `StoredQuery` carries name/type/version/saved/q.
+- **Ask:** reconcile the store's signature with its wire realization — either
+  make the name optional and return the descriptor, or drop the nameless form
+  and the identifier sentence from the SM.
+
+### UPR-83 — the overview's two rules for `Location` on a write disagree about the status
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §Location + §"Prefer minimal, identifier or full representation response", both stored-query store operations)
+- **Register:** AMB-119 (fixed_handling)
+- **Facts:** §Location says "The `Location` header MUST ONLY be used for
+  resource creation (e.g., `201 Created`) or redirect responses", while the
+  §Prefer branches say the response "SHOULD include a `Location` header
+  pointing to the newly created or updated resource" (minimal) and "MAY
+  include a `Location` header" where "The HTTP status is typically `201
+  Created` or `200 OK`" (identifier, representation). Both stored-query stores
+  are assigned `200` and never `201`, so nothing says which passage governs
+  them.
+- **Ask:** say whether the §Location status rule or the §Prefer branch governs
+  a creation answered with `200` (ours: the §Prefer default-minimal sentence —
+  the stores declare no `Prefer` parameter — so a 200 carries the `Location`
+  of the resource written).
+
+### UPR-84 — two grammars for one stored-query identifier, and a casing example that contradicts the schema
+
+- **Components:** SM (`master04-definition_package.adoc` §Registered Queries + §Query Formalism), ITS-REST (`docs/query/Qualified_query_name.md`, `parameters/query/query_type.yaml`, `schemas/query/{QueryType,StoredQuery}.yaml`, `schemas/definition/QueryList.yaml`)
+- **Register:** AMB-120 (fixed_handling)
+- **Facts:** SM admits `<namespace>::<query-name>` AND
+  `<namespace>::<formalism>::<query-name>`, defaults a missing namespace to
+  `"misc"`, and treats the formalism case-insensitively with an optional
+  `::`-separated version defaulting to major "1". ITS-REST defines only the
+  two-part form with an optional namespace and NO default, plus a flat
+  `query_type` string. So the SM's own three-part example is not a legal ITS
+  name, and `my_compositions` is one identifier under ITS but
+  `misc::my_compositions` under SM. Independently, `query_type` and
+  `QueryType` declare `default: "AQL"` while every released example spells the
+  served member `"aql"`, with no rule saying whether the value is echoed or
+  normalized.
+- **Ask:** state one identifier grammar across the two components (including
+  whether the `misc` default applies on the wire), and settle the formalism
+  casing (ours: the ITS two-part wire grammar, the SM `misc` default and
+  three-part decomposition as the storage key, and the declared `type` echoed
+  as stored).
+
+### UPR-85 — SM's regex + paged query listing has no wire
+
+- **Components:** SM (`i_definition_query.adoc` §list_queries, §list_matching_queries), ITS-REST (`operations/definition_query_list.yaml`)
+- **Register:** AMB-121 (report_only)
+- **Facts:** SM lists by two PERL regexes — one on the query identifier, one on
+  the archetype/template identifiers referenced inside the query text — with
+  `item_offset`/`items_to_fetch` paging and an `invalid_id_pattern` error. The
+  wire has one list operation keyed by a required name matched as a PREFIX,
+  with no paging, no artefact-reference filter, and a single 200 branch, so the
+  SM error has no status to wear.
+- **Ask:** realize or retire `list_matching_queries`, and state whether the
+  released list is meant to page (ours: prefix matching only, no paging, no
+  rejection branch).
+
+### UPR-86 — the versioned store's `{version}` grammar is described only for reads
+
+- **Components:** ITS-REST (`parameters/path/version.yaml`, `operations/definition_query_version_store.yaml`, `responses/400.yaml`)
+- **Register:** AMB-122 (fixed_handling)
+- **Facts:** the one `{version}` description covers reads and writes alike and
+  is written in resolution terms ("a pattern as partial prefix … the highest
+  (latest) version matching the prefix will be considered"), which cannot apply
+  to a store: a prefix selects among existing versions and a store creates one.
+  No released sentence assigns an outcome to a prefix, a SEMVER pre-release, or
+  a malformed token on the write; the 409 covers only a duplicate pair.
+- **Ask:** define the write-side version grammar (ours: an exact numeric
+  `major.minor.patch`, everything else `400` — a non-numeric or partial stored
+  version would break the read-side prefix resolution and the SEMVER ordering
+  the same surface requires).
+
+### UPR-87 — store-time validity is required by the SM, unassigned by the ITS, and undefined by QUERY
+
+- **Components:** SM (`i_definition_query.adoc` §store_query `Pre_valid_query`, §valid_query), ITS-REST (both store operations, `responses/400.yaml`, `docs/query/Qualified_query_name.md` §NOTE, `parameters/query/query_type.yaml`), QUERY 1.1.0
+- **Register:** AMB-123 (fixed_handling)
+- **Facts:** SM makes a valid query text a PRECONDITION of the store, but the
+  precondition names `is_valid_query` while the interface declares
+  `valid_query` — a naming defect that leaves it formally dangling. ITS-REST
+  declares only the general syntactic 400 and never mentions validity, and
+  QUERY 1.1.0 says nothing about stored queries at all, so no semantic validity
+  contract exists for a store. Two neighbouring branches are equally
+  unassigned: a store under the reserved query-name `aql` (a MUST-NOT with no
+  status) and a store declaring an unsupported `query_type`.
+- **Ask:** fix the `is_valid_query`/`valid_query` naming, and assign the three
+  branches (ours: a syntactic parse failure, the reserved name, and an
+  unsupported formalism are each `400`; no semantic status exists on this
+  surface).
+
+### UPR-88 — the stored-query list: no empty-result branch, no order, no paging, an unreachable wildcard
+
+- **Components:** ITS-REST (`operations/definition_query_list.yaml`, `parameters/path/qualified_query_name.yaml`, `schemas/definition/QueryList.yaml`, `definition.openapi.yaml`), SM (`i_definition_query.adoc` §list_queries)
+- **Register:** AMB-124 (fixed_handling)
+- **Facts:** the operation declares a single 200 and never says what a pattern
+  matching nothing returns, never orders the array (the example happens to be
+  version-ascending), exposes none of the SM's paging, and carries a clause —
+  "when is empty, it will be treated as "wildcard" in the search" — describing
+  a request the release cannot express: the name parameter is `required: true`
+  and no bare `/definition/query` path is declared.
+- **Ask:** assign the empty-result branch, state the listing order, decide
+  whether the operation pages, and either declare the wildcard route or drop
+  the clause (ours: `200 []`, name + SEMVER-ascending, no paging; our bare
+  listing route is a flagged extension exercised by no case).
+
+### UPR-89 — do ETag/Last-Modified/If-Match apply to a stored query?
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §"ETag and Last-Modified" + §"If-Match and accidental overwrites"; the stored-query responses and operations)
+- **Register:** AMB-125 (fixed_handling)
+- **Facts:** the SHOULD covers "VERSION, VERSIONED_OBJECT, or other resources
+  that have versioning or unique state identifiers", and a stored query is
+  version-addressed and carries a `saved` timestamp — yet no stored-query
+  response declares either header. The version-less store is an overwriting
+  write with no `preceding_version_uid` in its path, the exact shape §If-Match
+  addresses, and it declares no `If-Match` parameter.
+- **Ask:** say whether stored queries fall under the conditional-header SHOULD,
+  and whether the overwriting store takes `If-Match` (ours: none of the three
+  is emitted or honoured — a stored query is not a change-controlled version
+  tree, and no released stored-query response declares the headers).
+
+### UPR-90 — stored-query retrieval fidelity is unstated
+
+- **Components:** ITS-REST (`operations/definition_query_version_get.yaml`, `responses/200_StoredQuery_get.yaml`, `schemas/query/StoredQuery.yaml`)
+- **Register:** AMB-126 (fixed_handling)
+- **Facts:** the read "Retrieves the definition of a particular stored query
+  (at specified version) and its associated metadata" and types `q` as the AQL
+  text, but never says whether the served text is byte-identical to what was
+  stored, a re-printed equivalent, or merely an equivalent query — a real
+  difference, since a parse-and-print round trip re-cases, re-indents and
+  collapses the client's own definition.
+- **Ask:** state the fidelity rule on the stored-query read (ours: verbatim —
+  a re-printed definition would change the artefact under an unchanged name
+  and version).
+
+### UPR-91 — `I_DEFINITION_QUERY` realization gaps in both directions
+
+- **Components:** SM (`i_definition_query.adoc`), ITS-REST (the `/definition/query/**` route set)
+- **Register:** AMB-127 (report_only)
+- **Facts:** SM→ITS — of nine operations the wire realizes two (`store_query`
+  in both forms, `list_queries`); `delete_query` (with pre/postconditions),
+  `list_matching_queries`, `queries_count` and `store_query_set` have no
+  endpoint, and `store_query_set`'s released Meaning is "Register a query set.
+  TODO: determine details."; `has_query` and `valid_query` exist only
+  indirectly (through the list read and the store). ITS→SM — the released
+  single-definition read `definition_query_version_get` realizes NO SM
+  operation, because the interface declares no get-a-query function.
+- **Ask:** realize or retire the four unrealized operations, finish
+  `store_query_set`, and give the single-definition read an SM operation. (The
+  neighbouring Definition-side gaps are UPR-05 / UPR-14 / UPR-16 / UPR-72.)

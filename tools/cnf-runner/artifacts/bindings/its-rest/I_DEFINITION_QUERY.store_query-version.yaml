@@ -14,20 +14,54 @@
 #   response depends on the request method". The stored-query PUT is the
 #   `stored` outcome kind (wire 200, not 201), exactly as on the variant-less
 #   binding.
+# - `Location` — docs/overview/Requests_and_responses.md §"Representation
+#   details negotiation" ("If no `Prefer` header is provided, the default
+#   behavior is assumed to be `return=minimal`"; this operation declares no
+#   `Prefer` parameter, so every request to it is that exchange) + §"Prefer
+#   minimal, identifier or full representation response", `return=minimal`:
+#   "The response SHOULD include a `Location` header pointing to the newly
+#   created or updated resource." Here the written version IS the addressed
+#   one, so only presence is asserted; the version-less form's constant slot is
+#   pinned on its own binding (register AMB-117). That the header rides a 200
+#   rather than a 201 is register AMB-119.
+# - `409` on a duplicate `(name, version)` — §"HTTP status codes", row `409
+#   Conflict`: "Indicates that the request could not be processed because it
+#   might generate a duplicate or a conflict". A version-addressed definition is
+#   immutable, so re-storing an existing pair is exactly that duplicate
+#   (register AMB-117).
+# - `400` on a version segment that is not an exact `major.minor.patch` —
+#   §"HTTP status codes", row `400 Bad Request`: "The service cannot or will not
+#   process the request due to something that is perceived to be a client error
+#   (e.g., malformed request syntax, syntactically invalid content)". The
+#   `{version}` parameter's prefix semantics are RESOLUTION semantics over
+#   versions that already exist and cannot apply to a write; the write-side
+#   grammar is adjudicated in register AMB-122.
+#
+# `query_type` — parameters/query/query_type.yaml, as on the variant-less
+# binding: optional, released default "AQL".
 #
 # Identical to the variant-less store binding except for the version segment, so
-# a red row localizes to the version-addressed store alone. Only the branches a
-# case exercises are declared (the same discipline the other variant bindings
-# follow).
+# a red row localizes to the version-addressed store alone.
+# NOTE: header matchers are EXECUTED assertions (exec/headers.rs) — a violated
+# declaration is a red row.
 sm_operation: I_DEFINITION_QUERY.store_query
 its: its-rest
 variant: version
 request:
   method: PUT
   path: /definition/query/{qualified_query_name}/{version}   # Qualified_query_name.md (name + version identity)
+  query:
+    query_type: "${query_type?}"              # parameters/query/query_type.yaml
   body: aql_text
   headers:
     Content-Type: text/plain                  # the AQL body is query text, not a resource
     Accept: application/json
 outcomes:
-  stored: { status: 200 }                     # Requests_and_responses.md §HTTP status codes, row 200
+  stored:
+    status: 200                               # Requests_and_responses.md §HTTP status codes, row 200
+    headers:
+      Location: present                       # §Prefer minimal — "SHOULD include a `Location` header pointing to the newly created or updated resource"
+  conflict: { status: 409 }                   # §HTTP status codes, row 409 (duplicate) — the immutable version-addressed definition
+  validation_failed:
+    status: 400                               # §HTTP status codes, row 400 (syntactically invalid content) — AMB-122
+    body: error_loose
