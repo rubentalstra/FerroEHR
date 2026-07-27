@@ -138,6 +138,10 @@
       "passed"
     ],
     [
+      "SmartAppLaunch",
+      "no_cases"
+    ],
+    [
       "EhrDemographicSeparation",
       "passed"
     ],
