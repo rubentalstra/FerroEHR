@@ -1294,6 +1294,18 @@
       "rows_total": 8
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-client_uid_in_use",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-creation_with_preceding_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete",
       "status": "passed",
       "rows_driven": 1,
@@ -1301,6 +1313,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete_directory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deleted_member_with_data",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_not_modifiable",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1396,6 +1420,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-non_existing_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt",
       "status": "passed",
       "rows_driven": 1,
@@ -1415,6 +1445,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-stale_preceding_version",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1481,6 +1523,30 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-header_identity",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-malformed_contribution_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-resolve_refs",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-version_ref_shape",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
