@@ -178,11 +178,6 @@ async fn every_operation_documents_an_error_outcome() {
         "/health",
         "/health/liveness",
         "/ehrbase/rest/status",
-        // Stored-query list endpoints whose released contract is 200-only (an
-        // unmatched name prefix yields an empty list, never an error):
-        // definition_query_list.yaml.
-        "/ehrbase/rest/openehr/v1/definition/query",
-        "/ehrbase/rest/openehr/v1/definition/query/{qualified_query_name}",
     ];
     let doc = served_document().await;
     let mut findings = Vec::new();
