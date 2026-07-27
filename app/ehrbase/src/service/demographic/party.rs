@@ -359,7 +359,12 @@ impl EhrbaseService {
         if let Some(expected) = expected
             && current.tree != expected
         {
-            return Err(ServiceError::Conflict(format!(
+            // A stale preceding version is a VERSION MISMATCH: the wire arm
+            // answers `409` and echoes the latest `version_uid` in `ETag`
+            // (`responses/409_PERSON_with_uid_based_id.yaml`: "Returns also
+            // latest `version_uid` in the `ETag` header") — the handler's
+            // mismatch arm keys on this variant.
+            return Err(ServiceError::VersionConflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
                 current.tree
             )));
