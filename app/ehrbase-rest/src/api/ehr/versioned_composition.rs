@@ -76,9 +76,6 @@ pub(super) async fn run(
             let p = params::build::<VersionedCompositionVersionGetAtTimeParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
-            // 200_VERSION_of_COMPOSITION_at_time: Location is
-            // …/versioned_composition/{versioned_object_uid}/version/{version_uid}.
-            let segment = format!("versioned_composition/{}/version", p.versioned_object_uid);
             let body = state
                 .backend()
                 .composition_version_at_time(ehr_id, ehrbase::ids::VoId(vo_id), p.version_at_time)
@@ -86,13 +83,15 @@ pub(super) async fn run(
             // Version-uid ETag + Last-Modified from the envelope's
             // commit_audit.time_committed (§"ETag and Last-Modified": the
             // value "should be derived from
-            // VERSION.commit_audit.time_committed.value").
+            // VERSION.commit_audit.time_committed.value"); no Location — a
+            // GET never carries one (§Location: "It MUST NOT be used to
+            // indicate an alternate representation of an existing resource").
             let resp = super::read_resp(&p.ehr_id, body);
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.
             Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
                 h,
                 &base,
-                Some(&segment),
+                None,
                 &resp,
                 "original_version",
             ))
@@ -100,7 +99,20 @@ pub(super) async fn run(
         "versioned_composition_version_get_by_id" => {
             let p = params::build::<VersionedCompositionVersionGetByIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
             let ovid = parse_version_uid(&p.version_uid)?;
+            // The addressed version must belong to the container the path
+            // names: the version_uid's object_id "matches the
+            // VERSIONED_OBJECT identifier" (ITS-REST overview Resources.md
+            // §Identifier types; RM common version.adoc Owner_id_valid) — a
+            // version of ANOTHER container is not a version of this resource,
+            // so an incoherent pair names nothing here → 404.
+            if crate::overview::version_id::object_id_uuid(&ovid) != Some(vo_id) {
+                return Err(RestError(ApiError::NotFound(format!(
+                    "version {} in versioned object {}",
+                    p.version_uid, p.versioned_object_uid
+                ))));
+            }
             let body = state
                 .backend()
                 .composition_original_version(ehr_id, ovid)
