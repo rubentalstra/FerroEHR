@@ -35,6 +35,14 @@ workflow refuses a tag that has no matching section here.
   Type` (an absent `Content-Type` remains accepted), mirroring the ADL 1.4
   guard.
 
+- **The published API reference now describes the template endpoints in
+  full** (#490). The nine ADL 1.4 / ADL 2 template operations in the served
+  OpenAPI document gained the response headers they actually send (`ETag`,
+  `Location`, `Preference-Applied`), the status branches they actually
+  answer (`400`, `406`, `415`, `422`), request/response examples, and a
+  spec citation on every branch; "Get template at version" is now marked
+  deprecated, as the openEHR REST specification marks it.
+
 - **Stored-query POST bodies accept `{}`; the query POSTs accept the URL
   parameter forms** (#481). The three body members of the stored-execute
   body are optional (the docs text gives `offset` a default and makes
