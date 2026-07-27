@@ -46,11 +46,27 @@ pub(super) async fn run(
         }
         "contribution_get" => {
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
+            let uid = p.contribution_uid.clone();
             let resp = state
                 .backend()
                 .demographic_contribution_get(p.contribution_uid)
                 .await?;
-            Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+            // Weak ETag (the contribution uid — the same identity the 201's
+            // ETag carries) + Last-Modified from `audit.time_committed`,
+            // mirroring the EHR sibling's register-documented reading of the
+            // overview §"ETag and Last-Modified" SHOULD (a CONTRIBUTION is
+            // immutable and uniquely identified; the released 200_CONTRIBUTION
+            // declares neither header).
+            let mut meta = ehrbase::service::response::ResourceMeta::new(String::new(), uid);
+            if let Some(at) = resp.body["audit"]["time_committed"]["value"]
+                .as_str()
+                .and_then(|raw| raw.parse::<jiff::Timestamp>().ok())
+            {
+                meta = meta.with_last_modified(at);
+            }
+            let mut out = negotiate::respond(h, StatusCode::OK, &resp.body);
+            super::set_versioning_headers(&mut out, Some(&meta));
+            Ok(out)
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted demographic contribution operation: {other}"
