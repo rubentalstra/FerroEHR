@@ -608,22 +608,95 @@ pub(crate) async fn ehr_create_with_id(
     get, path = "/ehr/{ehr_id}/ehr_status/{version_uid}", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("version_uid" = String, Path,
-         description = "VERSION identifier, taken from VERSION.uid.value \
-                        (an OBJECT_VERSION_ID, e.g. \
-                        `…::openEHRSys.example.com::2`).")
+         description = "VERSION identifier, taken from VERSION.uid.value — an \
+                        OBJECT_VERSION_ID \
+                        `{object_id}::{creating_system_id}::{version_tree_id}` \
+                        (`Resources.md` §\"Identifier types\"). The addressed \
+                        uid must name the served version's full three-part \
+                        identity; a fabricated `creating_system_id` names no \
+                        VERSION here and is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2")
     ),
     responses(
-        (status = 200, description = "The EHR_STATUS at that version; `ETag` \
-                                      (weak `W/` form) carries the version uid, \
-                                      `Last-Modified` the commit time. Any \
-                                      associated item tags MAY be echoed in the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.",
+        (status = 200, description = "The bare EHR_STATUS at that version \
+                                      (canonical JSON/XML per `Accept`; the \
+                                      VERSION envelope is served by the \
+                                      `versioned_ehr_status` operations). No \
+                                      `Location`: `Requests_and_responses.md` \
+                                      §Location forbids it on a `GET` (\"It MUST \
+                                      NOT be used to indicate an alternate \
+                                      representation of an existing resource\"). \
+                                      The `openehr-item-tag`/\
+                                      `openehr-version-item-tag` response headers \
+                                      are a MAY on reads (§\"openehr-item-tag and \
+                                      openehr-version-item-tag\", \"Usage in \
+                                      Responses\"): this server emits them only \
+                                      on the `PUT` write wrapper, never on a \
+                                      `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` \
+                             (§\"ETag and Last-Modified\": the value \"is usually \
+                             taken from e.g. … VERSION.uid.value\"; the `W/` \
+                             weakness indicator is required since Release \
+                             1.1.0)."),
+             ("Last-Modified" = String,
+              description = "That version's commit instant as an HTTP-date — \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\"). The bare EHR_STATUS \
+                             body carries no commit audit, so the instant comes \
+                             from the version metadata."),
+         ),
+         example = json!({
+             "_type": "EHR_STATUS",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+             "subject": {
+                 "_type": "PARTY_SELF",
+                 "external_ref": {
+                     "_type": "PARTY_REF",
+                     "namespace": "demographic",
+                     "type": "PERSON",
+                     "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                 }
+             },
+             "is_queryable": true,
+             "is_modifiable": true
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID, or `version_uid` is \
+                                      not a well-formed OBJECT_VERSION_ID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\"). \
+                                      A syntactically valid but unknown id is \
+                                      `404`, not `400`.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`, or no EHR_STATUS version \
                                       with `version_uid`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR_STATUS resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      defined for templated COMPOSITION content \
+                                      only, and EHR_STATUS is not templated).",
          body = serde_json::Value)
     )
 )]
@@ -647,24 +720,90 @@ pub(crate) async fn ehr_status_get_by_version_id(
     get, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; the version \
                         extant at that time is returned. Absent means the \
-                        latest version. The timezone is optional — \
-                        server-local when omitted.")
+                        latest version. The timezone is optional — server-local \
+                        when omitted (`Resources.md` §\"Datetime format\": \
+                        query parameters \"MUST always use the _extended_ ISO \
+                        8601 format\" and \"Timezone SHOULD be only supplied \
+                        when needed, otherwise the local timezone is \
+                        assumed\").",
+         example = "2026-07-26T09:12:44.512Z")
     ),
     responses(
-        (status = 200, description = "The EHR_STATUS; `ETag` (weak `W/` form) \
-                                      carries the version uid, `Last-Modified` \
-                                      the commit time. Item tags MAY be echoed \
-                                      in the `openehr-item-tag`/\
-                                      `openehr-version-item-tag` response headers.",
-         body = serde_json::Value),
-        (status = 400, description = "Malformed `version_at_time`.",
+        (status = 200, description = "The bare EHR_STATUS extant at that time \
+                                      (canonical JSON/XML per `Accept`). No \
+                                      `Location`: `Requests_and_responses.md` \
+                                      §Location forbids it on a `GET`. The \
+                                      `openehr-item-tag`/\
+                                      `openehr-version-item-tag` response headers \
+                                      are a MAY on reads (§\"openehr-item-tag and \
+                                      openehr-version-item-tag\", \"Usage in \
+                                      Responses\"): this server emits them only \
+                                      on the `PUT` write wrapper, never on a \
+                                      `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             version served (§\"ETag and Last-Modified\"; the \
+                             `W/` weakness indicator is required since Release \
+                             1.1.0)."),
+             ("Last-Modified" = String,
+              description = "That version's commit instant as an HTTP-date — \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\"). The bare EHR_STATUS \
+                             body carries no commit audit, so the instant comes \
+                             from the version metadata."),
+         ),
+         example = json!({
+             "_type": "EHR_STATUS",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+             "subject": {
+                 "_type": "PARTY_SELF",
+                 "external_ref": {
+                     "_type": "PARTY_REF",
+                     "namespace": "demographic",
+                     "type": "PERSON",
+                     "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                 }
+             },
+             "is_queryable": true,
+             "is_modifiable": true
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID, or \
+                                      `version_at_time` is not an extended ISO \
+                                      8601 datetime (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `400` row: \
+                                      \"malformed request syntax, syntactically \
+                                      invalid content\").",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`, or no EHR_STATUS version \
                                       at the specified time.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR_STATUS resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      defined for templated COMPOSITION content \
+                                      only, and EHR_STATUS is not templated).",
          body = serde_json::Value)
     )
 )]
@@ -691,43 +830,266 @@ pub(crate) async fn ehr_status_get_at_time(
     put, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("If-Match" = String, Header,
-         description = "The latest EHR_STATUS version uid (the \
-                        `preceding_version_uid`), double-quoted (weak `W/` \
-                        form also accepted). Required."),
+         description = "The latest EHR_STATUS version uid (which becomes the new \
+                        version's `preceding_version_uid`), double-quoted; the \
+                        weak `W/\"…\"` form the server emits is also accepted. \
+                        Required — `Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\": \"When the service expects \
+                        `If-Match` for an operation, but the client does not \
+                        provide it, the service SHOULD respond with `400 Bad \
+                        Request`\"; a non-matching value MUST be `412`.",
+         example = "W/\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`."),
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens: \
+                        `return=minimal` — no body, `204 No Content`; \
+                        `return=identifier` — the body is only \
+                        `{ \"uid\": \"<new version uid>\" }` at `200 OK`, never \
+                        `204` (§\"Prefer only identifier\": \"a variant of \
+                        preference that implies minimal response semantics, but \
+                        with a non-empty response body\"); \
+                        `return=representation` — the full RM `EHR_STATUS` at \
+                        `200 OK`. An absent header means `return=minimal` (\"If \
+                        no `Prefer` header is provided, the default behavior is \
+                        assumed to be `return=minimal`\"); the token actually \
+                        applied is echoed in the `Preference-Applied` response \
+                        header.",
+         example = "return=representation"),
+        ("openehr-version" = Option<String>, Header,
+         description = "Committal metadata for the new EHR_STATUS VERSION, as an \
+                        attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. Merged with the \
+                        server defaults (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\": whatever \
+                        is provided \"MUST be merged with the default VERSION and \
+                        VERSION.audit_details attributes on commit runtime\")."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY repeat \
+                        — e.g. `description.value=\"Status corrected at \
+                        triage\"`, `committer.name=\"John Doe\",\
+                        committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+                        committer.external_ref.namespace=\"demographic\",\
+                        committer.external_ref.type=\"PERSON\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` defaults to `251|modification|` and is \
+                        client-overridable to any audit_change_type code \
+                        consistent with an update (e.g. `250|amendment|`); \
+                        `time_committed` \"is always set by the server\", and an \
+                        omitted `system_id` defaults to the server's configured \
+                        identifier (\"when `system_id` is not provided by the \
+                        client, the server MUST set it to its own configured \
+                        system identifier\")."),
         ("openehr-item-tag" = Option<String>, Header,
          description = "Item tags to set on the VERSIONED_EHR_STATUS \
-                        (VERSIONED_OBJECT-level); an empty value removes all. \
-                        MAY be echoed back."),
+                        (VERSIONED_OBJECT-level target); an empty value removes \
+                        all (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", \"Usage in Requests\"). MAY \
+                        be echoed back in the response header of the same name."),
         ("openehr-version-item-tag" = Option<String>, Header,
          description = "Item tags to set on the new EHR_STATUS VERSION; an empty \
-                        value removes all. MAY be echoed back.")
+                        value removes all (same section, \"Usage in Requests\"). \
+                        MAY be echoed back in the response header of the same \
+                        name.")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new EHR_STATUS."),
+                 description = "The new EHR_STATUS, canonical JSON or XML per \
+                                `Content-Type`. The Simplified Formats do not \
+                                apply — EHR_STATUS is not templated.",
+                 example = json!({
+                     "_type": "EHR_STATUS",
+                     "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                     "subject": {
+                         "_type": "PARTY_SELF",
+                         "external_ref": {
+                             "_type": "PARTY_REF",
+                             "namespace": "demographic",
+                             "type": "PERSON",
+                             "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                         }
+                     },
+                     "is_queryable": true,
+                     "is_modifiable": false
+                 })),
     responses(
-        (status = 200, description = "Updated; body per `Prefer` \
-                                      (representation or identifier). `ETag` \
-                                      (weak `W/` form) + `Location` carry the \
-                                      new version, `Last-Modified` its commit \
-                                      time.",
-         body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); `ETag` \
-                                      (weak `W/` form) + `Location` carry the \
-                                      new version, `Last-Modified` its commit \
-                                      time."),
-        (status = 400, description = "Invalid EHR_STATUS, or `If-Match` expected \
-                                      but missing/malformed.",
+        (status = 200, description = "Updated, with a body: the full RM \
+                                      `EHR_STATUS` for \
+                                      `Prefer: return=representation` (the \
+                                      `representation` example) or the \
+                                      single-`uid` object for \
+                                      `return=identifier` (the `identifier` \
+                                      example) — `Requests_and_responses.md` \
+                                      §\"Prefer minimal, identifier or full \
+                                      representation response\". `ETag`, \
+                                      `Last-Modified` and `Location` describe the \
+                                      newly committed version, and \
+                                      `Preference-Applied` declares the token \
+                                      honoured.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<new version uid>\"` \
+                             (§\"ETag and Last-Modified\": the value \"is usually \
+                             taken from e.g. … VERSION.uid.value\" and \"changes \
+                             as soon as the resource changes\")."),
+             ("Location" = String,
+              description = "The URL of the newly committed version, \
+                             `<base_path>/ehr/<ehr_id>/ehr_status/<version_uid>` \
+                             (§\"Prefer minimal, identifier or full \
+                             representation response\": the response \"SHOULD \
+                             include a `Location` header pointing to the newly \
+                             created or updated resource\")."),
+             ("Last-Modified" = String,
+              description = "The commit instant of the new version as an \
+                             HTTP-date — \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured (§\"Representation details \
+                             negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the \
+                             VERSIONED_EHR_STATUS, present only when the request \
+                             carried the header (§\"openehr-item-tag and \
+                             openehr-version-item-tag\", \"Usage in Responses\": \
+                             servers \"MAY include\" it \"to confirm the actual \
+                             list of ITEM_TAGs stored on the server side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the new \
+                             EHR_STATUS VERSION, present only when the request \
+                             carried the header (same section, \"Usage in \
+                             Responses\")."),
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the full RM EHR_STATUS",
+              value = json!({
+                  "_type": "EHR_STATUS",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                  "subject": {
+                      "_type": "PARTY_SELF",
+                      "external_ref": {
+                          "_type": "PARTY_REF",
+                          "namespace": "demographic",
+                          "type": "PERSON",
+                          "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                      }
+                  },
+                  "is_queryable": true,
+                  "is_modifiable": false
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "Updated with no body — the default \
+                                      `Prefer: return=minimal` \
+                                      (`Requests_and_responses.md` §\"Prefer \
+                                      minimal, identifier or full representation \
+                                      response\": \"If no response body is \
+                                      returned, the service SHOULD use `204 No \
+                                      Content`\"). The version headers are \
+                                      carried exactly as on the `200`.",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<new version uid>\"` \
+                             (§\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "The URL of the newly committed version, \
+                             `<base_path>/ehr/<ehr_id>/ehr_status/<version_uid>` \
+                             (§\"Prefer minimal, identifier or full \
+                             representation response\")."),
+             ("Last-Modified" = String,
+              description = "The commit instant of the new version as an \
+                             HTTP-date (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (§\"Representation details \
+                             negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the \
+                             VERSIONED_EHR_STATUS, present only when the request \
+                             carried the header (§\"openehr-item-tag and \
+                             openehr-version-item-tag\", \"Usage in \
+                             Responses\")."),
+             ("openehr-version-item-tag" = String,
+              description = "Echo of the ITEM_TAG list now stored on the new \
+                             EHR_STATUS VERSION, present only when the request \
+                             carried the header (same section, \"Usage in \
+                             Responses\")."),
+         )),
+        (status = 400, description = "`ehr_id` is not a UUID, the EHR_STATUS \
+                                      payload could not be parsed, or `If-Match` \
+                                      is missing/empty/not a well-formed \
+                                      OBJECT_VERSION_ID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\"; \
+                                      §\"If-Match and accidental overwrites\" for \
+                                      the missing-`If-Match` case).",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR_STATUS resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      defined for templated COMPOSITION content \
+                                      only, and EHR_STATUS is not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not name the latest \
+                                      EHR_STATUS version, so the update was not \
+                                      performed (`Requests_and_responses.md` \
+                                      §\"If-Match and accidental overwrites\": \
+                                      the service \"MUST NOT perform the \
+                                      requested method\" and \"MUST respond with \
+                                      HTTP status code `412 Precondition \
+                                      Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<current latest version \
+                             uid>\"` — the same section's SHOULD: the service \
+                             \"SHOULD return also latest `version_uid` in the \
+                             `ETag` response headers\"."),
+             ("Last-Modified" = String,
+              description = "The commit instant of that current latest version \
+                             as an HTTP-date, carried alongside the `ETag` \
+                             (§\"ETag and Last-Modified\")."),
+         )),
+        (status = 415, description = "The request `Content-Type` is not a format \
+                                      this resource can process — notably a \
+                                      Simplified Format, which is defined only \
+                                      for templated COMPOSITION content \
+                                      (`Resources.md` §\"JSON Format\": \"If the \
+                                      service cannot process the request payload \
+                                      as JSON format, it MUST respond with HTTP \
+                                      status code `415 Unsupported Media Type`\"; \
+                                      §\"Simplified Formats\" carries the same \
+                                      MUST for the simplified types).",
          body = serde_json::Value)
     )
 )]
@@ -752,12 +1114,62 @@ pub(crate) async fn ehr_status_update(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path,
-            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
+            description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                           (`Resources.md` §\"Identifier types\").",
+            example = "7d44b88c-4199-4bad-97dc-d78268e01398")),
     responses(
         (status = 200, description = "The VERSIONED_EHR_STATUS container \
-                                      (canonical JSON/XML).",
+                                      (canonical JSON/XML per `Accept`): the \
+                                      versioned-object identity and its \
+                                      `owner_id`/`time_created`, not the version \
+                                      content. No `Location`: \
+                                      `Requests_and_responses.md` §Location \
+                                      forbids it on a `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag \
+                             `W/\"<versioned_object_uid>\"` (§\"ETag and \
+                             Last-Modified\": the value \"is usually taken from \
+                             e.g. VERSIONED_OBJECT.uid.value\"; the `W/` weakness \
+                             indicator is required since Release 1.1.0)."),
+             ("Last-Modified" = String,
+              description = "The commit instant of the container's most recent \
+                             version as an HTTP-date — \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\": both headers \"SHOULD \
+                             be included in responses for VERSION, \
+                             VERSIONED_OBJECT, or other resources that have \
+                             versioning or unique state identifiers\")."),
+         ),
+         example = json!({
+             "_type": "VERSIONED_EHR_STATUS",
+             "uid": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+             "owner_id": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "EHR",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" }
+             },
+             "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" }
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\").",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the VERSIONED_EHR_STATUS container has only \
+                                      the canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      not defined for this resource).",
          body = serde_json::Value)
     )
 )]
@@ -780,12 +1192,95 @@ pub(crate) async fn versioned_ehr_status_get(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/revision_history", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path,
-            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
+            description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                           (`Resources.md` §\"Identifier types\").",
+            example = "7d44b88c-4199-4bad-97dc-d78268e01398")),
     responses(
         (status = 200, description = "The REVISION_HISTORY of the \
-                                      VERSIONED_EHR_STATUS (canonical JSON/XML).",
+                                      VERSIONED_EHR_STATUS (canonical JSON/XML \
+                                      per `Accept`): one REVISION_HISTORY_ITEM \
+                                      per committed version, most recent LAST \
+                                      (RM common \
+                                      `org.openehr.rm.common.revision_history.adoc`, \
+                                      `REVISION_HISTORY.items`: \"The items in \
+                                      this history in most-recent-last \
+                                      order\"). No `Location`: \
+                                      `Requests_and_responses.md` §Location \
+                                      forbids it on a `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag \
+                             `W/\"<versioned_object_uid>\"` of the container the \
+                             history belongs to (§\"ETag and Last-Modified\": the \
+                             value \"is usually taken from e.g. \
+                             VERSIONED_OBJECT.uid.value\")."),
+             ("Last-Modified" = String,
+              description = "The commit instant of the most recent revision as \
+                             an HTTP-date — \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\")."),
+         ),
+         example = json!({
+             "_type": "REVISION_HISTORY",
+             "items": [
+                 {
+                     "_type": "REVISION_HISTORY_ITEM",
+                     "version_id": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                     "audits": [ {
+                         "_type": "AUDIT_DETAILS",
+                         "system_id": "openEHRSys.example.com",
+                         "committer": { "_type": "PARTY_IDENTIFIED", "name": "John Doe" },
+                         "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                         "change_type": {
+                             "_type": "DV_CODED_TEXT",
+                             "value": "creation",
+                             "defining_code": {
+                                 "_type": "CODE_PHRASE",
+                                 "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                                 "code_string": "249"
+                             }
+                         }
+                     } ]
+                 },
+                 {
+                     "_type": "REVISION_HISTORY_ITEM",
+                     "version_id": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                     "audits": [ {
+                         "_type": "AUDIT_DETAILS",
+                         "system_id": "openEHRSys.example.com",
+                         "committer": { "_type": "PARTY_IDENTIFIED", "name": "John Doe" },
+                         "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T11:04:02.880114Z" },
+                         "change_type": {
+                             "_type": "DV_CODED_TEXT",
+                             "value": "modification",
+                             "defining_code": {
+                                 "_type": "CODE_PHRASE",
+                                 "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                                 "code_string": "251"
+                             }
+                         }
+                     } ]
+                 }
+             ]
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\").",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the REVISION_HISTORY resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      not defined for this resource).",
          body = serde_json::Value)
     )
 )]
@@ -809,24 +1304,124 @@ pub(crate) async fn versioned_ehr_status_revision_history(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/version", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; the VERSION \
                         extant at that time is returned. Absent means the \
-                        latest VERSION. The timezone is optional — \
-                        server-local when omitted.")
+                        latest VERSION. The timezone is optional — server-local \
+                        when omitted (`Resources.md` §\"Datetime format\": query \
+                        parameters \"MUST always use the _extended_ ISO 8601 \
+                        format\" and \"Timezone SHOULD be only supplied when \
+                        needed, otherwise the local timezone is assumed\").",
+         example = "2026-07-26T09:12:44.512Z")
     ),
     responses(
-        (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
-                                      (canonical JSON/XML); `ETag` (weak `W/` \
-                                      form) carries the version uid, \
-                                      `Last-Modified` its `commit_audit` \
-                                      `time_committed`.",
-         body = serde_json::Value),
-        (status = 400, description = "Malformed `version_at_time`.",
+        (status = 200, description = "The ORIGINAL_VERSION envelope of the \
+                                      EHR_STATUS extant at that time (canonical \
+                                      JSON/XML per `Accept`): the version \
+                                      identity, its CONTRIBUTION reference, the \
+                                      commit audit, the lifecycle state, and the \
+                                      EHR_STATUS itself under `data`. No \
+                                      `Location`: `Requests_and_responses.md` \
+                                      §Location forbids it on a `GET` (\"It MUST \
+                                      NOT be used to indicate an alternate \
+                                      representation of an existing \
+                                      resource\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` \
+                             (§\"ETag and Last-Modified\": the value \"is usually \
+                             taken from e.g. … VERSION.uid.value\"; the `W/` \
+                             weakness indicator is required since Release \
+                             1.1.0)."),
+             ("Last-Modified" = String,
+              description = "The version's own \
+                             `commit_audit.time_committed` as an HTTP-date — \
+                             \"For openEHR resources, this value should be \
+                             derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\")."),
+         ),
+         example = json!({
+             "_type": "ORIGINAL_VERSION",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "preceding_version_uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "contribution": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "CONTRIBUTION",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" }
+             },
+             "commit_audit": {
+                 "_type": "AUDIT_DETAILS",
+                 "system_id": "openEHRSys.example.com",
+                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "John Doe" },
+                 "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T11:04:02.880114Z" },
+                 "change_type": {
+                     "_type": "DV_CODED_TEXT",
+                     "value": "modification",
+                     "defining_code": {
+                         "_type": "CODE_PHRASE",
+                         "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                         "code_string": "251"
+                     }
+                 }
+             },
+             "lifecycle_state": {
+                 "_type": "DV_CODED_TEXT",
+                 "value": "complete",
+                 "defining_code": {
+                     "_type": "CODE_PHRASE",
+                     "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                     "code_string": "532"
+                 }
+             },
+             "data": {
+                 "_type": "EHR_STATUS",
+                 "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                 "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                 "archetype_details": {
+                     "_type": "ARCHETYPED",
+                     "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                     "rm_version": "1.2.0"
+                 },
+                 "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                 "subject": {
+                     "_type": "PARTY_SELF",
+                     "external_ref": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "PERSON",
+                         "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                     }
+                 },
+                 "is_queryable": true,
+                 "is_modifiable": true
+             }
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID, or \
+                                      `version_at_time` is not an extended ISO \
+                                      8601 datetime (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\", the `400` row: \
+                                      \"malformed request syntax, syntactically \
+                                      invalid content\").",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`, or no VERSION at the \
                                       specified time.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the ORIGINAL_VERSION resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      not defined for this resource).",
          body = serde_json::Value)
     )
 )]
@@ -850,20 +1445,123 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path,
-         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+         description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("version_uid" = String, Path,
-         description = "VERSION identifier, taken from VERSION.uid.value \
-                        (an OBJECT_VERSION_ID).")
+         description = "VERSION identifier, taken from VERSION.uid.value — an \
+                        OBJECT_VERSION_ID \
+                        `{object_id}::{creating_system_id}::{version_tree_id}` \
+                        (`Resources.md` §\"Identifier types\"). The addressed \
+                        uid must name the served version's full three-part \
+                        identity; a fabricated `creating_system_id` names no \
+                        VERSION here and is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2")
     ),
     responses(
-        (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
-                                      identified by `version_uid` (canonical \
-                                      JSON/XML); `ETag` (weak `W/` form) carries \
-                                      the version uid, `Last-Modified` its \
-                                      `commit_audit` `time_committed`.",
+        (status = 200, description = "The ORIGINAL_VERSION envelope of the \
+                                      EHR_STATUS identified by `version_uid` \
+                                      (canonical JSON/XML per `Accept`): the \
+                                      version identity, its CONTRIBUTION \
+                                      reference, the commit audit, the lifecycle \
+                                      state, and the EHR_STATUS itself under \
+                                      `data`. No `Location`: \
+                                      `Requests_and_responses.md` §Location \
+                                      forbids it on a `GET`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` \
+                             (§\"ETag and Last-Modified\": the value \"is usually \
+                             taken from e.g. … VERSION.uid.value\"; the `W/` \
+                             weakness indicator is required since Release \
+                             1.1.0)."),
+             ("Last-Modified" = String,
+              description = "The version's own \
+                             `commit_audit.time_committed` as an HTTP-date — \
+                             \"For openEHR resources, this value should be \
+                             derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\")."),
+         ),
+         example = json!({
+             "_type": "ORIGINAL_VERSION",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+             "preceding_version_uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "contribution": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "CONTRIBUTION",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" }
+             },
+             "commit_audit": {
+                 "_type": "AUDIT_DETAILS",
+                 "system_id": "openEHRSys.example.com",
+                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "John Doe" },
+                 "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T11:04:02.880114Z" },
+                 "change_type": {
+                     "_type": "DV_CODED_TEXT",
+                     "value": "modification",
+                     "defining_code": {
+                         "_type": "CODE_PHRASE",
+                         "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                         "code_string": "251"
+                     }
+                 }
+             },
+             "lifecycle_state": {
+                 "_type": "DV_CODED_TEXT",
+                 "value": "complete",
+                 "defining_code": {
+                     "_type": "CODE_PHRASE",
+                     "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                     "code_string": "532"
+                 }
+             },
+             "data": {
+                 "_type": "EHR_STATUS",
+                 "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                 "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                 "archetype_details": {
+                     "_type": "ARCHETYPED",
+                     "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                     "rm_version": "1.2.0"
+                 },
+                 "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                 "subject": {
+                     "_type": "PARTY_SELF",
+                     "external_ref": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "PERSON",
+                         "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                     }
+                 },
+                 "is_queryable": true,
+                 "is_modifiable": true
+             }
+         })),
+        (status = 400, description = "`ehr_id` is not a UUID, or `version_uid` is \
+                                      not a well-formed OBJECT_VERSION_ID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\"). \
+                                      A syntactically valid but unknown id is \
+                                      `404`, not `400`.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`, or no VERSION with \
                                       `version_uid`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the ORIGINAL_VERSION resource has only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"; the Simplified Formats are \
+                                      not defined for this resource).",
          body = serde_json::Value)
     )
 )]
