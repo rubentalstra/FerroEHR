@@ -697,6 +697,278 @@ async fn demographic_operations_are_fully_documented() {
     );
 }
 
+/// The Demographic API group's sixteen released `ITEM_TAG` operations are
+/// documented to full step-6 completeness: every served status branch, the
+/// dual-form `uid_based_id` prose with its disjointness reading, the
+/// `Prefer`/`Preference-Applied` pair on the five PUTs, the released-shaped
+/// examples, and — because a tag collection is not change-controlled — NO
+/// `ETag`, `Last-Modified` or `Location` anywhere on the family.
+///
+/// The five typed quintets are byte-identical on the released wire
+/// (`specifications/operations/{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`
+/// and their `$ref`d responses), so the loop asserts each kind individually — a
+/// quintet that drifts apart fails here. The space-wide
+/// `demographic_tags_get.yaml` is the delta: no scoping parameter at all, and
+/// `200`/`400` as its only released branches (there is nothing to fail to
+/// find, hence no `404`). `Resources.md` §"XML Format"/§"JSON Format" make the
+/// unfulfillable `Accept` a `406` and the unprocessable payload a `415`;
+/// `Requests_and_responses.md` §"Representation details negotiation" gives the
+/// `Prefer` split and its `Preference-Applied` echo.
+#[tokio::test]
+#[allow(clippy::too_many_lines)] // one regression test per audited group keeps the pins together
+async fn demographic_item_tag_operations_are_fully_documented() {
+    const BASE: &str = "/ehrbase/rest/openehr/v1/demographic";
+    const KINDS: &[(&str, &str)] = &[
+        ("person", "PERSON"),
+        ("agent", "AGENT"),
+        ("group", "GROUP"),
+        ("organisation", "ORGANISATION"),
+        ("role", "ROLE"),
+    ];
+
+    let doc = served_document().await;
+
+    let codes = |op: &Value| -> Vec<String> {
+        op["responses"]
+            .as_object()
+            .map(|r| r.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let header_names = |op: &Value, status: &str| -> Vec<String> {
+        op["responses"][status]["headers"]
+            .as_object()
+            .map(|h| h.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let first_content = |holder: &Value| -> Value {
+        holder["content"]
+            .as_object()
+            .and_then(|c| c.values().next())
+            .cloned()
+            .unwrap_or_default()
+    };
+    let require = |op: &Value, path: &str, method: &str, expected: &[&str]| {
+        let present = codes(op);
+        for want in expected {
+            assert!(
+                present.iter().any(|c| c == want),
+                "{method} {path} must document {want}; has {present:?}"
+            );
+        }
+    };
+    let text = |op: &Value| -> String {
+        format!(
+            "{} {}",
+            op.get("summary")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+            op.get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+        )
+    };
+    let param_doc = |op: &Value, name: &str| -> String {
+        op.get("parameters")
+            .and_then(Value::as_array)
+            .and_then(|params| {
+                params
+                    .iter()
+                    .find(|p| p.get("name").and_then(Value::as_str) == Some(name))
+            })
+            .and_then(|p| p.get("description").and_then(Value::as_str))
+            .unwrap_or_default()
+            .to_owned()
+    };
+    // The served example of a response, wherever the declaration put it (a
+    // media-typed `content(..)` block or the bare `example`).
+    let response_example = |resp: &Value| -> Value {
+        let via_content = first_content(resp)["example"].clone();
+        if via_content.is_null() {
+            resp["example"].clone()
+        } else {
+            via_content
+        }
+    };
+    // A tag collection has no version and no uid, so none of the
+    // change-control headers may be declared anywhere on this family.
+    let no_versioning_headers = |op: &Value, path: &str, method: &str, status: &str| {
+        for banned in ["ETag", "Last-Modified", "Location"] {
+            assert!(
+                !header_names(op, status).iter().any(|h| h == banned),
+                "{method} {path} {status} must NOT declare {banned}: an ITEM_TAG \
+                 collection is not change-controlled"
+            );
+        }
+    };
+
+    for (segment, _rm_type) in KINDS {
+        // ── get: 200/400/404/406, the dual-form prose, the served row shape ──
+        let path = format!("{BASE}/{segment}/{{uid_based_id}}/tags");
+        let op = doc["paths"][&path]["get"].clone();
+        assert!(op.is_object(), "GET {path} must be documented");
+        require(&op, &path, "GET", &["200", "400", "404", "406"]);
+        no_versioning_headers(&op, &path, "GET", "200");
+        let uid = param_doc(&op, "uid_based_id");
+        assert!(
+            uid.contains("VERSIONED_PARTY") && uid.contains("version_uid"),
+            "GET {path} must carry the released dual-form uid_based_id prose; has: {uid}"
+        );
+        assert!(
+            uid.contains("DISJOINT"),
+            "GET {path} must state that the version and container collections are disjoint"
+        );
+        assert!(
+            documented_params(&op, "header")
+                .iter()
+                .any(|n| n == "Accept"),
+            "GET {path} must document the canonical Accept negotiation"
+        );
+        let rows = response_example(&op["responses"]["200"]);
+        assert!(
+            rows.is_array(),
+            "GET {path} 200 must carry a worked ITEM_TAG list example"
+        );
+        let first = rows[0].clone();
+        assert_eq!(
+            first["_type"], "ITEM_TAG",
+            "GET {path} 200 example must be an ITEM_TAG list"
+        );
+        assert_eq!(
+            first["target"]["_type"], "HIER_OBJECT_ID",
+            "GET {path} 200 example's container target is the bare RM \
+             UID_BASED_ID (item_tag.adoc), never an OBJECT_REF envelope"
+        );
+        assert_eq!(
+            first["owner_id"]["type"], "SYSTEM",
+            "GET {path} 200 example's owner_id follows the released \
+             local/SYSTEM shape (register AMB-137)"
+        );
+        let retrieved = op["responses"]["200"]["description"]
+            .as_str()
+            .unwrap_or_default();
+        assert!(
+            retrieved.contains("empty list"),
+            "GET {path} 200 must carry the released empty-collection sentence; has: {retrieved}"
+        );
+
+        // ── update: both Prefer branches with Preference-Applied, 415 + 422 ──
+        let op = doc["paths"][&path]["put"].clone();
+        assert!(op.is_object(), "PUT {path} must be documented");
+        require(
+            &op,
+            &path,
+            "PUT",
+            &["200", "204", "400", "404", "406", "415", "422"],
+        );
+        assert!(
+            documented_params(&op, "header")
+                .iter()
+                .any(|n| n == "Prefer"),
+            "PUT {path} must document the Prefer negotiation"
+        );
+        for status in ["200", "204"] {
+            assert!(
+                header_names(&op, status)
+                    .iter()
+                    .any(|h| h == "Preference-Applied"),
+                "PUT {path} {status} must echo the applied preference"
+            );
+            no_versioning_headers(&op, &path, "PUT", status);
+        }
+        assert!(
+            !documented_params(&op, "header")
+                .iter()
+                .any(|n| n.eq_ignore_ascii_case("if-match")),
+            "PUT {path} must NOT take If-Match: tags are not change-controlled"
+        );
+        let body = first_content(&op["requestBody"]).clone();
+        assert!(
+            body["example"][0]["key"].is_string(),
+            "PUT {path} request body must be a bare UPDATE_ITEM_TAG array example"
+        );
+        let body_doc = op["requestBody"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned();
+        assert!(
+            body_doc.contains("remove all ITEM_TAG"),
+            "PUT {path} must carry the released empty-list clear-all sentence; has: {body_doc}"
+        );
+        assert!(
+            body_doc.contains("REPLACE"),
+            "PUT {path} must state the full-collection replace semantics"
+        );
+
+        // ── delete: 204/400/404, no headers, the plural set semantics ────────
+        let path = format!("{BASE}/{segment}/{{uid_based_id}}/tags/{{key}}");
+        let op = doc["paths"][&path]["delete"].clone();
+        assert!(op.is_object(), "DELETE {path} must be documented");
+        require(&op, &path, "DELETE", &["204", "400", "404"]);
+        assert!(
+            header_names(&op, "204").is_empty(),
+            "DELETE {path} 204 carries no header at all; has {:?}",
+            header_names(&op, "204")
+        );
+        assert!(
+            text(&op).contains("resource(s)"),
+            "DELETE {path} must carry the released plural 'resource(s)' semantics"
+        );
+        let key = param_doc(&op, "key");
+        assert!(
+            key.contains("target_path"),
+            "DELETE {path} must explain that `key` alone selects every target_path"
+        );
+        let not_found = op["responses"]["404"]["description"]
+            .as_str()
+            .unwrap_or_default();
+        assert!(
+            not_found.contains("ITEM_TAG identified by the `key` does not exist"),
+            "DELETE {path} 404 must carry the released two-trigger text; has: {not_found}"
+        );
+    }
+
+    // ── the space-wide list: no scoping parameter, no 404 ────────────────────
+    let path = format!("{BASE}/tags");
+    let op = doc["paths"][&path]["get"].clone();
+    assert!(op.is_object(), "GET {path} must be documented");
+    require(&op, &path, "GET", &["200", "400", "406"]);
+    assert!(
+        !codes(&op).iter().any(|c| c == "404"),
+        "GET {path} has no scoping parameter, so nothing can be not-found"
+    );
+    assert!(
+        documented_params(&op, "path").is_empty(),
+        "GET {path} is the one tag route with no scoping path parameter"
+    );
+    for filter in ["tag_key", "tag_value", "tag_target_path"] {
+        assert!(
+            documented_params(&op, "query").iter().any(|n| n == filter),
+            "GET {path} must document the {filter} filter"
+        );
+        assert!(
+            param_doc(&op, filter).contains("carries NO description"),
+            "GET {path} must record that the released {filter} file is description-free"
+        );
+    }
+    no_versioning_headers(&op, &path, "GET", "200");
+    assert_eq!(
+        response_example(&op["responses"]["200"])[0]["_type"],
+        "ITEM_TAG",
+        "GET {path} 200 must carry a served ITEM_TAG list example"
+    );
+
+    // ── the family is complete: sixteen released ITEM_TAG operations ─────────
+    let tagged = operations(&doc)
+        .into_iter()
+        .filter(|(path, _, _)| path.starts_with(BASE) && path.contains("/tags"))
+        .count();
+    assert_eq!(
+        tagged, 16,
+        "the Demographic API serves sixteen released ITEM_TAG operations \
+         (five typed quintets + the space-wide list)"
+    );
+}
+
 /// The eight `PARTY_RELATIONSHIP` operations are OUR OWN EXTENSION: the
 /// released Demographic API defines no `party_relationship` path, so every one
 /// of them must say so in its description and none may be counted towards a
