@@ -4509,3 +4509,447 @@ AMB-144:
     from the platform overview.
   disposition: report_only
   upstream_ref: "UPR-108"
+
+AMB-145:
+  ambiguity: >-
+    The SMART discovery chapter's own example advertises resource scopes the
+    SMART scope chapter's own grammar cannot parse — a released-vs-released
+    conflict inside ONE specification, four chapters apart. The master04
+    §Service Discovery example document carries `"scopes_supported": ["openid",
+    "profile", "launch", "launch/patient", "patient/*.rs", "user/*.rs",
+    "offline_access"]`, while master08 §Resource Scopes closes the `<resource>`
+    position of `<compartment>/<resource>.<permission>` to exactly three nouns
+    — `template-<templateId>`, `composition-<templateId>`, `aql-<queryName>`
+    ("The following openEHR REST APIs `<resource>` types are supported for use
+    in scopes", an exhaustive list) — and the wildcards master08 then defines
+    are for the `<templateId>`/`<queryName>` TAIL, never for the noun: all five
+    rows of its pattern table (`MyHospital::Template.v0`,
+    `org.openehr::bloodpressure.v1`, `*::Template.v0`, `MyHospital::*`, `*`)
+    are id patterns, and all eight rows of its maximal table spell a noun out.
+    `patient/*.rs` and `user/*.rs` put a bare `*` exactly where the noun must
+    be, so a conformant parser of master08 cannot resolve them to any resource
+    family: the two forms are simultaneously the specification's own advertised
+    example and ungrammatical under the specification's own grammar. Nothing
+    anywhere says what a Platform does with a scope it cannot parse, and
+    nothing says whether the SMART-on-FHIR `<compartment>/*.<permission>`
+    "everything" idiom the example is plainly borrowing is meant to be legal
+    here at all.
+  source: >-
+    ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service
+    Discovery (the example JSON block — the quoted `scopes_supported` array)
+    CONTRASTED with master08-scopes.adoc §Resource Scopes (the syntax line
+    `<compartment>/<resource>.<permission>`; the closed three-noun `<resource>`
+    list; the `<templateId>`/`<queryName>` pattern table; the maximal scope
+    table) + master07-authorization.adoc §Context Selection NOTE ("standard
+    SMART launch scopes and context attributes remain compatible and may be
+    used in parallel for interoperability purposes … but their use is not
+    normative in this specification" — which covers the LAUNCH scopes, not the
+    resource-scope grammar, so it does not license an ungrammatical resource
+    scope) — the conflict CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: INERT DEMOTION, chosen because it is the only reading that
+    contradicts neither side of the conflict. The one grammar
+    (`crates/openehr-its/src/rest/smart_scopes.rs`, shared by the CDR's scope
+    gate and by any REST client previewing what a scope grants) is TOTAL:
+    `SmartScope::parse` maps `patient/*.rs` and `user/*.rs` onto
+    `SmartScope::Other`, which is retained verbatim and is inert — it neither
+    grants nor denies anything, so a token carrying the master04 example's
+    scope set is not rejected (the example stays servable) and is also not
+    silently widened into `composition-*`/`template-*`/`aql-*` authority the
+    master08 grammar never wrote (the grammar stays enforced). Fail-closed mode
+    then behaves exactly as it does for a scope-less token: an inert scope is
+    not a family scope, so a scope-governed operation is denied. Pinned by
+    `smart_scopes.rs` §tests `master04_example_wildcard_resource_is_inert` (the
+    two example forms), `unknown_scope_is_inert_other` and
+    `bad_permission_char_falls_back_to_other`. What this server ADVERTISES is
+    kept consistent with what it can enforce: the default `scopes_supported`
+    lists only grammar-parseable forms (`patient/composition-*.cruds`,
+    `user/template-*.cruds`, `system/aql-*.cruds`, …) rather than republishing
+    the unparseable example forms — an operator whose Authorization Server does
+    issue them may still advertise them verbatim through the
+    `scopes_supported` override, since the advertisement is the AS's claim, not
+    the CDR's. Reported upstream (UPR-109).
+  disposition: fixed_handling
+  upstream_ref: "UPR-109"
+
+AMB-146:
+  ambiguity: >-
+    master04 §Authentication Endpoints names the WRONG discovery document for
+    its own attribute list. The sentence reads "The following attributes in the
+    `.well-known/openid-configuration` must match those defined in the OAuth
+    2.0 + OpenID Connect Discovery specification as well as the FHIR SMART
+    metadata specification", and the list it introduces ends with
+    `capabilities` — which is not an OpenID Provider Metadata member at all but
+    a SMART-configuration member, defined by master04's OWN §Capabilities
+    section three sections later ("The `capabilities` section advertises
+    supported SMART features as an array value"). Everything around the
+    sentence is about the other document: the chapter opens by extending "the
+    FHIR `.well-known/smart-configuration` endpoint definition", the example
+    block it annotates is introduced as "Responses to
+    `/.well-known/smart-configuration` endpoint", and the sibling §Services
+    section describes a `services` member that is likewise absent from OpenID
+    Provider Metadata. So a reader following the sentence literally is sent to
+    a different document than the one the whole chapter defines.
+  source: >-
+    ITS-REST docs/smart_app_launch/master04-service_discovery.adoc
+    §Authentication Endpoints (the quoted sentence and its 14-item list, whose
+    last item is `capabilities`) vs the same file's §Service Discovery ("The
+    *SMART Service Discovery* mechanism extends the FHIR
+    `.well-known/smart-configuration` endpoint definition"; "Responses to
+    `/.well-known/smart-configuration` endpoint must be served with the
+    `application/json` MIME type") and §Capabilities ("The `capabilities`
+    section advertises supported SMART features as an array value") and
+    §Services ("the response from configuration endpoint must include the
+    `services` section") — CONFIRMED first-hand.
+  handling: >-
+    Editorial: a document-name slip with no wire consequence. This server reads
+    the sentence as governing `.well-known/smart-configuration` (the document
+    the chapter defines, the document the example is, and the only document
+    that can carry `capabilities` and `services`) and serves the whole listed
+    attribute set from `/.well-known/smart-configuration`; it publishes no
+    `.well-known/openid-configuration` at all, that being an Authorization
+    Server document and the CDR being the resource server (master02 §Glossary).
+    No case turns on the distinction. Reported upstream (UPR-110).
+  disposition: editorial
+  upstream_ref: "UPR-110"
+
+AMB-147:
+  ambiguity: >-
+    master08 names `**` twice and never defines it. §Resource Scopes says the
+    ids "support wildcard and pattern-based matching using `*` and `**`, as
+    follows:" and then gives a five-row table in which `**` does not appear
+    once — the rows are `MyHospital::Template.v0`,
+    `org.openehr::bloodpressure.v1`, `*::Template.v0`, `MyHospital::*` and `*`.
+    The chapter's NOTE names it a second time ("Wildcard-based scopes (e.g.,
+    `*` or `**`) should be used cautiously and only when absolutely
+    necessary"), so the token is real and load-bearing in the prose, yet the
+    "as follows" table that is supposed to define it defines only `*`. Two
+    readings survive the text and it picks neither: `**` as a mere synonym of
+    `*`, or `**` as the broader wildcard that crosses the `::` namespace
+    delimiter which `*` (per the table's own `*::Template.v0` and
+    `MyHospital::*` rows, both of which are meaningless if `*` already crossed
+    `::`) does not.
+  source: >-
+    ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the
+    quoted "using `*` and `**`, as follows:" sentence; the five-row pattern
+    table with no `**` row; the quoted wildcard NOTE) — the omission CONFIRMED
+    first-hand (grep of the whole smart_app_launch tree: the `**` token occurs
+    in those two sentences and nowhere else).
+  handling: >-
+    Fixed handling, derived from the table the spec DID write. Our documented
+    reading is that `*` is segment-local and `**` crosses `::`: it is the only
+    reading under which the table's `*::Template.v0` ("Template.v0 from any
+    namespace") and `MyHospital::*` ("Any template within MyHospital
+    namespace") rows say something a bare `*` does not already say, and it is
+    the reading under which the prose's pairing of the two tokens is
+    meaningful rather than redundant. The bare-`*` row ("All available
+    templates or queries") is honoured as written and is NOT narrowed by the
+    segment-local rule — a pattern that is exactly `*` (or exactly `**`)
+    matches every id — so the table's own top-level row and the segment-local
+    rule coexist. Implemented in
+    `crates/openehr-its/src/rest/smart_scopes.rs` (`Pattern::matches` +
+    `glob_match`: `**` consumes any bytes, `*` consumes any bytes stopping
+    before `:`, every other byte literal) and unit-covered there. Reported
+    upstream (UPR-111).
+  disposition: fixed_handling
+  upstream_ref: "UPR-111"
+
+AMB-148:
+  ambiguity: >-
+    Two editorial defects in master08's normative sentences. (1) The scope
+    syntax is stated with a SINGULAR third component — "the scope syntax
+    `<compartment>/<resource>.<permission>` where:" — and then explained with a
+    PLURAL one: the third bullet of the same list reads "`<permissions>`
+    specifies the allowed operations", a placeholder that appears nowhere in
+    the syntax line, while the syntax line's `<permission>` appears nowhere in
+    the bullet list. Since the component is in fact a SET of letters (the
+    chapter's own `crud`/`cruds`/`rs` examples and the whole maximal table),
+    the placeholder a reader is meant to substitute for is genuinely ambiguous
+    between two spellings of the same grammar position. (2) The chapter's one
+    validation obligation is a comma splice: "The _Platform_ must validate
+    requested scopes against the _Application_ registration metadata,
+    applicable access control policies, the authenticated user's permissions."
+    — three coordinated objects with no conjunction, so a reader cannot tell
+    whether the third item is a third object of "against" or the start of a
+    dropped clause, nor whether the three are conjunctive (all three must
+    permit) or alternative.
+  source: >-
+    ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the
+    syntax line `<compartment>/<resource>.<permission>` vs the third bullet
+    "`<permissions>` specifies the allowed operations"; the permission-letter
+    list `c`/`r`/`u`/`d`/`s`; the maximal table rows ending `crud`, `cruds` and
+    `rs`) + the same file's §Scopes second paragraph (the quoted validation
+    sentence) — both CONFIRMED first-hand.
+  handling: >-
+    Editorial: neither defect changes what a conformant Platform does. (1) The
+    grammar position is read as the plural SET the chapter's own examples show
+    — the permission tail is a non-empty string of `c`/`r`/`u`/`d`/`s` letters
+    (`Permissions` in `crates/openehr-its/src/rest/smart_scopes.rs`), which
+    satisfies both spellings. (2) The validation sentence is read
+    CONJUNCTIVELY — every listed source must permit — because that is the only
+    reading under which "validate" narrows rather than widens, and because this
+    server composes the SMART gate as an AND onto the RBAC/ABAC decision
+    (`app/ehrbase-rest/src/extensions/access/pep.rs`: SMART can only narrow,
+    never widen) so that the "applicable access control policies" object of the
+    sentence is enforced independently of the scope. No case turns on either
+    reading. Reported upstream (UPR-112).
+  disposition: editorial
+  upstream_ref: "UPR-112"
+
+AMB-149:
+  ambiguity: >-
+    The discovery document is specified as CONTENT and not at all as an HTTP
+    resource. master04 fixes its path relative to the Platform base URL and its
+    `application/json` media type, and then stops: across the whole
+    smart_app_launch tree there is not one status code, not one caching
+    statement, not one error shape, and not one sentence on whether the
+    document is publicly readable (grep-verified: zero occurrences of any of
+    200/201/400/401/403/404, `Cache-Control`, `max-age`, `ETag`, `cache` or
+    `error` in any of the nine chapters). Three consequences are unresolved by
+    the released text. (1) AUTH POSTURE: whether
+    `/.well-known/smart-configuration` may be protected is never stated; it is
+    only INFERABLE, from master07 §Embedded iFrame Launch, where the
+    Application fetches `{iss}/.well-known/smart-configuration` in order to
+    LEARN the `authorization_endpoint` — i.e. strictly before it can hold any
+    token — which is an argument, not a rule. (2) FRESHNESS: nothing says
+    whether the document may be cached, for how long, or how a client learns it
+    changed. (3) The `baseUrl` VERSION SEGMENT: master04 requires "Absolute URL
+    to the root of the API" and every example writes the openEHR entry with a
+    version segment (`https://platform.example.com/openehr/rest/v1`) while
+    writing the FHIR entry without one (`https://platform.example.com/`), but
+    no sentence says whether "the root of the API" includes the ITS-REST
+    version segment — so a client cannot tell from the text whether to append
+    it.
+  source: >-
+    ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service
+    Discovery ("The configuration endpoint should be always available relative
+    to the _Platform_ base URL"; the `/gateway/v1` sub-path example; "Responses
+    to `/.well-known/smart-configuration` endpoint must be served with the
+    `application/json` MIME type"; the example's
+    `"baseUrl":"https://platform.example.com/openehr/rest/v1"` for
+    `org.openehr.rest` against `"baseUrl":"https://platform.example.com/"` for
+    `org.fhir.rest`) + §Services ("`baseUrl`: Absolute URL to the root of the
+    API `*(required)*`") + master07-authorization.adoc §Embedded iFrame Launch
+    ("Once launched, the _Application_ uses the `iss` value to retrieve the
+    SMART configuration document from `{iss}/.well-known/smart-configuration`.
+    This configuration document provides important endpoints including the
+    `authorization_endpoint`") + ITS-REST
+    docs/overview/Requests_and_responses.md §"HTTP status codes" (the generic
+    table, which assigns no code to this document because ITS-REST does not
+    define this document) — the silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling on all three, each grounded on the strongest released
+    material available and flagged where it is ours. (1) PUBLIC. The discovery
+    document is served unauthenticated, outside the auth layer, alongside the
+    health family — because master07's pre-authorization fetch is impossible
+    otherwise, and because the document is by construction a directory of
+    endpoints rather than clinical content (it carries no EHR data). The
+    inference is the spec's own launch sequence; the DECISION to serve it
+    publicly is ours where the text is silent — no openEHR spec governs the
+    auth posture of this document. (2) NO CACHING DIRECTIVES are emitted and
+    none are required of clients: with no released freshness rule, inventing
+    `Cache-Control`/`ETag` semantics for a document whose contents change only
+    on operator reconfiguration would be an unspecified contract, and the
+    default (no directive) leaves clients on the generic HTTP heuristics. Our
+    own design/extension. (3) THE VERSION SEGMENT IS INCLUDED: the served
+    `org.openehr.rest` `baseUrl` is the configured external origin plus the
+    server's full REST base path including its version segment, matching the
+    only released example of that exact key and satisfying "root of the API" in
+    the sense a client can immediately concatenate a resource path onto. The
+    absolute-URL requirement itself is NOT part of this silence — it is stated,
+    and this server satisfies it from the operator-supplied external origin
+    (`smart.public_base_url`, boot-required when SMART is enabled), wire-tested
+    in `app/ehrbase-rest/tests/smart_http.rs`. Reported upstream (UPR-113).
+  disposition: fixed_handling
+  upstream_ref: "UPR-113"
+
+AMB-150:
+  ambiguity: >-
+    master08 defines a scope grammar and then never connects it to the API it
+    governs. Six silences, all in the enforcement half. (1) NO
+    SCOPE-TO-OPERATION MAPPING EXISTS ANYWHERE. Nothing in the nine chapters
+    names a single openEHR REST route, HTTP method, or operation id
+    (grep-verified), so which CRUDS letter a given operation consumes, and
+    which of the three nouns it belongs to, is entirely unassigned: the maximal
+    table says `user/aql-<queryName>.cruds` grants "Full access to
+    user-permitted AQL definitions or ad-hoc queries" without saying that
+    executing a query is `s` rather than `r`, or that storing one is `c`.
+    (2) OUT-OF-NOUN OPERATIONS. The noun list is closed to templates,
+    compositions and AQL, so EHR, EHR_STATUS, CONTRIBUTION, DIRECTORY, the
+    demographic resources and the admin routes have no expressible SMART scope
+    at all — and the text never says whether that means they are ungoverned,
+    universally granted, or universally denied. (3) THE PERMISSION TAIL'S
+    WELL-FORMEDNESS. The five letters are listed and nothing more: no statement
+    that the tail is order-free, that letters may not repeat, or what a tail
+    containing an unrecognised letter means. (4) THE DENY STATUS. master08
+    requires the Platform to "validate requested scopes" and never says what a
+    refusal looks like on the wire. (5) A `patient/` SCOPE WITH NO RESOLVABLE
+    CONTEXT. master07 makes the `ehrId` token-response parameter permissive
+    ("the following openEHR-specific parameters may be included in the token
+    response"), so a token can hold `patient/composition-*.r` and carry no
+    resolvable EHR at all, and nothing says what the Platform then does.
+    (6) MULTI-SCOPE COMPOSITION AND COMPARTMENT MATCHING. Nothing says how
+    several granted scopes combine when more than one could permit a request,
+    and nothing says by what value the `patient` compartment is matched to a
+    request's EHR.
+  source: >-
+    ITS-REST docs/smart_app_launch/master08-scopes.adoc §Scopes (second
+    paragraph: "The _Platform_ must validate requested scopes against …") +
+    §Resource Scopes (the closed three-noun list; the five permission letters
+    `c`/`r`/`u`/`d`/`s` with no well-formedness rule; the maximal table's eight
+    rows, all of which describe access in prose and none of which names an
+    operation) + master07-authorization.adoc §Context Selection (the token
+    response table and its introducing sentence "the following openEHR-specific
+    parameters may be included in the token response") + the whole
+    smart_app_launch tree, grep-verified to contain no HTTP method, no openEHR
+    route path, no status code, and no operation identifier + ITS-REST
+    docs/overview/Requests_and_responses.md §"Authentication and authorization"
+    ("If authentication and authorization are required, services MUST properly
+    use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers,
+    returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication`
+    as applicable") and §"HTTP status codes" (403 — "The service understood the
+    request but refuses to authorize it") + RM ehr EHR_STATUS class §Attributes
+    (`subject`: 1..1 PARTY_SELF, whose `external_ref` is the demographic
+    reference) — all silences CONFIRMED first-hand.
+  handling: >-
+    Fixed handling on all six; where a choice had no released ground it is
+    flagged as ours. (1) THE SCOPE-TO-OPERATION MAPPING IS IMPLEMENTER-INVENTED
+    — no openEHR spec governs it, our own design/extension. The table lives in
+    `app/ehrbase-rest/src/smart/enforce.rs` (`family_of_op`: `composition_*` /
+    `versioned_composition_*` to Composition, `query_execute_*` /
+    `definition_query_*` to Aql, `definition_template_*` to Template;
+    `permission_of_op`: `query_execute_*` to `s`, create/upload/store to `c`,
+    update to `u`, delete to `d`, else `r`) and its only anchors in the spec
+    are the maximal table's own prose readings ("Execute and read AQL queries"
+    pairing execution with `s`; "AQL definitions or ad-hoc queries" putting
+    stored-query definitions in the `aql-` noun). Any citation of this mapping
+    must carry that flag. (2) OUT-OF-NOUN OPERATIONS ARE SMART-UNGOVERNED, not
+    denied: a grammar that cannot express a scope for
+    EHR/EHR_STATUS/CONTRIBUTION/DIRECTORY/demographics/admin cannot be read as
+    denying them, so the SMART gate returns allow-with-no-binding for them and
+    authorization there is left entirely to the RBAC/ABAC layer the SMART gate
+    is AND-composed onto (`family_of_op` yields `None`). (3) THE TAIL IS
+    ORDER-FREE AND TOTAL-OR-INERT: any non-empty string over `{c,r,u,d,s}` in
+    any order parses to the corresponding set (repetition is idempotent), and a
+    tail containing ANY other character makes the WHOLE scope unparseable and
+    therefore inert (`SmartScope::Other`) rather than partially honoured — the
+    AMB-145 demotion rule applied to the tail, so an unrecognised letter can
+    never silently widen a grant. (4) THE DENY STATUS IS THE BASE SPEC'S 403,
+    not a SMART-specific code: the caller is authenticated and refused, so the
+    ITS-REST §"Authentication and authorization" MUST and the 403 status row
+    assign it, and the SMART gate routes every deny through the existing ABAC
+    `forbidden` path. (5) A `patient/` SCOPE WITH NO RESOLVABLE
+    `ehrId`/`patient` CLAIM IS DENIED — fail-closed, and the choice is ours
+    where master07 only says "may": a compartment scope whose compartment
+    cannot be established grants access to an unbounded set, which is the
+    opposite of what the compartment means, so the absence of the context is
+    treated as the absence of the grant. (6) COMPOSITION IS
+    BROADEST-COMPARTMENT-WINS AND PATIENT MATCHING IS THE EHR'S SUBJECT
+    EXTERNAL REF: when several granted scopes permit the same request, the
+    broadest permitting compartment decides (System over User over Patient), so
+    a `system/` grant is not narrowed by the coincidental presence of a
+    `patient/` one (`broaden` in `enforce.rs`); and when the patient
+    compartment does decide, the token's claim is compared to the target EHR's
+    `EHR_STATUS.subject.external_ref` (`subject_gate` in
+    `app/ehrbase-rest/src/extensions/access/pep.rs`), the only value the RM
+    gives an EHR that identifies its patient. Both are our own design where the
+    spec is silent. Reported upstream (UPR-114).
+  disposition: fixed_handling
+  upstream_ref: "UPR-114"
+
+AMB-151:
+  ambiguity: >-
+    SMART on openEHR is a released chapter set with no conformance surface of
+    its own, and its subject is a Platform that is not the CDR. Four facts,
+    each verified against the vendored tree. (a) STATUS: the specification
+    carries `:spec_status: DEVELOPMENT`. (b) FORCE: it contains exactly ONE
+    RFC 2119 uppercase keyword in all nine chapters — master06 §Deprecated
+    Flows' "MUST NOT be used" on the Implicit and ROPC grants; every other
+    obligation is written in lowercase prose ("must", "should", "may"), so the
+    text's requirement force is uniformly weak and uniformly unmarked.
+    (c) MACHINE-READABILITY: SMART is the only API area of the release with no
+    OpenAPI artifact — the vendored OAS carries exactly seven groups (admin,
+    definition, demographic, ehr, overview, query, system) and none of them is
+    SMART — and it has no schemas. (d) COVERAGE ANCHOR: the CNF corpus does not
+    mention SMART anywhere (grep-verified across the whole vendored CNF tree),
+    and the Profiles book's REST-APIs capability table has no SMART row. On top
+    of that, the subject of almost every obligation is the *Platform*, defined
+    as "a software ecosystem comprising at minimum an Authorization Server, an
+    openEHR Clinical Data Repository (CDR), and a FHIR Server" — so with an
+    external Authorization Server, most of what the specification requires is
+    not CDR behaviour at all.
+  source: >-
+    ITS-REST docs/smart_app_launch/manifest_vars.adoc (`:spec_status:
+    DEVELOPMENT`) + master06-authentication.adoc §Deprecated Flows (the sole
+    uppercase keyword: "The following OAuth 2.0 flows are discouraged and MUST
+    NOT be used within SMART on openEHR") + master02-overview.adoc §Glossary
+    (the quoted Platform definition) + master04-service_discovery.adoc §Service
+    Discovery + §Services + §Capabilities (the three CDR-side obligations: the
+    document, its `application/json` media type, the required
+    `org.openehr.rest` service entry with an absolute `baseUrl`) +
+    master08-scopes.adoc §Resource Scopes (the grammar) + ITS-REST
+    docs/overview/Requests_and_responses.md §"Authentication and authorization"
+    and §"HTTP status codes" (the 403 the deny discipline rests on) + the
+    vendored OAS group set (crates/openehr-its/vendor/rest-oas — seven
+    `*.openapi.yaml` groups, no SMART) + the vendored CNF tree (zero
+    occurrences of "smart", grep-verified) + CNF
+    docs/profiles/master03-profiles.adoc §Functional REST APIs table (six rows:
+    DEFINITION, EHR, DEMOGRAPHIC, QUERY, ADMIN, MESSAGE — no SMART row) — all
+    CONFIRMED first-hand.
+  handling: >-
+    Statement-declared, with the boundary drawn explicitly rather than left
+    implicit. THE CDR'S ENFORCEABLE SHARE OF SMART IS EXACTLY THREE
+    BEHAVIOURS: the discovery document (served at the Platform base URL as
+    `application/json`, carrying a required `org.openehr.rest` entry whose
+    `baseUrl` is absolute), the master08 resource-scope grammar (parsed and
+    enforced as a narrowing AND onto RBAC/ABAC), and the 403-on-scope-deny
+    discipline (the base spec's status, AMB-150(4)). Everything else the
+    specification describes belongs to the Authorization Server: the launch
+    sequences of master07, token issuance and the deprecated-grant prohibition
+    of master06, client registration and credentialing of master03, and the
+    application typology of master05. NINE BOUNDARY DELEGATIONS ARE RECORDED
+    HERE AS SCOPE STATEMENTS, NOT AS AMBIGUITIES — in each the specification
+    itself hands the rule to HL7 or to the implementer, so there is nothing for
+    openEHR to clarify: (B-1) the `.well-known/smart-configuration` endpoint
+    definition, which master04 "extends" from FHIR; (B-2) the requiredness and
+    semantics of the OAuth2/OIDC discovery members, which "must match those
+    defined in the OAuth 2.0 + OpenID Connect Discovery specification as well
+    as the FHIR SMART metadata specification"; (B-3) the base `capabilities`
+    vocabulary, master04 defining only the four openEHR additions "in addition
+    to those scopes defined in the original SMART App Launch framework";
+    (B-4) the standard SMART launch scopes and context attributes, whose "use
+    is not normative in this specification"; (B-5) the authorization-code
+    sequence itself, which "builds on the OAuth 2.0 Authorization Code Flow";
+    (B-6) client registration, where "the current recommendation is to handle
+    registration out-of-band"; (B-7) the confidential-client authentication
+    methods, both of which master06 delegates to HL7 pages; (B-8) end-user
+    identity verification, whose "exact mechanisms of identity verification are
+    considered implementation-specific and fall outside the scope of this
+    specification"; (B-9) the public/confidential application typology, which
+    master05 takes from "the considered by SMART specification". COVERAGE
+    CONSEQUENCE, stated openly: the catalogue authors no SMART case. Two
+    independent reasons, neither of them a coverage decision of convenience.
+    First, this server ships SMART OFF by default and the composed conformance
+    SUT runs the default configuration, so a SMART case would drive a surface
+    that is deliberately absent (the discovery route is not mounted and the
+    gate is inert — zero wire drift is itself the specified behaviour of the
+    disabled state). Second, and independent of configuration, every scope case
+    needs a Bearer token carrying a chosen `scope` claim, which requires an
+    Authorization Server the conformance stack does not run and a per-case
+    token-minting step the runner does not have (the ixit's `Bearer` principal
+    is one static token per instance, and the SUT accepts bearer tokens only
+    against a configured OIDC issuer). Authoring cases that could never execute
+    would be a false coverage claim, so the three CDR-side behaviours are
+    registered as wire-surface elements with this entry as their adjudication
+    (`vocab/wire_surface.yaml`: `smart-discovery-document-shape`,
+    `smart-resource-scope-grammar`, `smart-scope-deny-403`) and are proven
+    instead by the server's own tests — `app/ehrbase-rest/tests/smart_http.rs`
+    (the discovery document's absolute `baseUrl`s, its absence when disabled,
+    the honest `openehr-permission-v1` capability, fail-closed denial of
+    scope-less template and query access, advisory-mode deferral) and the
+    grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs`. The
+    `SmartAppLaunch` capability row exists in `vocab/capability_matrix.yaml` so
+    the surface is visible and honestly scoped in the rendered report; this
+    party's statement does NOT claim it. Reported upstream (UPR-115).
+  disposition: statement_declared
+  upstream_ref: "UPR-115"
