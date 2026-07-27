@@ -1639,6 +1639,30 @@
       "citation": "I_DEFINITION_ADL14.delete_opt: AMB-17"
     },
     {
+      "case": "I_DEFINITION_ADL14.get_opt-example_detail_levels",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_opt-example_invalid_detail_level",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_opt-example_type_output",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_opt-partial_template_id_no_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_fail",
       "status": "passed",
       "rows_driven": 1,
@@ -1649,7 +1673,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_single",
@@ -1659,10 +1683,9 @@
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_specific_version",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all",
@@ -1680,8 +1703,26 @@
     {
       "case": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 3,
+      "rows_total": 3
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-prefer_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-prefer_minimal",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-unparseable_opt",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-valid_opt",
@@ -1697,10 +1738,9 @@
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-wrong_media",
@@ -1711,8 +1751,8 @@
     {
       "case": "I_DEFINITION_ADL14.validate_opt-invalid_opt",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 3,
+      "rows_total": 3
     },
     {
       "case": "I_DEFINITION_ADL14.validate_opt-valid_opt",
@@ -1780,6 +1820,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_ADL2.get_artefact-version_prefix",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL2.has_artefact-existing",
       "status": "passed",
       "rows_driven": 1,
@@ -1840,8 +1886,26 @@
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-invalid_artefacts",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.upload_artefact-prefer_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.upload_artefact-prefer_minimal",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.upload_artefact-unparseable_artefact",
+      "status": "passed",
+      "rows_driven": 2,
+      "rows_total": 2
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-valid_opt",
@@ -1850,10 +1914,16 @@
       "rows_total": 2
     },
     {
+      "case": "I_DEFINITION_ADL2.upload_artefact-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL2.valid_artefact-invalid",
       "status": "passed",
-      "rows_driven": 3,
-      "rows_total": 3
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL2.valid_artefact-valid",
