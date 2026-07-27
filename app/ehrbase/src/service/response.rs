@@ -39,6 +39,11 @@ pub struct ResourceMeta {
     /// returns plain values, and this seam carries what the mandated headers
     /// need. The tag *content* is the RM `common.item_tag.ITEM_TAG` type.
     pub item_tags: Option<Value>,
+    /// The served/committed VERSION's own `ITEM_TAG` collection, when it is
+    /// distinct from the container's (`openehr-version-item-tag` — overview
+    /// §"openehr-item-tag and openehr-version-item-tag": the two headers
+    /// address a `VERSIONED_OBJECT` and a specific VERSION within it).
+    pub version_item_tags: Option<Value>,
 }
 
 impl ResourceMeta {
@@ -51,6 +56,7 @@ impl ResourceMeta {
             uid: uid.into(),
             last_modified: None,
             item_tags: None,
+            version_item_tags: None,
         }
     }
 

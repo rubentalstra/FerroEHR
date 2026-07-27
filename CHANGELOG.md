@@ -17,6 +17,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Demographic ITEM_TAG collections honour the released dual-form
+  addressing** (#509). A version-addressed `uid_based_id` on the demographic
+  tag routes now reads, replaces, and deletes that VERSION's own distinct
+  tag collection (previously every form reached the container's set); the
+  tags GET and DELETE now answer `404` for a nonexistent, wrong-kind, or
+  cross-space target (previously an empty `200` list); both
+  `openehr-item-tag` and `openehr-version-item-tag` request headers are
+  accepted on party create AND update, each landing on its own target's
+  collection with its own response-header echo; a tag's `target` is now the
+  bare RM `UID_BASED_ID` (an `OBJECT_VERSION_ID` for version targets) and
+  its `owner_id` follows the released examples' `local`/`SYSTEM` shape; and
+  the PARTY_RELATIONSHIP extension's stale-delete `409` now echoes the
+  latest `version_uid` in `ETag` like the party delete it mirrors.
+
 - **Demographic header echoes** (#388). The stale-version party DELETE's
   `409 Conflict` now returns the latest `version_uid` in `ETag` (the released
   response requires it); and the demographic CONTRIBUTION read now carries

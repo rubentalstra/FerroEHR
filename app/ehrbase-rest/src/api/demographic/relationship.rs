@@ -1049,14 +1049,13 @@ pub(super) async fn run(
                 Err(e) => Err(RestError::from(e)),
             }
         }
-        // TODO: a stale `uid_based_id` here answers `409` without echoing the
-        // latest `version_uid` in `ETag`, unlike the party delete
-        // (`super::error_with_meta` + `party_current_meta`). Resolve the current
-        // relationship metadata on the conflict and echo it, so the extension
-        // matches the convention its declaration claims to follow.
+        // A stale `uid_based_id` answers `409` AND echoes the latest
+        // `version_uid` in `ETag`, matching the party delete this extension
+        // mirrors (`409_PERSON_with_uid_based_id.yaml`'s convention).
         "party_relationship_delete" => {
             let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
-            let resp = state
+            let preceding = p.uid_based_id.clone();
+            match state
                 .backend()
                 .party_relationship_delete(
                     p.uid_based_id,
@@ -1066,10 +1065,27 @@ pub(super) async fn run(
                         crate::api::ehr::committer_proxy(),
                     ),
                 )
-                .await?;
-            let mut out = negotiate::empty(StatusCode::NO_CONTENT);
-            super::set_versioning_headers(&mut out, resp.meta.as_ref());
-            Ok(out)
+                .await
+            {
+                Ok(resp) => {
+                    let mut out = negotiate::empty(StatusCode::NO_CONTENT);
+                    super::set_versioning_headers(&mut out, resp.meta.as_ref());
+                    Ok(out)
+                }
+                Err(e) if super::is_precondition(&e) => {
+                    let meta = state
+                        .backend()
+                        .party_relationship_latest_meta(preceding)
+                        .await
+                        .ok()
+                        .flatten();
+                    Ok(super::error_with_meta(
+                        ApiError::Conflict(e.message),
+                        meta.as_ref(),
+                    ))
+                }
+                Err(e) => Err(RestError::from(e)),
+            }
         }
         // The versioned reads carry the weak `ETag` (+ `Last-Modified` where the
         // served body exposes a commit audit) the overview §"`ETag` and
