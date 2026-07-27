@@ -17,6 +17,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The published API reference now describes the demographic endpoints in
+  full** (#505). The 26 person / agent / group / organisation / role,
+  versioned-party and demographic-contribution operations in the served
+  OpenAPI document gained the response headers they actually send (`ETag`,
+  `Location`, `Last-Modified`, `Preference-Applied` and the two
+  `openehr-*-item-tag` headers), the status branches they actually answer
+  (`204`, `400`, `406`, `409`, `412`, `415`, `422`), the committal
+  (`openehr-version` / `openehr-audit-details`), `Prefer`, `If-Match`,
+  `Accept` and `Content-Type` request headers, worked PERSON /
+  VERSIONED_PARTY / CONTRIBUTION examples, and a spec citation on every
+  branch. Reads and deletes no longer suggest a `Location` header they never
+  send, and the party routes now state plainly that Simplified (FLAT /
+  STRUCTURED) media types are refused because a demographic party is not
+  templated. The eight `PARTY_RELATIONSHIP` operations are labelled for what
+  they are — an extension of this server, with no openEHR REST operation
+  behind them — and the group carries a note that the openEHR Demographic
+  API is itself a `DEVELOPMENT`-state specification.
+
 - **Stored-query stores answer honest `Location`s and validate the version
   segment** (#498). The version-less `PUT /definition/query/{name}` now
   always names the version it actually wrote (`…/1.0.0`) in `Location` —
