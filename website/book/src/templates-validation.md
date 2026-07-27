@@ -195,6 +195,21 @@ The supported family: `_uid`, `_link:n`, `_feeder_audit`, `_null_flavour`,
 `_other_participation:n`, `_work_flow_id`, `_guideline_id`, `_expiry_time`,
 `_wf_definition`, `_instruction_details`, `_identifier:n`, and `_thumbnail`.
 
+An ACTION's `_instruction_details` carries exactly three suffixes on the field
+itself — the instruction's path within its composition, that composition's uid,
+and the activity id:
+
+```json
+{
+  "encounter/procedure/_instruction_details|path": "/content[openEHR-EHR-INSTRUCTION.request.v1]",
+  "encounter/procedure/_instruction_details|composition_uid": "4cdc3017-d8c5-4cd3-9900-f3bb7171d006",
+  "encounter/procedure/_instruction_details|activity_id": "activities[at0001]"
+}
+```
+
+An interval event additionally carries `|sample_count` (the number of samples
+the interval summarises) alongside its `/width` and `/math_function` fields.
+
 ### Embedding canonical JSON with `|raw`
 
 When one node needs full fidelity inside an otherwise-FLAT commit, write the
@@ -224,12 +239,11 @@ the value set is closed.
 When a template contains sibling nodes with the same name, the generated
 WebTemplate/FLAT path ids are disambiguated with underscore suffixes counted
 from 1 — `blood_pressure`, `blood_pressure_1`, `blood_pressure_2` — as the
-specification prescribes. Server builds compiled with the `ehrbase-quirks`
-feature instead use the Better-compatible numbering (`blood_pressure`,
-`blood_pressure2`), and additionally accept the Better-only DV_QUANTITY
-suffixes `|unit_system` and `|unit_display_name`; the standard build does
-neither. If your tooling was written against Better/EHRbase paths, match the
-build to it.
+specification prescribes. There is no vendor-compatibility mode: the
+specification's numbering is the only numbering, and vendor-only DV_QUANTITY
+suffixes such as `|unit_system` and `|unit_display_name` are not accepted. If
+your tooling was written against another server's path ids, map them on the
+client side.
 
 ## Validation on commit
 

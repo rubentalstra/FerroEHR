@@ -220,7 +220,7 @@ fn attr_emitted(node: &WebTemplateNode, out: &SimNode, attr: &str) -> bool {
 /// `master05-rm_mapping.adoc` §§ACTION (`/time`, `/ism_transition`),
 /// INSTRUCTION (`/narrative`), OBSERVATION (`/history_origin`), ACTIVITY
 /// (`/timing`, `/action_archetype_id`), POINT_EVENT/INTERVAL_EVENT (`/time`),
-/// INTERVAL_EVENT (`/width`, `/math_function`). EVENT_CONTEXT `start_time`/
+/// INTERVAL_EVENT (`/width`, `/math_function`, `|sample_count`). EVENT_CONTEXT `start_time`/
 /// `setting` are NOT emitted here — they surface through the `ctx/` vocabulary
 /// (master06; [`crate::flat::ctx`]) to avoid a duplicate encoding of the same datum.
 fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
@@ -274,6 +274,12 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
             leaf("time", "DV_DATE_TIME", rm.get("time"));
             leaf("width", "DV_DURATION", rm.get("width"));
             leaf("math_function", "DV_CODED_TEXT", rm.get("math_function"));
+            // master05 §INTERVAL_EVENT: `|sample_count` (INTEGER) is a datum
+            // suffix on the event node itself, not a sub-path — the section's
+            // second example spells it `…/any_event:0|sample_count: 5`.
+            if let Some(n) = rm.get("sample_count").filter(|v| !v.is_null()) {
+                out.attrs.insert("sample_count".to_owned(), n.clone());
+            }
         }
         _ => {}
     }
