@@ -31,7 +31,14 @@ EhrExtract: { family: Platform, tier: OPTIONS, required: false, source: "CNF pro
 Tds: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: TDS)" }
 DefinitionApi: { family: Platform, tier: CORE, required: true, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEFINITION API)" }
 EhrApi: { family: Platform, tier: CORE, required: true, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: EHR API)" }
-DemographicApi: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API)" }
+# REPORTING QUALIFIER, release-pinned (group-12 audit, 2026-07-27) — carried on
+# the capability row because the report/statement renderers take their scope
+# text from this matrix and no other artifact carries per-API scope wording.
+# It qualifies REPORTING only: it is never a verdict modifier, and it is not an
+# ambiguity (requirement force is unaffected — the BCP-14 clause of ITS-REST
+# `docs/overview/Preface.md` §Requirements is not state-qualified, so every
+# MUST/SHOULD on this API binds exactly as elsewhere).
+DemographicApi: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API). SCOPE: the openEHR DEMOGRAPHIC API is DEVELOPMENT-state in the pinned release — ITS-REST docs/demographic/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and derived from the released operation/RM/SM text, not from a conformance clause" }
 QueryApi: { family: Platform, tier: STANDARD, required: true, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: QUERY API)" }
 AdminApi: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: ADMIN API)" }
 MessageApi: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: MESSAGE API)" }
