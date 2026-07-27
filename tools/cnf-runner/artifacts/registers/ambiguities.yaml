@@ -1859,6 +1859,166 @@ AMB-97:
   disposition: editorial
   upstream_ref: "UPR-61"
 
+AMB-98:
+  ambiguity: >-
+    The relation of the REST paging parameters (offset/fetch) to an
+    in-query AQL LIMIT/OFFSET is entirely unlegislated: the one released
+    exclusion clause targets the DEPRECATED TOP ("cannot be combined with
+    AQL-top"), whose replacement LIMIT arrived in the same release. Nothing
+    states whether REST paging overrides, composes with, or
+    conflicts-and-errors against LIMIT/OFFSET, and no status code is
+    assigned even to the stated TOP prohibition.
+  source: >-
+    ITS-REST specifications/docs/query/Request.md §Common Headers and
+    Query Parameters (the fetch bullet, linking AQL #_top); QUERY AQL
+    master03-syntax.adoc §TOP (deprecated) + §LIMIT — confirmed
+    first-hand.
+  handling: >-
+    Fixed handling: REST paging COMPOSES OVER the AQL-limited result set —
+    the AQL LIMIT/OFFSET clauses shape the logical result, then
+    offset/fetch window it; fetch combined with the deprecated TOP is
+    rejected 400 (the stated prohibition, code ours). Reported upstream
+    (UPR-62): update the exclusion clause for LIMIT and define the
+    composition.
+  disposition: fixed_handling
+  upstream_ref: "UPR-62"
+
+AMB-99:
+  ambiguity: >-
+    The three query POSTs carry offset/fetch/query_parameters in the body
+    while the released SHOULD-list ("All query execution requests SHOULD
+    support at least the following parameters") draws no GET/POST
+    distinction — the URL forms apply to POST too — and no released
+    sentence assigns precedence when a value is carried in BOTH places.
+    The same duality one level down from AMB-59.
+  source: >-
+    ITS-REST specifications/docs/query/Request.md §Common Headers and
+    Query Parameters vs operations/query_execute_*_body.yaml (zero query
+    parameters declared) — confirmed first-hand.
+  handling: >-
+    Fixed handling (the AMB-59 pattern): the POSTs accept the URL forms;
+    a value carried in both places must agree — equal values accepted,
+    a disagreement is 400. Reported upstream (UPR-63): assign the
+    precedence.
+  disposition: fixed_handling
+  upstream_ref: "UPR-63"
+
+AMB-100:
+  ambiguity: >-
+    No released sentence reserves the protocol parameter names (q, ehr_id,
+    offset, fetch) from binding as AQL $parameters, and the spec collides
+    with itself: the QueryParameters schema example binds ehr_id as a
+    query parameter while Request.md §About the ehr_id parameter defines
+    ehr_id as the EHR-scope protocol parameter, and the StoredQuery
+    example's AQL binds $ehr_id.
+  source: >-
+    ITS-REST specifications/docs/query/Request.md §Query parameters +
+    §About the ehr_id parameter; schemas/query/QueryParameters.yaml (the
+    ehr_id example); schemas/query/StoredQuery.yaml (the $ehr_id example
+    AQL) — confirmed first-hand.
+  handling: >-
+    Fixed handling: the four protocol names are reserved — a URL
+    parameter named q/ehr_id/offset/fetch is ALWAYS the protocol
+    parameter, never a $parameter bind; a query whose AQL declares
+    $ehr_id receives it only through the JSON query_parameters object
+    (where no protocol meaning exists). Reported upstream (UPR-64):
+    reserve the names or rename the protocol parameters.
+  disposition: fixed_handling
+  upstream_ref: "UPR-64"
+
+AMB-101:
+  ambiguity: >-
+    What the ehr_id scope DOES to the executed query is never stated: the
+    strongest released verbs are "used to execute the query within a
+    single EHR context" and "MAY be used by the underlying backend to
+    perform routing, optimizations or similar". No sentence says it
+    filters the result set, injects an EHR predicate, or how it interacts
+    with an AQL that already fixes a DIFFERENT ehr_id (the spec's own
+    body example hardcodes one). And no released branch exists for a
+    well-formed but UNKNOWN ehr_id (the SM's ehr_id_does_not_exist error
+    has no wire realization; the ad-hoc ops declare no 404 at all).
+  source: >-
+    ITS-REST specifications/docs/query/Request.md §About the ehr_id
+    parameter + §the body example; docs/query/Query_types.md §Single EHR
+    queries; SM UML/classes/i_query_service.adoc (the declared error) —
+    confirmed first-hand.
+  handling: >-
+    Fixed handling: the scope constrains execution to the named EHR (a
+    conflicting in-AQL EHR predicate simply yields the intersection —
+    empty when they differ), and a well-formed but unknown ehr_id answers
+    404, REALIZING the SM's declared ehr_id_does_not_exist (SM is a
+    released oracle; the 404 is the only declared realization candidate).
+    Reported upstream (UPR-65): define the scoping semantics and bind the
+    unknown-EHR branch.
+  disposition: fixed_handling
+  upstream_ref: "UPR-65"
+
+AMB-102:
+  ambiguity: >-
+    A malformed {version} selector (not exact-3-part and not a
+    {major}/{major}.{minor} prefix — e.g. "1.x", "v1", "1.2.3.4") has no
+    assigned outcome; the released 404 trigger is "a stored query with
+    qualified_query_name AND version does not exist". The same question
+    covers a qualified_query_name outside [a-zA-Z0-9_.-] and the reserved
+    org.openehr::aql form.
+  source: >-
+    ITS-REST specifications/parameters/path/version.yaml (the two legal
+    forms) + responses/404_Query_version.yaml (the trigger);
+    docs/query/Qualified_query_name.md (the class + the reserved-name
+    NOTE) — confirmed first-hand.
+  handling: >-
+    Fixed handling: an unmatchable selector IS "a version that does not
+    exist" — 404 under the released trigger's own wording (a selector
+    matching nothing), covering malformed versions, out-of-class names,
+    and the reserved name alike. Reported upstream (UPR-66): assign the
+    malformed-selector branch explicitly.
+  disposition: fixed_handling
+  upstream_ref: "UPR-66"
+
+AMB-103:
+  ambiguity: >-
+    The Query surface carries an editorial defect bundle. SM: RESULT_SET
+    requiredness is inverted vs the wire (SM columns/id/creation_time 1..1
+    with rows 0..1; the released schema requires rows alone, id has no
+    wire field); the SM identifier grammar competes (mandatory
+    reverse-domain namespace + slash-joined version vs the released
+    optional-namespace + path-segment version); SM version matching is
+    exact-3-part-only (no prefix concept); SM types query_parameters
+    Hash<String,String> against the JSON-typed wire — breaking the AQL
+    quoting NOTE that needs the number/string distinction; SM ehr_ids is a
+    List with no wire realization (single ehr_id only) and is typed UUID;
+    SM negative-value semantics (zero-or-negative fetch means ALL) exist
+    only in SM and contradict HTTP intuition; the SM row shape is a
+    wrapped object ({values: [...]}) vs the released bare array; the
+    flattened wire descriptor loses version/formalism/registration_time —
+    the EXECUTED STORED VERSION IS UNOBSERVABLE on the wire, weakening the
+    prefix-matching contract; result_set.adoc carries "Rox data.", an
+    empty Meaning cell, and a left-in authoring TODO. Released doc
+    defects: Request.md's headline example uses the non-existent FETCH
+    keyword and a malformed at-code node predicate; the vendored AQL
+    grammar files (AqlParser/AqlLexer.g4) are MISSING from the QUERY
+    component; the adjacent definition store operationIds carry a literal
+    .yaml suffix; 400_Query declares no error body; the OAS is JSON-only
+    against the canonical-format MUST while the ITS-XML RESULT_SET is a
+    6-line draft stub; the glossary defines no query term; the CNF
+    querying schedule links the demographic service model and is
+    otherwise TBD/xx throughout.
+  source: >-
+    SM UML/classes/{i_query_service,stored_query_execute_spec,
+    adhoc_query_execute_spec,result_set,result_set_column,result_set_row,
+    result_query_descriptor,query_descriptor}.adoc + SM openehr_platform
+    master08-query_service.adoc; ITS-REST docs/query/Request.md +
+    schemas/query/* + operations/definition_query_*store*.yaml +
+    responses/400_Query.yaml; QUERY docs/AQL master07-grammar.adoc (the
+    missing includes); ITS-XML components/QUERY/latest/README.adoc; CNF
+    platform_test_schedule master11 — all confirmed first-hand.
+  handling: >-
+    Editorial: the wire adjudicates from the released ITS-REST query
+    prose + the QUERY component; the SM's competing shapes are design
+    authority only. Reported upstream (UPR-67).
+  disposition: editorial
+  upstream_ref: "UPR-67"
+
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on
