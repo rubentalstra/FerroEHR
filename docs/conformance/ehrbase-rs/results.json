@@ -238,7 +238,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.delete_composition-already_deleted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.delete_composition-audit_headers",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-etag_names_new_version",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -251,6 +263,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.delete_composition-non_existent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-not_latest_version",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -274,6 +292,30 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_composition_at_time-before_first_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_time-deleted_at_time",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_time-future",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_at_time-malformed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_at_time-no_time_arg",
       "status": "passed",
       "rows_driven": 1,
@@ -292,6 +334,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_composition_at_version-deleted_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_latest-bad_composition",
       "status": "passed",
       "rows_driven": 1,
@@ -299,6 +347,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_latest-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_latest-deleted_head",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -334,13 +388,67 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-at_time_before_first_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-at_time_future",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-at_time_malformed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-at_time_omitted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-bad_ehr",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-container_shape",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-deleted_version_envelope",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-malformed_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-non_existent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-version_of_other_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-version_unknown",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -394,7 +502,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-body_uid_mismatch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-event",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-missing_if_match",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -407,6 +527,18 @@
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-persistent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-stale_if_match",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
