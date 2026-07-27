@@ -6,7 +6,7 @@
 - [VERSION.signature location](version-signature-location.md) — signature 0..1/optional, canonical_form, server-vs-client signing; RM common master06 + UML version.adoc; SM/ITS-REST/CNF silent
 - [Persistent COMPOSITION uniqueness](persistent-composition-uniqueness.md) — one-persistent-per-template is NOT spec-mandated (SILENT/under-debate); RM ehr master04 + CNF master07 same_opt_twice (tagged future)
 - [FLAT/STRUCTURED format location](flat-structured-format-location.md) — ITS-REST simplified_formats (STABLE) = authoritative wire; SM SIM-B/SDF (DEVELOPMENT) = abstract model+rules; SDT retired; CNF only legacy Robot suite
-- [DIRECTORY API location](directory-api-location.md) — EHR FOLDER/directory REST (OAS-split YAML) + FOLDER RM + CNF master09 + the status-code spec gaps (409/404-no-directory undefined; no versioned_directory route)
+- [DIRECTORY API location](directory-api-location.md) — the 5 directory ops/responses/params + FOLDER RM + SM I_EHR_DIRECTORY + CNF master09/Robot; `path` param defined ONLY in parameters/query/path.yaml; enumerated released-text gaps
 - [TemplateMetadata.version location](template-metadata-version-location.md) — ITS-REST definition/template list version field (deprecated, not required); source = template_id suffix OR OPT other_details (CNF master04 L161); ADL1.4 has no formal versioning
 - [FOLDER / directory model location](folder-directory-model-location.md) — RM FOLDER/VERSIONED_FOLDER/EHR.directory-vs-folders model, invariants, deletion, + generated Rust bindings
 - [AOM2 validation catalogue location](aom2-validation-catalogue-location.md) — where every V-code full text lives (master03/04.5/07/06), master08=phase orchestration only, the 14 spec-silent codes (external adl_syntax_errors.txt), am24 gen tree map
