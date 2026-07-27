@@ -86,6 +86,13 @@ cnf.composition.minimal_event.v2:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence; leaf value updated for the v2 content state"
+cnf.composition.minimal_event.foreign_uid:
+  source: fixtures/composition/minimal_event.foreign_uid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-07-27 from cnf.composition.minimal_event.v2 by populating LOCATABLE.uid with a fixed OBJECT_VERSION_ID naming a DIFFERENT version container (11111111-1111-4111-8111-111111111111::cnf.example.org::1). The payload is intrinsically VALID — LOCATABLE.uid is 0..1 (RM common locatable.adoc §Attributes) and the value is a well-formed OBJECT_VERSION_ID (BASE base_types master05 §Identification) — so the only defect a server can find is RELATIONAL: the body's implied version container (ITS-REST overview Resources.md §Identifier types: the COMPOSITION identifier 'implies that the VERSIONED_OBJECT identifier is …') contradicts the container the request URL addresses"
 cnf.composition.minimal_event.invalid_structure:
   source: fixtures/composition/minimal_event.invalid_structure.json
   format: canonical-json
