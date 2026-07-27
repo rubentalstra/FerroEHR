@@ -62,4 +62,4 @@ flow:
     expect: conflict
 postconditions:
   - { assert: version, count: 2 }
-  - { assert: version, of: "${second_version_uid}", change_type: MODIFICATION }
+  - { assert: version, of: "${second_version_uid}", change_type: MODIFY }

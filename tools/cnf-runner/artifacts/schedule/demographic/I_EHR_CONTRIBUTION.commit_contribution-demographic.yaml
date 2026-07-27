@@ -25,7 +25,7 @@ capabilities: [PartyOperations, DemographicApi]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "the demographic CONTRIBUTION routes realize no SM operation (register AMB-136); the I_EHR_CONTRIBUTION anchor with variant `demographic` is a catalogue naming convention, never an SM claim"
+  - "the demographic CONTRIBUTION routes realize no SM operation — SM openehr_platform master06-demographic_service.adoc defines no contribution interface (register AMB-136); the I_EHR_CONTRIBUTION anchor with variant `demographic` is a catalogue naming convention, never an SM claim"
 test_purpose: >-
   A CONTRIBUTION committed on the demographic route creates the PARTY versions
   it carries in one transaction, is retrievable by its own uid, and the

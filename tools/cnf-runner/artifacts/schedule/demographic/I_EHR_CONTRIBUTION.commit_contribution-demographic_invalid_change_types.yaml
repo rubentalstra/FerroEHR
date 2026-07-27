@@ -36,7 +36,7 @@ exercises: [Versioning]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "the demographic CONTRIBUTION routes realize no SM operation (register AMB-136); the I_EHR_CONTRIBUTION anchor with variant `demographic` is a catalogue naming convention, never an SM claim"
+  - "the demographic CONTRIBUTION routes realize no SM operation — SM openehr_platform master06-demographic_service.adoc defines no contribution interface (register AMB-136); the I_EHR_CONTRIBUTION anchor with variant `demographic` is a catalogue naming convention, never an SM claim"
 test_purpose: >-
   On the first demographic commit, a single-version CONTRIBUTION whose member
   carries a non-creation change_type, or a deleted lifecycle_state, is
