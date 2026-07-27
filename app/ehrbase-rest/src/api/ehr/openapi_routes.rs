@@ -89,7 +89,14 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                                       resource\"), and the RM `EHR` root is not a \
                                       VERSION, so the §\"ETag and Last-Modified\" \
                                       source `VERSION.commit_audit.time_committed` \
-                                      does not exist for it.",
+                                      does not exist for it. When the EHR has a \
+                                      directory, the body additionally carries \
+                                      the RM-grounded `directory` OBJECT_REF and \
+                                      `folders` list (RM ehr `EHR` class: \
+                                      `directory` 0..1 refers to `folders`' \
+                                      first member — `Directory_in_folders`); \
+                                      the ITS-REST `Ehr` schema omits both, but \
+                                      the RM model is the body authority.",
          body = serde_json::Value,
          headers(
              ("ETag" = String,
@@ -3358,7 +3365,7 @@ pub(crate) async fn versioned_composition_version_get_by_id(
 /// EHR's first folder hierarchy (`EHR.directory` = `folders.item(1)`, RM ehr
 /// master04 §Folders) and is change-controlled like any other versioned
 /// object, so the read carries the weak `ETag`/`Last-Modified` of the version
-/// it served (`Requests_and_responses.md` §"ETag and Last-Modified").
+/// it served (`Requests_and_responses.md` §"`ETag` and Last-Modified").
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(
@@ -3899,7 +3906,7 @@ pub(crate) async fn directory_update(
 /// Create the directory (FOLDER) (`POST /ehr/{ehr_id}/directory`).
 ///
 /// Creates the EHR's directory hierarchy from a complete FOLDER tree: a new
-/// VERSIONED_OBJECT, its first ORIGINAL_VERSION and a new CONTRIBUTION (SM
+/// `VERSIONED_OBJECT`, its first `ORIGINAL_VERSION` and a new CONTRIBUTION (SM
 /// `i_ehr_directory.adoc` `create_directory`). The committal headers
 /// `openehr-version` / `openehr-audit-details` are accepted and merged into
 /// that commit (`Requests_and_responses.md` §openehr-version-and-audit-details).
@@ -4343,7 +4350,23 @@ pub(crate) async fn directory_create(
               description = "The commit instant of that current latest version \
                              as an HTTP-date, carried alongside the `ETag` \
                              (§\"ETag and Last-Modified\")."),
-         ))
+         )),
+        (status = 406, description = "A Simplified-Format `Accept` was sent: \
+                                      the directory resource family has no \
+                                      simplified mapping (the Simplified \
+                                      Formats specification defines FLAT/\
+                                      STRUCTURED for templated COMPOSITION \
+                                      content only), so the request is refused \
+                                      uniformly — even though this response \
+                                      carries no body.",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified-Format `Content-Type` was \
+                                      sent: no simplified mapping exists for \
+                                      the directory resource family \
+                                      (`Resources.md` §Simplified Formats), so \
+                                      the request is refused uniformly — even \
+                                      though this operation takes no body.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn directory_delete(
