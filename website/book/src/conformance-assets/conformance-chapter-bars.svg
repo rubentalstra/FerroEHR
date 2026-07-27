@@ -56,9 +56,9 @@ text { fill: #c3c2b7; }
 
 <text x="304.3703703703703" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="336.074074074074" y="115" class="muted">52</text>
 <text x="166" y="149" text-anchor="end">Query</text>
-<rect x="174" y="132" width="53.33333333333333" height="26" class="bar-passed"/>
+<rect x="174" y="132" width="91.85185185185185" height="26" class="bar-passed"/>
 
-<text x="200.66666666666666" y="149" class="seg-label" text-anchor="middle">18</text><text x="235.33333333333331" y="149" class="muted">18</text>
+<text x="219.92592592592592" y="149" class="seg-label" text-anchor="middle">31</text><text x="273.85185185185185" y="149" class="muted">31</text>
 <text x="166" y="183" text-anchor="end">Demographic</text>
 <rect x="174" y="166" width="47.407407407407405" height="26" class="bar-passed"/>
 
