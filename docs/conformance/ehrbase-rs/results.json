@@ -2237,6 +2237,30 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.get_ehr_status-at_time_before_first_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_ehr_status-at_time_future",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_ehr_status-at_time_malformed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_ehr_status-at_time_omitted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.get_ehr_status-bad_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -2249,7 +2273,61 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.get_ehr_status_at_version-addressed_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_ehr_status_at_version-unknown_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-at_time_before_first_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-at_time_future",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-at_time_malformed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-at_time_omitted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-bad_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.get_versioned_ehr_status-contained_uid_form",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-container_shape",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-version_of_other_ehr",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2267,6 +2345,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_queryable-audit_change_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_queryable-bad_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -2274,6 +2358,30 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-invalid_body",
+      "status": "passed",
+      "rows_driven": 5,
+      "rows_total": 5
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-stale_if_match",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
