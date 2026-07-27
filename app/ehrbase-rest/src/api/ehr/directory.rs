@@ -177,7 +177,15 @@ pub(super) async fn run(
                 )
                 .await
             {
-                Ok(()) => Ok(negotiate::empty(no_content)),
+                // 204 with the NEW deleted version's weak ETag + Last-Modified
+                // (overview §"ETag and Last-Modified": both SHOULD accompany
+                // versioned resources; the delete commits a 523|deleted|
+                // version — RM common master06 §Logical Deletion).
+                Ok(resp) => Ok(negotiate::deleted_with_headers(
+                    &base,
+                    Some("directory"),
+                    &resp,
+                )),
                 Err(e) if e.status == CallStatusType::VersionMismatch => {
                     let meta = state
                         .backend()

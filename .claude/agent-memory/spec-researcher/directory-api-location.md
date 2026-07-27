@@ -1,30 +1,60 @@
 ---
 name: directory-api-location
-description: Where the DIRECTORY (EHR FOLDER) API + FOLDER RM + CNF tests live, and the spec gaps for status codes
+description: Where the DIRECTORY (EHR FOLDER) 5-operation API + FOLDER RM + SM I_EHR_DIRECTORY + CNF live, and the enumerated released-text gaps
 metadata:
   type: reference
 ---
 
-DIRECTORY / EHR FOLDER API spec locations (ITS-REST is OAS-split YAML, NOT prose .adoc):
+DIRECTORY / EHR FOLDER API spec locations (ITS-REST is OAS-split YAML; the EHR-API
+docs prose is a STUB — see [[ehr-status-ops-location]]).
 
-- Routes: `docs/specs/openehr/ITS-REST/specifications/ehr.openapi.yaml` lines 77-88 — `/ehr/{ehr_id}/directory` (post/put/delete/get) + `/ehr/{ehr_id}/directory/{version_uid}` (get).
-- Operations: `.../specifications/operations/directory_{create,update,delete,get_at_time,get_by_version_id}.yaml`.
-- Responses: `.../specifications/responses/` — `201_directory`, `200_directory_updated`, `204_version_updated`, `204_deleted`, `204_deleted_at_time`, `200_FOLDER_retrieved`, `412_directory`, `404_directory_*`, `404_unknown_ehr_id`, `400`.
-- Params: `.../parameters/query/{version_at_time,path}.yaml`, `.../parameters/path/{ehr_id,version_uid}.yaml`, `.../parameters/header/{If-Match,Prefer,Accept_LOCATABLE,ContentType_LOCATABLE}.yaml`.
-- Headers: `.../headers/{ETag_FOLDER,Location_directory,Location_deprecated,ContentType_LOCATABLE}.yaml`.
-- Schema: `.../schemas/ehr/Folder.yaml` (FOLDER: items[OBJECT_REF] / folders[FOLDER] / details[ITEM_STRUCTURE], all 0..1; allOf Versionable->Locatable).
-- General header/status semantics (Location deprecation, ETag W/, If-Match->412/400, Prefer, version_at_time, openehr-version/audit-details/item-tag): `.../specifications/docs/overview/Requests_and_responses.md`.
-- Vendored codegen OAS (same content, bundled): `crates/openehr-its/vendor/rest-oas/ehr-*.openapi.yaml`.
+- Routes: `ITS-REST/specifications/ehr.openapi.yaml` L77-88 — `/ehr/{ehr_id}/directory`
+  (post/put/delete/get) + `/ehr/{ehr_id}/directory/{version_uid}` (get). No `folders`
+  route, no `versioned_directory` route, no FOLDER `tags` route (only composition +
+  ehr_status have `/tags`).
+- Operations: `operations/directory_{create,update,delete,get_at_time,get_by_version_id}.yaml`.
+- Responses: `201_directory`, `200_directory_updated`, `204_version_updated` (SHARED with
+  ehr_status/composition/demographic updates — it, not the 200, declares
+  `Location_version` + the two item-tag headers), `204_deleted`, `204_deleted_at_time`,
+  `200_FOLDER_retrieved`, `412_directory`, `404_unknown_ehr_id`, `400`,
+  `404_directory_unknown_ehr_id_or_no_version_{at_time,uid}_or_no_path`.
+- Params: `parameters/query/{path,version_at_time}.yaml`, `path/{ehr_id,version_uid}.yaml`,
+  `header/{If-Match,Prefer,Accept_LOCATABLE,ContentType_LOCATABLE}.yaml`.
+- Headers: `headers/{ETag_FOLDER,ETag,Location_directory,Location_version,Location_deprecated,ContentType_LOCATABLE}.yaml`.
+- Schema: `schemas/ehr/Folder.yaml` (+ `UMFolder.yaml`); items ->
+  `schemas/base_types/UObjectRefOfUidBasedId.yaml` -> `ObjectRef.yaml` (namespace/type/id
+  ALL required). `schemas/ehr/Ehr.yaml` carries **NO** directory/folders/compositions/
+  contributions properties at all.
 
-RM grounding:
-- FOLDER class: `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.folder.adoc` (no uniqueness invariant at class level; only LOCATABLE.name). Prose: `RM/docs/common/master05-directory_package.adoc` (VERSIONED_FOLDER = VERSIONED_OBJECT<FOLDER>; path = slash-separated name values + uniqueness modifier).
-- EHR.directory: `RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc` L42 (directory: OBJECT_REF 0..1), invariants Directory_valid (type=VERSIONED_FOLDER) L70, Directory_in_folders L76.
+**THE `path` QUERY PARAM: its ONLY released definition is `parameters/query/path.yaml`**
+("slash-separated values of the name attribute of FOLDERs in the directory",
+example `episodes/a/b/c`) + SM `has_path` Meaning (same words). The overview docs
+(`docs/overview/*.md`) mention directory/folder only 3 times and NEVER the path param —
+grep-verified. RM's own directory paths are a DIFFERENT syntax
+(`/folders[hospital episodes]/items[1]`, `RM/docs/common/master05-directory_package.adoc §Paths`).
 
-CNF tests: `docs/specs/openehr/CNF/docs/platform_test_schedule/master09-func_tc_ehr_directory.adoc` — SM I_EHR_DIRECTORY ops (has_directory, has_path, create/update/delete_directory, get_directory[_at_time/_at_version], has_directory_version, get_versioned_directory). Robot suites under CNF/tests/platform/robot/I_EHR_DIRECTORY/.
+RM grounding: `RM/docs/common/master05-directory_package.adoc` (VERSIONED_FOLDER =
+VERSIONED_OBJECT<FOLDER>) + `RM/docs/UML/classes/org.openehr.rm.common.{folder,versioned_folder}.adoc`
+(FOLDER declares NO invariants) + `RM/docs/ehr/master04-ehr_package.adoc §Folders` (L102-131)
+and L237 (`is_modifiable` covers Folders) + `master06-change_control_package.adoc §Contributions`
+(change_type 249/250/251/523) + `§Logical Deletion`. See [[folder-directory-model-location]].
 
-KNOWN SPEC GAPS (flag as "spec-silent / our own design"):
-- No REST endpoint for get_versioned_directory (VERSIONED_OBJECT of directory) — CNF L.1-L.3 have no ITS-REST route.
-- create on EHR-that-already-has-directory: CNF E.2 requires an error, REST create defines only 400/404 (no 409). Status undefined.
-- update/delete when EHR exists but has NO directory: CNF H.2/I.1 require error, REST defines only 404_unknown_ehr_id/412/400 (404 is "unknown ehr_id" only). Status undefined.
-- GET at_time with malformed version_at_time: operation omits 400 (only 200/204/404); overview general 400 would apply.
-- Last-Modified: overview says SHOULD for VERSION resources, but directory responses list only ETag/Location/Content-Type.
+SM: `SM/docs/UML/classes/i_ehr_directory.adoc` — 9 ops (has_directory, has_path,
+create/update/delete_directory, get_directory, get_directory_at_time,
+has_directory_version, get_directory_at_version, get_versioned_directory);
+`uv_folder.adoc` (UV_FOLDER = UPDATE_VERSION<FOLDER>) + `update_version.adoc` +
+`openehr_platform/master03-common_package.adoc §Version Update Semantics`.
+
+CNF (stalled guide): `CNF/docs/platform_test_schedule/master09-func_tc_ehr_directory.adoc`
+(cases C.1–L.3). Robot: `CNF/tests/platform/robot/I_EHR_DIRECTORY/**` +
+`_resources/keywords/directory_keywords.robot` (the validate-* keywords carry the concrete
+status codes; L730 literally says the 409-already-exists case "is not (yet) in the SPEC").
+Fixtures: `_resources/test_data_sets/directory/*.json`.
+
+RELEASED-TEXT GAPS for directory (all confirmed first-hand):
+create-on-existing-directory status; update/delete when EHR has no directory;
+`path` leading-slash + root-name-included + escaping + items-addressable; the
+`path`-miss branch on a 204-deleted version; `EHR.directory`/`folders` never on the wire;
+committal + item-tag request headers absent from all 5 op files (docs text mandates them);
+is_modifiable rejection status; body-`uid`-vs-If-Match mismatch; DELETE 204 declares no
+headers at all.
