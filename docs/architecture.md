@@ -128,8 +128,9 @@ shipped RBAC/ABAC `access` module in `ehrbase-rest`.
 OPT 1.4 XML ingestion → `openehr-am`; WebTemplate builder (`moka`-cached);
 composition validation (walker over WebTemplate + RM invariants + terminology
 binding via `openehr-term`); FLAT/STRUCTURED/Web-Template JSON in
-`openehr_its::flat` (Better `web-template` semantics; quirks behind a feature
-flag). Simplified Formats is a STABLE ITS-REST 1.1.0 sub-specification, so it
+`openehr_its::flat`, whose only authority is the vendored Simplified Formats
+spec text — there is no vendor-quirk mode and no feature flag; vendor
+implementations are prior art only. Simplified Formats is a STABLE ITS-REST 1.1.0 sub-specification, so it
 lives in `openehr-its` beside the other ITS surfaces.
 
 ## Spec version policy
