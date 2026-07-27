@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Template-upload rejection statuses follow the released split** (#489).
+  An ADL 1.4 OPT upload whose body is not well-formed XML now answers
+  `400 Bad Request` (the released "syntactically invalid … content" branch)
+  instead of `422`; well-formed XML that is not a valid OPT stays `422`.
+  The ADL2 template upload now refuses a payload declaring a media type
+  other than its single `text/plain` body type with `415 Unsupported Media
+  Type` (an absent `Content-Type` remains accepted), mirroring the ADL 1.4
+  guard.
+
 - **Stored-query POST bodies accept `{}`; the query POSTs accept the URL
   parameter forms** (#481). The three body members of the stored-execute
   body are optional (the docs text gives `offset` a default and makes
