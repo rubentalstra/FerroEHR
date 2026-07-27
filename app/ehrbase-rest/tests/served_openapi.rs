@@ -801,7 +801,7 @@ async fn demographic_item_tag_operations_are_fully_documented() {
         }
     };
 
-    for (segment, rm_type) in KINDS {
+    for (segment, _rm_type) in KINDS {
         // ── get: 200/400/404/406, the dual-form prose, the served row shape ──
         let path = format!("{BASE}/{segment}/{{uid_based_id}}/tags");
         let op = doc["paths"][&path]["get"].clone();
@@ -834,12 +834,14 @@ async fn demographic_item_tag_operations_are_fully_documented() {
             "GET {path} 200 example must be an ITEM_TAG list"
         );
         assert_eq!(
-            first["target"]["type"], *rm_type,
-            "GET {path} 200 example must target {rm_type}"
+            first["target"]["_type"], "HIER_OBJECT_ID",
+            "GET {path} 200 example's container target is the bare RM \
+             UID_BASED_ID (item_tag.adoc), never an OBJECT_REF envelope"
         );
-        assert!(
-            first["owner_id"].is_object(),
-            "GET {path} 200 example must carry the server-assigned owner_id"
+        assert_eq!(
+            first["owner_id"]["type"], "SYSTEM",
+            "GET {path} 200 example's owner_id follows the released \
+             local/SYSTEM shape (register AMB-137)"
         );
         let retrieved = op["responses"]["200"]["description"]
             .as_str()

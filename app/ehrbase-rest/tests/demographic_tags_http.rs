@@ -98,7 +98,7 @@ async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMa
     )
 }
 
-/// Create a person, returning its full `version_uid` (from the create ETag).
+/// Create a person, returning its full `version_uid` (from the create `ETag`).
 async fn create_person(app: &Router) -> String {
     let req = Request::builder()
         .method("POST")
