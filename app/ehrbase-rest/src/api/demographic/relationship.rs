@@ -58,41 +58,178 @@ pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
 // Each snapshots the request and runs it through the demographic group
 // dispatcher (`super::dispatch::dispatch`), which routes relationship ops into [`run`].
 
-/// Create a `PARTY_RELATIONSHIP`
-/// (`POST /demographic/party_relationship`) — our own extension (no ITS-REST
-/// operation governs it; see the module docs).
+/// Create a `PARTY_RELATIONSHIP` (`POST /demographic/party_relationship`).
+///
+/// **Our own extension — no ITS-REST operation governs this.** The released
+/// Demographic API defines no `party_relationship` path anywhere; this route
+/// realizes SM `I_PARTY_RELATIONSHIP`
+/// (`docs/specs/openehr/SM/docs/UML/classes/i_party_relationship.adoc` — a
+/// *service* basis, not a *wire* basis) over an envelope that deliberately
+/// mirrors the released party CRUD so clients see one consistent surface. It is
+/// **excluded from any conformance-profile claim**: none of the branches below
+/// is a released ITS-REST requirement, and the overview citations describe the
+/// convention we chose to follow, not an obligation this route inherits. The RM
+/// itself carries relationships inline on the source PARTY
+/// (`PARTY.relationships`, RM `demographic/master02` §Party Relationships), so a
+/// standalone relationship resource is ours by construction.
 #[utoipa::path(
     post, path = "/demographic/party_relationship", tag = "demographic-relationship",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created relationship), or \
-                        `return=identifier` (`{uid}` only)."),
+         description = "Response-verbosity preference, following the released \
+                        convention: `return=representation` — the created \
+                        PARTY_RELATIONSHIP; `return=identifier` — only \
+                        `{ \"uid\": \"…\" }`; absent or `return=minimal` — an \
+                        empty body (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\"; §\"Prefer only identifier\" keeps \
+                        the identifier variant off `204`). The token honoured is \
+                        echoed in `Preference-Applied`. Extension route — the \
+                        convention is borrowed, not mandated.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "`application/json` (the default when absent) or \
+                        `application/xml` — the canonical formats. A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "`application/json` (default) or `application/xml`. A \
+                        Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. Accepted in the \
+                        shape the released committal headers use \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"), applied here to an extension \
+                        resource.",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `time_committed` is always server-set and an \
+                        omitted `system_id` falls back to the server's configured \
+                        identifier, as in the released committal-header rule \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "committer.name=\"John Doe\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "An RM PARTY_RELATIONSHIP (canonical JSON or XML)."),
+                 description = "An RM PARTY_RELATIONSHIP as canonical JSON or \
+                                XML. `source` and `target` are `PARTY_REF`s and \
+                                the relationship's `name` is its type \
+                                (`Type_validity: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party_relationship`). \
+                                No released schema governs this body — the shape \
+                                is the RM class itself.",
+                 example = json!({
+                     "_type": "PARTY_RELATIONSHIP",
+                     "name": { "_type": "DV_TEXT", "value": "carer" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.carer.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.carer.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "source": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "PERSON",
+                         "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+                     },
+                     "target": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "PERSON",
+                         "id": { "_type": "HIER_OBJECT_ID", "value": "6cb19121-4307-4648-9da0-d62e4d51f19b" }
+                     }
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`.",
+        (status = 201, description = "Created. The body follows `Prefer` (the \
+                                      full relationship, the `{uid}` object, or \
+                                      empty). Extension route — the status and \
+                                      body rules mirror the released party \
+                                      create; no released response file governs \
+                                      them.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version, in the weak form the release requires of \
+                             identifier `ETag`s (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "`<base_path>/demographic/party_relationship/<version_uid>` \
+                             — the URL of the newly created resource (§Location: \
+                             used \"in `201 Created` responses when a new resource \
+                             is successfully created\")."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured (§\"Representation details negotiation\").")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created relationship",
+              value = json!({
+                  "_type": "PARTY_RELATIONSHIP",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "carer" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.carer.v1",
+                  "source": {
+                      "_type": "PARTY_REF",
+                      "namespace": "demographic",
+                      "type": "PERSON",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+                  },
+                  "target": {
+                      "_type": "PARTY_REF",
+                      "namespace": "demographic",
+                      "type": "PERSON",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "6cb19121-4307-4648-9da0-d62e4d51f19b" }
+                  }
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The request could not be parsed: a body that \
+                                      is not well-formed canonical JSON/XML. \
+                                      Status assignment follows the overview \
+                                      table's `400` row — \"malformed request \
+                                      syntax, syntactically invalid content\" \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\").",
          body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted relationship.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY_RELATIONSHIP is untemplated, so it is \
+                                      served in the canonical formats only and a \
+                                      Simplified-only `Accept` is refused \
+                                      (`Resources.md` §\"Simplified Formats\": an \
+                                      unfulfillable `Accept` is `406`).",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (relationships are not \
-                                      templated).", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (relationships are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which an untemplated \
+                                      resource cannot use — no header can name a \
+                                      template for it (`Requests_and_responses.md` \
+                                      §openehr-template-id scopes \
+                                      `openehr-template-id` to \"committing \
+                                      COMPOSITION\"); `Resources.md` §\"Simplified \
+                                      Formats\" makes an unprocessable payload \
+                                      format a `415`. An absent `Content-Type` \
+                                      declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The relationship fails RM/semantic \
-                                      validation.", body = serde_json::Value)
+        (status = 422, description = "The body parses but is not a usable \
+                                      PARTY_RELATIONSHIP (missing or invalid \
+                                      `source`/`target` `PARTY_REF`s, or another \
+                                      RM invariant violation) — the overview \
+                                      table's `422` row, \"the request was \
+                                      well-formed but was unable to be followed \
+                                      due to semantic errors\" \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\").",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_create(
@@ -110,32 +247,105 @@ pub(crate) async fn party_relationship_create(
 }
 
 /// Retrieve a `PARTY_RELATIONSHIP` by uid-based id
-/// (`GET /demographic/party_relationship/{uid_based_id}`) — our own extension.
+/// (`GET /demographic/party_relationship/{uid_based_id}`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     get, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (`version_uid`) or a \
-                        HIER_OBJECT_ID (`versioned_object_uid`) for the latest \
-                        / at-time version."),
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) or \
+                        a HIER_OBJECT_ID (`versioned_object_uid`) for the latest \
+                        / at-time version — the dual form the released party \
+                        reads use (`Resources.md` §\"Identifier types\" and \
+                        §\"Multiple identifiers for the same resource\"), applied \
+                        here to an extension resource.",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "A given time in the extended ISO 8601 format; when the \
+                        path id is a `versioned_object_uid`, selects the version \
+                        extant at that instant (latest when omitted). The \
+                        timezone is optional — server-local when absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "`application/json` (default) or `application/xml`. A \
+                        Simplified-only `Accept` is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The relationship (RM canonical JSON/XML); \
-                                      `ETag` carries the version uid (weak `W/` \
-                                      form).", body = serde_json::Value),
-        (status = 204, description = "The relationship version at the requested \
-                                      time is deleted."),
-        (status = 404, description = "Unknown relationship, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The relationship as canonical JSON/XML. No \
+                                      `Location`: §Location says the header \"MUST \
+                                      NOT be used to indicate an alternate \
+                                      representation of an existing resource (e.g. \
+                                      via `GET` method)\" \
+                                      (`Requests_and_responses.md`), a rule this \
+                                      extension follows.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (§\"ETag and Last-Modified\": \
+                             identifier `ETag`s are weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\").")
+         ),
+         example = json!({
+             "_type": "PARTY_RELATIONSHIP",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "carer" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.carer.v1",
+             "source": {
+                 "_type": "PARTY_REF",
+                 "namespace": "demographic",
+                 "type": "PERSON",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+             },
+             "target": {
+                 "_type": "PARTY_REF",
+                 "namespace": "demographic",
+                 "type": "PERSON",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "6cb19121-4307-4648-9da0-d62e4d51f19b" }
+             }
+         })),
+        (status = 204, description = "The version the request selects is a \
+                                      deletion marker — a successful read of a \
+                                      logically deleted resource, mirroring the \
+                                      released party read's own `204` branch \
+                                      (`specifications/responses/204_deleted_at_time.yaml`)."),
+        (status = 400, description = "The `uid_based_id` is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or \
+                                      `version_at_time` is not an extended ISO \
+                                      8601 instant — the overview table's `400` \
+                                      row, \"syntactically invalid content\" \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\").",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (relationships are not \
-                                      templated).", body = serde_json::Value)
+        (status = 404, description = "No such relationship, or no version at the \
+                                      requested `version_at_time` — the overview \
+                                      table's `404` row, \"The origin service did \
+                                      not find the target resource or is not \
+                                      willing to disclose that one exists\".",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: an \
+                                      untemplated resource is served in the \
+                                      canonical formats only, so a Simplified-only \
+                                      `Accept` is refused (`Resources.md` \
+                                      §\"Simplified Formats\").",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` sends no payload, \
+                                      but the declaration is refused before the \
+                                      read because an untemplated resource has no \
+                                      template to expand one against \
+                                      (`Resources.md` §\"Simplified Formats\"). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_get(
@@ -153,52 +363,179 @@ pub(crate) async fn party_relationship_get(
 }
 
 /// Update a `PARTY_RELATIONSHIP`
-/// (`PUT /demographic/party_relationship/{uid_based_id}`) — our own extension.
+/// (`PUT /demographic/party_relationship/{uid_based_id}`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     put, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
     params(
         ("uid_based_id" = String, Path,
          description = "The HIER_OBJECT_ID `versioned_object_uid` of the \
-                        relationship to update."),
+                        relationship container to update — the same container \
+                        form the released party update takes \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "REQUIRED: the existing latest `version_uid` (the \
+                        `preceding_version_uid`), double-quoted; the weak \
+                        `W/\"…\"` form this server emits in `ETag` is accepted \
+                        too. The precondition is required because the preceding \
+                        version is NOT in the path — \"This is only required by a \
+                        small set of versioned resources in this specification, \
+                        when the `preceding_version_uid` is not part of the \
+                        endpoint path segment\" (`Requests_and_responses.md` \
+                        §\"If-Match and accidental overwrites\"), the convention \
+                        this extension follows.",
+         example = "\"1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation`. `return=identifier` is treated \
-                        as `minimal` here (our extension)."),
+         description = "`return=representation` — the updated relationship at \
+                        `200`; `return=identifier` — `{ \"uid\": \"…\" }` at \
+                        `200` (never `204`, §\"Prefer only identifier\"); absent \
+                        or `return=minimal` — an empty `204` \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "`application/json` (the default when absent) or \
+                        `application/xml`. A Simplified `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "`application/json` (default) or `application/xml`. A \
+                        Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list, in the shape of the released \
+                        committal headers (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `time_committed` is always server-set \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "change_type.code_string=\"251\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The updated RM PARTY_RELATIONSHIP (canonical \
-                                JSON or XML)."),
+                 description = "The updated RM PARTY_RELATIONSHIP as canonical \
+                                JSON or XML; no released schema governs this \
+                                body.",
+                 example = json!({
+                     "_type": "PARTY_RELATIONSHIP",
+                     "name": { "_type": "DV_TEXT", "value": "carer" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.carer.v1",
+                     "source": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "PERSON",
+                         "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+                     },
+                     "target": {
+                         "_type": "PARTY_REF",
+                         "namespace": "demographic",
+                         "type": "ORGANISATION",
+                         "id": { "_type": "HIER_OBJECT_ID", "value": "6cb19121-4307-4648-9da0-d62e4d51f19b" }
+                     }
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation`); \
-                                      `ETag`/`Location` carry the new version.",
+        (status = 200, description = "Updated, with the body `Prefer` asked for \
+                                      (`return=representation` — the full \
+                                      relationship; `return=identifier` — the \
+                                      `{uid}` object).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the NEW \
+                             version (§\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "`<base_path>/demographic/party_relationship/<new version_uid>` \
+                             — the version this update created (§Location + \
+                             §\"Prefer minimal, identifier or full representation \
+                             response\": \"the newly created or updated \
+                             resource\")."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured (§\"Representation \
+                             details negotiation\").")
+         )),
+        (status = 204, description = "Updated with no body — the default \
+                                      `return=minimal` (§\"Prefer minimal, \
+                                      identifier or full representation \
+                                      response\": \"If no response body is \
+                                      returned, the service SHOULD use `204 No \
+                                      Content`\").",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version."),
+             ("Location" = String,
+              description = "`<base_path>/demographic/party_relationship/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured.")
+         )),
+        (status = 400, description = "The request could not be parsed, or the \
+                                      required `If-Match` is absent — \"When the \
+                                      service expects `If-Match` for an operation, \
+                                      but the client does not provide it, the \
+                                      service SHOULD respond with `400 Bad \
+                                      Request`\" (`Requests_and_responses.md` \
+                                      §\"If-Match and accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "No such relationship container — the \
+                                      overview table's `404` row \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\").",
          body = serde_json::Value),
-        (status = 404, description = "Unknown relationship.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: an \
+                                      untemplated resource is served in the \
+                                      canonical formats only, so a Simplified-only \
+                                      `Accept` is refused (`Resources.md` \
+                                      §\"Simplified Formats\").",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (relationships are not \
-                                      templated).", body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (relationships are not templated).",
+        (status = 412, description = "`If-Match` does not match the latest version \
+                                      on the service side: \"it MUST NOT perform \
+                                      the requested method. Instead, it MUST \
+                                      respond with HTTP status code `412 \
+                                      Precondition Failed`, and SHOULD return also \
+                                      latest `version_uid` in the `ETag` response \
+                                      headers\" (`Requests_and_responses.md` \
+                                      §\"If-Match and accidental overwrites\") — \
+                                      the convention this extension follows.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"`, so the client can retry against it. No \
+                             `Location`: §Location scopes the header to \
+                             creation/redirect responses."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off.")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which an untemplated \
+                                      resource cannot use (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The relationship fails RM/semantic \
-                                      validation.", body = serde_json::Value)
+        (status = 422, description = "The body parses but is not a usable \
+                                      PARTY_RELATIONSHIP (missing or invalid \
+                                      `source`/`target` `PARTY_REF`s) — the \
+                                      overview table's `422` row, \"the request \
+                                      was well-formed but was unable to be \
+                                      followed due to semantic errors\".",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_update(
@@ -216,37 +553,105 @@ pub(crate) async fn party_relationship_update(
 }
 
 /// Delete a `PARTY_RELATIONSHIP`
-/// (`DELETE /demographic/party_relationship/{uid_based_id}`) — our own
-/// extension.
+/// (`DELETE /demographic/party_relationship/{uid_based_id}`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
+/// The delete is LOGICAL — it commits a deletion VERSION rather than removing
+/// history (RM `common/master06` §Change Control), matching the released party
+/// deletes.
 #[utoipa::path(
     delete, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest version \
+                        — the `preceding_version_uid` to delete — as in the \
+                        released party delete \
+                        (`specifications/parameters/path/uid_based_id_as_version_uid.yaml`).",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1"),
         ("If-Match" = Option<String>, Header,
-         description = "The latest `version_uid`, double-quoted (weak `W/` form \
-                        also accepted); an alternative source of the preceding \
-                        version to delete."),
+         description = "OPTIONAL: the preceding version is already the path \
+                        segment, and the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"). A header that IS sent is \
+                        honoured as an alternative source of the preceding \
+                        version; the weak `W/\"…\"` and bare quoted forms are \
+                        both accepted.",
+         example = "\"1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list, in the shape of the released \
+                        committal headers (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `time_committed` is always server-set \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "description.value=\"relationship ended\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format. A Simplified-only `Accept` is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the relationship is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown relationship.",
+        (status = 204, description = "Logically deleted — a deletion VERSION was \
+                                      committed and there is no body to return \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `204` row).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version just committed — the `ETag` \
+                             \"changes as soon as the resource changes (i.e. when \
+                             a new version is created)\" (§\"ETag and \
+                             Last-Modified\"), and a logical delete creates one. \
+                             No `Location`: §\"Deprecated headers\" deprecates it \
+                             on `DELETE` responses.")
+         )),
+        (status = 400, description = "The request could not be parsed, or the \
+                                      relationship is already deleted — the \
+                                      branch the released party delete assigns to \
+                                      `400` \
+                                      (`specifications/responses/400_already_deleted.yaml`), \
+                                      followed here by convention.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (relationships are not \
-                                      templated).", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (relationships are not templated).",
+        (status = 404, description = "No such relationship — the overview table's \
+                                      `404` row (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\").",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: an \
+                                      untemplated resource is served in the \
+                                      canonical formats only, so a Simplified-only \
+                                      `Accept` is refused (`Resources.md` \
+                                      §\"Simplified Formats\").",
+         body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version — the branch the released \
+                                      party delete assigns to `409` \
+                                      (`specifications/responses/409_PERSON_with_uid_based_id.yaml`: \
+                                      \"returned when supplied `uid_based_id` \
+                                      doesn't match the latest version. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\"), followed here by convention — \
+                                      except that this extension route does NOT \
+                                      echo the latest `version_uid` in an `ETag` \
+                                      on the conflict, so no such header is \
+                                      declared; the message body names the latest \
+                                      version instead.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is refused before the \
+                                      write because an untemplated resource has no \
+                                      template to expand one against \
+                                      (`Resources.md` §\"Simplified Formats\"). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
          body = serde_json::Value)
     )
 )]
@@ -265,19 +670,60 @@ pub(crate) async fn party_relationship_delete(
 }
 
 /// Retrieve the `VERSIONED_PARTY_RELATIONSHIP` container
-/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}`) —
-/// our own extension.
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}", tag = "demographic-relationship",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`).")
+         description = "The version-container id of the relationship (a \
+                        HIER_OBJECT_ID / `versioned_object_uid`, `Resources.md` \
+                        §\"Identifier types\").",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8"),
+        ("Accept" = Option<String>, Header,
+         description = "This container is served as canonical `application/json`; \
+                        an `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSIONED_PARTY_RELATIONSHIP (RM \
-                                      canonical JSON/XML).", body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP.",
+        (status = 200, description = "The VERSIONED_OBJECT container of the \
+                                      relationship, as canonical JSON. No \
+                                      `Location`: §Location restricts the header \
+                                      to creation/redirect responses \
+                                      (`Requests_and_responses.md`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<versioned_object_uid>\"` — \
+                             the `ETag` value \"is usually taken from e.g. \
+                             VERSIONED_OBJECT.uid.value, VERSION.uid.value\" \
+                             (§\"ETag and Last-Modified\"). A container body \
+                             exposes no commit audit, so no `Last-Modified` \
+                             accompanies it.")
+         )),
+        (status = 400, description = "The `versioned_object_uid` is not a \
+                                      well-formed id — the overview table's `400` \
+                                      row, \"syntactically invalid content\" \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\").",
+         body = serde_json::Value),
+        (status = 404, description = "No such relationship container — the \
+                                      overview table's `404` row.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      container is served as canonical JSON only, \
+                                      so an `Accept` excluding `application/json` \
+                                      is refused (`Resources.md` §\"JSON \
+                                      Format\").",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, refused before the read \
+                                      because an untemplated resource has no \
+                                      template to expand one against \
+                                      (`Resources.md` §\"Simplified Formats\").",
          body = serde_json::Value)
     )
 )]
@@ -296,19 +742,58 @@ pub(crate) async fn versioned_party_relationship_get(
 }
 
 /// Retrieve the relationship's `REVISION_HISTORY`
-/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`)
-/// — our own extension.
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history", tag = "demographic-relationship",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`).")
+         description = "The version-container id of the relationship (a \
+                        HIER_OBJECT_ID / `versioned_object_uid`).",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8"),
+        ("Accept" = Option<String>, Header,
+         description = "The history is served as canonical `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The REVISION_HISTORY (RM canonical \
-                                      JSON/XML).", body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP.",
+        (status = 200, description = "The relationship's REVISION_HISTORY as \
+                                      canonical JSON; `items` runs oldest-first \
+                                      (`REVISION_HISTORY.most_recent_version` is \
+                                      the last item, RM `common/master04` \
+                                      §REVISION_HISTORY).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<versioned_object_uid>\"` — \
+                             a REVISION_HISTORY carries no `uid` of its own, so \
+                             the addressed container's id is the `ETag` source \
+                             (§\"ETag and Last-Modified\" names \
+                             VERSIONED_OBJECT.uid.value as one)."),
+             ("Last-Modified" = String,
+              description = "The most recent revision's commit instant as an \
+                             HTTP-date, \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\").")
+         )),
+        (status = 400, description = "The `versioned_object_uid` is not a \
+                                      well-formed id — the overview table's `400` \
+                                      row (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\").",
+         body = serde_json::Value),
+        (status = 404, description = "No such relationship container — the \
+                                      overview table's `404` row.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      history is served as canonical JSON only \
+                                      (`Resources.md` §\"JSON Format\").",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, refused before the read \
+                                      (`Resources.md` §\"Simplified Formats\").",
          body = serde_json::Value)
     )
 )]
@@ -327,27 +812,63 @@ pub(crate) async fn party_relationship_revision_history(
 }
 
 /// Retrieve the relationship VERSION at a point in time
-/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version`)
-/// — our own extension.
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version", tag = "demographic-relationship",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`)."),
+         description = "The version-container id of the relationship (a \
+                        HIER_OBJECT_ID / `versioned_object_uid`).",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; selects the VERSION extant \
-                        at that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "A given time in the extended ISO 8601 format; selects the \
+                        VERSION extant at that instant (the latest when omitted). \
+                        The timezone is optional — server-local when absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The VERSION is served as canonical `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON/XML); \
-                                      `ETag` carries the version uid (weak `W/` \
-                                      form), `Location` the version URL.",
+        (status = 200, description = "The ORIGINAL_VERSION wrapper as canonical \
+                                      JSON, `data` carrying the relationship. No \
+                                      `Location` — §Location restricts the header \
+                                      to creation/redirect responses \
+                                      (`Requests_and_responses.md`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served VERSION (§\"ETag and Last-Modified\")."),
+             ("Last-Modified" = String,
+              description = "The served VERSION's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\").")
+         )),
+        (status = 400, description = "The `versioned_object_uid` is malformed, or \
+                                      `version_at_time` is not an extended ISO \
+                                      8601 instant — the overview table's `400` \
+                                      row (`Requests_and_responses.md` §\"HTTP \
+                                      status codes\").",
          body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP, or \
-                                      no version at the requested \
-                                      `version_at_time`.", body = serde_json::Value)
+        (status = 404, description = "No such relationship container, or no \
+                                      version at the requested `version_at_time` \
+                                      — the overview table's `404` row.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      VERSION is served as canonical JSON only \
+                                      (`Resources.md` §\"JSON Format\").",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, refused before the read \
+                                      (`Resources.md` §\"Simplified Formats\").",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_version_get_at_time(
@@ -365,23 +886,62 @@ pub(crate) async fn party_relationship_version_get_at_time(
 }
 
 /// Retrieve a specific relationship VERSION by version uid
-/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}`)
-/// — our own extension.
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}`).
+///
+/// **Our own extension — no ITS-REST operation governs this** (see
+/// [`party_relationship_create`] and the module docs); realizes SM
+/// `I_PARTY_RELATIONSHIP` and is excluded from any conformance-profile claim.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}", tag = "demographic-relationship",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`)."),
+         description = "The version-container id of the relationship (a \
+                        HIER_OBJECT_ID / `versioned_object_uid`).",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8"),
         ("version_uid" = String, Path,
-         description = "The VERSION identifier (OBJECT_VERSION_ID / \
-                        `version_uid`).")
+         description = "The VERSION identifier (an OBJECT_VERSION_ID) whose \
+                        `object_id` segment is the `versioned_object_uid` above \
+                        (`Resources.md` §\"Identifier types\").",
+         example = "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The VERSION is served as canonical `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON/XML).",
+        (status = 200, description = "The ORIGINAL_VERSION wrapper as canonical \
+                                      JSON, `data` carrying the relationship. No \
+                                      `Location` — §Location restricts the header \
+                                      to creation/redirect responses \
+                                      (`Requests_and_responses.md`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served VERSION (§\"ETag and Last-Modified\")."),
+             ("Last-Modified" = String,
+              description = "The served VERSION's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (§\"ETag and Last-Modified\").")
+         )),
+        (status = 400, description = "The `versioned_object_uid` or `version_uid` \
+                                      is not well-formed — the overview table's \
+                                      `400` row (`Requests_and_responses.md` \
+                                      §\"HTTP status codes\").",
          body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP or \
-                                      version.", body = serde_json::Value)
+        (status = 404, description = "No such relationship container, or a \
+                                      `version_uid` that names no version of it — \
+                                      the overview table's `404` row.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      VERSION is served as canonical JSON only \
+                                      (`Resources.md` §\"JSON Format\").",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, refused before the read \
+                                      (`Resources.md` §\"Simplified Formats\").",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_version_get_by_id(
@@ -489,6 +1049,11 @@ pub(super) async fn run(
                 Err(e) => Err(RestError::from(e)),
             }
         }
+        // TODO: a stale `uid_based_id` here answers `409` without echoing the
+        // latest `version_uid` in `ETag`, unlike the party delete
+        // (`super::error_with_meta` + `party_current_meta`). Resolve the current
+        // relationship metadata on the conflict and echo it, so the extension
+        // matches the convention its declaration claims to follow.
         "party_relationship_delete" => {
             let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
             let resp = state

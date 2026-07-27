@@ -1,33 +1,64 @@
-//! Native `utoipa-axum` routing for the **standard Demographic API group**
-//! (`x-status: DEVELOPMENT` in the vendored
-//! `docs/specs/openehr/ITS-REST/specifications/demographic.openapi.yaml`): the
-//! party CRUD (`agent`/`group`/`organisation`/`person`/`role`), the
+//! Native `utoipa-axum` routing for the **standard Demographic API group**:
+//! the party CRUD (`agent`/`group`/`organisation`/`person`/`role`), the
 //! `versioned_party` reads, `contribution` create/get, and the `ITEM_TAG`
 //! sub-resources (`demographic_tags_get` + the per-party `*_tags_*`).
 //!
-//! Our own wire follows the vendored demographic OAS operation ids verbatim.
 //! Each `#[utoipa::path]` handler single-sources its route and its `OpenAPI`
 //! path, then forwards to the demographic group dispatcher
 //! ([`super::dispatch::dispatch`]) through [`guarded_dispatch`] — so the wire behaviour
 //! is identical to the former table-driven `mount()` adapter (same
 //! `EHR_ACCESS` gate, ABAC PEP, and ATNA audit tagging).
 //!
-//! The `#[utoipa::path]` documentation is spec-exact against the demographic
-//! operation YAMLs (`operations/{agent,person,group,organisation,role}_*.yaml`,
-//! `versioned_party_*.yaml`, `demographic_contribution_*.yaml`, the `*_tags_*`
-//! ops) and their `$ref`d responses/parameters/headers, with the
-//! DEVELOPMENT-status gaps filled from the ITS-REST overview prose
-//! (`docs/overview/Requests_and_responses.md`): the weak `W/` `ETag` MUST, the
-//! `Prefer` `return=minimal|representation|identifier` triad, the
-//! committal-header (`openehr-version`/`openehr-audit-details`) MUST-accept
-//! rule, and the `If-Match` 400/412 rules.
-//! Every versioned response also carries `Last-Modified` from the version's
-//! commit time (overview §"`ETag` and Last-Modified": both SHOULD accompany
-//! versioned resources). Demographic `PARTY`/`PARTY_RELATIONSHIP`
-//! resources are not templated, so a Simplified-Format `Content-Type`/`Accept`
-//! is rejected (`415`/`406` — our own design, since no template governs a
-//! party); this is not in the YAMLs' `Accept_LOCATABLE` enum but is the real
-//! wire ([`super::party`] runs `guard_non_templated` for every op).
+//! ## Release state
+//!
+//! The Demographic API is `DEVELOPMENT`-state within ITS-REST Release-1.1.0 —
+//! "This specification is in the `DEVELOPMENT` state"
+//! (`docs/specs/openehr/ITS-REST/specifications/docs/demographic/Description.md`
+//! §Status), and its `Preface.md` §Conformance is `tbd.`. That is a **reporting
+//! qualifier only**: the BCP-14 requirement force of the released text is not
+//! state-qualified, so every MUST/SHOULD below binds exactly as it does on a
+//! STABLE group, and nothing here is marked `deprecated` except where the
+//! released docs text itself deprecates it. The declarations are pinned to that
+//! release, not to the upstream development branch.
+//!
+//! ## Where the declarations come from
+//!
+//! The five party CRUD quintets are byte-identical across the kinds on the
+//! released wire, so each kind's declaration mirrors the same
+//! `operations/person_{create,get,update,delete}.yaml` + `$ref`d
+//! responses/parameters/headers, differing only in the RM type and its own
+//! `headers/Location_{PERSON,AGENT,GROUP,ORGANISATION,ROLE}.yaml`. The
+//! `versioned_party_*` and `demographic_contribution_*` families are declared
+//! from their own operation files. Everything the released files leave open is
+//! filled from the RELEASED overview chapters — never from the stalled OAS:
+//! `docs/overview/Requests_and_responses.md` (the weak `W/` `ETag` MUST, the
+//! `Prefer` triad + `Preference-Applied`, the committal-header
+//! `openehr-version`/`openehr-audit-details` MUST-accept rule, the `If-Match`
+//! `400`/`412` rules, and §Location's MUST-NOT on `GET`) and
+//! `docs/overview/Resources.md` (the `415`/`406` format MUSTs).
+//!
+//! Two consequences are visible on every declaration below:
+//!
+//! - **`Location` is never declared on a read or a delete.** The released
+//!   `200_PERSON_retrieved.yaml`, `204_version_deleted.yaml`, `412_PERSON.yaml`
+//!   and `409_PERSON_with_uid_based_id.yaml` all slot
+//!   `headers/Location_deprecated.yaml`, and §Location says the header "MUST NOT
+//!   be used to indicate an alternate representation of an existing resource
+//!   (e.g. via `GET` method)" and "MUST ONLY be used for resource creation
+//!   (e.g., `201 Created`) or redirect responses". Those slots are therefore
+//!   left undeclared rather than declared-as-deprecated.
+//! - **Party resources are canonical-only.** The released operations reference
+//!   `parameters/header/Accept_LOCATABLE.yaml`, whose enum admits the two
+//!   Simplified MIME types — but a PARTY is not templated and
+//!   `Requests_and_responses.md` §openehr-template-id scopes the only
+//!   template-naming header to "committing COMPOSITION", so a Simplified party
+//!   payload has no way to name the template it would have to be expanded
+//!   against. OUR handling of that gap (the released text fixes no other): the
+//!   Simplified types are refused on every party route — a Simplified
+//!   `Content-Type` is `415` and a Simplified-only `Accept` is `406`, the two
+//!   MUSTs `Resources.md` §"Simplified Formats" states for a format the service
+//!   cannot process/fulfil ([`super::party`] runs `guard_non_templated` on every
+//!   party operation).
 //!
 //! The own-design `PARTY_RELATIONSHIP` extension is *not* here — it lives in
 //! [`super::relationship`] (no ITS-REST operation governs it).
@@ -89,50 +120,307 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 // ── AGENT ───────────────────────────────────────────────────────────────────
 
 /// Create an `AGENT` (`POST /demographic/agent`).
+///
+/// "Creates the first version of a new AGENT." (ITS-REST
+/// `specifications/operations/agent_create.yaml`). The `uid` is server-minted:
+/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// client cannot know at create time, so a `uid` in the submitted body does not
+/// survive the write and the invariant `Uid_mandatory` (RM
+/// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
+/// satisfied post-assignment. The released create declares no `409`, so a
+/// client-supplied `uid` is never a conflict.
 #[utoipa::path(
     post, path = "/demographic/agent", tag = "AGENT",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created AGENT), or \
-                        `return=identifier` (only the uid)."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; enum \
+                        `return=representation|return=minimal|return=identifier`, \
+                        default `return=minimal`). An absent header is \
+                        `return=minimal` — \"If no `Prefer` header is provided, \
+                        the default behavior is assumed to be `return=minimal`\" \
+                        — and `return=identifier` never answers `204`: \"the \
+                        status will be `201 Created` or `200 OK`, never `204 No \
+                        Content`\" (`Requests_and_responses.md` §\"Prefer only \
+                        identifier\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`). \
+                        An absent header reads as canonical JSON — `Resources.md` \
+                        §\"JSON Format\" makes the header a client MAY, so its \
+                        absence declares nothing to refuse. A Simplified \
+                        `Content-Type` is `415` (see that response).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION (e.g. \
-                        `lifecycle_state.code_string`); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", and \
+                        \"whatever is provided it MUST be merged with the default \
+                        VERSION and VERSION.audit_details attributes on commit \
+                        runtime\" (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\", which scopes the rule to \
+                        \"all change-controlled resources\" — parties are \
+                        version-controlled, RM `common/master06` §Change \
+                        Control).",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS (committer, \
-                        description, change_type); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. \"Through the `openehr-audit-details` header, \
+                        clients MAY supply values for the AUDIT_DETAILS \
+                        attributes `change_type`, `description`, `committer` and \
+                        `system_id`. The `time_committed` attribute is always set \
+                        by the server.\" — and \"when `system_id` is not provided \
+                        by the client, the server MUST set it to its own \
+                        configured system identifier\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "committer.name=\"John Doe\""),
         ("openehr-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
-                        stored set is echoed in the response header."),
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — here the VERSIONED_PARTY. The tags are stored after the \
+                        party exists and the stored set is echoed in the response \
+                        header of the same name. \"Providing an empty value for \
+                        this header will effectively remove all ITEM_TAGs \
+                        associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", Usage in Requests); an absent \
+                        header changes nothing.",
+         example = "key=\"category\",value=\"final\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with this VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag` only; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The AGENT (RM canonical JSON or XML)."),
+                 description = "\"The AGENT.\", `required: true` (ITS-REST \
+                                `specifications/operations/agent_create.yaml`; \
+                                schema `schemas/demographic/Agent.yaml`) as \
+                                canonical JSON or XML. `PARTY.identities` is \
+                                mandatory and non-empty (`Identities_valid`), and \
+                                `name` carries the type designation \
+                                (`Type_valid: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party`).",
+                 example = json!({
+                     "_type": "AGENT",
+                     "name": { "_type": "DV_TEXT", "value": "AGENT" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-AGENT.agent.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-AGENT.agent.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Triage Assistant v2" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`; stored \
-                                      ITEM_TAGs ride the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted AGENT.",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the AGENT is \
+                                      successfully created. If `Prefer` header is \
+                                      `return=representation`, the full resource \
+                                      is included in the response body; if is \
+                                      `return=identifier`, only its unique \
+                                      identifier is included. If the `Prefer` \
+                                      header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_AGENT.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is an \
+                             identifier (e.g. a `version_uid` enclosed by double \
+                             quotes) for a specific version of a resource.\" \
+                             (ITS-REST `specifications/headers/ETag.yaml`), in the \
+                             weak form the release requires — \"all `ETag` headers \
+                             that hold a resource identifier MUST include a \
+                             weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"<versioned_object_uid>::<system_id>::1\"`."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the AGENT resource.\" (ITS-REST \
+                             `specifications/headers/Location_AGENT.yaml`), set to \
+                             `<base_path>/demographic/agent/<version_uid>` — \
+                             §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date; \"this value should be derived from \
+                             VERSION.commit_audit.time_committed.value\", and both \
+                             `ETag` and `Last-Modified` \"SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released `201_AGENT.yaml` does \
+                             not slot it; the SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured. \"The service MAY include a \
+                             `Preference-Applied` header in the response … to \
+                             indicate that the client's preference has been \
+                             honored\" (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) — the \
+                             set as the server stored it; emitted only when the \
+                             party carries tags (\"Servers MAY include the \
+                             `openehr-item-tag` … header in responses to confirm \
+                             the actual list of ITEM_TAGs stored on the server \
+                             side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created AGENT",
+              value = json!({
+                  "_type": "AGENT",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "AGENT" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-AGENT.agent.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-AGENT.agent.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Triage Assistant v2" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a body that is not well-formed canonical \
+                                      JSON/XML. Content that parses but is not a \
+                                      valid AGENT is the `422` below.",
          body = serde_json::Value),
-        (status = 404, description = "A referenced resource does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). On a \
+                                      create the reachable trigger is a referenced \
+                                      resource the commit resolves and does not \
+                                      find.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied. A \
+                                      PARTY is untemplated, so this server serves \
+                                      it in the canonical formats only and refuses \
+                                      a Simplified-only `Accept`: \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\" (`Resources.md` \
+                                      §\"Simplified Formats\"; the same MUST is \
+                                      stated for XML and JSON). The released \
+                                      operation does not enumerate `406`; the MUST \
+                                      is cross-cutting.",
          body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A PARTY is not templated and \
+                                      `openehr-template-id` — the only header that \
+                                      can name a template — is scoped to \
+                                      \"committing COMPOSITION\" \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified party \
+                                      payload cannot be expanded: \"If the service \
+                                      cannot process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The AGENT is syntactically valid but \
-                                      fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      AGENT (empty `identities`, a `name` that is \
+                                      not the type designation), or a body whose \
+                                      `_type` is a different PARTY subtype than \
+                                      the route's — the routed kind's codec is the \
+                                      one that decodes it.",
          body = serde_json::Value)
     )
 )]
@@ -146,31 +434,181 @@ pub(crate) async fn agent_create(
 
 /// Retrieve an `AGENT` by uid-based id
 /// (`GET /demographic/agent/{uid_based_id}`).
+///
+/// "Retrieves a version of the AGENT identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/agent_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
-                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
-                        latest / at-time version."),
+         description = "The released parameter, verbatim: \"An abstract \
+                        identifier: it can take a form of an OBJECT_VERSION_ID \
+                        identifier taken from VERSION.uid.value (i.e. a \
+                        `version_uid`), or a form of a HIER_OBJECT_ID identifier \
+                        taken from VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id.yaml`). The \
+                        operation adds: \"When the `uid_based_id` has the form of \
+                        a HIER_OBJECT_ID, if the `version_at_time` is supplied, \
+                        retrieves the version extant _at specified time_, \
+                        otherwise retrieves the _latest_ AGENT version.\" A \
+                        syntactically unusable id is `400`; a well-formed id \
+                        naming no AGENT (including a container of another PARTY \
+                        kind) is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`). \
+                        Selects the version extant at that instant when the path \
+                        id is a `versioned_object_uid`; the latest version when \
+                        omitted. The timezone is optional — server-local when \
+                        absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The AGENT (RM canonical JSON/XML); `ETag` \
-                                      carries the version uid (weak `W/` form), \
-                                      any ITEM_TAGs ride the item-tag response \
-                                      headers.", body = serde_json::Value),
-        (status = 204, description = "The AGENT version at the requested time \
-                                      is deleted."),
-        (status = 404, description = "Unknown AGENT, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested AGENT is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_AGENT_retrieved.yaml`). \
+                                      That response slots \
+                                      `headers/Location_deprecated.yaml`, and \
+                                      §Location says the header \"MUST NOT be used \
+                                      to indicate an alternate representation of \
+                                      an existing resource (e.g. via `GET` \
+                                      method)\" — so no `Location` is emitted or \
+                                      declared here.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\" makes resource-identifier `ETag`s \
+                             weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\"; both \
+                             headers \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`). \
+                             \"When retrieving resources via `GET`, the server MAY \
+                             also add these headers to the response\" \
+                             (`Requests_and_responses.md` §\"openehr-item-tag and \
+                             openehr-version-item-tag\", Usage in Responses); \
+                             emitted only when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         example = json!({
+             "_type": "AGENT",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "AGENT" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-AGENT.agent.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-AGENT.agent.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "identities": [
+                 {
+                     "_type": "PARTY_IDENTITY",
+                     "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                     "archetype_node_id": "at0001",
+                     "details": {
+                         "_type": "ITEM_TREE",
+                         "name": { "_type": "DV_TEXT", "value": "identity details" },
+                         "archetype_node_id": "at0002",
+                         "items": [
+                             {
+                                 "_type": "ELEMENT",
+                                 "name": { "_type": "DV_TEXT", "value": "name" },
+                                 "archetype_node_id": "at0003",
+                                 "value": { "_type": "DV_TEXT", "value": "Triage Assistant v2" }
+                             }
+                         ]
+                     }
+                 }
+             ]
+         })),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters (at \
+                                      specified `version_at_time`) time has been \
+                                      deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`) \
+                                      — the version selected by the request is a \
+                                      deletion marker, which is a successful read \
+                                      of a logically deleted resource, not a \
+                                      `404`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `uid_based_id` that is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or a \
+                                      `version_at_time` that is not an extended \
+                                      ISO 8601 instant. The released get does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`). \
+                                      A well-formed id whose stored container is a \
+                                      different PARTY kind is this `404` too — the \
+                                      route is kind-checked, and a VERSIONED_OBJECT \
+                                      has one type (RM `common/master06` §Change \
+                                      Control).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated, so it is served in the \
+                                      canonical formats only and a Simplified-only \
+                                      `Accept` is refused — \"If the service cannot \
+                                      fulfill this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` carries no payload, \
+                                      but the released operation still admits a \
+                                      request `Content-Type`, and a party has no \
+                                      template to expand a Simplified payload \
+                                      against, so the declaration is refused \
+                                      before the read: \"If the service cannot \
+                                      process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value)
     )
 )]
@@ -183,52 +621,369 @@ pub(crate) async fn agent_get(
 }
 
 /// Update an `AGENT` (`PUT /demographic/agent/{uid_based_id}`).
+///
+/// "Updates AGENT identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of AGENT resource (i.e. the `preceding_version_uid`) must be
+/// specified in the `If-Match` header." (ITS-REST
+/// `specifications/operations/agent_update.yaml`).
 #[utoipa::path(
     put, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(
         ("uid_based_id" = String, Path,
-         description = "The HIER_OBJECT_ID `versioned_object_uid` of the AGENT \
-                        to update."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_versioned_object_uid.yaml`) \
+                        — the container, not a version. The operation adds: \"If \
+                        the request body already contains an AGENT.uid.value, it \
+                        must match the `uid_based_id` in the URL.\"",
+         example = "8849182c-82ad-4088-a07f-48ead4180515"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "The released parameter, verbatim: \"Header to make the \
+                        request conditional. Together with `ETag` request tag, it \
+                        helps to prevent simultaneous updates of a resource from \
+                        overwriting each other (\"mid-air collisions\"). The \
+                        format is always an `version_uid` identifier enclosed by \
+                        double quotes. The operation will be performed only if \
+                        the existing latest `version_uid` of the resource (i.e. \
+                        the `preceding_version_uid`) matches this header's \
+                        value.\" (ITS-REST \
+                        `specifications/parameters/header/If-Match.yaml`, \
+                        `required: true`). The weak `W/\"…\"` form this server \
+                        emits in `ETag` is accepted too — the bare quoted form is \
+                        the pre-1.1.0 shape the release keeps supported \
+                        (`Requests_and_responses.md` §\"Deprecated headers\").",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation`, or `return=identifier`."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`). `return=minimal` answers `204`; the \
+                        other two answer `200` — \"the status will be `201 \
+                        Created` or `200 OK`, never `204 No Content`\" for \
+                        `return=identifier` (`Requests_and_responses.md` \
+                        §\"Prefer only identifier\"). The token honoured is echoed \
+                        in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`); \
+                        absent reads as canonical JSON (`Resources.md` §\"JSON \
+                        Format\" makes the header a client MAY). A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", merged \
+                        with the server defaults \"on commit runtime\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `change_type`, `description`, `committer` and \
+                        `system_id` MAY be supplied; \"The `time_committed` \
+                        attribute is always set by the server\", and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\"). No \
+                        released parameter file declares it.",
+         example = "change_type.code_string=\"251\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the new VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`; \
+                        the only tag parameter the released update declares). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag`; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\""),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — the VERSIONED_PARTY. Not declared on the released \
+                        update operation, but it is the header this build reads \
+                        as the tag list to store, and demographic tags are \
+                        VERSIONED_OBJECT-anchored, so it is the accurate one to \
+                        send here. An empty value \"will effectively remove all \
+                        ITEM_TAGs associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\"); an absent header leaves the \
+                        stored tags untouched.",
+         example = "key=\"category\",value=\"final\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new AGENT (RM canonical JSON or XML); any \
-                                `uid` must match the path id."),
+                 description = "\"The new AGENT.\", `required: true` (ITS-REST \
+                                `specifications/operations/agent_update.yaml`; \
+                                schema `schemas/demographic/Agent.yaml`) as \
+                                canonical JSON or XML. A `uid` in the body \"must \
+                                match the `uid_based_id` in the URL\".",
+                 example = json!({
+                     "_type": "AGENT",
+                     "name": { "_type": "DV_TEXT", "value": "AGENT" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-AGENT.agent.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-AGENT.agent.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Triage Assistant v3" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation` \
-                                      or `return=identifier`); `ETag`/`Location` \
-                                      carry the new version.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the AGENT is \
+                                      successfully updated, with the full \
+                                      resource in the response body when `Prefer` \
+                                      header is `return=representation`, or only \
+                                      its identifiers when `Prefer` header is \
+                                      `return=identifier`.\" (ITS-REST \
+                                      `specifications/responses/200_AGENT_updated.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             NEW version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; the weakness \
+                             indicator is the release's MUST, \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the AGENT resource.\" (ITS-REST \
+                             `specifications/headers/Location_AGENT.yaml`), set to \
+                             `<base_path>/demographic/agent/<new version_uid>`. \
+                             §Location scopes the header to \"resource creation … \
+                             or redirect responses\" and §\"Prefer minimal, \
+                             identifier or full representation response\" names \
+                             the target as \"the newly created or updated \
+                             resource\" — an openEHR update commits a NEW VERSION, \
+                             which is that newly created resource."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"; both headers SHOULD accompany a \
+                             versioned resource). The released \
+                             `200_AGENT_updated.yaml` does not slot it; the \
+                             SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured \
+                             (`Requests_and_responses.md` §\"Representation \
+                             details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) as the \
+                             server stored it; emitted only when the party carries \
+                             tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             the same set, demographic tags having no version \
+                             anchor.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the updated AGENT",
+              value = json!({
+                  "_type": "AGENT",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "name": { "_type": "DV_TEXT", "value": "AGENT" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-AGENT.agent.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-AGENT.agent.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Triage Assistant v3" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the `Prefer` \
+                                      header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_version_updated.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version (ITS-REST \
+                             `specifications/headers/ETag.yaml`)."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the resource version resulted from the operation.\" \
+                             (ITS-REST \
+                             `specifications/headers/Location_version.yaml`), set \
+                             to \
+                             `<base_path>/demographic/agent/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`), \
+                             emitted when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Two \
+                                      reachable triggers here: an unparseable \
+                                      `uid_based_id`/body, and an ABSENT \
+                                      `If-Match` — \"When the service expects \
+                                      `If-Match` for an operation, but the client \
+                                      does not provide it, the service SHOULD \
+                                      respond with `400 Bad Request`\" \
+                                      (`Requests_and_responses.md` §\"If-Match and \
+                                      accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). A \
+                                      `versioned_object_uid` whose stored \
+                                      container is a different PARTY kind is this \
+                                      `404` as well — the route is kind-checked \
+                                      (a VERSIONED_OBJECT has one type, RM \
+                                      `common/master06` §Change Control).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown AGENT.", body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated and served in the \
+                                      canonical formats only, so a \
+                                      Simplified-only `Accept` MUST be refused \
+                                      (`Resources.md` §\"Simplified Formats\"). \
+                                      The released operation does not enumerate \
+                                      `406`; the MUST is cross-cutting.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 412, description = "The released trigger, verbatim: `412 \
+                                      Precondition Failed` \"is returned when \
+                                      `If-Match` request header doesn't match the \
+                                      latest version on the service side. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\" (ITS-REST \
+                                      `specifications/responses/412_AGENT.yaml`; \
+                                      the same rule is the overview's own MUST — \
+                                      \"it MUST NOT perform the requested method. \
+                                      Instead, it MUST respond with HTTP status \
+                                      code `412 Precondition Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` — the service \"SHOULD return also latest \
+                             `version_uid` in the `ETag` response headers\" \
+                             (`Requests_and_responses.md` §\"If-Match and \
+                             accidental overwrites\"; ITS-REST \
+                             `specifications/headers/ETag.yaml`). The released \
+                             `412_AGENT.yaml` also slots \
+                             `headers/Location_deprecated.yaml`; §Location \
+                             forbids `Location` on a non-creation response, so \
+                             none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which a party payload cannot \
+                                      use (no template can be named for an \
+                                      untemplated resource — \
+                                      `Requests_and_responses.md` \
+                                      §openehr-template-id): \"it MUST respond with \
+                                      HTTP status code `415 Unsupported Media \
+                                      Type`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). An absent `Content-Type` declares \
+                                      nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The AGENT fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      AGENT, or a body typed as a different PARTY \
+                                      subtype than the route's.",
          body = serde_json::Value)
     )
 )]
@@ -241,28 +996,150 @@ pub(crate) async fn agent_update(
 }
 
 /// Delete an `AGENT` (`DELETE /demographic/agent/{uid_based_id}`).
+///
+/// "Deletes the AGENT identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/agent_delete.yaml`). The delete is LOGICAL: it
+/// commits a new deletion VERSION rather than removing history — RM
+/// `common/master06` §Change Control keeps every committed version, and a
+/// subsequent read of the deleted current version answers `204`
+/// (`responses/204_deleted_at_time.yaml`).
 #[utoipa::path(
     delete, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of an OBJECT_VERSION_ID identifier taken from \
+                        VERSION.uid.value (i.e. a `version_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_version_uid.yaml`); \
+                        the operation sharpens it: \"The `uid_based_id` MUST be in \
+                        a form of an OBJECT_VERSION_ID identifier taken from the \
+                        last (most recent) VERSION.uid.value, representing the \
+                        `preceding_version_uid` to be deleted.\" A version that is \
+                        not the latest is `409`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("If-Match" = Option<String>, Header,
+         description = "OPTIONAL here, and the released operation declares no \
+                        `If-Match` parameter at all — by the spec's own carve-out: \
+                        the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"), and on this operation it IS the \
+                        path segment. A header that IS sent is still honoured — \
+                        the same section makes a received precondition binding — \
+                        as an alternative source of the preceding version; the \
+                        weak `W/\"…\"` and bare quoted forms are both accepted.",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list. No released parameter file declares \
+                        this header; the requirement is prose — \"services MUST \
+                        also allow `PUT`, `POST` and `DELETE` methods directly on \
+                        these change-controlled resources\" and \"services MUST \
+                        accept `openehr-version` and `openehr-audit-details` \
+                        custom request headers\" (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY repeat. \
+                        `time_committed` is always server-set and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "description.value=\"merged into another record\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format (`application/json` by default). A \
+                        Simplified-only `Accept` is `406` — a party is untemplated \
+                        (`Resources.md` §\"Simplified Formats\").",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the AGENT is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown AGENT.", body = serde_json::Value),
-        (status = 409, description = "The supplied `uid_based_id` is not the \
-                                      latest version; `ETag` carries the current \
-                                      latest version uid.", body = serde_json::Value)
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned for a successful \
+                                      delete operation.\" (ITS-REST \
+                                      `specifications/responses/204_version_deleted.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version the operation just committed — not \
+                             the version named in the path. The released \
+                             `204_version_deleted.yaml` slots \
+                             `headers/ETag.yaml`, whose value \"is an identifier \
+                             (e.g. a `version_uid` …) for a specific version of a \
+                             resource\", and §\"ETag and Last-Modified\" adds that \
+                             it \"changes as soon as the resource changes (i.e. \
+                             when a new version is created)\" — a logical delete \
+                             creates one. That same response slots \
+                             `headers/Location_deprecated.yaml`; §\"Deprecated \
+                             headers\" deprecates `Location` on `DELETE` \
+                             responses, so none is emitted or declared.")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content) or when the resource identified by \
+                                      the request parameters is already deleted.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400_already_deleted.yaml`) \
+                                      — so a second delete of the same party is \
+                                      this `400`, not a `404`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or one holding a \
+                                      different PARTY kind than this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied \
+                                      (a Simplified-only `Accept` on an \
+                                      untemplated resource): \"it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when supplied \
+                                      `uid_based_id` doesn't match the latest \
+                                      version. Returns also latest `version_uid` \
+                                      in the `ETag` header.\" (ITS-REST \
+                                      `specifications/responses/409_AGENT_with_uid_based_id.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` (ITS-REST \
+                             `specifications/headers/ETag.yaml`) — the client can \
+                             retry the delete against it. The released response \
+                             also slots `headers/Location_deprecated.yaml`; \
+                             §Location forbids `Location` on a non-creation \
+                             response, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is still refused before \
+                                      the write, because a party has no template a \
+                                      Simplified payload could be expanded against \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id; `Resources.md` \
+                                      §\"Simplified Formats\" `415` MUST). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn agent_delete(
@@ -276,50 +1153,307 @@ pub(crate) async fn agent_delete(
 // ── GROUP ─────────────────────────────────────────────────────────────────
 
 /// Create a `GROUP` (`POST /demographic/group`).
+///
+/// "Creates the first version of a new GROUP." (ITS-REST
+/// `specifications/operations/group_create.yaml`). The `uid` is server-minted:
+/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// client cannot know at create time, so a `uid` in the submitted body does not
+/// survive the write and the invariant `Uid_mandatory` (RM
+/// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
+/// satisfied post-assignment. The released create declares no `409`, so a
+/// client-supplied `uid` is never a conflict.
 #[utoipa::path(
     post, path = "/demographic/group", tag = "GROUP",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created GROUP), or \
-                        `return=identifier` (only the uid)."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; enum \
+                        `return=representation|return=minimal|return=identifier`, \
+                        default `return=minimal`). An absent header is \
+                        `return=minimal` — \"If no `Prefer` header is provided, \
+                        the default behavior is assumed to be `return=minimal`\" \
+                        — and `return=identifier` never answers `204`: \"the \
+                        status will be `201 Created` or `200 OK`, never `204 No \
+                        Content`\" (`Requests_and_responses.md` §\"Prefer only \
+                        identifier\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`). \
+                        An absent header reads as canonical JSON — `Resources.md` \
+                        §\"JSON Format\" makes the header a client MAY, so its \
+                        absence declares nothing to refuse. A Simplified \
+                        `Content-Type` is `415` (see that response).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION (e.g. \
-                        `lifecycle_state.code_string`); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", and \
+                        \"whatever is provided it MUST be merged with the default \
+                        VERSION and VERSION.audit_details attributes on commit \
+                        runtime\" (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\", which scopes the rule to \
+                        \"all change-controlled resources\" — parties are \
+                        version-controlled, RM `common/master06` §Change \
+                        Control).",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS (committer, \
-                        description, change_type); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. \"Through the `openehr-audit-details` header, \
+                        clients MAY supply values for the AUDIT_DETAILS \
+                        attributes `change_type`, `description`, `committer` and \
+                        `system_id`. The `time_committed` attribute is always set \
+                        by the server.\" — and \"when `system_id` is not provided \
+                        by the client, the server MUST set it to its own \
+                        configured system identifier\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "committer.name=\"John Doe\""),
         ("openehr-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
-                        stored set is echoed in the response header."),
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — here the VERSIONED_PARTY. The tags are stored after the \
+                        party exists and the stored set is echoed in the response \
+                        header of the same name. \"Providing an empty value for \
+                        this header will effectively remove all ITEM_TAGs \
+                        associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", Usage in Requests); an absent \
+                        header changes nothing.",
+         example = "key=\"category\",value=\"final\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with this VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag` only; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The GROUP (RM canonical JSON or XML)."),
+                 description = "\"The GROUP.\", `required: true` (ITS-REST \
+                                `specifications/operations/group_create.yaml`; \
+                                schema `schemas/demographic/Group.yaml`) as \
+                                canonical JSON or XML. `PARTY.identities` is \
+                                mandatory and non-empty (`Identities_valid`), and \
+                                `name` carries the type designation \
+                                (`Type_valid: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party`).",
+                 example = json!({
+                     "_type": "GROUP",
+                     "name": { "_type": "DV_TEXT", "value": "GROUP" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-GROUP.group.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-GROUP.group.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Cardiology on-call rota" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`; stored \
-                                      ITEM_TAGs ride the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted GROUP.",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the GROUP is \
+                                      successfully created. If `Prefer` header is \
+                                      `return=representation`, the full resource \
+                                      is included in the response body; if is \
+                                      `return=identifier`, only its unique \
+                                      identifier is included. If the `Prefer` \
+                                      header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_GROUP.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is an \
+                             identifier (e.g. a `version_uid` enclosed by double \
+                             quotes) for a specific version of a resource.\" \
+                             (ITS-REST `specifications/headers/ETag.yaml`), in the \
+                             weak form the release requires — \"all `ETag` headers \
+                             that hold a resource identifier MUST include a \
+                             weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"<versioned_object_uid>::<system_id>::1\"`."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the GROUP resource.\" (ITS-REST \
+                             `specifications/headers/Location_GROUP.yaml`), set to \
+                             `<base_path>/demographic/group/<version_uid>` — \
+                             §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date; \"this value should be derived from \
+                             VERSION.commit_audit.time_committed.value\", and both \
+                             `ETag` and `Last-Modified` \"SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released `201_GROUP.yaml` does \
+                             not slot it; the SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured. \"The service MAY include a \
+                             `Preference-Applied` header in the response … to \
+                             indicate that the client's preference has been \
+                             honored\" (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) — the \
+                             set as the server stored it; emitted only when the \
+                             party carries tags (\"Servers MAY include the \
+                             `openehr-item-tag` … header in responses to confirm \
+                             the actual list of ITEM_TAGs stored on the server \
+                             side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created GROUP",
+              value = json!({
+                  "_type": "GROUP",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "GROUP" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-GROUP.group.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-GROUP.group.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Cardiology on-call rota" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a body that is not well-formed canonical \
+                                      JSON/XML. Content that parses but is not a \
+                                      valid GROUP is the `422` below.",
          body = serde_json::Value),
-        (status = 404, description = "A referenced resource does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). On a \
+                                      create the reachable trigger is a referenced \
+                                      resource the commit resolves and does not \
+                                      find.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied. A \
+                                      PARTY is untemplated, so this server serves \
+                                      it in the canonical formats only and refuses \
+                                      a Simplified-only `Accept`: \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\" (`Resources.md` \
+                                      §\"Simplified Formats\"; the same MUST is \
+                                      stated for XML and JSON). The released \
+                                      operation does not enumerate `406`; the MUST \
+                                      is cross-cutting.",
          body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A PARTY is not templated and \
+                                      `openehr-template-id` — the only header that \
+                                      can name a template — is scoped to \
+                                      \"committing COMPOSITION\" \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified party \
+                                      payload cannot be expanded: \"If the service \
+                                      cannot process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The GROUP is syntactically valid but \
-                                      fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      GROUP (empty `identities`, a `name` that is \
+                                      not the type designation), or a body whose \
+                                      `_type` is a different PARTY subtype than \
+                                      the route's — the routed kind's codec is the \
+                                      one that decodes it.",
          body = serde_json::Value)
     )
 )]
@@ -333,31 +1467,181 @@ pub(crate) async fn group_create(
 
 /// Retrieve a `GROUP` by uid-based id
 /// (`GET /demographic/group/{uid_based_id}`).
+///
+/// "Retrieves a version of the GROUP identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/group_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
-                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
-                        latest / at-time version."),
+         description = "The released parameter, verbatim: \"An abstract \
+                        identifier: it can take a form of an OBJECT_VERSION_ID \
+                        identifier taken from VERSION.uid.value (i.e. a \
+                        `version_uid`), or a form of a HIER_OBJECT_ID identifier \
+                        taken from VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id.yaml`). The \
+                        operation adds: \"When the `uid_based_id` has the form of \
+                        a HIER_OBJECT_ID, if the `version_at_time` is supplied, \
+                        retrieves the version extant _at specified time_, \
+                        otherwise retrieves the _latest_ GROUP version.\" A \
+                        syntactically unusable id is `400`; a well-formed id \
+                        naming no GROUP (including a container of another PARTY \
+                        kind) is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`). \
+                        Selects the version extant at that instant when the path \
+                        id is a `versioned_object_uid`; the latest version when \
+                        omitted. The timezone is optional — server-local when \
+                        absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The GROUP (RM canonical JSON/XML); `ETag` \
-                                      carries the version uid (weak `W/` form), \
-                                      any ITEM_TAGs ride the item-tag response \
-                                      headers.", body = serde_json::Value),
-        (status = 204, description = "The GROUP version at the requested time \
-                                      is deleted."),
-        (status = 404, description = "Unknown GROUP, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested GROUP is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_GROUP_retrieved.yaml`). \
+                                      That response slots \
+                                      `headers/Location_deprecated.yaml`, and \
+                                      §Location says the header \"MUST NOT be used \
+                                      to indicate an alternate representation of \
+                                      an existing resource (e.g. via `GET` \
+                                      method)\" — so no `Location` is emitted or \
+                                      declared here.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\" makes resource-identifier `ETag`s \
+                             weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\"; both \
+                             headers \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`). \
+                             \"When retrieving resources via `GET`, the server MAY \
+                             also add these headers to the response\" \
+                             (`Requests_and_responses.md` §\"openehr-item-tag and \
+                             openehr-version-item-tag\", Usage in Responses); \
+                             emitted only when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         example = json!({
+             "_type": "GROUP",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "GROUP" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-GROUP.group.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-GROUP.group.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "identities": [
+                 {
+                     "_type": "PARTY_IDENTITY",
+                     "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                     "archetype_node_id": "at0001",
+                     "details": {
+                         "_type": "ITEM_TREE",
+                         "name": { "_type": "DV_TEXT", "value": "identity details" },
+                         "archetype_node_id": "at0002",
+                         "items": [
+                             {
+                                 "_type": "ELEMENT",
+                                 "name": { "_type": "DV_TEXT", "value": "name" },
+                                 "archetype_node_id": "at0003",
+                                 "value": { "_type": "DV_TEXT", "value": "Cardiology on-call rota" }
+                             }
+                         ]
+                     }
+                 }
+             ]
+         })),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters (at \
+                                      specified `version_at_time`) time has been \
+                                      deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`) \
+                                      — the version selected by the request is a \
+                                      deletion marker, which is a successful read \
+                                      of a logically deleted resource, not a \
+                                      `404`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `uid_based_id` that is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or a \
+                                      `version_at_time` that is not an extended \
+                                      ISO 8601 instant. The released get does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`). \
+                                      A well-formed id whose stored container is a \
+                                      different PARTY kind is this `404` too — the \
+                                      route is kind-checked, and a VERSIONED_OBJECT \
+                                      has one type (RM `common/master06` §Change \
+                                      Control).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated, so it is served in the \
+                                      canonical formats only and a Simplified-only \
+                                      `Accept` is refused — \"If the service cannot \
+                                      fulfill this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` carries no payload, \
+                                      but the released operation still admits a \
+                                      request `Content-Type`, and a party has no \
+                                      template to expand a Simplified payload \
+                                      against, so the declaration is refused \
+                                      before the read: \"If the service cannot \
+                                      process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value)
     )
 )]
@@ -370,52 +1654,369 @@ pub(crate) async fn group_get(
 }
 
 /// Update a `GROUP` (`PUT /demographic/group/{uid_based_id}`).
+///
+/// "Updates GROUP identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of GROUP resource (i.e. the `preceding_version_uid`) must be
+/// specified in the `If-Match` header." (ITS-REST
+/// `specifications/operations/group_update.yaml`).
 #[utoipa::path(
     put, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(
         ("uid_based_id" = String, Path,
-         description = "The HIER_OBJECT_ID `versioned_object_uid` of the GROUP \
-                        to update."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_versioned_object_uid.yaml`) \
+                        — the container, not a version. The operation adds: \"If \
+                        the request body already contains a GROUP.uid.value, it \
+                        must match the `uid_based_id` in the URL.\"",
+         example = "8849182c-82ad-4088-a07f-48ead4180515"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "The released parameter, verbatim: \"Header to make the \
+                        request conditional. Together with `ETag` request tag, it \
+                        helps to prevent simultaneous updates of a resource from \
+                        overwriting each other (\"mid-air collisions\"). The \
+                        format is always an `version_uid` identifier enclosed by \
+                        double quotes. The operation will be performed only if \
+                        the existing latest `version_uid` of the resource (i.e. \
+                        the `preceding_version_uid`) matches this header's \
+                        value.\" (ITS-REST \
+                        `specifications/parameters/header/If-Match.yaml`, \
+                        `required: true`). The weak `W/\"…\"` form this server \
+                        emits in `ETag` is accepted too — the bare quoted form is \
+                        the pre-1.1.0 shape the release keeps supported \
+                        (`Requests_and_responses.md` §\"Deprecated headers\").",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation`, or `return=identifier`."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`). `return=minimal` answers `204`; the \
+                        other two answer `200` — \"the status will be `201 \
+                        Created` or `200 OK`, never `204 No Content`\" for \
+                        `return=identifier` (`Requests_and_responses.md` \
+                        §\"Prefer only identifier\"). The token honoured is echoed \
+                        in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`); \
+                        absent reads as canonical JSON (`Resources.md` §\"JSON \
+                        Format\" makes the header a client MAY). A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", merged \
+                        with the server defaults \"on commit runtime\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `change_type`, `description`, `committer` and \
+                        `system_id` MAY be supplied; \"The `time_committed` \
+                        attribute is always set by the server\", and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\"). No \
+                        released parameter file declares it.",
+         example = "change_type.code_string=\"251\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the new VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`; \
+                        the only tag parameter the released update declares). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag`; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\""),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — the VERSIONED_PARTY. Not declared on the released \
+                        update operation, but it is the header this build reads \
+                        as the tag list to store, and demographic tags are \
+                        VERSIONED_OBJECT-anchored, so it is the accurate one to \
+                        send here. An empty value \"will effectively remove all \
+                        ITEM_TAGs associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\"); an absent header leaves the \
+                        stored tags untouched.",
+         example = "key=\"category\",value=\"final\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new GROUP (RM canonical JSON or XML); any \
-                                `uid` must match the path id."),
+                 description = "\"The new GROUP.\", `required: true` (ITS-REST \
+                                `specifications/operations/group_update.yaml`; \
+                                schema `schemas/demographic/Group.yaml`) as \
+                                canonical JSON or XML. A `uid` in the body \"must \
+                                match the `uid_based_id` in the URL\".",
+                 example = json!({
+                     "_type": "GROUP",
+                     "name": { "_type": "DV_TEXT", "value": "GROUP" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-GROUP.group.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-GROUP.group.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Cardiology on-call rota (2026)" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation` \
-                                      or `return=identifier`); `ETag`/`Location` \
-                                      carry the new version.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the GROUP is \
+                                      successfully updated, with the full \
+                                      resource in the response body when `Prefer` \
+                                      header is `return=representation`, or only \
+                                      its identifiers when `Prefer` header is \
+                                      `return=identifier`.\" (ITS-REST \
+                                      `specifications/responses/200_GROUP_updated.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             NEW version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; the weakness \
+                             indicator is the release's MUST, \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the GROUP resource.\" (ITS-REST \
+                             `specifications/headers/Location_GROUP.yaml`), set to \
+                             `<base_path>/demographic/group/<new version_uid>`. \
+                             §Location scopes the header to \"resource creation … \
+                             or redirect responses\" and §\"Prefer minimal, \
+                             identifier or full representation response\" names \
+                             the target as \"the newly created or updated \
+                             resource\" — an openEHR update commits a NEW VERSION, \
+                             which is that newly created resource."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"; both headers SHOULD accompany a \
+                             versioned resource). The released \
+                             `200_GROUP_updated.yaml` does not slot it; the \
+                             SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured \
+                             (`Requests_and_responses.md` §\"Representation \
+                             details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) as the \
+                             server stored it; emitted only when the party carries \
+                             tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             the same set, demographic tags having no version \
+                             anchor.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the updated GROUP",
+              value = json!({
+                  "_type": "GROUP",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "name": { "_type": "DV_TEXT", "value": "GROUP" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-GROUP.group.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-GROUP.group.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Cardiology on-call rota (2026)" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the `Prefer` \
+                                      header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_version_updated.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version (ITS-REST \
+                             `specifications/headers/ETag.yaml`)."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the resource version resulted from the operation.\" \
+                             (ITS-REST \
+                             `specifications/headers/Location_version.yaml`), set \
+                             to \
+                             `<base_path>/demographic/group/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`), \
+                             emitted when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Two \
+                                      reachable triggers here: an unparseable \
+                                      `uid_based_id`/body, and an ABSENT \
+                                      `If-Match` — \"When the service expects \
+                                      `If-Match` for an operation, but the client \
+                                      does not provide it, the service SHOULD \
+                                      respond with `400 Bad Request`\" \
+                                      (`Requests_and_responses.md` §\"If-Match and \
+                                      accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). A \
+                                      `versioned_object_uid` whose stored \
+                                      container is a different PARTY kind is this \
+                                      `404` as well — the route is kind-checked \
+                                      (a VERSIONED_OBJECT has one type, RM \
+                                      `common/master06` §Change Control).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown GROUP.", body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated and served in the \
+                                      canonical formats only, so a \
+                                      Simplified-only `Accept` MUST be refused \
+                                      (`Resources.md` §\"Simplified Formats\"). \
+                                      The released operation does not enumerate \
+                                      `406`; the MUST is cross-cutting.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 412, description = "The released trigger, verbatim: `412 \
+                                      Precondition Failed` \"is returned when \
+                                      `If-Match` request header doesn't match the \
+                                      latest version on the service side. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\" (ITS-REST \
+                                      `specifications/responses/412_GROUP.yaml`; \
+                                      the same rule is the overview's own MUST — \
+                                      \"it MUST NOT perform the requested method. \
+                                      Instead, it MUST respond with HTTP status \
+                                      code `412 Precondition Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` — the service \"SHOULD return also latest \
+                             `version_uid` in the `ETag` response headers\" \
+                             (`Requests_and_responses.md` §\"If-Match and \
+                             accidental overwrites\"; ITS-REST \
+                             `specifications/headers/ETag.yaml`). The released \
+                             `412_GROUP.yaml` also slots \
+                             `headers/Location_deprecated.yaml`; §Location \
+                             forbids `Location` on a non-creation response, so \
+                             none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which a party payload cannot \
+                                      use (no template can be named for an \
+                                      untemplated resource — \
+                                      `Requests_and_responses.md` \
+                                      §openehr-template-id): \"it MUST respond with \
+                                      HTTP status code `415 Unsupported Media \
+                                      Type`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). An absent `Content-Type` declares \
+                                      nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The GROUP fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      GROUP, or a body typed as a different PARTY \
+                                      subtype than the route's.",
          body = serde_json::Value)
     )
 )]
@@ -428,28 +2029,150 @@ pub(crate) async fn group_update(
 }
 
 /// Delete a `GROUP` (`DELETE /demographic/group/{uid_based_id}`).
+///
+/// "Deletes the GROUP identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/group_delete.yaml`). The delete is LOGICAL: it
+/// commits a new deletion VERSION rather than removing history — RM
+/// `common/master06` §Change Control keeps every committed version, and a
+/// subsequent read of the deleted current version answers `204`
+/// (`responses/204_deleted_at_time.yaml`).
 #[utoipa::path(
     delete, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of an OBJECT_VERSION_ID identifier taken from \
+                        VERSION.uid.value (i.e. a `version_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_version_uid.yaml`); \
+                        the operation sharpens it: \"The `uid_based_id` MUST be in \
+                        a form of an OBJECT_VERSION_ID identifier taken from the \
+                        last (most recent) VERSION.uid.value, representing the \
+                        `preceding_version_uid` to be deleted.\" A version that is \
+                        not the latest is `409`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("If-Match" = Option<String>, Header,
+         description = "OPTIONAL here, and the released operation declares no \
+                        `If-Match` parameter at all — by the spec's own carve-out: \
+                        the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"), and on this operation it IS the \
+                        path segment. A header that IS sent is still honoured — \
+                        the same section makes a received precondition binding — \
+                        as an alternative source of the preceding version; the \
+                        weak `W/\"…\"` and bare quoted forms are both accepted.",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list. No released parameter file declares \
+                        this header; the requirement is prose — \"services MUST \
+                        also allow `PUT`, `POST` and `DELETE` methods directly on \
+                        these change-controlled resources\" and \"services MUST \
+                        accept `openehr-version` and `openehr-audit-details` \
+                        custom request headers\" (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY repeat. \
+                        `time_committed` is always server-set and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "description.value=\"merged into another record\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format (`application/json` by default). A \
+                        Simplified-only `Accept` is `406` — a party is untemplated \
+                        (`Resources.md` §\"Simplified Formats\").",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the GROUP is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown GROUP.", body = serde_json::Value),
-        (status = 409, description = "The supplied `uid_based_id` is not the \
-                                      latest version; `ETag` carries the current \
-                                      latest version uid.", body = serde_json::Value)
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned for a successful \
+                                      delete operation.\" (ITS-REST \
+                                      `specifications/responses/204_version_deleted.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version the operation just committed — not \
+                             the version named in the path. The released \
+                             `204_version_deleted.yaml` slots \
+                             `headers/ETag.yaml`, whose value \"is an identifier \
+                             (e.g. a `version_uid` …) for a specific version of a \
+                             resource\", and §\"ETag and Last-Modified\" adds that \
+                             it \"changes as soon as the resource changes (i.e. \
+                             when a new version is created)\" — a logical delete \
+                             creates one. That same response slots \
+                             `headers/Location_deprecated.yaml`; §\"Deprecated \
+                             headers\" deprecates `Location` on `DELETE` \
+                             responses, so none is emitted or declared.")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content) or when the resource identified by \
+                                      the request parameters is already deleted.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400_already_deleted.yaml`) \
+                                      — so a second delete of the same party is \
+                                      this `400`, not a `404`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or one holding a \
+                                      different PARTY kind than this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied \
+                                      (a Simplified-only `Accept` on an \
+                                      untemplated resource): \"it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when supplied \
+                                      `uid_based_id` doesn't match the latest \
+                                      version. Returns also latest `version_uid` \
+                                      in the `ETag` header.\" (ITS-REST \
+                                      `specifications/responses/409_GROUP_with_uid_based_id.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` (ITS-REST \
+                             `specifications/headers/ETag.yaml`) — the client can \
+                             retry the delete against it. The released response \
+                             also slots `headers/Location_deprecated.yaml`; \
+                             §Location forbids `Location` on a non-creation \
+                             response, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is still refused before \
+                                      the write, because a party has no template a \
+                                      Simplified payload could be expanded against \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id; `Resources.md` \
+                                      §\"Simplified Formats\" `415` MUST). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn group_delete(
@@ -463,50 +2186,307 @@ pub(crate) async fn group_delete(
 // ── ORGANISATION ────────────────────────────────────────────────────────────
 
 /// Create an `ORGANISATION` (`POST /demographic/organisation`).
+///
+/// "Creates the first version of a new ORGANISATION." (ITS-REST
+/// `specifications/operations/organisation_create.yaml`). The `uid` is server-minted:
+/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// client cannot know at create time, so a `uid` in the submitted body does not
+/// survive the write and the invariant `Uid_mandatory` (RM
+/// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
+/// satisfied post-assignment. The released create declares no `409`, so a
+/// client-supplied `uid` is never a conflict.
 #[utoipa::path(
     post, path = "/demographic/organisation", tag = "ORGANISATION",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created ORGANISATION), or \
-                        `return=identifier` (only the uid)."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; enum \
+                        `return=representation|return=minimal|return=identifier`, \
+                        default `return=minimal`). An absent header is \
+                        `return=minimal` — \"If no `Prefer` header is provided, \
+                        the default behavior is assumed to be `return=minimal`\" \
+                        — and `return=identifier` never answers `204`: \"the \
+                        status will be `201 Created` or `200 OK`, never `204 No \
+                        Content`\" (`Requests_and_responses.md` §\"Prefer only \
+                        identifier\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`). \
+                        An absent header reads as canonical JSON — `Resources.md` \
+                        §\"JSON Format\" makes the header a client MAY, so its \
+                        absence declares nothing to refuse. A Simplified \
+                        `Content-Type` is `415` (see that response).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION (e.g. \
-                        `lifecycle_state.code_string`); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", and \
+                        \"whatever is provided it MUST be merged with the default \
+                        VERSION and VERSION.audit_details attributes on commit \
+                        runtime\" (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\", which scopes the rule to \
+                        \"all change-controlled resources\" — parties are \
+                        version-controlled, RM `common/master06` §Change \
+                        Control).",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS (committer, \
-                        description, change_type); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. \"Through the `openehr-audit-details` header, \
+                        clients MAY supply values for the AUDIT_DETAILS \
+                        attributes `change_type`, `description`, `committer` and \
+                        `system_id`. The `time_committed` attribute is always set \
+                        by the server.\" — and \"when `system_id` is not provided \
+                        by the client, the server MUST set it to its own \
+                        configured system identifier\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "committer.name=\"John Doe\""),
         ("openehr-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
-                        stored set is echoed in the response header."),
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — here the VERSIONED_PARTY. The tags are stored after the \
+                        party exists and the stored set is echoed in the response \
+                        header of the same name. \"Providing an empty value for \
+                        this header will effectively remove all ITEM_TAGs \
+                        associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", Usage in Requests); an absent \
+                        header changes nothing.",
+         example = "key=\"category\",value=\"final\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with this VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag` only; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The ORGANISATION (RM canonical JSON or XML)."),
+                 description = "\"The ORGANISATION.\", `required: true` (ITS-REST \
+                                `specifications/operations/organisation_create.yaml`; \
+                                schema `schemas/demographic/Organisation.yaml`) as \
+                                canonical JSON or XML. `PARTY.identities` is \
+                                mandatory and non-empty (`Identities_valid`), and \
+                                `name` carries the type designation \
+                                (`Type_valid: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party`).",
+                 example = json!({
+                     "_type": "ORGANISATION",
+                     "name": { "_type": "DV_TEXT", "value": "ORGANISATION" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "St Elsewhere Hospital" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`; stored \
-                                      ITEM_TAGs ride the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted ORGANISATION.",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the ORGANISATION is \
+                                      successfully created. If `Prefer` header is \
+                                      `return=representation`, the full resource \
+                                      is included in the response body; if is \
+                                      `return=identifier`, only its unique \
+                                      identifier is included. If the `Prefer` \
+                                      header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_ORGANISATION.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is an \
+                             identifier (e.g. a `version_uid` enclosed by double \
+                             quotes) for a specific version of a resource.\" \
+                             (ITS-REST `specifications/headers/ETag.yaml`), in the \
+                             weak form the release requires — \"all `ETag` headers \
+                             that hold a resource identifier MUST include a \
+                             weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"<versioned_object_uid>::<system_id>::1\"`."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the ORGANISATION resource.\" (ITS-REST \
+                             `specifications/headers/Location_ORGANISATION.yaml`), set to \
+                             `<base_path>/demographic/organisation/<version_uid>` — \
+                             §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date; \"this value should be derived from \
+                             VERSION.commit_audit.time_committed.value\", and both \
+                             `ETag` and `Last-Modified` \"SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released `201_ORGANISATION.yaml` does \
+                             not slot it; the SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured. \"The service MAY include a \
+                             `Preference-Applied` header in the response … to \
+                             indicate that the client's preference has been \
+                             honored\" (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) — the \
+                             set as the server stored it; emitted only when the \
+                             party carries tags (\"Servers MAY include the \
+                             `openehr-item-tag` … header in responses to confirm \
+                             the actual list of ITEM_TAGs stored on the server \
+                             side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created ORGANISATION",
+              value = json!({
+                  "_type": "ORGANISATION",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "ORGANISATION" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "St Elsewhere Hospital" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a body that is not well-formed canonical \
+                                      JSON/XML. Content that parses but is not a \
+                                      valid ORGANISATION is the `422` below.",
          body = serde_json::Value),
-        (status = 404, description = "A referenced resource does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). On a \
+                                      create the reachable trigger is a referenced \
+                                      resource the commit resolves and does not \
+                                      find.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied. A \
+                                      PARTY is untemplated, so this server serves \
+                                      it in the canonical formats only and refuses \
+                                      a Simplified-only `Accept`: \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\" (`Resources.md` \
+                                      §\"Simplified Formats\"; the same MUST is \
+                                      stated for XML and JSON). The released \
+                                      operation does not enumerate `406`; the MUST \
+                                      is cross-cutting.",
          body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A PARTY is not templated and \
+                                      `openehr-template-id` — the only header that \
+                                      can name a template — is scoped to \
+                                      \"committing COMPOSITION\" \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified party \
+                                      payload cannot be expanded: \"If the service \
+                                      cannot process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The ORGANISATION is syntactically valid \
-                                      but fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      ORGANISATION (empty `identities`, a `name` that is \
+                                      not the type designation), or a body whose \
+                                      `_type` is a different PARTY subtype than \
+                                      the route's — the routed kind's codec is the \
+                                      one that decodes it.",
          body = serde_json::Value)
     )
 )]
@@ -526,31 +2506,181 @@ pub(crate) async fn organisation_create(
 
 /// Retrieve an `ORGANISATION` by uid-based id
 /// (`GET /demographic/organisation/{uid_based_id}`).
+///
+/// "Retrieves a version of the ORGANISATION identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/organisation_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
-                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
-                        latest / at-time version."),
+         description = "The released parameter, verbatim: \"An abstract \
+                        identifier: it can take a form of an OBJECT_VERSION_ID \
+                        identifier taken from VERSION.uid.value (i.e. a \
+                        `version_uid`), or a form of a HIER_OBJECT_ID identifier \
+                        taken from VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id.yaml`). The \
+                        operation adds: \"When the `uid_based_id` has the form of \
+                        a HIER_OBJECT_ID, if the `version_at_time` is supplied, \
+                        retrieves the version extant _at specified time_, \
+                        otherwise retrieves the _latest_ ORGANISATION version.\" A \
+                        syntactically unusable id is `400`; a well-formed id \
+                        naming no ORGANISATION (including a container of another PARTY \
+                        kind) is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`). \
+                        Selects the version extant at that instant when the path \
+                        id is a `versioned_object_uid`; the latest version when \
+                        omitted. The timezone is optional — server-local when \
+                        absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ORGANISATION (RM canonical JSON/XML); \
-                                      `ETag` carries the version uid (weak `W/` \
-                                      form), any ITEM_TAGs ride the item-tag \
-                                      response headers.", body = serde_json::Value),
-        (status = 204, description = "The ORGANISATION version at the requested \
-                                      time is deleted."),
-        (status = 404, description = "Unknown ORGANISATION, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested ORGANISATION is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_ORGANISATION_retrieved.yaml`). \
+                                      That response slots \
+                                      `headers/Location_deprecated.yaml`, and \
+                                      §Location says the header \"MUST NOT be used \
+                                      to indicate an alternate representation of \
+                                      an existing resource (e.g. via `GET` \
+                                      method)\" — so no `Location` is emitted or \
+                                      declared here.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\" makes resource-identifier `ETag`s \
+                             weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\"; both \
+                             headers \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`). \
+                             \"When retrieving resources via `GET`, the server MAY \
+                             also add these headers to the response\" \
+                             (`Requests_and_responses.md` §\"openehr-item-tag and \
+                             openehr-version-item-tag\", Usage in Responses); \
+                             emitted only when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         example = json!({
+             "_type": "ORGANISATION",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "ORGANISATION" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "identities": [
+                 {
+                     "_type": "PARTY_IDENTITY",
+                     "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                     "archetype_node_id": "at0001",
+                     "details": {
+                         "_type": "ITEM_TREE",
+                         "name": { "_type": "DV_TEXT", "value": "identity details" },
+                         "archetype_node_id": "at0002",
+                         "items": [
+                             {
+                                 "_type": "ELEMENT",
+                                 "name": { "_type": "DV_TEXT", "value": "name" },
+                                 "archetype_node_id": "at0003",
+                                 "value": { "_type": "DV_TEXT", "value": "St Elsewhere Hospital" }
+                             }
+                         ]
+                     }
+                 }
+             ]
+         })),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters (at \
+                                      specified `version_at_time`) time has been \
+                                      deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`) \
+                                      — the version selected by the request is a \
+                                      deletion marker, which is a successful read \
+                                      of a logically deleted resource, not a \
+                                      `404`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `uid_based_id` that is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or a \
+                                      `version_at_time` that is not an extended \
+                                      ISO 8601 instant. The released get does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`). \
+                                      A well-formed id whose stored container is a \
+                                      different PARTY kind is this `404` too — the \
+                                      route is kind-checked, and a VERSIONED_OBJECT \
+                                      has one type (RM `common/master06` §Change \
+                                      Control).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated, so it is served in the \
+                                      canonical formats only and a Simplified-only \
+                                      `Accept` is refused — \"If the service cannot \
+                                      fulfill this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` carries no payload, \
+                                      but the released operation still admits a \
+                                      request `Content-Type`, and a party has no \
+                                      template to expand a Simplified payload \
+                                      against, so the declaration is refused \
+                                      before the read: \"If the service cannot \
+                                      process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value)
     )
 )]
@@ -562,56 +2692,371 @@ pub(crate) async fn organisation_get(
     guarded_dispatch(state, "organisation_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update an `ORGANISATION`
-/// (`PUT /demographic/organisation/{uid_based_id}`).
+/// Update an `ORGANISATION` (`PUT /demographic/organisation/{uid_based_id}`).
+///
+/// "Updates ORGANISATION identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of ORGANISATION resource (i.e. the `preceding_version_uid`) must be
+/// specified in the `If-Match` header." (ITS-REST
+/// `specifications/operations/organisation_update.yaml`).
 #[utoipa::path(
     put, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(
         ("uid_based_id" = String, Path,
-         description = "The HIER_OBJECT_ID `versioned_object_uid` of the \
-                        ORGANISATION to update."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_versioned_object_uid.yaml`) \
+                        — the container, not a version. The operation adds: \"If \
+                        the request body already contains an ORGANISATION.uid.value, it \
+                        must match the `uid_based_id` in the URL.\"",
+         example = "8849182c-82ad-4088-a07f-48ead4180515"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "The released parameter, verbatim: \"Header to make the \
+                        request conditional. Together with `ETag` request tag, it \
+                        helps to prevent simultaneous updates of a resource from \
+                        overwriting each other (\"mid-air collisions\"). The \
+                        format is always an `version_uid` identifier enclosed by \
+                        double quotes. The operation will be performed only if \
+                        the existing latest `version_uid` of the resource (i.e. \
+                        the `preceding_version_uid`) matches this header's \
+                        value.\" (ITS-REST \
+                        `specifications/parameters/header/If-Match.yaml`, \
+                        `required: true`). The weak `W/\"…\"` form this server \
+                        emits in `ETag` is accepted too — the bare quoted form is \
+                        the pre-1.1.0 shape the release keeps supported \
+                        (`Requests_and_responses.md` §\"Deprecated headers\").",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation`, or `return=identifier`."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`). `return=minimal` answers `204`; the \
+                        other two answer `200` — \"the status will be `201 \
+                        Created` or `200 OK`, never `204 No Content`\" for \
+                        `return=identifier` (`Requests_and_responses.md` \
+                        §\"Prefer only identifier\"). The token honoured is echoed \
+                        in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`); \
+                        absent reads as canonical JSON (`Resources.md` §\"JSON \
+                        Format\" makes the header a client MAY). A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", merged \
+                        with the server defaults \"on commit runtime\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `change_type`, `description`, `committer` and \
+                        `system_id` MAY be supplied; \"The `time_committed` \
+                        attribute is always set by the server\", and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\"). No \
+                        released parameter file declares it.",
+         example = "change_type.code_string=\"251\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the new VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`; \
+                        the only tag parameter the released update declares). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag`; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\""),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — the VERSIONED_PARTY. Not declared on the released \
+                        update operation, but it is the header this build reads \
+                        as the tag list to store, and demographic tags are \
+                        VERSIONED_OBJECT-anchored, so it is the accurate one to \
+                        send here. An empty value \"will effectively remove all \
+                        ITEM_TAGs associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\"); an absent header leaves the \
+                        stored tags untouched.",
+         example = "key=\"category\",value=\"final\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new ORGANISATION (RM canonical JSON or XML); \
-                                any `uid` must match the path id."),
+                 description = "\"The new ORGANISATION.\", `required: true` (ITS-REST \
+                                `specifications/operations/organisation_update.yaml`; \
+                                schema `schemas/demographic/Organisation.yaml`) as \
+                                canonical JSON or XML. A `uid` in the body \"must \
+                                match the `uid_based_id` in the URL\".",
+                 example = json!({
+                     "_type": "ORGANISATION",
+                     "name": { "_type": "DV_TEXT", "value": "ORGANISATION" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "St Elsewhere Hospital NHS Trust" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation` \
-                                      or `return=identifier`); `ETag`/`Location` \
-                                      carry the new version.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the ORGANISATION is \
+                                      successfully updated, with the full \
+                                      resource in the response body when `Prefer` \
+                                      header is `return=representation`, or only \
+                                      its identifiers when `Prefer` header is \
+                                      `return=identifier`.\" (ITS-REST \
+                                      `specifications/responses/200_ORGANISATION_updated.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             NEW version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; the weakness \
+                             indicator is the release's MUST, \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the ORGANISATION resource.\" (ITS-REST \
+                             `specifications/headers/Location_ORGANISATION.yaml`), set to \
+                             `<base_path>/demographic/organisation/<new version_uid>`. \
+                             §Location scopes the header to \"resource creation … \
+                             or redirect responses\" and §\"Prefer minimal, \
+                             identifier or full representation response\" names \
+                             the target as \"the newly created or updated \
+                             resource\" — an openEHR update commits a NEW VERSION, \
+                             which is that newly created resource."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"; both headers SHOULD accompany a \
+                             versioned resource). The released \
+                             `200_ORGANISATION_updated.yaml` does not slot it; the \
+                             SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured \
+                             (`Requests_and_responses.md` §\"Representation \
+                             details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) as the \
+                             server stored it; emitted only when the party carries \
+                             tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             the same set, demographic tags having no version \
+                             anchor.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the updated ORGANISATION",
+              value = json!({
+                  "_type": "ORGANISATION",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "name": { "_type": "DV_TEXT", "value": "ORGANISATION" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "St Elsewhere Hospital NHS Trust" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the `Prefer` \
+                                      header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_version_updated.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version (ITS-REST \
+                             `specifications/headers/ETag.yaml`)."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the resource version resulted from the operation.\" \
+                             (ITS-REST \
+                             `specifications/headers/Location_version.yaml`), set \
+                             to \
+                             `<base_path>/demographic/organisation/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`), \
+                             emitted when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Two \
+                                      reachable triggers here: an unparseable \
+                                      `uid_based_id`/body, and an ABSENT \
+                                      `If-Match` — \"When the service expects \
+                                      `If-Match` for an operation, but the client \
+                                      does not provide it, the service SHOULD \
+                                      respond with `400 Bad Request`\" \
+                                      (`Requests_and_responses.md` §\"If-Match and \
+                                      accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). A \
+                                      `versioned_object_uid` whose stored \
+                                      container is a different PARTY kind is this \
+                                      `404` as well — the route is kind-checked \
+                                      (a VERSIONED_OBJECT has one type, RM \
+                                      `common/master06` §Change Control).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown ORGANISATION.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated and served in the \
+                                      canonical formats only, so a \
+                                      Simplified-only `Accept` MUST be refused \
+                                      (`Resources.md` §\"Simplified Formats\"). \
+                                      The released operation does not enumerate \
+                                      `406`; the MUST is cross-cutting.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 412, description = "The released trigger, verbatim: `412 \
+                                      Precondition Failed` \"is returned when \
+                                      `If-Match` request header doesn't match the \
+                                      latest version on the service side. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\" (ITS-REST \
+                                      `specifications/responses/412_ORGANISATION.yaml`; \
+                                      the same rule is the overview's own MUST — \
+                                      \"it MUST NOT perform the requested method. \
+                                      Instead, it MUST respond with HTTP status \
+                                      code `412 Precondition Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` — the service \"SHOULD return also latest \
+                             `version_uid` in the `ETag` response headers\" \
+                             (`Requests_and_responses.md` §\"If-Match and \
+                             accidental overwrites\"; ITS-REST \
+                             `specifications/headers/ETag.yaml`). The released \
+                             `412_ORGANISATION.yaml` also slots \
+                             `headers/Location_deprecated.yaml`; §Location \
+                             forbids `Location` on a non-creation response, so \
+                             none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which a party payload cannot \
+                                      use (no template can be named for an \
+                                      untemplated resource — \
+                                      `Requests_and_responses.md` \
+                                      §openehr-template-id): \"it MUST respond with \
+                                      HTTP status code `415 Unsupported Media \
+                                      Type`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). An absent `Content-Type` declares \
+                                      nothing to refuse.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
-         body = serde_json::Value),
-        (status = 422, description = "The ORGANISATION fails RM/semantic \
-                                      validation.", body = serde_json::Value)
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      ORGANISATION, or a body typed as a different PARTY \
+                                      subtype than the route's.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn organisation_update(
@@ -628,31 +3073,151 @@ pub(crate) async fn organisation_update(
     .await
 }
 
-/// Delete an `ORGANISATION`
-/// (`DELETE /demographic/organisation/{uid_based_id}`).
+/// Delete an `ORGANISATION` (`DELETE /demographic/organisation/{uid_based_id}`).
+///
+/// "Deletes the ORGANISATION identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/organisation_delete.yaml`). The delete is LOGICAL: it
+/// commits a new deletion VERSION rather than removing history — RM
+/// `common/master06` §Change Control keeps every committed version, and a
+/// subsequent read of the deleted current version answers `204`
+/// (`responses/204_deleted_at_time.yaml`).
 #[utoipa::path(
     delete, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of an OBJECT_VERSION_ID identifier taken from \
+                        VERSION.uid.value (i.e. a `version_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_version_uid.yaml`); \
+                        the operation sharpens it: \"The `uid_based_id` MUST be in \
+                        a form of an OBJECT_VERSION_ID identifier taken from the \
+                        last (most recent) VERSION.uid.value, representing the \
+                        `preceding_version_uid` to be deleted.\" A version that is \
+                        not the latest is `409`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("If-Match" = Option<String>, Header,
+         description = "OPTIONAL here, and the released operation declares no \
+                        `If-Match` parameter at all — by the spec's own carve-out: \
+                        the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"), and on this operation it IS the \
+                        path segment. A header that IS sent is still honoured — \
+                        the same section makes a received precondition binding — \
+                        as an alternative source of the preceding version; the \
+                        weak `W/\"…\"` and bare quoted forms are both accepted.",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list. No released parameter file declares \
+                        this header; the requirement is prose — \"services MUST \
+                        also allow `PUT`, `POST` and `DELETE` methods directly on \
+                        these change-controlled resources\" and \"services MUST \
+                        accept `openehr-version` and `openehr-audit-details` \
+                        custom request headers\" (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY repeat. \
+                        `time_committed` is always server-set and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "description.value=\"merged into another record\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format (`application/json` by default). A \
+                        Simplified-only `Accept` is `406` — a party is untemplated \
+                        (`Resources.md` §\"Simplified Formats\").",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the ORGANISATION is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown ORGANISATION.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned for a successful \
+                                      delete operation.\" (ITS-REST \
+                                      `specifications/responses/204_version_deleted.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version the operation just committed — not \
+                             the version named in the path. The released \
+                             `204_version_deleted.yaml` slots \
+                             `headers/ETag.yaml`, whose value \"is an identifier \
+                             (e.g. a `version_uid` …) for a specific version of a \
+                             resource\", and §\"ETag and Last-Modified\" adds that \
+                             it \"changes as soon as the resource changes (i.e. \
+                             when a new version is created)\" — a logical delete \
+                             creates one. That same response slots \
+                             `headers/Location_deprecated.yaml`; §\"Deprecated \
+                             headers\" deprecates `Location` on `DELETE` \
+                             responses, so none is emitted or declared.")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content) or when the resource identified by \
+                                      the request parameters is already deleted.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400_already_deleted.yaml`) \
+                                      — so a second delete of the same party is \
+                                      this `400`, not a `404`.",
          body = serde_json::Value),
-        (status = 409, description = "The supplied `uid_based_id` is not the \
-                                      latest version; `ETag` carries the current \
-                                      latest version uid.", body = serde_json::Value)
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or one holding a \
+                                      different PARTY kind than this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied \
+                                      (a Simplified-only `Accept` on an \
+                                      untemplated resource): \"it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when supplied \
+                                      `uid_based_id` doesn't match the latest \
+                                      version. Returns also latest `version_uid` \
+                                      in the `ETag` header.\" (ITS-REST \
+                                      `specifications/responses/409_ORGANISATION_with_uid_based_id.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` (ITS-REST \
+                             `specifications/headers/ETag.yaml`) — the client can \
+                             retry the delete against it. The released response \
+                             also slots `headers/Location_deprecated.yaml`; \
+                             §Location forbids `Location` on a non-creation \
+                             response, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is still refused before \
+                                      the write, because a party has no template a \
+                                      Simplified payload could be expanded against \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id; `Resources.md` \
+                                      §\"Simplified Formats\" `415` MUST). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn organisation_delete(
@@ -672,50 +3237,307 @@ pub(crate) async fn organisation_delete(
 // ── PERSON ────────────────────────────────────────────────────────────────
 
 /// Create a `PERSON` (`POST /demographic/person`).
+///
+/// "Creates the first version of a new PERSON." (ITS-REST
+/// `specifications/operations/person_create.yaml`). The `uid` is server-minted:
+/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// client cannot know at create time, so a `uid` in the submitted body does not
+/// survive the write and the invariant `Uid_mandatory` (RM
+/// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
+/// satisfied post-assignment. The released create declares no `409`, so a
+/// client-supplied `uid` is never a conflict.
 #[utoipa::path(
     post, path = "/demographic/person", tag = "PERSON",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created PERSON), or \
-                        `return=identifier` (only the uid)."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; enum \
+                        `return=representation|return=minimal|return=identifier`, \
+                        default `return=minimal`). An absent header is \
+                        `return=minimal` — \"If no `Prefer` header is provided, \
+                        the default behavior is assumed to be `return=minimal`\" \
+                        — and `return=identifier` never answers `204`: \"the \
+                        status will be `201 Created` or `200 OK`, never `204 No \
+                        Content`\" (`Requests_and_responses.md` §\"Prefer only \
+                        identifier\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`). \
+                        An absent header reads as canonical JSON — `Resources.md` \
+                        §\"JSON Format\" makes the header a client MAY, so its \
+                        absence declares nothing to refuse. A Simplified \
+                        `Content-Type` is `415` (see that response).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION (e.g. \
-                        `lifecycle_state.code_string`); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", and \
+                        \"whatever is provided it MUST be merged with the default \
+                        VERSION and VERSION.audit_details attributes on commit \
+                        runtime\" (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\", which scopes the rule to \
+                        \"all change-controlled resources\" — parties are \
+                        version-controlled, RM `common/master06` §Change \
+                        Control).",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS (committer, \
-                        description, change_type); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. \"Through the `openehr-audit-details` header, \
+                        clients MAY supply values for the AUDIT_DETAILS \
+                        attributes `change_type`, `description`, `committer` and \
+                        `system_id`. The `time_committed` attribute is always set \
+                        by the server.\" — and \"when `system_id` is not provided \
+                        by the client, the server MUST set it to its own \
+                        configured system identifier\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "committer.name=\"John Doe\""),
         ("openehr-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
-                        stored set is echoed in the response header."),
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — here the VERSIONED_PARTY. The tags are stored after the \
+                        party exists and the stored set is echoed in the response \
+                        header of the same name. \"Providing an empty value for \
+                        this header will effectively remove all ITEM_TAGs \
+                        associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", Usage in Requests); an absent \
+                        header changes nothing.",
+         example = "key=\"category\",value=\"final\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with this VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag` only; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The PERSON (RM canonical JSON or XML)."),
+                 description = "\"The PERSON.\", `required: true` (ITS-REST \
+                                `specifications/operations/person_create.yaml`; \
+                                schema `schemas/demographic/Person.yaml`) as \
+                                canonical JSON or XML. `PARTY.identities` is \
+                                mandatory and non-empty (`Identities_valid`), and \
+                                `name` carries the type designation \
+                                (`Type_valid: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party`).",
+                 example = json!({
+                     "_type": "PERSON",
+                     "name": { "_type": "DV_TEXT", "value": "PERSON" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Jane Doe" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`; stored \
-                                      ITEM_TAGs ride the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted PERSON.",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the PERSON is \
+                                      successfully created. If `Prefer` header is \
+                                      `return=representation`, the full resource \
+                                      is included in the response body; if is \
+                                      `return=identifier`, only its unique \
+                                      identifier is included. If the `Prefer` \
+                                      header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_PERSON.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is an \
+                             identifier (e.g. a `version_uid` enclosed by double \
+                             quotes) for a specific version of a resource.\" \
+                             (ITS-REST `specifications/headers/ETag.yaml`), in the \
+                             weak form the release requires — \"all `ETag` headers \
+                             that hold a resource identifier MUST include a \
+                             weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"<versioned_object_uid>::<system_id>::1\"`."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the PERSON resource.\" (ITS-REST \
+                             `specifications/headers/Location_PERSON.yaml`), set to \
+                             `<base_path>/demographic/person/<version_uid>` — \
+                             §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date; \"this value should be derived from \
+                             VERSION.commit_audit.time_committed.value\", and both \
+                             `ETag` and `Last-Modified` \"SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released `201_PERSON.yaml` does \
+                             not slot it; the SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured. \"The service MAY include a \
+                             `Preference-Applied` header in the response … to \
+                             indicate that the client's preference has been \
+                             honored\" (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) — the \
+                             set as the server stored it; emitted only when the \
+                             party carries tags (\"Servers MAY include the \
+                             `openehr-item-tag` … header in responses to confirm \
+                             the actual list of ITEM_TAGs stored on the server \
+                             side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created PERSON",
+              value = json!({
+                  "_type": "PERSON",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "PERSON" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Jane Doe" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a body that is not well-formed canonical \
+                                      JSON/XML. Content that parses but is not a \
+                                      valid PERSON is the `422` below.",
          body = serde_json::Value),
-        (status = 404, description = "A referenced resource does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). On a \
+                                      create the reachable trigger is a referenced \
+                                      resource the commit resolves and does not \
+                                      find.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied. A \
+                                      PARTY is untemplated, so this server serves \
+                                      it in the canonical formats only and refuses \
+                                      a Simplified-only `Accept`: \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\" (`Resources.md` \
+                                      §\"Simplified Formats\"; the same MUST is \
+                                      stated for XML and JSON). The released \
+                                      operation does not enumerate `406`; the MUST \
+                                      is cross-cutting.",
          body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A PARTY is not templated and \
+                                      `openehr-template-id` — the only header that \
+                                      can name a template — is scoped to \
+                                      \"committing COMPOSITION\" \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified party \
+                                      payload cannot be expanded: \"If the service \
+                                      cannot process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The PERSON is syntactically valid but \
-                                      fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      PERSON (empty `identities`, a `name` that is \
+                                      not the type designation), or a body whose \
+                                      `_type` is a different PARTY subtype than \
+                                      the route's — the routed kind's codec is the \
+                                      one that decodes it.",
          body = serde_json::Value)
     )
 )]
@@ -729,31 +3551,181 @@ pub(crate) async fn person_create(
 
 /// Retrieve a `PERSON` by uid-based id
 /// (`GET /demographic/person/{uid_based_id}`).
+///
+/// "Retrieves a version of the PERSON identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/person_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
-                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
-                        latest / at-time version."),
+         description = "The released parameter, verbatim: \"An abstract \
+                        identifier: it can take a form of an OBJECT_VERSION_ID \
+                        identifier taken from VERSION.uid.value (i.e. a \
+                        `version_uid`), or a form of a HIER_OBJECT_ID identifier \
+                        taken from VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id.yaml`). The \
+                        operation adds: \"When the `uid_based_id` has the form of \
+                        a HIER_OBJECT_ID, if the `version_at_time` is supplied, \
+                        retrieves the version extant _at specified time_, \
+                        otherwise retrieves the _latest_ PERSON version.\" A \
+                        syntactically unusable id is `400`; a well-formed id \
+                        naming no PERSON (including a container of another PARTY \
+                        kind) is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`). \
+                        Selects the version extant at that instant when the path \
+                        id is a `versioned_object_uid`; the latest version when \
+                        omitted. The timezone is optional — server-local when \
+                        absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The PERSON (RM canonical JSON/XML); `ETag` \
-                                      carries the version uid (weak `W/` form), \
-                                      any ITEM_TAGs ride the item-tag response \
-                                      headers.", body = serde_json::Value),
-        (status = 204, description = "The PERSON version at the requested time \
-                                      is deleted."),
-        (status = 404, description = "Unknown PERSON, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested PERSON is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_PERSON_retrieved.yaml`). \
+                                      That response slots \
+                                      `headers/Location_deprecated.yaml`, and \
+                                      §Location says the header \"MUST NOT be used \
+                                      to indicate an alternate representation of \
+                                      an existing resource (e.g. via `GET` \
+                                      method)\" — so no `Location` is emitted or \
+                                      declared here.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\" makes resource-identifier `ETag`s \
+                             weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\"; both \
+                             headers \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`). \
+                             \"When retrieving resources via `GET`, the server MAY \
+                             also add these headers to the response\" \
+                             (`Requests_and_responses.md` §\"openehr-item-tag and \
+                             openehr-version-item-tag\", Usage in Responses); \
+                             emitted only when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         example = json!({
+             "_type": "PERSON",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "PERSON" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "identities": [
+                 {
+                     "_type": "PARTY_IDENTITY",
+                     "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                     "archetype_node_id": "at0001",
+                     "details": {
+                         "_type": "ITEM_TREE",
+                         "name": { "_type": "DV_TEXT", "value": "identity details" },
+                         "archetype_node_id": "at0002",
+                         "items": [
+                             {
+                                 "_type": "ELEMENT",
+                                 "name": { "_type": "DV_TEXT", "value": "name" },
+                                 "archetype_node_id": "at0003",
+                                 "value": { "_type": "DV_TEXT", "value": "Jane Doe" }
+                             }
+                         ]
+                     }
+                 }
+             ]
+         })),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters (at \
+                                      specified `version_at_time`) time has been \
+                                      deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`) \
+                                      — the version selected by the request is a \
+                                      deletion marker, which is a successful read \
+                                      of a logically deleted resource, not a \
+                                      `404`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `uid_based_id` that is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or a \
+                                      `version_at_time` that is not an extended \
+                                      ISO 8601 instant. The released get does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`). \
+                                      A well-formed id whose stored container is a \
+                                      different PARTY kind is this `404` too — the \
+                                      route is kind-checked, and a VERSIONED_OBJECT \
+                                      has one type (RM `common/master06` §Change \
+                                      Control).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated, so it is served in the \
+                                      canonical formats only and a Simplified-only \
+                                      `Accept` is refused — \"If the service cannot \
+                                      fulfill this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` carries no payload, \
+                                      but the released operation still admits a \
+                                      request `Content-Type`, and a party has no \
+                                      template to expand a Simplified payload \
+                                      against, so the declaration is refused \
+                                      before the read: \"If the service cannot \
+                                      process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value)
     )
 )]
@@ -766,52 +3738,369 @@ pub(crate) async fn person_get(
 }
 
 /// Update a `PERSON` (`PUT /demographic/person/{uid_based_id}`).
+///
+/// "Updates PERSON identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of PERSON resource (i.e. the `preceding_version_uid`) must be
+/// specified in the `If-Match` header." (ITS-REST
+/// `specifications/operations/person_update.yaml`).
 #[utoipa::path(
     put, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(
         ("uid_based_id" = String, Path,
-         description = "The HIER_OBJECT_ID `versioned_object_uid` of the PERSON \
-                        to update."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_versioned_object_uid.yaml`) \
+                        — the container, not a version. The operation adds: \"If \
+                        the request body already contains a PERSON.uid.value, it \
+                        must match the `uid_based_id` in the URL.\"",
+         example = "8849182c-82ad-4088-a07f-48ead4180515"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "The released parameter, verbatim: \"Header to make the \
+                        request conditional. Together with `ETag` request tag, it \
+                        helps to prevent simultaneous updates of a resource from \
+                        overwriting each other (\"mid-air collisions\"). The \
+                        format is always an `version_uid` identifier enclosed by \
+                        double quotes. The operation will be performed only if \
+                        the existing latest `version_uid` of the resource (i.e. \
+                        the `preceding_version_uid`) matches this header's \
+                        value.\" (ITS-REST \
+                        `specifications/parameters/header/If-Match.yaml`, \
+                        `required: true`). The weak `W/\"…\"` form this server \
+                        emits in `ETag` is accepted too — the bare quoted form is \
+                        the pre-1.1.0 shape the release keeps supported \
+                        (`Requests_and_responses.md` §\"Deprecated headers\").",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation`, or `return=identifier`."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`). `return=minimal` answers `204`; the \
+                        other two answer `200` — \"the status will be `201 \
+                        Created` or `200 OK`, never `204 No Content`\" for \
+                        `return=identifier` (`Requests_and_responses.md` \
+                        §\"Prefer only identifier\"). The token honoured is echoed \
+                        in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`); \
+                        absent reads as canonical JSON (`Resources.md` §\"JSON \
+                        Format\" makes the header a client MAY). A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", merged \
+                        with the server defaults \"on commit runtime\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `change_type`, `description`, `committer` and \
+                        `system_id` MAY be supplied; \"The `time_committed` \
+                        attribute is always set by the server\", and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\"). No \
+                        released parameter file declares it.",
+         example = "change_type.code_string=\"251\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the new VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`; \
+                        the only tag parameter the released update declares). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag`; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\""),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — the VERSIONED_PARTY. Not declared on the released \
+                        update operation, but it is the header this build reads \
+                        as the tag list to store, and demographic tags are \
+                        VERSIONED_OBJECT-anchored, so it is the accurate one to \
+                        send here. An empty value \"will effectively remove all \
+                        ITEM_TAGs associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\"); an absent header leaves the \
+                        stored tags untouched.",
+         example = "key=\"category\",value=\"final\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new PERSON (RM canonical JSON or XML); any \
-                                `uid` must match the path id."),
+                 description = "\"The new PERSON.\", `required: true` (ITS-REST \
+                                `specifications/operations/person_update.yaml`; \
+                                schema `schemas/demographic/Person.yaml`) as \
+                                canonical JSON or XML. A `uid` in the body \"must \
+                                match the `uid_based_id` in the URL\".",
+                 example = json!({
+                     "_type": "PERSON",
+                     "name": { "_type": "DV_TEXT", "value": "PERSON" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Jane Doe (married name)" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation` \
-                                      or `return=identifier`); `ETag`/`Location` \
-                                      carry the new version.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the PERSON is \
+                                      successfully updated, with the full \
+                                      resource in the response body when `Prefer` \
+                                      header is `return=representation`, or only \
+                                      its identifiers when `Prefer` header is \
+                                      `return=identifier`.\" (ITS-REST \
+                                      `specifications/responses/200_PERSON_updated.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             NEW version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; the weakness \
+                             indicator is the release's MUST, \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the PERSON resource.\" (ITS-REST \
+                             `specifications/headers/Location_PERSON.yaml`), set to \
+                             `<base_path>/demographic/person/<new version_uid>`. \
+                             §Location scopes the header to \"resource creation … \
+                             or redirect responses\" and §\"Prefer minimal, \
+                             identifier or full representation response\" names \
+                             the target as \"the newly created or updated \
+                             resource\" — an openEHR update commits a NEW VERSION, \
+                             which is that newly created resource."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"; both headers SHOULD accompany a \
+                             versioned resource). The released \
+                             `200_PERSON_updated.yaml` does not slot it; the \
+                             SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured \
+                             (`Requests_and_responses.md` §\"Representation \
+                             details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) as the \
+                             server stored it; emitted only when the party carries \
+                             tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             the same set, demographic tags having no version \
+                             anchor.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the updated PERSON",
+              value = json!({
+                  "_type": "PERSON",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "name": { "_type": "DV_TEXT", "value": "PERSON" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Jane Doe (married name)" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the `Prefer` \
+                                      header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_version_updated.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version (ITS-REST \
+                             `specifications/headers/ETag.yaml`)."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the resource version resulted from the operation.\" \
+                             (ITS-REST \
+                             `specifications/headers/Location_version.yaml`), set \
+                             to \
+                             `<base_path>/demographic/person/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`), \
+                             emitted when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Two \
+                                      reachable triggers here: an unparseable \
+                                      `uid_based_id`/body, and an ABSENT \
+                                      `If-Match` — \"When the service expects \
+                                      `If-Match` for an operation, but the client \
+                                      does not provide it, the service SHOULD \
+                                      respond with `400 Bad Request`\" \
+                                      (`Requests_and_responses.md` §\"If-Match and \
+                                      accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). A \
+                                      `versioned_object_uid` whose stored \
+                                      container is a different PARTY kind is this \
+                                      `404` as well — the route is kind-checked \
+                                      (a VERSIONED_OBJECT has one type, RM \
+                                      `common/master06` §Change Control).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown PERSON.", body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated and served in the \
+                                      canonical formats only, so a \
+                                      Simplified-only `Accept` MUST be refused \
+                                      (`Resources.md` §\"Simplified Formats\"). \
+                                      The released operation does not enumerate \
+                                      `406`; the MUST is cross-cutting.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 412, description = "The released trigger, verbatim: `412 \
+                                      Precondition Failed` \"is returned when \
+                                      `If-Match` request header doesn't match the \
+                                      latest version on the service side. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\" (ITS-REST \
+                                      `specifications/responses/412_PERSON.yaml`; \
+                                      the same rule is the overview's own MUST — \
+                                      \"it MUST NOT perform the requested method. \
+                                      Instead, it MUST respond with HTTP status \
+                                      code `412 Precondition Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` — the service \"SHOULD return also latest \
+                             `version_uid` in the `ETag` response headers\" \
+                             (`Requests_and_responses.md` §\"If-Match and \
+                             accidental overwrites\"; ITS-REST \
+                             `specifications/headers/ETag.yaml`). The released \
+                             `412_PERSON.yaml` also slots \
+                             `headers/Location_deprecated.yaml`; §Location \
+                             forbids `Location` on a non-creation response, so \
+                             none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which a party payload cannot \
+                                      use (no template can be named for an \
+                                      untemplated resource — \
+                                      `Requests_and_responses.md` \
+                                      §openehr-template-id): \"it MUST respond with \
+                                      HTTP status code `415 Unsupported Media \
+                                      Type`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). An absent `Content-Type` declares \
+                                      nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The PERSON fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      PERSON, or a body typed as a different PARTY \
+                                      subtype than the route's.",
          body = serde_json::Value)
     )
 )]
@@ -824,28 +4113,150 @@ pub(crate) async fn person_update(
 }
 
 /// Delete a `PERSON` (`DELETE /demographic/person/{uid_based_id}`).
+///
+/// "Deletes the PERSON identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/person_delete.yaml`). The delete is LOGICAL: it
+/// commits a new deletion VERSION rather than removing history — RM
+/// `common/master06` §Change Control keeps every committed version, and a
+/// subsequent read of the deleted current version answers `204`
+/// (`responses/204_deleted_at_time.yaml`).
 #[utoipa::path(
     delete, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of an OBJECT_VERSION_ID identifier taken from \
+                        VERSION.uid.value (i.e. a `version_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_version_uid.yaml`); \
+                        the operation sharpens it: \"The `uid_based_id` MUST be in \
+                        a form of an OBJECT_VERSION_ID identifier taken from the \
+                        last (most recent) VERSION.uid.value, representing the \
+                        `preceding_version_uid` to be deleted.\" A version that is \
+                        not the latest is `409`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("If-Match" = Option<String>, Header,
+         description = "OPTIONAL here, and the released operation declares no \
+                        `If-Match` parameter at all — by the spec's own carve-out: \
+                        the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"), and on this operation it IS the \
+                        path segment. A header that IS sent is still honoured — \
+                        the same section makes a received precondition binding — \
+                        as an alternative source of the preceding version; the \
+                        weak `W/\"…\"` and bare quoted forms are both accepted.",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list. No released parameter file declares \
+                        this header; the requirement is prose — \"services MUST \
+                        also allow `PUT`, `POST` and `DELETE` methods directly on \
+                        these change-controlled resources\" and \"services MUST \
+                        accept `openehr-version` and `openehr-audit-details` \
+                        custom request headers\" (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY repeat. \
+                        `time_committed` is always server-set and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "description.value=\"merged into another record\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format (`application/json` by default). A \
+                        Simplified-only `Accept` is `406` — a party is untemplated \
+                        (`Resources.md` §\"Simplified Formats\").",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the PERSON is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown PERSON.", body = serde_json::Value),
-        (status = 409, description = "The supplied `uid_based_id` is not the \
-                                      latest version; `ETag` carries the current \
-                                      latest version uid.", body = serde_json::Value)
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned for a successful \
+                                      delete operation.\" (ITS-REST \
+                                      `specifications/responses/204_version_deleted.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version the operation just committed — not \
+                             the version named in the path. The released \
+                             `204_version_deleted.yaml` slots \
+                             `headers/ETag.yaml`, whose value \"is an identifier \
+                             (e.g. a `version_uid` …) for a specific version of a \
+                             resource\", and §\"ETag and Last-Modified\" adds that \
+                             it \"changes as soon as the resource changes (i.e. \
+                             when a new version is created)\" — a logical delete \
+                             creates one. That same response slots \
+                             `headers/Location_deprecated.yaml`; §\"Deprecated \
+                             headers\" deprecates `Location` on `DELETE` \
+                             responses, so none is emitted or declared.")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content) or when the resource identified by \
+                                      the request parameters is already deleted.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400_already_deleted.yaml`) \
+                                      — so a second delete of the same party is \
+                                      this `400`, not a `404`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or one holding a \
+                                      different PARTY kind than this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied \
+                                      (a Simplified-only `Accept` on an \
+                                      untemplated resource): \"it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when supplied \
+                                      `uid_based_id` doesn't match the latest \
+                                      version. Returns also latest `version_uid` \
+                                      in the `ETag` header.\" (ITS-REST \
+                                      `specifications/responses/409_PERSON_with_uid_based_id.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` (ITS-REST \
+                             `specifications/headers/ETag.yaml`) — the client can \
+                             retry the delete against it. The released response \
+                             also slots `headers/Location_deprecated.yaml`; \
+                             §Location forbids `Location` on a non-creation \
+                             response, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is still refused before \
+                                      the write, because a party has no template a \
+                                      Simplified payload could be expanded against \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id; `Resources.md` \
+                                      §\"Simplified Formats\" `415` MUST). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn person_delete(
@@ -859,50 +4270,307 @@ pub(crate) async fn person_delete(
 // ── ROLE ────────────────────────────────────────────────────────────────────
 
 /// Create a `ROLE` (`POST /demographic/role`).
+///
+/// "Creates the first version of a new ROLE." (ITS-REST
+/// `specifications/operations/role_create.yaml`). The `uid` is server-minted:
+/// a PARTY's `uid` is the containing VERSION's `OBJECT_VERSION_ID`, which the
+/// client cannot know at create time, so a `uid` in the submitted body does not
+/// survive the write and the invariant `Uid_mandatory` (RM
+/// `demographic/master02` §Party Identification, `PARTY.Uid_mandatory`) is
+/// satisfied post-assignment. The released create declares no `409`, so a
+/// client-supplied `uid` is never a conflict.
 #[utoipa::path(
     post, path = "/demographic/role", tag = "ROLE",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created ROLE), or \
-                        `return=identifier` (only the uid)."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; enum \
+                        `return=representation|return=minimal|return=identifier`, \
+                        default `return=minimal`). An absent header is \
+                        `return=minimal` — \"If no `Prefer` header is provided, \
+                        the default behavior is assumed to be `return=minimal`\" \
+                        — and `return=identifier` never answers `204`: \"the \
+                        status will be `201 Created` or `200 OK`, never `204 No \
+                        Content`\" (`Requests_and_responses.md` §\"Prefer only \
+                        identifier\"). The token honoured is echoed in \
+                        `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`). \
+                        An absent header reads as canonical JSON — `Resources.md` \
+                        §\"JSON Format\" makes the header a client MAY, so its \
+                        absence declares nothing to refuse. A Simplified \
+                        `Content-Type` is `415` (see that response).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION (e.g. \
-                        `lifecycle_state.code_string`); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this create commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", and \
+                        \"whatever is provided it MUST be merged with the default \
+                        VERSION and VERSION.audit_details attributes on commit \
+                        runtime\" (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\", which scopes the rule to \
+                        \"all change-controlled resources\" — parties are \
+                        version-controlled, RM `common/master06` §Change \
+                        Control).",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS (committer, \
-                        description, change_type); accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this create \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. \"Through the `openehr-audit-details` header, \
+                        clients MAY supply values for the AUDIT_DETAILS \
+                        attributes `change_type`, `description`, `committer` and \
+                        `system_id`. The `time_committed` attribute is always set \
+                        by the server.\" — and \"when `system_id` is not provided \
+                        by the client, the server MUST set it to its own \
+                        configured system identifier\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "committer.name=\"John Doe\""),
         ("openehr-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
-                        stored set is echoed in the response header."),
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — here the VERSIONED_PARTY. The tags are stored after the \
+                        party exists and the stored set is echoed in the response \
+                        header of the same name. \"Providing an empty value for \
+                        this header will effectively remove all ITEM_TAGs \
+                        associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\", Usage in Requests); an absent \
+                        header changes nothing.",
+         example = "key=\"category\",value=\"final\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with this VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag` only; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The ROLE (RM canonical JSON or XML)."),
+                 description = "\"The ROLE.\", `required: true` (ITS-REST \
+                                `specifications/operations/role_create.yaml`; \
+                                schema `schemas/demographic/Role.yaml`) as \
+                                canonical JSON or XML. `PARTY.identities` is \
+                                mandatory and non-empty (`Identities_valid`), and \
+                                `name` carries the type designation \
+                                (`Type_valid: type = name`, RM UML \
+                                `org.openehr.rm.demographic.party`).",
+                 example = json!({
+                     "_type": "ROLE",
+                     "name": { "_type": "DV_TEXT", "value": "ROLE" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "General practitioner" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the new version \
-                                      uid (weak `W/` form), `Location` the \
-                                      resource URL. Body per `Prefer`; stored \
-                                      ITEM_TAGs ride the \
-                                      `openehr-item-tag`/`openehr-version-item-tag` \
-                                      response headers.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a precondition \
-                                      violation on the submitted ROLE.",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the ROLE is \
+                                      successfully created. If `Prefer` header is \
+                                      `return=representation`, the full resource \
+                                      is included in the response body; if is \
+                                      `return=identifier`, only its unique \
+                                      identifier is included. If the `Prefer` \
+                                      header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_ROLE.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is an \
+                             identifier (e.g. a `version_uid` enclosed by double \
+                             quotes) for a specific version of a resource.\" \
+                             (ITS-REST `specifications/headers/ETag.yaml`), in the \
+                             weak form the release requires — \"all `ETag` headers \
+                             that hold a resource identifier MUST include a \
+                             weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"<versioned_object_uid>::<system_id>::1\"`."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the ROLE resource.\" (ITS-REST \
+                             `specifications/headers/Location_ROLE.yaml`), set to \
+                             `<base_path>/demographic/role/<version_uid>` — \
+                             §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The creating VERSION's commit instant as an \
+                             HTTP-date; \"this value should be derived from \
+                             VERSION.commit_audit.time_committed.value\", and both \
+                             `ETag` and `Last-Modified` \"SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released `201_ROLE.yaml` does \
+                             not slot it; the SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured. \"The service MAY include a \
+                             `Preference-Applied` header in the response … to \
+                             indicate that the client's preference has been \
+                             honored\" (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) — the \
+                             set as the server stored it; emitted only when the \
+                             party carries tags (\"Servers MAY include the \
+                             `openehr-item-tag` … header in responses to confirm \
+                             the actual list of ITEM_TAGs stored on the server \
+                             side\")."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the created ROLE",
+              value = json!({
+                  "_type": "ROLE",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+                  "name": { "_type": "DV_TEXT", "value": "ROLE" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "General practitioner" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a body that is not well-formed canonical \
+                                      JSON/XML. Content that parses but is not a \
+                                      valid ROLE is the `422` below.",
          body = serde_json::Value),
-        (status = 404, description = "A referenced resource does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). On a \
+                                      create the reachable trigger is a referenced \
+                                      resource the commit resolves and does not \
+                                      find.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied. A \
+                                      PARTY is untemplated, so this server serves \
+                                      it in the canonical formats only and refuses \
+                                      a Simplified-only `Accept`: \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\" (`Resources.md` \
+                                      §\"Simplified Formats\"; the same MUST is \
+                                      stated for XML and JSON). The released \
+                                      operation does not enumerate `406`; the MUST \
+                                      is cross-cutting.",
          body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A PARTY is not templated and \
+                                      `openehr-template-id` — the only header that \
+                                      can name a template — is scoped to \
+                                      \"committing COMPOSITION\" \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified party \
+                                      payload cannot be expanded: \"If the service \
+                                      cannot process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The ROLE is syntactically valid but \
-                                      fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      ROLE (empty `identities`, a `name` that is \
+                                      not the type designation), or a body whose \
+                                      `_type` is a different PARTY subtype than \
+                                      the route's — the routed kind's codec is the \
+                                      one that decodes it.",
          body = serde_json::Value)
     )
 )]
@@ -916,31 +4584,181 @@ pub(crate) async fn role_create(
 
 /// Retrieve a `ROLE` by uid-based id
 /// (`GET /demographic/role/{uid_based_id}`).
+///
+/// "Retrieves a version of the ROLE identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/role_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(
         ("uid_based_id" = String, Path,
-         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
-                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
-                        latest / at-time version."),
+         description = "The released parameter, verbatim: \"An abstract \
+                        identifier: it can take a form of an OBJECT_VERSION_ID \
+                        identifier taken from VERSION.uid.value (i.e. a \
+                        `version_uid`), or a form of a HIER_OBJECT_ID identifier \
+                        taken from VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id.yaml`). The \
+                        operation adds: \"When the `uid_based_id` has the form of \
+                        a HIER_OBJECT_ID, if the `version_at_time` is supplied, \
+                        retrieves the version extant _at specified time_, \
+                        otherwise retrieves the _latest_ ROLE version.\" A \
+                        syntactically unusable id is `400`; a well-formed id \
+                        naming no ROLE (including a container of another PARTY \
+                        kind) is `404`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; when the id is a \
-                        `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`). \
+                        Selects the version extant at that instant when the path \
+                        id is a `versioned_object_uid`; the latest version when \
+                        omitted. The timezone is optional — server-local when \
+                        absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406` (see that response).",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ROLE (RM canonical JSON/XML); `ETag` \
-                                      carries the version uid (weak `W/` form), \
-                                      any ITEM_TAGs ride the item-tag response \
-                                      headers.", body = serde_json::Value),
-        (status = 204, description = "The ROLE version at the requested time \
-                                      is deleted."),
-        (status = 404, description = "Unknown ROLE, or no version at the \
-                                      requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested ROLE is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_ROLE_retrieved.yaml`). \
+                                      That response slots \
+                                      `headers/Location_deprecated.yaml`, and \
+                                      §Location says the header \"MUST NOT be used \
+                                      to indicate an alternate representation of \
+                                      an existing resource (e.g. via `GET` \
+                                      method)\" — so no `Location` is emitted or \
+                                      declared here.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\" makes resource-identifier `ETag`s \
+                             weak-type)."),
+             ("Last-Modified" = String,
+              description = "The served version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\"; both \
+                             headers \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`). \
+                             \"When retrieving resources via `GET`, the server MAY \
+                             also add these headers to the response\" \
+                             (`Requests_and_responses.md` §\"openehr-item-tag and \
+                             openehr-version-item-tag\", Usage in Responses); \
+                             emitted only when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             demographic tags have no version anchor, so this \
+                             carries the same set as `openehr-item-tag`.")
+         ),
+         example = json!({
+             "_type": "ROLE",
+             "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" },
+             "name": { "_type": "DV_TEXT", "value": "ROLE" },
+             "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+             "archetype_details": {
+                 "_type": "ARCHETYPED",
+                 "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                 "rm_version": "1.2.0"
+             },
+             "identities": [
+                 {
+                     "_type": "PARTY_IDENTITY",
+                     "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                     "archetype_node_id": "at0001",
+                     "details": {
+                         "_type": "ITEM_TREE",
+                         "name": { "_type": "DV_TEXT", "value": "identity details" },
+                         "archetype_node_id": "at0002",
+                         "items": [
+                             {
+                                 "_type": "ELEMENT",
+                                 "name": { "_type": "DV_TEXT", "value": "name" },
+                                 "archetype_node_id": "at0003",
+                                 "value": { "_type": "DV_TEXT", "value": "General practitioner" }
+                             }
+                         ]
+                     }
+                 }
+             ]
+         })),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters (at \
+                                      specified `version_at_time`) time has been \
+                                      deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted_at_time.yaml`) \
+                                      — the version selected by the request is a \
+                                      deletion marker, which is a successful read \
+                                      of a logically deleted resource, not a \
+                                      `404`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `uid_based_id` that is neither an \
+                                      OBJECT_VERSION_ID nor a HIER_OBJECT_ID, or a \
+                                      `version_at_time` that is not an extended \
+                                      ISO 8601 instant. The released get does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
          body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`). \
+                                      A well-formed id whose stored container is a \
+                                      different PARTY kind is this `404` too — the \
+                                      route is kind-checked, and a VERSIONED_OBJECT \
+                                      has one type (RM `common/master06` §Change \
+                                      Control).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated, so it is served in the \
+                                      canonical formats only and a Simplified-only \
+                                      `Accept` is refused — \"If the service cannot \
+                                      fulfill this aspect of the request, it MUST \
+                                      respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `GET` carries no payload, \
+                                      but the released operation still admits a \
+                                      request `Content-Type`, and a party has no \
+                                      template to expand a Simplified payload \
+                                      against, so the declaration is refused \
+                                      before the read: \"If the service cannot \
+                                      process the request payload as the \
+                                      simplified format is not supported, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" (`Resources.md` \
+                                      §\"Simplified Formats\"). An absent \
+                                      `Content-Type` declares nothing to refuse.",
          body = serde_json::Value)
     )
 )]
@@ -953,52 +4771,369 @@ pub(crate) async fn role_get(
 }
 
 /// Update a `ROLE` (`PUT /demographic/role/{uid_based_id}`).
+///
+/// "Updates ROLE identified by `uid_based_id`." … "The existing latest
+/// `version_uid` of ROLE resource (i.e. the `preceding_version_uid`) must be
+/// specified in the `If-Match` header." (ITS-REST
+/// `specifications/operations/role_update.yaml`).
 #[utoipa::path(
     put, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(
         ("uid_based_id" = String, Path,
-         description = "The HIER_OBJECT_ID `versioned_object_uid` of the ROLE \
-                        to update."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_versioned_object_uid.yaml`) \
+                        — the container, not a version. The operation adds: \"If \
+                        the request body already contains a ROLE.uid.value, it \
+                        must match the `uid_based_id` in the URL.\"",
+         example = "8849182c-82ad-4088-a07f-48ead4180515"),
         ("If-Match" = String, Header,
-         description = "The latest `version_uid` (the `preceding_version_uid`), \
-                        double-quoted (weak `W/` form also accepted). \
-                        Required."),
+         description = "The released parameter, verbatim: \"Header to make the \
+                        request conditional. Together with `ETag` request tag, it \
+                        helps to prevent simultaneous updates of a resource from \
+                        overwriting each other (\"mid-air collisions\"). The \
+                        format is always an `version_uid` identifier enclosed by \
+                        double quotes. The operation will be performed only if \
+                        the existing latest `version_uid` of the resource (i.e. \
+                        the `preceding_version_uid`) matches this header's \
+                        value.\" (ITS-REST \
+                        `specifications/parameters/header/If-Match.yaml`, \
+                        `required: true`). The weak `W/\"…\"` form this server \
+                        emits in `ETag` is accepted too — the bare quoted form is \
+                        the pre-1.1.0 shape the release keeps supported \
+                        (`Requests_and_responses.md` §\"Deprecated headers\").",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation`, or `return=identifier`."),
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`). `return=minimal` answers `204`; the \
+                        other two answer `200` — \"the status will be `201 \
+                        Created` or `200 OK`, never `204 No Content`\" for \
+                        `return=identifier` (`Requests_and_responses.md` \
+                        §\"Prefer only identifier\"). The token honoured is echoed \
+                        in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format, `application/json` or \
+                        `application/xml` (ITS-REST \
+                        `specifications/parameters/header/ContentType_LOCATABLE.yaml`); \
+                        absent reads as canonical JSON (`Resources.md` §\"JSON \
+                        Format\" makes the header a client MAY). A Simplified \
+                        `Content-Type` is `415`.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format, `application/json` \
+                        (default) or `application/xml` (ITS-REST \
+                        `specifications/parameters/header/Accept_LOCATABLE.yaml`). \
+                        A Simplified-only `Accept` is `406`.",
+         example = "application/json"),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the new VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the VERSION this update commits, \
+                        as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. No released \
+                        parameter file declares this header; the requirement is \
+                        prose: \"services MUST accept `openehr-version` and \
+                        `openehr-audit-details` custom request headers\", merged \
+                        with the server defaults \"on commit runtime\" \
+                        (`Requests_and_responses.md` §\"openehr-version and \
+                        openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"532\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule."),
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this update \
+                        commits, as an attribute-path list; the header MAY \
+                        repeat. `change_type`, `description`, `committer` and \
+                        `system_id` MAY be supplied; \"The `time_committed` \
+                        attribute is always set by the server\", and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\"). No \
+                        released parameter file declares it.",
+         example = "change_type.code_string=\"251\""),
         ("openehr-version-item-tag" = Option<String>, Header,
-         description = "ITEM_TAGs to associate with the new VERSION; the stored \
-                        set is echoed in the response header.")
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSION\" (ITS-REST \
+                        `specifications/parameters/header/openehr-version-item-tag.yaml`; \
+                        the only tag parameter the released update declares). \
+                        Demographic ITEM_TAGs are stored against the \
+                        VERSIONED_PARTY with no version anchor, so the two tag \
+                        sets coincide on this surface and this build takes the \
+                        list to store from `openehr-item-tag`; both response \
+                        headers then carry that one set.",
+         example = "key=\"reviewed\",value=\"true\""),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "\"The list of all ITEM_TAG to be set and associated with \
+                        the current VERSIONED_OBJECT\" (ITS-REST \
+                        `specifications/parameters/header/openehr-item-tag.yaml`) \
+                        — the VERSIONED_PARTY. Not declared on the released \
+                        update operation, but it is the header this build reads \
+                        as the tag list to store, and demographic tags are \
+                        VERSIONED_OBJECT-anchored, so it is the accurate one to \
+                        send here. An empty value \"will effectively remove all \
+                        ITEM_TAGs associated with the given target\" \
+                        (`Requests_and_responses.md` §\"openehr-item-tag and \
+                        openehr-version-item-tag\"); an absent header leaves the \
+                        stored tags untouched.",
+         example = "key=\"category\",value=\"final\"")
     ),
     request_body(content = serde_json::Value,
-                 description = "The new ROLE (RM canonical JSON or XML); any \
-                                `uid` must match the path id."),
+                 description = "\"The new ROLE.\", `required: true` (ITS-REST \
+                                `specifications/operations/role_update.yaml`; \
+                                schema `schemas/demographic/Role.yaml`) as \
+                                canonical JSON or XML. A `uid` in the body \"must \
+                                match the `uid_based_id` in the URL\".",
+                 example = json!({
+                     "_type": "ROLE",
+                     "name": { "_type": "DV_TEXT", "value": "ROLE" },
+                     "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "identities": [
+                         {
+                             "_type": "PARTY_IDENTITY",
+                             "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                             "archetype_node_id": "at0001",
+                             "details": {
+                                 "_type": "ITEM_TREE",
+                                 "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                 "archetype_node_id": "at0002",
+                                 "items": [
+                                     {
+                                         "_type": "ELEMENT",
+                                         "name": { "_type": "DV_TEXT", "value": "name" },
+                                         "archetype_node_id": "at0003",
+                                         "value": { "_type": "DV_TEXT", "value": "Senior general practitioner" }
+                                     }
+                                 ]
+                             }
+                         }
+                     ]
+                 })),
     responses(
-        (status = 200, description = "Updated (`Prefer: return=representation` \
-                                      or `return=identifier`); `ETag`/`Location` \
-                                      carry the new version.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the ROLE is \
+                                      successfully updated, with the full \
+                                      resource in the response body when `Prefer` \
+                                      header is `return=representation`, or only \
+                                      its identifiers when `Prefer` header is \
+                                      `return=identifier`.\" (ITS-REST \
+                                      `specifications/responses/200_ROLE_updated.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             NEW version (ITS-REST \
+                             `specifications/headers/ETag.yaml`; the weakness \
+                             indicator is the release's MUST, \
+                             `Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the ROLE resource.\" (ITS-REST \
+                             `specifications/headers/Location_ROLE.yaml`), set to \
+                             `<base_path>/demographic/role/<new version_uid>`. \
+                             §Location scopes the header to \"resource creation … \
+                             or redirect responses\" and §\"Prefer minimal, \
+                             identifier or full representation response\" names \
+                             the target as \"the newly created or updated \
+                             resource\" — an openEHR update commits a NEW VERSION, \
+                             which is that newly created resource."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"; both headers SHOULD accompany a \
+                             versioned resource). The released \
+                             `200_ROLE_updated.yaml` does not slot it; the \
+                             SHOULD is cross-cutting."),
+             ("Preference-Applied" = String,
+              description = "`return=identifier` | `return=representation` — the \
+                             preference the service honoured \
+                             (`Requests_and_responses.md` §\"Representation \
+                             details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`) as the \
+                             server stored it; emitted only when the party carries \
+                             tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`); \
+                             the same set, demographic tags having no version \
+                             anchor.")
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the updated ROLE",
+              value = json!({
+                  "_type": "ROLE",
+                  "uid": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" },
+                  "name": { "_type": "DV_TEXT", "value": "ROLE" },
+                  "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+                  "archetype_details": {
+                      "_type": "ARCHETYPED",
+                      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                      "rm_version": "1.2.0"
+                  },
+                  "identities": [
+                      {
+                          "_type": "PARTY_IDENTITY",
+                          "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                          "archetype_node_id": "at0001",
+                          "details": {
+                              "_type": "ITEM_TREE",
+                              "name": { "_type": "DV_TEXT", "value": "identity details" },
+                              "archetype_node_id": "at0002",
+                              "items": [
+                                  {
+                                      "_type": "ELEMENT",
+                                      "name": { "_type": "DV_TEXT", "value": "name" },
+                                      "archetype_node_id": "at0003",
+                                      "value": { "_type": "DV_TEXT", "value": "Senior general practitioner" }
+                                  }
+                              ]
+                          }
+                      }
+                  ]
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new version uid",
+              value = json!({ "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2" })))
+         )),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the `Prefer` \
+                                      header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_version_updated.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the new \
+                             version (ITS-REST \
+                             `specifications/headers/ETag.yaml`)."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the resource version resulted from the operation.\" \
+                             (ITS-REST \
+                             `specifications/headers/Location_version.yaml`), set \
+                             to \
+                             `<base_path>/demographic/role/<new version_uid>`."),
+             ("Last-Modified" = String,
+              description = "The new version's commit instant as an HTTP-date \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\")."),
+             ("openehr-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSIONED_OBJECT\" (ITS-REST \
+                             `specifications/headers/openehr-item-tag.yaml`), \
+                             emitted when the party carries tags."),
+             ("openehr-version-item-tag" = String,
+              description = "\"The list of all ITEM_TAG associated with the \
+                             current VERSION\" (ITS-REST \
+                             `specifications/headers/openehr-version-item-tag.yaml`).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Two \
+                                      reachable triggers here: an unparseable \
+                                      `uid_based_id`/body, and an ABSENT \
+                                      `If-Match` — \"When the service expects \
+                                      `If-Match` for an operation, but the client \
+                                      does not provide it, the service SHOULD \
+                                      respond with `400 Bad Request`\" \
+                                      (`Requests_and_responses.md` §\"If-Match and \
+                                      accidental overwrites\").",
          body = serde_json::Value),
-        (status = 204, description = "Updated (`Prefer: return=minimal`); \
-                                      `ETag`/`Location` carry the new version."),
-        (status = 400, description = "Malformed request, or missing `If-Match`.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`). A \
+                                      `versioned_object_uid` whose stored \
+                                      container is a different PARTY kind is this \
+                                      `404` as well — the route is kind-checked \
+                                      (a VERSIONED_OBJECT has one type, RM \
+                                      `common/master06` §Change Control).",
          body = serde_json::Value),
-        (status = 404, description = "Unknown ROLE.", body = serde_json::Value),
-        (status = 406, description = "A Simplified Format was requested via \
-                                      `Accept` (parties are not templated).",
+        (status = 406, description = "The `Accept` header cannot be satisfied: a \
+                                      PARTY is untemplated and served in the \
+                                      canonical formats only, so a \
+                                      Simplified-only `Accept` MUST be refused \
+                                      (`Resources.md` §\"Simplified Formats\"). \
+                                      The released operation does not enumerate \
+                                      `406`; the MUST is cross-cutting.",
          body = serde_json::Value),
-        (status = 412, description = "`If-Match` does not match the latest \
-                                      version; `ETag` carries the current latest \
-                                      version uid.", body = serde_json::Value),
-        (status = 415, description = "A Simplified Format `Content-Type` was \
-                                      sent (parties are not templated).",
+        (status = 412, description = "The released trigger, verbatim: `412 \
+                                      Precondition Failed` \"is returned when \
+                                      `If-Match` request header doesn't match the \
+                                      latest version on the service side. Returns \
+                                      also latest `version_uid` in the `ETag` \
+                                      header.\" (ITS-REST \
+                                      `specifications/responses/412_ROLE.yaml`; \
+                                      the same rule is the overview's own MUST — \
+                                      \"it MUST NOT perform the requested method. \
+                                      Instead, it MUST respond with HTTP status \
+                                      code `412 Precondition Failed`\").",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` — the service \"SHOULD return also latest \
+                             `version_uid` in the `ETag` response headers\" \
+                             (`Requests_and_responses.md` §\"If-Match and \
+                             accidental overwrites\"; ITS-REST \
+                             `specifications/headers/ETag.yaml`). The released \
+                             `412_ROLE.yaml` also slots \
+                             `headers/Location_deprecated.yaml`; §Location \
+                             forbids `Location` on a non-creation response, so \
+                             none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`, which a party payload cannot \
+                                      use (no template can be named for an \
+                                      untemplated resource — \
+                                      `Requests_and_responses.md` \
+                                      §openehr-template-id): \"it MUST respond with \
+                                      HTTP status code `415 Unsupported Media \
+                                      Type`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). An absent `Content-Type` declares \
+                                      nothing to refuse.",
          body = serde_json::Value),
-        (status = 422, description = "The ROLE fails RM/semantic validation.",
+        (status = 422, description = "The released trigger, verbatim: `422 \
+                                      Unprocessable Entity` \"is returned when the \
+                                      content type and syntax is correct, could be \
+                                      converted to a resource, but there are \
+                                      semantic validation errors\" (ITS-REST \
+                                      `specifications/responses/422.yaml`). Here: \
+                                      an RM invariant violation on the submitted \
+                                      ROLE, or a body typed as a different PARTY \
+                                      subtype than the route's.",
          body = serde_json::Value)
     )
 )]
@@ -1011,28 +5146,150 @@ pub(crate) async fn role_update(
 }
 
 /// Delete a `ROLE` (`DELETE /demographic/role/{uid_based_id}`).
+///
+/// "Deletes the ROLE identified by `uid_based_id`." (ITS-REST
+/// `specifications/operations/role_delete.yaml`). The delete is LOGICAL: it
+/// commits a new deletion VERSION rather than removing history — RM
+/// `common/master06` §Change Control keeps every committed version, and a
+/// subsequent read of the deleted current version answers `204`
+/// (`responses/204_deleted_at_time.yaml`).
 #[utoipa::path(
     delete, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(
         ("uid_based_id" = String, Path,
-         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
-                        version (the `preceding_version_uid`) to delete."),
+         description = "The released parameter, verbatim: \"An identifier in a \
+                        form of an OBJECT_VERSION_ID identifier taken from \
+                        VERSION.uid.value (i.e. a `version_uid`).\" (ITS-REST \
+                        `specifications/parameters/path/uid_based_id_as_version_uid.yaml`); \
+                        the operation sharpens it: \"The `uid_based_id` MUST be in \
+                        a form of an OBJECT_VERSION_ID identifier taken from the \
+                        last (most recent) VERSION.uid.value, representing the \
+                        `preceding_version_uid` to be deleted.\" A version that is \
+                        not the latest is `409`.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("If-Match" = Option<String>, Header,
+         description = "OPTIONAL here, and the released operation declares no \
+                        `If-Match` parameter at all — by the spec's own carve-out: \
+                        the precondition is required only \"when the \
+                        `preceding_version_uid` is not part of the endpoint path \
+                        segment\" (`Requests_and_responses.md` §\"If-Match and \
+                        accidental overwrites\"), and on this operation it IS the \
+                        path segment. A header that IS sent is still honoured — \
+                        the same section makes a received precondition binding — \
+                        as an alternative source of the preceding version; the \
+                        weak `W/\"…\"` and bare quoted forms are both accepted.",
+         example = "\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\""),
         ("openehr-version" = Option<String>, Header,
-         description = "Optional committal metadata for the delete VERSION; \
-                        accepted per the committal-header MUST-accept rule."),
+         description = "Committal metadata for the deletion VERSION, as an \
+                        attribute-path list. No released parameter file declares \
+                        this header; the requirement is prose — \"services MUST \
+                        also allow `PUT`, `POST` and `DELETE` methods directly on \
+                        these change-controlled resources\" and \"services MUST \
+                        accept `openehr-version` and `openehr-audit-details` \
+                        custom request headers\" (`Requests_and_responses.md` \
+                        §\"openehr-version and openehr-audit-details\").",
+         example = "lifecycle_state.code_string=\"523\""),
         ("openehr-audit-details" = Option<String>, Header,
-         description = "Optional committal AUDIT_DETAILS; accepted per the \
-                        committal-header MUST-accept rule.")
+         description = "Committal AUDIT_DETAILS for the CONTRIBUTION this delete \
+                        commits, as an attribute-path list; the header MAY repeat. \
+                        `time_committed` is always server-set and an omitted \
+                        `system_id` MUST default to the server's configured \
+                        identifier (`Requests_and_responses.md` §\"openehr-version \
+                        and openehr-audit-details\"). No released parameter file \
+                        declares it.",
+         example = "description.value=\"merged into another record\""),
+        ("Accept" = Option<String>, Header,
+         description = "A successful delete has no body, so this only selects the \
+                        error-body format (`application/json` by default). A \
+                        Simplified-only `Accept` is `406` — a party is untemplated \
+                        (`Resources.md` §\"Simplified Formats\").",
+         example = "application/json")
     ),
     responses(
-        (status = 204, description = "Logically deleted; `ETag` carries the \
-                                      deleted version uid."),
-        (status = 400, description = "Malformed request, or the ROLE is \
-                                      already deleted.", body = serde_json::Value),
-        (status = 404, description = "Unknown ROLE.", body = serde_json::Value),
-        (status = 409, description = "The supplied `uid_based_id` is not the \
-                                      latest version; `ETag` carries the current \
-                                      latest version uid.", body = serde_json::Value)
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned for a successful \
+                                      delete operation.\" (ITS-REST \
+                                      `specifications/responses/204_version_deleted.yaml`).",
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             DELETION version the operation just committed — not \
+                             the version named in the path. The released \
+                             `204_version_deleted.yaml` slots \
+                             `headers/ETag.yaml`, whose value \"is an identifier \
+                             (e.g. a `version_uid` …) for a specific version of a \
+                             resource\", and §\"ETag and Last-Modified\" adds that \
+                             it \"changes as soon as the resource changes (i.e. \
+                             when a new version is created)\" — a logical delete \
+                             creates one. That same response slots \
+                             `headers/Location_deprecated.yaml`; §\"Deprecated \
+                             headers\" deprecates `Location` on `DELETE` \
+                             responses, so none is emitted or declared.")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content) or when the resource identified by \
+                                      the request parameters is already deleted.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400_already_deleted.yaml`) \
+                                      — so a second delete of the same party is \
+                                      this `400`, not a `404`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or one holding a \
+                                      different PARTY kind than this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied \
+                                      (a Simplified-only `Accept` on an \
+                                      untemplated resource): \"it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"Simplified \
+                                      Formats\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when supplied \
+                                      `uid_based_id` doesn't match the latest \
+                                      version. Returns also latest `version_uid` \
+                                      in the `ETag` header.\" (ITS-REST \
+                                      `specifications/responses/409_ROLE_with_uid_based_id.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The CURRENT latest `version_uid`, weak form \
+                             `W/\"…\"` (ITS-REST \
+                             `specifications/headers/ETag.yaml`) — the client can \
+                             retry the delete against it. The released response \
+                             also slots `headers/Location_deprecated.yaml`; \
+                             §Location forbids `Location` on a non-creation \
+                             response, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The current latest version's commit instant as an \
+                             HTTP-date, from the same metadata the `ETag` is read \
+                             off (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 415, description = "The request DECLARES a Simplified \
+                                      `Content-Type`. A `DELETE` sends no payload, \
+                                      but the declaration is still refused before \
+                                      the write, because a party has no template a \
+                                      Simplified payload could be expanded against \
+                                      (`Requests_and_responses.md` \
+                                      §openehr-template-id; `Resources.md` \
+                                      §\"Simplified Formats\" `415` MUST). An \
+                                      absent `Content-Type` declares nothing to \
+                                      refuse.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn role_delete(
@@ -1047,17 +5304,106 @@ pub(crate) async fn role_delete(
 
 /// Retrieve the `VERSIONED_PARTY` container
 /// (`GET /demographic/versioned_party/{versioned_object_uid}`).
+///
+/// "Retrieves a VERSIONED_PARTY identified by `versioned_object_uid`."
+/// (ITS-REST `specifications/operations/versioned_party_get.yaml`). The four
+/// `versioned_party_*` reads are canonical-JSON-only on this server: the
+/// released operations reference `parameters/header/Accept_canonical.yaml`
+/// (JSON + XML), and `Resources.md` §"Data representation" requires only that
+/// "Services MUST support at least one of the openEHR **XML** or **JSON**
+/// canonical formats" — JSON satisfies it, and an exclusively-XML `Accept` is
+/// the `406` the same chapter mandates. That is an honest boundary of this
+/// build, not a spec allowance to serve less.
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}", tag = "VERSIONED_PARTY",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"VERSIONED_PARTY \
+                        identifier taken from VERSIONED_PARTY.uid.value.\" \
+                        (ITS-REST \
+                        `specifications/parameters/path/versioned_object_uid_PARTY.yaml`, \
+                        `format: uuid`) — the version container, i.e. the \
+                        HIER_OBJECT_ID form of a party id.",
+         example = "6cb19121-4307-4648-9da0-d62e4d51f19b"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        This build serves the container as `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSIONED_PARTY (RM canonical \
-                                      JSON/XML).", body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested \
+                                      VERSIONED_PARTY is successfully \
+                                      retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_VERSIONED_PARTY.yaml`; \
+                                      schema \
+                                      `schemas/demographic/VersionedParty.yaml`). \
+                                      `owner_id` is emitted in the shape that \
+                                      schema's own example uses — a `PARTY_REF` \
+                                      with `namespace: local` and `type: SYSTEM` \
+                                      — because a demographic party has no \
+                                      containing EHR to own it and no released \
+                                      text names another referent.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<versioned_object_uid>\"`. \
+                             The released `200_VERSIONED_PARTY.yaml` declares no \
+                             `ETag`; the overview does — the value \"is usually \
+                             taken from e.g. VERSIONED_OBJECT.uid.value, \
+                             VERSION.uid.value\" and both `ETag` and \
+                             `Last-Modified` \"SHOULD be included in responses for \
+                             VERSION, VERSIONED_OBJECT, or other resources that \
+                             have versioning\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\"). No `Last-Modified` \
+                             accompanies it: a VERSIONED_OBJECT container body \
+                             exposes no `commit_audit.time_committed` to derive \
+                             it from.")
+         ),
+         example = json!({
+             "_type": "VERSIONED_PARTY",
+             "uid": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
+             "owner_id": {
+                 "_type": "PARTY_REF",
+                 "namespace": "local",
+                 "type": "SYSTEM",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" }
+             },
+             "time_created": { "_type": "DV_DATE_TIME", "value": "2015-01-20T19:30:22.765+01:00" }
+         })),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). Here: \
+                                      a `versioned_object_uid` that is not a \
+                                      well-formed party id. The released operation \
+                                      does not enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      this build serves the VERSIONED_PARTY \
+                                      container as canonical JSON only, so an \
+                                      `Accept` that excludes `application/json` is \
+                                      refused — \"If the service cannot fulfill \
+                                      this aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not Acceptable`\" \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -1077,17 +5423,84 @@ pub(crate) async fn versioned_party_get(
 
 /// Retrieve the party's `REVISION_HISTORY`
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/revision_history`).
+///
+/// "Retrieves revision history of the VERSIONED_PARTY identified by
+/// `versioned_object_uid`." (ITS-REST
+/// `specifications/operations/versioned_party_revision_history.yaml`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/revision_history", tag = "VERSIONED_PARTY",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"VERSIONED_PARTY \
+                        identifier taken from VERSIONED_PARTY.uid.value.\" \
+                        (ITS-REST \
+                        `specifications/parameters/path/versioned_object_uid_PARTY.yaml`, \
+                        `format: uuid`).",
+         example = "6cb19121-4307-4648-9da0-d62e4d51f19b"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        This build serves the history as `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The REVISION_HISTORY (RM canonical \
-                                      JSON/XML).", body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested \
+                                      REVISION_HISTORY is successfully \
+                                      retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_REVISION_HISTORY.yaml`; \
+                                      schema `schemas/common/RevisionHistory.yaml`). \
+                                      `items` runs oldest-first — \
+                                      `REVISION_HISTORY.most_recent_version` is \
+                                      the last item (RM `common/master04` \
+                                      §REVISION_HISTORY).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<versioned_object_uid>\"`. A \
+                             REVISION_HISTORY carries no `uid` of its own, so the \
+                             addressed container's id is the `ETag` source the \
+                             overview names — the value \"is usually taken from \
+                             e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). The released \
+                             `200_REVISION_HISTORY.yaml` declares no `ETag`; the \
+                             SHOULD is cross-cutting."),
+             ("Last-Modified" = String,
+              description = "The most recent revision's commit instant as an \
+                             HTTP-date — \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"), taken from the last \
+                             `items[]`/`audits[0]` entry.")
+         )),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`) — here a \
+                                      `versioned_object_uid` that is not a \
+                                      well-formed party id.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      REVISION_HISTORY is served as canonical JSON \
+                                      only on this build, so an `Accept` excluding \
+                                      `application/json` MUST be refused \
+                                      (`Resources.md` §\"JSON Format\"). The \
+                                      released operation does not enumerate `406`; \
+                                      the MUST is cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -1107,23 +5520,90 @@ pub(crate) async fn versioned_party_revision_history(
 
 /// Retrieve the party VERSION at a point in time
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version`).
+///
+/// "Retrieves a VERSION from the VERSIONED_PARTY identified by
+/// `versioned_object_uid`." … "If `version_at_time` is supplied, retrieves the
+/// VERSION extant _at specified time_, otherwise retrieves the _latest_
+/// VERSION." (ITS-REST
+/// `specifications/operations/versioned_party_version_get_at_time.yaml`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/version", tag = "VERSIONED_PARTY",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"VERSIONED_PARTY \
+                        identifier taken from VERSIONED_PARTY.uid.value.\" \
+                        (ITS-REST \
+                        `specifications/parameters/path/versioned_object_uid_PARTY.yaml`, \
+                        `format: uuid`).",
+         example = "6cb19121-4307-4648-9da0-d62e4d51f19b"),
         ("version_at_time" = Option<String>, Query,
-         description = "Extended ISO 8601 instant; selects the VERSION extant \
-                        at that time (latest when omitted). The timezone is \
-                        optional — server-local when omitted.")
+         description = "\"A given time in the extended ISO 8601 format.\" \
+                        (ITS-REST \
+                        `specifications/parameters/query/version_at_time.yaml`); \
+                        the latest VERSION when omitted. The timezone is optional \
+                        — server-local when absent.",
+         example = "2015-01-20T19:30:22.765+01:00"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        This build serves the VERSION as `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON/XML); \
-                                      `ETag` carries the version uid (weak `W/` \
-                                      form).", body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY, or no version at \
-                                      the requested `version_at_time`.",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested VERSION is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_VERSION_of_PARTY_at_time.yaml`; \
+                                      schema \
+                                      `schemas/demographic/UVersionOfParty.yaml`) \
+                                      — the ORIGINAL_VERSION wrapper, `data` \
+                                      carrying the party itself.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is the \
+                             VERSION identifier (i.e. the `version_uid`) enclosed \
+                             by double quotes.\" (ITS-REST \
+                             `specifications/headers/ETag_VERSION.yaml`, which this \
+                             response slots), in the weak `W/\"…\"` form the \
+                             release requires. That response also slots \
+                             `headers/Location_deprecated.yaml`; §Location forbids \
+                             `Location` on a `GET`, so none is emitted."),
+             ("Last-Modified" = String,
+              description = "The served VERSION's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`) — here a \
+                                      malformed `versioned_object_uid` or a \
+                                      `version_at_time` that is not an extended ISO \
+                                      8601 instant.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when either the URL \
+                                      configured doesn't exist at all, or the \
+                                      targeted resource doesn't exist, or when a \
+                                      VERSION of the resource does not exist at \
+                                      the specified `version_at_time`\" (ITS-REST \
+                                      `specifications/responses/404_not_found_or_no_version_at_time.yaml`).",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      VERSION is served as canonical JSON only on \
+                                      this build, so an `Accept` excluding \
+                                      `application/json` MUST be refused \
+                                      (`Resources.md` §\"JSON Format\"). The \
+                                      released operation does not enumerate `406`; \
+                                      the MUST is cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -1143,20 +5623,93 @@ pub(crate) async fn versioned_party_version_get_at_time(
 
 /// Retrieve a specific party VERSION by version uid
 /// (`GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`).
+///
+/// "Retrieves a VERSION identified by `version_uid` of a VERSIONED_PARTY
+/// identified by `versioned_object_uid`." (ITS-REST
+/// `specifications/operations/versioned_party_version_get_by_id.yaml`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/version/{version_uid}", tag = "VERSIONED_PARTY",
     params(
         ("versioned_object_uid" = String, Path,
-         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
-                        `versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"VERSIONED_PARTY \
+                        identifier taken from VERSIONED_PARTY.uid.value.\" \
+                        (ITS-REST \
+                        `specifications/parameters/path/versioned_object_uid_PARTY.yaml`, \
+                        `format: uuid`).",
+         example = "6cb19121-4307-4648-9da0-d62e4d51f19b"),
         ("version_uid" = String, Path,
-         description = "The VERSION identifier (OBJECT_VERSION_ID / \
-                        `version_uid`).")
+         description = "The released parameter, verbatim: \"VERSION identifier \
+                        taken from VERSION.uid.value.\" (ITS-REST \
+                        `specifications/parameters/path/version_uid.yaml`) — the \
+                        OBJECT_VERSION_ID form, whose `object_id` segment is the \
+                        `versioned_object_uid` above (`Resources.md` §\"Identifier \
+                        types\").",
+         example = "6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        This build serves the VERSION as `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON/XML).",
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the requested VERSION is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_VERSION_of_PARTY_by_id.yaml`; \
+                                      schema \
+                                      `schemas/demographic/UVersionOfParty.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<version_uid>\"` of the \
+                             served VERSION. The released \
+                             `200_VERSION_of_PARTY_by_id.yaml` declares NO `ETag` \
+                             while its at-time sibling declares \
+                             `headers/ETag_VERSION.yaml` — an asymmetry between two \
+                             responses that serve the same resource shape. The \
+                             overview settles it: `ETag` and `Last-Modified` \
+                             \"SHOULD be included in responses for VERSION, \
+                             VERSIONED_OBJECT, or other resources that have \
+                             versioning\", the value \"usually taken from e.g. … \
+                             VERSION.uid.value\" (`Requests_and_responses.md` \
+                             §\"ETag and Last-Modified\"), so both are emitted \
+                             here."),
+             ("Last-Modified" = String,
+              description = "The served VERSION's commit instant as an HTTP-date, \
+                             \"derived from \
+                             VERSION.commit_audit.time_committed.value\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\").")
+         )),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`) — here a \
+                                      `versioned_object_uid` or `version_uid` that \
+                                      is not well-formed.",
          body = serde_json::Value),
-        (status = 404, description = "Unknown VERSIONED_PARTY or version.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when, based on the \
+                                      request parameters, the server did not find \
+                                      a current representation of a target \
+                                      resource, or is not willing to disclose that \
+                                      one exists\" (ITS-REST \
+                                      `specifications/responses/404.yaml`) — an \
+                                      unknown container, or a `version_uid` that \
+                                      names no version of it.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      VERSION is served as canonical JSON only on \
+                                      this build, so an `Accept` excluding \
+                                      `application/json` MUST be refused \
+                                      (`Resources.md` §\"JSON Format\"). The \
+                                      released operation does not enumerate `406`; \
+                                      the MUST is cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -1177,30 +5730,255 @@ pub(crate) async fn versioned_party_version_get_by_id(
 // ── CONTRIBUTION ─────────────────────────────────────────────────────────────
 
 /// Create a demographic `CONTRIBUTION` (`POST /demographic/contribution`).
+///
+/// The released operation defines the relaxed commit envelope verbatim: "We
+/// will use the relaxed CONTRIBUTION with the following optional attributes:
+/// `uid`: when provided, it will be accepted in case is not in-use, otherwise
+/// error will be returned; `audit.time_committed`: server will always set it;
+/// `audit.system_id`: when provided, it will be validated" (ITS-REST
+/// `specifications/operations/demographic_contribution_create.yaml`). "The
+/// `audit` and each `versions[i].commit_audit` are `UPDATE_AUDIT` objects …
+/// Clients SHOULD send `_type: \"UPDATE_AUDIT\"`; for interoperability servers
+/// SHOULD additionally accept `_type: \"AUDIT_DETAILS\"` or an omitted `_type`
+/// for this attribute."
+///
+/// The commit envelope is canonical **JSON** only on this build: the released
+/// operation references `parameters/header/ContentType_canonical.yaml`
+/// (JSON + XML), and `Resources.md` §"Data representation" requires only that
+/// "Services MUST support at least one of the openEHR **XML** or **JSON**
+/// canonical formats" — an honest boundary, not a spec allowance.
 #[utoipa::path(
     post, path = "/demographic/contribution", tag = "CONTRIBUTION",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body), \
-                        `return=representation` (the created CONTRIBUTION), or \
-                        `return=identifier` (only the uid).")
+         description = "The released parameter, verbatim: \"Request header to \
+                        indicate the preference over response details. The \
+                        response will contain the entire resource when the \
+                        `Prefer` header has a value of `return=representation`, \
+                        or only the resource identifier (e.g., the `uid`) when \
+                        the value is `return=identifier`.\" (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`; default \
+                        `return=minimal`, which answers an empty `201`). The \
+                        token honoured is echoed in `Preference-Applied`.",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "`application/json` — the CONTRIBUTION commit envelope is \
+                        canonical JSON on this build (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml` \
+                        also lists `application/xml`, which this envelope does \
+                        not serve). Any other DECLARED type is `415`; an absent \
+                        header reads as JSON (`Resources.md` §\"JSON Format\" \
+                        makes the header a client MAY).",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        The `201` body is served as `application/json`; an \
+                        `Accept` that excludes JSON is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The CONTRIBUTION (canonical JSON/XML envelope); \
-                                the `audit` and each `versions[i].commit_audit` \
-                                are UPDATE_AUDIT objects; an optional `uid` is \
-                                honoured when not already in use."),
+                 description = "\"The CONTRIBUTION.\", `required: true` (ITS-REST \
+                                `specifications/operations/demographic_contribution_create.yaml`; \
+                                schema \
+                                `schemas/demographic/NewContribution.yaml` — \
+                                `versions` and `audit` required, `uid` optional). \
+                                Each `versions[i]` is an `UPDATE_VERSION` \
+                                (`lifecycle_state`, `data`, `commit_audit` \
+                                required; `preceding_version_uid` on a \
+                                modification). NOTE: the release publishes no \
+                                demographic CONTRIBUTION example, so the example \
+                                below is OURS, constructed from those schemas — \
+                                it is not released spec text.",
+                 example = json!({
+                     "uid": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" },
+                     "versions": [
+                         {
+                             "_type": "ORIGINAL_VERSION",
+                             "lifecycle_state": {
+                                 "_type": "DV_CODED_TEXT",
+                                 "value": "complete",
+                                 "defining_code": {
+                                     "terminology_id": { "value": "openehr" },
+                                     "code_string": "532"
+                                 }
+                             },
+                             "commit_audit": {
+                                 "_type": "UPDATE_AUDIT",
+                                 "change_type": {
+                                     "_type": "DV_CODED_TEXT",
+                                     "value": "creation",
+                                     "defining_code": {
+                                         "terminology_id": { "value": "openehr" },
+                                         "code_string": "249"
+                                     }
+                                 },
+                                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "A user name" }
+                             },
+                             "data": {
+                                 "_type": "PERSON",
+                                 "name": { "_type": "DV_TEXT", "value": "PERSON" },
+                                 "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+                                 "archetype_details": {
+                                     "_type": "ARCHETYPED",
+                                     "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                                     "rm_version": "1.2.0"
+                                 },
+                                 "identities": [
+                                     {
+                                         "_type": "PARTY_IDENTITY",
+                                         "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                                         "archetype_node_id": "at0001",
+                                         "details": {
+                                             "_type": "ITEM_TREE",
+                                             "name": { "_type": "DV_TEXT", "value": "identity details" },
+                                             "archetype_node_id": "at0002",
+                                             "items": [
+                                                 {
+                                                     "_type": "ELEMENT",
+                                                     "name": { "_type": "DV_TEXT", "value": "name" },
+                                                     "archetype_node_id": "at0003",
+                                                     "value": { "_type": "DV_TEXT", "value": "Jane Doe" }
+                                                 }
+                                             ]
+                                         }
+                                     }
+                                 ]
+                             }
+                         }
+                     ],
+                     "audit": {
+                         "_type": "UPDATE_AUDIT",
+                         "change_type": {
+                             "_type": "DV_CODED_TEXT",
+                             "value": "creation",
+                             "defining_code": {
+                                 "terminology_id": { "value": "openehr" },
+                                 "code_string": "249"
+                             }
+                         },
+                         "description": { "_type": "DV_TEXT", "value": "Description text" },
+                         "committer": { "_type": "PARTY_IDENTIFIED", "name": "A user name" }
+                     }
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` carries the \
-                                      `contribution_uid` (weak `W/` form), \
-                                      `Location` the resource URL. Body per \
-                                      `Prefer`.", body = serde_json::Value),
-        (status = 400, description = "Malformed request, or a modification type \
-                                      that does not match the operation (e.g. a \
-                                      first-version MODIFICATION).",
+        (status = 201, description = "The released trigger, verbatim: `201 \
+                                      Created` \"is returned when the \
+                                      CONTRIBUTION is successfully created. If \
+                                      `Prefer` header is `return=representation`, \
+                                      the full resource is included in the \
+                                      response body; if is `return=identifier`, \
+                                      only its unique identifier is included. If \
+                                      the `Prefer` header is missing or set to \
+                                      `return=minimal`, the body is empty.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/201_demographic_CONTRIBUTION.yaml`).",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "\"The `ETag` (i.e. entity tag) response header is the \
+                             `contribution_uid` identifier, enclosed by double \
+                             quotes.\" (ITS-REST \
+                             `specifications/headers/ETag_CONTRIBUTION.yaml`), in \
+                             the weak form the release requires — \"all `ETag` \
+                             headers that hold a resource identifier MUST include \
+                             a weakness indicator `W/`\" \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\"). Shape: \
+                             `W/\"0826851c-c4c2-4d61-92b9-410fb8275ff0\"`. It is \
+                             the CONTRIBUTION's own uid, not a version uid, so no \
+                             `Last-Modified` accompanies it."),
+             ("Location" = String,
+              description = "\"The `Location` response header indicates the URL of \
+                             the CONTRIBUTION resource.\" (ITS-REST \
+                             `specifications/headers/Location_demographic_CONTRIBUTION.yaml`), \
+                             set to \
+                             `<base_path>/demographic/contribution/<contribution_uid>` \
+                             — §Location: used \"in `201 Created` responses when a \
+                             new resource is successfully created\"."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured (`Requests_and_responses.md` \
+                             §\"Representation details negotiation\").")
+         ),
+         examples(
+             ("identifier" = (summary = "Prefer: return=identifier — only the contribution uid",
+              value = json!({ "uid": "0826851c-c4c2-4d61-92b9-410fb8275ff0" }))),
+             ("representation" = (summary = "Prefer: return=representation — the committed CONTRIBUTION (constructed example — the release publishes none)",
+              value = json!({
+                  "_type": "CONTRIBUTION",
+                  "uid": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" },
+                  "versions": [
+                      {
+                          "_type": "OBJECT_REF",
+                          "namespace": "local",
+                          "type": "PERSON",
+                          "id": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" }
+                      }
+                  ],
+                  "audit": {
+                      "_type": "AUDIT_DETAILS",
+                      "system_id": "openEHRSys.example.com",
+                      "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                      "change_type": {
+                          "_type": "DV_CODED_TEXT",
+                          "value": "creation",
+                          "defining_code": {
+                              "terminology_id": { "value": "openehr" },
+                              "code_string": "249"
+                          }
+                      },
+                      "description": { "_type": "DV_TEXT", "value": "Description text" },
+                      "committer": { "_type": "PARTY_IDENTIFIED", "name": "A user name" }
+                  }
+              })))
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content, or the modification type does not \
+                                      match the operation - i.e. first version of \
+                                      a MODIFICATION)\" (ITS-REST \
+                                      `specifications/responses/400_CONTRIBUTION.yaml`). \
+                                      A supplied `audit.system_id` that does not \
+                                      validate is this branch too — the operation \
+                                      says \"when provided, it will be \
+                                      validated\".",
          body = serde_json::Value),
-        (status = 409, description = "A CONTRIBUTION with the same `uid` already \
-                                      exists.", body = serde_json::Value)
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      `201` body is served as canonical JSON only, \
+                                      so an `Accept` excluding `application/json` \
+                                      MUST be refused (`Resources.md` §\"JSON \
+                                      Format\"). The released operation does not \
+                                      enumerate `406`; the MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 409, description = "The released trigger, verbatim: `409 \
+                                      Conflict` \"is returned when a resource with \
+                                      same identifier(s) already exists\" (ITS-REST \
+                                      `specifications/responses/409.yaml`) — a \
+                                      client-supplied `uid` that is already in \
+                                      use, the operation's \"accepted in case is \
+                                      not in-use, otherwise error will be \
+                                      returned\".",
+         body = serde_json::Value),
+        (status = 415, description = "The request DECLARES a payload media type \
+                                      this envelope cannot be processed as: the \
+                                      demographic CONTRIBUTION commit is canonical \
+                                      JSON on this build, so an XML or Simplified \
+                                      `Content-Type` is refused — \"If the service \
+                                      cannot process the request payload as JSON \
+                                      format, it MUST respond with HTTP status \
+                                      code `415 Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"; the same \
+                                      MUST for the other formats). An absent \
+                                      `Content-Type` declares nothing to refuse. \
+                                      The released operation does not enumerate \
+                                      `415`; the MUST is cross-cutting.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn contribution_create(
@@ -1219,17 +5997,116 @@ pub(crate) async fn contribution_create(
 
 /// Retrieve a demographic `CONTRIBUTION` by uid
 /// (`GET /demographic/contribution/{contribution_uid}`).
+///
+/// "Retrieves a CONTRIBUTION identified by `contribution_uid`." (ITS-REST
+/// `specifications/operations/demographic_contribution_get.yaml`).
 #[utoipa::path(
     get, path = "/demographic/contribution/{contribution_uid}", tag = "CONTRIBUTION",
     params(
         ("contribution_uid" = String, Path,
-         description = "The CONTRIBUTION uid.")
+         description = "The released parameter, verbatim: \"The CONTRIBUTION \
+                        uid.\" (ITS-REST \
+                        `specifications/parameters/path/contribution_uid.yaml`, \
+                        `format: uuid`). A value that is not a UUID is `400`.",
+         example = "0826851c-c4c2-4d61-92b9-410fb8275ff0"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`). \
+                        This build serves the CONTRIBUTION envelope as \
+                        `application/json`; an `Accept` that excludes JSON — \
+                        including the Simplified types the released `200` \
+                        describes — is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The CONTRIBUTION (canonical JSON/XML \
-                                      envelope).", body = serde_json::Value),
-        (status = 404, description = "No CONTRIBUTION with that \
-                                      `contribution_uid`.", body = serde_json::Value)
+        (status = 200, description = "The released trigger, verbatim: `200 OK` \
+                                      \"is returned when the CONTRIBUTION is \
+                                      successfully retrieved.\" (ITS-REST \
+                                      `specifications/responses/200_CONTRIBUTION.yaml`; \
+                                      schema `schemas/common/Contribution.yaml`). \
+                                      That response also describes a Simplified \
+                                      arm — \"When the request `Accept` header \
+                                      selects a Simplified Formats MIME type …, \
+                                      the response body is still a canonical \
+                                      CONTRIBUTION envelope; only each \
+                                      `versions[i].data` payload is serialized in \
+                                      the requested FLAT or STRUCTURED form\" — \
+                                      which this build does NOT serve on the \
+                                      demographic surface: a demographic \
+                                      CONTRIBUTION's versions carry untemplated \
+                                      PARTY data with no template to expand \
+                                      against (`Requests_and_responses.md` \
+                                      §openehr-template-id), so a Simplified \
+                                      `Accept` is the `406` below. No `ETag` or \
+                                      `Last-Modified` is emitted: the released \
+                                      response declares neither, and a \
+                                      CONTRIBUTION is not itself a versioned \
+                                      resource.",
+         body = serde_json::Value,
+         example = json!({
+             "_type": "CONTRIBUTION",
+             "uid": { "_type": "HIER_OBJECT_ID", "value": "0826851c-c4c2-4d61-92b9-410fb8275ff0" },
+             "versions": [
+                 {
+                     "_type": "OBJECT_REF",
+                     "namespace": "local",
+                     "type": "PERSON",
+                     "id": { "_type": "OBJECT_VERSION_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1" }
+                 }
+             ],
+             "audit": {
+                 "_type": "AUDIT_DETAILS",
+                 "system_id": "openEHRSys.example.com",
+                 "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                 "change_type": {
+                     "_type": "DV_CODED_TEXT",
+                     "value": "creation",
+                     "defining_code": {
+                         "terminology_id": { "value": "openehr" },
+                         "code_string": "249"
+                     }
+                 },
+                 "description": { "_type": "DV_TEXT", "value": "Description text" },
+                 "committer": { "_type": "PARTY_IDENTIFIED", "name": "A user name" }
+             }
+         })),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is returned \
+                                      when the request could not be parsed or is \
+                                      invalid (e.g. malformed request URL syntax, \
+                                      missing required header or parameter, or \
+                                      syntactically invalid header, parameter or \
+                                      content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`) — here a \
+                                      `contribution_uid` that is not a UUID, the \
+                                      `format: uuid` the released path parameter \
+                                      declares. The released operation does not \
+                                      enumerate `400`; the trigger is the \
+                                      cross-cutting one.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when a CONTRIBUTION \
+                                      with `contribution_uid` does not exist\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_demographic_CONTRIBUTION.yaml`). \
+                                      An EHR-scoped CONTRIBUTION is this `404` \
+                                      too — the demographic surface addresses only \
+                                      the ehr-less ones, and the EHR API has its \
+                                      own contribution endpoints.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: the \
+                                      CONTRIBUTION envelope is served as canonical \
+                                      JSON only on this build, so an `Accept` \
+                                      excluding `application/json` (XML, or one of \
+                                      the Simplified types the released `200` \
+                                      describes) MUST be refused — \"If the service \
+                                      cannot fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 Not \
+                                      Acceptable`\" (`Resources.md` §\"JSON \
+                                      Format\"/§\"Simplified Formats\"). The \
+                                      released operation does not enumerate `406`; \
+                                      the MUST is cross-cutting.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn contribution_get(
