@@ -2014,7 +2014,11 @@ AMB-102:
     Fixed handling: an unmatchable selector IS "a version that does not
     exist" — 404 under the released trigger's own wording (a selector
     matching nothing), covering malformed versions, out-of-class names,
-    and the reserved name alike. Reported upstream (UPR-66): assign the
+    and the reserved name alike. This entry is the READ side only; the
+    corresponding WRITE-side branches are AMB-122 (a version segment the
+    versioned store cannot write) and AMB-123 (a store under the reserved
+    name), both 400 rather than 404, because a write cannot address a
+    resource that does not exist. Reported upstream (UPR-66): assign the
     malformed-selector branch explicitly.
   disposition: fixed_handling
   upstream_ref: "UPR-66"
@@ -2699,3 +2703,554 @@ AMB-116:
     missing mandatory section, or make the two catalogues disjoint.
   disposition: fixed_handling
   upstream_ref: "UPR-80"
+
+AMB-117:
+  ambiguity: >-
+    The released text calls a stored query overwritable and immutable in the
+    same breath, and never says which version a VERSION-LESS store writes.
+    `definition_query_store` describes itself as "Stores a new query, or
+    updates an existing query on the system" and declares only 200 and 400 —
+    no conflict branch — while the resource's own tag prose says stored
+    queries "provide a reusable, immutable way to identify a specific AQL
+    statement", and the versioned sibling declares exactly the 409 that
+    immutability implies. Nor does anything assign the minted version: the
+    version-less operation takes no `version`, `Qualified_query_name.md`
+    makes the version "optional" but states its absent/partial rule for USE
+    ("the system must use the latest `version` with the supplied prefix"),
+    which is a resolution rule over versions that already exist and says
+    nothing about which one a write creates; the single illustration is the
+    Location example's `…/org.openehr::compositions/1.0.1`, a minted version
+    shown without a rule for choosing it.
+  source: >-
+    ITS-REST specifications/operations/definition_query_store.yaml
+    (description "Stores a new query, or updates an existing query on the
+    system."; responses '200' + '400' only) vs
+    specifications/tags/StoredQuery_schema.md ("Stored queries provide a
+    reusable, immutable way to identify a specific AQL statement that can be
+    executed later.") vs operations/definition_query_version_store.yaml
+    (responses 200/400/409) + responses/409_StoredQuery_version.yaml ("`409
+    Conflict` is returned when a query with the given `qualified_query_name`
+    and `version` already exists on the server.") + docs/query/
+    Qualified_query_name.md (the version is "optional"; the partial/absent
+    rule is stated for use) + headers/Location_Query.yaml (the example
+    `…/org.openehr::compositions/1.0.1`) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, resolved BY FORM: the two sentences stop competing once
+    the two operations are read apart. The VERSION-LESS store is the
+    overwriting form — it writes one default slot and there "updates an
+    existing query", which is precisely what its missing 409 says — while the
+    VERSIONED store is the immutable form, where an existing
+    `(name, version)` pair is refused 409 and never replaced. Immutability is
+    therefore a property of a version-ADDRESSED definition, not of the name.
+    The default slot is the constant `1.0.0`: it is the lowest SEMVER a first
+    store can carry, it keeps the version-less form idempotent (a second
+    store updates the same slot instead of accumulating versions no client
+    asked for and no client can predict), and it is the only choice that
+    needs no minting rule — every alternative (increment the patch, take the
+    highest stored version plus one) would create versions the released text
+    never promises and would make the version-less store's own Location
+    unpredictable. The slot is CONSTANT even when higher versions exist: a
+    version-less store beside a stored `2.0.0` still writes and names
+    `1.0.0`, because the version-less form addresses the default slot, not
+    the name's latest. Gated by
+    I_DEFINITION_QUERY.store_query-default_version_slot (the Location and the
+    read-back both name 1.0.0), -update_in_place (a second version-less store
+    updates the same slot: one row, the new text, no 409),
+    -default_slot_with_higher_version (the constant slot beside a stored
+    2.0.0) and -version_duplicate_conflict (the immutable half). Reported
+    upstream (UPR-81): state the minted version of a version-less store, and
+    reconcile the overwrite sentence with the immutability prose.
+  disposition: fixed_handling
+  upstream_ref: "UPR-81"
+
+AMB-118:
+  ambiguity: >-
+    SM `store_query` and the released wire disagree about what a store TAKES
+    and what it RETURNS. SM: `store_query(a_query_text, a_type, a_query_name:
+    String[0..1]): QUERY_DESCRIPTOR` — "Register a query under a qualified
+    name. If no name is provided, one is created in the service. Return a
+    Query descriptor containing the query name and unique identifier." On the
+    wire the name is a REQUIRED path segment, so the nameless form is not
+    even requestable and a server-minted name would have no way to reach a
+    client; and the success response is BODYLESS (the released 200 declares a
+    description and a `Location` header and no content), so the descriptor is
+    not returned. The "unique identifier" that sentence promises exists in
+    neither model: SM's own QUERY_DESCRIPTOR declares qualified_query_name /
+    version / registration_time / formalism / source and no identifier
+    attribute, and the wire `StoredQuery` carries name / type / version /
+    saved / q.
+  source: >-
+    SM UML/classes/i_definition_query.adoc §store_query (the signature, the
+    `[0..1]` name, and the quoted Meaning) + UML/classes/query_descriptor.adoc
+    (§Description "Object describing a query in terms of its unique
+    identifier…" against an attribute list with no identifier) vs ITS-REST
+    specifications/parameters/path/qualified_query_name.yaml (`required:
+    true`) + operations/definition_query_store.yaml +
+    responses/200_StoredQuery_stored.yaml (description + Location header, no
+    `content`) + schemas/query/StoredQuery.yaml (required name/type/version/
+    saved/q) — CONFIRMED first-hand.
+  handling: >-
+    Report only. The wire is what the released ITS binds: the client supplies
+    the name on the path, and the store answers 200 with no body and a
+    Location naming the stored resource; a client that wants the descriptor
+    reads it back through the version get. No case asserts a nameless store
+    or a descriptor response body — neither is requestable or observable over
+    the released wire, and authoring one would test a server into a shape the
+    ITS does not offer. The divergence is carried, never resolved privately.
+    Sits beside AMB-127, which records the realization gaps of the same
+    interface: this entry is about the SHAPE of the one realized store,
+    AMB-127 about which operations exist at all. Reported upstream (UPR-82).
+  disposition: report_only
+  upstream_ref: "UPR-82"
+
+AMB-119:
+  ambiguity: >-
+    The overview says two things about `Location` on a write, and the
+    stored-query stores sit exactly between them. §Location is exclusive
+    about the STATUS: the header "is used by a server to indicate the URL of
+    a newly created resource … in `201 Created` responses when a new resource
+    is successfully created", "It MUST NOT be used to indicate an alternate
+    representation of an existing resource", and the deprecation note reads
+    "The `Location` header MUST ONLY be used for resource creation (e.g.,
+    `201 Created`) or redirect responses". §"Prefer minimal, identifier or
+    full representation response" is not: on the `return=minimal` branch "The
+    response SHOULD include a `Location` header pointing to the newly created
+    or updated resource. The HTTP status is typically `201 Created`", and on
+    the identifier and representation branches the response "MAY include a
+    `Location` header" where "The HTTP status is typically `201 Created` or
+    `200 OK`" — a `Location` paired with a 200 in the overview's own words.
+    Neither passage says which governs a write the release assigns `200` and
+    never `201`, which is what both stored-query stores are.
+  source: >-
+    ITS-REST docs/overview/Requests_and_responses.md §Location (the three
+    quoted sentences, incl. the DEPRECATION note's MUST ONLY) + §"Representation
+    details negotiation" ("If no `Prefer` header is provided, the default
+    behavior is assumed to be `return=minimal`") + §"Prefer minimal,
+    identifier or full representation response" (the quoted minimal-branch
+    SHOULD and the "201 Created or 200 OK" pairings) + §HTTP status codes
+    (row 200 "The request succeeded, payload sent in a 200 response depends
+    on the request method") vs
+    specifications/responses/200_StoredQuery_stored.yaml (which declares the
+    header on the store's 200) + headers/Location_Query.yaml ("The `Location`
+    response header indicates the URL of the Stored Query resource.") +
+    operations/definition_query_store.yaml and
+    definition_query_version_store.yaml (both map success to '200' and
+    declare no `Prefer` parameter) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: both stores answer 200 and DO carry `Location`. The
+    decisive docs-text sentence is the `return=minimal` one — the stores
+    declare no `Prefer` parameter, so by "If no `Prefer` header is provided,
+    the default behavior is assumed to be `return=minimal`" every request to
+    them is that exchange, and its text assigns the header directly: "The
+    response SHOULD include a `Location` header pointing to the newly created
+    or updated resource." §Location's MUST ONLY is not contradicted, because
+    it restricts the header to "resource creation … or redirect responses"
+    and a store IS the creation or update of the resource the header names;
+    what its parenthetical fixes is an EXAMPLE status, not the only one, and
+    the same overview pairs `Location` with `200 OK` two sections later. The
+    substantive prohibition — `Location` as an ALTERNATE REPRESENTATION of an
+    existing resource, i.e. on a read — stands untouched and is asserted the
+    other way: `Location` is declared PRESENT on both store outcomes (pinned
+    to the written version on the version-less store — AMB-117) and ABSENT on
+    every stored-query read. Reported upstream (UPR-83): say whether the
+    §Location status rule or the §Prefer branch governs a 200-status
+    creation, since the release assigns these operations 200 and no 201.
+  disposition: fixed_handling
+  upstream_ref: "UPR-83"
+
+AMB-120:
+  ambiguity: >-
+    Two released components define DIFFERENT grammars for the same stored-query
+    identifier, and neither defers to the other. SM master04 §Registered
+    Queries: names "may include a namespace and optionally a formalism type",
+    with the schemes `<namespace>::<query-name>` AND
+    `<namespace>::<formalism>::<query-name>` (its own example
+    `"task_planning::aql::chemotherapy_plans"`), and "If no namespace is
+    supplied, the namespace `"misc"` is assumed"; §Query Formalism makes the
+    formalism parameter case-insensitive with an optional `::`-separated
+    version and "If no version identifier part is supplied, the major version
+    "1" is assumed", so that "AQL", "aql" and "AQL::1" are "all equivalent".
+    ITS-REST defines only `[{namespace}::]{query-name}` — two parts, no
+    formalism segment — with an optional namespace and NO default for it, a
+    query-name charset of `[a-zA-Z0-9_.-]`, and a flat `query_type` string
+    parameter for the formalism. The consequences differ observably: the SM's
+    three-part example is not a legal ITS name, and a bare `my_compositions`
+    is one identifier under ITS but `misc::my_compositions` under SM — so the
+    same PUT and the same GET may or may not address the same stored query.
+    A third silence rides along: the `query_type` parameter and the
+    `QueryType` schema both declare `default: "AQL"`, while every released
+    example of a stored query's `type` member spells it `"aql"`, and nothing
+    says whether the served value echoes what was declared or is normalized.
+  source: >-
+    SM openehr_platform master04-definition_package.adoc §Registered Queries
+    (the two schemes, the examples, "If no namespace is supplied, the
+    namespace `"misc"` is assumed") + §Query Formalism (case-insensitive,
+    optional `::` version, "the major version "1" is assumed", the three
+    equivalent `_type_` values) vs ITS-REST docs/query/Qualified_query_name.md
+    (the `[{namespace}::]{query-name}` form, the optional namespace with no
+    default, the `[a-zA-Z0-9_.-]` query-name pattern, the valid-name
+    examples) + specifications/parameters/query/query_type.yaml and
+    schemas/query/QueryType.yaml (`default: "AQL"`) vs
+    schemas/query/StoredQuery.yaml and schemas/definition/QueryList.yaml (the
+    examples' `"type": "aql"`) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: a documented blend, each half taken from the component
+    that governs it. The WIRE grammar is the ITS one — a client addresses
+    `[{namespace}::]{query-name}` and is never required to supply a third
+    segment. The STORAGE KEY adopts the SM defaults, because they are the
+    only released rule that makes two spellings of one query the same query:
+    a namespace-less name is keyed under `misc`, so `my_compositions` and
+    `misc::my_compositions` are one stored query addressable either way
+    (without that default the two spellings would be different registrations
+    and a client could store under one and 404 under the other), and a
+    three-part `ns::formalism::name` decomposes per §Registered Queries so
+    its middle segment is read as the formalism and never as part of the
+    query-name — which is also what puts the reserved-name rule on the right
+    segment (AMB-123). A dot inside a name stays part of the query-name, per
+    the ITS charset, and is never a separator. Formalism values compare
+    case-insensitively per §Query Formalism, so the server keys and serves
+    the `type` member in ONE canonical spelling — the `QueryType` schema
+    default `AQL` — regardless of the casing the client declared (`aql`,
+    `AQL` and `AQL::1` are "all equivalent" per §Query Formalism, so the
+    normalization is semantically lossless; which spelling the released text
+    itself prefers remains contradictory — schema `default: "AQL"` against
+    every worked example's `"aql"` — and is carried upstream rather than
+    resolved here). The NAME halves
+    are exercised — I_DEFINITION_QUERY.store_query-unqualified_name and
+    -dotted_name (the namespace-less and dotted forms store and resolve back)
+    and list_queries-prefix_all_versions (the prefix list over the canonical
+    key). The CASING half is deliberately NOT gated: pinning either spelling
+    would assert what the released text declares two ways at once, so the
+    served canonical `AQL` is carried here and left for the upstream ruling.
+    Reported upstream (UPR-84).
+  disposition: fixed_handling
+  upstream_ref: "UPR-84"
+
+AMB-121:
+  ambiguity: >-
+    SM defines a query LISTING the released wire does not have. `list_queries`
+    takes `item_offset` / `items_to_fetch`; `list_matching_queries` takes TWO
+    PERL regexes — one on the query identifier, one on "archetype / template
+    identifiers" referenced INSIDE the query text — plus the same paging
+    pair, and declares an `invalid_id_pattern` error. The released wire has
+    one list operation, `GET /definition/query/{qualified_query_name}`, whose
+    only parameter is the required name, matched as a PREFIX ("will list all
+    versions of all queries with names starting with `org.openehr`"), with a
+    single 200 branch. So the wire has no regex language, no
+    artefact-reference filter, no paging, and no rejection branch that could
+    carry the SM error.
+  source: >-
+    SM UML/classes/i_definition_query.adoc §list_queries (item_offset,
+    items_to_fetch) and §list_matching_queries ("List all registered queries
+    matching an identifier pattern (regex) and an artefact identifier pattern
+    (regex) for artefacts referenced in the query"; "`_id_pattern_`:: PERL
+    regular expression on query identifier"; error `invalid_id_pattern`) vs
+    ITS-REST specifications/operations/definition_query_list.yaml (parameters:
+    qualified_query_name + Accept only; the prefix examples; a single '200') +
+    parameters/path/qualified_query_name.yaml — CONFIRMED first-hand.
+  handling: >-
+    Report only. The wire matches by the released PREFIX rule and nothing
+    else: no filter string is a regex, so the SM's `invalid_id_pattern` has
+    no wire realization and no rejection case is authorable (it would have to
+    invent both the pattern language and the status). `list_matching_queries`
+    carries an explicit `unrealized` its-rest binding and an SM-anchored case,
+    so the gap is not-applicable WITH CITATION rather than silently absent
+    (AMB-127 records the full realization picture). The realized list's own
+    open questions — empty result, ordering, and the missing paging the SM
+    form implies — are AMB-124. Reference, not duplication: AMB-103 already
+    carries the adjacent SM-vs-wire identifier and paging clauses for the
+    query EXECUTION surface; this entry is the DEFINITION surface's listing.
+    Sits beside AMB-107, the same regex-vs-glob shape on the template list.
+    Reported upstream (UPR-85).
+  disposition: report_only
+  upstream_ref: "UPR-85"
+
+AMB-122:
+  ambiguity: >-
+    The `{version}` path parameter is described ONCE, for the read and the
+    write routes alike, in purely read-resolution terms: "A SEMVER version
+    number. This can be an exact version (e.g. `1.7.1`), or a pattern as
+    partial prefix, in a form of `{major}` or `{major}.{minor}` (e.g. `1` or
+    `1.0`), in which case the highest (latest) version matching the prefix
+    will be considered." On the versioned STORE that sentence is incoherent —
+    a prefix selects among versions that already exist, and a store creates
+    one — and no released sentence assigns an outcome to a prefix, a SEMVER
+    pre-release/build form, or any other token on the write. The operation
+    declares 200/400/409, its 409 trigger is a duplicate
+    `(name, version)` pair, and its 400 is the general syntactic one.
+  source: >-
+    ITS-REST specifications/parameters/path/version.yaml (the quoted
+    description, shared by definition_query_version_store.yaml,
+    definition_query_version_get.yaml and the query-execution routes) +
+    operations/definition_query_version_store.yaml (responses 200/400/409) +
+    responses/409_StoredQuery_version.yaml (the duplicate-pair trigger) +
+    responses/400.yaml ("the request could not be parsed or is invalid (e.g.
+    malformed request URL syntax, missing required header or parameter, or
+    syntactically invalid header, parameter or content)") + docs/query/
+    Qualified_query_name.md ("The `version` identifier is in the format
+    specified by SEMVER style (i.e. `major.minor.patch`)") — CONFIRMED
+    first-hand.
+  handling: >-
+    Fixed handling: the versioned store requires an EXACT three-part numeric
+    `major.minor.patch`. A prefix (`1`, `1.0`), a pre-release or
+    build-metadata form (`1.0.0-rc.1`), and any other token are all
+    "syntactically invalid … parameter" and answer the operation's own
+    declared 400. Storing the segment verbatim is not a tenable alternative:
+    the whole surface ORDERS versions numerically — the read must resolve a
+    `{major}`/`{major}.{minor}` prefix to "the highest (latest) version
+    matching", and the list is SEMVER-ascending (AMB-124) — so a stored
+    non-numeric version has no place in that order, and a stored bare `1`
+    collides with the prefix algebra that must resolve `1` to a full version.
+    Coherent with AMB-102's read-side handling and deliberately distinct from
+    it: a READ addressing an unmatchable selector is 404 because it names no
+    existing resource, while a WRITE cannot address a non-existent resource
+    at all, so its unusable segment is a bad request and not a missing one.
+    Gated by I_DEFINITION_QUERY.store_query-version_prefix_rejected,
+    -version_prerelease_rejected and -version_malformed_rejected. Reported
+    upstream (UPR-86): state the write-side version grammar, since the
+    parameter's prefix semantics cannot apply to a store.
+  disposition: fixed_handling
+  upstream_ref: "UPR-86"
+
+AMB-123:
+  ambiguity: >-
+    Whether a stored query is CHECKED at store time, and against what, has
+    three released sources that never meet. SM makes it a precondition:
+    `store_query` carries `Pre_valid_query: is_valid_query(a_query_text)`,
+    and `valid_query` "Return True if the provided query text is a valid
+    instance of the formalism" — the precondition names a function
+    `is_valid_query` the interface does not declare (the declared operation
+    is `valid_query`), an editorial defect that leaves the precondition
+    formally dangling. ITS-REST declares only the general syntactic 400 on
+    both stores and never mentions validity. QUERY 1.1.0 is silent on stored
+    queries entirely — the component specifies AQL, not a query registry — so
+    no semantic validity contract for a STORE exists anywhere. Two adjacent
+    branches are unassigned in the same way: a store under the reserved
+    query-name `aql`, which the released NOTE forbids without naming a
+    status, and a store declaring a `query_type` the service does not
+    implement, which the flat string parameter admits without saying what
+    happens.
+  source: >-
+    SM UML/classes/i_definition_query.adoc §store_query (`Pre_valid_query`:
+    `is_valid_query(a_query_text)`) and §valid_query (the declared operation
+    name and its Meaning) vs ITS-REST
+    specifications/operations/definition_query_store.yaml and
+    definition_query_version_store.yaml (400 the only rejection) +
+    responses/400.yaml (the syntactic trigger) + docs/query/
+    Qualified_query_name.md §NOTE ("The `query-name` value must not be `aql`
+    (case-insensitive), as that is a reserved name") +
+    parameters/query/query_type.yaml (a free string, `default: "AQL"`) + SM
+    UML/classes/query_descriptor.adoc §formalism ("aql"; "any other string
+    value") + QUERY 1.1.0 docs/AQL (no stored-query registration or
+    store-time validity text) — CONFIRMED first-hand.
+  handling: >-
+    Fixed handling for all three branches, all on the released 400. (1)
+    Store-time validation is SYNTACTIC: the text is parsed as an instance of
+    its declared formalism, and a text that does not parse is refused 400.
+    That realizes the SM precondition with the only status the released
+    operations declare, and it stops at syntax because nothing beyond syntax
+    is released — there is no 422 on this surface and no AQL validity
+    catalogue to define one. The contrast with the template uploads is
+    deliberate: AMB-110's syntax/semantics split exists because AM defines
+    BOTH phases for archetypes, and QUERY defines neither for a stored
+    definition. (2) The reserved name is refused 400 AT THE STORE: the NOTE
+    is a MUST-NOT on the value, and a path segment carrying a forbidden value
+    is a syntactically invalid parameter — the released 400 trigger verbatim.
+    This EXTENDS AMB-102, whose fixed handling covers the READ side only
+    (an unresolvable name is 404 there because it addresses nothing); the two
+    are one rule seen from two directions and are deliberately kept apart,
+    because a write answering 404 would claim the resource does not exist
+    rather than that the request may not create it. (3) An unsupported
+    `query_type` is 400 rather than a silent registration: the value is not
+    malformed in itself (`QUERY_DESCRIPTOR.formalism` admits "any other
+    string value"), but a service that cannot parse a text in that formalism
+    cannot satisfy `Pre_valid_query` and must not register a definition it
+    could never execute. Gated by I_DEFINITION_QUERY.valid_query-invalid
+    (syntax), -bad_formalism (the unsupported formalism) and
+    store_query-reserved_name (the reserved name, in both letter cases).
+    Reported upstream (UPR-87): assign the three branches, and fix the
+    `is_valid_query` / `valid_query` naming defect.
+  disposition: fixed_handling
+  upstream_ref: "UPR-87"
+
+AMB-124:
+  ambiguity: >-
+    Beyond "matched by `qualified_query_name` as pattern", the list operation
+    is unstated in four ways. (a) NO MATCH: nothing says whether a pattern
+    matching nothing is an empty 200 or a 404 — the operation declares one
+    branch. (b) ORDER: the response is an array of StoredQuery objects and
+    nothing orders it, though the released example happens to show two
+    versions of one name ascending (`1.0.1` then `1.1.7`). (c) PAGING: the SM
+    form takes `item_offset`/`items_to_fetch` and the wire operation declares
+    no paging parameter at all. (d) The WILDCARD clause — "when is empty, it
+    will be treated as "wildcard" in the search" — describes a request the
+    released API cannot express: the path parameter is `required: true` and
+    the definition API declares only `/definition/query/{qualified_query_name}`
+    and `/definition/query/{qualified_query_name}/{version}`, with no bare
+    `/definition/query` path, so an "empty" name addresses a different URL
+    rather than this operation.
+  source: >-
+    ITS-REST specifications/operations/definition_query_list.yaml (the
+    description incl. the wildcard clause and the two prefix examples; a
+    single '200' response; parameters qualified_query_name + Accept) +
+    parameters/path/qualified_query_name.yaml (`required: true`) +
+    responses/200_QueryList.yaml + schemas/definition/QueryList.yaml (the
+    two-entry ascending example) + definition.openapi.yaml (only the two
+    `/definition/query/…` paths) + docs/overview/Requests_and_responses.md
+    §HTTP status codes (row 404 "The origin service did not find the target
+    resource or is not willing to disclose that one exists") + SM
+    UML/classes/i_definition_query.adoc §list_queries (the paging pair) —
+    CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, one position per silence. (a) A pattern matching nothing
+    is a FULFILLED request answering `200 []`: the operation declares exactly
+    one branch, and the released 404 trigger is a target resource that does
+    not exist — the list resource exists and its result is merely empty.
+    (b) Listing order is by qualified name, then version SEMVER-ASCENDING:
+    the order the released example shows, and the only total, stable order
+    definable over the surface's own version grammar (which is also why the
+    write-side version grammar must stay numeric — AMB-122). (c) NO paging is
+    exposed, because the released operation declares no parameter for it; the
+    SM's paged form is the realization gap AMB-121 records, not a wire
+    behaviour to synthesize. (d) The wildcard clause is UNREACHABLE as
+    released and is therefore gated by nothing. Our own bare
+    `GET /definition/query`, which serves the whole registry as the empty
+    prefix of the same rule, is an EXTENSION — no openEHR spec governs the
+    bare form — and no case exercises it, so no verdict depends on the
+    unreachable clause. Gated by
+    I_DEFINITION_QUERY.list_queries-prefix_all_versions (prefix match across
+    every version of every matching name, in the SEMVER-ascending order) and
+    -no_match_empty_list (`200 []`). Reported upstream (UPR-88): assign the
+    empty-result branch, state the listing order, and either give the
+    operation the SM's paging or drop the unreachable wildcard clause.
+  disposition: fixed_handling
+  upstream_ref: "UPR-88"
+
+AMB-125:
+  ambiguity: >-
+    Whether the conditional-request headers apply to a STORED QUERY is left
+    open, and the case for them is stronger here than for a template
+    (AMB-112). The overview scopes them by resource kind — "Both `ETag` and
+    `Last-Modified` SHOULD be included in responses for VERSION,
+    VERSIONED_OBJECT, or other resources that have versioning or unique state
+    identifiers" — and a stored query plainly HAS versioning: it is addressed
+    at a SEMVER, and its released representation carries a `saved` timestamp,
+    which is exactly the last-changed fact `Last-Modified` reports. Yet no
+    stored-query response declares either header, and no store declares an
+    `If-Match` parameter — including the version-LESS store, the one
+    overwriting write on this surface and precisely the lost-update shape
+    §If-Match and accidental overwrites addresses ("This is only required by
+    a small set of versioned resources in this specification, when the
+    `preceding_version_uid` is not part of the endpoint path segment").
+  source: >-
+    ITS-REST docs/overview/Requests_and_responses.md §"ETag and Last-Modified"
+    (the SHOULD sentence; "For openEHR resources, this value should be derived
+    from VERSION.commit_audit.time_committed.value") + §"If-Match and
+    accidental overwrites" (the quoted SHOULD and the 412 rule) vs
+    specifications/responses/200_StoredQuery_stored.yaml (Location only),
+    200_StoredQuery_get.yaml and 200_QueryList.yaml (Content-Type only) + the
+    four stored-query operations' parameter lists (no conditional-request
+    header anywhere) + schemas/query/StoredQuery.yaml (the `saved` member) —
+    CONFIRMED first-hand.
+  handling: >-
+    Fixed handling: NONE of the three is emitted or honoured on the
+    stored-query routes. A stored query is not a VERSION or a
+    VERSIONED_OBJECT, and its "versions" are independent definitions
+    registered under one name rather than a version tree — there is no
+    preceding version, no change-controlled state, and nothing an `ETag`
+    could name beyond the definition the request already addressed. The
+    version-less store's slot has no identifier distinct from the slot
+    itself, so an `If-Match` precondition would have no value to compare, and
+    the release declares the header on none of these operations; honouring an
+    undeclared precondition would put a 412 on the wire that no released
+    stored-query response defines. The posture is RECORDED, not asserted: no
+    case claims the headers are absent, because that would over-read a SHOULD
+    into a MUST NOT — the same restraint AMB-112 applies to `Last-Modified`
+    on templates. Reported upstream (UPR-89): say whether stored queries fall
+    under the conditional-header SHOULD, and whether the overwriting
+    version-less store takes `If-Match`.
+  disposition: fixed_handling
+  upstream_ref: "UPR-89"
+
+AMB-126:
+  ambiguity: >-
+    No released sentence says how faithfully a stored query's TEXT must be
+    served back. The version get "Retrieves the definition of a particular
+    stored query (at specified version) and its associated metadata" and the
+    representation types `q` as the AQL string, but nothing states whether
+    the served `q` is the byte-identical text the client stored, a normalized
+    or re-printed form of the same AQL, or merely an equivalent query — a
+    real difference, since a parse-and-print round trip can re-case keywords,
+    re-indent, collapse whitespace, and drop anything the parser does not
+    retain.
+  source: >-
+    ITS-REST specifications/operations/definition_query_version_get.yaml (the
+    quoted description) + responses/200_StoredQuery_get.yaml (a
+    representation, no fidelity rule) + schemas/query/StoredQuery.yaml (`q`
+    typed as the AQL text) + operations/definition_query_store.yaml (the
+    stored body is the AQL text, `text/plain`) — silence CONFIRMED
+    first-hand.
+  handling: >-
+    Fixed handling: retrieval is VERBATIM. What was stored is what is served
+    — the store's request body IS the definition, and a client that reads it
+    back to review, diff, or re-store it must see its own text. A silently
+    re-printed definition would change the artefact under an unchanged name
+    and version, which the immutability of a version-addressed definition
+    (AMB-117) forbids in substance even where the text is silent about form.
+    The same position, for the same reason, as template retrieval (AMB-111).
+    Asserted rather than declared: the version-get cases compare the served
+    `q` against the exact text the flow stored. Reported upstream (UPR-90):
+    state the fidelity rule on the stored-query read.
+  disposition: fixed_handling
+  upstream_ref: "UPR-90"
+
+AMB-127:
+  ambiguity: >-
+    The stored-query sub-surface has realization gaps in BOTH directions.
+    SM→ITS: of the nine `I_DEFINITION_QUERY` operations the released wire
+    realizes two — `store_query` (in its version-less and versioned forms)
+    and `list_queries` (the prefix list). Four have no endpoint at all:
+    `delete_query` (with `Pre_has_query`: `has_query(a_query_name)` and
+    `Post_query_deleted`: `not has_query (a_query_name)`, and the error
+    `invalid_query`), `list_matching_queries`, `queries_count`, and
+    `store_query_set` — whose released Meaning is literally "Register a query
+    set. TODO: determine details.", an operation upstream has not finished
+    specifying. Two more exist only INDIRECTLY: `has_query` (Boolean) has no
+    existence probe of its own, and `valid_query` no validation endpoint.
+    ITS→SM: the released `definition_query_version_get` — the single-
+    definition read, the only way to obtain one stored query — realizes NO SM
+    operation, because the interface declares no get-a-query function at all;
+    a released wire behaviour with no service-model anchor to name it by.
+  source: >-
+    SM UML/classes/i_definition_query.adoc (all nine operations, incl.
+    §delete_query's pre/postconditions and §store_query_set's "TODO:
+    determine details.") vs the released ITS-REST 1.1.0 definition API —
+    specifications/definition.openapi.yaml (only
+    `/definition/query/{qualified_query_name}` and
+    `…/{version}`) + operations/definition_query_list.yaml,
+    definition_query_store.yaml, definition_query_version_get.yaml,
+    definition_query_version_store.yaml — CONFIRMED first-hand.
+  handling: >-
+    Report only, both directions carried. SM→ITS: the four operations with no
+    wire carry explicit `unrealized` its-rest bindings, so their SM-anchored
+    cases are NOT-APPLICABLE WITH CITATION on this ITS instead of silently
+    absent, and activate unchanged if a later release adds the endpoints
+    (the AMB-17 pattern). The two indirect ones are bound to their
+    realizations rather than declared missing — `has_query` to the prefix
+    list read (a non-empty result means registered), `valid_query` to the
+    store (SM `Pre_valid_query` — AMB-123) — exactly as AMB-108 binds
+    `valid_opt` to the template upload. ITS→SM: the version get is anchored
+    to `list_queries` with `variant: version_get`, the closest SM read, since
+    the object it serves is one member of what `list_queries` returns; that
+    is a CATALOGUE naming convention and NOT a claim that the SM defines the
+    operation. Our admin `DELETE /admin/query/{qualified_query_name}/{version}`
+    does NOT realize `delete_query` and is not bound to it: it deletes one
+    `(name, version)` row while the SM contract deletes a query BY NAME
+    (its postcondition is `not has_query(a_query_name)`, which a
+    single-version delete does not establish), and it is an extension of our
+    own — no openEHR spec governs it, and the service code flags it as such.
+    Reported upstream (UPR-91): realize or retire the four unrealized
+    operations, finish `store_query_set`, and give the single-definition read
+    an SM operation.
+  disposition: report_only
+  upstream_ref: "UPR-91"

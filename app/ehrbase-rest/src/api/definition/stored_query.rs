@@ -43,10 +43,13 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 }
 
 /// `GET …/definition/query` — every registered stored query (the empty
-/// prefix of the same list). NOTE: the vendored ITS-REST OAS defines only
-/// the `{qualified_query_name}` route; the bare listing is our own
-/// convenience extension of that route's documented prefix semantics
-/// ("List stored queries") — no openEHR spec governs the bare form.
+/// prefix of the same list). NOTE: the released ITS-REST text defines only
+/// the `{qualified_query_name}` operation, whose own description says an
+/// empty pattern "will be treated as \"wildcard\" in the search"
+/// (`operations/definition_query_list.yaml`) yet leaves that clause with no
+/// addressable form (the path parameter is required and no `/definition/query`
+/// path exists); the bare listing is our own convenience extension realizing
+/// it — no openEHR spec governs the bare form.
 pub(super) async fn list_all(
     state: &AppState,
     parts: &RequestParts,
