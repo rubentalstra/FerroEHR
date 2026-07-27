@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The FLAT/STRUCTURED mapping of `INSTRUCTION_DETAILS` and
+  `INTERVAL_EVENT.sample_count`** (#521). An ACTION's instruction details now
+  travel over the wire exactly as the Simplified Formats specification maps
+  them — three suffixes on the `_instruction_details` field itself:
+  `|path`, `|composition_uid` and `|activity_id`. Previously the server
+  emitted a nested `_instruction_details/instruction_id` field with generic
+  object-reference suffixes, so `|composition_uid` was never produced, the
+  instruction path sat one level too deep, and two suffixes the
+  specification does not define were emitted; clients that sent the
+  specified form had the details silently dropped. Both directions are now
+  symmetric, so a composition round-trips through FLAT and STRUCTURED
+  without losing the reference. Separately, an interval event's
+  `|sample_count` (the count of samples the interval summarises) is now
+  both emitted and accepted; it was previously ignored in both directions.
+
+- **The template documentation no longer advertises a build flag that does
+  not exist** (#521). The templates-and-validation page described an
+  `ehrbase-quirks` build that renumbers duplicate node names and accepts two
+  vendor-only `DV_QUANTITY` suffixes; that feature was removed long ago.
+  There is one behaviour — the one the specification prescribes.
+
 - **SMART App Launch conformance** (#519). The discovery document's
   `services.*.baseUrl` values are now absolute URLs built from the new
   required `smart.public_base_url` origin (the specification requires

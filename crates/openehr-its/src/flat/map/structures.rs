@@ -249,22 +249,19 @@ fn emit_audit_details(d: &Value, out: &mut SimNode) {
     }
 }
 
-/// INSTRUCTION_DETAILS (master05 §INSTRUCTION_DETAILS): the `instruction_id`
-/// (LOCATABLE_REF: `|id`/`|type`/`|namespace`/`|path`) + `|activity_id`.
+/// INSTRUCTION_DETAILS (master05 §INSTRUCTION_DETAILS): exactly three STRING
+/// suffixes on the `_instruction_details` node itself — `|path` →
+/// `instruction_id.path`, `|composition_uid` → `instruction_id.id`,
+/// `|activity_id` → `activity_id`. The table and the section's example block
+/// agree; `instruction_id` is NOT a nested node on the simplified wire and the
+/// generic OBJECT_REF suffixes (`|id`/`|type`/`|namespace`) are not defined here.
 fn emit_instruction_details(det: &Value, out: &mut SimNode) {
     if let Some(iid) = det.get("instruction_id").filter(|v| !v.is_null()) {
-        let child = out.occurrence_mut("instruction_id", None);
-        if let Some(v) = iid.pointer("/id/value") {
-            child.attrs.insert("id".to_owned(), v.clone());
-        }
-        if let Some(v) = iid.get("type").filter(|v| !v.is_null()) {
-            child.attrs.insert("type".to_owned(), v.clone());
-        }
-        if let Some(v) = iid.get("namespace").filter(|v| !v.is_null()) {
-            child.attrs.insert("namespace".to_owned(), v.clone());
-        }
         if let Some(v) = iid.get("path").filter(|v| !v.is_null()) {
-            child.attrs.insert("path".to_owned(), v.clone());
+            out.attrs.insert("path".to_owned(), v.clone());
+        }
+        if let Some(v) = iid.pointer("/id/value") {
+            out.attrs.insert("composition_uid".to_owned(), v.clone());
         }
     }
     if let Some(aid) = det.get("activity_id").filter(|v| !v.is_null()) {
@@ -500,38 +497,46 @@ fn build_audit_details(node: &SimNode) -> Value {
     Value::Object(d)
 }
 
-/// INSTRUCTION_DETAILS (master05 §INSTRUCTION_DETAILS).
+/// INSTRUCTION_DETAILS (master05 §INSTRUCTION_DETAILS): `|composition_uid` +
+/// `|path` rebuild the mandatory `instruction_id` LOCATABLE_REF,
+/// `|activity_id` the sibling String attribute.
+///
+/// `LOCATABLE_REF` inherits OBJECT_REF's mandatory `namespace` and `type`
+/// (BASE base_types `LOCATABLE_REF`/`OBJECT_REF` classes: `namespace` 1..1,
+/// `type` 1..1), but master05 defines **no** flat suffix for either — they are
+/// derived here, not carried on the wire:
+///
+/// - `namespace` is `EHR` (the local EHR system context; OBJECT_REF's legal
+///   values are `local`, `unknown`, or any `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*`
+///   string — the same default `parties::build_object_ref` uses);
+/// - `id` is an `OBJECT_VERSION_ID` when the uid carries the
+///   `object_id::creating_system_id::version_tree_id` form (BASE
+///   `master09-identification`), else a `HIER_OBJECT_ID`;
+/// - `type` follows from that: a version uid names one `COMPOSITION`, a bare
+///   object uid names the `VERSIONED_COMPOSITION`.
 fn build_instruction_details(node: &SimNode) -> Value {
     let mut o = Map::new();
     o.insert("_type".to_owned(), json!("INSTRUCTION_DETAILS"));
-    if let Some(iid) = single(node, "instruction_id") {
-        let id = iid.attrs.get("id").and_then(Value::as_str).unwrap_or("");
-        let ty = iid
-            .attrs
-            .get("type")
-            .and_then(Value::as_str)
-            .unwrap_or("VERSIONED_COMPOSITION");
-        let ns = iid
-            .attrs
-            .get("namespace")
-            .and_then(Value::as_str)
-            .unwrap_or("EHR");
-        let id_type = if id.contains("::") {
-            "OBJECT_VERSION_ID"
-        } else {
-            "HIER_OBJECT_ID"
-        };
-        let mut lref = json!({
-            "_type": "LOCATABLE_REF",
-            "namespace": ns,
-            "type": ty,
-            "id": {"_type": id_type, "value": id},
-        });
-        if let Some(p) = iid.attrs.get("path").and_then(Value::as_str) {
-            lref["path"] = json!(p);
-        }
-        o.insert("instruction_id".to_owned(), lref);
+    let uid = node
+        .attrs
+        .get("composition_uid")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let (ref_type, id_type) = if uid.contains("::") {
+        ("COMPOSITION", "OBJECT_VERSION_ID")
+    } else {
+        ("VERSIONED_COMPOSITION", "HIER_OBJECT_ID")
+    };
+    let mut lref = json!({
+        "_type": "LOCATABLE_REF",
+        "namespace": "EHR",
+        "type": ref_type,
+        "id": {"_type": id_type, "value": uid},
+    });
+    if let Some(p) = node.attrs.get("path") {
+        lref["path"] = p.clone();
     }
+    o.insert("instruction_id".to_owned(), lref);
     if let Some(aid) = node.attrs.get("activity_id") {
         o.insert("activity_id".to_owned(), aid.clone());
     }
@@ -650,14 +655,17 @@ mod tests {
         ));
     }
 
-    // master05 §INSTRUCTION_DETAILS.
+    // master05 §INSTRUCTION_DETAILS: the three flat suffixes sit on the
+    // `_instruction_details` node itself (`|path`, `|composition_uid`,
+    // `|activity_id`) — there is no nested `instruction_id` node and no
+    // OBJECT_REF suffix.
     #[test]
     fn instruction_details_roundtrip() {
         let rm = json!({
             "_type": "ACTION",
             "instruction_details": {"_type": "INSTRUCTION_DETAILS",
                 "instruction_id": {"_type": "LOCATABLE_REF", "namespace": "EHR",
-                    "type": "VERSIONED_COMPOSITION",
+                    "type": "COMPOSITION",
                     "id": {"_type": "OBJECT_VERSION_ID", "value": "4cdc::x::1"},
                     "path": "/content[x]"},
                 "activity_id": "activities[at0001]"}
@@ -665,12 +673,13 @@ mod tests {
         let mut out = SimNode::default();
         emit_rm_attrs(&rm, "ACTION", &mut out);
         let det = out.child("_instruction_details").unwrap();
+        assert_eq!(det.attrs.get("path"), Some(&json!("/content[x]")));
+        assert_eq!(det.attrs.get("composition_uid"), Some(&json!("4cdc::x::1")));
         assert_eq!(
             det.attrs.get("activity_id"),
             Some(&json!("activities[at0001]"))
         );
-        let iid = det.child("instruction_id").unwrap();
-        assert_eq!(iid.attrs.get("path"), Some(&json!("/content[x]")));
+        assert!(det.children.is_empty(), "no nested instruction_id node");
 
         let occ = out.children["_instruction_details"].occurrences.clone();
         let (attr, v) = build_rm_attr("_instruction_details", &occ, "ACTION", "p")
@@ -678,9 +687,22 @@ mod tests {
             .unwrap();
         assert_eq!(attr, "instruction_details");
         assert_eq!(v["activity_id"], json!("activities[at0001]"));
+        assert_eq!(v["instruction_id"]["path"], json!("/content[x]"));
+        assert_eq!(v["instruction_id"]["id"]["value"], json!("4cdc::x::1"));
         assert_eq!(
             v["instruction_id"]["id"]["_type"],
             json!("OBJECT_VERSION_ID")
         );
+        assert_eq!(v["instruction_id"]["type"], json!("COMPOSITION"));
+
+        // A bare (non-versioned) composition uid names the versioned object.
+        let mut bare = SimNode::default();
+        bare.attrs
+            .insert("composition_uid".to_owned(), json!("4cdc3017"));
+        let (_, v) = build_rm_attr("_instruction_details", &[bare], "ACTION", "p")
+            .unwrap()
+            .unwrap();
+        assert_eq!(v["instruction_id"]["id"]["_type"], json!("HIER_OBJECT_ID"));
+        assert_eq!(v["instruction_id"]["type"], json!("VERSIONED_COMPOSITION"));
     }
 }
