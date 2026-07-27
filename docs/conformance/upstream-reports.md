@@ -632,3 +632,102 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   the REST route anchored only by RM `VERSIONED_OBJECT.revision_history()`.
 - **Ask:** correct the preconditions/signatures/typing/wording; consider
   adding container + revision-history read operations to I_EHR_STATUS.
+
+### UPR-35 — template stability across versions of one VERSIONED_COMPOSITION is unstated
+
+- **Components:** RM (versioned_composition, common change_control), SM (i_ehr_composition), ITS-REST
+- **Register:** AMB-73 (report_only)
+- **Facts:** VERSIONED_COMPOSITION pins `archetype_node_id` and
+  `is_persistent` across versions (its two invariants) but not
+  `archetype_details.template_id`; no released sentence permits or forbids
+  a template change on update. The CNF schedule expects rejection but is a
+  stalled guide.
+- **Problem:** servers legitimately diverge; the behaviour is untestable.
+- **Ask:** state whether template_id is version-stable (an invariant beside
+  Archetype_node_id_valid, or an explicit permission).
+
+### UPR-36 — deleted-composition read branches are only partially assigned
+
+- **Component:** ITS-REST (composition_get + the versioned_composition read ops)
+- **Register:** AMB-74 (fixed_handling)
+- **Facts:** the only deleted branch on the bare route
+  (`204_deleted_at_time`) is textually scoped to "at specified
+  `version_at_time`"; a GET of a deleted version by explicit version_uid,
+  or of the implicit latest when the trunk head is deleted, has no branch;
+  the versioned envelope routes declare 200/404 only, and the overview
+  docs never mention logical deletion.
+- **Problem:** the read behaviour for deleted content — the case
+  medicolegal traceability exists for — is unassigned on five routes.
+- **Ask:** assign the deleted-read branches (suggested: 204 on the bare
+  resource routes for all addressing forms; 200 with the data-less
+  ORIGINAL_VERSION on the VERSION-envelope routes).
+
+### UPR-37 — the composition DELETE 204's ETag identity is unstated
+
+- **Component:** ITS-REST (204_version_deleted + headers/ETag)
+- **Register:** AMB-75 (fixed_handling)
+- **Facts:** the delete commits a NEW `523|deleted|` version (RM master06
+  §Logical Deletion); the 204's ETag references the generic header with no
+  statement whether it carries the new version's uid or the addressed
+  (preceding) one.
+- **Problem:** clients chaining on the DELETE's ETag (e.g. to read the
+  deletion audit back) cannot rely on which version it names.
+- **Ask:** state the identity (suggested: the new deleted version's uid —
+  the resource's current state).
+
+### UPR-38 — no branch is assigned for lexically malformed identifier path segments
+
+- **Components:** ITS-REST (overview + parameter files), BASE (base_types)
+- **Register:** AMB-76 (fixed_handling)
+- **Facts:** `ehr_id` / `versioned_object_uid` are HIER_OBJECT_IDs per the
+  glossary; BASE's UID subtypes have "mutually exclusive string patterns"
+  but no class-level lexical invariant beyond non-empty; the per-operation
+  response maps declare no 400 for a malformed segment, while the overview
+  400 row covers "syntactically invalid … parameter".
+- **Problem:** 400-vs-404 for a garbage identifier token is unassigned and
+  implementations diverge (the stalled Robot suite itself answers both
+  ways across sibling cases).
+- **Ask:** assign the malformed-identifier branch explicitly.
+
+### UPR-39 — editorial defects in SM I_EHR_COMPOSITION + three ITS-REST doc typos
+
+- **Components:** SM (i_ehr_composition, i_validity_checker), ITS-REST
+- **Register:** AMB-77 (editorial)
+- **Facts/Problems:** (1) `get_composition_latest` precondition references
+  the undeclared `a_version_uid`; (2) `get_composition_at_version` breaks
+  the interface's error-name vocabulary (`ehr_does_not_exist` /
+  `object_version_does_not_exist`); (3) the same operation declares no
+  preconditions; (4) `delete_composition` types `a_version_uid` as UUID
+  while its Meaning requires an OBJECT_VERSION_ID; (5)
+  `update_composition` lacks a `preceding_version_uid` parameter (flagged
+  by the CNF schedule itself, master07); (6) the preconditions call
+  `valid_content(...)` where I_VALIDITY_CHECKER declares
+  `content_valid(...)`; (7) REST 412/409/400-already-deleted have no SM
+  counterparts and SM's `composition_already_exists` has no wire branch.
+  Typos: `headers/ETag_COMPOSITION.yaml` example closes `W/"…'` with a
+  single quote; `operations/composition_get.yaml` "is be used";
+  `Resources.md` §Multiple identifiers example writes a single colon
+  before the version_tree_id.
+- **Ask:** correct the signatures/preconditions/typing/error names and the
+  three examples; consider adding the missing concurrency/conflict error
+  vocabulary.
+
+### UPR-40 — the docs text never states the body-uid vs URL rule for a COMPOSITION update
+
+- **Component:** ITS-REST (overview Resources.md + Requests_and_responses.md)
+- **Register:** AMB-78 (report_only)
+- **Facts:** `Resources.md` §Identifier types derives the container from the
+  served identifier ("which also implies that the VERSIONED_OBJECT identifier
+  is `8849182c-…`") and calls populating a COMPOSITION's inherited `uid`
+  "strongly recommended"/"should"; RM types `LOCATABLE.uid` 0..1. The
+  normative prose never says what a service does when an update body's
+  `uid` names a DIFFERENT container than the addressed one — the requirement
+  exists only as an API-definition operation description.
+- **Problem:** the rule that clients are actually held to is invisible in the
+  normative text, and its branch is unassigned: 422 (well-formed but
+  unfollowable), 400 (client error), or silent acceptance with the
+  server's own uid are all defensible, so implementations diverge on a
+  request that is trivially easy to send by accident (a read-modify-write
+  client replaying a fetched COMPOSITION at the wrong URL).
+- **Ask:** state the rule in the docs text and assign its branch (suggested:
+  reject with 422 — the request is well-formed but cannot be followed).

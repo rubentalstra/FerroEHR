@@ -339,8 +339,12 @@ impl EhrbaseService {
             return Err(Self::not_modifiable_error(ehr_id));
         }
         // Reject an update whose body declares a *different* template than the
-        // stored composition it supersedes (CNF master07
-        // `update_composition-wrong_template`) — a semantic 422, not 400/412.
+        // stored composition it supersedes — a semantic 422. NOTE: no openEHR
+        // spec governs template stability across versions (RM ehr
+        // `versioned_composition.adoc` pins archetype_node_id and
+        // is_persistent across versions but not
+        // archetype_details.template_id) — our own design convention,
+        // consistent with those container invariants.
         let stored_template = current
             .root_data
             .as_ref()

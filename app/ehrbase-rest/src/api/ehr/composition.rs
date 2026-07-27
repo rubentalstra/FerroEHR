@@ -206,10 +206,14 @@ pub(super) async fn run(
             let uid = parse_uid_based_id(&p.uid_based_id)?;
             let body = decode_composition_body(&state, h, &parts.body).await?;
             // A body-supplied COMPOSITION.uid must identify the same
-            // versioned object as the path `uid_based_id` (ITS-REST
-            // `composition_update`: "the uid, if present, must match") —
-            // a mismatched body uid is a 400, never a silent write to the
-            // path's object.
+            // versioned object as the path `uid_based_id` — never a silent
+            // write to the path's object. NOTE: no released ITS-REST sentence
+            // assigns this rejection (the "must match" rule appears only in
+            // the stalled OAS operation description); the body is well-formed,
+            // so the fitting released row is 422 ("well-formed but was unable
+            // to be followed due to semantic errors",
+            // Requests_and_responses.md §HTTP status codes) — our register-
+            // documented handling.
             if let Some(body_uid) = body
                 .get("uid")
                 .and_then(|u| u.get("value"))
@@ -217,7 +221,7 @@ pub(super) async fn run(
             {
                 let body_vo = body_uid.split("::").next().unwrap_or(body_uid);
                 if body_vo.parse::<Uuid>() != Ok(uid.vo_id.0) {
-                    return Err(ApiError::BadRequest(format!(
+                    return Err(ApiError::Unprocessable(format!(
                         "the body COMPOSITION.uid {body_uid:?} does not identify the \
                          versioned object addressed by the request path ({})",
                         uid.vo_id
