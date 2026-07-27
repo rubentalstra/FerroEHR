@@ -1345,3 +1345,189 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** realize or retire the four unrealized operations, finish
   `store_query_set`, and give the single-definition read an SM operation. (The
   neighbouring Definition-side gaps are UPR-05 / UPR-14 / UPR-16 / UPR-72.)
+
+### UPR-92 — the party routes offer Simplified Formats that have no PARTY shape and no template channel
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §openehr-template-id; `docs/overview/Resources.md` §Simplified Formats + §"Data representation"; `docs/simplified_formats/` master02 + master05; the party create/update/get operations and their `Accept`/`Content-Type` enums)
+- **Register:** AMB-128 (fixed_handling)
+- **Facts:** the party create/update/get operations negotiate
+  `application/openehr.wt.flat+json` and `application/openehr.wt.structured+json`
+  alongside the canonical types, but the Simplified Formats sub-specification is
+  template-derived by construction ("Field identifiers are specific to each
+  operational template"; "field identifiers are generated from OPT definitions")
+  and its RM-mapping chapter's only top-level mapping is COMPOSITION — no
+  demographic PARTY root is mapped anywhere. The header that names the template
+  on a Simplified commit is scoped by a MUST to one class ("whenever committing
+  COMPOSITION"), and none of the ten party create/update operations declares it,
+  so a FLAT party commit has no way to identify the template its field
+  identifiers would come from.
+- **Ask:** either give the Simplified Formats a demographic shape and the party
+  commits a template-naming channel, or remove the two Simplified MIME types
+  from the party routes' negotiation. (Ours: the party routes are
+  canonical-only — a Simplified `Content-Type` is 415 and a Simplified-only
+  `Accept` is 406, both by the §Simplified Formats MUSTs.)
+
+### UPR-93 — `PARTY.Uid_mandatory` is an invariant the create contract cannot satisfy
+
+- **Components:** RM demographic (`org.openehr.rm.demographic.party.adoc` §Description NOTE + §Invariants; `master02-demographic_package.adoc` §Party Identification), RM common (`master06-change_control_package.adoc` §Version Identification), ITS-REST (`operations/person_create.yaml`)
+- **Register:** AMB-129 (fixed_handling)
+- **Facts:** the PARTY class table carries `Uid_mandatory: uid /= Void` as an
+  invariant while the NOTE in the same table calls populating that attribute
+  "strongly recommended"; §Party Identification then fixes the value as "the
+  `_uid_` attribute (type `OBJECT_VERSION_ID`) of the containing `VERSION`",
+  which a create request cannot know because the version does not exist yet. No
+  sentence says whether the invariant is evaluated on the request or on the
+  committed object. The NOTE's own example is internally inconsistent too: it
+  prescribes the value "copied from the `_object_id()_`" — the leading Guid —
+  and then copies the full `87284370-…::uk.nhs.ehr1::2`.
+- **Ask:** reconcile the invariant with the NOTE's recommendation strength,
+  state the evaluation point, and fix the object_id()-versus-example
+  contradiction. (Ours: the server mints and injects the uid; the invariant
+  holds post-assignment on the stored and served PARTY, in the full three-part
+  form — the same form UPR-27/AMB-65 settles for top-level objects generally.)
+
+### UPR-94 — `PARTY_RELATIONSHIP.Target_valid` is uncomputable, asymmetric, and contradicts PARTY
+
+- **Components:** RM demographic (`org.openehr.rm.demographic.party_relationship.adoc` §Invariants; `org.openehr.rm.demographic.party.adoc` §Functions + §Invariants), BASE (`org.openehr.base.base_types.party_ref.adoc`, `…object_ref.adoc`)
+- **Register:** AMB-130 (editorial)
+- **Facts:** `Target_valid: target /= Void and then not
+  target.reverse_relationships.has (self)` dereferences `reverse_relationships`
+  on a `PARTY_REF`, which inherits `OBJECT_REF` and declares only
+  `namespace`/`type`/`id`. Its sibling `Source_valid` has the same
+  wrong-type dereference but asserts the POSITIVE membership, and PARTY's own
+  `Reverse_relationships_validity` invariant plus the `reverse_relationships()`
+  postcondition both assert the positive over exactly the set `Target_valid`
+  negates. Even read charitably the expression is empty:
+  `reverse_relationships` is `List<LOCATABLE_REF>`, so `has (self)` compares a
+  `PARTY_RELATIONSHIP` to references and is never True.
+- **Ask:** restate both invariants over features their declared types have
+  (resolution through the demographic repository, as the `reverse_relationships`
+  postcondition already does), fix the `Target_valid` polarity, and align the
+  membership test with the `LOCATABLE_REF` element type. (Ours: neither
+  invariant is asserted on the wire; the released structure they gesture at —
+  relationships stored inline in the source party, `source`/`target` as
+  container-scoped `PARTY_REF`s — is.)
+
+### UPR-95 — the typed demographic routes assign no branch to a wrong subtype or a wrong-kind container
+
+- **Components:** ITS-REST (the five `{kind}_create` and `{kind}_get` operations; `docs/overview/Requests_and_responses.md` §HTTP status codes), RM common (`master06-change_control_package.adoc` §Typing)
+- **Register:** AMB-131 (fixed_handling)
+- **Facts:** the demographic API is five parallel typed route families over one
+  abstract class. A body whose `_type` is another concrete PARTY subtype than
+  the route's (a `ROLE` posted to `/demographic/person`) is well-formed JSON and
+  a well-formed RM object, and the create's 400/422/404 set assigns it nothing.
+  A `uid_based_id` naming a container that exists but holds another kind (a
+  PERSON's container addressed via `/demographic/organisation/{uid_based_id}`)
+  is a well-formed identifier resolving to a real container, and the get's
+  200/204/404 set assigns it nothing — although §Typing makes a version
+  container single-typed, so the addressed resource genuinely does not exist.
+- **Ask:** assign both branches explicitly on the typed demographic routes.
+  (Ours: wrong subtype in the body is 422 — the request is well-formed and the
+  failure is semantic; wrong kind behind the uid is 404 — the addressed
+  resource does not exist.)
+
+### UPR-96 — a party create's body `uid` has no rule, where the CONTRIBUTION create has one
+
+- **Components:** ITS-REST (`operations/person_create.yaml` and its four siblings; `operations/contribution_create.yaml`; `operations/person_update.yaml`), RM demographic (`master02-demographic_package.adoc` §Party Identification)
+- **Register:** AMB-132 (fixed_handling)
+- **Facts:** the CONTRIBUTION create states the rule for a client-supplied
+  envelope uid ("when provided, it will be accepted in case is not in-use,
+  otherwise error will be returned") and the party update states a match rule
+  against the URL; the party CREATE states neither, declares no conflict
+  branch, and leaves open whether a body uid is honoured, ignored or refused.
+  The value is also not one a client can legitimately choose: §Party
+  Identification makes the PARTY uid the containing VERSION's
+  OBJECT_VERSION_ID, whose object_id() part is the container the create is
+  about to mint.
+- **Ask:** say what a party create does with a body `uid`, as the CONTRIBUTION
+  create already does. (Ours: the create succeeds and server-minted identity
+  wins — the body value does not survive, because the identifier is derived
+  from a version this very request creates.)
+
+### UPR-97 — `resolve_refs` is described generically but cannot be requested on the reference-densest API
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §"Prefer resolving Object references"; the five party gets and the four versioned_party reads), RM demographic (`party.adoc`, `role.adoc`, `actor.adoc`)
+- **Register:** AMB-133 (report_only)
+- **Facts:** the preference is a bare client-side MAY with one worked context
+  ("retrieving lists of COMPOSITION resources within an EHR"), assigning the
+  service no obligation, no status and no failure mode. The demographic
+  payloads are the most reference-dense the API has —
+  `PARTY.relationships[i].source`/`.target` and `ROLE.performer` are
+  `PARTY_REF`s, `ACTOR.roles` is a list of them, `PARTY.reverse_relationships`
+  is a list of `LOCATABLE_REF`s — yet no demographic read declares a `Prefer`
+  parameter at all, so the preference cannot be expressed on the resources it
+  would help most.
+- **Ask:** declare `Prefer` on the demographic reads and state what resolving a
+  `PARTY_REF` yields, or say the preference does not apply there. (Ours: not
+  implemented on any demographic read — an honest boundary carried in the
+  wire-surface register; asserting either behaviour would over-read the MAY.)
+
+### UPR-98 — the two CONTRIBUTION commit routes describe different formats, and neither says what an XML envelope is
+
+- **Components:** ITS-REST (`operations/contribution_create.yaml`, `operations/demographic_contribution_create.yaml`, `docs/overview/Resources.md` §"Data representation" + §XML/JSON/Simplified Formats, `docs/overview/Amendment_record.md` SPECITS-84)
+- **Register:** AMB-134 (fixed_handling)
+- **Facts:** the EHR-side commit's own prose adds a Simplified-Formats arm and
+  confines it — "the CONTRIBUTION envelope itself remains canonical JSON … Only
+  the inner versioned payload … is serialized in the chosen FLAT or STRUCTURED
+  form" — while the same operation negotiates `application/xml` for the whole
+  exchange, a combination the envelope-stays-canonical-JSON rule cannot
+  express. The demographic-side commit carries the same `operationId` and no
+  such paragraph at all. Neither operation describes what an XML CONTRIBUTION
+  envelope would be, and the two routes' documented format sets differ with no
+  stated reason.
+- **Ask:** state the envelope's format rule once, for both routes — including
+  whether an XML envelope exists — and either extend the SPECITS-84 arm to the
+  demographic commit or say why demographic payloads are excluded. (Ours: the
+  envelope is canonical JSON on both routes; the EHR route accepts the
+  Simplified types for `versions[i].data` exactly as SPECITS-84 defines, the
+  demographic route does not, since the Simplified Formats have no PARTY shape
+  — UPR-92. §"Data representation" requires "at least one of" the canonical
+  formats and JSON is that one.)
+
+### UPR-99 — the SM demographic editorial defect bundle
+
+- **Components:** SM (`i_demographic_service.adoc`, `i_party.adoc`, `i_party_relationship.adoc`, `i_validity_checker.adoc`), RM common (`master06-change_control_package.adoc` §Contributions + §Logical Deletion + §Version Identification)
+- **Register:** AMB-135 (editorial)
+- **Facts:** (1) `i_party (a_versioned_party_id)` and `i_party_relationship
+  (a_versioned_party_rel_id)` declare untyped parameters; (2)
+  `get_party_at_version`'s `Pre_has_party_version` names a function the
+  interface does not declare — the declared probe is `has_party_version_id`;
+  (3) its `I_PARTY_RELATIONSHIP` twin `get_party_relationship_at_version`
+  declares no precondition at all although `has_party_relationship` exists; (4)
+  the create/update preconditions call `valid_content` while
+  `I_VALIDITY_CHECKER` declares `content_valid` (the same defect UPR-39
+  reports on `I_EHR_COMPOSITION`); (5) `create_party_relationship` lists the
+  error `definition_unknown` with no `definitions_valid` precondition, where
+  `create_party` carries both; (6) every identifier is typed bare `UUID`,
+  including the ones naming a VERSION, whose identifier is the three-part
+  OBJECT_VERSION_ID; (7) `delete_party`'s `Post_party_deleted: not has_party
+  (…)` postulates a physical delete, which RM common forbids — "a versioned
+  repository … is by definition indelible", and deletion is the four-step
+  logical procedure of §Logical Deletion.
+- **Ask:** fix (1)–(6) editorially and restate (7) as the RM's logical
+  deletion. (Ours: the catalogue keeps the SM names as anchors and adjudicates
+  behaviour from the ITS-REST docs text + RM; the party DELETE commits a
+  `523|deleted|` VERSION and the container survives.)
+
+### UPR-100 — demographic realization gaps in both directions
+
+- **Components:** SM (`i_party.adoc`, `i_party_relationship.adoc`, `i_demographic_service.adoc`, `docs/openehr_platform/master06-demographic_service.adoc`), ITS-REST (the `/demographic/versioned_party/**` and `/demographic/contribution` routes)
+- **Register:** AMB-136 (report_only)
+- **Facts:** ITS→SM — six released routes realize no SM operation: the four
+  `/demographic/versioned_party/**` reads (container, `revision_history`,
+  version-at-time, version-by-id), because `I_PARTY` declares no container
+  read, no revision-history operation and no operation returning a VERSION
+  envelope; and the two `/demographic/contribution` routes, because the SM
+  demographic chapter includes only `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`,
+  `I_PARTY_RELATIONSHIP` and their two UV classes — there is no demographic
+  contribution interface anywhere in SM. SM→ITS — `has_party` and
+  `has_party_version_id` have no wire (the API declares no existence probe), and
+  `i_party`/`i_party_relationship` are interface factories with no wire meaning.
+- **Ask:** give the versioned-party reads and the demographic contribution an
+  SM home, and decide whether the existence probes deserve a wire. (Ours: the
+  two versioned_party VERSION reads and the two contribution routes are
+  anchored to their closest SM read/commit under an explicit variant — a
+  catalogue naming convention, not an SM claim, the same device UPR-91/AMB-127
+  uses for the stored-query read; the container get and `revision_history` stay
+  a cited honest boundary; the existence probes are bound to the 200/404 of
+  their corresponding reads.)

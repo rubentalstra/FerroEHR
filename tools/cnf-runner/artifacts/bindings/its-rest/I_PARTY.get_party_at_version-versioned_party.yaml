@@ -27,3 +27,10 @@ outcomes:
       ETag: 'pattern:W/".*"'
       Last-Modified: present
       Location: absent
+  not_found:
+    # An unknown `version_uid` under a known container. DOCS TEXT (overview
+    # Requests_and_responses.md §HTTP status codes, the 404 row verbatim): "The
+    # origin service did not find the target resource or is not willing to
+    # disclose that one exists" — the addressed VERSION does not exist, so the
+    # request names no target resource.
+    status: 404
