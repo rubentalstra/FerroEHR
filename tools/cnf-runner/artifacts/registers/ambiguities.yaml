@@ -513,10 +513,18 @@ AMB-54:
     Fixed handling: (a) creation-with-preceding and (c) out-of-group tokens
     are 422 (well-formed envelopes whose change-control semantics cannot be
     followed — the general 422 row); (b) a stale/unknown
-    preceding_version_uid is 412 with the current-latest weak ETag,
-    consistent with the direct routes' precondition family. The
-    first-version-modification case gates at the released 400. Reported
-    upstream (UPR-47): assign the three residual branches.
+    preceding_version_uid is 412; the response beyond the status is
+    UNCONSTRAINED on this branch — the §If-Match ETag SHOULD is conditioned
+    on the service RECEIVING If-Match ("If a service receives this header
+    …"), which this operation has no parameter for, and CONTRIBUTION.versions
+    is a list over "any number of versionable items" (RM contribution.adoc),
+    so no single latest version_uid exists to name. On the DIRECT routes the
+    antecedent holds and the referent is unique, and the catalogue
+    deliberately gates that SHOULD there (a strength choice, recorded here on
+    purpose). The first-version-modification case gates at the released 400.
+    Reported upstream (UPR-47): assign the three residual branches, and
+    assign (or decline) an identifying header for the body-borne
+    precondition failure.
   disposition: fixed_handling
   upstream_ref: "UPR-47"
 
