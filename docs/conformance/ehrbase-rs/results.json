@@ -18,6 +18,12 @@
   "ixit_digest": "911ec784dff4ca9b",
   "outcomes": [
     {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_unfiltered",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
       "status": "passed",
       "rows_driven": 1,
@@ -133,7 +139,31 @@
       "citation": "I_ADMIN_SERVICE.list_contributions: AMB-33"
     },
     {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_cascade",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_existing_cascade",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_existing_recreate",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
