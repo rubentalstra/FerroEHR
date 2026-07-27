@@ -855,8 +855,9 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // (never narrowed to `modification` — RM change_control §"Contributions":
     // a correction is committed with change type 250|amendment|), and
     // spec-invalid combinations are rejected: creation on an existing object
-    // as 400 (ITS-REST 400_CONTRIBUTION — modification-type mismatch), an
-    // out-of-group code as 422 (content validation).
+    // as 422 (the register-documented mirror of the directional released
+    // 400_CONTRIBUTION trigger), an out-of-group code as 422 (content
+    // validation).
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
@@ -936,13 +937,14 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         matches!(
             bad_creation,
             Err(SmError {
-                status: CallStatusType::PreconditionViolation,
+                status: CallStatusType::ContentInvalid,
                 ..
             })
         ),
-        "creation on an existing object is a change-control mismatch — the \
-         ITS-REST 400_CONTRIBUTION scope (modification type does not match), \
-         not content validation; got {bad_creation:?}"
+        "creation on an existing object is the UNASSIGNED mirror of the \
+         released 400_CONTRIBUTION trigger (which is directional: 'first \
+         version of a MODIFICATION') — the register-documented 422 \
+         (AMB-54, narrowed); got {bad_creation:?}"
     );
 
     // Invalid code: not a member of the audit_change_type group

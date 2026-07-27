@@ -89,14 +89,17 @@ fn classify(
     match code.as_str() {
         change_type::CREATION => {
             if has_preceding {
-                // A change-control mismatch, not content validation: ITS-REST
-                // scopes `400_CONTRIBUTION` to "the modification type does not
-                // match the operation" — a 400, never a 422.
-                return Err(ServiceError::BadRequest(
+                // The released `400_CONTRIBUTION` trigger is DIRECTIONAL —
+                // "first version of a MODIFICATION" — and does not cover this
+                // mirror case; no released text assigns it, so it is the
+                // register-documented 422: a well-formed envelope whose
+                // change-control semantics cannot be followed (RM
+                // change_control §Contributions: creation commits a NEW
+                // VERSIONED_OBJECT).
+                return Err(ServiceError::Unprocessable(
                     "change_type 249|creation| is invalid for an existing object \
                      (preceding_version_uid present); creation commits a new \
-                     VERSIONED_OBJECT (RM change_control §Contributions; ITS-REST \
-                     contribution 400: modification type does not match)"
+                     VERSIONED_OBJECT (RM change_control §Contributions)"
                         .to_owned(),
                 ));
             }
@@ -109,8 +112,15 @@ fn classify(
         }
         change_type::DELETED => {
             if !has_preceding {
-                return Err(ServiceError::Unprocessable(
-                    "deleted (523) version requires preceding_version_uid".to_owned(),
+                // A non-creation change type as a FIRST version — the released
+                // `400_CONTRIBUTION` trigger family ("the modification type
+                // does not match the operation - i.e. first version of a
+                // MODIFICATION") → 400.
+                return Err(ServiceError::BadRequest(
+                    "deleted (523) version requires preceding_version_uid — a first \
+                     version's change type is 249|creation| (ITS-REST contribution \
+                     400: the modification type does not match the operation)"
+                        .to_owned(),
                 ));
             }
             if has_data {
@@ -150,10 +160,14 @@ fn classify(
         // version of an existing object; the code is preserved verbatim.
         _ => {
             if !has_preceding {
-                return Err(ServiceError::Unprocessable(format!(
+                // THE released assignment: `400_CONTRIBUTION` — "the
+                // modification type does not match the operation - i.e. first
+                // version of a MODIFICATION" → 400.
+                return Err(ServiceError::BadRequest(format!(
                     "change_type {code} requires preceding_version_uid — a first \
-                     version's change type is 249|creation| (RM change_control \
-                     §Contributions)"
+                     version's change type is 249|creation| (ITS-REST contribution \
+                     400: the modification type does not match the operation; RM \
+                     change_control §Contributions)"
                 )));
             }
             if !has_data {
@@ -1006,12 +1020,15 @@ mod tests {
 
     #[test]
     fn classify_rejects_spec_invalid_combinations() {
-        // creation with a preceding version is a change-control mismatch —
-        // the ITS-REST `400_CONTRIBUTION` scope, not content validation.
-        assert!(classify_bad_request(Some("249"), true, true).contains("249|creation|"));
-        assert!(classify_err(Some("250"), false, true).contains("preceding_version_uid"));
+        // A non-creation change type as the FIRST version is THE released
+        // `400_CONTRIBUTION` trigger ("the modification type does not match
+        // the operation - i.e. first version of a MODIFICATION") → 400;
+        // creation WITH a preceding is its unassigned mirror → the
+        // register-documented 422 (AMB-54, narrowed).
+        assert!(classify_err(Some("249"), true, true).contains("249|creation|"));
+        assert!(classify_bad_request(Some("250"), false, true).contains("preceding_version_uid"));
         assert!(classify_err(Some("523"), true, true).contains("must not carry data"));
-        assert!(classify_err(Some("523"), false, false).contains("preceding_version_uid"));
+        assert!(classify_bad_request(Some("523"), false, false).contains("preceding_version_uid"));
         assert!(classify_err(Some("999"), true, true).contains("audit_change_type"));
         assert!(classify_err(Some("251"), true, false).contains("needs data"));
     }

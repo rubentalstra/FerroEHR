@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Contribution change-type mismatch statuses follow the released
+  assignment** (#467). A non-creation `change_type` committed as the FIRST
+  version of a versioned object (the released `400_CONTRIBUTION` trigger:
+  "the modification type does not match the operation - i.e. first version
+  of a MODIFICATION") now answers 400; a `249|creation|` member carrying a
+  `preceding_version_uid` — the unassigned mirror case — moves to 422.
+  Previously the two were inverted.
+
 - **The CONTRIBUTION GET serves `ETag` + `Last-Modified`** (#463).
   `GET …/contribution/{contribution_uid}` now carries the contribution-uid
   weak `ETag` (the same identity the 201 already carries) and a
