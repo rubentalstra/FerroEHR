@@ -29,7 +29,11 @@
 //! responses/parameters/headers, differing only in the RM type and its own
 //! `headers/Location_{PERSON,AGENT,GROUP,ORGANISATION,ROLE}.yaml`. The
 //! `versioned_party_*` and `demographic_contribution_*` families are declared
-//! from their own operation files. Everything the released files leave open is
+//! from their own operation files, and the sixteen `ITEM_TAG` operations from
+//! theirs (five more byte-identical typed quintets plus the space-wide
+//! `demographic_tags_get.yaml` — see that section's own preamble, which carries
+//! the family-wide rules: canonical-JSON only, no change control, and the
+//! our-own-design `owner_id`). Everything the released files leave open is
 //! filled from the RELEASED overview chapters — never from the stalled OAS:
 //! `docs/overview/Requests_and_responses.md` (the weak `W/` `ETag` MUST, the
 //! `Prefer` triad + `Preference-Applied`, the committal-header
@@ -6116,24 +6120,225 @@ pub(crate) async fn contribution_get(
     let parts = crate::api::into_parts(request).await;
     guarded_dispatch(state, "contribution_get", parts, super::dispatch::dispatch).await
 }
-
 // ── ITEM_TAG sub-resources ───────────────────────────────────────────────────
+//
+// Sixteen released operations: five byte-identical typed quintets
+// (`{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`,
+// differing only in the RM type name and in their own
+// `responses/200_<RM>_ItemTagList_{retrieved,updated}.yaml` +
+// `schemas/demographic/ItemTagOf<Kind>.yaml`) plus the space-wide
+// `demographic_tags_get.yaml`. The fifteen typed ones mirror the EHR-side tag
+// family minus `ehr_id`; the space-wide one is a genuine delta (see it).
+//
+// Every tag route is canonical-JSON only. The canonical XML ITS defines no
+// ITEM_TAG type at all, so the released `Accept_canonical` enum's
+// `application/xml` member is stalled shape here: an XML `Accept` is `406`, and
+// an XML `Content-Type` on the five PUTs is `415` (`Resources.md` §"XML
+// Format"/§"JSON Format"). The five DELETEs declare no `Accept` and answer
+// `204` with no body, so they negotiate nothing and carry no `406`.
+//
+// Tags are not change-controlled: none of the sixteen commits a CONTRIBUTION,
+// mints a version, takes an `If-Match`, or serves an `ETag`, `Last-Modified` or
+// `Location`. The only response header on the whole family is
+// `Preference-Applied`, on the five PUTs.
+//
+// `owner_id` is our own design. RM `item_tag.adoc` types it `OBJECT_REF` —
+// "Identifier of owner object, such as EHR" — and a demographic party has no
+// EHR; no demographic RM class declares a `tags` containment either, so nothing
+// released fixes the owner of an EHR-less tag. This build names the owning
+// VERSIONED_PARTY; the position is register-documented in the conformance
+// catalogue. The released `ItemTagOf*` examples instead show
+// `{namespace: local, type: SYSTEM}`, which no released sentence requires.
+//
+// TODO: serve `target` as the bare `UID_BASED_ID` the RM declares
+// (`item_tag.adoc`: `target: UID_BASED_ID`, "which may be a
+// `VERSIONED_OBJECT<T>` or a `VERSION<T>`") instead of the `OBJECT_REF`
+// envelope this family currently emits. The EHR-side tag family already serves
+// the RM shape; the RM is the RELEASED component and wins over the stalled OAS
+// `ItemTag`/`UObjectRefOfUidBasedId` schema the envelope follows. Until that
+// lands, the declarations below describe the envelope actually served.
 
-/// List `ITEM_TAG`s across the demographic surface (`GET /demographic/tags`).
+/// List `ITEM_TAG`s across the whole Demographic space
+/// (`GET /demographic/tags`).
+///
+/// "Retrieves the list of ITEM_TAG resources associated with any target VERSION
+/// or VERSIONED_PARTY within the Demographic space." (ITS-REST
+/// `specifications/operations/demographic_tags_get.yaml`).
+///
+/// The ONLY tag route on the whole surface with NO scoping parameter: its
+/// EHR-side twin is bounded by one EHR, this one is a whole-space scan. The
+/// released operation declares no scoping parameter, no `offset`/`fetch`, no
+/// ordering and no limit, and no released sentence bounds who may read the
+/// space — it is served whole under the deployment's authorization layer, a
+/// position register-documented in the conformance catalogue (distinct from the
+/// filter semantics, which are their own entry).
 #[utoipa::path(
     get, path = "/demographic/tags", tag = "ITEM_TAG",
     params(
         ("tag_key" = Option<String>, Query,
-         description = "Filter by ITEM_TAG `key` (exact match)."),
+         description = "Filter by ITEM_TAG `key`. The released parameter file \
+                        (`specifications/parameters/query/tag_key.yaml`) \
+                        carries NO description at all — only `name`, `in: \
+                        query`, `style: form`, `explode: true` and `schema: \
+                        {type: string}` — so everything below is read off the \
+                        operation description or is OURS. The three filters \
+                        are AND-combined, each an EXACT, case-sensitive match \
+                        on the stored value; an omitted filter constrains \
+                        nothing — \"In case no such parameter is provided then \
+                        all ITEM_TAG resources will be retrieved\" \
+                        (`demographic_tags_get.yaml`). None of exactness, case \
+                        sensitivity or the combination rule is fixed by the \
+                        released text, so those semantics are OURS, \
+                        register-documented in the conformance catalogue. The \
+                        parameter is SCALAR: the released description says the \
+                        list \"can be filtered by the given one or more \
+                        `tag_key`, `tag_value`, `tag_target_path` query \
+                        parameters\" while each released parameter schema is a \
+                        plain `type: string` — the plural reads as one or more \
+                        OF THE THREE parameters (the mismatch is a \
+                        released-text defect, register-documented), and a \
+                        repeated parameter has no defined meaning.",
+         example = "flag"),
         ("tag_value" = Option<String>, Query,
-         description = "Filter by ITEM_TAG `value` (exact match)."),
+         description = "Filter by ITEM_TAG `value`. The released parameter \
+                        file \
+                        (`specifications/parameters/query/tag_value.yaml`) \
+                        carries NO description at all — only `name`, `in: \
+                        query`, `style: form`, `explode: true` and `schema: \
+                        {type: string}` — so everything below is read off the \
+                        operation description or is OURS. Same semantics as \
+                        `tag_key`: exact, case-sensitive, AND-combined, \
+                        scalar.",
+         example = "follow-up"),
         ("tag_target_path" = Option<String>, Query,
-         description = "Filter by ITEM_TAG `target_path` (exact match).")
+         description = "Filter by ITEM_TAG `target_path`. The released \
+                        parameter file \
+                        (`specifications/parameters/query/tag_target_path.yaml`) \
+                        carries NO description at all — only `name`, `in: \
+                        query`, `style: form`, `explode: true` and `schema: \
+                        {type: string}` — so everything below is read off the \
+                        operation description or is OURS. Same semantics as \
+                        `tag_key`: exact, case-sensitive, AND-combined, \
+                        scalar. Tags stored WITHOUT a `target_path` (the \
+                        absent 0..1 case, which is also where an empty string \
+                        normalizes to) match no value of this filter; they are \
+                        reached by omitting it.",
+         example = "/details/items[at0001]/value"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The matching ITEM_TAGs (an empty array \
-                                      when none match).", body = serde_json::Value),
-        (status = 400, description = "A filter query parameter is invalid.",
+        (
+            status = 200, description = "The matching ITEM_TAG list, across \
+                                         every party kind and both target \
+                                         forms. An empty array when nothing \
+                                         matches — the released empty-list \
+                                         sentence for this operation still \
+                                         names an EHR, a copy-paste from the \
+                                         EHR-scoped twin onto a route that has \
+                                         no EHR at all; it is read as the \
+                                         Demographic space and the defect is \
+                                         register-documented in the \
+                                         conformance catalogue. A no-match \
+                                         result is `200 []`, never `404`. \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         tagged target — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The released operation reuses \
+                                         `responses/200_PERSON_ItemTagList_retrieved.yaml` \
+                                         (items typed \
+                                         `schemas/demographic/ItemTagOfPerson.yaml`) \
+                                         for this CROSS-KIND list, another \
+                                         released-text defect — each row's own \
+                                         `target.type` names its kind, and the \
+                                         example below shows an AGENT tag \
+                                         beside a PERSON one. The (`key`, \
+                                         `target_path`) ordering the server \
+                                         applies is OURS: no openEHR spec \
+                                         governs tag ordering.",
+            content((serde_json::Value = "application/json", example = json!([
+                {
+                    "_type": "ITEM_TAG",
+                    "key": "flag",
+                    "value": "follow-up",
+                    "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                    "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                },
+                {
+                    "_type": "ITEM_TAG",
+                    "key": "reviewed",
+                    "value": "true",
+                    "target_path": "/details/items[at0001]/value",
+                    "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31" } },
+                    "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "b1e6a0c4-6b2e-4f3a-9c1d-2f5a7e8b0c31" } }
+                }
+            ])))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      This route takes no path parameter and \
+                                      every filter is an unconstrained string, \
+                                      so the only reachable trigger is an \
+                                      unparseable query string. The released \
+                                      operation declares `200` and `400` ONLY \
+                                      — with no scoping parameter there is \
+                                      nothing to fail to find, so there is no \
+                                      `404` on this route.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6153,18 +6358,184 @@ pub(crate) async fn demographic_tags_get(
 
 /// Retrieve an `AGENT`'s `ITEM_TAG`s
 /// (`GET /demographic/agent/{uid_based_id}/tags`).
+///
+/// "Retrieves the list of all ITEM_TAG resources associated with a given target
+/// AGENT version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/agent_tags_get.yaml`).
+///
+/// The two `uid_based_id` forms address DISJOINT tag collections — see the
+/// parameter.
 #[utoipa::path(
     get, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target AGENT VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to get the \
+                        tags of a particular (target) version of the AGENT \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        get the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/agent_tags_get.yaml`; the \
+                        released path parameter file \
+                        `parameters/path/uid_based_id.yaml` carries the same \
+                        dual-form sentence with VERSIONED_OBJECT in place of \
+                        VERSIONED_PARTY). The two forms address DISJOINT \
+                        collections: an ITEM_TAG carries exactly one `target` \
+                        (RM `item_tag.adoc`: `target: UID_BASED_ID`, \"which \
+                        may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), \
+                        so a tag written against the container is invisible to \
+                        the version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ITEM_TAGs on the target (an empty \
-                                      array when none exist).",
+        (
+            status = 200, description = "The released trigger, verbatim: `200 \
+                                         OK` \"is returned when the requested \
+                                         ITEM_TAG list is successfully \
+                                         retrieved.\" (ITS-REST \
+                                         `specifications/responses/200_AGENT_ItemTagList_retrieved.yaml`; \
+                                         items typed \
+                                         `schemas/demographic/ItemTagOfAgent.yaml`). \
+                                         \"This will return an empty list when \
+                                         there is no ITEM_TAG associated with \
+                                         the given target\" \
+                                         (`agent_tags_get.yaml`) — an \
+                                         EXISTING, untagged target is `200 \
+                                         []`; a target that does not exist is \
+                                         `404`. \"More than one ITEM_TAG may \
+                                         be associated with a single target \
+                                         AGENT or VERSIONED_PARTY, in which \
+                                         case they are uniquely identified by \
+                                         their `key` and `target_path` pair \
+                                         attributes\". Every row carries the \
+                                         SERVER-ASSIGNED `target` and \
+                                         `owner_id`; neither is client input. \
+                                         `target` names the ADDRESSED \
+                                         collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. No `ETag`, `Last-Modified` or \
+                                         `Location` accompanies the list: a \
+                                         tag collection is not \
+                                         change-controlled and has no version \
+                                         and no uid.",
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      All of these are that non-existence: an \
+                                      unknown `versioned_object_uid`; a \
+                                      version form whose version does not \
+                                      exist; and a well-formed uid whose \
+                                      stored container is NOT an AGENT — \
+                                      another PARTY kind, or a \
+                                      COMPOSITION/EHR_STATUS/FOLDER uid from \
+                                      the EHR space. The kind-checked reading \
+                                      is OURS (the released sentence does not \
+                                      spell it out) and follows from the route \
+                                      naming the target's class — a \
+                                      VERSIONED_OBJECT has one type (RM \
+                                      `common/master06` §Change Control); it \
+                                      is register-documented in the \
+                                      conformance catalogue. An EXISTING \
+                                      target with no tags is `200 []`, never \
+                                      `404`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6178,27 +6549,322 @@ pub(crate) async fn agent_tags_get(
 
 /// Replace an `AGENT`'s `ITEM_TAG`s
 /// (`PUT /demographic/agent/{uid_based_id}/tags`).
+///
+/// "Updates the list of all ITEM_TAG resources associated with a given target
+/// AGENT version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/agent_tags_update.yaml`). It is a FULL COLLECTION
+/// REPLACE of the ADDRESSED collection — the container's or one version's,
+/// never both.
+///
+/// Tags are not change-controlled, so this write commits no CONTRIBUTION, mints
+/// no version, takes no `If-Match` and no committal headers, and serves neither
+/// `ETag` nor `Last-Modified`.
 #[utoipa::path(
     put, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target AGENT VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to update \
+                        the tags of a particular AGENT version (e.g. one \
+                        identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        update the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/agent_tags_update.yaml`). \
+                        The update sentence sources the HIER_OBJECT_ID from \
+                        VERSIONED_OBJECT while the get and delete of the same \
+                        family source it from VERSIONED_PARTY, and all three \
+                        end on \"the target VERSIONED_PARTY container\" — an \
+                        editorial split inside one operation family, \
+                        register-documented in the conformance catalogue; both \
+                        name the same container. The two forms address \
+                        DISJOINT collections: an ITEM_TAG carries exactly one \
+                        `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
+                        \"which may be a `VERSIONED_OBJECT<T>` or a \
+                        `VERSION<T>`\"), so a tag written against the \
+                        container is invisible to the version form and a tag \
+                        written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So replacing the container's list never touches any \
+                        version's list, and replacing one version's list never \
+                        touches the container's or a sibling version's.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the stored ITEM_TAG list).")
+         description = "`return=minimal` — the default when the header is \
+                        absent (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\": \"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\") — answers `204 No Content`; \
+                        `return=representation` answers `200` with the full \
+                        RESULTING tag list of the addressed collection. \
+                        `return=identifier` cannot be honoured: its released \
+                        contract is a body carrying \"only the identifier \
+                        (e.g., the `uid`) of the affected resource\" and an \
+                        ITEM_TAG has no uid, so the server applies — and \
+                        declares — the default `return=minimal`; that \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue. Whichever branch runs, the \
+                        response states it in `Preference-Applied` (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`).",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). The tag \
+                        list has no XML and no Simplified-Format shape, so \
+                        only `application/json` is processable and any other \
+                        declared type is `415`; an ABSENT `Content-Type` \
+                        declares nothing and is read as canonical JSON.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The full ITEM_TAG list to store; an empty array \
-                                removes all tags on the target."),
+                 description = "A BARE JSON ARRAY of UPDATE_ITEM_TAG objects — \
+                                the complete tag list to associate with the \
+                                ADDRESSED collection (`required: true`; there \
+                                is no envelope object). Per the released \
+                                `schemas/common/UpdateItemTag.yaml`: `key` is \
+                                REQUIRED (\"Tag key (identifier)\"), `value` \
+                                (\"Tag value\") and `target_path` (\"An AQL \
+                                path withing the `target` used to tag a \
+                                fine-grained element\") are optional, and \
+                                `additionalProperties: false` defines no other \
+                                member. `target` and `owner_id` are NOT client \
+                                input — the server assigns them from the route \
+                                — which is why the write schema omits them; a \
+                                body that nonetheless carries them is accepted \
+                                and those members ignored, per our canonical \
+                                tolerant-read posture (no released sentence \
+                                governs the extra-member case — our own \
+                                design). This is a FULL COLLECTION REPLACE: \
+                                tags omitted from the body are removed, and \
+                                \"Providing an empty list will effectively \
+                                remove all ITEM_TAG associated with the given \
+                                target\" (`agent_tags_update.yaml`), so `[]` \
+                                is the clear-all form and never an error. \
+                                Identity inside the list is the (`key`, \
+                                `target_path`) PAIR (\"More than one ITEM_TAG \
+                                may be associated with a single target, in \
+                                which case they are uniquely identified by \
+                                their `key` and `target_path` pair \
+                                attributes\"), so two entries may share a \
+                                `key` when their `target_path` differs; a \
+                                DUPLICATE pair inside one body is resolved \
+                                last-wins (no released rule and no \
+                                `uniqueItems` — ours, register-documented). A \
+                                `target_path` of `\"\"` normalizes to ABSENT, \
+                                the same identity as an entry with no \
+                                `target_path` at all: the RM models \
+                                `target_path` 0..1 with no non-empty invariant \
+                                while all five released `ItemTagOf*` examples \
+                                carry `target_path: \"\"` — reconciling the \
+                                two on one identity is ours, \
+                                register-documented. Canonical JSON only: an \
+                                XML (or Simplified-Format) `Content-Type` is \
+                                `415`.",
+                 example = json!([
+                     { "key": "flag", "value": "follow-up" },
+                     { "key": "reviewed", "value": "true", "target_path": "/details/items[at0001]/value" }
+                 ])),
     responses(
-        (status = 200, description = "Stored (`Prefer: return=representation`); \
-                                      body is the stored ITEM_TAG list.",
+        (
+            status = 200, description = "Applied, with `Prefer: \
+                                         return=representation`. The body is \
+                                         the full RESULTING ITEM_TAG list of \
+                                         the addressed collection — every tag \
+                                         now stored on it, server-assigned \
+                                         `target`/`owner_id` included — not \
+                                         merely the entries just sent. (The \
+                                         released \
+                                         `responses/200_AGENT_ItemTagList_updated.yaml` \
+                                         describes itself as \"returned when \
+                                         the requested ITEM_TAG list is \
+                                         successfully retrieved\", a \
+                                         copy-and-paste of its `_retrieved` \
+                                         sibling; the trigger is the update, \
+                                         as stated here. Items are typed \
+                                         `schemas/demographic/ItemTagOfAgent.yaml`.) \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The only response header is \
+                                         `Preference-Applied`: a tag \
+                                         collection is not change-controlled, \
+                                         so there is no `ETag`, no \
+                                         `Last-Modified` and no `Location`.",
+            headers(
+                ("Preference-Applied" = String,
+                 description = "`return=representation` — the honoured \
+                                preference (`Requests_and_responses.md` \
+                                §\"Representation details negotiation\": the \
+                                service MAY include this header \"to indicate \
+                                that the client's preference has been \
+                                honored\").")
+            ),
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "AGENT", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the \
+                                      `Prefer` header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_updated.yaml`) \
+                                      — the DEFAULT branch; a \
+                                      `return=identifier` request resolves \
+                                      here too. No body and no resource header \
+                                      of any kind — no `ETag`, no \
+                                      `Last-Modified`, no `Location` — only \
+                                      the `Preference-Applied` declaration.",
+         headers(
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the applied preference, \
+                             including when the request asked for \
+                             `return=identifier` (an ITEM_TAG has no uid to \
+                             return).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      UUID nor a well-formed three-part \
+                                      OBJECT_VERSION_ID, or a body that is not \
+                                      parseable JSON / not a JSON ARRAY. A \
+                                      well-formed array whose entries break an \
+                                      ITEM_TAG rule is `422`, not `400`.",
          body = serde_json::Value),
-        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
-        (status = 400, description = "The ITEM_TAG list is invalid.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      An unknown `versioned_object_uid`, a \
+                                      version form whose version does not \
+                                      exist, and a well-formed uid whose \
+                                      stored container is NOT an AGENT \
+                                      (another PARTY kind, or a uid from the \
+                                      EHR space) are all this `404` — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 406, description = "A `return=representation` request whose \
+                                      `Accept` cannot be satisfied: the \
+                                      ITEM_TAG list is served as canonical \
+                                      `application/json` only (the canonical \
+                                      XML ITS defines no ITEM_TAG type, so the \
+                                      released `Accept_canonical` enum's \
+                                      `application/xml` member is stalled \
+                                      shape here) — `Resources.md` §\"XML \
+                                      Format\": \"If the service cannot \
+                                      fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\". The default `204` \
+                                      branch returns no body and negotiates \
+                                      nothing. The released operation does not \
+                                      enumerate `406`; the MUST is \
+                                      cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      canonical JSON. The tag list has no XML \
+                                      and no Simplified-Format shape, so any \
+                                      other declared media type is refused: \
+                                      \"If the service cannot process the \
+                                      request payload as JSON format, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"). An \
+                                      ABSENT `Content-Type` declares nothing \
+                                      and is accepted as JSON. The released \
+                                      operation does not enumerate `415`; the \
+                                      MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 422, description = "The body is well-formed but an entry \
+                                      breaks an ITEM_TAG rule: a missing or \
+                                      empty `key`, a `key` with leading or \
+                                      trailing whitespace (RM `item_tag.adoc` \
+                                      __Inv_key_valid__: \"not key.is_empty \
+                                      and key.is_justified\"), or an EMPTY \
+                                      `value` (__Inv_value_valid__: \"value /= \
+                                      Void implies not value.is_empty\" — omit \
+                                      the member instead). The invariants are \
+                                      checked before any write, so a rejected \
+                                      list leaves the stored collection \
+                                      untouched. The released operation \
+                                      declares only `400`; answering `422` for \
+                                      these SEMANTIC failures follows \
+                                      `Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row (\"The \
+                                      request was well-formed but was unable \
+                                      to be followed due to semantic errors\") \
+                                      and is OURS, register-documented in the \
+                                      conformance catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6210,20 +6876,132 @@ pub(crate) async fn agent_tags_update(
     guarded_dispatch(state, "agent_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from an `AGENT` by key
+/// Delete an `AGENT`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/agent/{uid_based_id}/tags/{key}`).
+///
+/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
+/// given target AGENT version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/agent_tags_delete.yaml`).
+///
+/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// `target_path`) pair, the route carries no `target_path` selector, and the
+/// released text says "resource(s)" — so every tag under `key` on the addressed
+/// collection goes, however many paths they carry.
 #[utoipa::path(
-    delete, path = "/demographic/agent/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
+    delete, path = "/demographic/agent/{uid_based_id}/tags/{key}",
+    tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target AGENT VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
-        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to delete \
+                        the tags a particular (target) version of the AGENT \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        delete the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/agent_tags_delete.yaml`). \
+                        The two forms address DISJOINT collections: an \
+                        ITEM_TAG carries exactly one `target` (RM \
+                        `item_tag.adoc`: `target: UID_BASED_ID`, \"which may \
+                        be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), so a \
+                        tag written against the container is invisible to the \
+                        version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So deleting a key from the container leaves the same \
+                        key on every version untouched, and vice versa.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("key" = String, Path,
+         description = "The ITEM_TAG `key` whose tags are deleted from the \
+                        addressed collection — \"The ITEM_TAG key\" (ITS-REST \
+                        `specifications/parameters/path/key.yaml`, `type: \
+                        string`), an UNCONSTRAINED string with no format, \
+                        pattern or length bound, taken percent-decoded from \
+                        the path segment (a key containing `/`, `?` or `#` \
+                        must be percent-encoded by the client). It selects a \
+                        SET, not one resource: identity is the (`key`, \
+                        `target_path`) pair and this route has no \
+                        `target_path` selector, so EVERY tag under the key \
+                        goes — which is why the released description says \
+                        \"Deletes the ITEM_TAG resource(s) identified by \
+                        `tag_key`\" (`agent_tags_delete.yaml`). (That \
+                        description calls the parameter `tag_key` in prose \
+                        while the path parameter is `key` — a released-text \
+                        inconsistency, register-documented in the conformance \
+                        catalogue; the wire name is `key`.)",
+         example = "flag")
     ),
     responses(
-        (status = 204, description = "The ITEM_TAG was deleted."),
-        (status = 404, description = "The `uid_based_id` does not exist, or no \
-                                      ITEM_TAG has that `key`.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters has \
+                                      been (logically) deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted.yaml`). \
+                                      \"(logically) deleted\" is \
+                                      change-control vocabulary that cannot \
+                                      apply here — a tag is not \
+                                      change-controlled, so removal is plain: \
+                                      no deleted version is committed and the \
+                                      tags simply cease to exist. No body and \
+                                      no headers: an ITEM_TAG has no version \
+                                      and no uid, so there is nothing for an \
+                                      `ETag`/`Last-Modified` to carry, and \
+                                      \"the `Location` response header was \
+                                      deprecated from responses of `DELETE` \
+                                      methods\" (`Requests_and_responses.md` \
+                                      §\"Deprecated headers\"). The released \
+                                      operation declares no `Accept` either, \
+                                      and the empty body negotiates nothing — \
+                                      so this route has no `406`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist, or when \
+                                      the ITEM_TAG identified by the `key` \
+                                      does not exist.\" (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id_or_key.yaml`). \
+                                      The SECOND trigger makes this operation \
+                                      deliberately NON-IDEMPOTENT on the wire: \
+                                      the second identical `DELETE` answers \
+                                      `404`, because after the first one no \
+                                      ITEM_TAG under that key exists on the \
+                                      addressed collection. A key that exists \
+                                      only on the OTHER collection of the same \
+                                      versioned object (container vs version) \
+                                      does not exist here either. Target \
+                                      non-existence covers an unknown \
+                                      `versioned_object_uid`, a version form \
+                                      whose version does not exist, and a \
+                                      well-formed uid whose stored container \
+                                      is NOT an AGENT (another PARTY kind, or \
+                                      a uid from the EHR space) — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6237,18 +7015,184 @@ pub(crate) async fn agent_tags_delete(
 
 /// Retrieve a `GROUP`'s `ITEM_TAG`s
 /// (`GET /demographic/group/{uid_based_id}/tags`).
+///
+/// "Retrieves the list of all ITEM_TAG resources associated with a given target
+/// GROUP version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/group_tags_get.yaml`).
+///
+/// The two `uid_based_id` forms address DISJOINT tag collections — see the
+/// parameter.
 #[utoipa::path(
     get, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target GROUP VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to get the \
+                        tags of a particular (target) version of the GROUP \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        get the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/group_tags_get.yaml`; the \
+                        released path parameter file \
+                        `parameters/path/uid_based_id.yaml` carries the same \
+                        dual-form sentence with VERSIONED_OBJECT in place of \
+                        VERSIONED_PARTY). The two forms address DISJOINT \
+                        collections: an ITEM_TAG carries exactly one `target` \
+                        (RM `item_tag.adoc`: `target: UID_BASED_ID`, \"which \
+                        may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), \
+                        so a tag written against the container is invisible to \
+                        the version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ITEM_TAGs on the target (an empty \
-                                      array when none exist).",
+        (
+            status = 200, description = "The released trigger, verbatim: `200 \
+                                         OK` \"is returned when the requested \
+                                         ITEM_TAG list is successfully \
+                                         retrieved.\" (ITS-REST \
+                                         `specifications/responses/200_GROUP_ItemTagList_retrieved.yaml`; \
+                                         items typed \
+                                         `schemas/demographic/ItemTagOfGroup.yaml`). \
+                                         \"This will return an empty list when \
+                                         there is no ITEM_TAG associated with \
+                                         the given target\" \
+                                         (`group_tags_get.yaml`) — an \
+                                         EXISTING, untagged target is `200 \
+                                         []`; a target that does not exist is \
+                                         `404`. \"More than one ITEM_TAG may \
+                                         be associated with a single target \
+                                         GROUP or VERSIONED_PARTY, in which \
+                                         case they are uniquely identified by \
+                                         their `key` and `target_path` pair \
+                                         attributes\". Every row carries the \
+                                         SERVER-ASSIGNED `target` and \
+                                         `owner_id`; neither is client input. \
+                                         `target` names the ADDRESSED \
+                                         collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. No `ETag`, `Last-Modified` or \
+                                         `Location` accompanies the list: a \
+                                         tag collection is not \
+                                         change-controlled and has no version \
+                                         and no uid.",
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      All of these are that non-existence: an \
+                                      unknown `versioned_object_uid`; a \
+                                      version form whose version does not \
+                                      exist; and a well-formed uid whose \
+                                      stored container is NOT a GROUP — \
+                                      another PARTY kind, or a \
+                                      COMPOSITION/EHR_STATUS/FOLDER uid from \
+                                      the EHR space. The kind-checked reading \
+                                      is OURS (the released sentence does not \
+                                      spell it out) and follows from the route \
+                                      naming the target's class — a \
+                                      VERSIONED_OBJECT has one type (RM \
+                                      `common/master06` §Change Control); it \
+                                      is register-documented in the \
+                                      conformance catalogue. An EXISTING \
+                                      target with no tags is `200 []`, never \
+                                      `404`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6262,27 +7206,321 @@ pub(crate) async fn group_tags_get(
 
 /// Replace a `GROUP`'s `ITEM_TAG`s
 /// (`PUT /demographic/group/{uid_based_id}/tags`).
+///
+/// "Updates the list of all ITEM_TAG resources associated with a given target
+/// GROUP version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/group_tags_update.yaml`). It is a FULL COLLECTION
+/// REPLACE of the ADDRESSED collection — the container's or one version's,
+/// never both.
+///
+/// Tags are not change-controlled, so this write commits no CONTRIBUTION, mints
+/// no version, takes no `If-Match` and no committal headers, and serves neither
+/// `ETag` nor `Last-Modified`.
 #[utoipa::path(
     put, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target GROUP VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to update \
+                        the tags of a particular GROUP version (e.g. one \
+                        identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        update the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/group_tags_update.yaml`). \
+                        The update sentence sources the HIER_OBJECT_ID from \
+                        VERSIONED_OBJECT while the get and delete of the same \
+                        family source it from VERSIONED_PARTY, and all three \
+                        end on \"the target VERSIONED_PARTY container\" — an \
+                        editorial split inside one operation family, \
+                        register-documented in the conformance catalogue; both \
+                        name the same container. The two forms address \
+                        DISJOINT collections: an ITEM_TAG carries exactly one \
+                        `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
+                        \"which may be a `VERSIONED_OBJECT<T>` or a \
+                        `VERSION<T>`\"), so a tag written against the \
+                        container is invisible to the version form and a tag \
+                        written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So replacing the container's list never touches any \
+                        version's list, and replacing one version's list never \
+                        touches the container's or a sibling version's.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the stored ITEM_TAG list).")
+         description = "`return=minimal` — the default when the header is \
+                        absent (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\": \"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\") — answers `204 No Content`; \
+                        `return=representation` answers `200` with the full \
+                        RESULTING tag list of the addressed collection. \
+                        `return=identifier` cannot be honoured: its released \
+                        contract is a body carrying \"only the identifier \
+                        (e.g., the `uid`) of the affected resource\" and an \
+                        ITEM_TAG has no uid, so the server applies — and \
+                        declares — the default `return=minimal`; that \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue. Whichever branch runs, the \
+                        response states it in `Preference-Applied` (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`).",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). The tag \
+                        list has no XML and no Simplified-Format shape, so \
+                        only `application/json` is processable and any other \
+                        declared type is `415`; an ABSENT `Content-Type` \
+                        declares nothing and is read as canonical JSON.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The full ITEM_TAG list to store; an empty array \
-                                removes all tags on the target."),
+                 description = "A BARE JSON ARRAY of UPDATE_ITEM_TAG objects — \
+                                the complete tag list to associate with the \
+                                ADDRESSED collection (`required: true`; there \
+                                is no envelope object). Per the released \
+                                `schemas/common/UpdateItemTag.yaml`: `key` is \
+                                REQUIRED (\"Tag key (identifier)\"), `value` \
+                                (\"Tag value\") and `target_path` (\"An AQL \
+                                path withing the `target` used to tag a \
+                                fine-grained element\") are optional, and \
+                                `additionalProperties: false` defines no other \
+                                member. `target` and `owner_id` are NOT client \
+                                input — the server assigns them from the route \
+                                — which is why the write schema omits them; a \
+                                body that nonetheless carries them is accepted \
+                                and those members ignored, per our canonical \
+                                tolerant-read posture (no released sentence \
+                                governs the extra-member case — our own \
+                                design). This is a FULL COLLECTION REPLACE: \
+                                tags omitted from the body are removed, and \
+                                \"Providing an empty list will effectively \
+                                remove all ITEM_TAG associated with the given \
+                                target\" (`group_tags_update.yaml`), so `[]` \
+                                is the clear-all form and never an error. \
+                                Identity inside the list is the (`key`, \
+                                `target_path`) PAIR (\"More than one ITEM_TAG \
+                                may be associated with a single target, in \
+                                which case they are uniquely identified by \
+                                their `key` and `target_path` pair \
+                                attributes\"), so two entries may share a \
+                                `key` when their `target_path` differs; a \
+                                DUPLICATE pair inside one body is resolved \
+                                last-wins (no released rule and no \
+                                `uniqueItems` — ours, register-documented). A \
+                                `target_path` of `\"\"` normalizes to ABSENT, \
+                                the same identity as an entry with no \
+                                `target_path` at all: the RM models \
+                                `target_path` 0..1 with no non-empty invariant \
+                                while all five released `ItemTagOf*` examples \
+                                carry `target_path: \"\"` — reconciling the \
+                                two on one identity is ours, \
+                                register-documented. Canonical JSON only: an \
+                                XML (or Simplified-Format) `Content-Type` is \
+                                `415`.",
+                 example = json!([
+                     { "key": "flag", "value": "follow-up" },
+                     { "key": "reviewed", "value": "true", "target_path": "/details/items[at0001]/value" }
+                 ])),
     responses(
-        (status = 200, description = "Stored (`Prefer: return=representation`); \
-                                      body is the stored ITEM_TAG list.",
+        (
+            status = 200, description = "Applied, with `Prefer: \
+                                         return=representation`. The body is \
+                                         the full RESULTING ITEM_TAG list of \
+                                         the addressed collection — every tag \
+                                         now stored on it, server-assigned \
+                                         `target`/`owner_id` included — not \
+                                         merely the entries just sent. (The \
+                                         released \
+                                         `responses/200_GROUP_ItemTagList_updated.yaml` \
+                                         describes itself as \"returned when \
+                                         the requested ITEM_TAG list is \
+                                         successfully retrieved\", a \
+                                         copy-and-paste of its `_retrieved` \
+                                         sibling; the trigger is the update, \
+                                         as stated here. Items are typed \
+                                         `schemas/demographic/ItemTagOfGroup.yaml`.) \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The only response header is \
+                                         `Preference-Applied`: a tag \
+                                         collection is not change-controlled, \
+                                         so there is no `ETag`, no \
+                                         `Last-Modified` and no `Location`.",
+            headers(
+                ("Preference-Applied" = String,
+                 description = "`return=representation` — the honoured \
+                                preference (`Requests_and_responses.md` \
+                                §\"Representation details negotiation\": the \
+                                service MAY include this header \"to indicate \
+                                that the client's preference has been \
+                                honored\").")
+            ),
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "GROUP", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the \
+                                      `Prefer` header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_updated.yaml`) \
+                                      — the DEFAULT branch; a \
+                                      `return=identifier` request resolves \
+                                      here too. No body and no resource header \
+                                      of any kind — no `ETag`, no \
+                                      `Last-Modified`, no `Location` — only \
+                                      the `Preference-Applied` declaration.",
+         headers(
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the applied preference, \
+                             including when the request asked for \
+                             `return=identifier` (an ITEM_TAG has no uid to \
+                             return).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      UUID nor a well-formed three-part \
+                                      OBJECT_VERSION_ID, or a body that is not \
+                                      parseable JSON / not a JSON ARRAY. A \
+                                      well-formed array whose entries break an \
+                                      ITEM_TAG rule is `422`, not `400`.",
          body = serde_json::Value),
-        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
-        (status = 400, description = "The ITEM_TAG list is invalid.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      An unknown `versioned_object_uid`, a \
+                                      version form whose version does not \
+                                      exist, and a well-formed uid whose \
+                                      stored container is NOT a GROUP (another \
+                                      PARTY kind, or a uid from the EHR space) \
+                                      are all this `404` — the kind-checked \
+                                      reading being OURS, register-documented \
+                                      in the conformance catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 406, description = "A `return=representation` request whose \
+                                      `Accept` cannot be satisfied: the \
+                                      ITEM_TAG list is served as canonical \
+                                      `application/json` only (the canonical \
+                                      XML ITS defines no ITEM_TAG type, so the \
+                                      released `Accept_canonical` enum's \
+                                      `application/xml` member is stalled \
+                                      shape here) — `Resources.md` §\"XML \
+                                      Format\": \"If the service cannot \
+                                      fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\". The default `204` \
+                                      branch returns no body and negotiates \
+                                      nothing. The released operation does not \
+                                      enumerate `406`; the MUST is \
+                                      cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      canonical JSON. The tag list has no XML \
+                                      and no Simplified-Format shape, so any \
+                                      other declared media type is refused: \
+                                      \"If the service cannot process the \
+                                      request payload as JSON format, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"). An \
+                                      ABSENT `Content-Type` declares nothing \
+                                      and is accepted as JSON. The released \
+                                      operation does not enumerate `415`; the \
+                                      MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 422, description = "The body is well-formed but an entry \
+                                      breaks an ITEM_TAG rule: a missing or \
+                                      empty `key`, a `key` with leading or \
+                                      trailing whitespace (RM `item_tag.adoc` \
+                                      __Inv_key_valid__: \"not key.is_empty \
+                                      and key.is_justified\"), or an EMPTY \
+                                      `value` (__Inv_value_valid__: \"value /= \
+                                      Void implies not value.is_empty\" — omit \
+                                      the member instead). The invariants are \
+                                      checked before any write, so a rejected \
+                                      list leaves the stored collection \
+                                      untouched. The released operation \
+                                      declares only `400`; answering `422` for \
+                                      these SEMANTIC failures follows \
+                                      `Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row (\"The \
+                                      request was well-formed but was unable \
+                                      to be followed due to semantic errors\") \
+                                      and is OURS, register-documented in the \
+                                      conformance catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6294,20 +7532,132 @@ pub(crate) async fn group_tags_update(
     guarded_dispatch(state, "group_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from a `GROUP` by key
+/// Delete a `GROUP`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/group/{uid_based_id}/tags/{key}`).
+///
+/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
+/// given target GROUP version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/group_tags_delete.yaml`).
+///
+/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// `target_path`) pair, the route carries no `target_path` selector, and the
+/// released text says "resource(s)" — so every tag under `key` on the addressed
+/// collection goes, however many paths they carry.
 #[utoipa::path(
-    delete, path = "/demographic/group/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
+    delete, path = "/demographic/group/{uid_based_id}/tags/{key}",
+    tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target GROUP VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
-        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to delete \
+                        the tags a particular (target) version of the GROUP \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        delete the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/group_tags_delete.yaml`). \
+                        The two forms address DISJOINT collections: an \
+                        ITEM_TAG carries exactly one `target` (RM \
+                        `item_tag.adoc`: `target: UID_BASED_ID`, \"which may \
+                        be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), so a \
+                        tag written against the container is invisible to the \
+                        version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So deleting a key from the container leaves the same \
+                        key on every version untouched, and vice versa.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("key" = String, Path,
+         description = "The ITEM_TAG `key` whose tags are deleted from the \
+                        addressed collection — \"The ITEM_TAG key\" (ITS-REST \
+                        `specifications/parameters/path/key.yaml`, `type: \
+                        string`), an UNCONSTRAINED string with no format, \
+                        pattern or length bound, taken percent-decoded from \
+                        the path segment (a key containing `/`, `?` or `#` \
+                        must be percent-encoded by the client). It selects a \
+                        SET, not one resource: identity is the (`key`, \
+                        `target_path`) pair and this route has no \
+                        `target_path` selector, so EVERY tag under the key \
+                        goes — which is why the released description says \
+                        \"Deletes the ITEM_TAG resource(s) identified by \
+                        `tag_key`\" (`group_tags_delete.yaml`). (That \
+                        description calls the parameter `tag_key` in prose \
+                        while the path parameter is `key` — a released-text \
+                        inconsistency, register-documented in the conformance \
+                        catalogue; the wire name is `key`.)",
+         example = "flag")
     ),
     responses(
-        (status = 204, description = "The ITEM_TAG was deleted."),
-        (status = 404, description = "The `uid_based_id` does not exist, or no \
-                                      ITEM_TAG has that `key`.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters has \
+                                      been (logically) deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted.yaml`). \
+                                      \"(logically) deleted\" is \
+                                      change-control vocabulary that cannot \
+                                      apply here — a tag is not \
+                                      change-controlled, so removal is plain: \
+                                      no deleted version is committed and the \
+                                      tags simply cease to exist. No body and \
+                                      no headers: an ITEM_TAG has no version \
+                                      and no uid, so there is nothing for an \
+                                      `ETag`/`Last-Modified` to carry, and \
+                                      \"the `Location` response header was \
+                                      deprecated from responses of `DELETE` \
+                                      methods\" (`Requests_and_responses.md` \
+                                      §\"Deprecated headers\"). The released \
+                                      operation declares no `Accept` either, \
+                                      and the empty body negotiates nothing — \
+                                      so this route has no `406`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist, or when \
+                                      the ITEM_TAG identified by the `key` \
+                                      does not exist.\" (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id_or_key.yaml`). \
+                                      The SECOND trigger makes this operation \
+                                      deliberately NON-IDEMPOTENT on the wire: \
+                                      the second identical `DELETE` answers \
+                                      `404`, because after the first one no \
+                                      ITEM_TAG under that key exists on the \
+                                      addressed collection. A key that exists \
+                                      only on the OTHER collection of the same \
+                                      versioned object (container vs version) \
+                                      does not exist here either. Target \
+                                      non-existence covers an unknown \
+                                      `versioned_object_uid`, a version form \
+                                      whose version does not exist, and a \
+                                      well-formed uid whose stored container \
+                                      is NOT a GROUP (another PARTY kind, or a \
+                                      uid from the EHR space) — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6321,18 +7671,184 @@ pub(crate) async fn group_tags_delete(
 
 /// Retrieve an `ORGANISATION`'s `ITEM_TAG`s
 /// (`GET /demographic/organisation/{uid_based_id}/tags`).
+///
+/// "Retrieves the list of all ITEM_TAG resources associated with a given target
+/// ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/organisation_tags_get.yaml`).
+///
+/// The two `uid_based_id` forms address DISJOINT tag collections — see the
+/// parameter.
 #[utoipa::path(
     get, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ORGANISATION VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to get the \
+                        tags of a particular (target) version of the \
+                        ORGANISATION version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        get the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/organisation_tags_get.yaml`; \
+                        the released path parameter file \
+                        `parameters/path/uid_based_id.yaml` carries the same \
+                        dual-form sentence with VERSIONED_OBJECT in place of \
+                        VERSIONED_PARTY). The two forms address DISJOINT \
+                        collections: an ITEM_TAG carries exactly one `target` \
+                        (RM `item_tag.adoc`: `target: UID_BASED_ID`, \"which \
+                        may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), \
+                        so a tag written against the container is invisible to \
+                        the version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ITEM_TAGs on the target (an empty \
-                                      array when none exist).",
+        (
+            status = 200, description = "The released trigger, verbatim: `200 \
+                                         OK` \"is returned when the requested \
+                                         ITEM_TAG list is successfully \
+                                         retrieved.\" (ITS-REST \
+                                         `specifications/responses/200_ORGANISATION_ItemTagList_retrieved.yaml`; \
+                                         items typed \
+                                         `schemas/demographic/ItemTagOfOrganisation.yaml`). \
+                                         \"This will return an empty list when \
+                                         there is no ITEM_TAG associated with \
+                                         the given target\" \
+                                         (`organisation_tags_get.yaml`) — an \
+                                         EXISTING, untagged target is `200 \
+                                         []`; a target that does not exist is \
+                                         `404`. \"More than one ITEM_TAG may \
+                                         be associated with a single target \
+                                         ORGANISATION or VERSIONED_PARTY, in \
+                                         which case they are uniquely \
+                                         identified by their `key` and \
+                                         `target_path` pair attributes\". \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. No `ETag`, `Last-Modified` or \
+                                         `Location` accompanies the list: a \
+                                         tag collection is not \
+                                         change-controlled and has no version \
+                                         and no uid.",
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      All of these are that non-existence: an \
+                                      unknown `versioned_object_uid`; a \
+                                      version form whose version does not \
+                                      exist; and a well-formed uid whose \
+                                      stored container is NOT an ORGANISATION \
+                                      — another PARTY kind, or a \
+                                      COMPOSITION/EHR_STATUS/FOLDER uid from \
+                                      the EHR space. The kind-checked reading \
+                                      is OURS (the released sentence does not \
+                                      spell it out) and follows from the route \
+                                      naming the target's class — a \
+                                      VERSIONED_OBJECT has one type (RM \
+                                      `common/master06` §Change Control); it \
+                                      is register-documented in the \
+                                      conformance catalogue. An EXISTING \
+                                      target with no tags is `200 []`, never \
+                                      `404`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6352,27 +7868,322 @@ pub(crate) async fn organisation_tags_get(
 
 /// Replace an `ORGANISATION`'s `ITEM_TAG`s
 /// (`PUT /demographic/organisation/{uid_based_id}/tags`).
+///
+/// "Updates the list of all ITEM_TAG resources associated with a given target
+/// ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/organisation_tags_update.yaml`). It is
+/// a FULL COLLECTION REPLACE of the ADDRESSED collection — the container's or
+/// one version's, never both.
+///
+/// Tags are not change-controlled, so this write commits no CONTRIBUTION, mints
+/// no version, takes no `If-Match` and no committal headers, and serves neither
+/// `ETag` nor `Last-Modified`.
 #[utoipa::path(
     put, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ORGANISATION VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to update \
+                        the tags of a particular ORGANISATION version (e.g. \
+                        one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        update the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/organisation_tags_update.yaml`). \
+                        The update sentence sources the HIER_OBJECT_ID from \
+                        VERSIONED_OBJECT while the get and delete of the same \
+                        family source it from VERSIONED_PARTY, and all three \
+                        end on \"the target VERSIONED_PARTY container\" — an \
+                        editorial split inside one operation family, \
+                        register-documented in the conformance catalogue; both \
+                        name the same container. The two forms address \
+                        DISJOINT collections: an ITEM_TAG carries exactly one \
+                        `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
+                        \"which may be a `VERSIONED_OBJECT<T>` or a \
+                        `VERSION<T>`\"), so a tag written against the \
+                        container is invisible to the version form and a tag \
+                        written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So replacing the container's list never touches any \
+                        version's list, and replacing one version's list never \
+                        touches the container's or a sibling version's.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the stored ITEM_TAG list).")
+         description = "`return=minimal` — the default when the header is \
+                        absent (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\": \"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\") — answers `204 No Content`; \
+                        `return=representation` answers `200` with the full \
+                        RESULTING tag list of the addressed collection. \
+                        `return=identifier` cannot be honoured: its released \
+                        contract is a body carrying \"only the identifier \
+                        (e.g., the `uid`) of the affected resource\" and an \
+                        ITEM_TAG has no uid, so the server applies — and \
+                        declares — the default `return=minimal`; that \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue. Whichever branch runs, the \
+                        response states it in `Preference-Applied` (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`).",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). The tag \
+                        list has no XML and no Simplified-Format shape, so \
+                        only `application/json` is processable and any other \
+                        declared type is `415`; an ABSENT `Content-Type` \
+                        declares nothing and is read as canonical JSON.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The full ITEM_TAG list to store; an empty array \
-                                removes all tags on the target."),
+                 description = "A BARE JSON ARRAY of UPDATE_ITEM_TAG objects — \
+                                the complete tag list to associate with the \
+                                ADDRESSED collection (`required: true`; there \
+                                is no envelope object). Per the released \
+                                `schemas/common/UpdateItemTag.yaml`: `key` is \
+                                REQUIRED (\"Tag key (identifier)\"), `value` \
+                                (\"Tag value\") and `target_path` (\"An AQL \
+                                path withing the `target` used to tag a \
+                                fine-grained element\") are optional, and \
+                                `additionalProperties: false` defines no other \
+                                member. `target` and `owner_id` are NOT client \
+                                input — the server assigns them from the route \
+                                — which is why the write schema omits them; a \
+                                body that nonetheless carries them is accepted \
+                                and those members ignored, per our canonical \
+                                tolerant-read posture (no released sentence \
+                                governs the extra-member case — our own \
+                                design). This is a FULL COLLECTION REPLACE: \
+                                tags omitted from the body are removed, and \
+                                \"Providing an empty list will effectively \
+                                remove all ITEM_TAG associated with the given \
+                                target\" (`organisation_tags_update.yaml`), so \
+                                `[]` is the clear-all form and never an error. \
+                                Identity inside the list is the (`key`, \
+                                `target_path`) PAIR (\"More than one ITEM_TAG \
+                                may be associated with a single target, in \
+                                which case they are uniquely identified by \
+                                their `key` and `target_path` pair \
+                                attributes\"), so two entries may share a \
+                                `key` when their `target_path` differs; a \
+                                DUPLICATE pair inside one body is resolved \
+                                last-wins (no released rule and no \
+                                `uniqueItems` — ours, register-documented). A \
+                                `target_path` of `\"\"` normalizes to ABSENT, \
+                                the same identity as an entry with no \
+                                `target_path` at all: the RM models \
+                                `target_path` 0..1 with no non-empty invariant \
+                                while all five released `ItemTagOf*` examples \
+                                carry `target_path: \"\"` — reconciling the \
+                                two on one identity is ours, \
+                                register-documented. Canonical JSON only: an \
+                                XML (or Simplified-Format) `Content-Type` is \
+                                `415`.",
+                 example = json!([
+                     { "key": "flag", "value": "follow-up" },
+                     { "key": "reviewed", "value": "true", "target_path": "/details/items[at0001]/value" }
+                 ])),
     responses(
-        (status = 200, description = "Stored (`Prefer: return=representation`); \
-                                      body is the stored ITEM_TAG list.",
+        (
+            status = 200, description = "Applied, with `Prefer: \
+                                         return=representation`. The body is \
+                                         the full RESULTING ITEM_TAG list of \
+                                         the addressed collection — every tag \
+                                         now stored on it, server-assigned \
+                                         `target`/`owner_id` included — not \
+                                         merely the entries just sent. (The \
+                                         released \
+                                         `responses/200_ORGANISATION_ItemTagList_updated.yaml` \
+                                         describes itself as \"returned when \
+                                         the requested ITEM_TAG list is \
+                                         successfully retrieved\", a \
+                                         copy-and-paste of its `_retrieved` \
+                                         sibling; the trigger is the update, \
+                                         as stated here. Items are typed \
+                                         `schemas/demographic/ItemTagOfOrganisation.yaml`.) \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The only response header is \
+                                         `Preference-Applied`: a tag \
+                                         collection is not change-controlled, \
+                                         so there is no `ETag`, no \
+                                         `Last-Modified` and no `Location`.",
+            headers(
+                ("Preference-Applied" = String,
+                 description = "`return=representation` — the honoured \
+                                preference (`Requests_and_responses.md` \
+                                §\"Representation details negotiation\": the \
+                                service MAY include this header \"to indicate \
+                                that the client's preference has been \
+                                honored\").")
+            ),
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ORGANISATION", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the \
+                                      `Prefer` header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_updated.yaml`) \
+                                      — the DEFAULT branch; a \
+                                      `return=identifier` request resolves \
+                                      here too. No body and no resource header \
+                                      of any kind — no `ETag`, no \
+                                      `Last-Modified`, no `Location` — only \
+                                      the `Preference-Applied` declaration.",
+         headers(
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the applied preference, \
+                             including when the request asked for \
+                             `return=identifier` (an ITEM_TAG has no uid to \
+                             return).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      UUID nor a well-formed three-part \
+                                      OBJECT_VERSION_ID, or a body that is not \
+                                      parseable JSON / not a JSON ARRAY. A \
+                                      well-formed array whose entries break an \
+                                      ITEM_TAG rule is `422`, not `400`.",
          body = serde_json::Value),
-        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
-        (status = 400, description = "The ITEM_TAG list is invalid.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      An unknown `versioned_object_uid`, a \
+                                      version form whose version does not \
+                                      exist, and a well-formed uid whose \
+                                      stored container is NOT an ORGANISATION \
+                                      (another PARTY kind, or a uid from the \
+                                      EHR space) are all this `404` — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 406, description = "A `return=representation` request whose \
+                                      `Accept` cannot be satisfied: the \
+                                      ITEM_TAG list is served as canonical \
+                                      `application/json` only (the canonical \
+                                      XML ITS defines no ITEM_TAG type, so the \
+                                      released `Accept_canonical` enum's \
+                                      `application/xml` member is stalled \
+                                      shape here) — `Resources.md` §\"XML \
+                                      Format\": \"If the service cannot \
+                                      fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\". The default `204` \
+                                      branch returns no body and negotiates \
+                                      nothing. The released operation does not \
+                                      enumerate `406`; the MUST is \
+                                      cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      canonical JSON. The tag list has no XML \
+                                      and no Simplified-Format shape, so any \
+                                      other declared media type is refused: \
+                                      \"If the service cannot process the \
+                                      request payload as JSON format, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"). An \
+                                      ABSENT `Content-Type` declares nothing \
+                                      and is accepted as JSON. The released \
+                                      operation does not enumerate `415`; the \
+                                      MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 422, description = "The body is well-formed but an entry \
+                                      breaks an ITEM_TAG rule: a missing or \
+                                      empty `key`, a `key` with leading or \
+                                      trailing whitespace (RM `item_tag.adoc` \
+                                      __Inv_key_valid__: \"not key.is_empty \
+                                      and key.is_justified\"), or an EMPTY \
+                                      `value` (__Inv_value_valid__: \"value /= \
+                                      Void implies not value.is_empty\" — omit \
+                                      the member instead). The invariants are \
+                                      checked before any write, so a rejected \
+                                      list leaves the stored collection \
+                                      untouched. The released operation \
+                                      declares only `400`; answering `422` for \
+                                      these SEMANTIC failures follows \
+                                      `Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row (\"The \
+                                      request was well-formed but was unable \
+                                      to be followed due to semantic errors\") \
+                                      and is OURS, register-documented in the \
+                                      conformance catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6390,20 +8201,133 @@ pub(crate) async fn organisation_tags_update(
     .await
 }
 
-/// Delete one `ITEM_TAG` from an `ORGANISATION` by key
+/// Delete an `ORGANISATION`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/organisation/{uid_based_id}/tags/{key}`).
+///
+/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
+/// given target ORGANISATION version or VERSIONED_PARTY identified by
+/// `uid_based_id`" (ITS-REST
+/// `specifications/operations/organisation_tags_delete.yaml`).
+///
+/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// `target_path`) pair, the route carries no `target_path` selector, and the
+/// released text says "resource(s)" — so every tag under `key` on the addressed
+/// collection goes, however many paths they carry.
 #[utoipa::path(
-    delete, path = "/demographic/organisation/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
+    delete, path = "/demographic/organisation/{uid_based_id}/tags/{key}",
+    tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ORGANISATION VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
-        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to delete \
+                        the tags a particular (target) version of the \
+                        ORGANISATION version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        delete the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/organisation_tags_delete.yaml`). \
+                        The two forms address DISJOINT collections: an \
+                        ITEM_TAG carries exactly one `target` (RM \
+                        `item_tag.adoc`: `target: UID_BASED_ID`, \"which may \
+                        be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), so a \
+                        tag written against the container is invisible to the \
+                        version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So deleting a key from the container leaves the same \
+                        key on every version untouched, and vice versa.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("key" = String, Path,
+         description = "The ITEM_TAG `key` whose tags are deleted from the \
+                        addressed collection — \"The ITEM_TAG key\" (ITS-REST \
+                        `specifications/parameters/path/key.yaml`, `type: \
+                        string`), an UNCONSTRAINED string with no format, \
+                        pattern or length bound, taken percent-decoded from \
+                        the path segment (a key containing `/`, `?` or `#` \
+                        must be percent-encoded by the client). It selects a \
+                        SET, not one resource: identity is the (`key`, \
+                        `target_path`) pair and this route has no \
+                        `target_path` selector, so EVERY tag under the key \
+                        goes — which is why the released description says \
+                        \"Deletes the ITEM_TAG resource(s) identified by \
+                        `tag_key`\" (`organisation_tags_delete.yaml`). (That \
+                        description calls the parameter `tag_key` in prose \
+                        while the path parameter is `key` — a released-text \
+                        inconsistency, register-documented in the conformance \
+                        catalogue; the wire name is `key`.)",
+         example = "flag")
     ),
     responses(
-        (status = 204, description = "The ITEM_TAG was deleted."),
-        (status = 404, description = "The `uid_based_id` does not exist, or no \
-                                      ITEM_TAG has that `key`.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters has \
+                                      been (logically) deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted.yaml`). \
+                                      \"(logically) deleted\" is \
+                                      change-control vocabulary that cannot \
+                                      apply here — a tag is not \
+                                      change-controlled, so removal is plain: \
+                                      no deleted version is committed and the \
+                                      tags simply cease to exist. No body and \
+                                      no headers: an ITEM_TAG has no version \
+                                      and no uid, so there is nothing for an \
+                                      `ETag`/`Last-Modified` to carry, and \
+                                      \"the `Location` response header was \
+                                      deprecated from responses of `DELETE` \
+                                      methods\" (`Requests_and_responses.md` \
+                                      §\"Deprecated headers\"). The released \
+                                      operation declares no `Accept` either, \
+                                      and the empty body negotiates nothing — \
+                                      so this route has no `406`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist, or when \
+                                      the ITEM_TAG identified by the `key` \
+                                      does not exist.\" (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id_or_key.yaml`). \
+                                      The SECOND trigger makes this operation \
+                                      deliberately NON-IDEMPOTENT on the wire: \
+                                      the second identical `DELETE` answers \
+                                      `404`, because after the first one no \
+                                      ITEM_TAG under that key exists on the \
+                                      addressed collection. A key that exists \
+                                      only on the OTHER collection of the same \
+                                      versioned object (container vs version) \
+                                      does not exist here either. Target \
+                                      non-existence covers an unknown \
+                                      `versioned_object_uid`, a version form \
+                                      whose version does not exist, and a \
+                                      well-formed uid whose stored container \
+                                      is NOT an ORGANISATION (another PARTY \
+                                      kind, or a uid from the EHR space) — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6423,18 +8347,184 @@ pub(crate) async fn organisation_tags_delete(
 
 /// Retrieve a `PERSON`'s `ITEM_TAG`s
 /// (`GET /demographic/person/{uid_based_id}/tags`).
+///
+/// "Retrieves the list of all ITEM_TAG resources associated with a given target
+/// PERSON version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/person_tags_get.yaml`).
+///
+/// The two `uid_based_id` forms address DISJOINT tag collections — see the
+/// parameter.
 #[utoipa::path(
     get, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target PERSON VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to get the \
+                        tags of a particular (target) version of the PERSON \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        get the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/person_tags_get.yaml`; the \
+                        released path parameter file \
+                        `parameters/path/uid_based_id.yaml` carries the same \
+                        dual-form sentence with VERSIONED_OBJECT in place of \
+                        VERSIONED_PARTY). The two forms address DISJOINT \
+                        collections: an ITEM_TAG carries exactly one `target` \
+                        (RM `item_tag.adoc`: `target: UID_BASED_ID`, \"which \
+                        may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), \
+                        so a tag written against the container is invisible to \
+                        the version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ITEM_TAGs on the target (an empty \
-                                      array when none exist).",
+        (
+            status = 200, description = "The released trigger, verbatim: `200 \
+                                         OK` \"is returned when the requested \
+                                         ITEM_TAG list is successfully \
+                                         retrieved.\" (ITS-REST \
+                                         `specifications/responses/200_PERSON_ItemTagList_retrieved.yaml`; \
+                                         items typed \
+                                         `schemas/demographic/ItemTagOfPerson.yaml`). \
+                                         \"This will return an empty list when \
+                                         there is no ITEM_TAG associated with \
+                                         the given target\" \
+                                         (`person_tags_get.yaml`) — an \
+                                         EXISTING, untagged target is `200 \
+                                         []`; a target that does not exist is \
+                                         `404`. \"More than one ITEM_TAG may \
+                                         be associated with a single target \
+                                         PERSON or VERSIONED_PARTY, in which \
+                                         case they are uniquely identified by \
+                                         their `key` and `target_path` pair \
+                                         attributes\". Every row carries the \
+                                         SERVER-ASSIGNED `target` and \
+                                         `owner_id`; neither is client input. \
+                                         `target` names the ADDRESSED \
+                                         collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. No `ETag`, `Last-Modified` or \
+                                         `Location` accompanies the list: a \
+                                         tag collection is not \
+                                         change-controlled and has no version \
+                                         and no uid.",
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      All of these are that non-existence: an \
+                                      unknown `versioned_object_uid`; a \
+                                      version form whose version does not \
+                                      exist; and a well-formed uid whose \
+                                      stored container is NOT a PERSON — \
+                                      another PARTY kind, or a \
+                                      COMPOSITION/EHR_STATUS/FOLDER uid from \
+                                      the EHR space. The kind-checked reading \
+                                      is OURS (the released sentence does not \
+                                      spell it out) and follows from the route \
+                                      naming the target's class — a \
+                                      VERSIONED_OBJECT has one type (RM \
+                                      `common/master06` §Change Control); it \
+                                      is register-documented in the \
+                                      conformance catalogue. An EXISTING \
+                                      target with no tags is `200 []`, never \
+                                      `404`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6448,27 +8538,322 @@ pub(crate) async fn person_tags_get(
 
 /// Replace a `PERSON`'s `ITEM_TAG`s
 /// (`PUT /demographic/person/{uid_based_id}/tags`).
+///
+/// "Updates the list of all ITEM_TAG resources associated with a given target
+/// PERSON version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/person_tags_update.yaml`). It is a FULL
+/// COLLECTION REPLACE of the ADDRESSED collection — the container's or one
+/// version's, never both.
+///
+/// Tags are not change-controlled, so this write commits no CONTRIBUTION, mints
+/// no version, takes no `If-Match` and no committal headers, and serves neither
+/// `ETag` nor `Last-Modified`.
 #[utoipa::path(
     put, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target PERSON VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to update \
+                        the tags of a particular PERSON version (e.g. one \
+                        identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        update the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/person_tags_update.yaml`). \
+                        The update sentence sources the HIER_OBJECT_ID from \
+                        VERSIONED_OBJECT while the get and delete of the same \
+                        family source it from VERSIONED_PARTY, and all three \
+                        end on \"the target VERSIONED_PARTY container\" — an \
+                        editorial split inside one operation family, \
+                        register-documented in the conformance catalogue; both \
+                        name the same container. The two forms address \
+                        DISJOINT collections: an ITEM_TAG carries exactly one \
+                        `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
+                        \"which may be a `VERSIONED_OBJECT<T>` or a \
+                        `VERSION<T>`\"), so a tag written against the \
+                        container is invisible to the version form and a tag \
+                        written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So replacing the container's list never touches any \
+                        version's list, and replacing one version's list never \
+                        touches the container's or a sibling version's.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the stored ITEM_TAG list).")
+         description = "`return=minimal` — the default when the header is \
+                        absent (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\": \"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\") — answers `204 No Content`; \
+                        `return=representation` answers `200` with the full \
+                        RESULTING tag list of the addressed collection. \
+                        `return=identifier` cannot be honoured: its released \
+                        contract is a body carrying \"only the identifier \
+                        (e.g., the `uid`) of the affected resource\" and an \
+                        ITEM_TAG has no uid, so the server applies — and \
+                        declares — the default `return=minimal`; that \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue. Whichever branch runs, the \
+                        response states it in `Preference-Applied` (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`).",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). The tag \
+                        list has no XML and no Simplified-Format shape, so \
+                        only `application/json` is processable and any other \
+                        declared type is `415`; an ABSENT `Content-Type` \
+                        declares nothing and is read as canonical JSON.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The full ITEM_TAG list to store; an empty array \
-                                removes all tags on the target."),
+                 description = "A BARE JSON ARRAY of UPDATE_ITEM_TAG objects — \
+                                the complete tag list to associate with the \
+                                ADDRESSED collection (`required: true`; there \
+                                is no envelope object). Per the released \
+                                `schemas/common/UpdateItemTag.yaml`: `key` is \
+                                REQUIRED (\"Tag key (identifier)\"), `value` \
+                                (\"Tag value\") and `target_path` (\"An AQL \
+                                path withing the `target` used to tag a \
+                                fine-grained element\") are optional, and \
+                                `additionalProperties: false` defines no other \
+                                member. `target` and `owner_id` are NOT client \
+                                input — the server assigns them from the route \
+                                — which is why the write schema omits them; a \
+                                body that nonetheless carries them is accepted \
+                                and those members ignored, per our canonical \
+                                tolerant-read posture (no released sentence \
+                                governs the extra-member case — our own \
+                                design). This is a FULL COLLECTION REPLACE: \
+                                tags omitted from the body are removed, and \
+                                \"Providing an empty list will effectively \
+                                remove all ITEM_TAG associated with the given \
+                                target\" (`person_tags_update.yaml`), so `[]` \
+                                is the clear-all form and never an error. \
+                                Identity inside the list is the (`key`, \
+                                `target_path`) PAIR (\"More than one ITEM_TAG \
+                                may be associated with a single target, in \
+                                which case they are uniquely identified by \
+                                their `key` and `target_path` pair \
+                                attributes\"), so two entries may share a \
+                                `key` when their `target_path` differs; a \
+                                DUPLICATE pair inside one body is resolved \
+                                last-wins (no released rule and no \
+                                `uniqueItems` — ours, register-documented). A \
+                                `target_path` of `\"\"` normalizes to ABSENT, \
+                                the same identity as an entry with no \
+                                `target_path` at all: the RM models \
+                                `target_path` 0..1 with no non-empty invariant \
+                                while all five released `ItemTagOf*` examples \
+                                carry `target_path: \"\"` — reconciling the \
+                                two on one identity is ours, \
+                                register-documented. Canonical JSON only: an \
+                                XML (or Simplified-Format) `Content-Type` is \
+                                `415`.",
+                 example = json!([
+                     { "key": "flag", "value": "follow-up" },
+                     { "key": "reviewed", "value": "true", "target_path": "/details/items[at0001]/value" }
+                 ])),
     responses(
-        (status = 200, description = "Stored (`Prefer: return=representation`); \
-                                      body is the stored ITEM_TAG list.",
+        (
+            status = 200, description = "Applied, with `Prefer: \
+                                         return=representation`. The body is \
+                                         the full RESULTING ITEM_TAG list of \
+                                         the addressed collection — every tag \
+                                         now stored on it, server-assigned \
+                                         `target`/`owner_id` included — not \
+                                         merely the entries just sent. (The \
+                                         released \
+                                         `responses/200_PERSON_ItemTagList_updated.yaml` \
+                                         describes itself as \"returned when \
+                                         the requested ITEM_TAG list is \
+                                         successfully retrieved\", a \
+                                         copy-and-paste of its `_retrieved` \
+                                         sibling; the trigger is the update, \
+                                         as stated here. Items are typed \
+                                         `schemas/demographic/ItemTagOfPerson.yaml`.) \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The only response header is \
+                                         `Preference-Applied`: a tag \
+                                         collection is not change-controlled, \
+                                         so there is no `ETag`, no \
+                                         `Last-Modified` and no `Location`.",
+            headers(
+                ("Preference-Applied" = String,
+                 description = "`return=representation` — the honoured \
+                                preference (`Requests_and_responses.md` \
+                                §\"Representation details negotiation\": the \
+                                service MAY include this header \"to indicate \
+                                that the client's preference has been \
+                                honored\").")
+            ),
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the \
+                                      `Prefer` header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_updated.yaml`) \
+                                      — the DEFAULT branch; a \
+                                      `return=identifier` request resolves \
+                                      here too. No body and no resource header \
+                                      of any kind — no `ETag`, no \
+                                      `Last-Modified`, no `Location` — only \
+                                      the `Preference-Applied` declaration.",
+         headers(
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the applied preference, \
+                             including when the request asked for \
+                             `return=identifier` (an ITEM_TAG has no uid to \
+                             return).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      UUID nor a well-formed three-part \
+                                      OBJECT_VERSION_ID, or a body that is not \
+                                      parseable JSON / not a JSON ARRAY. A \
+                                      well-formed array whose entries break an \
+                                      ITEM_TAG rule is `422`, not `400`.",
          body = serde_json::Value),
-        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
-        (status = 400, description = "The ITEM_TAG list is invalid.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      An unknown `versioned_object_uid`, a \
+                                      version form whose version does not \
+                                      exist, and a well-formed uid whose \
+                                      stored container is NOT a PERSON \
+                                      (another PARTY kind, or a uid from the \
+                                      EHR space) are all this `404` — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 406, description = "A `return=representation` request whose \
+                                      `Accept` cannot be satisfied: the \
+                                      ITEM_TAG list is served as canonical \
+                                      `application/json` only (the canonical \
+                                      XML ITS defines no ITEM_TAG type, so the \
+                                      released `Accept_canonical` enum's \
+                                      `application/xml` member is stalled \
+                                      shape here) — `Resources.md` §\"XML \
+                                      Format\": \"If the service cannot \
+                                      fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\". The default `204` \
+                                      branch returns no body and negotiates \
+                                      nothing. The released operation does not \
+                                      enumerate `406`; the MUST is \
+                                      cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      canonical JSON. The tag list has no XML \
+                                      and no Simplified-Format shape, so any \
+                                      other declared media type is refused: \
+                                      \"If the service cannot process the \
+                                      request payload as JSON format, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"). An \
+                                      ABSENT `Content-Type` declares nothing \
+                                      and is accepted as JSON. The released \
+                                      operation does not enumerate `415`; the \
+                                      MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 422, description = "The body is well-formed but an entry \
+                                      breaks an ITEM_TAG rule: a missing or \
+                                      empty `key`, a `key` with leading or \
+                                      trailing whitespace (RM `item_tag.adoc` \
+                                      __Inv_key_valid__: \"not key.is_empty \
+                                      and key.is_justified\"), or an EMPTY \
+                                      `value` (__Inv_value_valid__: \"value /= \
+                                      Void implies not value.is_empty\" — omit \
+                                      the member instead). The invariants are \
+                                      checked before any write, so a rejected \
+                                      list leaves the stored collection \
+                                      untouched. The released operation \
+                                      declares only `400`; answering `422` for \
+                                      these SEMANTIC failures follows \
+                                      `Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row (\"The \
+                                      request was well-formed but was unable \
+                                      to be followed due to semantic errors\") \
+                                      and is OURS, register-documented in the \
+                                      conformance catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6486,20 +8871,132 @@ pub(crate) async fn person_tags_update(
     .await
 }
 
-/// Delete one `ITEM_TAG` from a `PERSON` by key
+/// Delete a `PERSON`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/person/{uid_based_id}/tags/{key}`).
+///
+/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
+/// given target PERSON version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/person_tags_delete.yaml`).
+///
+/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// `target_path`) pair, the route carries no `target_path` selector, and the
+/// released text says "resource(s)" — so every tag under `key` on the addressed
+/// collection goes, however many paths they carry.
 #[utoipa::path(
-    delete, path = "/demographic/person/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
+    delete, path = "/demographic/person/{uid_based_id}/tags/{key}",
+    tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target PERSON VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
-        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to delete \
+                        the tags a particular (target) version of the PERSON \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        delete the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/person_tags_delete.yaml`). \
+                        The two forms address DISJOINT collections: an \
+                        ITEM_TAG carries exactly one `target` (RM \
+                        `item_tag.adoc`: `target: UID_BASED_ID`, \"which may \
+                        be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), so a \
+                        tag written against the container is invisible to the \
+                        version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So deleting a key from the container leaves the same \
+                        key on every version untouched, and vice versa.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("key" = String, Path,
+         description = "The ITEM_TAG `key` whose tags are deleted from the \
+                        addressed collection — \"The ITEM_TAG key\" (ITS-REST \
+                        `specifications/parameters/path/key.yaml`, `type: \
+                        string`), an UNCONSTRAINED string with no format, \
+                        pattern or length bound, taken percent-decoded from \
+                        the path segment (a key containing `/`, `?` or `#` \
+                        must be percent-encoded by the client). It selects a \
+                        SET, not one resource: identity is the (`key`, \
+                        `target_path`) pair and this route has no \
+                        `target_path` selector, so EVERY tag under the key \
+                        goes — which is why the released description says \
+                        \"Deletes the ITEM_TAG resource(s) identified by \
+                        `tag_key`\" (`person_tags_delete.yaml`). (That \
+                        description calls the parameter `tag_key` in prose \
+                        while the path parameter is `key` — a released-text \
+                        inconsistency, register-documented in the conformance \
+                        catalogue; the wire name is `key`.)",
+         example = "flag")
     ),
     responses(
-        (status = 204, description = "The ITEM_TAG was deleted."),
-        (status = 404, description = "The `uid_based_id` does not exist, or no \
-                                      ITEM_TAG has that `key`.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters has \
+                                      been (logically) deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted.yaml`). \
+                                      \"(logically) deleted\" is \
+                                      change-control vocabulary that cannot \
+                                      apply here — a tag is not \
+                                      change-controlled, so removal is plain: \
+                                      no deleted version is committed and the \
+                                      tags simply cease to exist. No body and \
+                                      no headers: an ITEM_TAG has no version \
+                                      and no uid, so there is nothing for an \
+                                      `ETag`/`Last-Modified` to carry, and \
+                                      \"the `Location` response header was \
+                                      deprecated from responses of `DELETE` \
+                                      methods\" (`Requests_and_responses.md` \
+                                      §\"Deprecated headers\"). The released \
+                                      operation declares no `Accept` either, \
+                                      and the empty body negotiates nothing — \
+                                      so this route has no `406`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist, or when \
+                                      the ITEM_TAG identified by the `key` \
+                                      does not exist.\" (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id_or_key.yaml`). \
+                                      The SECOND trigger makes this operation \
+                                      deliberately NON-IDEMPOTENT on the wire: \
+                                      the second identical `DELETE` answers \
+                                      `404`, because after the first one no \
+                                      ITEM_TAG under that key exists on the \
+                                      addressed collection. A key that exists \
+                                      only on the OTHER collection of the same \
+                                      versioned object (container vs version) \
+                                      does not exist here either. Target \
+                                      non-existence covers an unknown \
+                                      `versioned_object_uid`, a version form \
+                                      whose version does not exist, and a \
+                                      well-formed uid whose stored container \
+                                      is NOT a PERSON (another PARTY kind, or \
+                                      a uid from the EHR space) — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6519,18 +9016,184 @@ pub(crate) async fn person_tags_delete(
 
 /// Retrieve a `ROLE`'s `ITEM_TAG`s
 /// (`GET /demographic/role/{uid_based_id}/tags`).
+///
+/// "Retrieves the list of all ITEM_TAG resources associated with a given target
+/// ROLE version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/role_tags_get.yaml`).
+///
+/// The two `uid_based_id` forms address DISJOINT tag collections — see the
+/// parameter.
 #[utoipa::path(
     get, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ROLE VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`).")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to get the \
+                        tags of a particular (target) version of the ROLE \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        get the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/role_tags_get.yaml`; the \
+                        released path parameter file \
+                        `parameters/path/uid_based_id.yaml` carries the same \
+                        dual-form sentence with VERSIONED_OBJECT in place of \
+                        VERSIONED_PARTY). The two forms address DISJOINT \
+                        collections: an ITEM_TAG carries exactly one `target` \
+                        (RM `item_tag.adoc`: `target: UID_BASED_ID`, \"which \
+                        may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), \
+                        so a tag written against the container is invisible to \
+                        the version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     responses(
-        (status = 200, description = "The ITEM_TAGs on the target (an empty \
-                                      array when none exist).",
+        (
+            status = 200, description = "The released trigger, verbatim: `200 \
+                                         OK` \"is returned when the requested \
+                                         ITEM_TAG list is successfully \
+                                         retrieved.\" (ITS-REST \
+                                         `specifications/responses/200_ROLE_ItemTagList_retrieved.yaml`; \
+                                         items typed \
+                                         `schemas/demographic/ItemTagOfRole.yaml`). \
+                                         \"This will return an empty list when \
+                                         there is no ITEM_TAG associated with \
+                                         the given target\" \
+                                         (`role_tags_get.yaml`) — an EXISTING, \
+                                         untagged target is `200 []`; a target \
+                                         that does not exist is `404`. \"More \
+                                         than one ITEM_TAG may be associated \
+                                         with a single target ROLE or \
+                                         VERSIONED_PARTY, in which case they \
+                                         are uniquely identified by their \
+                                         `key` and `target_path` pair \
+                                         attributes\". Every row carries the \
+                                         SERVER-ASSIGNED `target` and \
+                                         `owner_id`; neither is client input. \
+                                         `target` names the ADDRESSED \
+                                         collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. No `ETag`, `Last-Modified` or \
+                                         `Location` accompanies the list: a \
+                                         tag collection is not \
+                                         change-controlled and has no version \
+                                         and no uid.",
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      All of these are that non-existence: an \
+                                      unknown `versioned_object_uid`; a \
+                                      version form whose version does not \
+                                      exist; and a well-formed uid whose \
+                                      stored container is NOT a ROLE — another \
+                                      PARTY kind, or a \
+                                      COMPOSITION/EHR_STATUS/FOLDER uid from \
+                                      the EHR space. The kind-checked reading \
+                                      is OURS (the released sentence does not \
+                                      spell it out) and follows from the route \
+                                      naming the target's class — a \
+                                      VERSIONED_OBJECT has one type (RM \
+                                      `common/master06` §Change Control); it \
+                                      is register-documented in the \
+                                      conformance catalogue. An EXISTING \
+                                      target with no tags is `200 []`, never \
+                                      `404`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      an ITEM_TAG list is served as canonical \
+                                      `application/json` only. The canonical \
+                                      XML ITS defines no ITEM_TAG type, so an \
+                                      `application/xml` Accept — a member of \
+                                      the released `Accept_canonical` enum, \
+                                      stalled shape on this operation — is \
+                                      refused (`Resources.md` §\"XML Format\": \
+                                      \"If the service cannot fulfill this \
+                                      aspect of the request, it MUST respond \
+                                      with HTTP status code `406 Not \
+                                      Acceptable`\"). The released operation \
+                                      does not enumerate `406`; the MUST is \
+                                      cross-cutting.",
          body = serde_json::Value)
     )
 )]
@@ -6544,27 +9207,321 @@ pub(crate) async fn role_tags_get(
 
 /// Replace a `ROLE`'s `ITEM_TAG`s
 /// (`PUT /demographic/role/{uid_based_id}/tags`).
+///
+/// "Updates the list of all ITEM_TAG resources associated with a given target
+/// ROLE version or VERSIONED_PARTY identified by `uid_based_id`" (ITS-REST
+/// `specifications/operations/role_tags_update.yaml`). It is a FULL COLLECTION
+/// REPLACE of the ADDRESSED collection — the container's or one version's,
+/// never both.
+///
+/// Tags are not change-controlled, so this write commits no CONTRIBUTION, mints
+/// no version, takes no `If-Match` and no committal headers, and serves neither
+/// `ETag` nor `Last-Modified`.
 #[utoipa::path(
     put, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ROLE VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_OBJECT.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to update \
+                        the tags of a particular ROLE version (e.g. one \
+                        identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        update the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/role_tags_update.yaml`). \
+                        The update sentence sources the HIER_OBJECT_ID from \
+                        VERSIONED_OBJECT while the get and delete of the same \
+                        family source it from VERSIONED_PARTY, and all three \
+                        end on \"the target VERSIONED_PARTY container\" — an \
+                        editorial split inside one operation family, \
+                        register-documented in the conformance catalogue; both \
+                        name the same container. The two forms address \
+                        DISJOINT collections: an ITEM_TAG carries exactly one \
+                        `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
+                        \"which may be a `VERSIONED_OBJECT<T>` or a \
+                        `VERSION<T>`\"), so a tag written against the \
+                        container is invisible to the version form and a tag \
+                        written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So replacing the container's list never touches any \
+                        version's list, and replacing one version's list never \
+                        touches the container's or a sibling version's.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the stored ITEM_TAG list).")
+         description = "`return=minimal` — the default when the header is \
+                        absent (`Requests_and_responses.md` §\"Representation \
+                        details negotiation\": \"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\") — answers `204 No Content`; \
+                        `return=representation` answers `200` with the full \
+                        RESULTING tag list of the addressed collection. \
+                        `return=identifier` cannot be honoured: its released \
+                        contract is a body carrying \"only the identifier \
+                        (e.g., the `uid`) of the affected resource\" and an \
+                        ITEM_TAG has no uid, so the server applies — and \
+                        declares — the default `return=minimal`; that \
+                        resolution is OURS, register-documented in the \
+                        conformance catalogue. Whichever branch runs, the \
+                        response states it in `Preference-Applied` (ITS-REST \
+                        `specifications/parameters/header/Prefer.yaml`).",
+         example = "return=representation"),
+        ("Content-Type" = Option<String>, Header,
+         description = "The canonical payload format (ITS-REST \
+                        `specifications/parameters/header/ContentType_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). The tag \
+                        list has no XML and no Simplified-Format shape, so \
+                        only `application/json` is processable and any other \
+                        declared type is `415`; an ABSENT `Content-Type` \
+                        declares nothing and is read as canonical JSON.",
+         example = "application/json"),
+        ("Accept" = Option<String>, Header,
+         description = "The canonical response format (ITS-REST \
+                        `specifications/parameters/header/Accept_canonical.yaml`, \
+                        enum `application/json` | `application/xml`). An \
+                        ITEM_TAG list is served as `application/json` only — \
+                        the canonical XML ITS defines no ITEM_TAG type, so the \
+                        enum's `application/xml` member is stalled shape on \
+                        this operation and asking for it is `406`.",
+         example = "application/json")
     ),
     request_body(content = serde_json::Value,
-                 description = "The full ITEM_TAG list to store; an empty array \
-                                removes all tags on the target."),
+                 description = "A BARE JSON ARRAY of UPDATE_ITEM_TAG objects — \
+                                the complete tag list to associate with the \
+                                ADDRESSED collection (`required: true`; there \
+                                is no envelope object). Per the released \
+                                `schemas/common/UpdateItemTag.yaml`: `key` is \
+                                REQUIRED (\"Tag key (identifier)\"), `value` \
+                                (\"Tag value\") and `target_path` (\"An AQL \
+                                path withing the `target` used to tag a \
+                                fine-grained element\") are optional, and \
+                                `additionalProperties: false` defines no other \
+                                member. `target` and `owner_id` are NOT client \
+                                input — the server assigns them from the route \
+                                — which is why the write schema omits them; a \
+                                body that nonetheless carries them is accepted \
+                                and those members ignored, per our canonical \
+                                tolerant-read posture (no released sentence \
+                                governs the extra-member case — our own \
+                                design). This is a FULL COLLECTION REPLACE: \
+                                tags omitted from the body are removed, and \
+                                \"Providing an empty list will effectively \
+                                remove all ITEM_TAG associated with the given \
+                                target\" (`role_tags_update.yaml`), so `[]` is \
+                                the clear-all form and never an error. \
+                                Identity inside the list is the (`key`, \
+                                `target_path`) PAIR (\"More than one ITEM_TAG \
+                                may be associated with a single target, in \
+                                which case they are uniquely identified by \
+                                their `key` and `target_path` pair \
+                                attributes\"), so two entries may share a \
+                                `key` when their `target_path` differs; a \
+                                DUPLICATE pair inside one body is resolved \
+                                last-wins (no released rule and no \
+                                `uniqueItems` — ours, register-documented). A \
+                                `target_path` of `\"\"` normalizes to ABSENT, \
+                                the same identity as an entry with no \
+                                `target_path` at all: the RM models \
+                                `target_path` 0..1 with no non-empty invariant \
+                                while all five released `ItemTagOf*` examples \
+                                carry `target_path: \"\"` — reconciling the \
+                                two on one identity is ours, \
+                                register-documented. Canonical JSON only: an \
+                                XML (or Simplified-Format) `Content-Type` is \
+                                `415`.",
+                 example = json!([
+                     { "key": "flag", "value": "follow-up" },
+                     { "key": "reviewed", "value": "true", "target_path": "/details/items[at0001]/value" }
+                 ])),
     responses(
-        (status = 200, description = "Stored (`Prefer: return=representation`); \
-                                      body is the stored ITEM_TAG list.",
+        (
+            status = 200, description = "Applied, with `Prefer: \
+                                         return=representation`. The body is \
+                                         the full RESULTING ITEM_TAG list of \
+                                         the addressed collection — every tag \
+                                         now stored on it, server-assigned \
+                                         `target`/`owner_id` included — not \
+                                         merely the entries just sent. (The \
+                                         released \
+                                         `responses/200_ROLE_ItemTagList_updated.yaml` \
+                                         describes itself as \"returned when \
+                                         the requested ITEM_TAG list is \
+                                         successfully retrieved\", a \
+                                         copy-and-paste of its `_retrieved` \
+                                         sibling; the trigger is the update, \
+                                         as stated here. Items are typed \
+                                         `schemas/demographic/ItemTagOfRole.yaml`.) \
+                                         Every row carries the SERVER-ASSIGNED \
+                                         `target` and `owner_id`; neither is \
+                                         client input. `target` names the \
+                                         ADDRESSED collection — `{namespace: \
+                                         \"demographic\", type: <PARTY kind>, \
+                                         id: <the addressed uid>}`, whose `id` \
+                                         is a `HIER_OBJECT_ID` for the \
+                                         container form and an \
+                                         `OBJECT_VERSION_ID` for the version \
+                                         form — and `owner_id` names the \
+                                         owning VERSIONED_PARTY. That \
+                                         `owner_id` is OUR OWN DESIGN: RM \
+                                         `item_tag.adoc` says only \
+                                         \"Identifier of owner object, such as \
+                                         EHR\" and a demographic party has no \
+                                         EHR, so no released sentence fixes \
+                                         it; the released `ItemTagOf*` \
+                                         examples show `{namespace: local, \
+                                         type: SYSTEM}` instead, which nothing \
+                                         requires. The position is \
+                                         register-documented in the \
+                                         conformance catalogue. `target_path` \
+                                         is present only on tags that carry \
+                                         one — it is 0..1 in the RM — and the \
+                                         empty string normalizes to ABSENT, so \
+                                         a stored tag never echoes the \
+                                         `target_path: \"\"` the released \
+                                         `ItemTagOf*` examples all show; that \
+                                         reconciliation is register-documented \
+                                         too. The only response header is \
+                                         `Preference-Applied`: a tag \
+                                         collection is not change-controlled, \
+                                         so there is no `ETag`, no \
+                                         `Last-Modified` and no `Location`.",
+            headers(
+                ("Preference-Applied" = String,
+                 description = "`return=representation` — the honoured \
+                                preference (`Requests_and_responses.md` \
+                                §\"Representation details negotiation\": the \
+                                service MAY include this header \"to indicate \
+                                that the client's preference has been \
+                                honored\").")
+            ),
+            content((serde_json::Value = "application/json", example =
+                json!([
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "flag",
+                        "value": "follow-up",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    },
+                    {
+                        "_type": "ITEM_TAG",
+                        "key": "reviewed",
+                        "value": "true",
+                        "target_path": "/details/items[at0001]/value",
+                        "target": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } },
+                        "owner_id": { "_type": "OBJECT_REF", "namespace": "demographic", "type": "ROLE", "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" } }
+                    }
+                ])
+            ))
+        ),
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the update \
+                                      operation was successful and the \
+                                      `Prefer` header is missing or is set to \
+                                      `return=minimal`.\" (ITS-REST \
+                                      `specifications/responses/204_updated.yaml`) \
+                                      — the DEFAULT branch; a \
+                                      `return=identifier` request resolves \
+                                      here too. No body and no resource header \
+                                      of any kind — no `ETag`, no \
+                                      `Last-Modified`, no `Location` — only \
+                                      the `Preference-Applied` declaration.",
+         headers(
+             ("Preference-Applied" = String,
+              description = "`return=minimal` — the applied preference, \
+                             including when the request asked for \
+                             `return=identifier` (an ITEM_TAG has no uid to \
+                             return).")
+         )),
+        (status = 400, description = "The released trigger, verbatim: `400 Bad \
+                                      Request` \"is returned when the request \
+                                      could not be parsed or is invalid (e.g. \
+                                      malformed request URL syntax, missing \
+                                      required header or parameter, or \
+                                      syntactically invalid header, parameter \
+                                      or content)\" (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      UUID nor a well-formed three-part \
+                                      OBJECT_VERSION_ID, or a body that is not \
+                                      parseable JSON / not a JSON ARRAY. A \
+                                      well-formed array whose entries break an \
+                                      ITEM_TAG rule is `422`, not `400`.",
          body = serde_json::Value),
-        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
-        (status = 400, description = "The ITEM_TAG list is invalid.",
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist.\" \
+                                      (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id.yaml`). \
+                                      An unknown `versioned_object_uid`, a \
+                                      version form whose version does not \
+                                      exist, and a well-formed uid whose \
+                                      stored container is NOT a ROLE (another \
+                                      PARTY kind, or a uid from the EHR space) \
+                                      are all this `404` — the kind-checked \
+                                      reading being OURS, register-documented \
+                                      in the conformance catalogue.",
          body = serde_json::Value),
-        (status = 404, description = "The `uid_based_id` does not exist.",
+        (status = 406, description = "A `return=representation` request whose \
+                                      `Accept` cannot be satisfied: the \
+                                      ITEM_TAG list is served as canonical \
+                                      `application/json` only (the canonical \
+                                      XML ITS defines no ITEM_TAG type, so the \
+                                      released `Accept_canonical` enum's \
+                                      `application/xml` member is stalled \
+                                      shape here) — `Resources.md` §\"XML \
+                                      Format\": \"If the service cannot \
+                                      fulfill this aspect of the request, it \
+                                      MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\". The default `204` \
+                                      branch returns no body and negotiates \
+                                      nothing. The released operation does not \
+                                      enumerate `406`; the MUST is \
+                                      cross-cutting.",
+         body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not \
+                                      canonical JSON. The tag list has no XML \
+                                      and no Simplified-Format shape, so any \
+                                      other declared media type is refused: \
+                                      \"If the service cannot process the \
+                                      request payload as JSON format, it MUST \
+                                      respond with HTTP status code `415 \
+                                      Unsupported Media Type`\" \
+                                      (`Resources.md` §\"JSON Format\"). An \
+                                      ABSENT `Content-Type` declares nothing \
+                                      and is accepted as JSON. The released \
+                                      operation does not enumerate `415`; the \
+                                      MUST is cross-cutting.",
+         body = serde_json::Value),
+        (status = 422, description = "The body is well-formed but an entry \
+                                      breaks an ITEM_TAG rule: a missing or \
+                                      empty `key`, a `key` with leading or \
+                                      trailing whitespace (RM `item_tag.adoc` \
+                                      __Inv_key_valid__: \"not key.is_empty \
+                                      and key.is_justified\"), or an EMPTY \
+                                      `value` (__Inv_value_valid__: \"value /= \
+                                      Void implies not value.is_empty\" — omit \
+                                      the member instead). The invariants are \
+                                      checked before any write, so a rejected \
+                                      list leaves the stored collection \
+                                      untouched. The released operation \
+                                      declares only `400`; answering `422` for \
+                                      these SEMANTIC failures follows \
+                                      `Requests_and_responses.md` §\"HTTP \
+                                      status codes\", the `422` row (\"The \
+                                      request was well-formed but was unable \
+                                      to be followed due to semantic errors\") \
+                                      and is OURS, register-documented in the \
+                                      conformance catalogue.",
          body = serde_json::Value)
     )
 )]
@@ -6576,20 +9533,132 @@ pub(crate) async fn role_tags_update(
     guarded_dispatch(state, "role_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from a `ROLE` by key
+/// Delete a `ROLE`'s `ITEM_TAG`s under one key
 /// (`DELETE /demographic/role/{uid_based_id}/tags/{key}`).
+///
+/// "Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a
+/// given target ROLE version or VERSIONED_PARTY identified by `uid_based_id`"
+/// (ITS-REST `specifications/operations/role_tags_delete.yaml`).
+///
+/// A SET delete, not a single-resource delete: ITEM_TAG identity is the (`key`,
+/// `target_path`) pair, the route carries no `target_path` selector, and the
+/// released text says "resource(s)" — so every tag under `key` on the addressed
+/// collection goes, however many paths they carry.
 #[utoipa::path(
-    delete, path = "/demographic/role/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
+    delete, path = "/demographic/role/{uid_based_id}/tags/{key}",
+    tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path,
-         description = "The target ROLE VERSION (`version_uid`) or \
-                        VERSIONED_PARTY (`versioned_object_uid`)."),
-        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
+         description = "The released parameter, verbatim: \"The `uid_based_id` \
+                        can take a form of an OBJECT_VERSION_ID identifier \
+                        taken from VERSION.uid.value (i.e. a `version_uid`), \
+                        or a form of a HIER_OBJECT_ID identifier taken from \
+                        VERSIONED_PARTY.uid.value (i.e. a \
+                        `versioned_object_uid`). The former is used to delete \
+                        the tags a particular (target) version of the ROLE \
+                        version (e.g. one identified by \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), \
+                        whereas the latter (e.g. an identifier like \
+                        `8849182c-82ad-4088-a07f-48ead4180515`) is be used to \
+                        delete the tags of the target VERSIONED_PARTY \
+                        container.\" (ITS-REST \
+                        `specifications/operations/role_tags_delete.yaml`). \
+                        The two forms address DISJOINT collections: an \
+                        ITEM_TAG carries exactly one `target` (RM \
+                        `item_tag.adoc`: `target: UID_BASED_ID`, \"which may \
+                        be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`\"), so a \
+                        tag written against the container is invisible to the \
+                        version form and a tag written against \
+                        `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1` \
+                        is invisible both to the container form and to every \
+                        other version. The container form names the \
+                        VERSIONED_PARTY's OWN tag collection, not the latest \
+                        version's — there is no implicit-latest reading here. \
+                        So deleting a key from the container leaves the same \
+                        key on every version untouched, and vice versa.",
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"),
+        ("key" = String, Path,
+         description = "The ITEM_TAG `key` whose tags are deleted from the \
+                        addressed collection — \"The ITEM_TAG key\" (ITS-REST \
+                        `specifications/parameters/path/key.yaml`, `type: \
+                        string`), an UNCONSTRAINED string with no format, \
+                        pattern or length bound, taken percent-decoded from \
+                        the path segment (a key containing `/`, `?` or `#` \
+                        must be percent-encoded by the client). It selects a \
+                        SET, not one resource: identity is the (`key`, \
+                        `target_path`) pair and this route has no \
+                        `target_path` selector, so EVERY tag under the key \
+                        goes — which is why the released description says \
+                        \"Deletes the ITEM_TAG resource(s) identified by \
+                        `tag_key`\" (`role_tags_delete.yaml`). (That \
+                        description calls the parameter `tag_key` in prose \
+                        while the path parameter is `key` — a released-text \
+                        inconsistency, register-documented in the conformance \
+                        catalogue; the wire name is `key`.)",
+         example = "flag")
     ),
     responses(
-        (status = 204, description = "The ITEM_TAG was deleted."),
-        (status = 404, description = "The `uid_based_id` does not exist, or no \
-                                      ITEM_TAG has that `key`.",
+        (status = 204, description = "The released trigger, verbatim: `204 No \
+                                      Content` \"is returned when the resource \
+                                      identified by the request parameters has \
+                                      been (logically) deleted.\" (ITS-REST \
+                                      `specifications/responses/204_deleted.yaml`). \
+                                      \"(logically) deleted\" is \
+                                      change-control vocabulary that cannot \
+                                      apply here — a tag is not \
+                                      change-controlled, so removal is plain: \
+                                      no deleted version is committed and the \
+                                      tags simply cease to exist. No body and \
+                                      no headers: an ITEM_TAG has no version \
+                                      and no uid, so there is nothing for an \
+                                      `ETag`/`Last-Modified` to carry, and \
+                                      \"the `Location` response header was \
+                                      deprecated from responses of `DELETE` \
+                                      methods\" (`Requests_and_responses.md` \
+                                      §\"Deprecated headers\"). The released \
+                                      operation declares no `Accept` either, \
+                                      and the empty body negotiates nothing — \
+                                      so this route has no `406`."),
+        (status = 400, description = "The released cross-cutting trigger, \
+                                      verbatim: `400 Bad Request` \"is \
+                                      returned when the request could not be \
+                                      parsed or is invalid (e.g. malformed \
+                                      request URL syntax, missing required \
+                                      header or parameter, or syntactically \
+                                      invalid header, parameter or content)\" \
+                                      (ITS-REST \
+                                      `specifications/responses/400.yaml`). \
+                                      Here: a `uid_based_id` that is neither a \
+                                      HIER_OBJECT_ID (a UUID) nor a \
+                                      well-formed three-part \
+                                      OBJECT_VERSION_ID. A well-formed \
+                                      identifier that names nothing is `404`, \
+                                      not `400`.",
+         body = serde_json::Value),
+        (status = 404, description = "The released trigger, verbatim: `404 Not \
+                                      Found` \"is returned when the \
+                                      `uid_based_id` does not exist, or when \
+                                      the ITEM_TAG identified by the `key` \
+                                      does not exist.\" (ITS-REST \
+                                      `specifications/responses/404_unknown_uid_based_id_or_key.yaml`). \
+                                      The SECOND trigger makes this operation \
+                                      deliberately NON-IDEMPOTENT on the wire: \
+                                      the second identical `DELETE` answers \
+                                      `404`, because after the first one no \
+                                      ITEM_TAG under that key exists on the \
+                                      addressed collection. A key that exists \
+                                      only on the OTHER collection of the same \
+                                      versioned object (container vs version) \
+                                      does not exist here either. Target \
+                                      non-existence covers an unknown \
+                                      `versioned_object_uid`, a version form \
+                                      whose version does not exist, and a \
+                                      well-formed uid whose stored container \
+                                      is NOT a ROLE (another PARTY kind, or a \
+                                      uid from the EHR space) — the \
+                                      kind-checked reading being OURS, \
+                                      register-documented in the conformance \
+                                      catalogue.",
          body = serde_json::Value)
     )
 )]

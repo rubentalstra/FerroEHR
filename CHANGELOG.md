@@ -31,6 +31,23 @@ workflow refuses a tag that has no matching section here.
   the PARTY_RELATIONSHIP extension's stale-delete `409` now echoes the
   latest `version_uid` in `ETag` like the party delete it mirrors.
 
+- **The published API reference now describes the demographic item-tag
+  endpoints in full** (#510). The sixteen `ITEM_TAG` operations — the
+  person / agent / group / organisation / role `tags` read, replace and
+  delete-by-key, plus the space-wide `GET /demographic/tags` — gained the
+  status branches they actually answer (`400`, `404`, `406`, `415`, `422`),
+  the `Prefer` / `Content-Type` / `Accept` request headers, the
+  `Preference-Applied` echo on both replace branches, and worked ITEM_TAG
+  examples. They now state plainly that a version-addressed `uid_based_id`
+  and a container-addressed one name two DISTINCT tag collections, that an
+  empty list on the replace clears every tag, that deleting by key alone
+  removes every tag under that key whatever its `target_path`, and that a
+  tag collection is never change-controlled — so no `ETag`, `Last-Modified`
+  or `Location` is offered anywhere on the family. The space-wide list is
+  documented for what it is: the one tag route with no scoping parameter at
+  all, no paging, and `200` (an empty array when nothing matches) or `400`
+  as its only outcomes.
+
 - **Demographic header echoes** (#388). The stale-version party DELETE's
   `409 Conflict` now returns the latest `version_uid` in `ETag` (the released
   response requires it); and the demographic CONTRIBUTION read now carries
