@@ -801,7 +801,9 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Facts:** `400_CONTRIBUTION` assigns first-version-of-a-MODIFICATION →
   400; creation-with-preceding, stale/unknown preceding (no If-Match/412 on
   this op), and out-of-group tokens remain unassigned.
-- **Ask:** assign the three residual branches.
+- **Ask:** assign the three residual branches, and assign (or decline) an
+  identifying header for the body-borne precondition failure (no single
+  latest `version_uid` exists on a multi-member contribution).
 
 ### UPR-48 — contribution GET's simplified promise contradicts its declared schema
 
