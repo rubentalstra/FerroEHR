@@ -1538,6 +1538,14 @@ elements:
       - I_EHR_CONTRIBUTION.commit_contribution-ehr_not_modifiable
   # The CONTRIBUTION change-set surface (SM i_ehr_contribution.adoc; RM common
   # master06 §Contributions; the ITS-REST contribution routes).
+  - id: contribution-simplified-format-envelope-split
+    description: "The Simplified Formats MIME types are accepted on both CONTRIBUTION endpoints, and the simplified serialization reaches versions[i].data ONLY: on a commit the request envelope (uid, versions[] metadata, audit) is canonical JSON with each member's inner payload in the chosen FLAT or STRUCTURED form, and on a read a simplified Accept still yields a canonical CONTRIBUTION envelope."
+    source: "ITS-REST docs/overview/Amendment_record.md, the SPECITS-84 row verbatim: \"Add support for FLAT/SDT to Contribution REST API calls - accept the Simplified Formats MIME types on CONTRIBUTION endpoints; the Simplified Formats serialization applies to `versions[].data` only, the CONTRIBUTION envelope remains canonical\" + docs/overview/Resources.md §Simplified Formats (the two MIME types and their Content-Type/Accept negotiation: \"clients and servers MUST use: `application/openehr.wt.flat+json` … `application/openehr.wt.structured+json`\"). The PER-OPERATION statement of the split is docs-text-silent and grounded on the RELEASED OAS (cited AS the OAS — owner ruling 2026-07-28): operations/contribution_create.yaml §\"Simplified Formats\" (\"When a Simplified Formats MIME type is used, the **CONTRIBUTION envelope itself remains canonical JSON** … Only the inner versioned payload - each `versions[i].data` … - is serialized in the chosen FLAT or STRUCTURED form\") and operations/contribution_get.yaml §\"Simplified Formats\" (\"the **CONTRIBUTION envelope itself is still returned as canonical JSON**\")"
+    covered_by:
+      - SF-CONTRIB-flat_commit
+      - SF-CONTRIB-structured_commit
+      - SF-CONTRIB-flat_read
+      - SF-CONTRIB-structured_read
   - id: contribution-client-supplied-envelope-uid
     description: "The CONTRIBUTION envelope's optional client-supplied uid is ACCEPTED when free — the committed resource is addressable under it — and a second commit naming a uid already in use is refused as a duplicate identifier."
     source: "ITS-REST specifications/operations/contribution_create.yaml, the relaxed-envelope list, verbatim: \"`uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned\" — the only released sentence governing the attribute. WHICH error comes from Requests_and_responses.md §HTTP status codes, the 409 row (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"), the only row that describes a colliding identifier"
