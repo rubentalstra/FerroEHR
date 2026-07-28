@@ -30,7 +30,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §JSON Format"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
   - "RM common §LOCATABLE (links, feeder_audit)"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

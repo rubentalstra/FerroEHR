@@ -50,7 +50,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Resources.md §Data representation"
   - "ITS-XML README.adoc §Releases and IM Versions (the v1/v2 lineages)"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "Canonical-XML lineage selection is statement-declared, not spec-mandated — the ICS options declaration selects this branch (AMB-169); released ITS-REST names no XML namespace and no selection mechanism"
 requires:

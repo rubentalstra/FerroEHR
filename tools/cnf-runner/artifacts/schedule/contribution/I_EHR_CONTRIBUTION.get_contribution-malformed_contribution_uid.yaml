@@ -34,7 +34,7 @@ spec_refs:
   - "ITS-REST overview Glossary_and_conventions (the identifier table; contribution_uid absent from it)"
   - "BASE base_types §identification (mutually exclusive UID string patterns)"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes offers both the 400 row ('syntactically invalid content') and the 404 row ('did not find the target resource') and assigns neither to a malformed segment; a server answering 404 for a garbage token breaches no quoted rule"
 requires:

@@ -32,7 +32,7 @@ spec_refs:
   - "ITS-REST overview Resources §Multiple identifiers for the same resource"
   - "RM common §versioned_object (version_with_id)"
   - "SM openehr_platform §I_EHR_STATUS.get_ehr_status_at_version"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}; its EHR_STATUS v1 is is_queryable = true

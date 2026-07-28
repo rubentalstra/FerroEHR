@@ -18,7 +18,7 @@ spec_refs:
   - "ITS-REST simplified_formats master04 §Context"
   - "ITS-REST simplified_formats master06 §Language and Territory"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # Simplified-Format media types on the resource endpoints arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-61; SPECITS-84 for CONTRIBUTION)
 requires:
   server: any
   templates: [cnf.opt.vitals]

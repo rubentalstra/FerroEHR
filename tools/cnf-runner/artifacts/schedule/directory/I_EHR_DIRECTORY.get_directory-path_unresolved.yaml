@@ -34,7 +34,7 @@ description: "Get the directory narrowed by an unresolvable path"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   ehr: { commits: any }                  # mints ${ehr_id}
   directory: cnf.directory.reference_structure   # the reference tree; /emergency exists, /emergency/episode_z does not

@@ -48,7 +48,7 @@ spec_refs:
   - "RM item_tag.adoc §Attributes"
   - "ITS-REST person_tags_get.yaml §description"
   - "ITS-REST person_tags_update.yaml §description"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # the Demographic API arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-70)
 formats: [canonical-json]
 requires: { server: any }
 data_sets: [cnf.demographic.person.v1]

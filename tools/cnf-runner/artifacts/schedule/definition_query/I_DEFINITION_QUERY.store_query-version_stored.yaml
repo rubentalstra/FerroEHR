@@ -29,7 +29,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.store_query"
   - "ITS-REST query Qualified_query_name.md §version identifier"
   - "ITS-REST overview Requests_and_responses §Representation details negotiation"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:
   - step: 1

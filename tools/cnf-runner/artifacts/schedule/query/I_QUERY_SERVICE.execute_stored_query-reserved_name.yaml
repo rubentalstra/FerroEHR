@@ -33,7 +33,7 @@ spec_refs:
   - "ITS-REST query Qualified_query_name.md §NOTE (reserved name)"
   - "ITS-REST query Query_types.md §Ad-hoc queries"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
-applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }   # the reserved `aql` query-name resolution arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-46)
 ambiguities: [AMB-102]
 requires:
   server: any

@@ -23,7 +23,7 @@ description: "get a stored query by a {major} version prefix"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.list_queries"
   - "ITS-REST query Qualified_query_name.md §version identifier"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:
   - step: 1

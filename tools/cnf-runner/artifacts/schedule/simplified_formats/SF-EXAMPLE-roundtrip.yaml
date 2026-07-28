@@ -26,7 +26,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §Simplified Formats"
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # Simplified-Format media types on the resource endpoints arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-61; SPECITS-84 for CONTRIBUTION)
 requires:
   server: any
   templates: [cnf.opt.minimal_action]    # provisioned as precondition (idempotent; 409 tolerated)

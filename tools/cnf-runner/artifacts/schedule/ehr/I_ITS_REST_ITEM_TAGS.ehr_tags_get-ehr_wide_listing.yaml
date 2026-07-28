@@ -41,7 +41,7 @@ description: "EHR-wide tag listing reaches a COMPOSITION tag"
 spec_refs:
   - "ITS-REST ehr_tags_get.yaml §description"
   - "RM ehr.adoc §Attributes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # ITEM_TAGs are Release-1.1.0 behaviour — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-77)
 formats: [canonical-json]
 requires:
   server: any

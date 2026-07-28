@@ -48,7 +48,6 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP Methods"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
-applies: { its_rest: ">=1.1.0" }
 requires:
   server: any
 ambiguities: [AMB-60]

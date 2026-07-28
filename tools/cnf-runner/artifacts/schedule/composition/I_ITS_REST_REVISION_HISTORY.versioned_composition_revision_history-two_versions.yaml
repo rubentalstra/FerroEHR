@@ -45,7 +45,7 @@ spec_refs:
   - "RM common §revision_history (items 1..1; the items.last postconditions)"
   - "RM common §revision_history_item (version_id / audits; Audit_valid)"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 formats: [canonical-json]
 requires:
   server: any

@@ -43,7 +43,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
   - "ITS-REST specifications §definition_template_adl1.4_get"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]   # the two-version family, provisioned (409-tolerant)
