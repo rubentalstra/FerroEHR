@@ -461,26 +461,11 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** Correct the two cells to rejected (violation `rm_invariant(Events_valid)`)
   per RM history.adoc.
 
-### UPR-23 — commit_contribution mismatched-change_type rejection has no assigned status code
+### UPR-23 — superseded
 
-- **Register entry:** AMB-54
-- **Channel:** ITS-REST
-- **Status:** draft
-- **Spec citation:** RM common `master06-change_control_package.adoc` §Change
-  Control (addition = a first ORIGINAL_VERSION, `preceding_version_uid` Void,
-  `change_type 249|creation|`; modification = a new ORIGINAL_VERSION on an
-  existing VERSIONED_OBJECT, `change_type 251|modification|`) requires the
-  rejection; ITS-REST `overview/Requests_and_responses.md` §HTTP status codes
-  assigns no specific code (permits 400 generic or 422 semantic); the ITS-REST
-  docs text has no CONTRIBUTION status-code table.
-- **Problem:** Committing a CONTRIBUTION whose `change_type` mismatches the
-  version state (a `251|modification|` as the first version; a `249|creation|`
-  naming a `preceding_version_uid`) must be rejected per RM change-control, but
-  the released ITS-REST spec assigns no status code — servers may return 400 or
-  422, so conformance cannot gate a single code.
-- **Ask:** Assign a specific status code (400 or 422) to the
-  mismatched-`change_type` rejection on contribution commit in the ITS-REST
-  spec (docs text + OAS), so the behaviour is gateable.
+- Removed 2026-07-28 (#536): orphaned by the 2026-07-27 AMB-54 re-adjudication,
+  which re-grounded the mismatched-change_type rejection and reports under
+  UPR-47. See UPR-47 for the live ask.
 
 ### UPR-24 — DV_CODED_TEXT.value has no value==rubric invariant
 
@@ -519,22 +504,11 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** Define (or explicitly delegate to RFC 7231) the q-value / weighted
   Accept semantics a conformant server must apply, so the behaviour is gateable.
 
-### UPR-26 — No simplified inner-data surface for commit_contribution
+### UPR-26 — superseded
 
-- **Register entry:** AMB-57
-- **Channel:** ITS-REST
-- **Status:** draft
-- **Spec citation:** ITS-REST `simplified_formats/master02-overview.adoc`
-  §Scope (covers "Mapping between the Simplified Formats and canonical openEHR
-  RM (e.g. COMPOSITION)"; CONTRIBUTION not in scope) + §MIME Types (only the
-  two wt COMPOSITION MIME types) vs the released ITS-REST contribution-create
-  operation (CONTRIBUTION envelope body, canonical JSON/XML only).
-- **Problem:** There is no ITS-REST 1.1.0 wire for committing a CONTRIBUTION
-  whose inner versions carry simplified-format COMPOSITIONs, so the behaviour
-  cannot be exercised as a normative case.
-- **Ask:** Define a simplified-format inner-data surface for
-  `commit_contribution` (or state explicitly that CONTRIBUTION commit is
-  canonical-only), so the boundary is authoritative rather than inferred.
+- Removed 2026-07-28 (#536): orphaned by the 2026-07-27 AMB-57 re-adjudication,
+  which re-grounded the simplified inner-data surface question and reports
+  under UPR-48. See UPR-48 for the live ask.
 
 ### UPR-27 — RM and ITS-REST disagree on the form of the uid copied into a top-level object
 
