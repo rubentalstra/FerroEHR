@@ -730,7 +730,7 @@ COMMENT ON TABLE sp_data_set IS 'SM-6 SUBJECT_DATA_SET config: variables registe
 -- §Persistence requires only configuration to survive re-initialisation and does
 -- not forbid persisting samples — keeping them is what makes "tracked over time"
 -- real across restarts; reset() truncates this table too. No openEHR spec governs
--- the storage mechanics — our own design (docs/design/sm-platform/10-subject-proxy.md §2.3).
+-- the storage mechanics — our own design.
 CREATE TABLE sp_sample (
     id             uuid NOT NULL DEFAULT uuidv7(),
     subject_id     text NOT NULL,

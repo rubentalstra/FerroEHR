@@ -174,18 +174,19 @@ pub async fn fetch_stored_query(name: String, version: String) -> Result<String,
 ///
 /// - `version` present → `PUT definition/query/{name}/{version}`, storing the
 ///   query at that one version. A stored query is identified by its qualified
-///   name AND its version (ITS-REST
-///   `specifications/docs/query/Qualified_query_name.md` §Qualified query
-///   name), and that pair is IMMUTABLE here: an existing one answers `409`,
-///   never an overwrite — which is why the save screens propose a bumped
-///   version when re-saving a loaded query
+///   name AND its version (ITS-REST docs text,
+///   `docs/specs/openehr/ITS-REST/specifications/docs/query/Qualified_query_name.md`
+///   §Qualified query name), and that pair is IMMUTABLE here: an existing one
+///   answers `409`, never an overwrite — which is why the save screens propose
+///   a bumped version when re-saving a loaded query
 ///   ([`next_minor`](crate::query_namespace::next_minor)).
 /// - `version` absent → `PUT definition/query/{name}`: the server owns the
 ///   version, and a query already stored at it is REPLACED.
 ///
 /// `name` is the qualified query name — `[{namespace}::]{query-name}`, the
-/// namespace optional (ITS-REST
-/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name).
+/// namespace optional (ITS-REST docs text,
+/// `docs/specs/openehr/ITS-REST/specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name).
 /// The save screens compose it from their namespace + name fields with
 /// [`qualify`](crate::query_namespace::qualify). Name and version are separate
 /// path segments, each percent-encoded via `urlencoding`. The AQL is validated

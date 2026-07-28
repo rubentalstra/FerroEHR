@@ -1,8 +1,10 @@
-# Alert starter pack (binding doc §5) — documented, not imposed. Load into a
-# Prometheus/Grafana alerting instance and calibrate thresholds against real
-# traffic (§7: tuning of shipped rules, never missing capability).
+# Alert starter pack — documented, not imposed. Load into a Prometheus/Grafana
+# alerting instance and calibrate every threshold against real traffic: these
+# rules exist to be tuned, and a rule that never fires in your deployment is a
+# threshold to move, not a capability the server is missing.
 #
-# Every rule uses only the closed-label metric families from the §1.2 catalog.
+# Every rule uses only closed-label metric families the server exports, so no
+# rule can blow up cardinality.
 groups:
   - name: ehrbase-red
     rules:
@@ -50,7 +52,7 @@ groups:
     rules:
       - alert: AuditRecordsDropped
         # Any increase in dropped audit records — fail-open auditing losing
-        # records is a page (binding doc §5).
+        # records is a page.
         expr: increase(atna_audit_dropped_total[5m]) > 0
         for: 0m
         labels:

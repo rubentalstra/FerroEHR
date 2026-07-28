@@ -28,14 +28,14 @@ Owning spec locations (verbatim decisive lines confirmed):
   magnitude NULL rejected "RM/Schema magnitude is mandatory"), every RM-valid
   value accepted. Confirms OPT does NOT materialize a constraint per attribute.
 
-Our decision: `docs/ADRs/ADR-012-closed-archetype-validation.md` — closed-world
-applies ONLY to archetype-slot competition / archetyped (at-coded) children,
-rule 2 explicitly EXEMPTS plain RM attributes the template does not constrain
-("remain open ... never flagged"). So ADR-012 does NOT authorize rejecting
-content under an unconstrained RM-mandatory attribute (e.g. ACTION.description).
+Our settled reading of the above: closed-world validation applies ONLY to
+archetype-slot competition and to archetyped (at-coded) children; plain RM
+attributes the template does not constrain remain open and are never flagged.
+Nothing in the spec text above authorizes rejecting content under an
+unconstrained RM-mandatory attribute (e.g. ACTION.description).
 
-ECC design: the validate_open behaviour is documented in the conformance tool itself (validate_open
-matrix) + `12-content-composition-entry.md`.
+The validate_open behaviour is exercised by the committed CNF catalogue
+(`tools/cnf-runner/artifacts`), which is where the expectation lives.
 
 No CNF case found for committing a *server-generated example* composition
 (grep empty); master15:38 is the only instance-generation guidance.

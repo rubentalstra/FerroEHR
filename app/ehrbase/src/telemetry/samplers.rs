@@ -1,4 +1,4 @@
-//! Background metric samplers (binding doc §1.2): the DB pool gauges, the tokio
+//! Background metric samplers: the DB pool gauges, the tokio
 //! runtime gauges (stable `Handle::metrics()` subset), and the periodic
 //! Prometheus recorder upkeep. When OTLP metrics push is enabled the same gauge
 //! values are additionally recorded through the `OTel` meter (dual path).

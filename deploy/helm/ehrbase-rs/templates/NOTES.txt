@@ -1,6 +1,6 @@
 ehrbase-rs {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
-A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1). See docs/enterprise/deployment.md.
+A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1).
 
 Configuration: one ehrbase.toml, rendered from .Values.config into a ConfigMap
 and mounted at /etc/ehrbase/ehrbase.toml. Secrets are injected as EHRBASE_* env.
@@ -21,7 +21,7 @@ NOTE: config.management.enabled=false — the ops-introspection surface (info,
       prometheus, metrics, env, loggers) is absent. Health probes are unaffected.
 {{ end }}
 ────────────────────────────────────────────────────────────────────────────
-DATABASE / MIGRATIONS (ADR-013)
+DATABASE / MIGRATIONS
 ────────────────────────────────────────────────────────────────────────────
 This chart NEVER ships a PostgreSQL. It connects to an EXTERNAL PostgreSQL 18
 as the unprivileged app role.
@@ -37,9 +37,10 @@ as the unprivileged app role.
 {{ end }}
 Migrations are append-only and MUST be applied by the `ehrbase_migrator` role,
 NOT the runtime app role. Either grant the runtime DSN the migrator role, or
-run migrations out-of-band with a migrator DSN (recommended). See the
-"Upgrade strategy" section of docs/enterprise/deployment.md (lock_timeout
-wrapper + image pinning).
+run migrations out-of-band with a migrator DSN (recommended). Wrap that step
+in a short lock_timeout so DDL blocked behind live traffic fails fast instead
+of queueing, and pin the image by digest so a rollback cannot outrun the
+schema.
 
 ────────────────────────────────────────────────────────────────────────────
 SECURITY POSTURE

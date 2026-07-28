@@ -50,9 +50,13 @@ pub(crate) fn canonical_key(id: &str) -> String {
 /// "versioning is not applicable for ADL 1.4"
 /// (`docs/specs/openehr/CNF/docs/platform_test_schedule/master04-func_tc_definition_adl.adoc`
 /// §Definition ADL). The ITS-REST DEFINITION API nevertheless carries an
-/// (optional, `deprecated`) `TemplateMetadata.version`, and its `filter_version`
-/// query parameter documents the value as **"taken from `template_id`"**
-/// (`crates/openehr-its/vendor/rest-oas/definition-codegen.openapi.yaml`
+/// (optional, `deprecated`) `TemplateMetadata.version`. The ITS-REST docs text
+/// is silent on where that value comes from, so the RELEASED OAS grounds it
+/// (the oracle order: docs text first, the released OAS fills docs-text
+/// silence): its `version` query parameter documents the value as **"taken
+/// from `template_id`"**
+/// (`docs/specs/openehr/ITS-REST/specifications/parameters/query/filter_version.yaml`,
+/// bundled as `computable/OAS/definition-codegen.openapi.yaml`
 /// §`components.parameters.filter_version`). We therefore derive the reported
 /// version from the id's version axis, per BASE §Archetype Identifiers
 /// (`docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`

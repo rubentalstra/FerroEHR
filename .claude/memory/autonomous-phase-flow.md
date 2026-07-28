@@ -14,7 +14,7 @@ waiting for a "yes continue".
 
 **Why:** the owner wants uninterrupted autonomous progression through the
 roadmap (now the root `ROADMAP.md` — the E1→E5 enterprise arc that
-originally motivated this has shipped; docs/enterprise/ was deleted
+originally motivated this has shipped; the enterprise doc tree was deleted
 2026-07-14).
 
 **Hard ordering rule (owner correction 2026-07-11, angry):** the sequence is
