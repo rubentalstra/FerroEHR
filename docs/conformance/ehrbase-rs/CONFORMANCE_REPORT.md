@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 694 |
+| passed | 704 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 63 |
-| total | 757 |
+| total | 767 |
 
 ## By chapter
 
@@ -20,10 +20,10 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 312 | 0 | 0 | 11 |
-| — EHR resource | 24 | 0 | 0 | 1 |
+| **EHR** | 314 | 0 | 0 | 11 |
+| — EHR resource | 25 | 0 | 0 | 1 |
 | — EHR_STATUS | 46 | 0 | 0 | 1 |
-| — COMPOSITION | 88 | 0 | 0 | 0 |
+| — COMPOSITION | 89 | 0 | 0 | 0 |
 | — DIRECTORY | 63 | 0 | 0 | 4 |
 | — CONTRIBUTION | 55 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
@@ -35,8 +35,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | **Query** | 36 | 0 | 0 | 0 |
 | — Ad-hoc AQL | 25 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
-| **Demographic** | 60 | 0 | 0 | 2 |
-| — Parties | 39 | 0 | 0 | 1 |
+| **Demographic** | 68 | 0 | 0 | 2 |
+| — Parties | 47 | 0 | 0 | 1 |
 | — Party relationships | 15 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
 | **Messaging** | 0 | 0 | 0 | 14 |
@@ -91,12 +91,14 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | ArchetypeValidation | pass | 121 | 0 | 0 | 0 |
 | PartyOperations | pass | 50 | 0 | 0 | 2 |
 | PartyRelationshipOperations | pass | 15 | 0 | 0 | 0 |
+| DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
 | AqlBasic | pass | 19 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 2 | 0 | 0 | 0 |
 | AqlTerminology | pass | 1 | 0 | 0 | 0 |
 | ActivityReport | excused (unrealized on this technology profile) | 0 | 0 | 0 | 8 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
 | EhrDumpLoad | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
 | DemographicArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
 | EhrExtract | excused (unrealized on this technology profile) | 0 | 0 | 0 | 10 |
@@ -153,7 +155,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 694 of 757 selected cases driven.
+Coverage: 704 of 767 selected cases driven.
 
 Not-executed verdicts (each cited):
 

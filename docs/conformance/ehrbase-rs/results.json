@@ -19,6 +19,7 @@
     ]
   },
   "ixit_digest": "6046ad1106580c5b",
+  "restapi_specs_version": "1.1.0",
   "outcomes": [
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_unfiltered",
@@ -2367,13 +2368,55 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_root_missing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetyped_content_accepted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-bbbb",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-capabilities_present_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-client_supplied_uid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-identity_details_missing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-identity_details_wrong_type",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2418,6 +2461,12 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-roles_present_empty",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3297,11 +3346,23 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-item_tag_wrapper_headers",
       "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_SERVICE.create_ehr-bulk_load_population",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-committal_headers",
