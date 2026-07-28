@@ -59,7 +59,11 @@ impl RunReport {
 }
 
 /// Whether every operation the case's flow calls is unrealized on this ITS.
-fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
+///
+/// Shared with the `claim-completeness` gate ([`crate::validate`]), which
+/// needs the same catalogue-side predicate to tell a case that can carry
+/// executed evidence from one that will always resolve excused.
+pub(crate) fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
     // ANY unrealized step makes the whole case not-applicable on this ITS:
     // the flow cannot reach its expectation without the missing wire, so a
     // verdict would be meaningless — the case is excused with the machine-

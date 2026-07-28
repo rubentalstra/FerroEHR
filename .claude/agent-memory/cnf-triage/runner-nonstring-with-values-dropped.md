@@ -1,9 +1,19 @@
 ---
 name: runner-nonstring-with-values-dropped
-description: RUNNER defect pattern — numeric/bool `with:` values are never promoted into the VarStore, so ${var?} in a binding query/header template silently drops the parameter; only a with-key literally named like the parameter survives (build_url backfill)
+description: HISTORICAL (fixed) — numeric/bool `with:` values used to be dropped from URL/header templates; merge_with_vars now promotes every scalar
 metadata:
   type: project
 ---
+
+**STATUS: FIXED — verified 2026-07-28.** `merge_with_vars` now matches
+`Value::String | Value::Number | Value::Bool` and promotes each as wire text
+(the in-code comment cites this very triage: "a number-typed `url_fetch: 4`
+must reach a `${url_fetch?}` URL slot"). Objects/arrays still stay out, which
+is correct — they have no scalar wire text. Keep this entry only as the shape
+to re-check after driver refactors; do NOT attribute a live row to it without
+re-reading the function.
+
+Historical description follows.
 
 `HttpDriver::merge_with_vars` (`tools/cnf-runner/src/exec/driver.rs`) promotes a
 step's `with:` entries into the template VarStore **only when the JSON value is a
