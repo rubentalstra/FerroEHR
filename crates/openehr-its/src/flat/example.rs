@@ -42,8 +42,10 @@
 //! choices here (fixed instants, first coded value, range-clamped magnitudes) are
 //! ours; only the mandatory-skeleton-is-committable contract of the `required`
 //! level is load-bearing (verified by the composition validator in the crate tests).
-//! Reachable-in-content `PARTY_*` value leaves are skipped rather than fabricated
-//! (they carry no FLAT round-trip shape); they are almost always optional.
+//! Reachable-in-content `PARTY_*` value leaves are skipped rather than fabricated:
+//! they are almost always optional, an `ENTRY.subject` left unset defaults to
+//! PARTY_SELF (master05 §OBSERVATION `/subject` row Note), and a party invented
+//! here would put a fictitious identified person into an example document.
 
 use std::collections::HashSet;
 
@@ -422,9 +424,11 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
             put(out, base, "", json!(value));
             put(out, base, "formalism", json!(formalism));
         }
-        // PARTY_PROXY / PARTY_IDENTIFIED value leaves carry no FLAT round-trip
-        // shape (they are rebuilt from `ctx/…`, not tree data); skip rather than
-        // fabricate an incomplete party. See the module NOTE.
+        // PARTY_PROXY / PARTY_IDENTIFIED value leaves are skipped rather than
+        // fabricated: an unset `ENTRY.subject` defaults to PARTY_SELF and a
+        // `COMPOSITION.composer` comes from `ctx/composer_*`, so inventing a
+        // named party here would put a fictitious person in the example.
+        // See the module NOTE.
         _ => return false,
     }
     true
