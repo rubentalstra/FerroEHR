@@ -41,6 +41,12 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary
   values enter only by schedule release, never ad hoc.
+- **A deployment fact no released operation discloses is an IXIT
+  declaration, never a runner guess**: the party's `ixit.json` declares it
+  (e.g. `system_id`) and a case reads it as `${ixit:<field>}` — the field set
+  is closed like every other grammar. A party that declares nothing makes the
+  referencing cases not-applicable with that citation, so an undeclared fact
+  costs coverage, never correctness.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its source under the oracle

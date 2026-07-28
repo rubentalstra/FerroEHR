@@ -84,7 +84,7 @@ impl<'a> HttpDriver<'a> {
             set,
             ixit,
             client,
-            resolver: Resolver::new(manifest, corpus_dir),
+            resolver: Resolver::new(manifest, corpus_dir, Some(ixit)),
             committed: Vec::new(),
             last_body: None,
             last_version_uid: None,
