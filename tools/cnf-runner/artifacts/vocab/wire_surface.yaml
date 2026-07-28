@@ -1445,6 +1445,13 @@ elements:
     # the released response files: 201-with-an-empty-body on a create, 204 on
     # an update. The body selector `prefer_conditional` is untouched — the
     # minimal branch is judged by the bindings' `body: absent`, not by it.
+    # ONE FAMILY STAYS UNASSERTABLE and is deliberately not cased: the EHR
+    # create. `responses/201_EHR.yaml` is the only create response file WITHOUT
+    # the "If the `Prefer` header is missing or set to `return=minimal`, the
+    # body is empty" sentence (verified first-hand 2026-07-28), so both sources
+    # are still silent there and a status expectation would be invention —
+    # register AMB-62's residue clause, and the boundary
+    # I_EHR_SERVICE.create_ehr-return_identifier names.
     covered_by:
       # CREATE — 201 with an empty body, plus the Location the branch SHOULDs.
       - I_EHR_COMPOSITION.create_composition-prefer_minimal
