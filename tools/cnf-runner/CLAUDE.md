@@ -67,7 +67,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   written down: a RELEASED ITS-REST operation the SM models no interface for
   is enumerated from the pinned `NON_SM_REST_OPERATIONS` table under a
   reserved `I_ITS_REST_*` pseudo-interface (a catalogue naming convention,
-  never an SM claim — register AMB-160; an unpinned use of the prefix is a
+  never an SM claim — register AMB-161; an unpinned use of the prefix is a
   finding), and the Axis-3 domain is parsed from the `#`/`##` sections of the
   two released overview chapters — every section must be named by an authored
   `elements`/`branches` source or pinned in `AXIS3_SECTION_EXCLUSIONS` with

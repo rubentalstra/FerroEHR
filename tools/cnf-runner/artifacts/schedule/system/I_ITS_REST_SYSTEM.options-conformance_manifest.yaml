@@ -3,7 +3,7 @@
 # carries the `Allow` header.
 #
 # ANCHOR: `I_ITS_REST_SYSTEM.options` is a reserved catalogue pseudo-interface
-# (register AMB-160), not an SM operation — the SM defines no System component.
+# (register AMB-161), not an SM operation — the SM defines no System component.
 # It is pinned in NON_SM_REST_OPERATIONS (tools/cnf-runner/src/validate.rs), the
 # ITS-side half of the Axis-1 enumeration domain, so this operation is
 # enumerated and held to the same coverage obligation as an SM one.
@@ -30,7 +30,7 @@
 #
 # SCOPE: 200 + `Allow` and nothing more. The response BODY (the Options
 # conformance manifest) and the resource the operation is served on are
-# described by no released sentence — register AMB-159 carries that silence and
+# described by no released sentence — register AMB-160 carries that silence and
 # its upstream report — so this case asserts neither.
 id: I_ITS_REST_SYSTEM.options-conformance_manifest
 kind: functional
@@ -50,7 +50,7 @@ applies: { its_rest: ">=1.1.0" }
 formats: [canonical-json]
 requires:
   server: any
-ambiguities: [AMB-159, AMB-160]
+ambiguities: [AMB-160, AMB-161]
 flow:
   - step: 1
     call: options
