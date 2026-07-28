@@ -226,6 +226,34 @@ cnf.ehr_status.with_subject.xml:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence"
+# The four canonical-XML EHR_STATUS payloads for the SM setters' xml_body
+# variant cases (#288 slice 3): one per target flag state, each owning its
+# subject (single-EHR-per-subject SUT). Same representation ground as the
+# .xml sibling above; the derivation is mechanical, never hand-written XML.
+cnf.ehr_status.with_subject.h.xml:
+  source: fixtures/ehr/ehr_status.with_subject.h.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.h.json (is_queryable=true, is_modifiable=true, subject cnf-subject-07) via crates/openehr-its/examples/canonical_convert.rs"
+cnf.ehr_status.with_subject.i.xml:
+  source: fixtures/ehr/ehr_status.with_subject.i.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.i.json (is_queryable=true, is_modifiable=true, subject cnf-subject-08) via crates/openehr-its/examples/canonical_convert.rs"
+cnf.ehr_status.with_subject.j.xml:
+  source: fixtures/ehr/ehr_status.with_subject.j.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.j.json (is_queryable=false, is_modifiable=true, subject cnf-subject-09) via crates/openehr-its/examples/canonical_convert.rs"
+cnf.ehr_status.with_subject.k.xml:
+  source: fixtures/ehr/ehr_status.with_subject.k.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.k.json (is_queryable=true, is_modifiable=false, subject cnf-subject-10) via crates/openehr-its/examples/canonical_convert.rs"
 # Corpus additions for the master04 (DEFINITION_ADL14) cases. Same entry
 # schema as MANIFEST.yaml; the orchestrator concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).

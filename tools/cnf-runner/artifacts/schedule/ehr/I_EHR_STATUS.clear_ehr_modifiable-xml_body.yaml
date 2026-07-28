@@ -1,0 +1,70 @@
+# The canonical-XML REQUEST-payload branch of I_EHR_STATUS.clear_ehr_modifiable — the last
+# format branch of the SM EHR_STATUS setters (#288 slice 3). The variant-less
+# realization builds its PUT body by JSON read-modify-write, so the XML request
+# seam is the `xml_body` variant: a case-supplied canonical-XML EHR_STATUS
+# (codec-derived corpus fixture) PUT with the current version in If-Match.
+#
+# Payload branch ground (ITS-REST overview Resources.md §XML Format): "A client
+# MAY use the header `Content-Type: application/xml` in the requests to specify
+# the XML payload format. If the service cannot process the request payload as
+# XML format, it MUST respond with HTTP status code `415 Unsupported Media
+# Type`". The format role on a body-carrying request names the REQUEST
+# representation; the response is negotiated canonical JSON, which is what lets
+# the final step read the status back and prove the XML was UNDERSTOOD: the
+# asserted is_modifiable value and the fixture's own subject id can only appear if the
+# service parsed the XML payload.
+#
+# Technology-profile scope: canonical XML is optional support (Resources.md
+# §Data representation, "at least one of" the two canonical formats), so the
+# case declares the canonical-xml format axis and counts only against a
+# statement whose technology profile declares XML.
+id: I_EHR_STATUS.clear_ehr_modifiable-xml_body
+kind: functional
+component: EHR
+sm_operation: I_EHR_STATUS.clear_ehr_modifiable
+capabilities: [EhrStatus]
+profiles: [CORE]
+test_purpose: >-
+  clear_ehr_modifiable driven by a canonical-XML EHR_STATUS payload is processed as the
+  resource it represents: is_modifiable is false afterwards and the payload's
+  subject is stored.
+description: "clear_ehr_modifiable with a canonical-XML request payload"
+spec_refs:
+  - "ITS-REST overview Resources §XML Format"
+  - "ITS-REST overview Resources §Data representation"
+  - "SM openehr_platform §I_EHR_STATUS.clear_ehr_modifiable"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+formats: [canonical-xml]
+data_sets: [cnf.ehr_status.with_subject.k.xml]
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}; a fresh EHR's is_modifiable defaults true, so the false-writing XML PUT is an observable transition
+flow:
+  - step: 1
+    call: get_ehr_status                 # current version for the If-Match precondition
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    capture: { status_version_uid: ok.status_version_uid }
+    assert:
+      - { assert: field, path: "is_modifiable", equals: true }
+  - step: 2
+    call: clear_ehr_modifiable
+    variant: xml_body                    # the canonical-XML request seam
+    format: canonical-xml
+    with:
+      ehr_id: "${ehr_id}"
+      preceding_version_uid: "${status_version_uid}"
+      ehr_status: "${ds:cnf.ehr_status.with_subject.k.xml}"
+    expect: updated
+  - step: 3                              # negotiated-JSON read-back proves the XML payload was parsed
+    call: get_ehr_status
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    assert:
+      - { assert: field, path: "is_modifiable", equals: false }
+      - { assert: field, path: "subject/external_ref/id/value", equals: "cnf-subject-10" }
+postconditions:
+  - assert: state
+    text: "EHR_STATUS.is_modifiable for the EHR with known ehr_id is false, set by a canonical-XML payload"
