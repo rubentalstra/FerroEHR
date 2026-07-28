@@ -1,0 +1,63 @@
+# The canonical-XML REQUEST-payload branch of create_party: the same PERSON
+# create as -aaaa, with the PARTY serialized as canonical XML.
+#
+# Decisive released sentences (ITS-REST overview `Resources.md` §"XML Format"):
+# "When resources are serialized in **canonical XML** format, both request
+# payloads and responses MUST conform to the [published XSDs]" and "A client MAY
+# use the header `Content-Type: application/xml` in the requests to specify the
+# XML payload format. If the service cannot process the request payload as XML
+# format, it MUST respond with HTTP status code `415 Unsupported Media Type`."
+# The released OAS corroborates the type is on offer for this operation:
+# `operations/person_create.yaml` references
+# `parameters/header/ContentType_LOCATABLE.yaml`, whose enum contains
+# `application/xml`.
+#
+# The published ITS-XML schema defines the PERSON complexType (RM
+# Demographic.xsd) but declares no global element for it, so the XSDs pin the
+# content model while the document ROOT NAME is unassigned by the release; the
+# payload is the codec-derived XML twin of the JSON fixture the -aaaa case
+# commits, which is why the read-back can be compared against that JSON twin.
+# The response is negotiated canonical JSON (`Accept: application/json`, the
+# default of a body-carrying step), so the response-side XML branch belongs to
+# the read rows.
+#
+# §"Data representation" leaves XML support to the service ("Services MUST
+# support at least one of the openEHR **XML** or **JSON** canonical formats"),
+# hence the `canonical-xml` format axis.
+id: I_DEMOGRAPHIC_SERVICE.create_party-xml
+kind: functional
+component: DEMOGRAPHIC
+sm_operation: I_DEMOGRAPHIC_SERVICE.create_party
+capabilities: [PartyOperations]
+profiles: [OPTIONS]
+formats: [canonical-xml]               # tech-profile axis: XML-less parties are not judged by this row
+guards:
+  - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
+test_purpose: >-
+  create_party with a canonical-XML PERSON request payload creates a first
+  VERSION whose stored content equals the canonical-JSON twin of the same
+  PERSON.
+description: "Create a PERSON from a canonical-XML payload"
+spec_refs:
+  - "SM openehr_platform §I_DEMOGRAPHIC_SERVICE.create_party"
+  - "ITS-REST overview Resources.md §XML Format"
+  - "ITS-REST overview Resources.md §Data representation"
+  - "RM demographic §PERSON"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires: { server: empty }
+data_sets: [cnf.demographic.person.v1.xml, cnf.demographic.person.v1]
+flow:
+  - step: 1
+    call: create_party
+    format: canonical-xml              # Content-Type: application/xml on the request body
+    with: { party: "${ds:cnf.demographic.person.v1.xml}" }
+    expect: created
+    capture:
+      version_uid: created.version_uid
+      versioned_object_uid: created.versioned_object_uid
+    assert:
+      - { assert: instance_of, rm_type: PERSON }
+      - { assert: version, of: "${version_uid}", uid_pattern: "${versioned_object_uid}::<system>::1" }
+      # Format changed, content did not.
+      - { assert: equivalent, to: "${ds:cnf.demographic.person.v1}", ignoring: server_assigned }

@@ -12,6 +12,26 @@ request:
     If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+# The Simplified-Format commit header, on the PUT exactly as on the POST — the
+# DOCS TEXT names both methods: overview `Requests_and_responses.md`
+# §openehr-template-id, "The `openehr-template-id` request header MUST be used
+# whenever committing COMPOSITION (via `PUT` or `POST` methods) using a
+# Simplified Format which does not support TEMPLATE_ID value under an
+# equivalent `LOCATABLE.archetype_details.template_id` attribute of contained
+# data." The released OAS `operations/composition_update.yaml` omits the header
+# from its `parameters` list (it carries only ehr_id, uid_based_id, If-Match,
+# Prefer, Accept_LOCATABLE, ContentType_LOCATABLE and the two item-tag
+# headers) — a docs-text/OAS CONFLICT, so the docs text wins (owner ruling
+# 2026-07-24, `.claude/rules/spec-adherence.md`) and the header is declared
+# required on both simplified formats, mirroring the
+# I_EHR_COMPOSITION.create_composition binding.
+format_headers:
+  wt-flat:
+    Content-Type: application/openehr.wt.flat+json
+    openehr-template-id: required
+  wt-structured:
+    Content-Type: application/openehr.wt.structured+json
+    openehr-template-id: required
 # Header discipline on this outcome — ITS-REST overview
 # `Requests_and_responses.md` §"ETag and Last-Modified" (the DOCS TEXT, the wire
 # oracle): "Both `ETag` and `Last-Modified` SHOULD be included in responses for
