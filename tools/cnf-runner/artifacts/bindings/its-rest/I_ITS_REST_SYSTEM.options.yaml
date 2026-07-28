@@ -1,0 +1,58 @@
+# Wire realization of the System API's one operation for ITS-REST 1.1.0.
+#
+# ANCHOR: `I_ITS_REST_SYSTEM` is a reserved CATALOGUE pseudo-interface, NOT an
+# SM interface — the SM defines no System component and no interface owns this
+# operation (verified against docs/specs/openehr/SM/docs/UML/classes/). Case
+# cores speak SM operations only, so the pinned NON_SM_REST_OPERATIONS table in
+# tools/cnf-runner/src/validate.rs is what makes a RELEASED ITS-REST operation
+# with no SM anchor enumerable at all; the naming convention (and the fact that
+# it claims nothing about the SM) is adjudicated in register AMB-161, the same
+# distinction AMB-127 draws for variant anchoring.
+#
+# BEHAVIOUR — the decisive released sentence, and the only one: the System API
+# is STABLE (specifications/docs/system/Description.md §Status: "This
+# specification is in the `STABLE` state"), and the released overview tabulates
+# the method it is served with —
+# specifications/docs/overview/Requests_and_responses.md §HTTP Methods:
+# "| OPTIONS | Describe the communication options for the target resource. |".
+# That row is the whole of the released prose about this exchange, so the
+# binding asserts exactly two things.
+#  - 200: the released status table assigns the success code —
+#    §HTTP status codes, "| 200 | OK | The request succeeded, payload sent in a
+#    200 response depends on the request method |", under "To indicate the
+#    status of a request or operation, an appropriate HTTP status code MUST be
+#    used as described above". A served OPTIONS that succeeds is that row.
+#  - `Allow`: the header that carries "the communication options" under RFC
+#    9110 — the authority §HTTP Methods itself names for method semantics
+#    ("HTTP Methods are described by RFC 9110") — whose §10.2.1 defines the
+#    `Allow` field as the list of methods the target resource supports.
+#
+# NOT ASSERTED, and why (spec silence, registered, never guessed):
+#  - THE RESOURCE. No released sentence says which resource the System API's
+#    operation is served on; the System chapter is a stub (Purpose / Related
+#    Documents / Status) and names no path. §HTTP Methods only says "the target
+#    resource", so the probe is sent to the API base-path root — the one
+#    resource that IS the service — and that choice is recorded in register
+#    AMB-160, not presented as a released requirement.
+#  - THE BODY. The Options conformance manifest (solution, solution_version,
+#    vendor, restapi_specs_version, conformance_profile, endpoints) is described
+#    by NO released sentence — it exists only in the stalled OAS bundle, which
+#    is `emit-rest` codegen input and never a behavioural oracle (owner ruling
+#    2026-07-24). Same register entry AMB-160, same upstream report; no body
+#    selector is declared here.
+#  - NEGOTIATION. The released text assigns this exchange no media type and no
+#    negotiation branch, so the binding declares only the one canonical-JSON
+#    form the driver sends and claims no XML / 406 branch of its own; the
+#    cross-cutting negotiation elements of vocab/wire_surface.yaml carry the
+#    general rules.
+sm_operation: I_ITS_REST_SYSTEM.options
+its: its-rest
+request:
+  method: OPTIONS
+  path: /                                 # the API base-path root (AMB-160 — no released sentence names a path)
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200
+    headers:
+      Allow: present                      # overview §HTTP Methods (OPTIONS: "Describe the communication options for the target resource") over RFC 9110 §10.2.1

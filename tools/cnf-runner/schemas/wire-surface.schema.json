@@ -246,7 +246,7 @@
             "minItems": 1,
             "items": {
               "type": "string",
-              "pattern": "^(GET|POST|PUT|DELETE|HEAD) /\\S*$"
+              "pattern": "^(GET|POST|PUT|DELETE|HEAD|OPTIONS) /\\S*$"
             }
           },
           "config_gate": {
