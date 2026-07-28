@@ -272,6 +272,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The published per-chapter outcome bars are now a two-level chart with no
+  `Other` bucket** (#613). The single bar per schedule chapter hid the EHR
+  chapter's hundreds of cases behind one rectangle and swept the System API
+  and anything unrecognised into an `Other` row. The chart now renders a
+  chapter header carrying the chapter's total above one scaled bar per
+  **band** — the surface a case actually exercises (EHR resource /
+  EHR_STATUS / COMPOSITION / DIRECTORY / CONTRIBUTION / item tags / revision
+  history, ADL 1.4 vs ADL 2 vs stored queries, ad-hoc vs stored query
+  execution, parties vs relationships vs versioned party, and so on) — with
+  the exact passed / FAILED / errored / cited-N-A counts printed beside every
+  row, so a small band never loses its numbers to a short bar. Cited-N/A
+  segments carry a hatch texture so "not executed, with a citation" can read
+  as neither a pass nor a failure. The taxonomy is **total**: every case id
+  maps to a named band and an unmapped id fails the render naming the id,
+  rather than landing in a silent bucket. Both published SUTs render the same
+  bands — a band with no case shows as an explicit `no cases` row — so the
+  comparison page reads band-for-band.
+
 - **The conformance pipeline now exercises BOTH claimed version-signing modes
   in every run, in the one committed record** (#609). openEHR defines a
   version signature at two depths of one mechanism — a plain digest (an

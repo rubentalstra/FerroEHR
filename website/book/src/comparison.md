@@ -40,11 +40,15 @@ how to read the grid):
 
 ![Upstream EHRbase capability conformance](comparison-assets/conformance-heat-grid-java.svg)
 
-And the per-chapter outcomes side by side:
+And the per-chapter outcomes side by side. Both charts render the same
+chapter-and-band taxonomy, so they read band-for-band: a band upstream did
+not exercise shows as an explicit `no cases` row in the same position.
+Compare the printed counts, not the bar lengths — each chart scales its bars
+to its own widest band, and the legend states that scale.
 
-![EHRbase-rs outcomes by chapter](conformance-assets/conformance-chapter-bars.svg)
+![EHRbase-rs outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
-![Upstream EHRbase outcomes by chapter](comparison-assets/conformance-chapter-bars-java.svg)
+![Upstream EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-java.svg)
 
 Reading the upstream results honestly: the failures concentrate where the
 catalogue pins strict specification behaviour — archetype-constraint

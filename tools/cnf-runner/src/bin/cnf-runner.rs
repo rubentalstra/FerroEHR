@@ -633,11 +633,15 @@ fn conformance_assets_command(
         return ExitCode::from(2);
     }
     let sut_label = format!("{} {}", results.sut.name, results.sut.version);
-    let chapters = cnf_runner::conf_assets::chapter_counts(&results);
-    let chapter_refs: Vec<(&str, cnf_runner::conf_assets::ChapterCounts)> = chapters
-        .iter()
-        .map(|(chapter, counts)| (*chapter, counts.clone()))
-        .collect();
+    // An unmapped case id is a taxonomy gap, not a chart to publish: the
+    // renderer fails loudly and names the id.
+    let chapters = match cnf_runner::conf_assets::chapter_counts(&results) {
+        Ok(chapters) => chapters,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
     let assets = [
         (
             format!("conformance-heat-grid{suffix}.svg"),
@@ -645,7 +649,7 @@ fn conformance_assets_command(
         ),
         (
             format!("conformance-chapter-bars{suffix}.svg"),
-            cnf_runner::conf_assets::chapter_bars_svg(&sut_label, &chapter_refs),
+            cnf_runner::conf_assets::chapter_bars_svg(&sut_label, &chapters),
         ),
     ];
     for (name, body) in &assets {
