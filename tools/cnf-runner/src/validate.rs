@@ -447,7 +447,14 @@ fn drives_only_extension_bindings(set: &ArtifactSet, case: &CaseCore) -> bool {
 /// 4. the reverse: an `extension` row whose cases drive released wire is
 ///    mislabelled and understates what the product earned.
 fn check_realization_scope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
-    // (1) + (2): every extension binding declares a real, declared route.
+    check_extension_bindings(set, findings);
+    check_realization_markers(set, findings);
+}
+
+/// (1) + (2) of [`check_realization_scope`]: every extension binding names a
+/// declared family, drives one of that family's declared routes, and cites a
+/// register entry that resolves.
+fn check_extension_bindings(set: &ArtifactSet, findings: &mut Vec<Finding>) {
     for (path, binding) in &set.bindings {
         let Some(decl) = &binding.extension else {
             continue;
@@ -517,8 +524,12 @@ fn check_realization_scope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             );
         }
     }
+}
 
-    // (3) + (4): the matrix marker matches what the capability's cases drive.
+/// (3) + (4) of [`check_realization_scope`]: the matrix `realization` marker
+/// matches what the capability's verdict-bearing cases actually drive, in both
+/// directions.
+fn check_realization_markers(set: &ArtifactSet, findings: &mut Vec<Finding>) {
     let Some((matrix_path, matrix)) = &set.matrix else {
         return;
     };
