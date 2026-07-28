@@ -156,6 +156,32 @@ fn unmet_binding_floors(
     unmet
 }
 
+/// The `served_extensions` family + adjudicating register entry of the first
+/// EXTENSION binding the case's flow drives, if any — the marker that the case
+/// verifies a route no openEHR specification governs (our own
+/// design/extension). The register id travels with it so the not-applicable
+/// citation is register-linked like every other excused row.
+fn extension_family(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
+    let anchor = case.sm_operation.as_ref()?;
+    for step in &case.flow {
+        let op = if step.call.contains('.') {
+            SmOperationRef::parse(&step.call).ok()?
+        } else {
+            anchor.sibling(&step.call)
+        };
+        if let Some(decl) = set
+            .bindings
+            .iter()
+            .map(|(_, b)| b)
+            .find(|b| b.sm_operation == op)
+            .and_then(|b| b.extension.as_ref())
+        {
+            return Some(format!("{}; {}", decl.family, decl.ambiguity));
+        }
+    }
+    None
+}
+
 /// The `${ixit:…}` facts a case reads that THIS party's ixit does not
 /// declare. A declared fact is the only source (no released operation
 /// discloses it), so a case that needs an undeclared one is not-applicable
@@ -276,6 +302,39 @@ pub fn execute(
             continue;
         }
         if let Some(citation) = fully_unrealized(set, case) {
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
+        // ICS-driven selection (ISO/IEC 9646), the EXTENSION arm: a case that
+        // drives a route no openEHR specification governs is our own
+        // design/extension, so it is behaviour only a party that CLAIMS the
+        // capability answers for. Driving it at another vendor's SUT would
+        // publish failures for routes that vendor never offered to serve —
+        // the published comparison must be honest in both directions, and a
+        // spurious red row is not honesty.
+        if let Some(stmt) = statement
+            && let Some(family) = extension_family(set, case)
+            && !case
+                .capabilities
+                .iter()
+                .any(|c| stmt.claims.capabilities.contains(c))
+        {
+            let citation = format!(
+                "extension realization ({family}): the ICS claims none of this case's \
+                 capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
+                 test selection"
+            );
             report.records.push(CaseRecord {
                 case: case.id.clone(),
                 format: None,
@@ -648,6 +707,66 @@ mod tests {
             .bindings
             .push((std::path::PathBuf::from("b.yaml"), unfloored));
         assert!(unmet_binding_floors(&plain, &case, &old).is_empty());
+    }
+
+    /// An EXTENSION realization is party-scoped selection, not a global one:
+    /// the family + register id travel in the marker so the citation is
+    /// register-linked, and a case that drives no extension binding is
+    /// untouched — an ordinary released-wire case can never be excused this
+    /// way.
+    #[test]
+    fn extension_realizations_are_marked_with_their_family_and_register_entry() {
+        let extension: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_PARTY_RELATIONSHIP.get_party_relationship",
+                "its": "its-rest",
+                "extension": {
+                    "family": "party-relationship",
+                    "reason": "the release surfaces no PARTY_RELATIONSHIP resource",
+                    "source": "SM i_party_relationship.adoc vs ITS-REST demographic.openapi.yaml",
+                    "ambiguity": "AMB-32"
+                },
+                "request": { "method": "GET", "path": "/demographic/party_relationship/{versioned_object_uid}" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        let released: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_DEFINITION_ADL14.list_opts",
+                "its": "its-rest",
+                "request": { "method": "GET", "path": "/definition/template/adl1.4" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings
+            .push((std::path::PathBuf::from("e.yaml"), extension));
+        set.bindings
+            .push((std::path::PathBuf::from("r.yaml"), released));
+
+        let on_extension: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-extension", "kind": "functional", "component": "DEMOGRAPHIC",
+            "sm_operation": "I_PARTY_RELATIONSHIP.get_party_relationship",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "capabilities": ["PartyRelationshipOperations"],
+            "flow": [{ "step": 1, "call": "get_party_relationship", "expect": "ok" }]
+        }))
+        .unwrap();
+        let marker = extension_family(&set, &on_extension).expect("an extension marker");
+        assert!(marker.contains("party-relationship"), "{marker}");
+        assert!(
+            marker.contains("AMB-32"),
+            "the citation must stay register-linked: {marker}"
+        );
+
+        let on_released: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-released", "kind": "functional", "component": "DEFINITION_ADL14",
+            "sm_operation": "I_DEFINITION_ADL14.list_opts",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "list_opts", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(extension_family(&set, &on_released).is_none());
     }
 
     /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty

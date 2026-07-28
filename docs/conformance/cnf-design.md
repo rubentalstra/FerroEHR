@@ -1818,6 +1818,15 @@ conformance the product earned. Extension bindings are also excluded from the
 released-path set the Axis-4 claim check compares against, since their paths
 are by construction the declared extension routes.
 
+Extension realizations are also **party-scoped at SELECTION** (`run.rs`,
+beside the option-branch and version-floor arms): a case driving an extension
+binding is not-applicable — with the family + register id as its citation —
+for a party whose statement claims none of the case's capabilities. A route
+openEHR does not specify is an offer only the party that CLAIMS it answers
+for; driving it at another vendor's system under test would publish failures
+for routes that vendor never offered to serve, and the published comparison
+has to be honest in both directions.
+
 ### 8.14 The performance & volumetrics schedule
 
 Performance conformance is its own dimension with its own machine-readable
