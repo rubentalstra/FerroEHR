@@ -599,6 +599,13 @@ fn check_references(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mu
                 check_one_ref(r, &ctx, &defined, findings);
             }
         }
+        // The SMART `scope` claim resolves on the same pre-step footing as
+        // `with` (it is minted into the request's own Authorization header).
+        for value in step.scope_templates() {
+            for r in value.refs() {
+                check_one_ref(r, &ctx, &defined, findings);
+            }
+        }
         for (name, _source) in step.captures() {
             defined.insert(name.to_string());
         }
@@ -1459,6 +1466,18 @@ const NON_SM_REST_OPERATIONS: &[(&str, &str)] = &[
         "I_ITS_REST_SYSTEM.options",
         "ITS-REST docs/system/Description.md (STABLE System API) + overview \
          Requests_and_responses.md §HTTP Methods (OPTIONS)",
+    ),
+    // ── SMART on openEHR: the Platform's service-discovery document ──
+    (
+        "I_ITS_REST_SMART.discovery",
+        "ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service Discovery — \
+         \"The configuration endpoint should be always available relative to the _Platform_ base \
+         URL\", served as `application/json`, its `services` map carrying at minimum \
+         `org.openehr.rest` with an absolute `baseUrl` (§Services). The SM models no Platform \
+         interface (the Platform is \"a software ecosystem comprising at minimum an Authorization \
+         Server, an openEHR Clinical Data Repository (CDR), and a FHIR Server\" — \
+         master02-overview.adoc §Glossary — not an SM service), and SMART is the one API area of \
+         the release with no OpenAPI group, so the operation is enumerable only from this table",
     ),
     // ── ITEM_TAG: the two space-wide lists ──
     (

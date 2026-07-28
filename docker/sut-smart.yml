@@ -1,0 +1,65 @@
+# CNF SMART on openEHR lane (compose OVERLAY).
+#
+# Boots the ehrbase SUT in the SMART *resource-server* role so the three
+# CDR-side SMART behaviours become executable conformance cases instead of
+# statement-declared claims: the service-discovery document
+# (ITS-REST docs/smart_app_launch/master04-service_discovery.adoc), the
+# master08 resource-scope grammar, and the 403-on-scope-deny discipline.
+#
+# Usage (overlay on the root stack):
+#   docker compose -f docker-compose.yml -f docker/sut-smart.yml up -d --wait ehrbase
+# The reference conformance pipeline selects it with CONF_SMART_MODE=1, which
+# also picks the lane's ixit + statement and writes to its own artefact
+# directory (scripts/conformance.sh).
+#
+# WHY A SEPARATE LANE, AND WHY IT DOES NOT RUN THE WHOLE CATALOGUE.
+# `require_smart_scopes` is the fail-closed posture master04 §Capabilities lets
+# a Platform advertise as `openehr-permission-v1`: a caller holding no SMART
+# resource scope for a scope-governed family is refused. SMART scopes ride
+# Bearer tokens only, so the catalogue's Basic-auth principals hold none and
+# every template / composition / AQL case would be refused in this posture.
+# That is the configuration behaving exactly as specified, not a defect — so
+# the lane deliberately drives only the SMART group, and the DEFAULT lane
+# (SMART off, zero wire drift) remains the conformance baseline.
+#
+# THE ISSUER IS COMMITTED TEST MATERIAL. `tools/cnf-runner/party/smart/` holds
+# a passphrase-less RSA test keypair in public version control, so the runner
+# can mint per-case scope-carrying access tokens — the CDR validates tokens and
+# never issues them (master06 §Supported Authentication Flows), and the
+# conformance stack runs no Authorization Server. Only the PUBLIC half is
+# mounted here. Never point a deployment holding real data at this issuer:
+# every token it would accept is forgeable by anyone with a checkout.
+services:
+  ehrbase:
+    environment:
+      # ── the SMART resource-server role ────────────────────────────────────
+      EHRBASE__SMART__ENABLED: "true"
+      # master04 §Capabilities: advertising `openehr-permission-v1` is the
+      # declaration that the scope layer decides an ungranted resource family.
+      EHRBASE__SMART__REQUIRE_SMART_SCOPES: "true"
+      # master04 §Services: every services.*.baseUrl is an "Absolute URL to the
+      # root of the API (required)", so the server needs its external origin.
+      # This is the origin the runner reaches the composed SUT on.
+      EHRBASE__SMART__PUBLIC_BASE_URL: "http://localhost:8080"
+      # master04 §Authentication Endpoints — the external Authorization
+      # Server's endpoints, advertised verbatim. The CDR implements none of
+      # them, so example.com literals are the honest declaration for a lane
+      # whose tokens are minted by the runner rather than obtained from an AS.
+      EHRBASE__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT: "https://as.cnf.test/authorize"
+      EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT: "https://as.cnf.test/token"
+      EHRBASE__SMART__ENDPOINTS__JWKS_URI: "https://as.cnf.test/jwks.json"
+      # master06 §Deprecated Flows: implicit and resource-owner-password MUST
+      # NOT be advertised (SmartConfig::validate rejects them at boot).
+      EHRBASE__SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED: "authorization_code,client_credentials"
+      EHRBASE__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED: "code"
+      EHRBASE__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED: "S256"
+      # ── trust the committed CNF test issuer ───────────────────────────────
+      # Overrides the dev config's Keycloak issuer: the lane validates the
+      # runner-minted tokens against a STATIC JWKS, so no Authorization Server
+      # has to be running for the scope cases to execute.
+      EHRBASE__AUTH__OIDC__ISSUER: "https://as.cnf.test"
+      EHRBASE__AUTH__OIDC__AUDIENCES: "cnf-smart-sut"
+      EHRBASE__AUTH__OIDC__ALGORITHMS: "RS256"
+      EHRBASE__AUTH__OIDC__JWKS_JSON_FILE: /etc/ehrbase/cnf-smart-jwks.json
+    volumes:
+      - ./tools/cnf-runner/party/smart/jwks.json:/etc/ehrbase/cnf-smart-jwks.json:ro

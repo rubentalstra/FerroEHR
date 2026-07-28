@@ -44,6 +44,12 @@ uuid = { workspace = true, features = ["v5"] }
 serde_jcs = { workspace = true }
 sha2 = { workspace = true }
 pgp = { workspace = true }
+# The SMART lane's per-step token mint: the CDR is a SMART resource server and
+# never issues tokens (ITS-REST docs/smart_app_launch/master06-authentication
+# §Supported Authentication Flows), and the conformance stack runs no
+# Authorization Server, so the runner signs RS256 access tokens carrying the
+# scope claim each case declares. Never hand-roll JWT signing.
+jsonwebtoken = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }

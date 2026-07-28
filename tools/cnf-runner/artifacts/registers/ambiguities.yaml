@@ -5180,30 +5180,58 @@ AMB-151:
     considered implementation-specific and fall outside the scope of this
     specification"; (B-9) the public/confidential application typology, which
     master05 takes from "the considered by SMART specification". COVERAGE
-    CONSEQUENCE, stated openly: the catalogue authors no SMART case. Two
-    independent reasons, neither of them a coverage decision of convenience.
-    First, this server ships SMART OFF by default and the composed conformance
-    SUT runs the default configuration, so a SMART case would drive a surface
-    that is deliberately absent (the discovery route is not mounted and the
-    gate is inert — zero wire drift is itself the specified behaviour of the
-    disabled state). Second, and independent of configuration, every scope case
-    needs a Bearer token carrying a chosen `scope` claim, which requires an
-    Authorization Server the conformance stack does not run and a per-case
-    token-minting step the runner does not have (the ixit's `Bearer` principal
-    is one static token per instance, and the SUT accepts bearer tokens only
-    against a configured OIDC issuer). Authoring cases that could never execute
-    would be a false coverage claim, so the three CDR-side behaviours are
-    registered as wire-surface elements with this entry as their adjudication
-    (`vocab/wire_surface.yaml`: `smart-discovery-document-shape`,
-    `smart-resource-scope-grammar`, `smart-scope-deny-403`) and are proven
-    instead by the server's own tests — `app/ehrbase-rest/tests/smart_http.rs`
-    (the discovery document's absolute `baseUrl`s, its absence when disabled,
-    the honest `openehr-permission-v1` capability, fail-closed denial of
-    scope-less template and query access, advisory-mode deferral) and the
-    grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs`. The
-    `SmartAppLaunch` capability row exists in `vocab/capability_matrix.yaml` so
-    the surface is visible and honestly scoped in the rendered report; this
-    party's statement does NOT claim it. Reported upstream (UPR-115).
+    CONSEQUENCE — REVISED: the three CDR-side behaviours are now EXECUTED
+    CASES, and only the boundary above stays statement-declared. The two
+    blockers this entry originally recorded were runner/stack capabilities, not
+    spec facts, and both have been built. (i) A SMART OVERLAY LANE:
+    `docker/sut-smart.yml` boots the SUT in the SMART resource-server posture
+    (`smart.enabled`, `smart.require_smart_scopes` — the fail-closed posture
+    master04 §Capabilities lets a Platform advertise as `openehr-permission-v1`
+    —, the advertised Authorization-Server endpoints, and `auth.oidc` trusting
+    a committed static test issuer), selected by `CONF_SMART_MODE=1`.
+    (ii) A PER-CASE TOKEN MINT: a flow step declares the `scope` claim its
+    principal presents and the runner signs an RS256 access token carrying
+    exactly that, against the issuer the party declares in its ixit `smart`
+    lane. The CDR still never issues a token — master06 §Supported
+    Authentication Flows makes that the Authorization Server's duty and the
+    stack still runs none; the RUNNER takes the AS role for the lane, which is
+    a test-harness fact, not a claim about the CDR. Because that lane is a
+    party declaration, a party whose ixit declares no `smart` block records
+    every SMART case not-applicable with that citation (ISO/IEC 9646 test
+    selection), so the default SMART-off lane is unchanged and no case is ever
+    driven against a deployment that legitimately does not run SMART.
+    WHAT IS EXECUTED (`vocab/wire_surface.yaml` → `artifacts/schedule/smart/`):
+    `smart-discovery-document-shape` → `SMART-DISCOVERY-document_shape` (the
+    document served from the Platform base URL as `application/json`, the
+    required `org.openehr.rest` service, its absolute `baseUrl`, the
+    `capabilities` array); `smart-resource-scope-grammar` →
+    `SMART-RESOURCE_SCOPES-granted_scope_permits` (the granting rows: the
+    `user` and `system` compartments, the `*` pattern row, single- and
+    multi-letter permission tails, and an identity scope alongside) plus
+    `SMART-RESOURCE_SCOPES-scope_deny_403`; `smart-scope-deny-403` →
+    `SMART-RESOURCE_SCOPES-scope_deny_403` (a granted template scope without
+    the read letter, a scope of another family, identity scopes only, and no
+    scope at all). WHAT REMAINS OFF THE WIRE, honestly registered rather than
+    absorbed: the disabled-state absence
+    (`smart-discovery-absent-when-disabled` — the absence of a surface has no
+    wire to drive) and the grammar rows no case reaches yet
+    (`smart-resource-scope-grammar-remaining-rows` — the `patient` compartment
+    and its launch-context binding, the `composition-`/`aql-` nouns, the four
+    non-`*` pattern rows, the inert demotion), a coverage gap that now shrinks
+    case by case because the machinery exists. Both stay proven meanwhile by
+    the server's own tests — `app/ehrbase-rest/tests/smart_http.rs` and the
+    grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs` —
+    which is evidence about the server and the parser, never about the wire.
+    THE LANE IS FOCUSED, NOT THE BASELINE: SMART scopes ride Bearer tokens
+    only, so in the fail-closed posture the catalogue's Basic-auth principals
+    hold none and every template/composition/AQL case would be (correctly)
+    refused — the configuration behaving as specified. The lane therefore
+    drives only the SMART group and writes to its own artefact directory; the
+    default lane remains the conformance baseline. The `SmartAppLaunch`
+    capability row in `vocab/capability_matrix.yaml` is claimed by the lane's
+    own party statement (`party/ehrbase-rs/statement.smart.json`) and NOT by
+    the default one, because the default deployment does not run the role.
+    Reported upstream (UPR-115).
   disposition: statement_declared
   upstream_ref: "UPR-115"
 

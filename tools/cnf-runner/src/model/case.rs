@@ -297,6 +297,20 @@ pub struct FlowStep {
     /// Per-step format role (intrinsic-format cases only).
     #[serde(default)]
     pub format: Option<FormatName>,
+    /// The SMART `scope` claim this step's principal presents (ITS-REST
+    /// `docs/smart_app_launch/master08-scopes.adoc` §Resource Scopes). The
+    /// addressed instance must be a `bearer_mint` principal: the runner signs
+    /// a fresh access token carrying exactly these scopes, because the CDR is
+    /// a resource server and the conformance stack runs no Authorization
+    /// Server to obtain one from (master06 §Supported Authentication Flows).
+    ///
+    /// **Declaring the key at all** — including as an empty list, which is the
+    /// scope-less token the fail-closed deny branch needs — marks the step as
+    /// SMART-lane, so a party whose ixit declares no `smart` block records the
+    /// case not-applicable instead of driving it (ISO/IEC 9646 test
+    /// selection).
+    #[serde(default)]
+    pub scopes: Option<Vec<TemplatedValue>>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub with: Option<Vec<(String, TemplatedValue)>>,
     pub expect: ExpectSpec,
@@ -435,6 +449,20 @@ impl FlowStep {
     #[must_use]
     pub fn with_entries(&self) -> &[(String, TemplatedValue)] {
         self.with.as_deref().unwrap_or_default()
+    }
+
+    /// Whether the step declares a SMART `scope` claim — true even for an
+    /// empty list (the scope-less token is a deliberate declaration, not the
+    /// absence of one).
+    #[must_use]
+    pub fn declares_scopes(&self) -> bool {
+        self.scopes.is_some()
+    }
+
+    /// The declared SMART scope templates (empty when the key is absent).
+    #[must_use]
+    pub fn scope_templates(&self) -> &[TemplatedValue] {
+        self.scopes.as_deref().unwrap_or_default()
     }
 }
 

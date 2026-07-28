@@ -469,6 +469,13 @@
             "wt"
           ]
         },
+        "scopes": {
+          "description": "The SMART `scope` claim this step's principal presents (ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes), space-joined into a minted RS256 access token by the addressed `bearer_mint` instance. Declaring the key at all — including as an empty list, the scope-less token the fail-closed deny branch needs — marks the step SMART-lane, so a party whose ixit declares no `smart` block records the case not-applicable.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "with": {
           "type": "object"
         },
