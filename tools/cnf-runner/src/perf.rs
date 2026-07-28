@@ -598,9 +598,15 @@ impl PerfOp {
                 "EhrApi",
             ],
             PerfOp::CompositionReadFlat => &["SimplifiedFormats", "CompositionOps", "EhrApi"],
-            PerfOp::PartyCreate | PerfOp::PartyRead | PerfOp::PartyUpdate => {
-                &["PartyOperations", "DemographicApi"]
-            }
+            // Every party commit is validated against the archetyped
+            // demographic model on the way in — the same reasoning that maps
+            // ArchetypeValidation onto CompositionCommit.
+            PerfOp::PartyCreate | PerfOp::PartyUpdate => &[
+                "PartyOperations",
+                "DemographicArchetypeValidation",
+                "DemographicApi",
+            ],
+            PerfOp::PartyRead => &["PartyOperations", "DemographicApi"],
             // Extension routes (no released wire) — they gate the
             // PartyRelationshipOperations CAPABILITY only, never the
             // DEMOGRAPHIC API's wire conformance, so DemographicApi is

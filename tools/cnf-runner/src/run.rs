@@ -42,6 +42,12 @@ pub struct RunReport {
     pub interpreter_run: usize,
     /// All active assertion-machinery cases considered.
     pub considered: usize,
+    /// The `restapi_specs_version` the System OPTIONS manifest served, when
+    /// the campaign drove that exchange — an independent confirmation of the
+    /// party's declared `spec_versions.its_rest`, never a source of truth
+    /// (the released `Options` schema has no `required` list; a divergence
+    /// becomes a static-review finding, not a re-declaration).
+    pub restapi_specs_version: Option<String>,
 }
 
 impl RunReport {
@@ -521,6 +527,9 @@ pub fn execute(
         let record = run_case(&runnable, runnable.formats.first().copied(), &mut driver)?;
         report.interpreter_run += 1;
         report.records.push(record);
+        if let Some(version) = driver.take_observed_restapi_specs_version() {
+            report.restapi_specs_version.get_or_insert(version);
+        }
     }
     Ok(report)
 }
