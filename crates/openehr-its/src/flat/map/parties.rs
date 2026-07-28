@@ -126,6 +126,14 @@ pub(super) fn build_object_ref(node: &SimNode) -> Option<Value> {
 /// `/_relationship`. The example spelling is the emitted one (it is the form
 /// two tables and every example agree on); the underscore spelling is
 /// accepted on input as an alias by [`relationship_child`].
+///
+/// This is the **sole** emission site of the party `_identifier:i` family
+/// (master05 §§PARTY_IDENTIFIED, PARTY_RELATED `/_identifier:i`):
+/// [`super::structures::emit_rm_attrs`] deliberately carries no PARTY arm, so
+/// the family is emitted exactly once however a party node is reached — a
+/// PARTY_PROXY datum leaf through [`super::data_values::emit_leaf`], or a
+/// `_provider` / `_health_care_facility` / FEEDER_AUDIT_DETAILS party through
+/// [`super::structures`].
 pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
     if p.get("_type").and_then(Value::as_str) == Some("PARTY_SELF") {
         out.attrs.insert("_type".to_owned(), json!("PARTY_SELF"));
@@ -584,6 +592,40 @@ mod tests {
         assert_eq!(
             rebuilt["relationship"]["defining_code"]["code_string"],
             json!("10")
+        );
+    }
+
+    // The party `_identifier:i` family (master05 §§PARTY_IDENTIFIED,
+    // PARTY_RELATED `/_identifier:i`) has exactly ONE emission site:
+    // `emit_party`. It used to be emitted a second time by
+    // `structures::emit_rm_attrs`'s PARTY arm — idempotent, so invisible on
+    // the wire, but a trap for the next change to either site. This pins the
+    // ownership split in both directions, so restoring either duplicate fails
+    // here rather than silently.
+    #[test]
+    fn party_identifiers_have_exactly_one_emission_site() {
+        let rm = json!({
+            "_type": "PARTY_IDENTIFIED", "name": "Silvia Blake",
+            "identifiers": [{"_type": "DV_IDENTIFIER", "id": "122", "issuer": "issuer"}],
+        });
+
+        let mut from_party = SimNode::default();
+        emit_party(&rm, &mut from_party);
+        assert_eq!(
+            from_party
+                .child("_identifier")
+                .and_then(|o| o.attrs.get("id")),
+            Some(&json!("122")),
+            "`emit_party` owns the `_identifier:i` family"
+        );
+
+        let mut from_rm_attrs = SimNode::default();
+        crate::flat::map::structures::emit_rm_attrs(&rm, "PARTY_IDENTIFIED", &mut from_rm_attrs);
+        assert!(
+            !from_rm_attrs.children.contains_key("_identifier"),
+            "the `_`-attribute dispatcher must NOT re-emit the party \
+             `_identifier:i` family — `emit_party` already did: {:?}",
+            from_rm_attrs.children.keys().collect::<Vec<_>>()
         );
     }
 }
