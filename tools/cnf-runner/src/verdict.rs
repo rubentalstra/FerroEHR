@@ -183,6 +183,33 @@ pub fn compute(
     register: &AmbiguityRegister,
 ) -> VerdictReport {
     let mut review = static_review(statement, cases, matrix, register);
+    // The results record's technology profile is the selection filter for
+    // every gating roll-up below, so a divergence from the statement's claim
+    // means records were (de)selected under a DIFFERENT profile than the one
+    // being certified — stale results, or a run driven without the statement.
+    // Surfaced as a review finding, never silently tolerated (a narrower
+    // recorded profile deselects failed rows: the false-green shape found on
+    // the #288 convergence run, 2026-07-28).
+    if let Some(claimed) = statement
+        .tech_profiles
+        .iter()
+        .find(|p| p.its == results.tech_profile.its)
+    {
+        let mut recorded = results.tech_profile.formats.clone();
+        let mut declared = claimed.formats.clone();
+        recorded.sort_unstable_by_key(|f| format!("{f:?}"));
+        declared.sort_unstable_by_key(|f| format!("{f:?}"));
+        if recorded != declared {
+            review.push(ReviewFinding {
+                message: format!(
+                    "results.tech_profile.formats {:?} diverges from the statement's {:?} \
+                     tech-profile claim {:?} — the run's gating selection does not match the \
+                     certified claim; re-run against the current statement",
+                    results.tech_profile.formats, results.tech_profile.its, claimed.formats
+                ),
+            });
+        }
+    }
     let performance = measured_verdicts(statement, results, perf_cases, &mut review);
     let selected = select(statement, results, cases, register);
 
@@ -786,6 +813,45 @@ mod tests {
                 .find(|(t, _)| *t == Tier::Core)
                 .map(|(_, v)| *v),
             Some(ProfileVerdict::Fail)
+        );
+    }
+
+    #[test]
+    fn diverging_recorded_tech_profile_is_a_review_finding() {
+        // A results record whose tech profile is NARROWER than the statement's
+        // claim deselects that format's rows from every gating roll-up — the
+        // false-green shape (a failed canonical-xml case invisible behind a
+        // PASS). The divergence itself must surface as a review finding.
+        let cases = vec![functional_case(
+            "I_EHR_SERVICE.create_ehr-main",
+            &["EhrOperations"],
+            &["CORE"],
+        )];
+        let mut st = statement(&["EhrOperations"], &["CORE"], &[]);
+        st.tech_profiles[0].formats = vec![FormatName::CanonicalJson, FormatName::CanonicalXml];
+        let rs = results(serde_json::json!([
+            { "case": "I_EHR_SERVICE.create_ehr-main", "format": "canonical-json",
+              "status": "passed", "rows_driven": 1, "rows_total": 1 }
+        ]));
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
+        assert!(
+            report
+                .review
+                .iter()
+                .any(|f| f.message.contains("diverges from the statement's")),
+            "expected the tech-profile divergence review finding, got {:?}",
+            report.review
+        );
+        // And the matching profile stays clean.
+        st.tech_profiles[0].formats = vec![FormatName::CanonicalJson];
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
+        assert!(
+            !report
+                .review
+                .iter()
+                .any(|f| f.message.contains("diverges from the statement's")),
+            "{:?}",
+            report.review
         );
     }
 

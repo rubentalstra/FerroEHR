@@ -1610,9 +1610,26 @@ fn run_command(
             verification_pack_status: cnf_runner::party::VerificationPackStatus::Passed,
         },
         schedule_release: "cnf-2.0-w2".to_owned(),
+        // The recorded technology profile IS the claim the verdict pipeline
+        // selects gating records with (`verdict::rollup_results`): a narrow
+        // hardcoded list here silently deselects every other format's failed
+        // rows — the false-green shape that hid four red canonical-xml rows
+        // behind a PASS badge (#288 convergence run, 2026-07-28). The profile
+        // therefore comes from the party statement's its-rest claim; with no
+        // statement, EVERY format is selected so nothing red can vanish.
         tech_profile: cnf_runner::party::TechProfile {
             its: cnf_runner::vocab::ItsName::ItsRest,
-            formats: vec![cnf_runner::vocab::FormatName::CanonicalJson],
+            formats: statement
+                .as_ref()
+                .and_then(|s| {
+                    s.tech_profiles
+                        .iter()
+                        .find(|p| p.its == cnf_runner::vocab::ItsName::ItsRest)
+                })
+                .map_or_else(
+                    || cnf_runner::vocab::FormatName::ALL.to_vec(),
+                    |p| p.formats.clone(),
+                ),
         },
         ixit_digest,
         outcomes,
