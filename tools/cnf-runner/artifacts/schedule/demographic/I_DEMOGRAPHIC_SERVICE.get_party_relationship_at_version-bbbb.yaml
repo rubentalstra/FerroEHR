@@ -3,18 +3,21 @@
 # TBD; authored as the primary declared-error path from the SM operation semantics
 # (.Errors: object_version_does_not_exist). Resolvable SM operation is
 # I_PARTY_RELATIONSHIP.get_party_relationship_at_version.
-# ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
-# (AMB-32); not-applicable on ITS-REST 1.1.0.
+#
+# REALIZATION (#623, 2026-07-28): the released ITS surfaces no
+# PARTY_RELATIONSHIP resource (register AMB-32); the refusal is EXECUTED against
+# the declared extension route the product serves.
 id: I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb
 kind: functional
 component: DEMOGRAPHIC
 sm_operation: I_PARTY_RELATIONSHIP.get_party_relationship_at_version
 capabilities: [PartyRelationshipOperations]
 profiles: [OPTIONS]
+ambiguities: [AMB-32]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY_RELATIONSHIP operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
-  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY_RELATIONSHIP operation semantics (declared meaning + Errors); master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
+  - "EXTENSION ROUTE — no openEHR spec governs /demographic/party_relationship; our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-32. The row gates the PartyRelationshipOperations CAPABILITY verdict only, never ITS-REST wire conformance"
 test_purpose: >-
   get_party_relationship_at_version for an unknown PARTY_RELATIONSHIP version id is
   rejected (object_version_does_not_exist).

@@ -1,22 +1,71 @@
-# ITS-REST 1.1.0 surfaces no wire for the PARTY_RELATIONSHIP operations.
-# demographic.openapi.yaml exposes resource endpoints only for the concrete
-# actor subtypes (person/organisation/role/group/agent) and the versioned_party /
-# contribution resources; PARTY_RELATIONSHIP appears only as a schema/tag, never
-# a path. Per RM demographic §PARTY_RELATIONSHIP, a relationship is stored
-# by-value in the source PARTY's `relationships` attribute, so it has no
-# standalone REST resource. An explicit unrealized declaration (the AMB-17
-# delete_opt / AMB-22 list_contributions / AMB-24 get_versioned_directory
-# precedent) so the master10 create_party_relationship cases are not-applicable
-# WITH CITATION on this ITS and activate when a later ITS release adds the wire.
-# Register entry: AMB-32.
+# EXTENSION realization of I_DEMOGRAPHIC_SERVICE.create_party_relationship.
+#
+# NO RELEASED WIRE EXISTS, re-derived first-hand 2026-07-28 under the oracle
+# order: the ITS-REST docs text names no PARTY_RELATIONSHIP resource anywhere
+# (specifications/docs/demographic/**), and the released
+# specifications/demographic.openapi.yaml declares twenty-seven paths, none of
+# them `/demographic/party_relationship*` (`PARTY_RELATIONSHIP` appears only as
+# schemas/demographic/PartyRelationship.yaml, the by-value member of
+# `PARTY.relationships` — RM demographic master02 §Party Relationships).
+# Register AMB-32.
+#
+# WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
+# design — `POST /demographic/party_relationship`, declared in the
+# `party-relationship` family of vocab/wire_surface.yaml served_extensions.
+# NO openEHR SPEC GOVERNS IT — our own design/extension. It therefore gates the
+# PartyRelationshipOperations CAPABILITY verdict ONLY and never ITS-REST wire
+# conformance; the capability-matrix row carries `realization: extension`, which
+# may never be `required` (owner ruling 2026-07-28).
+#
+# THE ENVELOPE below is what the route serves. It deliberately mirrors the
+# released party create so clients see one consistent surface, but every branch
+# is ours: the overview conventions the route follows are a convention it chose,
+# never an obligation it inherits.
 sm_operation: I_DEMOGRAPHIC_SERVICE.create_party_relationship
 its: its-rest
-unrealized:
+extension:
+  family: party-relationship
   reason: >-
-    No PARTY_RELATIONSHIP resource exists in ITS-REST 1.1.0
-    (demographic.openapi.yaml has no /demographic/party_relationship* path);
-    PARTY_RELATIONSHIP is a schema only, and per RM demographic a relationship is
-    held by-value in the source PARTY's relationships attribute — the SM
-    create_party_relationship has no bindable wire realization.
-  source: "SM docs/UML/classes/i_demographic_service.adoc (create_party_relationship) vs ITS-REST specifications/demographic.openapi.yaml (no party_relationship path)"
+    ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so the SM
+    create_party_relationship has no released wire; this product serves the
+    operation on its own /demographic/party_relationship route, which is what
+    the cases drive.
+  source: >-
+    SM docs/UML/classes/i_demographic_service.adoc (create_party_relationship)
+    vs released ITS-REST specifications/demographic.openapi.yaml (no
+    party_relationship path) + specifications/docs/demographic/** (no mention) —
+    no openEHR spec governs the extension route, our own design/extension
   ambiguity: AMB-32
+request:
+  method: POST
+  path: /demographic/party_relationship
+  body: party_relationship
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json]
+# NO `applies:` floor rides on these header expectations — see the note in
+# I_PARTY_RELATIONSHIP.get_party_relationship.yaml: a floor dates a RELEASED
+# rule, and nothing released governs this route.
+outcomes:
+  created:
+    status: 201
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'
+      Location: present
+      Content-Type: negotiated
+    body: prefer_conditional
+  validation_failed:
+    status: 422
+    body: error_loose
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+  versioned_object_uid:
+    from: capture version_uid
+    transform: root-uid
+server_assigned: [uid]
+# TODO: case the canonical-XML request/response branch of this extension route
+# once a codec-derived cnf.demographic.party_relationship.v1.xml fixture exists
+# in the corpus; until then the binding declares only canonical-json, so the XML
+# branch is uncovered rather than silently claimed.

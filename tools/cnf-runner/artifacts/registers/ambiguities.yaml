@@ -416,9 +416,28 @@ AMB-32:
     resource this API does not have.
     Our own `/demographic/party_relationship/**` routes are the honest boundary
     realization of SM `I_PARTY_RELATIONSHIP`: no openEHR spec governs them —
-    our own extension — and the service module documents them as excluded from
-    any conformance-profile claim, so no verdict rests on them. The demographic
-    invariant defects those routes would have to enforce are AMB-130.
+    our own extension. The demographic invariant defects those routes would have
+    to enforce are AMB-130.
+    REALIZATION RE-DERIVED 2026-07-28 (#623), and the handling above is
+    SUPERSEDED on exactly one point. The missing released wire is CONFIRMED
+    unchanged, first-hand: the ITS-REST docs text names no PARTY_RELATIONSHIP
+    resource anywhere under specifications/docs/demographic/**, and
+    specifications/demographic.openapi.yaml declares twenty-seven paths, none of
+    them `/demographic/party_relationship*`. What changed is what the CATALOGUE
+    does about it. Parking a CLAIMED capability as "not-applicable with
+    citation" was a certification hole: ISO/IEC 9646 test selection legitimizes
+    N/A only for a capability a party does NOT claim, and this party claims
+    PartyRelationshipOperations. So the six SM relationship operations now carry
+    EXTENSION bindings (`extension:` blocks naming the `party-relationship`
+    served_extensions family) onto the routes this product actually serves, and
+    the fifteen-case battery EXECUTES. The scoping the old wording achieved by
+    keeping the bindings unrealized is now MACHINE-ENFORCED instead of
+    conventional: the `realization-scope` gate fences an extension binding off
+    from every released-wire judgement and requires the capability row to carry
+    `realization: extension`, which the matrix model forbids from ever being
+    `required`. So it remains true that NO openEHR profile tier and NO ITS-REST
+    wire-conformance claim rests on these routes — the difference is that the
+    capability is now TESTED as product function rather than excused.
   disposition: fixed_handling
   upstream_ref: "UPR-11"
 AMB-33:
@@ -474,6 +493,22 @@ AMB-33:
     on the SM-keyed surface gate instead of falling through it. The one fully
     realized operation (`physical_ehr_delete` → `admin_ehr_delete`) keeps its
     variant-less binding. Reported upstream (UPR-12).
+    CLAIMS RE-DERIVED 2026-07-28 (#623) for the four capabilities this entry
+    excused — ActivityReport, EhrDumpLoad, EhrArchive, DemographicArchive. The
+    two-path released Admin API is CONFIRMED unchanged first-hand, and the
+    second half of the derivation decides the remedy: this product's OWN admin
+    extension surface is exactly three routes (template delete,
+    stored-query-version delete, the redacted config read — the
+    `admin-extension-routes` family of vocab/wire_surface.yaml), so it serves
+    no reporting, archive or dump/load route either. The SM operations behind
+    them live at the service layer only
+    (`ehrbase::service::admin::{statistics,archive,dump_load}`) and the CNF
+    runner is a black-box HTTP instrument, so nothing can drive them. Excusing
+    the four while the party CLAIMED them was a certification hole (ISO/IEC
+    9646 legitimizes "not applicable" only for a capability a party does NOT
+    claim), so the ehrbase-rs statement withdraws all four claims. The cases
+    and this entry stay; each becomes re-assertable the day the product serves
+    its operations on declared extension routes.
   disposition: fixed_handling
   upstream_ref: "UPR-12"
 AMB-34:
@@ -493,6 +528,20 @@ AMB-34:
     declared unrealized; the cases are not-applicable WITH CITATION on
     ITS-REST 1.1.0 and activate when a later ITS release adds a MESSAGE API.
     SM/ITS alignment candidate.
+    CLAIMS RE-DERIVED 2026-07-28 (#623) for the three capabilities this entry
+    excused — EhrExtract, Tds, MessageApi. The absence is CONFIRMED unchanged
+    first-hand: the release publishes seven API groups (overview, system, ehr,
+    demographic, query, definition, admin) and no message/extract/tdd group
+    exists in either the docs text or the OAS. The second half of the
+    derivation decides the remedy: `ehrbase::service::message` implements
+    export/import/TDD, but NO route reaches it — the module's own doc comment
+    expects an extension wire in `ehrbase-rest` that is not mounted — so the
+    black-box runner has nothing to drive. Excusing the three while the party
+    CLAIMED them was a certification hole (ISO/IEC 9646 legitimizes "not
+    applicable" only for a capability a party does NOT claim), so the
+    ehrbase-rs statement withdraws all three claims. The cases and this entry
+    stay; each becomes re-assertable the day the release adds a MESSAGE API or
+    the product serves the operations on declared extension routes.
   disposition: fixed_handling
   upstream_ref: "UPR-13"
 AMB-37:
@@ -519,6 +568,17 @@ AMB-37:
     conflates with list_opts on the one list endpoint; example generation and the
     deprecated version GET anchor to get_artefact (the closest SM op). SM/ITS alignment candidate: add ADL2 archetype provisioning + delete +
     count + generic-list + example-generation operations to the released ITS.
+    CLAIM RE-DERIVED 2026-07-28 (#623) for the Adl2ArchetypeProvisioning
+    capability specifically; the operation-level handling above is unchanged.
+    The missing wire is CONFIRMED first-hand
+    (specifications/definition.openapi.yaml surfaces only the OPT routes under
+    /definition/template/adl2), and this product serves no ADL 2
+    artefact-generic provisioning route of its own either — so there is no
+    surface, released or extension, for the capability's cases to execute
+    against. Excusing it while the party CLAIMED it was a certification hole
+    (ISO/IEC 9646 legitimizes "not applicable" only for a capability a party
+    does NOT claim), so the ehrbase-rs statement withdraws the claim. The cases
+    and this entry stay; the claim becomes re-assertable when a surface exists.
   disposition: fixed_handling
   upstream_ref: "UPR-14"
 AMB-39:
@@ -560,10 +620,29 @@ AMB-41:
   handling: >-
     The archetype-provisioning operations carry unrealized its-rest bindings;
     their cases are not-applicable WITH CITATION and activate when a later
-    ITS release adds the wire. The verdict pipeline records the capability as
-    unrealized-on-this-technology-profile — an explicit scope exclusion on
-    the certificate, never a silent pass and never a CORE failure the ITS
-    cannot avoid. SM/ITS alignment candidate.
+    ITS release adds the wire. SM/ITS alignment candidate.
+    CLAIM RE-DERIVED 2026-07-28 (#623), and the last clause of the original
+    handling — "never a CORE failure the ITS cannot avoid" — is WITHDRAWN as
+    the wrong remedy. The missing released wire is CONFIRMED unchanged
+    first-hand: specifications/definition.openapi.yaml declares eleven paths,
+    all under /definition/template/** or /definition/query/**, and no ITS-REST
+    docs chapter names an archetype resource. What was wrong was excusing a
+    CLAIMED capability: ISO/IEC 9646 test selection legitimizes "not
+    applicable" only for a capability a party does NOT claim, so an
+    excused-while-claimed row was a certification hole rather than a selection
+    outcome. The second half of the derivation decides the remedy: this product
+    ALSO serves no route for the operations (upload_archetype / get_archetype /
+    list_archetypes / has_archetype / delete_archetype / archetypes_count are
+    implemented in `ehrbase::service::definition::adl14` and reachable by no
+    HTTP route), so there is no extension surface to execute against either.
+    The ehrbase-rs statement therefore WITHDRAWS the claim. The consequence is
+    stated rather than absorbed: the CNF Profiles book marks ADL 1.4 archetype
+    provisioning CORE+STANDARD, so a party claiming CORE while not claiming it
+    draws a static-review finding — the honest reading of a release that
+    publishes no wire for a capability its own conformance book requires, and
+    strictly better than a silent excuse. The claim becomes re-assertable the
+    day either the release adds the wire or the product serves the operations
+    on declared extension routes.
   disposition: fixed_handling
   upstream_ref: "UPR-16"
 AMB-42:
