@@ -1753,6 +1753,44 @@ coverage only ratchets up. `cnf-runner validate --specs …` refreshes the
 deterministic per-interface/per-binding coverage report at
 `docs/conformance/coverage-report.md`.
 
+The **claim-completeness gates** (issue #622) close the same loop on the CLAIM
+side, so a certification claim can never be hollow. `validate` sweeps the
+committed party statements beside the artifact root
+(`<root>/../party/*/statement.json`) and relates them to the catalogue:
+
+- **`claim-completeness`** — a capability a statement claims must have at
+  least one verdict-bearing catalogue case (an active case naming it whose
+  gating is not suspended by a `report_only` register entry). Declaring a
+  capability IS the obligation to run the framework against it, so a hollow
+  claim fails before any SUT is composed. A capability whose cases ALL resolve
+  excused (an unrealized wire) or deselected (an undeclared option branch)
+  must additionally name the register entry that adjudicated that in its
+  matrix row's `evidence_exception`; the reverse also bites — an
+  `evidence_exception` on a capability that can carry executed evidence is
+  stale and must go, so an excuse can never outlive the wire it excused.
+  ISO/IEC 9646 test selection legitimizes "not applicable" only for a
+  capability a party does NOT claim.
+- **`capability-depth`** — one token case never certifies a capability. Each
+  matrix row records `min_cases`, the verdict-bearing case count its battery
+  must keep; falling below it names the capability and the shortfall. Floors
+  ratchet UP only: raising one to the current depth is always safe, so the
+  committed floors are derived from the catalogue and re-derived by a test.
+- **`workload-coverage`** — a claimed capability the measured
+  hospital-simulation workload does not exercise must carry a register-linked
+  `workload_exclusion` on its matrix row, which the certificate's Workload
+  Coverage table renders in place of the bare `NO — catalogue gap` cell; an
+  exclusion on a capability the simulation has since started exercising is
+  stale and must go. No released openEHR component governs a measured
+  workload at all (CNF guide `master03-overview.adoc` §Product Scope assesses
+  API conformance and data-validation conformance only), so the whole
+  instrument — and every exclusion from it — is our own design/extension,
+  declared once in the register and enumerated per capability in the matrix.
+
+The matrix row also carries **`realization: released-wire | extension`**,
+rendered as its own certificate column: an `extension` row is verified over
+routes no openEHR specification governs, so it may never be `required` and no
+openEHR profile tier ever rests on it.
+
 ### 8.14 The performance & volumetrics schedule
 
 Performance conformance is its own dimension with its own machine-readable

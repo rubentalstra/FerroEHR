@@ -7,7 +7,10 @@
 //!                                       validate an artifact tree (all gates);
 //!                                       --specs enables the SM/spec-ref
 //!                                       resolution checks against the vendored
-//!                                       spec tree (docs/specs/openehr)
+//!                                       spec tree (docs/specs/openehr). The
+//!                                       committed party statements beside the
+//!                                       root (<root>/../party/*/statement.json)
+//!                                       are swept in for the claim gates.
 //! cnf-runner verdicts --statement F --results F --root DIR --out DIR
 //!                                       compute the verdicts (pure pipeline)
 //!                                       and write the report/statement/
@@ -447,9 +450,10 @@ fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> 
         }
     }
     println!(
-        "{} case(s), {} binding(s), {} finding(s)",
+        "{} case(s), {} binding(s), {} party statement(s), {} finding(s)",
         loaded.set.cases.len(),
         loaded.set.bindings.len(),
+        loaded.set.parties.len(),
         findings.len()
     );
     if findings.is_empty() {

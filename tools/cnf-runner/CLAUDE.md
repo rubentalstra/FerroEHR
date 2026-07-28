@@ -37,6 +37,20 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `<sm_operation>[-<variant>].yaml` — machine-enforced by the
   `binding-filename` gate: selection is by the declared fields, so a
   disagreeing name misleads only the reader and the grep, silently.
+- **A CLAIM without cases is unrepresentable** (issue #622). `validate`
+  sweeps the committed party statements beside the artifact root
+  (`<root>/../party/*/statement.json`) and relates them to the catalogue, so
+  a hollow claim fails before any SUT is composed: `claim-completeness` (a
+  claimed capability has ≥ 1 verdict-bearing case; a capability whose cases
+  all resolve excused/deselected names its `evidence_exception` register
+  entry, and a stale one is a finding), `capability-depth` (every matrix row
+  keeps its `min_cases` floor — floors ratchet UP only, never down to match a
+  shrunken battery), `workload-coverage` (a claimed capability the measured
+  hospital simulation does not exercise carries a register-linked
+  `workload_exclusion`, rendered on the certificate instead of a bare
+  `NO — catalogue gap`; a stale exclusion is a finding too). The matrix row's
+  `realization: released-wire | extension` marks what the cases drive and is
+  a certificate column; an `extension` row may never be `required`.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary
