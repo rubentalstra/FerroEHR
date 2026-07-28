@@ -5678,11 +5678,26 @@ AMB-161:
     ITS→SM direction AMB-127 records for the stored-query single-definition
     read ("a released wire behaviour with no service-model anchor to name it
     by"), here in its complete form: not one operation missing from an
-    interface, but an entire API with no interface at all.
+    interface, but an entire API with no interface at all. NOT a one-off: the
+    ITEM_TAG surface is the second and larger instance — the whole vendored
+    docs/specs/openehr/SM/docs/ tree contains ZERO occurrences of "tag"
+    (grep-verified: no interface, no class, no attribute), while the released
+    ITS-REST defines twenty-three tag operations
+    (specifications/operations/{ehr,demographic}_tags_get.yaml, the EHR-side
+    {composition,ehr_status}_tags_{get,update,delete}.yaml and the demographic
+    {person,agent,group,organisation,role}_tags_{get,update,delete}.yaml) and
+    calls the wrapper headers "convenient wrappers around the dedicated
+    ITEM_TAG operations" (docs/overview/Requests_and_responses.md
+    §openehr-item-tag and openehr-version-item-tag) — released wire, no
+    service-model anchor.
   handling: >-
     Fixed handling — a naming convention, pinned and enumerable. Such an
-    operation is anchored under a reserved I_ITS_REST_<GROUP> pseudo-interface
-    (here I_ITS_REST_SYSTEM.options), which is a CATALOGUE naming convention and
+    operation is anchored under a reserved I_ITS_REST_<GROUP> pseudo-interface,
+    one per released resource family (I_ITS_REST_SYSTEM.options;
+    I_ITS_REST_ITEM_TAGS.<operationId> for the twenty-three tag routes, whose
+    operation name is the RELEASED operationId verbatim so every row traces to
+    exactly one specifications/operations/<operationId>.yaml), which is a
+    CATALOGUE naming convention and
     NOT a claim that the SM defines the operation — exactly the distinction
     AMB-127 draws when it anchors the version get to list_queries with a
     variant. The convention is not free-form: the pseudo-interface prefix is
@@ -5693,8 +5708,9 @@ AMB-161:
     binding-or-cited-exception obligation as an SM operation, and appear as
     their own rows of the coverage report; an unpinned I_ITS_REST_* reference is
     a validator finding, so the prefix can never become a way around SM
-    resolution. Revisits if a future SM release models the System API, at which
-    point the anchor becomes a real SM operation and the pinned row goes.
+    resolution. Revisits per family: when a future SM release models the System
+    API, or declares a tag interface, that family's anchors become real SM
+    operations and its pinned rows go.
   disposition: fixed_handling
 
 AMB-165:
@@ -5759,3 +5775,46 @@ AMB-165:
     Content-Type enum). Reported upstream (UPR-125).
   disposition: report_only
   upstream_ref: "UPR-125"
+
+AMB-166:
+  ambiguity: >-
+    The ITEM_TAG wrapper-header RESPONSE ECHO is assigned two different
+    strengths by two released sources. The overview docs text makes it
+    optional — "Servers MAY include the `openehr-item-tag` or
+    `openehr-version-item-tag` header in responses to confirm the actual list
+    of ITEM_TAGs stored on the server side" — while the change-controlled
+    write operations that declare the headers state it as fact: "The
+    corresponding response header(s) will return ITEM_TAGs as they were set by
+    the server". A MAY and a "will" cannot both be the obligation, so a
+    catalogue cannot decide from the release alone whether the absence of an
+    echo on a write that SET the headers is conformant.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md
+    §openehr-item-tag and openehr-version-item-tag, §"Usage in Responses"
+    ("Servers MAY include …"; and for reads "When retrieving resources via
+    `GET`, the server MAY also add these headers to the response") CONTRASTED
+    with specifications/operations/composition_create.yaml L6-7 and
+    person_create.yaml L6-7 (and their update siblings), verbatim: "A list of
+    ITEM_TAGs can be associated with the … in which case a `openehr-item-tag`
+    or `openehr-version-item-tag` request header can be set as well. The
+    corresponding response header(s) will return ITEM_TAGs as they were set by
+    the server" — CONFIRMED first-hand on both sides.
+  handling: >-
+    Fixed handling under the oracle order: the DOCS TEXT wins the conflict
+    (owner ruling 2026-07-24), so the echo is a MAY and the catalogue declares
+    it with the optional matcher (`present?`) on the wrapper-header write
+    bindings — never as a presence assertion. The operation-file sentence is an
+    OAS-tier source and cannot raise a docs-text MAY to a MUST. What the echo
+    would CONFIRM is asserted where it is executable and where the release does
+    assign it: the stored effect of the two headers, read back through the
+    dedicated tag routes — `openehr-item-tag` "applies to *VERSIONED_OBJECT*
+    targets", `openehr-version-item-tag` "applies to a specific target
+    *VERSION* within a VERSIONED_OBJECT", so the two collections are disjoint
+    and each read returns only its own. The value SHAPE of an echoed header is
+    likewise unasserted: the closed header-matcher vocabulary has no
+    conditional-value form, so a `present?` declaration cannot also pin a
+    pattern. Reported upstream (UPR-126): align the operation prose with the
+    overview, or raise the overview MAY to a conditional MUST for writes that
+    set the request header.
+  disposition: fixed_handling
+  upstream_ref: "UPR-126"

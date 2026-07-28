@@ -1266,23 +1266,164 @@ const PLATFORM_INTERFACES: &[&str] = &[
 /// operation — the same distinction `AMB-127` draws for variant anchoring.
 const PSEUDO_INTERFACE_PREFIX: &str = "I_ITS_REST_";
 
-/// RELEASED ITS-REST operations with NO SM interface — pinned from the docs
-/// text, never the OAS. The catalogue anchors each under a reserved
-/// `I_ITS_REST_*` pseudo-interface (a catalogue naming convention, never an
-/// SM claim — the same convention AMB-127 pins for variant anchoring).
-/// Today exactly one: the System API (ITS-REST `docs/system/Description.md`,
-/// STABLE) defines `OPTIONS {base_path}` (overview
-/// `Requests_and_responses.md` §HTTP Methods) and the SM has no corresponding
-/// interface.
+/// RELEASED ITS-REST operations with NO SM interface — pinned from the
+/// released ITS-REST sources (docs text first; the released operation files
+/// where the docs text is silent, per the oracle order). The catalogue anchors
+/// each under a reserved `I_ITS_REST_*` pseudo-interface, ONE per released
+/// resource family (a catalogue naming convention, never an SM claim — the
+/// same convention AMB-127 pins for variant anchoring, adjudicated for this
+/// table in AMB-161).
+///
+/// Two families are pinned today, and the operation name of every row is the
+/// RELEASED `operationId` verbatim, so a row is traceable to exactly one
+/// vendored `specifications/operations/<operationId>.yaml`:
+///
+/// - `I_ITS_REST_SYSTEM` — the System API (ITS-REST
+///   `docs/system/Description.md`, STABLE) defines `OPTIONS {base_path}`
+///   (overview `Requests_and_responses.md` §HTTP Methods).
+/// - `I_ITS_REST_ITEM_TAGS` — the 23 released ITEM_TAG routes: the two
+///   space-wide lists, the EHR-side COMPOSITION/EHR_STATUS triples, and the
+///   five demographic party triples. The SM models no tag concept at all —
+///   `docs/specs/openehr/SM/docs/` contains zero occurrences of "tag"
+///   (grep-verified) — while the released ITS-REST calls the
+///   `openehr-item-tag` / `openehr-version-item-tag` headers "convenient
+///   wrappers around the dedicated ITEM_TAG operations" (overview
+///   `Requests_and_responses.md` §openehr-item-tag and
+///   openehr-version-item-tag), so the operations are unambiguously part of
+///   the released wire with no service-model anchor to name them by.
 ///
 /// Without this table the Axis-1 enumeration is structurally blind to such an
 /// operation: [`check_surface_sm_operations`] walks SM class exports, so a
 /// wire behaviour the SM never models could never be reported missing.
-const NON_SM_REST_OPERATIONS: &[(&str, &str)] = &[(
-    "I_ITS_REST_SYSTEM.options",
-    "ITS-REST docs/system/Description.md (STABLE System API) + overview \
-     Requests_and_responses.md §HTTP Methods (OPTIONS)",
-)];
+const NON_SM_REST_OPERATIONS: &[(&str, &str)] = &[
+    (
+        "I_ITS_REST_SYSTEM.options",
+        "ITS-REST docs/system/Description.md (STABLE System API) + overview \
+         Requests_and_responses.md §HTTP Methods (OPTIONS)",
+    ),
+    // ── ITEM_TAG: the two space-wide lists ──
+    (
+        "I_ITS_REST_ITEM_TAGS.ehr_tags_get",
+        "ITS-REST specifications/operations/ehr_tags_get.yaml — GET \
+         /ehr/{ehr_id}/tags, the EHR-scoped list of \"the ITEM_TAG resources \
+         associated with any target VERSION or VERSIONED_OBJECT within the EHR \
+         identified by ehr_id\"",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.demographic_tags_get",
+        "ITS-REST specifications/operations/demographic_tags_get.yaml — GET \
+         /demographic/tags, the space-wide list of \"the ITEM_TAG resources \
+         associated with any target VERSION or VERSIONED_PARTY within the \
+         Demographic space\" (its unbounded scope is adjudicated in AMB-138)",
+    ),
+    // ── ITEM_TAG: the EHR-side typed families ──
+    (
+        "I_ITS_REST_ITEM_TAGS.composition_tags_get",
+        "ITS-REST specifications/operations/composition_tags_get.yaml — GET \
+         /ehr/{ehr_id}/composition/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.composition_tags_update",
+        "ITS-REST specifications/operations/composition_tags_update.yaml — PUT \
+         /ehr/{ehr_id}/composition/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.composition_tags_delete",
+        "ITS-REST specifications/operations/composition_tags_delete.yaml — \
+         DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.ehr_status_tags_get",
+        "ITS-REST specifications/operations/ehr_status_tags_get.yaml — GET \
+         /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update",
+        "ITS-REST specifications/operations/ehr_status_tags_update.yaml — PUT \
+         /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete",
+        "ITS-REST specifications/operations/ehr_status_tags_delete.yaml — \
+         DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}",
+    ),
+    // ── ITEM_TAG: the five demographic party families ──
+    (
+        "I_ITS_REST_ITEM_TAGS.person_tags_get",
+        "ITS-REST specifications/operations/person_tags_get.yaml — GET \
+         /demographic/person/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.person_tags_update",
+        "ITS-REST specifications/operations/person_tags_update.yaml — PUT \
+         /demographic/person/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.person_tags_delete",
+        "ITS-REST specifications/operations/person_tags_delete.yaml — DELETE \
+         /demographic/person/{uid_based_id}/tags/{key}",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.agent_tags_get",
+        "ITS-REST specifications/operations/agent_tags_get.yaml — GET \
+         /demographic/agent/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.agent_tags_update",
+        "ITS-REST specifications/operations/agent_tags_update.yaml — PUT \
+         /demographic/agent/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.agent_tags_delete",
+        "ITS-REST specifications/operations/agent_tags_delete.yaml — DELETE \
+         /demographic/agent/{uid_based_id}/tags/{key}",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.group_tags_get",
+        "ITS-REST specifications/operations/group_tags_get.yaml — GET \
+         /demographic/group/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.group_tags_update",
+        "ITS-REST specifications/operations/group_tags_update.yaml — PUT \
+         /demographic/group/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.group_tags_delete",
+        "ITS-REST specifications/operations/group_tags_delete.yaml — DELETE \
+         /demographic/group/{uid_based_id}/tags/{key}",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.organisation_tags_get",
+        "ITS-REST specifications/operations/organisation_tags_get.yaml — GET \
+         /demographic/organisation/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.organisation_tags_update",
+        "ITS-REST specifications/operations/organisation_tags_update.yaml — PUT \
+         /demographic/organisation/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.organisation_tags_delete",
+        "ITS-REST specifications/operations/organisation_tags_delete.yaml — \
+         DELETE /demographic/organisation/{uid_based_id}/tags/{key}",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.role_tags_get",
+        "ITS-REST specifications/operations/role_tags_get.yaml — GET \
+         /demographic/role/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.role_tags_update",
+        "ITS-REST specifications/operations/role_tags_update.yaml — PUT \
+         /demographic/role/{uid_based_id}/tags",
+    ),
+    (
+        "I_ITS_REST_ITEM_TAGS.role_tags_delete",
+        "ITS-REST specifications/operations/role_tags_delete.yaml — DELETE \
+         /demographic/role/{uid_based_id}/tags/{key}",
+    ),
+];
 
 /// The pinned citation of a non-SM ITS-REST operation, or `None` when the
 /// reference is not in [`NON_SM_REST_OPERATIONS`].
@@ -2403,6 +2544,79 @@ h|*1..1*\n\
         assert!(
             !findings.iter().any(|f| f.artifact == pinned),
             "the exception should suppress the finding, got: {findings:?}"
+        );
+    }
+
+    /// The pinned table is a MULTI-interface domain, not a single-row special
+    /// case: every row parses, carries the reserved prefix and a non-empty
+    /// citation, no reference is pinned twice, and more than one reserved
+    /// pseudo-interface is represented (System + ITEM_TAGS today).
+    #[test]
+    fn pinned_non_sm_table_is_wellformed_across_several_pseudo_interfaces() {
+        let mut seen: BTreeSet<&str> = BTreeSet::new();
+        let mut interfaces: BTreeSet<String> = BTreeSet::new();
+        for (name, source) in NON_SM_REST_OPERATIONS {
+            let op = SmOperationRef::parse(name)
+                .unwrap_or_else(|e| panic!("pinned row {name} does not parse: {e}"));
+            assert!(
+                op.interface().starts_with(PSEUDO_INTERFACE_PREFIX),
+                "pinned row {name} must use the reserved pseudo-interface prefix"
+            );
+            assert!(!source.trim().is_empty(), "pinned row {name} has no source");
+            assert!(seen.insert(name), "pinned row {name} is listed twice");
+            interfaces.insert(op.interface().to_owned());
+        }
+        assert!(
+            interfaces.len() > 1,
+            "the table must stay interface-general, got {interfaces:?}"
+        );
+        assert!(interfaces.contains("I_ITS_REST_ITEM_TAGS"));
+
+        // The reservation holds for EVERY pseudo-interface, not just System:
+        // an unpinned ITEM_TAGS reference is still a finding naming the table.
+        let empty_root = assert_fs::TempDir::new().unwrap();
+        let invented = SmOperationRef::parse("I_ITS_REST_ITEM_TAGS.folder_tags_get").unwrap();
+        let mut findings = Vec::new();
+        resolve_sm_operation(&invented, "b.yaml", empty_root.path(), &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.check == CheckId::SmOperation
+                    && f.message.contains("NON_SM_REST_OPERATIONS")),
+            "expected an unpinned-pseudo-interface finding, got: {findings:?}"
+        );
+    }
+
+    /// The Axis-1 report renders ONE row per reserved pseudo-interface, with
+    /// per-interface counts — the single-pseudo-interface era is over.
+    #[test]
+    fn axis1_report_groups_rows_per_pseudo_interface() {
+        let mut set = build_set(false);
+        let tag_binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_ITS_REST_ITEM_TAGS.composition_tags_get",
+            "its": "its-rest",
+            "request": { "method": "GET", "path": "/ehr/{ehr_id}/composition/{uid_based_id}/tags" },
+            "formats": ["canonical-json"],
+            "outcomes": { "ok": { "status": 200 } }
+        }))
+        .unwrap();
+        set.bindings.push((PathBuf::from("tags.yaml"), tag_binding));
+        let empty_root = assert_fs::TempDir::new().unwrap();
+
+        let report = render_coverage_report(&set, Some(empty_root.path()));
+        let tag_ops = NON_SM_REST_OPERATIONS
+            .iter()
+            .filter(|(name, _)| name.starts_with("I_ITS_REST_ITEM_TAGS."))
+            .count();
+        assert!(
+            report.contains("| I_ITS_REST_SYSTEM (docs-text pinned, non-SM) | 1 | 0 | 0 | 0 |"),
+            "{report}"
+        );
+        assert!(
+            report.contains(&format!(
+                "| I_ITS_REST_ITEM_TAGS (docs-text pinned, non-SM) | {tag_ops} | 1 | 0 | 0 |"
+            )),
+            "{report}"
         );
     }
 

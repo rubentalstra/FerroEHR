@@ -51,6 +51,19 @@ MessageApi: { family: Platform, tier: OPTIONS, required: false, source: "CNF pro
 # STABLE state does not change that (a stable specification of a descriptive
 # row is still descriptive), so the capability may never gate CORE or STANDARD.
 SystemApi: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST docs/system/Description.md §Status (\"This specification is in the `STABLE` state\") + docs/overview/Requests_and_responses.md §HTTP Methods (\"OPTIONS | Describe the communication options for the target resource\"). SCOPE: the CNF Profiles book has no SYSTEM row, so the tier is ours by analogy with the other non-book API capabilities, and the claim covers exactly what the released docs text assigns — a 200 answer carrying Allow on the API base path. The manifest BODY and the resource path are described by no released sentence (register AMB-160), so no claim rests on them" }
+# TIER BY THE RELEASE'S OWN WORDS — the ITEM_TAG surface is OPTIONAL, stated
+# outright: ITS-REST docs/overview/Requests_and_responses.md §openehr-item-tag
+# and openehr-version-item-tag, "If the server does not support ITEM_TAGs,
+# these headers will also be unsupported." A capability a conformant service
+# may simply not have can never gate CORE or STANDARD, so OPTIONS +
+# required:false — the same footing SystemApi and SmartAppLaunch sit on (the
+# CNF Profiles book has no ITEM_TAG row either; its REST-APIs table lists six
+# API groups and its Functional table no tag capability). The tag routes live
+# INSIDE the EHR and DEMOGRAPHIC API groups, so this capability is deliberately
+# NOT EhrApi/DemographicApi: a service that answers every EHR-API operation and
+# no tag route is conformant, and folding tags into EhrApi (CORE, required)
+# would claim otherwise.
+ItemTags: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST docs/overview/Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag (\"Both headers act as convenient wrappers around the dedicated ITEM_TAG operations\"; \"If the server does not support ITEM_TAGs, these headers will also be unsupported\") + the twenty-three released tag operations (specifications/operations/{ehr,demographic}_tags_get.yaml, {composition,ehr_status}_tags_{get,update,delete}.yaml, {person,agent,group,organisation,role}_tags_{get,update,delete}.yaml) + RM common master07-tags.adoc (the ITEM_TAG class the routes serve). SCOPE: the CNF Profiles book has no ITEM_TAG row, so the tier is ours by analogy with the other non-book capabilities; the operations have no SM interface at all (register AMB-161) and the catalogue anchors them under the reserved I_ITS_REST_ITEM_TAGS pseudo-interface. The editorial defects of the released tag surface are registered (AMB-91..97, AMB-137, AMB-138) and no claim rests on anything they leave unassigned" }
 Signing: { family: Platform, tier: STANDARD, required: false, source: "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing); RM common (ORIGINAL_VERSION.signature)" }
 SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST simplified_formats (SHOULD-level: OPTIONS profile, never gates CORE/STANDARD)" }
 # REPORTING QUALIFIER, release-pinned (group-15 audit) — the same
