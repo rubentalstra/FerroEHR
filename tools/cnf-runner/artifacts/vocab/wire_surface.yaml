@@ -377,6 +377,35 @@ branches:
     outcome: validation_failed
     reason: variant_of
     source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.set_ehr_queryable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  # The same two-row scoping for each of the three sibling setters (group-17
+  # follow-up, #288 slice 1): their variant-less bindings share the identical
+  # read-modify-write realization, so the same two branches are reachable only
+  # on the no_if_match / invalid_body variant bindings their new case trios
+  # drive.
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.set_ehr_modifiable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.set_ehr_modifiable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.clear_ehr_modifiable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.clear_ehr_queryable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.clear_ehr_queryable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
   # RETIRED coverage_gaps (group-12, 2026-07-27) — each branch now has its own
   # isolated case, so the exception is gone rather than reworded (coverage only
   # ratchets up): I_PARTY.delete_party already_deleted
