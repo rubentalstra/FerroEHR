@@ -287,7 +287,14 @@ pub fn operation_binding_schema() -> Value {
                 "properties": {
                     "method": { "enum": tokens(HttpMethod::ALL) },
                     "path": { "type": "string", "pattern": "^/" },
-                    "query": { "type": "object", "additionalProperties": { "type": "string" } },
+                    "query": {
+                        "type": "object",
+                        "additionalProperties": { "oneOf": [
+                            { "type": "string" },
+                            { "type": "array", "minItems": 1, "items": { "type": "string" },
+                              "description": "The repeated (RFC 6570 exploded, {?p*}) form: one name=value pair per member, unbound optional members absent" }
+                        ] }
+                    },
                     "body": { "oneOf": [
                         { "type": "string" },
                         { "type": "object",
@@ -342,7 +349,7 @@ pub fn operation_binding_schema() -> Value {
                     "properties": {
                         "from": { "type": "string" },
                         "strip": { "enum": ["weak-quotes"] },
-                        "transform": { "enum": ["root-uid", "uppercase"] },
+                        "transform": { "enum": tokens(crate::model::binding::TransformRule::ALL) },
                         "fallback": { "type": "string" }
                     }
                 }
@@ -842,6 +849,11 @@ pub fn ixit_schema() -> Value {
                     "sut": { "type": "string", "minLength": 1 },
                     "db": { "type": "string", "minLength": 1 }
                 }
+            },
+            "system_id": {
+                "description": "The SUT's own configured system identifier — the value it stamps into AUDIT_DETAILS.system_id when the client supplies none (ITS-REST Requests_and_responses §openehr-version and openehr-audit-details) and into every OBJECT_VERSION_ID.creating_system_id it mints. Declared here because no released operation discloses it; absent => the cases reading ${ixit:system_id} are not-applicable with that citation.",
+                "type": "string",
+                "minLength": 1
             },
             "signing": {
                 "description": "The SUT's version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode the deployment runs (a deployment runs one). digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",

@@ -18,9 +18,7 @@ use crate::exec::{Provisioned, StepDriver, StepObservation};
 use crate::ids::{CaptureName, SmOperationRef};
 use crate::ixit::{AuthMode, Instance, Ixit};
 use crate::model::assertion::{Assertion, EquivalentTarget, RowsSpec};
-use crate::model::binding::{
-    OperationBinding, RequestBody, StripRule, TransformRule, WireCapture, WireFrom,
-};
+use crate::model::binding::{OperationBinding, RequestBody, StripRule, WireCapture, WireFrom};
 use crate::model::case::{CaseCore, EhrRequirement, FlowStep};
 use crate::refgrammar::{CaptureField, Template, ValueRef};
 use crate::vocab::{FormatName, HttpMethod, OutcomeKind};
@@ -86,7 +84,7 @@ impl<'a> HttpDriver<'a> {
             set,
             ixit,
             client,
-            resolver: Resolver::new(manifest, corpus_dir),
+            resolver: Resolver::new(manifest, corpus_dir, Some(ixit)),
             committed: Vec::new(),
             last_body: None,
             last_version_uid: None,
@@ -212,38 +210,73 @@ impl<'a> HttpDriver<'a> {
         let mut url = format!("{base}{path}");
         if let Some(query) = &request.query {
             let mut params: Vec<(String, String)> = Vec::new();
-            for (name, template) in query {
-                match assertions::render_template(template, vars) {
-                    Ok(value) => params.push((name.clone(), value)),
-                    // An optional ref that is genuinely unbound omits the
-                    // parameter — but a name the step's `with:` DOES carry
-                    // (just not as a renderable scalar) is a case-authoring
-                    // or promotion defect and must be loud, never a silent
-                    // drop (the group-9 triage: a dropped bound parameter
-                    // masqueraded as a SUT failure).
-                    Err(e) if template_is_optional(template) => {
-                        if let Some(referenced) = template_ref_name(template)
-                            && with.contains_key(referenced)
-                        {
-                            return Err(format!(
-                                "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
-                            ));
+            for (name, value) in query {
+                for template in value.templates() {
+                    // A member bound to a LIST capture expands element-wise:
+                    // the repeated form's whole point is one pair per value
+                    // (RFC 6570 `{?p*}`). Only a repeated declaration may
+                    // expand — a single-valued parameter stays single.
+                    if value.is_repeated()
+                        && let Some(items) = list_capture_items(template, vars)
+                    {
+                        for item in items {
+                            params.push((name.clone(), item));
                         }
+                        continue;
                     }
-                    Err(e) => return Err(format!("query {name}: {e}")),
+                    match assertions::render_template(template, vars) {
+                        Ok(rendered) => params.push((name.clone(), rendered)),
+                        // An optional ref that is genuinely unbound omits the
+                        // parameter — but a name the step's `with:` DOES carry
+                        // (just not as a renderable scalar) is a case-authoring
+                        // or promotion defect and must be loud, never a silent
+                        // drop (the group-9 triage: a dropped bound parameter
+                        // masqueraded as a SUT failure).
+                        Err(e) if template_is_optional(template) => {
+                            if let Some(referenced) = template_ref_name(template)
+                                && with.contains_key(referenced)
+                            {
+                                return Err(format!(
+                                    "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
+                                ));
+                            }
+                        }
+                        Err(e) => return Err(format!("query {name}: {e}")),
+                    }
                 }
             }
             // `with` keys that match query names override/backfill
-            for (name, _) in query {
+            for (name, declared) in query {
                 if let Some(v) = with.get(name)
                     && !params.iter().any(|(n, _)| n == name)
                     && !v.is_null()
                 {
-                    let text = match v {
-                        Value::String(s) => s.clone(),
-                        other => other.to_string(),
-                    };
-                    params.push((name.clone(), text));
+                    match v {
+                        Value::String(s) => params.push((name.clone(), s.clone())),
+                        // A backfilled ARRAY is the repeated form and only
+                        // that: JSON-encoding it into one pair would send
+                        // `?p=%5B%22a%22%5D`, a value no released parameter
+                        // grammar defines.
+                        Value::Array(items) if declared.is_repeated() => {
+                            for item in items {
+                                params.push((name.clone(), scalar_text(item)?));
+                            }
+                        }
+                        Value::Array(_) => {
+                            return Err(format!(
+                                "query {name}: the step's `with:` binds a list where the binding \
+                                 declares a single-valued parameter — repeatability is the \
+                                 binding's declaration, not the case's"
+                            ));
+                        }
+                        Value::Object(_) => {
+                            return Err(format!(
+                                "query {name}: the step's `with:` binds an object; a query \
+                                 parameter value is a scalar"
+                            ));
+                        }
+                        other => params.push((name.clone(), other.to_string())),
+                    }
                 }
             }
             if !params.is_empty() {
@@ -406,14 +439,11 @@ impl<'a> HttpDriver<'a> {
         if matches!(spec.strip, Some(StripRule::WeakQuotes)) {
             value = value.trim_start_matches("W/").trim_matches('"').to_owned();
         }
-        match spec.transform {
-            Some(TransformRule::RootUid) => {
-                value = value.split("::").next().unwrap_or(&value).to_owned();
-            }
-            Some(TransformRule::Uppercase) => {
-                value = value.to_ascii_uppercase();
-            }
-            None => {}
+        // A transform that finds no such component yields NO capture — a
+        // truncated identifier must leave the capture unbound (loud at its
+        // use site), never bind the untransformed value.
+        if let Some(transform) = spec.transform {
+            value = transform.apply(&value)?;
         }
         Some(value)
     }
@@ -801,6 +831,30 @@ fn template_is_optional(template: &Template) -> bool {
         .is_some_and(|r| matches!(r, ValueRef::Capture { optional: true, .. }))
 }
 
+/// The items of a template that is exactly one capture reference bound to a
+/// LIST capture — the expansion source of a repeated query parameter.
+fn list_capture_items(template: &Template, vars: &VarStore) -> Option<Vec<String>> {
+    let ValueRef::Capture { name, .. } = template.as_single_ref()? else {
+        return None;
+    };
+    match vars.get(name) {
+        Some(Captured::List(items)) => Some(items.clone()),
+        _ => None,
+    }
+}
+
+/// One query-parameter value's wire text. Only scalars have one.
+fn scalar_text(value: &Value) -> Result<String, String> {
+    match value {
+        Value::String(s) => Ok(s.clone()),
+        Value::Number(_) | Value::Bool(_) => Ok(value.to_string()),
+        other => Err(format!(
+            "a query parameter value is a scalar, not a {}",
+            json_shape(other)
+        )),
+    }
+}
+
 /// The capture name an optional single-ref template references (`${name?}`
 /// → `name`), for the bound-but-unrendered diagnostic.
 fn template_ref_name(template: &Template) -> Option<&str> {
@@ -960,6 +1014,20 @@ fn base64_encode(input: &[u8]) -> String {
         }
     }
     out
+}
+
+/// The JSON shape name of a value, for diagnostics that must say WHAT was
+/// captured instead of the expected object (a canonical-XML capture, for
+/// instance, resolves as a string).
+fn json_shape(value: &Value) -> &'static str {
+    match value {
+        Value::Null => "null",
+        Value::Bool(_) => "boolean",
+        Value::Number(_) => "number",
+        Value::String(_) => "string",
+        Value::Array(_) => "array",
+        Value::Object(_) => "object",
+    }
 }
 
 impl HttpDriver<'_> {
@@ -1135,37 +1203,62 @@ impl HttpDriver<'_> {
                 ))
             }
             Some(RequestBody::Patched { from_capture, set }) => {
-                // Negatives against a non-existent resource have no captured
-                // base body (nothing to GET) — the wire still needs a valid
-                // resource payload, so fall back to the minimal canonical
-                // EHR_STATUS the recipes commit (the SUT rejects on the
-                // unknown id, not the body).
-                let mut patched = match vars.get(from_capture) {
-                    Some(crate::exec::state::Captured::Body(body)) => body.clone(),
-                    _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
-                        serde_json::json!({
-                            "_type": "EHR_STATUS",
-                            "name": { "_type": "DV_TEXT", "value": "ehr status" },
-                            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
-                            "subject": { "_type": "PARTY_SELF" },
-                            "is_queryable": true,
-                            "is_modifiable": true
-                        })
-                    }
-                    _ => {
-                        return Err(format!(
-                            "patched body: capture {from_capture} holds no resource body"
-                        ));
-                    }
-                };
-                if let Some(map) = patched.as_object_mut() {
-                    for (field, value) in set {
-                        map.insert(field.clone(), value.clone());
-                    }
-                }
-                Ok(Some(patched))
+                Self::patched_body(from_capture, set, vars).map(Some)
             }
         }
+    }
+
+    /// The read-modify-write body of an SM field-setter binding (AMB-15): the
+    /// captured resource with the declared `set:` fields overwritten.
+    ///
+    /// A captured body that is not a JSON object CANNOT carry the mutation —
+    /// a canonical-XML capture, for instance, resolves as a `Value::String`.
+    /// Applying nothing and sending the resource back unchanged would be a
+    /// FALSE GREEN: the PUT succeeds while exercising no setter at all. So a
+    /// non-object base is a loud step error, which the caller turns into a
+    /// transport-class (inconclusive, runner-side) observation — never a
+    /// silent no-op.
+    fn patched_body(
+        from_capture: &CaptureName,
+        set: &[(String, Value)],
+        vars: &VarStore,
+    ) -> Result<Value, String> {
+        // Negatives against a non-existent resource have no captured base
+        // body (nothing to GET) — the wire still needs a valid resource
+        // payload, so fall back to the minimal canonical EHR_STATUS the
+        // recipes commit (the SUT rejects on the unknown id, not the body).
+        let mut patched = match vars.get(from_capture) {
+            Some(Captured::Body(body)) => body.clone(),
+            _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
+                serde_json::json!({
+                    "_type": "EHR_STATUS",
+                    "name": { "_type": "DV_TEXT", "value": "ehr status" },
+                    "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                    "subject": { "_type": "PARTY_SELF" },
+                    "is_queryable": true,
+                    "is_modifiable": true
+                })
+            }
+            _ => {
+                return Err(format!(
+                    "patched body: capture {from_capture} holds no resource body"
+                ));
+            }
+        };
+        let Some(map) = patched.as_object_mut() else {
+            let fields: Vec<&str> = set.iter().map(|(field, _)| field.as_str()).collect();
+            return Err(format!(
+                "patched body: capture {from_capture} holds a {} base, not a JSON object, so the \
+                 declared set: [{}] cannot be applied — writing the captured resource back \
+                 unmutated would exercise nothing",
+                json_shape(&patched),
+                fields.join(", ")
+            ));
+        };
+        for (field, value) in set {
+            map.insert(field.clone(), value.clone());
+        }
+        Ok(patched)
     }
 
     /// commit: bulk-provision generated sets, binding committed uids.
@@ -2164,6 +2257,147 @@ mod tests {
         assert!(err.contains("did not render as a scalar"), "{err}");
     }
 
+    /// The RFC 6570 exploded form (`?p=a&p=b`): a binding declares the
+    /// parameter as a SEQUENCE of templates, each member contributes its own
+    /// pair, and an unbound optional member is simply absent — so one
+    /// declaration serves the whole-set, one-id and two-id calls of the admin
+    /// bulk delete.
+    #[test]
+    fn repeated_query_parameters_render_one_pair_per_member() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_ADMIN_SERVICE.physical_ehr_delete",
+            "its": "its-rest",
+            "variant": "delete_all",
+            "request": {
+                "method": "DELETE",
+                "path": "/admin/ehr/all",
+                "query": { "ehr_id": ["${ehr_id_subset?}", "${ehr_id_subset_2?}"] }
+            },
+            "outcomes": { "ok_empty": { "status": 204 } }
+        }))
+        .unwrap();
+
+        // Neither member bound: no query at all (the whole-set call).
+        let empty = BTreeMap::new();
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &empty);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap(),
+            "http://sut/admin/ehr/all"
+        );
+
+        // One member bound: the one-id subset.
+        let mut with = BTreeMap::new();
+        with.insert("ehr_id_subset".to_owned(), serde_json::json!("a"));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a"
+        );
+
+        // Both bound: the repeated form, in authored member order.
+        with.insert("ehr_id_subset_2".to_owned(), serde_json::json!("b"));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a&ehr_id=b"
+        );
+
+        // A member bound to a LIST capture expands element-wise, so the
+        // declaration is not capped at its authored arity.
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("ehr_id_subset").unwrap(),
+            Captured::List(vec!["a".to_owned(), "b".to_owned(), "c".to_owned()]),
+        );
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a&ehr_id=b&ehr_id=c"
+        );
+    }
+
+    /// A single-valued declaration never becomes repeated by accident: a list
+    /// bound under its name is a loud authoring error, never a silently
+    /// JSON-encoded `?p=%5B%22a%22%5D`.
+    #[test]
+    fn a_single_valued_query_parameter_refuses_a_list() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_ADMIN_SERVICE.physical_ehr_delete",
+            "its": "its-rest",
+            "request": {
+                "method": "DELETE",
+                "path": "/admin/ehr/all",
+                "query": { "ehr_id": "${ehr_id_subset?}" }
+            },
+            "outcomes": { "ok_empty": { "status": 204 } }
+        }))
+        .unwrap();
+        let mut with = BTreeMap::new();
+        with.insert("ehr_id".to_owned(), serde_json::json!(["a", "b"]));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
+        assert!(err.contains("single-valued parameter"), "{err}");
+
+        // …and a list capture never EXPANDS a single-valued declaration:
+        // repeatability is the binding's decision, not the case's.
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("ehr_id_subset").unwrap(),
+            Captured::List(vec!["a".to_owned(), "b".to_owned()]),
+        );
+        let empty = BTreeMap::new();
+        let url = HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap();
+        assert!(!url.contains("ehr_id=a&ehr_id=b"), "{url}");
+    }
+
+    /// A `Patched` binding whose captured base body is NOT a JSON object
+    /// (the canonical-XML capture shape: a `Value::String`) must fail loudly.
+    /// Silently skipping the declared `set:` writes the resource back
+    /// unmutated and the step "passes" while exercising nothing.
+    #[test]
+    fn patched_body_on_a_non_object_capture_is_loud() {
+        let from = CaptureName::parse("status_body").unwrap();
+        let set = vec![("is_queryable".to_owned(), serde_json::json!(false))];
+
+        let mut xml_vars = VarStore::default();
+        xml_vars.set(
+            from.clone(),
+            Captured::Body(Value::String(
+                "<ehr_status><is_queryable>true</is_queryable></ehr_status>".to_owned(),
+            )),
+        );
+        let err = HttpDriver::patched_body(&from, &set, &xml_vars).unwrap_err();
+        assert!(err.contains("not a JSON object"), "{err}");
+        assert!(err.contains("is_queryable"), "{err}");
+
+        // The object path still patches (and only the declared fields).
+        let mut json_vars = VarStore::default();
+        json_vars.set(
+            from.clone(),
+            Captured::Body(serde_json::json!({
+                "_type": "EHR_STATUS", "is_queryable": true, "is_modifiable": true
+            })),
+        );
+        let patched = HttpDriver::patched_body(&from, &set, &json_vars).unwrap();
+        assert_eq!(patched.get("is_queryable"), Some(&serde_json::json!(false)));
+        assert_eq!(patched.get("is_modifiable"), Some(&serde_json::json!(true)));
+
+        // An unbound EHR_STATUS capture keeps its minimal-resource fallback.
+        let fallback = HttpDriver::patched_body(&from, &set, &VarStore::default()).unwrap();
+        assert_eq!(
+            fallback.get("_type"),
+            Some(&serde_json::json!("EHR_STATUS"))
+        );
+        assert_eq!(
+            fallback.get("is_queryable"),
+            Some(&serde_json::json!(false))
+        );
+
+        // An unbound capture with no fallback role is still loud.
+        let other = CaptureName::parse("composition_body").unwrap();
+        let err = HttpDriver::patched_body(&other, &set, &VarStore::default()).unwrap_err();
+        assert!(err.contains("holds no resource body"), "{err}");
+    }
+
     #[test]
     fn base64_and_list_extraction() {
         assert_eq!(base64_encode(b"user:pass"), "dXNlcjpwYXNz");
@@ -2210,5 +2444,23 @@ mod tests {
         );
         let root = HttpDriver::extract_capture(&exchange, &test_binding(), &spec2, &vars2).unwrap();
         assert_eq!(root, "8849182c-82ad-4088-a07f-48ead4180515");
+
+        // The middle segment — the creating system id (#570).
+        let spec3: WireCapture = serde_json::from_value(serde_json::json!({
+            "from": "header ETag", "strip": "weak-quotes",
+            "transform": "creating-system-id"
+        }))
+        .unwrap();
+        let system =
+            HttpDriver::extract_capture(&exchange, &test_binding(), &spec3, &vars).unwrap();
+        assert_eq!(system, "openEHRSys.example.com");
+
+        // A value with no middle segment binds NOTHING rather than binding
+        // the whole value as if it were a system id.
+        let truncated = Exchange {
+            headers: BTreeMap::from([("etag".to_owned(), "\"8849182c\"".to_owned())]),
+            ..exchange
+        };
+        assert!(HttpDriver::extract_capture(&truncated, &test_binding(), &spec3, &vars).is_none());
     }
 }
