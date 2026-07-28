@@ -52,12 +52,12 @@ Capabilities claimed:
 - ItemTags
 - Signing
 - SimplifiedFormats
+- SmartAppLaunch
 - EhrDemographicSeparation
 - AuthenticatedAccess
 - AuthorizationSeparation
 - AuditAccountability
 - AnonymousEhrs
-- SmartAppLaunch
 
 Options declared: adl14-partial-id-exact, contribution-xml-unsupported, directory-empty-error, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, legacy-alt-formats-unsupported, party-xml-supported, sf-deprecated-types-unsupported, versioned-party-xml-unsupported, xml-namespace-negotiated
 

@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 677 |
+| passed | 692 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 75 |
-| total | 752 |
+| not_applicable | 63 |
+| total | 755 |
 
 ## By chapter
 
@@ -25,7 +25,7 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_DEFINITION_ADL14 | 20 | 0 | 0 | 0 | 6 |
 | I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
-| I_DEMOGRAPHIC_SERVICE | 42 | 0 | 0 | 0 | 13 |
+| I_DEMOGRAPHIC_SERVICE | 57 | 0 | 0 | 0 | 1 |
 | I_EHR_COMPOSITION | 88 | 0 | 0 | 0 | 0 |
 | I_EHR_CONTRIBUTION | 55 | 0 | 0 | 0 | 5 |
 | I_EHR_DIRECTORY | 63 | 0 | 0 | 0 | 4 |
@@ -63,7 +63,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Versioning | pass | 59 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 121 | 0 | 0 | 0 |
 | PartyOperations | pass | 50 | 0 | 0 | 2 |
-| PartyRelationshipOperations | excused (unrealized on this technology profile) | 0 | 0 | 0 | 12 |
+| PartyRelationshipOperations | pass | 15 | 0 | 0 | 0 |
 | AqlBasic | pass | 19 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 2 | 0 | 0 | 0 |
 | AqlTerminology | pass | 1 | 0 | 0 | 0 |
@@ -126,7 +126,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 677 of 752 selected cases driven.
+Coverage: 692 of 755 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -165,19 +165,7 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_QUERY.delete_query-delete_existing | I_DEFINITION_QUERY.delete_query: AMB-127 |
 | I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
 | I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
-| I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa | I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb | I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa | I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb | I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa | I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship-bbbb | I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa | I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb | I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa | I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb | I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa | I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32 |
-| I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb | I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
