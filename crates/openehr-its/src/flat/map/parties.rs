@@ -117,6 +117,15 @@ pub(super) fn build_object_ref(node: &SimNode) -> Option<Value> {
 /// PARTY_SELF (master05 §FEEDER_AUDIT_DETAILS, `/subject` row Note: "add
 /// /subject|_type: PARTY_SELF"). Without the marker a PARTY_SELF would rebuild
 /// as a PARTY_IDENTIFIED, so it is emitted whenever the value is one.
+///
+/// NOTE: master05 §PARTY_RELATED spells the relationship sub-path two ways —
+/// both example blocks of the section write
+/// `…/composer/relationship|code`/`|value`/`|terminology` (and the
+/// §"PARTY_RELATED performer" table row is likewise `/relationship`), while
+/// the §PARTY_RELATED mapping table's Flat Path column reads
+/// `/_relationship`. The example spelling is the emitted one (it is the form
+/// two tables and every example agree on); the underscore spelling is
+/// accepted on input as an alias by [`relationship_child`].
 pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
     if p.get("_type").and_then(Value::as_str) == Some("PARTY_SELF") {
         out.attrs.insert("_type".to_owned(), json!("PARTY_SELF"));
@@ -157,13 +166,21 @@ pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
 /// (master05 §PARTY_RELATED); otherwise `PARTY_IDENTIFIED` (master05
 /// §PARTY_IDENTIFIED). `default_party_type` is the `PARTY_REF.type` used when an
 /// `|id` is present but no explicit ref type (`PERSON`/`ORGANISATION`).
+///
+/// Both master05 spellings of the relationship sub-path are accepted here (see
+/// [`relationship_child`]); consuming it in this builder — rather than routing
+/// `_relationship` through [`super::build_rm_attr`] like the other
+/// `_`-prefixed families — is what makes the alias correct: the child is the
+/// PARTY_PROXY subtype discriminator, so it must be read *before* the concrete
+/// party type is decided, not attached afterwards to an already-typed
+/// PARTY_IDENTIFIED.
 pub(super) fn build_party(node: &SimNode, default_party_type: &str) -> Value {
     let explicit_self = node
         .attrs
         .get("_type")
         .and_then(Value::as_str)
         .is_some_and(|t| t == "PARTY_SELF");
-    let relationship = single(node, "relationship");
+    let relationship = relationship_child(node);
     let identifiers = build_party_identifiers(node);
 
     let mut p = Map::new();
@@ -377,6 +394,25 @@ fn single<'a>(node: &'a SimNode, name: &str) -> Option<&'a SimNode> {
     node.children.get(name).and_then(|c| c.occurrences.first())
 }
 
+/// The PARTY_RELATED `relationship` DV_CODED_TEXT child of a party node, under
+/// either spelling master05 §PARTY_RELATED gives it.
+///
+/// The section's two example blocks write
+/// `"…/composer/relationship|code": "10"` (and §"PARTY_RELATED performer"
+/// repeats `/relationship` in both its table and its example), while the
+/// §PARTY_RELATED mapping table's Flat Path column reads `/_relationship`.
+/// The spec contradicts itself, so both are read on input; only the example
+/// spelling is ever emitted ([`emit_party`]), keeping RM → FLAT → RM stable.
+fn relationship_child(node: &SimNode) -> Option<&SimNode> {
+    single(node, "relationship").or_else(|| single(node, RELATIONSHIP_TABLE_SEGMENT))
+}
+
+/// The master05 §PARTY_RELATED *table* spelling of the relationship sub-path,
+/// accepted on input as an alias of the example spelling `/relationship`.
+/// [`crate::flat::build`] excludes this segment from the generic `_`-family
+/// routing on a PARTY leaf, because [`build_party`] consumes it.
+pub(crate) const RELATIONSHIP_TABLE_SEGMENT: &str = "_relationship";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -479,5 +515,75 @@ mod tests {
         assert_eq!(o["id"]["value"], json!("3445"));
         assert_eq!(o["id"]["scheme"], json!("HOSPITAL-NS"));
         assert_eq!(o["namespace"], json!("HOSPITAL-NS"));
+    }
+
+    /// A party node carrying the relationship sub-path under `name`.
+    fn party_with_relationship(segment: &str) -> SimNode {
+        let mut node = node_of(&[("name", json!("Susan Doe"))]);
+        let child = node.occurrence_mut(segment, None);
+        child.attrs.insert("code".to_owned(), json!("10"));
+        child.attrs.insert("value".to_owned(), json!("mother"));
+        child
+            .attrs
+            .insert("terminology".to_owned(), json!("openehr"));
+        node
+    }
+
+    // master05 §PARTY_RELATED gives the relationship sub-path TWO spellings:
+    // the mapping table's Flat Path column reads `/_relationship`, while both
+    // example blocks of the same section (and the §"PARTY_RELATED performer"
+    // table + example) write `…/relationship|code`. Both are accepted on
+    // input and both make the party a PARTY_RELATED — the child is the
+    // subtype discriminator, so `build_party` must consume it whichever way
+    // it is spelled.
+    #[test]
+    fn party_related_accepts_both_master05_relationship_spellings() {
+        let example = build_party(&party_with_relationship("relationship"), "PERSON");
+        let table = build_party(
+            &party_with_relationship(RELATIONSHIP_TABLE_SEGMENT),
+            "PERSON",
+        );
+        assert_eq!(example["_type"], json!("PARTY_RELATED"));
+        assert_eq!(
+            table, example,
+            "the `/_relationship` table spelling must build the same \
+             PARTY_RELATED as the `/relationship` example spelling"
+        );
+        assert_eq!(table["relationship"]["defining_code"]["code_string"], "10");
+    }
+
+    // The emitted spelling stays the example one — the alias is input-only, so
+    // an RM → FLAT → RM round-trip never starts producing `/_relationship`.
+    #[test]
+    fn party_related_emits_only_the_example_relationship_spelling() {
+        let rm = json!({
+            "_type": "PARTY_RELATED", "name": "Susan Doe",
+            "relationship": {
+                "_type": "DV_CODED_TEXT", "value": "mother",
+                "defining_code": {"_type": "CODE_PHRASE",
+                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
+                    "code_string": "10"},
+            },
+        });
+        let mut out = SimNode::default();
+        emit_party(&rm, &mut out);
+        assert!(
+            out.children.contains_key("relationship"),
+            "master05 §PARTY_RELATED example blocks: `/relationship` is emitted"
+        );
+        assert!(
+            !out.children.contains_key(RELATIONSHIP_TABLE_SEGMENT),
+            "the `/_relationship` table spelling is an INPUT alias only; \
+             emitting it would change the wire: {:?}",
+            out.children.keys().collect::<Vec<_>>()
+        );
+        let rebuilt = build_party(&out, "PERSON");
+        assert_eq!(rebuilt["_type"], json!("PARTY_RELATED"));
+        assert_eq!(rebuilt["name"], json!("Susan Doe"));
+        assert_eq!(rebuilt["relationship"]["value"], json!("mother"));
+        assert_eq!(
+            rebuilt["relationship"]["defining_code"]["code_string"],
+            json!("10")
+        );
     }
 }
