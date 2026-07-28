@@ -90,6 +90,48 @@ pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
     }
     let _ = writeln!(out);
 
+    // ── per-capability rows ─────────────────────────────────────────────────
+    // The headline evidence token is worst-wins, so on its own it hides an
+    // inconclusive row inside a capability that also has passes. The counts
+    // travel with it (issue #629): an errored exchange is never a SUT failure,
+    // but it is never evidence of conformance either, and a divergence must
+    // not be able to sit behind one unseen.
+    if !verdicts.capability_tallies.is_empty() {
+        let _ = writeln!(out, "## By capability\n");
+        let _ = writeln!(
+            out,
+            "Selected gating cases per claimed capability. `inconclusive` counts cases whose \
+             exchange did not conclude (transport fault, unmapped status, step resolution) — \
+             they block a `passed` evidence token and are triaged, never absorbed.\n"
+        );
+        let _ = writeln!(
+            out,
+            "| Capability | Evidence | passed | failed | inconclusive | unevidenced |"
+        );
+        let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
+        for (name, tally) in &verdicts.capability_tallies {
+            if tally.selected() == 0 {
+                continue; // nothing selected for this claim — the matrix row says so
+            }
+            let evidence = verdicts
+                .capabilities
+                .iter()
+                .find(|(n, _)| n == name)
+                .map_or(Evidence::NoCases, |(_, e)| *e);
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} | {} | {} |",
+                name,
+                evidence_token(evidence),
+                tally.passed,
+                tally.failed,
+                tally.inconclusive,
+                tally.unevidenced,
+            );
+        }
+        let _ = writeln!(out);
+    }
+
     // ── performance measurements ────────────────────────────────────────────
     if !results.measurements.is_empty() {
         let _ = writeln!(out, "## Performance measurements\n");
@@ -569,22 +611,10 @@ fn declared_versions(statement: &Statement) -> Vec<(&'static str, &str)> {
     let mut out = Vec::new();
     for component in SpecComponent::ALL {
         if let Some(version) = statement.spec_versions.get(*component) {
-            out.push((spec_component_token(*component), version));
+            out.push((component.token(), version));
         }
     }
     out
-}
-
-fn spec_component_token(component: crate::vocab::SpecComponent) -> &'static str {
-    use crate::vocab::SpecComponent;
-    match component {
-        SpecComponent::Rm => "rm",
-        SpecComponent::Base => "base",
-        SpecComponent::Am => "am",
-        SpecComponent::Aql => "aql",
-        SpecComponent::ItsRest => "its_rest",
-        SpecComponent::Term => "term",
-    }
 }
 
 fn its_token(results: &Results) -> &'static str {

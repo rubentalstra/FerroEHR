@@ -47,7 +47,7 @@ outcomes:
   created:
     status: 201                           # the commit is accepted exactly as under the new header name
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'   # overview §ETag and Last-Modified + §Deprecated headers (the W/ indicator is a MUST)
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::1"', applies: { its_rest: ">=1.1.0" } }  # overview §ETag and Last-Modified + §Deprecated headers (the W/ indicator is a MUST)
       Location: present                   # overview §Location (201 Created)
     body: prefer_conditional
 captures:

@@ -37,10 +37,10 @@ outcomes:
   ok:
     status: 200
     headers:
-      ETag: 'pattern:W/"<contribution_uid>"'   # register AMB-87 + §Deprecated headers (the `W/` MUST)
+      ETag: { match: 'pattern:W/"<contribution_uid>"', applies: { its_rest: ">=1.1.0" } }  # register AMB-87 + §Deprecated headers (the `W/` MUST)
       Last-Modified: present                   # register AMB-87 — the committal instant
       Content-Type: negotiated
-      Location: absent                         # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
     body: present
   not_found:
     status: 404

@@ -248,6 +248,27 @@ branches:
     reason: coverage_gap
     source: "ITS-REST operations/admin_ehr_delete_all.yaml declares a 404 that resolves to the GENERIC responses/404.yaml (\"the server did not find a current representation of a target resource, or is not willing to disclose that one exists\") rather than the single route's responses/404_unknown_ehr_id.yaml — and NO released sentence gives it a trigger on this operation: the description states only the subset semantics (\"Deletes all or multiple EHRs, or a specified subset of EHRs identified using the `ehr_id` query parameter\") and parameters/query/ehr_id_Admin.yaml makes the selector optional, so a subset naming an unknown id has no assigned failure. Register AMB-140 carries the adjudication (delete-what-exists -> 204; malformed -> 400 before any deletion), which is why the branch is DECLARED but deliberately unexercised"
     note: "A case would have to invent the trigger the released text withholds; the honest position is the register entry plus this citation. Closes when a release assigns the branch a trigger (UPR-104)."
+  # The two template-UPLOAD refusal branches. Both bindings now DECLARE the
+  # `Accept` they intend, so one request-construction path sends the same
+  # upload whether the call is a driven step or a case precondition (issue
+  # #629 — the paths used to differ, and this operation answered each
+  # differently). Mapping 406 makes a refusal of that declared Accept a NAMED,
+  # judged outcome instead of an unmapped status the roll-up swallows as
+  # inconclusive. It is deliberately unexercised: every media type the
+  # operations' own Accept enums admit is, by that same enum, acceptable, so
+  # provoking the branch needs a request the case grammar cannot author (an
+  # Accept outside the closed catalogue format vocabulary). Closes when the
+  # case grammar can express an arbitrary Accept token.
+  - binding: I_DEFINITION_ADL14.upload_opt
+    outcome: not_acceptable
+    reason: coverage_gap
+    source: "docs/overview/Requests_and_responses.md §\"HTTP status codes\", row `406 Not Acceptable` — \"The target resource does not have a current representation that would be acceptable to the user\"; the acceptable set is the released OAS components/parameters/Accept_Template enum [application/json, application/xml, application/openehr.wt+json] `$ref`d by operations/definition_template_adl1.4_upload.yaml (the docs text describes no template-upload exchange at all)"
+    note: "Declared so a refusal of the binding's declared Accept is judged; unexercised because every enum member is acceptable by declaration and the case grammar authors no out-of-vocabulary Accept."
+  - binding: I_DEFINITION_ADL2.upload_artefact
+    outcome: not_acceptable
+    reason: coverage_gap
+    source: "docs/overview/Requests_and_responses.md §\"HTTP status codes\", row `406 Not Acceptable` — \"The target resource does not have a current representation that would be acceptable to the user\"; the acceptable set is the released OAS components/parameters/Accept_Template_adl2 enum [application/json, application/xml, text/plain] `$ref`d by operations/definition_template_adl2_upload.yaml"
+    note: "The ADL2 half of the same declared-but-unforceable refusal branch; see the row above."
   - binding: I_DEFINITION_ADL14.get_opt
     variant: example
     outcome: not_found

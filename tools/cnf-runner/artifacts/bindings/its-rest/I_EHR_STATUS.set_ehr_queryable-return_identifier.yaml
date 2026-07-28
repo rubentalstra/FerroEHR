@@ -39,7 +39,7 @@ outcomes:
   updated:
     status: 200                             # §Prefer only identifier — "the status will be `201 Created` or `200 OK`, never `204 No Content`"; an update creates nothing, so 200
     headers:
-      ETag: 'pattern:W/"[^"]+"'             # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Content-Type: negotiated              # Resources.md §JSON Format — the Content-Type MUST be present unless the response has no content body
       Preference-Applied: "present?"        # MAY — overview §Representation details negotiation
     body: prefer_conditional                # the identifier branch: a non-empty body carrying `uid`

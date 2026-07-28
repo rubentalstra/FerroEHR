@@ -10,14 +10,23 @@
 //! inconclusive error: the exchange completed, and the spec sentence the
 //! binding cites assigns the header.
 //!
+//! Two declaration-level modifiers gate whether a matcher is judged at all
+//! (both defined on [`crate::model::binding::HeaderExpectation`], which
+//! carries the decisive spec sentences):
+//!
+//! - `optional: true` (authored bare as `present?`) — the PRESENCE of the
+//!   header is a SHOULD/MAY, so an absent or blank header satisfies the
+//!   expectation outright; a header that IS there is judged in full by the
+//!   matcher, so a MUST-strength FORM still bites.
+//! - `applies: { its_rest: ">=1.1.0" }` — the rule is dated by the released
+//!   text itself (the `W/` weakness indicator and the read/DELETE `Location`
+//!   deprecation are both "Prior to Release 1.1.0" changes). A party whose
+//!   declared spec versions do not satisfy the floor is not judged on it;
+//!   everything else on the outcome still is.
+//!
 //! Matcher semantics (the closed [`HeaderMatcher`] vocabulary):
 //!
 //! - `present` — the header exists with a non-empty value.
-//! - `present?` — never fails: the declaration documents a MAY-level header
-//!   (e.g. `Preference-Applied` — ITS-REST `Requests_and_responses.md`
-//!   §Representation details negotiation "MAY include") whose VALUE is
-//!   checked when present via the sibling `pattern:`/literal form; presence
-//!   itself is not assertable without over-claiming the MAY.
 //! - `absent` — the header must not exist (e.g. `Location` on reads —
 //!   overview §Location "MUST NOT be used to indicate an alternate
 //!   representation").
@@ -41,20 +50,26 @@ use std::collections::BTreeMap;
 
 use crate::exec::assertions;
 use crate::exec::state::VarStore;
-use crate::model::binding::{HeaderMatcher, WireExpectation};
+use crate::model::binding::{HeaderExpectation, HeaderMatcher, WireExpectation};
+use crate::party::SpecVersions;
 
 /// The request-side context a matcher may need.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RequestContext<'a> {
     /// The `Accept` value the driver sent (the negotiated type).
     pub accept: Option<&'a str>,
     /// The latest version uid committed on this row (the newest successful
     /// `version_uid` binding capture), for `latest-version-uid`.
     pub last_version_uid: Option<&'a str>,
+    /// The party statement's declared spec versions — the right-hand side of
+    /// a version-dated expectation's `applies` floor. `None` (a
+    /// statement-blind sweep) declares nothing, so a dated rule is out of
+    /// scope exactly as it is for a party that omits the component.
+    pub spec_versions: Option<&'a SpecVersions>,
 }
 
-/// Evaluate every declared header matcher of `expectation` against the
-/// response headers; returns one failure line per violated matcher.
+/// Evaluate every declared header expectation of `expectation` against the
+/// response headers; returns one failure line per violated expectation.
 #[must_use]
 pub fn evaluate(
     expectation: &WireExpectation,
@@ -66,13 +81,32 @@ pub fn evaluate(
         return Vec::new();
     };
     let mut failures = Vec::new();
-    for (name, matcher) in declared {
+    for (name, header) in declared {
+        if !in_scope(header, ctx) {
+            continue;
+        }
         let observed = header_value(response_headers, name);
-        if let Some(failure) = judge(name, matcher, observed, ctx, vars) {
+        // A SHOULD/MAY-strength presence: nothing to judge when the server
+        // exercised its latitude and omitted the header. A header that IS
+        // there still faces the matcher in full.
+        if header.optional && observed.is_none_or(|v| v.trim().is_empty()) {
+            continue;
+        }
+        if let Some(failure) = judge(name, &header.matcher, observed, ctx, vars) {
             failures.push(failure);
         }
     }
     failures
+}
+
+/// Whether a version-dated expectation is in scope for the declaring party.
+fn in_scope(header: &HeaderExpectation, ctx: &RequestContext<'_>) -> bool {
+    match &header.applies {
+        None => true,
+        Some(applies) => ctx
+            .spec_versions
+            .is_some_and(|versions| applies.satisfied_by(versions)),
+    }
 }
 
 /// Case-insensitive header lookup (RFC 9110 §5.1: field names are
@@ -98,7 +132,6 @@ fn judge(
             Some(v) if !v.trim().is_empty() => None,
             _ => Some(format!("header {name}: expected present, got none")),
         },
-        HeaderMatcher::PresentOptional => None,
         HeaderMatcher::Absent => observed.map(|v| {
             format!("header {name}: expected absent, got {v:?} (the binding's cited spec sentence forbids it on this outcome)")
         }),
@@ -249,9 +282,13 @@ mod tests {
     }
 
     fn ctx<'a>() -> RequestContext<'a> {
-        RequestContext {
-            accept: None,
-            last_version_uid: None,
+        RequestContext::default()
+    }
+
+    fn versions(its_rest: &str) -> SpecVersions {
+        SpecVersions {
+            its_rest: Some(its_rest.to_owned()),
+            ..SpecVersions::default()
         }
     }
 
@@ -279,7 +316,7 @@ mod tests {
         let e = expectation(&serde_json::json!({ "Content-Type": "negotiated" }));
         let ctx = RequestContext {
             accept: Some("application/json"),
-            last_version_uid: None,
+            ..RequestContext::default()
         };
         let ok = response(&[("content-type", "application/json; charset=utf-8")]);
         assert!(evaluate(&e, &ok, &ctx, &VarStore::default()).is_empty());
@@ -291,8 +328,8 @@ mod tests {
     fn latest_version_uid_compares_case_insensitively() {
         let e = expectation(&serde_json::json!({ "ETag": "latest-version-uid" }));
         let ctx = RequestContext {
-            accept: None,
             last_version_uid: Some("abc::sys::2"),
+            ..RequestContext::default()
         };
         // The weak wrapper strips; case differences are the same identifier
         // (BASE master05 §Composite Identifiers and Case).
@@ -336,5 +373,80 @@ mod tests {
         let e = expectation(&serde_json::json!({ "Last-Modified": "present" }));
         let ok = response(&[("LAST-MODIFIED", "Wed, 22 Jul 2009 19:15:56 GMT")]);
         assert!(evaluate(&e, &ok, &ctx(), &VarStore::default()).is_empty());
+    }
+
+    /// `optional: true` splits SHOULD-strength PRESENCE from MUST-strength
+    /// FORM (issue #628): the query `ETag` is a SHOULD to emit (overview
+    /// §"ETag and Last-Modified") but a MUST to weaken when emitted
+    /// (§"Deprecated headers"). An omitted header passes; a malformed one
+    /// still fails.
+    #[test]
+    fn optional_presence_still_judges_the_form_when_present() {
+        let e = expectation(&serde_json::json!({
+            "ETag": { "match": "pattern:W/\"[^\"]+\"", "optional": true }
+        }));
+        assert!(evaluate(&e, &response(&[]), &ctx(), &VarStore::default()).is_empty());
+        let blank = response(&[("etag", "   ")]);
+        assert!(evaluate(&e, &blank, &ctx(), &VarStore::default()).is_empty());
+        let weak = response(&[("etag", "W/\"rs-1\"")]);
+        assert!(evaluate(&e, &weak, &ctx(), &VarStore::default()).is_empty());
+        let bare = response(&[("etag", "\"rs-1\"")]);
+        assert_eq!(evaluate(&e, &bare, &ctx(), &VarStore::default()).len(), 1);
+    }
+
+    /// A version-dated rule binds only the parties that declare the release
+    /// dating it (issue #627): the `W/` MUST is "Prior to Release 1.1.0"
+    /// deprecation text, so a 1.0.3 declarant is not judged on it and a
+    /// 1.1.0 declarant is — the SAME `applies` grammar and the SAME
+    /// `satisfied_by` polarity the case cores use.
+    #[test]
+    fn a_dated_expectation_binds_only_the_declaring_releases() {
+        let e = expectation(&serde_json::json!({
+            "ETag": {
+                "match": "pattern:W/\"[^\"]+\"",
+                "applies": { "its_rest": ">=1.1.0" }
+            }
+        }));
+        let bare = response(&[("etag", "\"x::sys::1\"")]);
+
+        let v11 = versions("1.1.0");
+        let judged = RequestContext {
+            spec_versions: Some(&v11),
+            ..RequestContext::default()
+        };
+        assert_eq!(evaluate(&e, &bare, &judged, &VarStore::default()).len(), 1);
+
+        let v103 = versions("1.0.3");
+        let dated_out = RequestContext {
+            spec_versions: Some(&v103),
+            ..RequestContext::default()
+        };
+        assert!(evaluate(&e, &bare, &dated_out, &VarStore::default()).is_empty());
+
+        // Undeclared behaves exactly as the case-level filter does: out of
+        // scope, never a silently-applied requirement.
+        assert!(evaluate(&e, &bare, &ctx(), &VarStore::default()).is_empty());
+    }
+
+    /// The two modifiers are independent: dating gates whether the rule is
+    /// consulted at all, optionality gates whether an absent header is a
+    /// violation.
+    #[test]
+    fn dating_and_optionality_compose() {
+        let e = expectation(&serde_json::json!({
+            "ETag": {
+                "match": "pattern:W/\"[^\"]+\"",
+                "optional": true,
+                "applies": { "its_rest": ">=1.1.0" }
+            }
+        }));
+        let v11 = versions("1.1.0");
+        let judged = RequestContext {
+            spec_versions: Some(&v11),
+            ..RequestContext::default()
+        };
+        assert!(evaluate(&e, &response(&[]), &judged, &VarStore::default()).is_empty());
+        let bare = response(&[("etag", "\"rs-1\"")]);
+        assert_eq!(evaluate(&e, &bare, &judged, &VarStore::default()).len(), 1);
     }
 }

@@ -29,4 +29,4 @@ formats: [canonical-xml]
 outcomes:
   updated:
     status: 200                             # the variant-less binding's updated row (200_EHR_STATUS_updated.yaml realization; Prefer representation)
-    headers: { ETag: 'pattern:W/"[^"]+"', Location: present }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }

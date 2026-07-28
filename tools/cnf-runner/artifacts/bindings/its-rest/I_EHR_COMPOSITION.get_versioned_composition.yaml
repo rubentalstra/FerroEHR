@@ -37,9 +37,9 @@ outcomes:
     status: 200                           # 200_VERSIONED_COMPOSITION.yaml
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # unknown ehr_id or versioned_object_uid (404_unknown_ehr_id_or_versioned_object_uid.yaml)
   bad_request:
     # A `versioned_object_uid` path segment that parses as no UID form at all

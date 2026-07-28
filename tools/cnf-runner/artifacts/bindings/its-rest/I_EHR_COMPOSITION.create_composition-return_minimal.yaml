@@ -45,9 +45,23 @@ formats: [canonical-json]
 outcomes:
   created:
     status: 201                           # OAS operations/composition_create.yaml — the one declared success status
+    # AMB-62 re-adjudicated 2026-07-28: 204 is a CONFORMANT answer to this
+    # branch too, so both are judged and neither server's answer is
+    # inconclusive. Once the OAS fill supplies "the body is empty", the
+    # docs-text conditional it satisfies FIRES — overview §"Prefer minimal,
+    # identifier or full representation response": "If no response body is
+    # returned, the service SHOULD use `204 No Content`" — and the docs text
+    # outranks the OAS. It is a SHOULD, not a MUST, and the release's own
+    # computable artifact declares 201 for this operation, so 201-with-an-
+    # empty-body is a weighed deviation rather than a violation. That 204 is
+    # reachable at all under `minimal` is the docs text's own contrast: the
+    # SIBLING preference is the one it excludes it from (§"Prefer only
+    # identifier": "the status will be `201 Created` or `200 OK`, never `204
+    # No Content`").
+    alt_status: [204]
     body: absent                          # OAS responses/201_COMPOSITION.yaml — "If the `Prefer` header is missing or set to `return=minimal`, the body is empty"
     headers:
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Location: present                   # overview §Prefer minimal — "The response SHOULD include a `Location` header pointing to the newly created or updated resource"
       Preference-Applied: "present?"      # MAY — overview §Representation details negotiation
 captures:

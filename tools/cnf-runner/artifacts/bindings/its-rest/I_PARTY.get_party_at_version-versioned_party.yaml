@@ -24,9 +24,9 @@ outcomes:
   ok:
     status: 200
     headers:
-      ETag: 'pattern:W/".*"'
+      ETag: { match: 'pattern:W/".*"', applies: { its_rest: ">=1.1.0" } }
       Last-Modified: present
-      Location: absent
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
   not_found:
     # An unknown `version_uid` under a known container. DOCS TEXT (overview
     # Requests_and_responses.md §HTTP status codes, the 404 row verbatim): "The

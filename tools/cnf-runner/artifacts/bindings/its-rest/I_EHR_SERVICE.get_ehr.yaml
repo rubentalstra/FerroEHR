@@ -40,8 +40,8 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<ehr_id>"'        # the section's own example source: "EHR.ehr_id.value"
-      Location: absent                    # GET — overview §Location
+      ETag: { match: 'pattern:W/"<ehr_id>"', applies: { its_rest: ">=1.1.0" } }  # the section's own example source: "EHR.ehr_id.value"
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # GET — overview §Location
   not_found: { status: 404 }              # 404.yaml (unknown ehr_id)
   bad_request:
     # An `ehr_id` PATH SEGMENT that is not a well-formed identifier at all.
@@ -71,4 +71,4 @@ outcomes:
     status: 401                           # overview §HTTP status codes (401 — "lacks valid authentication credentials for the target resource")
     headers:
       WWW-Authenticate: present           # overview §Authentication and authorization MUST, over RFC 9110 §15.5.2
-      Location: absent                    # error response — overview §Location (creation/redirect only)
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # error response — overview §Location (creation/redirect only)

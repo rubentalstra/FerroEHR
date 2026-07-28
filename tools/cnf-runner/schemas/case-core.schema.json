@@ -78,6 +78,7 @@
     "applies": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Spec-version applicability ranges (Cargo/semver requirement syntax). Every declared range must be satisfied by the party's declared version; an undeclared component puts the gated item out of scope.",
       "properties": {
         "rm": {
           "type": "string"

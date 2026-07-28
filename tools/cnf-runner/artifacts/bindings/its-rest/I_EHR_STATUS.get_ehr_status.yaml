@@ -24,10 +24,10 @@ outcomes:
   ok:
     status: 200                           # 200_EHR_STATUS_retrieved.yaml
     headers:
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }
   not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)
 captures:

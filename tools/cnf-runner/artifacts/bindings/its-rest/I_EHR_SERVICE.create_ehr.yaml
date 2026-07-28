@@ -31,7 +31,7 @@ formats: [canonical-json, canonical-xml]  # EHR resource is canonical-only (Acce
 outcomes:
   created:
     status: 201                           # 201_EHR.yaml
-    headers: { ETag: 'pattern:W/"[^"]+"', Last-Modified: present, Location: present }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Last-Modified: present, Location: present }
     body: prefer_conditional              # oneOf [Ehr | {uid} | empty] per Prefer
   already_exists:
     status: 409                           # 409_EHR.yaml (subject/ehr_id conflict)

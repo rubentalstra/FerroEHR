@@ -24,8 +24,8 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
-      Location: absent
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
   not_found:
     # The route addresses a version container of ANOTHER kind. DOCS TEXT
     # (overview Requests_and_responses.md §HTTP status codes, the 404 row

@@ -22,7 +22,7 @@ request:
 outcomes:
   deleted:
     status: 204
-    headers: { ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"' }
+    headers: { ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } } }
 captures:
   version_uid:
     from: header ETag

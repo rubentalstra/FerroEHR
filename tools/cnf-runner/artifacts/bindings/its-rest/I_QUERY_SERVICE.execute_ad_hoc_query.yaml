@@ -2,18 +2,10 @@
 # Sources: specifications/operations query_execute (POST /query/aql),
 # responses/200_Query.yaml, 400_Query.yaml, 408_Query.yaml.
 #
-# The `ETag` matcher is the WEAK-FORM pin, assigned by the released docs text:
-# docs/query/Request.md §"Common Headers and Query Parameters" declares the
-# response header for query execution — "Related response headers: `ETag` - A
-# unique identifier of the resultSet" — and docs/overview/Requests_and_responses.md
-# §"Deprecated headers" fixes its form for every such header: "all `ETag`
-# headers that hold a resource identifier MUST include a weakness indicator
-# `W/`" (§"ETag and Last-Modified" repeats the rationale — the openEHR `ETag`
-# is format-independent, "therefore … of weak-type", and SHOULD be included for
-# "resources that have versioning or unique state identifiers", which is exactly
-# what the resultSet identifier is). The identifier INSIDE the tag is the
-# service's choice ("usually taken from e.g. VERSIONED_OBJECT.uid.value, …"), so
-# only the weak wrapper is asserted.
+# The identifier INSIDE the entity tag is the service's choice (overview
+# §"ETag and Last-Modified": "usually taken from e.g. VERSIONED_OBJECT.uid.value,
+# …"), so only the weak wrapper is asserted; the strength of the assertion is
+# adjudicated at the `ok` outcome below.
 sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
 its: its-rest
 request:
@@ -35,7 +27,19 @@ outcomes:
     status: 200                           # 200_Query.yaml
     # Request.md §Common Headers and Query Parameters (related response
     # headers) + overview §Deprecated headers (the W/ MUST)
-    headers: { ETag: 'pattern:W/"[^"]+"' }
+    # The resultSet `ETag`: presence is SHOULD-strength, the weak form is a MUST.
+    # docs/query/Request.md §"Common Headers and Query Parameters" names the header
+    # with no RFC 2119 keyword at all ("Related response headers: `ETag` - A unique
+    # identifier of the resultSet"), and the released OAS declares it without
+    # `required` (query-codegen.openapi.yaml components/headers/ETag_RESULT_SET), so
+    # the only strength anywhere is docs/overview/Requests_and_responses.md §"ETag and
+    # Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in responses
+    # for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
+    # state identifiers". A server that omits it is therefore not failed (`optional:
+    # true`), while one that emits it must weaken it — §"Deprecated headers": "all
+    # `ETag` headers that hold a resource identifier MUST include a weakness indicator
+    # `W/`", a MUST the same chapter dates to Release 1.1.0 (`applies`).
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', optional: true, applies: { its_rest: ">=1.1.0" } } }
     body: result_set_body
   invalid_query: { status: 400 }          # 400_Query.yaml
   timeout: { status: 408 }                # 408_Query.yaml

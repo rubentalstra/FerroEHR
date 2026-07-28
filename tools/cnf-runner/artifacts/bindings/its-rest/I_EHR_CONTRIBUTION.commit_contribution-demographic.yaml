@@ -54,7 +54,7 @@ formats: [canonical-json]
 outcomes:
   created:
     status: 201
-    headers: { ETag: 'pattern:W/"[^"]+"', Location: present }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }
     body: prefer_conditional
   conflict:
     status: 409

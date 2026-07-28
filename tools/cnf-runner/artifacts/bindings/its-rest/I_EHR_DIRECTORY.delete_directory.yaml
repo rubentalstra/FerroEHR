@@ -40,9 +40,9 @@ outcomes:
   deleted:
     status: 204                           # 204_deleted.yaml — logical delete performed
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
       Last-Modified: present
-      Location: absent                    # DELETE — overview §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # DELETE — overview §Deprecated headers
   precondition_failed:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }

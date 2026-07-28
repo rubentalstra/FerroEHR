@@ -32,9 +32,9 @@ outcomes:
     status: 200                           # 200_COMPOSITION_retrieved.yaml
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
       Last-Modified: present
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   ok_empty: { status: 204 }               # latest version is a logical delete (204_deleted_at_time.yaml)
   not_found: { status: 404 }              # unknown ehr_id or unknown versioned_object_uid
 server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks
