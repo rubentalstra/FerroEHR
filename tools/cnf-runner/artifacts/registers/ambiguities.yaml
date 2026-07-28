@@ -1048,6 +1048,38 @@ AMB-61:
   options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]
 AMB-62:
   ambiguity: >-
+    RE-ADJUDICATED AGAIN 2026-07-28 (the create arm only; the update and
+    delete arms below stand unchanged). The previous same-day adjudication
+    applied tier 2 ASYMMETRICALLY: it took the OAS fill "the body is empty" as
+    the ground for 201, and in the same breath ruled the docs-text conditional
+    "If no response body is returned, the service SHOULD use `204 No Content`"
+    inert because "a fact the same text never assigns". But the OAS fill IS
+    that fact. Once tier 2 supplies the antecedent — and supplying what tier 1
+    withholds is exactly what the oracle order licenses it to do — the tier-1
+    conditional FIRES, and tier 1 outranks tier 2. Reading the fill for the
+    consequent while refusing it for the antecedent is not an oracle order, it
+    is a preference.
+    WHAT THAT DOES AND DOES NOT SETTLE. It does NOT make 204 the required
+    answer, because the sentence that fires is a SHOULD, not a MUST — and the
+    release's own computable artifact declares `'201'` as the create's single
+    success status with an empty minimal body, which is as explicit a weighed
+    reason to deviate from a SHOULD as a specification can hand an
+    implementer. It does NOT make 201 wrong either: §"Prefer minimal…" opens
+    with "The HTTP status is typically `201 Created`", descriptive and
+    unkeyworded. So the create's minimal branch has TWO conformant answers —
+    `201 Created` with an empty body, and `204 No Content` — and the artifact
+    judges both. Corroboration that 204 is reachable at all under `minimal`
+    comes from the docs text's own contrast: it takes the trouble to exclude
+    204 from the SIBLING preference (§"Prefer only identifier": "the status
+    will be `201 Created` or `200 OK`, never `204 No Content`") and never
+    excludes it here. Each `-return_minimal` / `-prefer_absent` CREATE binding
+    therefore carries `alt_status: [204]` on `created`, so a 204-answering
+    server is JUDGED rather than recorded inconclusive on an unmapped status
+    — and no server is the reference for which of the two it should be.
+    THE UPDATE ARM IS UNTOUCHED and stays 204-only: there both sources point
+    the same way (`204_version_updated.yaml` assigns the branch in the
+    indicative, and the docs-text SHOULD agrees), so nothing competes.
+    The EHR create residue at the end of this entry also stands.
     RE-ADJUDICATED 2026-07-28 under the OAS-fallback oracle order: the
     DOCS-TEXT silence is real and unchanged, but the released OAS FILLS IT
     per operation family, so the entry's former position — "the branch has no
@@ -1116,17 +1148,25 @@ AMB-62:
   handling: >-
     Fixed handling, per operation family, replacing the withdrawn
     no-assertable-status position. A minimal write (explicit
-    `Prefer: return=minimal` or no `Prefer` at all) answers `201 Created` with
-    an EMPTY body on a create and `204 No Content` on an update; a delete is
-    the 204 family it already was. That is not an authored blend of a
-    descriptive adverb and a conditional SHOULD — it is what the release's own
-    computable artifacts state, per operation, in the indicative.
-    THE DOCS TEXT IS NOT OVERRIDDEN, because it never spoke with one voice
-    here: its "typically 201" and its "SHOULD use 204" are the two halves the
-    OAS then assigns to the two families, so the tier-2 fill is consistent
-    with both sentences rather than beating either. Where the docs text DOES
-    speak singly it still wins outright — §"Prefer only identifier" is
-    unaffected and stays docs-text-governed.
+    `Prefer: return=minimal` or no `Prefer` at all) answers, on a CREATE,
+    EITHER `201 Created` with an empty body (the OAS's declared single success
+    status) OR `204 No Content` (the docs-text SHOULD, whose antecedent that
+    same OAS sentence supplies) — both conformant, both judged, expressed as
+    `status: 201` + `alt_status: [204]` on every `-return_minimal` /
+    `-prefer_absent` create binding; on an UPDATE it answers `204 No Content`,
+    where both sources agree; a delete is the 204 family it already was. What
+    is asserted of the body is the same on both create answers — `body:
+    absent` — so the two differ only in the status line.
+    THE DOCS TEXT IS NOT OVERRIDDEN ANYWHERE. On the UPDATE arm it never
+    spoke with one voice, and the OAS fill lands consistently with both of its
+    sentences. On the CREATE arm it DOES speak, once the fill supplies the
+    antecedent its conditional needs — and it is obeyed: 204 is accepted as
+    conformant there rather than refuted. What keeps 201 conformant beside it
+    is the strength of that sentence (a SHOULD) plus the release's own
+    declaration of 201 for the operation, not a tier-2 override of tier 1.
+    Where the docs text speaks singly and unconditionally it still wins
+    outright — §"Prefer only identifier" is unaffected and stays
+    docs-text-governed.
     ALREADY GATED under this reading: the two template uploads, whose
     operation-level 201 text AMB-110(b) had already read this way
     (I_DEFINITION_ADL14.upload_opt-prefer_minimal,
