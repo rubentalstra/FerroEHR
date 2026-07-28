@@ -68,6 +68,162 @@ workflow refuses a tag that has no matching section here.
   but publishes no XML form of the commit envelope, which is reported
   upstream rather than invented locally.
 
+
+- **Served OpenAPI: complete documentation for the six Query operations**
+  (#482). The two ad-hoc and four stored AQL executions now document what
+  the wire actually does. Every `200` declares the weak RESULT_SET `ETag`
+  (an identifier of the result set — ours is a deterministic content digest,
+  since the released `ResultSet` schema carries no id field) and carries a
+  canonical RESULT_SET example: `columns[]` with the `#N` unaliased-column
+  convention, rows whose cells are JSON primitives *and* canonical
+  `_type`-tagged RM objects, and the optional `meta` (`_type`,
+  `_schema_version`, `_created` in extended ISO 8601, and `_executed_aql` =
+  the parameter-SUBSTITUTED text, with `q` keeping the query as submitted).
+  The parameters now carry the released semantics: the named-`$parameter`
+  binding law and its un-prefixed rule, the `ehr_id` duality (query
+  parameter or `openehr-ehr-id` header, deprecated MixedCase spelling
+  accepted, a conflict 400), `offset`'s default of 0 and `fetch`'s
+  implementation-defined default with the one released prohibition
+  (`fetch` cannot be combined with AQL `TOP`), the qualified-query-name
+  grammar including the reserved `aql`, and the version exact/prefix
+  matching law. Also declared: `415` on the three POSTs, request-body
+  examples, and the `Prefer`-scope reason no query response carries
+  `Location` or `Preference-Applied`. Where the released text is silent the
+  declarations say so explicitly — the reserved protocol keys that never
+  bind as AQL parameters, REST paging composing over AQL `LIMIT`/`OFFSET`,
+  the URL-vs-body precedence on the POSTs, and the `ehr_id`-scope 404.
+  Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
+  operations** (#475). The EHR-wide read, the two per-target reads, the two
+  collection replaces and the two key-scoped deletes now document what the
+  wire actually does. The dual-form `uid_based_id` is spelled out with the
+  released version/container sentence and the disjointness it implies (a tag
+  has exactly one `target`, so container tags and version tags are separate
+  collections and neither read sees the other). The `PUT` bodies are
+  described as what they are — a bare JSON array of UPDATE_ITEM_TAG (`key`
+  required, `value`/`target_path` optional, `target`/`owner_id`
+  server-assigned from the route and ignored if sent), with `[]` quoted as
+  the clear-all form, (`key`, `target_path`) as the identity, last-wins on a
+  duplicate pair, an empty `target_path` normalizing to absent, and the
+  200/204 `Prefer` split (204 by default, 200 carrying the full RESULTING
+  list, `return=identifier` resolving to minimal because an ITEM_TAG has no
+  uid). The deletes document their SET semantics (every tag under the key on
+  the addressed collection) and the released third 404 trigger that makes
+  them deliberately non-idempotent. Every operation now declares the target
+  guard's 404s (unknown, foreign-EHR, wrong-kind or missing-version target),
+  the JSON-only reality (406 for an XML `Accept`, 415 for an XML
+  `Content-Type` — no ITEM_TAG type exists in the canonical XML ITS), the
+  RM-invariant 422 family on the writes, the `ehr_tags_get` filter semantics
+  (AND-combined, exact, case-sensitive, scalar, unbounded), and real ITEM_TAG
+  examples including a VERSION-targeted tag. Also recorded: no tag route
+  serves `ETag`/`Last-Modified` or accepts `If-Match` — a tag has neither a
+  version nor a uid — and the released-text defects met on the way (the
+  aggregate read's COMPOSITION-typed response schema, the `_updated`
+  responses' copy-pasted "retrieved" wording, `tag_key` vs the `key` path
+  parameter, and the "(logically) deleted" wording on a non-versioned
+  resource). Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the three CONTRIBUTION
+  operations** (#464). The native change-set commit now declares the whole
+  `NewContribution` envelope — `versions[]` of UPDATE_VERSION
+  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
+  `data`, `commit_audit`) plus the change-set `audit`, the accepted `_type`
+  spellings (`UPDATE_AUDIT` / `AUDIT_DETAILS` / omitted), the server-set
+  `time_committed`, the honoured-if-unused client `uid`, and the
+  committer/`system_id` copy-down — with a canonical two-member example (a
+  COMPOSITION creation plus an EHR_STATUS modification) and the SPECITS-84
+  rule quoted: the envelope stays canonical JSON, only each
+  `versions[i].data` takes the FLAT/STRUCTURED form. Every branch is
+  documented: `201` with the weak `ETag` carrying the *contribution* uid (not
+  a version uid), `Location`, `Preference-Applied` and the `Prefer`-conditional
+  bodies (the representation lists the minted version OBJECT_REFs, the
+  identifier body the contribution uid, minimal an empty `201`); `400` with
+  the released first-version-of-a-MODIFICATION trigger; `404`; `406`; `409`
+  (client uid in use — released — plus the non-modifiable EHR, duplicate
+  singletons and an EHR_STATUS delete member, flagged as ours); `412` for a
+  stale member `preceding_version_uid`; `415`; and the full `422` family
+  (empty `versions`, out-of-group change types, data on a delete/attestation
+  member, missing data, template and RM-invariant failures). The by-uid `GET`
+  documents the plain-UUID `contribution_uid`, `Prefer: return=representation,
+  resolve_refs` (members resolved to full ORIGINAL_VERSIONs, which is also
+  what makes a simplified `Accept` meaningful), its `200` headers and
+  canonical example (members as OBJECT_REFs, full AUDIT_DETAILS with optional
+  `description`), and `400`/`404`/`406`. The contribution-list route is
+  prominently flagged as our own extension with no openEHR spec behind it,
+  and its `offset`/`fetch` clamping (0 / 20, capped at 100 — never a `400`)
+  and row shape are now described accurately. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the five DIRECTORY
+  operations** (#457). Every response now declares its headers (weak `ETag`,
+  `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
+  reads and writes carry canonical FOLDER examples (nested `folders`, `items`
+  as OBJECT_REFs); the writes document the `If-Match` precondition — carried
+  in the header because these routes have no version segment, so a stale
+  value is `412`, never `409` — plus `Prefer`, the `openehr-version` /
+  `openehr-audit-details` committal headers and the item-tag headers, and the
+  canonical-JSON/XML-only request bodies (a Simplified-Format `Content-Type`
+  is `415`, an unfulfillable simplified `Accept` `406`: a FOLDER is not
+  templated). The `version_at_time` and `path` query parameters are described
+  with the released sentence plus our register-documented resolution rules
+  (root-implicit, leading-slash tolerant, folders-only, first-match; a future
+  time serves the latest version, a time before the first commit is `404`),
+  and every branch the wire serves is documented — the deleted-directory
+  `204` on both reads, the `DELETE`'s `204` carrying the new deleted version's
+  identity, the `404`s (including an EHR with no directory), the `412`s with
+  the latest-uid `ETag`, `400`/`406`/`415`/`422`, and the `409`s that are our
+  own design (creating a directory when one already exists, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the eight COMPOSITION and
+  VERSIONED_COMPOSITION operations** (#450). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes) and a canonical example; the commits document the
+  `openehr-version` / `openehr-audit-details` / `openehr-template-id` request
+  headers and the four negotiable media types (canonical JSON/XML plus
+  `application/openehr.wt.flat+json` and
+  `application/openehr.wt.structured+json`); and every branch the wire
+  actually serves is described — the `GET`'s deleted-version `204` for all
+  addressing forms, the `DELETE` quartet (`204` carrying the NEW deleted
+  version's identity, `400` already-deleted, `404`, `409` not-latest with the
+  latest-uid `ETag`), `412`/`415`/`406`/`422`, and the `409`s that are our own
+  design (duplicate live persistent COMPOSITION per template, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the seven EHR_STATUS and
+  VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes), canonical examples, and the 406/415 negotiation
+  branches; the EHR_STATUS update documents the `openehr-version` /
+  `openehr-audit-details` committal headers and the
+  `Prefer: return=identifier` response shape. Document only — no wire
+  change.
+
+- **`Last-Modified` on VERSIONED_OBJECT container and revision-history
+  reads** (#442). `GET …/versioned_ehr_status`,
+  `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
+  now carry `Last-Modified` derived from the newest held version's commit
+  instant, alongside the existing container-uid weak `ETag` (ITS-REST
+  overview *Requests and responses* §"ETag and Last-Modified": both headers
+  SHOULD accompany a VERSIONED_OBJECT response).
+
+
+- **`[server] system_id` — the deployment's own openEHR system identifier is
+  now configurable** (#424, `EHRBASE__SERVER__SYSTEM_ID`, default unchanged at
+  `ehrbase-rs.local`). The value is stamped into `EHR.system_id` at EHR
+  creation (RM *EHR Information Model* §EHR Identifier Allocation: the
+  identifier "that would normally be used for locally created EHRs"), into
+  `AUDIT_DETAILS.system_id` whenever the client supplies none through
+  `openehr-audit-details` (the REST API requires the server to "set it to its
+  own configured system identifier"), and into every minted
+  `OBJECT_VERSION_ID.creating_system_id`. Previously it was a hard-coded
+  constant that no configuration could change. Choose it before the first EHR
+  is created and keep it stable — the value is stored per EHR and per version,
+  so a later change affects only newly authored data and never rewrites
+  existing identifiers. It is distinct from `[server.identity]`, which is only
+  the `OPTIONS` manifest's display identity. An empty value, or one containing
+  the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
+
 ### Changed
 
 - **The published Conformance Statement now declares the non-openEHR surface
@@ -101,6 +257,36 @@ workflow refuses a tag that has no matching section here.
   behaves. The full per-resource classification, its citations and the
   upstream report asking openEHR to reconcile the two inventories are
   recorded in the conformance ambiguity register as `AMB-167` / `UPR-127`.
+
+
+- **Stored top-level objects now carry their copied `uid` at commit time**
+  (#439). The full three-part `OBJECT_VERSION_ID` is stamped into the
+  canonical body before it is decomposed, signed, and stored, so the
+  contained object served inside an ORIGINAL_VERSION envelope, the bare
+  resource reads, AQL projections, and EHR Extract exports all carry the
+  identical uid value (ITS-REST overview *Resources* §Identifier types).
+  Previously the uid was injected only on some read paths; clients now see
+  one consistent shape everywhere. Imported (EHR Extract) content is
+  exempt — its bodies are preserved verbatim.
+- **`EHR.ehr_status` references the version container by its
+  `HIER_OBJECT_ID`** (#426). The served EHR body's `ehr_status` OBJECT_REF
+  (typed `VERSIONED_EHR_STATUS` per the RM invariant) previously carried an
+  `OBJECT_VERSION_ID` naming one version — inconsistent with the sibling
+  `ehr_access` ref and with the RM's container semantics (`OBJECT_REF.id` is
+  the id of the referenced object; the referenced object is the
+  VERSIONED_EHR_STATUS, whose uid is a `HIER_OBJECT_ID`). Both refs now
+  carry the container id. Clients that read the current EHR_STATUS version
+  uid from the EHR body must fetch `GET /ehr/{ehr_id}/ehr_status` and use
+  its own `uid` instead.
+
+### Removed
+
+- **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
+  System API defines exactly one location for the Options-and-Conformance
+  operation — the API base-path root (`OPTIONS {base_path}`, e.g.
+  `/ehrbase/rest/openehr/v1`); the extra bare-root mount was our own
+  duplication and answered identically. Clients probing `OPTIONS /` must use
+  the base path.
 
 ### Fixed
 
@@ -348,187 +534,6 @@ workflow refuses a tag that has no matching section here.
   path's container now answers 404 (ITS-REST overview *Resources*
   §Identifier types; RM `Owner_id_valid`).
 
-### Added
-
-- **Served OpenAPI: complete documentation for the six Query operations**
-  (#482). The two ad-hoc and four stored AQL executions now document what
-  the wire actually does. Every `200` declares the weak RESULT_SET `ETag`
-  (an identifier of the result set — ours is a deterministic content digest,
-  since the released `ResultSet` schema carries no id field) and carries a
-  canonical RESULT_SET example: `columns[]` with the `#N` unaliased-column
-  convention, rows whose cells are JSON primitives *and* canonical
-  `_type`-tagged RM objects, and the optional `meta` (`_type`,
-  `_schema_version`, `_created` in extended ISO 8601, and `_executed_aql` =
-  the parameter-SUBSTITUTED text, with `q` keeping the query as submitted).
-  The parameters now carry the released semantics: the named-`$parameter`
-  binding law and its un-prefixed rule, the `ehr_id` duality (query
-  parameter or `openehr-ehr-id` header, deprecated MixedCase spelling
-  accepted, a conflict 400), `offset`'s default of 0 and `fetch`'s
-  implementation-defined default with the one released prohibition
-  (`fetch` cannot be combined with AQL `TOP`), the qualified-query-name
-  grammar including the reserved `aql`, and the version exact/prefix
-  matching law. Also declared: `415` on the three POSTs, request-body
-  examples, and the `Prefer`-scope reason no query response carries
-  `Location` or `Preference-Applied`. Where the released text is silent the
-  declarations say so explicitly — the reserved protocol keys that never
-  bind as AQL parameters, REST paging composing over AQL `LIMIT`/`OFFSET`,
-  the URL-vs-body precedence on the POSTs, and the `ehr_id`-scope 404.
-  Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
-  operations** (#475). The EHR-wide read, the two per-target reads, the two
-  collection replaces and the two key-scoped deletes now document what the
-  wire actually does. The dual-form `uid_based_id` is spelled out with the
-  released version/container sentence and the disjointness it implies (a tag
-  has exactly one `target`, so container tags and version tags are separate
-  collections and neither read sees the other). The `PUT` bodies are
-  described as what they are — a bare JSON array of UPDATE_ITEM_TAG (`key`
-  required, `value`/`target_path` optional, `target`/`owner_id`
-  server-assigned from the route and ignored if sent), with `[]` quoted as
-  the clear-all form, (`key`, `target_path`) as the identity, last-wins on a
-  duplicate pair, an empty `target_path` normalizing to absent, and the
-  200/204 `Prefer` split (204 by default, 200 carrying the full RESULTING
-  list, `return=identifier` resolving to minimal because an ITEM_TAG has no
-  uid). The deletes document their SET semantics (every tag under the key on
-  the addressed collection) and the released third 404 trigger that makes
-  them deliberately non-idempotent. Every operation now declares the target
-  guard's 404s (unknown, foreign-EHR, wrong-kind or missing-version target),
-  the JSON-only reality (406 for an XML `Accept`, 415 for an XML
-  `Content-Type` — no ITEM_TAG type exists in the canonical XML ITS), the
-  RM-invariant 422 family on the writes, the `ehr_tags_get` filter semantics
-  (AND-combined, exact, case-sensitive, scalar, unbounded), and real ITEM_TAG
-  examples including a VERSION-targeted tag. Also recorded: no tag route
-  serves `ETag`/`Last-Modified` or accepts `If-Match` — a tag has neither a
-  version nor a uid — and the released-text defects met on the way (the
-  aggregate read's COMPOSITION-typed response schema, the `_updated`
-  responses' copy-pasted "retrieved" wording, `tag_key` vs the `key` path
-  parameter, and the "(logically) deleted" wording on a non-versioned
-  resource). Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the three CONTRIBUTION
-  operations** (#464). The native change-set commit now declares the whole
-  `NewContribution` envelope — `versions[]` of UPDATE_VERSION
-  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
-  `data`, `commit_audit`) plus the change-set `audit`, the accepted `_type`
-  spellings (`UPDATE_AUDIT` / `AUDIT_DETAILS` / omitted), the server-set
-  `time_committed`, the honoured-if-unused client `uid`, and the
-  committer/`system_id` copy-down — with a canonical two-member example (a
-  COMPOSITION creation plus an EHR_STATUS modification) and the SPECITS-84
-  rule quoted: the envelope stays canonical JSON, only each
-  `versions[i].data` takes the FLAT/STRUCTURED form. Every branch is
-  documented: `201` with the weak `ETag` carrying the *contribution* uid (not
-  a version uid), `Location`, `Preference-Applied` and the `Prefer`-conditional
-  bodies (the representation lists the minted version OBJECT_REFs, the
-  identifier body the contribution uid, minimal an empty `201`); `400` with
-  the released first-version-of-a-MODIFICATION trigger; `404`; `406`; `409`
-  (client uid in use — released — plus the non-modifiable EHR, duplicate
-  singletons and an EHR_STATUS delete member, flagged as ours); `412` for a
-  stale member `preceding_version_uid`; `415`; and the full `422` family
-  (empty `versions`, out-of-group change types, data on a delete/attestation
-  member, missing data, template and RM-invariant failures). The by-uid `GET`
-  documents the plain-UUID `contribution_uid`, `Prefer: return=representation,
-  resolve_refs` (members resolved to full ORIGINAL_VERSIONs, which is also
-  what makes a simplified `Accept` meaningful), its `200` headers and
-  canonical example (members as OBJECT_REFs, full AUDIT_DETAILS with optional
-  `description`), and `400`/`404`/`406`. The contribution-list route is
-  prominently flagged as our own extension with no openEHR spec behind it,
-  and its `offset`/`fetch` clamping (0 / 20, capped at 100 — never a `400`)
-  and row shape are now described accurately. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the five DIRECTORY
-  operations** (#457). Every response now declares its headers (weak `ETag`,
-  `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
-  reads and writes carry canonical FOLDER examples (nested `folders`, `items`
-  as OBJECT_REFs); the writes document the `If-Match` precondition — carried
-  in the header because these routes have no version segment, so a stale
-  value is `412`, never `409` — plus `Prefer`, the `openehr-version` /
-  `openehr-audit-details` committal headers and the item-tag headers, and the
-  canonical-JSON/XML-only request bodies (a Simplified-Format `Content-Type`
-  is `415`, an unfulfillable simplified `Accept` `406`: a FOLDER is not
-  templated). The `version_at_time` and `path` query parameters are described
-  with the released sentence plus our register-documented resolution rules
-  (root-implicit, leading-slash tolerant, folders-only, first-match; a future
-  time serves the latest version, a time before the first commit is `404`),
-  and every branch the wire serves is documented — the deleted-directory
-  `204` on both reads, the `DELETE`'s `204` carrying the new deleted version's
-  identity, the `404`s (including an EHR with no directory), the `412`s with
-  the latest-uid `ETag`, `400`/`406`/`415`/`422`, and the `409`s that are our
-  own design (creating a directory when one already exists, and a
-  non-modifiable EHR), each flagged as such. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the eight COMPOSITION and
-  VERSIONED_COMPOSITION operations** (#450). Every response now declares its
-  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
-  item-tag echoes) and a canonical example; the commits document the
-  `openehr-version` / `openehr-audit-details` / `openehr-template-id` request
-  headers and the four negotiable media types (canonical JSON/XML plus
-  `application/openehr.wt.flat+json` and
-  `application/openehr.wt.structured+json`); and every branch the wire
-  actually serves is described — the `GET`'s deleted-version `204` for all
-  addressing forms, the `DELETE` quartet (`204` carrying the NEW deleted
-  version's identity, `400` already-deleted, `404`, `409` not-latest with the
-  latest-uid `ETag`), `412`/`415`/`406`/`422`, and the `409`s that are our own
-  design (duplicate live persistent COMPOSITION per template, and a
-  non-modifiable EHR), each flagged as such. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the seven EHR_STATUS and
-  VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
-  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
-  item-tag echoes), canonical examples, and the 406/415 negotiation
-  branches; the EHR_STATUS update documents the `openehr-version` /
-  `openehr-audit-details` committal headers and the
-  `Prefer: return=identifier` response shape. Document only — no wire
-  change.
-
-- **`Last-Modified` on VERSIONED_OBJECT container and revision-history
-  reads** (#442). `GET …/versioned_ehr_status`,
-  `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
-  now carry `Last-Modified` derived from the newest held version's commit
-  instant, alongside the existing container-uid weak `ETag` (ITS-REST
-  overview *Requests and responses* §"ETag and Last-Modified": both headers
-  SHOULD accompany a VERSIONED_OBJECT response).
-
-### Changed
-
-- **Stored top-level objects now carry their copied `uid` at commit time**
-  (#439). The full three-part `OBJECT_VERSION_ID` is stamped into the
-  canonical body before it is decomposed, signed, and stored, so the
-  contained object served inside an ORIGINAL_VERSION envelope, the bare
-  resource reads, AQL projections, and EHR Extract exports all carry the
-  identical uid value (ITS-REST overview *Resources* §Identifier types).
-  Previously the uid was injected only on some read paths; clients now see
-  one consistent shape everywhere. Imported (EHR Extract) content is
-  exempt — its bodies are preserved verbatim.
-- **`EHR.ehr_status` references the version container by its
-  `HIER_OBJECT_ID`** (#426). The served EHR body's `ehr_status` OBJECT_REF
-  (typed `VERSIONED_EHR_STATUS` per the RM invariant) previously carried an
-  `OBJECT_VERSION_ID` naming one version — inconsistent with the sibling
-  `ehr_access` ref and with the RM's container semantics (`OBJECT_REF.id` is
-  the id of the referenced object; the referenced object is the
-  VERSIONED_EHR_STATUS, whose uid is a `HIER_OBJECT_ID`). Both refs now
-  carry the container id. Clients that read the current EHR_STATUS version
-  uid from the EHR body must fetch `GET /ehr/{ehr_id}/ehr_status` and use
-  its own `uid` instead.
-
-### Added
-
-- **`[server] system_id` — the deployment's own openEHR system identifier is
-  now configurable** (#424, `EHRBASE__SERVER__SYSTEM_ID`, default unchanged at
-  `ehrbase-rs.local`). The value is stamped into `EHR.system_id` at EHR
-  creation (RM *EHR Information Model* §EHR Identifier Allocation: the
-  identifier "that would normally be used for locally created EHRs"), into
-  `AUDIT_DETAILS.system_id` whenever the client supplies none through
-  `openehr-audit-details` (the REST API requires the server to "set it to its
-  own configured system identifier"), and into every minted
-  `OBJECT_VERSION_ID.creating_system_id`. Previously it was a hard-coded
-  constant that no configuration could change. Choose it before the first EHR
-  is created and keep it stable — the value is stored per EHR and per version,
-  so a later change affects only newly authored data and never rewrites
-  existing identifiers. It is distinct from `[server.identity]`, which is only
-  the `OPTIONS` manifest's display identity. An empty value, or one containing
-  the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
-
-### Fixed
 
 - **EHR creation mints RM-valid EHR_STATUS and EHR_ACCESS objects; the RM
   archetype-root invariants are enforced on client bodies** (#423). The
@@ -560,16 +565,6 @@ workflow refuses a tag that has no matching section here.
   `DUMP_LOAD_FAIL_REPORT` entry that skips just that EHR exactly like a
   duplicate EHR id, leaving the rest of the archive to load.
 
-### Removed
-
-- **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
-  System API defines exactly one location for the Options-and-Conformance
-  operation — the API base-path root (`OPTIONS {base_path}`, e.g.
-  `/ehrbase/rest/openehr/v1`); the extra bare-root mount was our own
-  duplication and answered identically. Clients probing `OPTIONS /` must use
-  the base path.
-
-### Fixed
 
 - **Both EHR creates now accept and merge the committal request headers**
   (#422). ITS-REST `docs/overview/Requests_and_responses.md` §"openehr-version
