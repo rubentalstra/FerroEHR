@@ -25,8 +25,11 @@
 # What this case does NOT claim: WHICH identifier the server is configured
 # with. The released ITS-REST surfaces no endpoint from which a client can
 # learn a server's configured system id, so the identity half of the MUST is
-# not wire-checkable — see the `header-committal-system-id-server-value`
-# wire-surface element for that honest boundary.
+# checkable only against a party declaration — the sibling case
+# I_EHR_COMPOSITION.create_composition-audit_system_id_declared makes it,
+# against the ixit's `system_id`, and is not-applicable on a party that
+# declares none. Keeping it separate is why THIS case stays runnable
+# everywhere.
 #
 # The sibling cases for the other attributes of the same header are
 # I_EHR_COMPOSITION.update_composition-audit_amendment (change_type) and

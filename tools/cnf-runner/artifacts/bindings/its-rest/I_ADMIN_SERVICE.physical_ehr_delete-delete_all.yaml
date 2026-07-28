@@ -31,10 +31,15 @@
 #   requested operation succeeded and the resource(s) identified by the request
 #   parameters has been physically deleted (i.e. hard-delete)".
 # The 202 is carried as `alt_status` of the same logical kind (fulfilled, no
-# content) because the closed outcome vocabulary has no `accepted` kind — stated
-# openly in register AMB-139, which also records that 202 is absent from the
-# overview's own status-code table and legalized by that table's
-# "Additional status codes MAY be used" clause.
+# content) — stated openly in register AMB-139, which also records that 202 is
+# absent from the overview's own status-code table and legalized by that
+# table's "Additional status codes MAY be used" clause. Under this absorption a
+# case passes on either code and none can require or distinguish the async
+# branch; the 2026-07-28 schedule release (#544) added the `accepted` kind that
+# makes the branch nameable.
+# TODO: declare the 202 as its own `accepted` outcome here and on
+# I_ADMIN_SERVICE.physical_ehr_delete, and give the branch a case, retiring the
+# `admin-delete-async-acceptance-branch` wire_surface exception.
 #
 # THE `ehr_id` QUERY PARAMETER IS OPTIONAL AND MEANS "SUBSET":
 #   operations/admin_ehr_delete_all.yaml: "Deletes all or multiple EHRs, or a
@@ -42,16 +47,21 @@
 #   parameters/query/ehr_id_Admin.yaml: "An optional parameter to perform the
 #   operation on a subset of EHRs."
 # So an ABSENT parameter is the whole set and a present one names the subset.
-# The template below is the optional binding form, so a step that binds
-# `${ehr_id_subset}` sends `?ehr_id=<uuid>` and a step that does not sends no
-# query at all. The RFC 6570 `{?ehr_id*}` REPEATED form (`?ehr_id=a&ehr_id=b`)
-# is not expressible in the binding query model — a name→single-value map — and
-# is carried as the cited wire_surface element `admin-bulk-delete-subset-form`.
+# THE SELECTOR IS DECLARED IN THE REPEATED FORM — the RFC 6570 exploded
+# expansion the released path template itself asks for
+# (admin.openapi.yaml `/admin/ehr/all{?ehr_id*}`, the only RFC 6570 query
+# expansion in the whole released API, with parameters/query/ehr_id_Admin.yaml
+# `style: form`, `explode: true` and a `multiple` example listing two
+# identifiers). Both members are optional, so the SAME binding serves every
+# arity the released text admits: a step that binds neither sends no query at
+# all (the whole set), one sends `?ehr_id=a`, both send `?ehr_id=a&ehr_id=b`,
+# and a member bound to a LIST capture expands element-wise beyond two.
 #
-# THE 405-WHEN-DISABLED BRANCH IS NOT DECLARED HERE: the closed outcome
-# taxonomy has no method_not_allowed kind (the standing `method-405-allow-header`
-# boundary), so it is carried as the wire_surface element
-# `admin-bulk-delete-disabled-405` rather than as an unassertable outcome.
+# THE 405-WHEN-DISABLED BRANCH IS NOT DECLARED HERE: it exists only under a
+# deployment setting the ixit does not model, so no case can reach it and it is
+# carried as the wire_surface element `admin-bulk-delete-disabled-405`. (The
+# `method_not_allowed` kind added by the 2026-07-28 schedule release, #544,
+# removes the vocabulary half of that boundary; the topology half stands.)
 sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
 its: its-rest
 variant: delete_all
@@ -59,7 +69,9 @@ request:
   method: DELETE
   path: /admin/ehr/all
   query:
-    ehr_id: "${ehr_id_subset?}"           # absent -> the full set; present -> that subset
+    ehr_id:                               # RFC 6570 {?ehr_id*}: one pair per bound member
+      - "${ehr_id_subset?}"               # none bound -> the full set
+      - "${ehr_id_subset_2?}"             # both bound -> ?ehr_id=a&ehr_id=b
 outcomes:
   ok_empty:
     status: 204                           # 204_deleted_hard.yaml (synchronous hard delete)

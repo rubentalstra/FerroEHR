@@ -37,10 +37,11 @@
 #    served whole and unpaged, adjudicated in AMB-138.
 #
 # This operation declares NO 404 (it takes no path parameter at all) and its
-# released 400 branch is NOT declared here, for the same two reasons as
-# `ehr_tags_get`: the three filter parameters are unconstrained strings, and
-# the closed outcome taxonomy carries no malformed-request kind. Filter
-# semantics are unstated on both list routes — register AMB-94.
+# released 400 branch is NOT declared here, for the same reason as
+# `ehr_tags_get`: the three filter parameters are unconstrained strings, so no
+# request this catalogue can build is syntactically invalid. (The taxonomy's
+# `bad_request` kind, added by the 2026-07-28 schedule release #544, does not
+# change that.) Filter semantics are unstated on both list routes — AMB-94.
 sm_operation: I_ITS_REST_ITEM_TAGS.demographic_tags_get
 its: its-rest
 request:

@@ -7,7 +7,7 @@
 //! body-selector vocabularies are closed.
 
 use serde::de::Error as DeError;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::ids::{CaptureName, SmOperationRef};
 use crate::model::case::Applies;
@@ -90,19 +90,60 @@ pub enum StripRule {
     WeakQuotes,
 }
 
-/// Post-extraction transform: reduce an `OBJECT_VERSION_ID` to its root uid,
-/// or flip the captured value's ASCII case. `uppercase` exists so a case can
-/// author a case-VARIANT of a captured identifier (e.g. an `If-Match` naming
-/// the same version in different case — BASE `master05` §"Composite
-/// Identifiers and Case" makes two identifiers "identical apart from case …
-/// identify the same thing"), which the reference grammar itself cannot
-/// express (issue #403).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+/// Post-extraction transform over a captured value. The grammar is closed;
+/// every member addresses a component of the value the wire actually carries.
+///
+/// `root-uid` and `creating-system-id` decompose an `OBJECT_VERSION_ID`,
+/// whose lexical form the ITS-REST overview fixes as
+/// `object_id :: creating_system_id :: version_tree_id`
+/// (`Resources.md` §Identifier types: "The `version_uid` uniquely identifies
+/// a VERSION, in the lexical form of `object_id :: creating_system_id ::
+/// version_tree_id`"). `uppercase` exists so a case can author a
+/// case-VARIANT of a captured identifier (e.g. an `If-Match` naming the same
+/// version in different case — BASE `master05` §"Composite Identifiers and
+/// Case" makes two identifiers "identical apart from case … identify the
+/// same thing"), which the reference grammar itself cannot express
+/// (issue #403).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum TransformRule {
+    /// The leading `object_id` — the VERSIONED_OBJECT identifier.
     #[serde(rename = "root-uid")]
     RootUid,
+    /// The MIDDLE segment — the identifier of the system that created the
+    /// version. Yields nothing when the value carries no middle segment, so
+    /// a truncated identifier leaves the capture unbound (loud downstream)
+    /// rather than binding the whole value as if it were a system id.
+    #[serde(rename = "creating-system-id")]
+    CreatingSystemId,
+    /// The captured value, ASCII-uppercased.
     #[serde(rename = "uppercase")]
     Uppercase,
+}
+
+impl TransformRule {
+    /// Apply the transform, or `None` when the value has no such component.
+    #[must_use]
+    pub fn apply(self, value: &str) -> Option<String> {
+        let mut segments = value.split("::");
+        match self {
+            Self::RootUid => segments.next().map(ToOwned::to_owned),
+            Self::CreatingSystemId => {
+                let _object_id = segments.next()?;
+                segments
+                    .next()
+                    .filter(|s| !s.is_empty())
+                    .map(ToOwned::to_owned)
+            }
+            Self::Uppercase => Some(value.to_ascii_uppercase()),
+        }
+    }
+
+    /// All members, in grammar order (schema emission derives from this).
+    pub const ALL: &'static [TransformRule] = &[
+        TransformRule::RootUid,
+        TransformRule::CreatingSystemId,
+        TransformRule::Uppercase,
+    ];
 }
 
 /// One logical-capture wire mapping with optional modifiers.
@@ -323,6 +364,79 @@ impl<'de> Deserialize<'de> for RequestBody {
     }
 }
 
+/// One query parameter's authored value.
+///
+/// A scalar template is the single-valued form: one `name=value` pair, or
+/// none when its optional reference (`${x?}`) is unbound. A YAML **sequence**
+/// of templates is the repeated (RFC 6570 exploded, `{?p*}`) form: each
+/// member contributes its own `name=value` pair, in authored order, and a
+/// member whose optional reference is unbound is simply absent — so one
+/// authored sequence serves every arity up to its length. A member that
+/// resolves to a LIST capture expands element-wise.
+///
+/// Repeatability is declared HERE, in the wire layer, and never inferred
+/// from what a case happens to bind: a case core speaks SM operations and
+/// outcome kinds only, so it must not be able to change the serialization
+/// form of a request by passing a list. The one released use is the admin
+/// bulk delete's subset selector (`/admin/ehr/all{?ehr_id*}`).
+#[derive(Debug, Clone, PartialEq)]
+pub enum QueryValue {
+    /// One pair (the single-valued form).
+    Single(Template),
+    /// One pair per member (the repeated form).
+    Repeated(Vec<Template>),
+}
+
+impl QueryValue {
+    /// The authored templates, in order (one for [`Self::Single`]).
+    #[must_use]
+    pub fn templates(&self) -> &[Template] {
+        match self {
+            Self::Single(template) => std::slice::from_ref(template),
+            Self::Repeated(templates) => templates,
+        }
+    }
+
+    /// Whether the parameter is authored in the repeated form.
+    #[must_use]
+    pub fn is_repeated(&self) -> bool {
+        matches!(self, Self::Repeated(_))
+    }
+}
+
+impl<'de> Deserialize<'de> for QueryValue {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(s) => Template::parse(&s)
+                .map(Self::Single)
+                .map_err(D::Error::custom),
+            serde_json::Value::Array(items) => {
+                if items.is_empty() {
+                    return Err(D::Error::custom(
+                        "a repeated query parameter declares at least one member",
+                    ));
+                }
+                items
+                    .iter()
+                    .map(|item| match item {
+                        serde_json::Value::String(s) => {
+                            Template::parse(s).map_err(D::Error::custom)
+                        }
+                        _ => Err(D::Error::custom(
+                            "a repeated query parameter's members are value templates",
+                        )),
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(Self::Repeated)
+            }
+            _ => Err(D::Error::custom(
+                "a query parameter is a value template or a sequence of them",
+            )),
+        }
+    }
+}
+
 /// A request path with `{param}` placeholders resolved from case variables.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathTemplate {
@@ -371,10 +485,11 @@ impl<'de> Deserialize<'de> for PathTemplate {
 pub struct RequestSpec {
     pub method: HttpMethod,
     pub path: PathTemplate,
-    /// Query parameters (name → value template; optional refs `${x?}` omit
-    /// the parameter when unresolved).
+    /// Query parameters (name → value; optional refs `${x?}` omit the
+    /// parameter when unresolved, a sequence declares the repeated form —
+    /// see [`QueryValue`]).
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
-    pub query: Option<Vec<(String, Template)>>,
+    pub query: Option<Vec<(String, QueryValue)>>,
     #[serde(default)]
     pub body: Option<RequestBody>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
@@ -644,6 +759,83 @@ mod tests {
             }))
             .is_err()
         );
+    }
+
+    /// The closed transform grammar decomposes an OBJECT_VERSION_ID by its
+    /// released lexical form `object_id :: creating_system_id ::
+    /// version_tree_id` (ITS-REST Resources.md §Identifier types).
+    #[test]
+    fn transforms_address_object_version_id_components() {
+        let uid = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1";
+        assert_eq!(
+            TransformRule::RootUid.apply(uid).as_deref(),
+            Some("8849182c-82ad-4088-a07f-48ead4180515")
+        );
+        assert_eq!(
+            TransformRule::CreatingSystemId.apply(uid).as_deref(),
+            Some("openEHRSys.example.com")
+        );
+        assert_eq!(
+            TransformRule::Uppercase.apply("a::b::1").as_deref(),
+            Some("A::B::1")
+        );
+
+        // No middle segment => NO capture: a bare versioned_object_uid must
+        // never bind as if it were a creating system id.
+        assert_eq!(
+            TransformRule::CreatingSystemId.apply("8849182c-82ad-4088-a07f-48ead4180515"),
+            None
+        );
+        assert_eq!(TransformRule::CreatingSystemId.apply("uid::"), None);
+        // …while root-uid still answers on the same truncated value.
+        assert_eq!(TransformRule::RootUid.apply("uid").as_deref(), Some("uid"));
+
+        // The token is the authored form and the grammar stays closed.
+        let spec: WireCapture = serde_json::from_value(serde_json::json!({
+            "from": "header ETag", "strip": "weak-quotes",
+            "transform": "creating-system-id"
+        }))
+        .unwrap();
+        assert_eq!(spec.transform, Some(TransformRule::CreatingSystemId));
+        assert!(
+            serde_json::from_value::<WireCapture>(serde_json::json!({
+                "from": "header ETag", "transform": "middle-segment"
+            }))
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn query_values_are_single_or_repeated() {
+        let r: RequestSpec = serde_json::from_value(serde_json::json!({
+            "method": "DELETE",
+            "path": "/admin/ehr/all",
+            "query": { "ehr_id": ["${ehr_id_subset?}", "${ehr_id_subset_2?}"],
+                       "fetch": "${url_fetch?}" }
+        }))
+        .unwrap();
+        let query = r.query.unwrap();
+        let repeated = &query.iter().find(|(name, _)| name == "ehr_id").unwrap().1;
+        assert!(repeated.is_repeated());
+        assert_eq!(repeated.templates().len(), 2);
+        let single = &query.iter().find(|(name, _)| name == "fetch").unwrap().1;
+        assert!(!single.is_repeated());
+        assert_eq!(single.templates().len(), 1);
+
+        // An empty sequence declares nothing; a non-string member is outside
+        // the template grammar; a non-string, non-sequence value is neither.
+        for bad in [
+            serde_json::json!({ "method": "GET", "path": "/x", "query": { "p": [] } }),
+            serde_json::json!({ "method": "GET", "path": "/x", "query": { "p": [1] } }),
+            serde_json::json!({ "method": "GET", "path": "/x", "query": { "p": 1 } }),
+            // an illegal reference inside a member is still rejected
+            serde_json::json!({ "method": "GET", "path": "/x", "query": { "p": ["${step2.body}"] } }),
+        ] {
+            assert!(
+                serde_json::from_value::<RequestSpec>(bad.clone()).is_err(),
+                "{bad} must be rejected"
+            );
+        }
     }
 
     #[test]

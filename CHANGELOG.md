@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance runner: two more wire behaviours are now measured, not
+  excused** (#539, #569). The bulk admin delete's subset selector is exercised
+  in the repeated `?ehr_id=a&ehr_id=b` form the openEHR path template asks
+  for, proving every named EHR is deleted rather than only the first; and the
+  rule that a server stamps its OWN configured system identifier into a
+  commit audit when the client supplies none is now checked against that
+  identifier, not merely against "some non-blank value". The identifier is a
+  deployment fact no openEHR operation exposes, so a conformance target
+  declares it in its `ixit.json` (`"system_id": "…"`); a target that declares
+  none has those cases recorded not-applicable with that citation instead of
+  being checked against a guess. Both behaviours were previously carried as
+  cited coverage gaps.
+
 - **Canonical XML: choose the openEHR schema namespace per request** (#196).
   openEHR publishes its XML schemas in two lineages that differ only by the
   namespace a document declares — `http://schemas.openehr.org/v1` (the stable

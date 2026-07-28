@@ -100,7 +100,12 @@ under test, into its own directory:
   the ICS — declaring the capabilities and ambiguity-register options the
   vendor claims; option branches the ICS does not declare are excused as
   not-applicable with a citation, ISO/IEC 9646-style test selection). No
-  code or adapter is needed; a target is a configuration entry.
+  code or adapter is needed; a target is a configuration entry. The
+  `ixit.json` may also declare deployment facts no openEHR operation
+  exposes — currently `system_id`, the identifier the server stamps into the
+  commit audit and into the version ids it mints. Cases that check such a
+  value read the declaration; a party that declares none has those cases
+  recorded not-applicable rather than checked against a guess.
 
 ## Running the suite yourself
 
