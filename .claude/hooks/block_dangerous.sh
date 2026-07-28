@@ -30,8 +30,14 @@ if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])rm[[:space:]]+-[a-zA-Z]*([rR
 fi
 
 # Force pushes: never to main/master/develop; bare force-pushes refused too.
+# The protected names match only as WHOLE REF WORDS (delimiter-bounded, so
+# `refs/heads/main`, `origin main`, `HEAD:develop` all hit) — never as raw
+# substrings of the command line, which falsely blocked feature branches
+# whose names merely CONTAIN a protected name (fix/flat-master05-…) and
+# pushed sessions into delete-then-push workarounds that defeat the lease
+# safety this guard exists to encourage (#542).
 if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--force-with-lease|[[:space:]]-f([[:space:]]|$)|[[:space:]]\+[[:alnum:]])'; then
-  if printf '%s' "$cmd" | grep -qE '(main|master|develop)'; then
+  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]:/+])(main|master|develop)([[:space:]]|$|["'"'"';&|])'; then
     echo "BLOCKED: force-push touching main/master/develop is forbidden (CLAUDE.md hard rule)." >&2
     exit 2
   fi
