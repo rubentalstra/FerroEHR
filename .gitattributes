@@ -23,8 +23,8 @@ crates/*/src/**/generated/** linguist-generated=true
 crates/openehr-rm/src/model/data.rs linguist-generated=true
 
 # ── Linguist: honest language stats ──────────────────────────────────────────
-# Generated spec crates (ADR-004: emitted from the vendored BMM — the
-# hand-written *_impl.rs siblings are re-included below)
+# Generated spec crates: emitted from the vendored BMM by openehr-codegen. The
+# hand-written *_impl.rs siblings are re-included below.
 crates/openehr-base/src/** linguist-generated=true
 crates/openehr-rm/src/**   linguist-generated=true
 crates/openehr-am/src/**   linguist-generated=true

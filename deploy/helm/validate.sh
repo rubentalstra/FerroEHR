@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Validate the ehrbase-rs Helm chart (E5 task 3):
+# Validate the ehrbase-rs Helm chart:
 #   1. helm lint      — default + all-features value sets (must be clean)
 #   2. helm template  — render both; assert the output is valid multi-doc YAML
-#   3. security gate   — assert the security fields ADR-013 requires are pinned
-#                        in the rendered Deployment (runAsNonRoot,
-#                        readOnlyRootFilesystem, seccompProfile RuntimeDefault,
-#                        drop ALL caps, allowPrivilegeEscalation:false)
+#   3. security gate   — assert the Kubernetes Pod Security Standards
+#                        "Restricted" fields are pinned in the rendered
+#                        Deployment (runAsNonRoot, seccompProfile
+#                        RuntimeDefault, drop ALL caps,
+#                        allowPrivilegeEscalation:false), plus our
+#                        readOnlyRootFilesystem hardening
+#                        https://kubernetes.io/docs/concepts/security/pod-security-standards/
 #   4. golden render   — compare against deploy/helm/golden/ (or --update it)
 #   5. kubeconform     — schema-validate the manifests IF kubeconform is on PATH
 #                        (optional; skipped with a note when absent/offline)
@@ -60,7 +63,7 @@ PY
   fi
 }
 
-# ── Security-field gate: every field ADR-013 mandates must be present ─────────
+# ── Security-field gate: every Restricted-profile field must be present ──────
 assert_security() {
   local file="$1"
   local -a required=(

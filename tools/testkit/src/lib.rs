@@ -235,8 +235,9 @@ async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, Testk
 
     let url = clone_url(server, &name);
     // Many tests share ONE server now: cap each clone's pool well below the
-    // server's `max_connections` (100 by default) and open nothing eagerly —
-    // a single test never needs the production pool sizing.
+    // server's `max_connections` (the container is started with 200 — see the
+    // `with_cmd` below; the PostgreSQL image default is 100) and open nothing
+    // eagerly — a single test never needs the production pool sizing.
     let mut config = DbConfig::new(url.clone());
     config.max_connections = 10;
     config.min_connections = 0;

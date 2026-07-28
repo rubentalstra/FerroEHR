@@ -1,4 +1,4 @@
-//! Subscriber assembly (binding doc §1.3): a reloadable `EnvFilter` + a stdout
+//! Subscriber assembly: a reloadable `EnvFilter` + a stdout
 //! `fmt` layer (json/pretty/auto) + an optional `OTel` export layer.
 //!
 //! `tracing` is the single instrumentation API; this module wires the three

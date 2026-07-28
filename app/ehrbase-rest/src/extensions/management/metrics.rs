@@ -1,5 +1,4 @@
-//! `GET /management/prometheus` and `GET /management/metrics[/{name}]`
-//! (binding doc §2).
+//! `GET /management/prometheus` and `GET /management/metrics[/{name}]`.
 //!
 //! `prometheus` renders the exposition text scraped by Prometheus.
 //! `metrics` gives an actuator-style JSON view (the registry's metric names)

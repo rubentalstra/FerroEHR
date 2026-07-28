@@ -2,7 +2,7 @@
 
 The **authoritative openEHR spec text**, vendored verbatim from the official
 `github.com/openEHR/specifications-*` repos at the pins in `docs/VERSIONS.md`.
-**This is the conformance authority for all work in this repo (ADR-008):**
+**This is the conformance authority for all work in this repo:**
 when implementing or reviewing anything spec-facing, read the relevant section
 *here* — do not rely on memory, EHRbase behaviour, or blog posts. EHRbase is
 prior art; these documents are the oracle.

@@ -1,5 +1,4 @@
-//! `GET/POST/DELETE /management/loggers` — runtime log-filter control
-//! (binding doc §1.3).
+//! `GET/POST/DELETE /management/loggers` — runtime log-filter control.
 //!
 //! The subscriber's `EnvFilter` sits behind a `tracing_subscriber::reload`
 //! layer in the binary. [`LogReload`] is the type-erased handle onto that

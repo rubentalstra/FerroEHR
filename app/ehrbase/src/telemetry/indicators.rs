@@ -1,4 +1,4 @@
-//! Concrete health indicators (binding doc §2): the dependency-touching checks
+//! Concrete health indicators: the dependency-touching checks
 //! (DB pool, migrations, audit sender, event publisher) implementing the
 //! [`HealthIndicator`] trait from [`crate::telemetry::health`]. The binary
 //! constructs them over the live handles and registers them into the

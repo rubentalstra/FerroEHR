@@ -28,7 +28,7 @@ psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_
 echo "ehrbase-rs init: creating role '${APP_USER}' and database '${APP_DB}'"
 
 # 1) Login role (idempotent) — non-superuser by design — plus the three
-#    NOLOGIN group roles of the layered role architecture (ADR-013). The app
+#    NOLOGIN group roles of the layered role architecture. The app
 #    role has no CREATEROLE, so the baseline migration can only grant to these
 #    roles if they already exist; creating them here gives dev/compose the
 #    same grant topology as a hardened deployment (no "roles absent" NOTICEs).
