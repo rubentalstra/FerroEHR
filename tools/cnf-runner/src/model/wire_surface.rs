@@ -20,7 +20,7 @@
 //!   spec-inward (what the spec defines and whether a case reaches it); this
 //!   one runs the other way and is a **declaration, never an obligation** —
 //!   every entry carries `never_gates: true` and NO coverage requirement is
-//!   ever derived from it. It exists so an SDoC reader learns the extension
+//!   ever derived from it. It exists so an `SDoC` reader learns the extension
 //!   surface exists instead of discovering it on the wire.
 //!
 //! Every enumeration source is a RELEASED spec component or the ITS-REST docs
@@ -220,12 +220,12 @@ impl WireElement {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ServedExtension {
-    /// A stable family name (the grouping an SDoC reader sees).
+    /// A stable family name (the grouping an `SDoC` reader sees).
     pub family: String,
     /// The routes the family serves, each `"<METHOD> <path>"`, written as the
     /// server mounts them under the DEFAULT deployment (absolute from the
     /// server root, base path included — the same convention the served
-    /// OpenAPI document uses).
+    /// `OpenAPI` document uses).
     pub routes: Vec<String>,
     /// The configuration that mounts (or answers on) the family, verbatim —
     /// including the always-on case.
