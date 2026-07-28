@@ -210,6 +210,54 @@ and the activity id:
 An interval event additionally carries `|sample_count` (the number of samples
 the interval summarises) alongside its `/width` and `/math_function` fields.
 
+An element that records *why* a value is missing carries `_null_flavour` (and
+optionally `_null_reason`) **instead of** a value — the reference model makes
+the two mutually exclusive — and both directions preserve it:
+
+```json
+{
+  "vital_signs/blood_pressure/any_event:0/systolic/_null_flavour|code": "253",
+  "vital_signs/blood_pressure/any_event:0/systolic/_null_flavour|value": "unknown",
+  "vital_signs/blood_pressure/any_event:0/systolic/_null_flavour|terminology": "openehr",
+  "vital_signs/blood_pressure/any_event:0/systolic/_null_reason": "not asked"
+}
+```
+
+### Who the entry is about: `subject`
+
+Every entry (observation, evaluation, instruction, action, admin entry)
+records a subject. It defaults to the owner of the EHR, and while it stays the
+default it does not appear on the wire at all. When an entry is about someone
+else — a relative, a donor, a fetus — spell it out with the party suffixes:
+
+```json
+{
+  "family_history/family_history/subject|name": "Susan Doe",
+  "family_history/family_history/subject|id": "199",
+  "family_history/family_history/subject|id_scheme": "HOSPITAL-NS",
+  "family_history/family_history/subject|id_namespace": "HOSPITAL-NS",
+  "family_history/family_history/subject/relationship|code": "10",
+  "family_history/family_history/subject/relationship|value": "mother",
+  "family_history/family_history/subject/relationship|terminology": "openehr"
+}
+```
+
+A `/relationship` sub-path makes the subject a *related party*; additional
+identifiers ride the `/_identifier:n` family; `|_type: "PARTY_SELF"` marks a
+subject that is the EHR owner yet still carries an external reference.
+
+### Context fields: `ctx/` shortcut or full path
+
+The composition's event context is normally set through the `ctx/` shortcuts
+(`ctx/time`, `ctx/setting`, `ctx/language`, …). The equivalent full paths are
+accepted on input too, and take precedence over the shortcut defaults:
+`…/context/start_time`, `…/context/setting`, and an entry's `…/language` and
+`…/encoding`. A bare `…/context/setting|code` is resolved against the openEHR
+*setting* value set, exactly as `ctx/setting` is. Output always uses the
+`ctx/` form for these, so a round trip through FLAT is stable. A path the
+Simplified Formats specification does not define is rejected with an error —
+never silently dropped.
+
 ### Embedding canonical JSON with `|raw`
 
 When one node needs full fidelity inside an otherwise-FLAT commit, write the

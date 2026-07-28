@@ -109,7 +109,18 @@ pub(super) fn build_object_ref(node: &SimNode) -> Option<Value> {
 /// PARTY_PROXY (`PARTY_SELF`/`PARTY_IDENTIFIED`/`PARTY_RELATED`) → inlined
 /// `|name`/`|id`/`|id_scheme`/`|id_namespace` attrs on `out`, plus `_identifier:i`
 /// (PARTY_IDENTIFIED) and a `/relationship` DV_CODED_TEXT child (PARTY_RELATED).
+///
+/// The three subtype tables (master05 §§PARTY_SELF, PARTY_IDENTIFIED,
+/// PARTY_RELATED) share the `|id`/`|id_scheme`/`|id_namespace` rows, so the
+/// concrete subtype is carried by two discriminators: a `/relationship` child
+/// means PARTY_RELATED (master05 §PARTY_RELATED), and `|_type` marks a
+/// PARTY_SELF (master05 §FEEDER_AUDIT_DETAILS, `/subject` row Note: "add
+/// /subject|_type: PARTY_SELF"). Without the marker a PARTY_SELF would rebuild
+/// as a PARTY_IDENTIFIED, so it is emitted whenever the value is one.
 pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
+    if p.get("_type").and_then(Value::as_str) == Some("PARTY_SELF") {
+        out.attrs.insert("_type".to_owned(), json!("PARTY_SELF"));
+    }
     if let Some(name) = p.get("name").filter(|v| !v.is_null()) {
         out.attrs.insert("name".to_owned(), name.clone());
     }
