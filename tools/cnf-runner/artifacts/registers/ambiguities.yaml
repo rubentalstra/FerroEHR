@@ -5696,3 +5696,66 @@ AMB-161:
     resolution. Revisits if a future SM release models the System API, at which
     point the anchor becomes a real SM operation and the pinned row goes.
   disposition: fixed_handling
+
+AMB-165:
+  ambiguity: >-
+    The released sources DECLARE `application/xml` as an admissible request
+    representation for the CONTRIBUTION commit and WITHHOLD its shape. The
+    commit envelope is not the RM CONTRIBUTION: it carries each new version's
+    DATA inline (plus its lifecycle_state / preceding_version_uid /
+    commit_audit), whereas the only XML shape rule the release states for a
+    request payload is conformance to the published XSDs — and the published
+    ITS-XML `CONTRIBUTION` complexType cannot express that envelope. So a
+    canonical-XML CONTRIBUTION commit is declared possible and left
+    undefinable, and no conformance case can drive it without inventing the
+    document.
+  source: >-
+    THREE-WAY CHECK, both sources read first-hand. (1) DOCS TEXT — the only
+    sentence governing an XML request payload is ITS-REST
+    docs/overview/Resources.md §"XML Format": "When resources are serialized in
+    **canonical XML** format, both request payloads and responses MUST conform
+    to the [published XSDs]". The EHR API chapter adds nothing:
+    docs/ehr/Description.md is a 25-line stub (Purpose, Related Documents,
+    Status) with no occurrence of CONTRIBUTION at all. (2) THE PUBLISHED XSD —
+    ITS-XML RM Common.xsd types the resource as `<xs:complexType
+    name="CONTRIBUTION"><xs:sequence><xs:element name="uid"
+    type="HIER_OBJECT_ID"/><xs:element name="versions" type="OBJECT_REF"
+    maxOccurs="unbounded"/><xs:element name="audit"
+    type="AUDIT_DETAILS"/></xs:sequence></xs:complexType>`: `versions` are
+    REFERENCES to versions that already exist and `uid` is mandatory, so the
+    type describes a COMMITTED contribution, never a commit request; the schema
+    declares no global element for it either (the globally declared document
+    elements are `composition`, `version`, `extract`, `extract_request`,
+    `versioned_object`, `items`). (3) THE RELEASED OAS, citable only because
+    the docs text is silent on the envelope (owner ruling 2026-07-28) —
+    ITS-REST specifications/operations/contribution_create.yaml DECLARES the
+    media type twice: it references parameters/header/ContentType_LOCATABLE.yaml,
+    whose `enum` contains `application/xml`, and its own description says the
+    Simplified MIME types "MAY be set to one of the Simplified Formats MIME
+    types … in addition to the canonical `application/json` /
+    `application/xml`". Yet its `requestBody.content` has exactly ONE entry,
+    `application/json`, bound to schemas/ehr/NewContribution.yaml (uid,
+    versions[] of UpdateVersion, audit of UpdateAudit) — shapes with no XSD
+    counterpart, and the OAS supplies no XML schema, example or XSD reference
+    for the envelope. Declaration without definition, on both sides.
+  handling: >-
+    Report-only, and deliberately UNEXERCISED rather than invented. The
+    canonical-xml format stays DECLARED on the
+    I_EHR_CONTRIBUTION.commit_contribution binding (a service that accepts an
+    XML envelope is not thereby non-conformant, and the declaration is what
+    lets the classifier recognise the exchange) and stays recorded as a cited
+    exception in vocab/wire_surface.yaml — the same disposition AMB-140 and
+    AMB-159 apply to a branch whose trigger the release withholds. Authoring a
+    fixture would mean choosing a root element name, a versions-with-inline-data
+    element shape and an UPDATE_AUDIT rendering that NO released source states,
+    i.e. writing specification rather than testing it. The READ side is not
+    affected and is exercised: the retrieved CONTRIBUTION
+    (responses/200_CONTRIBUTION.yaml -> schemas/common/Contribution.yaml) is
+    exactly the XSD complexType — uid, versions as OBJECT_REF, audit — so
+    I_EHR_CONTRIBUTION.get_contribution-xml and
+    I_EHR_CONTRIBUTION.has_contribution-xml gate the canonical-XML CONTRIBUTION
+    representation. Closes when a release publishes an XML representation of the
+    commit envelope (or withdraws `application/xml` from the operation's
+    Content-Type enum). Reported upstream (UPR-125).
+  disposition: report_only
+  upstream_ref: "UPR-125"

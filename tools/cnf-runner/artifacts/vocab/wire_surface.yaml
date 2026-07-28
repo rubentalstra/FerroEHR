@@ -466,10 +466,10 @@ branches:
     format: wt-structured
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes its distinctive branch"
-  - binding: I_DEMOGRAPHIC_SERVICE.create_party
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_DEMOGRAPHIC_SERVICE.create_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  # RETIRED coverage_gap: the canonical-xml representation of
+  # I_DEMOGRAPHIC_SERVICE.create_party is now exercised by
+  # I_DEMOGRAPHIC_SERVICE.create_party-xml (a PERSON committed as a canonical-XML
+  # request payload, read back and compared against its canonical-JSON twin).
   - binding: I_EHR_COMPOSITION.create_composition
     variant: deprecated_media_type
     format: wt-structured
@@ -480,75 +480,41 @@ branches:
     format: wt-structured
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes its distinctive branch"
-  - binding: I_EHR_COMPOSITION.create_composition
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.create_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_at_time
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_at_time
-    format: wt-flat
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_at_time
-    format: wt-structured
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_at_version
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_latest
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_latest
-    format: wt-flat
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.get_composition_latest
-    format: wt-structured
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
   - binding: I_EHR_COMPOSITION.get_versioned_composition
     variant: version
     format: canonical-xml
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_EHR_COMPOSITION.get_versioned_composition binding; this variant scopes its distinctive branch"
-  - binding: I_EHR_COMPOSITION.get_versioned_composition
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_versioned_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.has_composition
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.has_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.update_composition
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.update_composition
-    format: wt-flat
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
-  - binding: I_EHR_COMPOSITION.update_composition
-    format: wt-structured
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
+  # RETIRED coverage_gaps (#288 slice 3): every COMPOSITION format branch now
+  # has its own isolated case, so the exceptions are gone rather than reworded
+  # (coverage only ratchets up). canonical-xml on create_composition /
+  # get_composition_at_time / get_composition_at_version /
+  # get_composition_latest / get_versioned_composition / has_composition /
+  # update_composition is exercised by the matching `-xml` case; wt-flat and
+  # wt-structured on get_composition_at_time / get_composition_latest by the
+  # matching `-simplified_forms` case (two steps, one per form, with the
+  # master04 §"Conversion Between Formats" value equality between them); and
+  # wt-flat / wt-structured on update_composition by
+  # I_EHR_COMPOSITION.update_composition-flat / -structured, whose PUTs carry
+  # the `openehr-template-id` the docs text makes a MUST for a Simplified-Format
+  # commit "via `PUT` or `POST` methods" (overview Requests_and_responses.md
+  # §openehr-template-id) — the header the update binding now declares.
+  #
+  # The CONTRIBUTION READ branches retire with them: canonical-xml on
+  # get_contribution and has_contribution is exercised by
+  # I_EHR_CONTRIBUTION.get_contribution-xml / -has_contribution-xml. Only the
+  # COMMIT side stays an exception, immediately below.
   - binding: I_EHR_CONTRIBUTION.commit_contribution
     format: canonical-xml
     reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.commit_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_CONTRIBUTION.get_contribution
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.get_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_CONTRIBUTION.has_contribution
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.has_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+    source: "The released sources DECLARE the media type for this operation and WITHHOLD the shape of the document it would carry, so no conformance case can drive it without inventing one. DOCS TEXT — the only sentence governing an XML request payload is Resources.md §\"XML Format\": \"When resources are serialized in **canonical XML** format, both request payloads and responses MUST conform to the [published XSDs]\"; the EHR API chapter adds nothing (docs/ehr/Description.md is a 25-line stub — Purpose, Related Documents, Status — with no occurrence of CONTRIBUTION). PUBLISHED XSD — ITS-XML RM Common.xsd types the resource `<xs:complexType name=\"CONTRIBUTION\"><xs:sequence><xs:element name=\"uid\" type=\"HIER_OBJECT_ID\"/><xs:element name=\"versions\" type=\"OBJECT_REF\" maxOccurs=\"unbounded\"/><xs:element name=\"audit\" type=\"AUDIT_DETAILS\"/></xs:sequence></xs:complexType>`: `versions` are REFERENCES and `uid` is mandatory, so the type describes a COMMITTED contribution, never the commit envelope, which must carry each new version's DATA inline; no global element is declared for it either. RELEASED OAS (citable only because the docs text is silent on the envelope — owner ruling 2026-07-28) — operations/contribution_create.yaml DECLARES the type twice, via parameters/header/ContentType_LOCATABLE.yaml (whose `enum` contains `application/xml`) and its own description (\"in addition to the canonical `application/json` / `application/xml`\"), yet its `requestBody.content` has exactly ONE entry, `application/json`, bound to schemas/ehr/NewContribution.yaml, whose UpdateVersion/UpdateAudit shapes have no XSD counterpart and no XML schema, example or XSD reference anywhere in the release. Register AMB-165"
+    note: "A case would have to invent the root element, the versions-with-inline-data shape and the UPDATE_AUDIT rendering the release withholds — writing specification rather than testing it (the AMB-140 / AMB-159 pattern for a declared branch whose shape or trigger the release withholds). The READ side is unaffected and IS exercised: the retrieved CONTRIBUTION (responses/200_CONTRIBUTION.yaml -> schemas/common/Contribution.yaml) is exactly the XSD complexType, so I_EHR_CONTRIBUTION.get_contribution-xml and -has_contribution-xml gate the canonical-XML CONTRIBUTION representation. Closes when a release publishes an XML representation of the commit envelope, or withdraws application/xml from the operation's Content-Type enum (UPR-125)."
+  # RETIRED coverage_gaps (2026-07-28, slice 3b) — the canonical-xml branch
+  # of the two CONTRIBUTION reads is now exercised
+  # (I_EHR_CONTRIBUTION.get_contribution-xml, -has_contribution-xml), so
+  # those two exceptions are gone; the commit_contribution row above stays,
+  # adjudicated (AMB-165/UPR-125): both released sources declare the media
+  # type and withhold the envelope shape.
   # RETIRED coverage_gaps (2026-07-28) — the canonical-xml branch of the whole
   # EHR_DIRECTORY surface and of the EHR-service surface is now exercised, so
   # the fourteen exceptions are gone rather than reworded (coverage only
@@ -590,22 +556,16 @@ branches:
     format: canonical-xml
     reason: coverage_gap
     source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.set_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_PARTY.get_party
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_PARTY.get_party_at_time
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_PARTY.get_party_at_version
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_PARTY.update_party
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.update_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  # RETIRED coverage_gaps (#288 slice 3): the canonical-xml representation of
+  # every PARTY binding is now exercised by its own isolated case —
+  # I_DEMOGRAPHIC_SERVICE.get_party-xml / -get_party_at_time-xml /
+  # -get_party_at_version-xml on the read side (each asserting the negotiated
+  # `Content-Type: application/xml` the docs text makes a MUST, and an XML
+  # document entity as the body floor: the published ITS-XML schema declares the
+  # PERSON complexType but no global element for it, so the release assigns no
+  # document root name), and I_DEMOGRAPHIC_SERVICE.update_party-xml on the write
+  # side (an XML request payload read back and compared against its
+  # canonical-JSON twin).
 
 # Axis 3 — cross-cutting wire-surface behaviours (populated below).
 elements:
