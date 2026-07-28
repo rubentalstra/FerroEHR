@@ -1624,9 +1624,15 @@ elements:
   - id: admin-bulk-delete-subset-form
     description: "The subset selector is accepted in the released RFC 6570 exploded form — a repeated `?ehr_id=a&ehr_id=b` — as well as in a single comma-joined value, and every named id is deleted rather than only the first."
     source: "ITS-REST specifications/admin.openapi.yaml (the path template `/admin/ehr/all{?ehr_id*}` — the only RFC 6570 query expansion in the whole released API) + parameters/query/ehr_id_Admin.yaml (`style: form`, `explode: true`, with a `multiple` example listing two identifiers) vs specifications/operations/admin_ehr_delete_all.yaml, whose prose fixes only that a subset is \"identified using the `ehr_id` query parameter\" and no serialization form at all"
-    exception:
-      reason: coverage_gap
-      note: "Server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/admin_http.rs `enabled_delete_all_repeated_param_reaches_backend_with_both_ids` for the repeated form and `enabled_delete_all_is_204_bodyless` for the comma form — both assert BOTH ids are gone, not merely a 204). Not authorable as a runner case: the binding request model's `request.query` is a name→single-value map (tools/cnf-runner/src/exec/driver.rs `build_url`), so a repeated parameter cannot be expressed at all, and a comma-joined value would assert a serialization the released prose never fixes. What IS authorable and IS gated is the LAW the prose does fix — a selector deletes exactly what it names — exercised with a one-member subset by I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset. Closes when the binding query model gains a repeated-parameter form (extension only by schedule release) — the same closed-model precedent as method-405-allow-header."
+    covered_by:
+      # The repeated form itself, two ids, both deleted (the exploded
+      # expansion the released path template `{?ehr_id*}` asks for). The
+      # binding query model gained the repeated form in the 2026-07-28
+      # schedule release (#539), retiring the former coverage_gap exception.
+      - I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset_repeated
+      # The law the prose fixes — a selector deletes exactly what it names —
+      # at the smallest arity.
+      - I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset
   - id: admin-bulk-delete-malformed-id-rejection
     description: "A bulk delete whose ehr_id selector carries a value that is not a well-formed identifier is refused as a client error, and the refusal happens BEFORE any deletion runs, so a typo in one id cannot silently destroy the well-formed ones in the same call."
     source: "ITS-REST docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content)\") and the clause below the table (\"Status code `400` indicates normally a bad request, as well as a generic client-side error, used when no other `4xx` error code is appropriate\") + parameters/query/ehr_id_Admin.yaml (the selector is an EHR identifier) + SM UML/classes/i_admin_service.adoc §physical_ehr_delete (`an_ehr_id: UUID [1]`); the ORDERING — validate the whole list, then act — has no released sentence at all and is adjudicated in register AMB-140"

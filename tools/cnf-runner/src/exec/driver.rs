@@ -212,38 +212,67 @@ impl<'a> HttpDriver<'a> {
         let mut url = format!("{base}{path}");
         if let Some(query) = &request.query {
             let mut params: Vec<(String, String)> = Vec::new();
-            for (name, template) in query {
-                match assertions::render_template(template, vars) {
-                    Ok(value) => params.push((name.clone(), value)),
-                    // An optional ref that is genuinely unbound omits the
-                    // parameter — but a name the step's `with:` DOES carry
-                    // (just not as a renderable scalar) is a case-authoring
-                    // or promotion defect and must be loud, never a silent
-                    // drop (the group-9 triage: a dropped bound parameter
-                    // masqueraded as a SUT failure).
-                    Err(e) if template_is_optional(template) => {
-                        if let Some(referenced) = template_ref_name(template)
-                            && with.contains_key(referenced)
-                        {
-                            return Err(format!(
-                                "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
-                            ));
+            for (name, value) in query {
+                for template in value.templates() {
+                    // A member bound to a LIST capture expands element-wise:
+                    // the repeated form's whole point is one pair per value
+                    // (RFC 6570 `{?p*}`). Only a repeated declaration may
+                    // expand — a single-valued parameter stays single.
+                    if value.is_repeated()
+                        && let Some(items) = list_capture_items(template, vars)
+                    {
+                        for item in items {
+                            params.push((name.clone(), item));
                         }
+                        continue;
                     }
-                    Err(e) => return Err(format!("query {name}: {e}")),
+                    match assertions::render_template(template, vars) {
+                        Ok(rendered) => params.push((name.clone(), rendered)),
+                        // An optional ref that is genuinely unbound omits the
+                        // parameter — but a name the step's `with:` DOES carry
+                        // (just not as a renderable scalar) is a case-authoring
+                        // or promotion defect and must be loud, never a silent
+                        // drop (the group-9 triage: a dropped bound parameter
+                        // masqueraded as a SUT failure).
+                        Err(e) if template_is_optional(template) => {
+                            if let Some(referenced) = template_ref_name(template)
+                                && with.contains_key(referenced)
+                            {
+                                return Err(format!(
+                                    "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
+                                ));
+                            }
+                        }
+                        Err(e) => return Err(format!("query {name}: {e}")),
+                    }
                 }
             }
             // `with` keys that match query names override/backfill
-            for (name, _) in query {
+            for (name, declared) in query {
                 if let Some(v) = with.get(name)
                     && !params.iter().any(|(n, _)| n == name)
                     && !v.is_null()
                 {
-                    let text = match v {
-                        Value::String(s) => s.clone(),
-                        other => other.to_string(),
-                    };
-                    params.push((name.clone(), text));
+                    match v {
+                        Value::String(s) => params.push((name.clone(), s.clone())),
+                        // A backfilled ARRAY is the repeated form and only
+                        // that: JSON-encoding it into one pair would send
+                        // `?p=%5B%22a%22%5D`, a value no released parameter
+                        // grammar defines.
+                        Value::Array(items) if declared.is_repeated() => {
+                            for item in items {
+                                params.push((name.clone(), scalar_text(item)?));
+                            }
+                        }
+                        Value::Array(_) | Value::Object(_) => {
+                            return Err(format!(
+                                "query {name}: the step's `with:` binds a {} where the binding \
+                                 declares a single-valued parameter",
+                                json_shape(v)
+                            ));
+                        }
+                        other => params.push((name.clone(), other.to_string())),
+                    }
                 }
             }
             if !params.is_empty() {
@@ -799,6 +828,30 @@ fn template_is_optional(template: &Template) -> bool {
     template
         .as_single_ref()
         .is_some_and(|r| matches!(r, ValueRef::Capture { optional: true, .. }))
+}
+
+/// The items of a template that is exactly one capture reference bound to a
+/// LIST capture — the expansion source of a repeated query parameter.
+fn list_capture_items(template: &Template, vars: &VarStore) -> Option<Vec<String>> {
+    let ValueRef::Capture { name, .. } = template.as_single_ref()? else {
+        return None;
+    };
+    match vars.get(name) {
+        Some(Captured::List(items)) => Some(items.clone()),
+        _ => None,
+    }
+}
+
+/// One query-parameter value's wire text. Only scalars have one.
+fn scalar_text(value: &Value) -> Result<String, String> {
+    match value {
+        Value::String(s) => Ok(s.clone()),
+        Value::Number(_) | Value::Bool(_) => Ok(value.to_string()),
+        other => Err(format!(
+            "a query parameter value is a scalar, not a {}",
+            json_shape(other)
+        )),
+    }
 }
 
 /// The capture name an optional single-ref template references (`${name?}`
@@ -2201,6 +2254,98 @@ mod tests {
         let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
         let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
         assert!(err.contains("did not render as a scalar"), "{err}");
+    }
+
+    /// The RFC 6570 exploded form (`?p=a&p=b`): a binding declares the
+    /// parameter as a SEQUENCE of templates, each member contributes its own
+    /// pair, and an unbound optional member is simply absent — so one
+    /// declaration serves the whole-set, one-id and two-id calls of the admin
+    /// bulk delete.
+    #[test]
+    fn repeated_query_parameters_render_one_pair_per_member() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_ADMIN_SERVICE.physical_ehr_delete",
+            "its": "its-rest",
+            "variant": "delete_all",
+            "request": {
+                "method": "DELETE",
+                "path": "/admin/ehr/all",
+                "query": { "ehr_id": ["${ehr_id_subset?}", "${ehr_id_subset_2?}"] }
+            },
+            "outcomes": { "ok_empty": { "status": 204 } }
+        }))
+        .unwrap();
+
+        // Neither member bound: no query at all (the whole-set call).
+        let empty = BTreeMap::new();
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &empty);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap(),
+            "http://sut/admin/ehr/all"
+        );
+
+        // One member bound: the one-id subset.
+        let mut with = BTreeMap::new();
+        with.insert("ehr_id_subset".to_owned(), serde_json::json!("a"));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a"
+        );
+
+        // Both bound: the repeated form, in authored member order.
+        with.insert("ehr_id_subset_2".to_owned(), serde_json::json!("b"));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a&ehr_id=b"
+        );
+
+        // A member bound to a LIST capture expands element-wise, so the
+        // declaration is not capped at its authored arity.
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("ehr_id_subset").unwrap(),
+            Captured::List(vec!["a".to_owned(), "b".to_owned(), "c".to_owned()]),
+        );
+        assert_eq!(
+            HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap(),
+            "http://sut/admin/ehr/all?ehr_id=a&ehr_id=b&ehr_id=c"
+        );
+    }
+
+    /// A single-valued declaration never becomes repeated by accident: a list
+    /// bound under its name is a loud authoring error, never a silently
+    /// JSON-encoded `?p=%5B%22a%22%5D`.
+    #[test]
+    fn a_single_valued_query_parameter_refuses_a_list() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_ADMIN_SERVICE.physical_ehr_delete",
+            "its": "its-rest",
+            "request": {
+                "method": "DELETE",
+                "path": "/admin/ehr/all",
+                "query": { "ehr_id": "${ehr_id_subset?}" }
+            },
+            "outcomes": { "ok_empty": { "status": 204 } }
+        }))
+        .unwrap();
+        let mut with = BTreeMap::new();
+        with.insert("ehr_id".to_owned(), serde_json::json!(["a", "b"]));
+        let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
+        let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
+        assert!(err.contains("single-valued parameter"), "{err}");
+
+        // …and a list capture never EXPANDS a single-valued declaration:
+        // repeatability is the binding's decision, not the case's.
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("ehr_id_subset").unwrap(),
+            Captured::List(vec!["a".to_owned(), "b".to_owned()]),
+        );
+        let empty = BTreeMap::new();
+        let url = HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap();
+        assert!(!url.contains("ehr_id=a&ehr_id=b"), "{url}");
     }
 
     /// A `Patched` binding whose captured base body is NOT a JSON object

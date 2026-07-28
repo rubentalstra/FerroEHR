@@ -106,7 +106,19 @@
         "query": {
           "type": "object",
           "additionalProperties": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                },
+                "description": "The repeated (RFC 6570 exploded, {?p*}) form: one name=value pair per member, unbound optional members absent"
+              }
+            ]
           }
         },
         "body": {
