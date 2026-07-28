@@ -107,9 +107,14 @@ sm_operations:
   - operation: I_EHR_STATUS.has_ehr_status_version
     reason: off_wire
     source: "SM i_ehr_status.adoc vs released ITS-REST 1.1.0 — no has-version wire on versioned_ehr_status (version existence is GET 200/404)"
-  - operation: I_EHR_STATUS.update_other_details
-    reason: coverage_gap
-    source: "SM i_ehr_status.adoc + released ITS-REST 1.1.0 PUT /ehr/{ehr_id}/ehr_status — EHR_STATUS.other_details is updated by the whole-status PUT; on the wire, not yet exercised (NEW-CASE candidate)"
+  # I_EHR_STATUS.update_other_details no longer appears here: it now carries its
+  # own realized its-rest binding (the whole-status PUT with the ITEM_TREE
+  # payload, the same read-modify-write realization its four
+  # is_queryable/is_modifiable siblings use) and the case
+  # I_EHR_STATUS.update_other_details-round_trip, so the operation is COVERED
+  # rather than excepted. The gate treats an sm_operations exception for an
+  # operation that has a binding as redundant, so the row is gone rather than
+  # reworded.
   - operation: I_PARTY.has_party
     reason: variant_of
     source: "SM i_party.adoc + released ITS-REST 1.1.0 demographic API — PARTY existence via GET 200/404"
@@ -229,10 +234,10 @@ branches:
     outcome: not_found
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL14.get_opt binding; this variant scopes only its distinctive negotiation/rejection branch"
-  - binding: I_DEFINITION_ADL14.get_opt
-    outcome: not_acceptable
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_acceptable branch of I_DEFINITION_ADL14.get_opt is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gap: the variant-less get_opt not_acceptable branch is now
+  # exercised by I_DEFINITION_ADL14.get_opt-flat_not_acceptable (an OPT read
+  # asking for application/openehr.wt.flat+json, a COMPOSITION data format the
+  # template resource has no representation in).
   - binding: I_DEFINITION_ADL2.get_artefact
     variant: example
     outcome: not_acceptable
@@ -300,26 +305,31 @@ branches:
     source: "released ITS-REST 1.1.0 — the conflict branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
   - binding: I_EHR_COMPOSITION.create_composition
     outcome: missing_template_id
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the missing_template_id branch of I_EHR_COMPOSITION.create_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §openehr-template-id — the ONLY released requirement this branch can breach is that section's MUST, and it is scoped to a Simplified Format: the header \"MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified Format which does not support TEMPLATE_ID value under an equivalent `LOCATABLE.archetype_details.template_id` attribute of contained data\". The variant-less binding declares `openehr-template-id: required` on BOTH simplified formats, so it always sends the header and cannot breach it; the breach is exercised on the no_template_id variant binding (SF-FLAT-missing_template_id). On the CANONICAL seam there is no branch to reach at all — no released sentence requires a canonical COMPOSITION to carry archetype_details.template_id (RM common master03 §ARCHETYPED types it 0..1), so a template-less canonical commit is not a missing_template_id case"
+    note: "RE-ADJUDICATED 2026-07-28 (was coverage_gap, a NEW-CASE candidate). The branch is realized via I_EHR_COMPOSITION.create_composition#no_template_id, exactly as I_EHR_COMPOSITION.update_composition's precondition_missing is realized via its no_if_match variant: the variant-less binding always supplies the header the branch requires to be absent."
   - binding: I_EHR_COMPOSITION.update_composition
     outcome: precondition_missing
     reason: variant_of
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_COMPOSITION.update_composition-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
-  - binding: I_EHR_COMPOSITION.update_composition
-    outcome: version_not_found
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gap: the update_composition version_not_found branch is now
+  # exercised by I_EHR_COMPOSITION.update_composition-unknown_preceding_version
+  # (an If-Match naming version 99 of the container the URL really addresses —
+  # a condition that evaluates false, so the §If-Match MUST 412 applies and the
+  # 404 family stays with the unknown PATH id of -non_existent).
   # RETIRED coverage_gap: the commit route's not_found branch is now exercised
   # by I_EHR_CONTRIBUTION.commit_contribution-non_existing_ehr, so the
   # exception is gone rather than reworded (coverage only ratchets up). The
   # new precondition_failed and the get_contribution validation_failed branches
   # are exercised by -stale_preceding_version and
   # -malformed_contribution_uid respectively, so neither needs an entry.
-  - binding: I_EHR_DIRECTORY.create_directory
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_DIRECTORY.create_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gap: the create_directory validation_failed branch is now
+  # exercised by I_EHR_DIRECTORY.create_directory-invalid_folder (a FOLDER with
+  # the 1..1 LOCATABLE.name removed). Its declared status was corrected from
+  # 400 to 422 in the same change — the 400 rested only on the stalled OAS
+  # `400.yaml`, while the released §HTTP status codes 422 row describes a
+  # well-formed body with semantic errors and the whole rest of the catalogue
+  # already maps the identical defect class that way.
   # RETIRED coverage_gaps: the directory precondition family is now exercised.
   # delete_directory / update_directory `precondition_failed` are gated by
   # I_EHR_DIRECTORY.{delete,update}_directory-stale_if_match, and
@@ -346,42 +356,15 @@ branches:
     outcome: validation_failed
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding (I_EHR_SERVICE.create_ehr-invalid_status); the client-supplied id changes the addressing, not the EHR_STATUS validation this branch reports"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gaps: the precondition family
+  # ({precondition_failed, precondition_missing, validation_failed} x
+  # {set_ehr_modifiable, clear_ehr_modifiable, clear_ehr_queryable}) is now
+  # exercised by the -stale_if_match / -missing_if_match / -invalid_body trio
+  # authored for each of the three remaining SM setters, mirroring the
+  # set_ehr_queryable trio. Coverage only ratchets up, so the nine exceptions
+  # are gone rather than reworded. The two `no_if_match` / `invalid_body`
+  # VARIANT bindings each setter needed came with them; their own branches are
+  # each exercised by exactly the case that drives them.
   # The precondition_failed branch of I_EHR_STATUS.set_ehr_queryable is now
   # EXERCISED on the variant-less binding by
   # I_EHR_STATUS.set_ehr_queryable-stale_if_match, so its exception is retired.
@@ -394,6 +377,35 @@ branches:
     outcome: validation_failed
     reason: variant_of
     source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.set_ehr_queryable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  # The same two-row scoping for each of the three sibling setters (group-17
+  # follow-up, #288 slice 1): their variant-less bindings share the identical
+  # read-modify-write realization, so the same two branches are reachable only
+  # on the no_if_match / invalid_body variant bindings their new case trios
+  # drive.
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.set_ehr_modifiable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.set_ehr_modifiable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.clear_ehr_modifiable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: precondition_missing
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the no_if_match variant binding (I_EHR_STATUS.clear_ehr_queryable-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: validation_failed
+    reason: variant_of
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (row 422, \"well-formed but was unable to be followed due to semantic errors\") — the invalid-payload branch is exercised on the invalid_body variant binding (I_EHR_STATUS.clear_ehr_queryable-invalid_body); the variant-less realization builds its body by read-modify-write from a status the server itself served, so it cannot reach this branch"
   # RETIRED coverage_gaps (group-12, 2026-07-27) — each branch now has its own
   # isolated case, so the exception is gone rather than reworded (coverage only
   # ratchets up): I_PARTY.delete_party already_deleted
@@ -406,18 +418,27 @@ branches:
     outcome: precondition_missing
     reason: variant_of
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (\"When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`\") — the branch is exercised on the missing_if_match variant binding (I_DEMOGRAPHIC_SERVICE.update_party-missing_if_match); the variant-less realization always sends the header, so it cannot reach this branch"
-  - binding: I_PARTY.update_party
-    outcome: version_not_found
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_PARTY.update_party is declared by the binding but not yet exercised. NOT closable as authored (group-12, 2026-07-27): the only way to name a non-existent preceding version on this route is through `If-Match`, and §\"If-Match and accidental overwrites\" assigns that exchange 412 ('If a service receives this header, and the condition evaluates to `false` … it MUST respond with HTTP status code `412 Precondition Failed`'), which -weak_etag_stale already exercises. A case reaching this branch would have to assert a 404 no released sentence assigns to an If-Match miss (NEW-CASE candidate only if a future release distinguishes the two)"
+  # RETIRED coverage_gap: the I_PARTY.update_party version_not_found branch is
+  # now exercised by I_DEMOGRAPHIC_SERVICE.update_party-unknown_preceding_version.
+  # The group-12 finding recorded here — that no released sentence assigns 404 to
+  # an If-Match miss, while §"If-Match and accidental overwrites" assigns it 412 —
+  # was RIGHT, and the entry was closed by ACTING on it rather than by inventing
+  # a case: the binding's declared status was corrected 404 -> 412 (its only
+  # ground was the stalled OAS person_update.yaml), matching the identical
+  # adjudication I_EHR_COMPOSITION.update_composition already carried, and the
+  # case now names the version_tree_id the ADDRESSED container never issued —
+  # distinct from -weak_etag_stale, which offers a FOREIGN container's uid, and
+  # from -unknown_container, whose PATH id does not resolve at all.
   - binding: I_QUERY_SERVICE.execute_ad_hoc_query
     outcome: timeout
     reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the timeout branch of I_QUERY_SERVICE.execute_ad_hoc_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_QUERY_SERVICE.execute_stored_query
-    outcome: invalid_query
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the invalid_query branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    source: "The released text DECLARES the branch and withholds every trigger for it, so no conformance case can reach it deterministically. Declaration: ITS-REST Requests_and_responses.md §HTTP status codes, row 408 — 'Request maximum execution time is reached, therefore the server aborted the request'. Withheld trigger, CONFIRMED first-hand across the whole released query surface: docs/query/{Request,Response,Query_types,Qualified_query_name}.md contain no occurrence of 408, 'timeout' or any execution-time concept (grep-verified), and §'Common Headers and Query Parameters' enumerates the entire client-settable request surface — 'ehr_id', 'offset', 'fetch', 'query_parameters' and the 'openehr-ehr-id' header — none of which bounds execution time. 'Maximum execution time' is therefore a purely server-side deployment property no client input can drive. Register AMB-159"
+    note: "A case would have to invent the trigger the released text withholds, or reach for SUT fault injection, which is not a wire behaviour — the honest position is the register entry plus this citation (the AMB-140 / I_ADMIN_SERVICE.physical_ehr_delete#delete_all pattern). Closes when a release supplies a client-drivable execution bound (UPR-121)."
+  # RETIRED coverage_gap: the stored-execution invalid_query branch is now
+  # exercised by I_QUERY_SERVICE.execute_stored_query-fetch_with_top — a stored
+  # definition carrying an AQL TOP invoked with the URL `fetch` paging
+  # parameter, the combination docs/query/Request.md §"Common Headers and Query
+  # Parameters" forbids outright ("`fetch` … cannot be combined with AQL-top").
   # RETIRED coverage_gap: the stored-execution not_found branch is now exercised
   # — I_QUERY_SERVICE.execute_stored_query-reserved_name on the variant-less
   # binding, and -version_unknown_major / -version_malformed_selector on the
@@ -426,7 +447,8 @@ branches:
   - binding: I_QUERY_SERVICE.execute_stored_query
     outcome: timeout
     reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the timeout branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+    source: "The released text DECLARES the branch and withholds every trigger for it, so no conformance case can reach it deterministically — the same adjudication as the ad-hoc route above, on the same evidence. Declaration: ITS-REST Requests_and_responses.md §HTTP status codes, row 408 — 'Request maximum execution time is reached, therefore the server aborted the request'. Withheld trigger, CONFIRMED first-hand: no occurrence of 408, 'timeout' or any execution-time concept anywhere in docs/query/ (grep-verified), and §'Common Headers and Query Parameters' enumerates the whole client-settable surface without an execution bound. The stored route adds nothing that would supply one: docs/query/Qualified_query_name.md governs only name and version selection. Register AMB-159"
+    note: "A case would have to invent the trigger the released text withholds, or reach for SUT fault injection, which is not a wire behaviour — the honest position is the register entry plus this citation (the AMB-140 / I_ADMIN_SERVICE.physical_ehr_delete#delete_all pattern). Closes when a release supplies a client-drivable execution bound (UPR-121)."
   - binding: I_DEFINITION_ADL2.get_artefact
     variant: example
     format: canonical-xml

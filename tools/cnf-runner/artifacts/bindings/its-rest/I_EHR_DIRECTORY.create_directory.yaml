@@ -32,7 +32,22 @@ outcomes:
       Content-Type: negotiated
     body: prefer_conditional
   validation_failed:
-    status: 400                           # 400.yaml (invalid FOLDER)
+    # An RM-invalid FOLDER is well-formed JSON that breaks an RM rule, so the
+    # SEMANTIC row of the released status table describes it and the syntactic
+    # one does not — ITS-REST overview Requests_and_responses.md §HTTP status
+    # codes: "422 | Unprocessable Entity | The request was well-formed but was
+    # unable to be followed due to semantic errors" versus "400 | Bad Request |
+    # … (e.g., malformed request syntax, syntactically invalid content)".
+    # CORRECTED 2026-07-28: this branch read 400, sourced only from the OAS
+    # `400.yaml`, which is stalled and never a wire oracle (owner ruling
+    # 2026-07-24). The identical defect class already maps to 422 everywhere
+    # else in the catalogue on this same row (I_EHR_SERVICE.create_ehr,
+    # I_EHR_COMPOSITION.create_composition, I_EHR_STATUS.*-invalid_body); the
+    # directory was the lone OAS-grounded outlier. The 400 that REMAINS
+    # correct on this family is a different branch: a malformed identifier
+    # segment (I_EHR_DIRECTORY.get_directory_at_version, register AMB-76),
+    # which the 400 row's "syntactically invalid content" does describe.
+    status: 422
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
   already_exists: { status: 409 }         # a LIVE directory already occupies the slot (SM Pre_no_directory; RM ehr §EHR.directory 0..1) — no released branch assigns this; register AMB-79 carries the adjudicated 409, whose text the overview §HTTP status codes 409 row supplies ("the request could not be processed because it might generate a duplicate or a conflict")
