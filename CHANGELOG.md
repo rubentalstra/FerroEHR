@@ -320,6 +320,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **FLAT/STRUCTURED: the specification's other spelling of a related party's
+  relationship is accepted on input** (#589). The Simplified Formats mapping
+  table for a `PARTY_RELATED` writes the relationship sub-path
+  `…/_relationship`, while every example block in the same section — and the
+  participation-performer table — writes `…/relationship|code`. Only the
+  example form was accepted, so a producer that followed the table row had
+  its composition rejected with an unknown-path error. Both spellings are now
+  read, and either one makes the party a `PARTY_RELATED`. What the server
+  *emits* is unchanged: always the example spelling, so stored data and
+  round-trips look exactly as before.
+
 - **Three FLAT/STRUCTURED mapping gaps: an entry's subject, null-flavoured
   elements, and the event-context paths** (#532, #533, #534). An entry's
   `subject` now travels over the wire in both directions: a composition whose

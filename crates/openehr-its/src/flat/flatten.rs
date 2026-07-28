@@ -231,6 +231,21 @@ fn occurrences_of<'a>(
                     })
                 }
                 Some(_) => None,
+                // NOTE: the `false` arm below — a value-less ELEMENT with no
+                // null flavour either — emits nothing. That input is
+                // RM-INVALID and unreachable for data this platform accepted:
+                // RM data_structures §ELEMENT `Inv_null_flavour_indicated`
+                // (`is_null() xor null_flavour = Void`,
+                // `RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
+                // makes exactly one of `value` / `null_flavour` present, and
+                // the commit choke point runs that invariant unconditionally
+                // (`crate::flat::validation::validate_rm_and_terminology`), so
+                // such a COMPOSITION is rejected 422 before it can be stored
+                // and re-flattened. The flattener therefore does not
+                // second-guess it: there is no datum and no null flavour to
+                // put on the wire, and inventing either would fabricate
+                // clinical meaning.
+                //
                 // A value-less null-flavoured ELEMENT belongs to no particular
                 // alternative of a choice group: the alternatives share one
                 // aqlPath and the datum that would select one is exactly what

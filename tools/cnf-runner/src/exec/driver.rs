@@ -226,18 +226,24 @@ impl<'a> HttpDriver<'a> {
                     }
                     match assertions::render_template(template, vars) {
                         Ok(rendered) => params.push((name.clone(), rendered)),
-                        // An optional ref that is genuinely unbound omits the
-                        // parameter — but a name the step's `with:` DOES carry
-                        // (just not as a renderable scalar) is a case-authoring
-                        // or promotion defect and must be loud, never a silent
-                        // drop (the group-9 triage: a dropped bound parameter
-                        // masqueraded as a SUT failure).
+                        // An optional ref that is genuinely UNBOUND omits the
+                        // parameter — but a name that IS bound (in the step's
+                        // `with:` or as an earlier capture in the var store)
+                        // and does not render as a scalar is a case-authoring
+                        // or capture-shape defect and must be loud, never a
+                        // silent drop (the group-9 triage, re-found by #594: a
+                        // List/Body-bound capture on an optional slot rendered
+                        // Err and the parameter vanished — the dropped bound
+                        // parameter masquerading as a SUT failure).
                         Err(e) if template_is_optional(template) => {
                             if let Some(referenced) = template_ref_name(template)
-                                && with.contains_key(referenced)
+                                && (with.contains_key(referenced)
+                                    || CaptureName::parse(referenced)
+                                        .is_ok_and(|n| vars.get(&n).is_some()))
                             {
                                 return Err(format!(
-                                    "query {name}: the optional ref ${{{referenced}?}} is bound in                                  the step's `with:` but did not render as a scalar: {e}"
+                                    "query {name}: the optional ref ${{{referenced}?}} is bound \
+                                     but did not render as a scalar: {e}"
                                 ));
                             }
                         }
@@ -2224,6 +2230,39 @@ mod tests {
     /// `url_fetch: 4` reaching `${url_fetch?}` emits `?fetch=4`; silently
     /// skipping non-string scalars dropped the parameter and masqueraded as
     /// a SUT failure.
+    /// The #594 regression: an optional query slot whose referenced name IS
+    /// bound — in the var store as a non-scalar capture (List/Body) — must be
+    /// a loud error, never a silent omission (the dropped-bound-parameter
+    /// false-green shape). A genuinely unbound optional slot still omits.
+    #[test]
+    fn a_bound_nonscalar_capture_on_an_optional_slot_is_loud() {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_QUERY_SERVICE.execute_ad_hoc_query",
+            "its": "its-rest",
+            "request": {
+                "method": "POST",
+                "path": "/query/aql",
+                "query": { "fetch": "${url_fetch?}" }
+            },
+            "outcomes": { "ok": { "status": 200 } }
+        }))
+        .unwrap();
+        // Bound in the VAR STORE (not the step's with:) as a List — the shape
+        // the pre-#594 guard missed.
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("url_fetch").unwrap(),
+            Captured::List(vec!["a".to_owned(), "b".to_owned()]),
+        );
+        let with = BTreeMap::new();
+        let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
+        assert!(err.contains("did not render as a scalar"), "{err}");
+        // Unbound: the parameter is omitted, no error.
+        let vars = VarStore::default();
+        let url = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap();
+        assert_eq!(url, "http://sut/query/aql");
+    }
+
     #[test]
     fn numeric_with_values_render_on_optional_url_slots() {
         let binding: OperationBinding = serde_json::from_value(serde_json::json!({
@@ -2338,15 +2377,19 @@ mod tests {
         assert!(err.contains("single-valued parameter"), "{err}");
 
         // …and a list capture never EXPANDS a single-valued declaration:
-        // repeatability is the binding's decision, not the case's.
+        // repeatability is the binding's decision, not the case's. Since
+        // #594 the refusal is LOUD — the pre-#594 behaviour (silently
+        // omitting the bound parameter) was the dropped-bound-parameter
+        // false-green shape; an error preserves this arm's intent (no
+        // expansion) without the silent drop.
         let mut vars = VarStore::default();
         vars.set(
             CaptureName::parse("ehr_id_subset").unwrap(),
             Captured::List(vec!["a".to_owned(), "b".to_owned()]),
         );
         let empty = BTreeMap::new();
-        let url = HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap();
-        assert!(!url.contains("ehr_id=a&ehr_id=b"), "{url}");
+        let err = HttpDriver::build_url(&binding, "http://sut", &empty, &vars).unwrap_err();
+        assert!(err.contains("did not render as a scalar"), "{err}");
     }
 
     /// A `Patched` binding whose captured base body is NOT a JSON object
