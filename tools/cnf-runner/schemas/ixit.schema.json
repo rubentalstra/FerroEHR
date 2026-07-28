@@ -80,6 +80,17 @@
                     "minLength": 1
                   }
                 }
+              },
+              {
+                "additionalProperties": false,
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "bearer_mint"
+                  }
+                }
               }
             ]
           },
@@ -199,6 +210,67 @@
           }
         }
       ]
+    },
+    "smart": {
+      "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform_instance",
+        "mint"
+      ],
+      "properties": {
+        "platform_instance": {
+          "description": "The instance whose base_url is the SMART Platform base URL — master04 §Service Discovery serves /.well-known/smart-configuration relative to it, not to the openEHR REST base the other instances address.",
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "mint": {
+          "description": "The static test issuer the `bearer_mint` instances sign RS256 access tokens with. Committed test material, never production key material.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issuer",
+            "subject",
+            "key_file",
+            "kid",
+            "ttl_seconds"
+          ],
+          "properties": {
+            "issuer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "audience": {
+              "type": "string",
+              "minLength": 1
+            },
+            "subject": {
+              "type": "string",
+              "minLength": 1
+            },
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "key_file": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kid": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ttl_seconds": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
     }
   }
 }
