@@ -1,0 +1,83 @@
+# The shape of the VERSIONED_PARTY container itself — the resource the
+# /demographic/versioned_party/{versioned_object_uid} route serves, as distinct
+# from the VERSION envelopes and the revision history reachable beneath it.
+#
+# The asserted facts are normative RM, quoted from RM common
+# UML/classes/org.openehr.rm.common.versioned_object.adoc §Attributes (the
+# supertype of RM demographic
+# UML/classes/org.openehr.rm.demographic.versioned_party.adoc):
+#   * `uid`: HIER_OBJECT_ID — "Unique identifier of this version container in
+#     the form of a UID with no extension", so the container id carries NO
+#     `::system::n` version coordinate (contrast VERSION.uid, the three-part
+#     OBJECT_VERSION_ID of RM common master06 §Version Identification);
+#   * `time_created`: DV_DATE_TIME 1..1 — "Time of initial creation of this
+#     versioned object".
+#
+# `owner_id` IS DELIBERATELY NOT ASSERTED. It is mandatory (OBJECT_REF 1..1) and
+# its wire values are stated by no released sentence — worse here than on the
+# EHR side, because a PARTY has no containing EHR at all (RM demographic
+# master02-demographic_package.adoc §Versioning Semantics says only "Every Party
+# is stored in its own Version container"). The one concrete guidance is the
+# released VERSIONED_PARTY *example* (ITS-REST
+# specifications/schemas/demographic/VersionedParty.yaml `example`: namespace
+# local, type SYSTEM), and an example is illustration, not a rule. Register
+# AMB-69's extended handling pins that no case asserts the tokens, because doing
+# so would resolve the silence privately.
+#
+# ANCHOR: `I_ITS_REST_VERSIONED_PARTY` is a reserved catalogue pseudo-interface
+# (register AMB-161), not an SM operation — `I_PARTY` declares no container read
+# and SM master06-demographic_service.adoc includes no versioned-party interface
+# (register AMB-136). The two EHR-side twins of this route DO have SM anchors;
+# this one is pinned in NON_SM_REST_OPERATIONS
+# (tools/cnf-runner/src/validate.rs).
+#
+# The header pair rides the docs-text SHOULD the binding declares (overview
+# Requests_and_responses.md §"ETag and Last-Modified": "Both `ETag` and
+# `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT,
+# or other resources that have versioning or unique state identifiers" — a
+# VERSIONED_OBJECT is named outright); the identifier INSIDE the entity tag
+# stays unconstrained because the same section makes its source a choice.
+id: I_ITS_REST_VERSIONED_PARTY.versioned_party_get-container_shape
+kind: functional
+component: DEMOGRAPHIC
+sm_operation: I_ITS_REST_VERSIONED_PARTY.versioned_party_get
+capabilities: [PartyOperations, DemographicApi]
+profiles: [OPTIONS]
+ambiguities: [AMB-69, AMB-136]
+guards:
+  - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
+  - "authored from RM common §versioned_object + RM demographic §versioned_party + the released ITS-REST demographic operation files; master10 (DEMOGRAPHIC) is a stalled schedule stub — a coverage guide only, not the authority"
+test_purpose: >-
+  The VERSIONED_PARTY container read serves a VERSIONED_PARTY whose uid is an
+  extension-less container id and which carries its creation time, with the
+  versioning headers and no Location.
+description: "Get VERSIONED_PARTY container shape"
+spec_refs:
+  - "RM common §versioned_object (uid / owner_id / time_created)"
+  - "RM demographic §versioned_party"
+  - "RM common §change_control (master06 — the three-part VERSION uid the container uid is NOT)"
+  - "ITS-REST overview Requests_and_responses §ETag and Last-Modified"
+  - "ITS-REST overview Resources §Resources"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+formats: [canonical-json]
+requires: { server: empty }
+data_sets: [cnf.demographic.person.v1]
+flow:
+  - step: 1
+    call: I_DEMOGRAPHIC_SERVICE.create_party
+    with: { party: "${ds:cnf.demographic.person.v1}" }
+    expect: created
+    capture: { versioned_object_uid: created.versioned_object_uid }
+  - step: 2
+    call: versioned_party_get
+    with: { versioned_object_uid: "${versioned_object_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: VERSIONED_PARTY }
+      # "a UID with no extension" — no `::creating_system_id::version_tree_id`
+      - { assert: field, path: "uid/value", equals: "${versioned_object_uid}" }
+      - { assert: field, path: "uid/value", matches: "^[^:]+$" }
+      # "Time of initial creation of this versioned object" (1..1)
+      - { assert: field, path: "time_created/value", exists: true }
+postconditions:
+  - { assert: version, count: 1 }

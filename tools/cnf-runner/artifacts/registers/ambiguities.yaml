@@ -1094,7 +1094,10 @@ AMB-62:
     close with "If the `Prefer` header is missing or set to `return=minimal`,
     the body is empty" (responses/201_COMPOSITION.yaml,
     201_PERSON.yaml, 201_Template_adl1_4_upload.yaml,
-    201_Template_adl2_upload.yaml — verified verbatim). UPDATES declare both
+    201_Template_adl2_upload.yaml — verified verbatim; 201_directory.yaml and
+    201_CONTRIBUTION.yaml carry the identical closing sentence and were
+    verified first-hand 2026-07-28 when the create branch was cased on those
+    two families too). UPDATES declare both
     and split them BY PREFERENCE: responses/200_COMPOSITION_updated.yaml (and
     its 200_*_updated siblings) is scoped "with the full resource in the
     response body when `Prefer` header is `return=representation`, or only its
@@ -1122,15 +1125,32 @@ AMB-62:
     (I_DEFINITION_ADL14.upload_opt-prefer_minimal,
     I_DEFINITION_ADL2.upload_artefact-prefer_minimal) — that adjudication is
     now the general rule rather than a two-operation exception.
-    STILL UNCOVERED, recorded as coverage to close rather than as silence: no
-    case yet pins the minimal branch on the COMPOSITION / EHR_STATUS /
-    DIRECTORY / PARTY / CONTRIBUTION writes, and the `Location` SHOULD is
-    asserted only on the create outcomes (wire_surface
-    `header-location-on-create`). The wire_surface element
-    `header-prefer-return-minimal` carries that gap with this entry's citation
-    and RETIRES when those cases land — it is a coverage gap now, not an
-    unassertable branch. The body selector `prefer_conditional` keeps its
-    current behaviour until it does.
+    NOW COVERED (2026-07-28, the same day): the branch is cased on every
+    write family this entry named — COMPOSITION create + update, EHR_STATUS
+    update, DIRECTORY create + update, PARTY create + update, CONTRIBUTION
+    create — each through a `-return_minimal` variant binding that pins the
+    header, one behaviour per case, plus the DEFAULT-WHEN-ABSENT half on one
+    create and one update through `-prefer_absent` variant bindings that send
+    no `Prefer` at all (the §Representation details negotiation sentence
+    asserted as an identity with the explicit form). The wire_surface element
+    `header-prefer-return-minimal` retires from coverage_gap to covered_by
+    accordingly. The `Location` SHOULD stays asserted on the CREATE outcomes
+    only (wire_surface `header-location-on-create`): the same sentence does say
+    "newly created or updated resource" and `204_version_updated.yaml` declares
+    the header, but widening the assertion to the update outcomes is a scope
+    change this entry has not made, and a binding asserts only what it declares.
+    The body selector `prefer_conditional` is unchanged — the minimal branch is
+    judged by the variant bindings' `body: absent`, not by it.
+    ONE RESIDUE, and it is a real one: the EHR CREATE is the only create family
+    the OAS does NOT close. `responses/201_EHR.yaml` stops after the
+    representation and identifier preferences and never says the minimal body
+    is empty (verified first-hand 2026-07-28), unlike 201_COMPOSITION,
+    201_PERSON, 201_directory, 201_CONTRIBUTION and the two template-upload
+    201s. Both sources are therefore still silent on the EHR minimal branch,
+    it stays unassertable, and no case pins it — the boundary the
+    `header-prefer-return-minimal` element and
+    I_EHR_SERVICE.create_ehr-return_identifier both name. Closes only if a
+    release states the EHR create's minimal answer.
   disposition: fixed_handling
 AMB-63:
   ambiguity: >-
@@ -1203,7 +1223,12 @@ AMB-63:
     wrong-clinical-answer failure mode. Explicitly NOT the BASE
     composite-identifier case rule (base_types master05 §Composite Identifiers
     and Case), which governs OBJECT_VERSION_ID-shaped ids, not a demographic
-    id. (b) THE SCOPE: the refusal is carried to EVERY create path, the
+    id. The type EXCLUSION is now CASED, not merely recorded:
+    I_EHR_SERVICE.create_ehr-subject_key_ignores_type commits two EHRs whose
+    subject external_ref differs ONLY in `type` (same id cnf-subject-11, same
+    namespace cnf; both values legal under BASE `PARTY_REF.Type_validity`) and
+    expects the conflict — so a server that widened the key to three parts is a
+    red row rather than an unnoticed divergence. (b) THE SCOPE: the refusal is carried to EVERY create path, the
     client-supplied-id form included — neither released source lifts it (the
     with-id 409 names the id collision and stops), and a rule a client could
     evade by choosing its own uuid would not be a rule.
@@ -4189,9 +4214,26 @@ AMB-136:
     CATALOGUE NAMING CONVENTION and NOT a claim that SM defines the operation,
     exactly as AMB-127 anchors the stored-query single-definition read. The
     container get and the `revision_history` sub-resource are NOT anchored that
-    way, because no SM read returns either shape — they stay the cited honest
-    boundary `versioned-party-container-and-revision-history`, whose server
-    behaviour is covered by DB-backed wire tests rather than a catalogue case.
+    way, because no SM read returns either shape — the closest-SM-read
+    convention has nothing to reach for. RE-ADJUDICATED 2026-07-28: they are
+    anchored under the RESERVED PSEUDO-INTERFACE mechanism instead
+    (`I_ITS_REST_VERSIONED_PARTY.versioned_party_get`,
+    `I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history`). That is a
+    DIFFERENT mechanism from the closest-SM-read convention this entry declined,
+    and it POST-DATES the original adjudication: AMB-161 established the
+    reserved `I_ITS_REST_*` prefix plus the pinned `NON_SM_REST_OPERATIONS`
+    table (tools/cnf-runner/src/validate.rs) for exactly this shape — a RELEASED
+    ITS-REST operation the SM models no interface for — and it names no SM
+    operation at all, so unlike a closest-read anchor it asserts nothing about
+    what the SM defines. Pseudo-interface families group by the SERVED RESOURCE
+    (as `I_ITS_REST_ITEM_TAGS` already spans the EHR and demographic tag
+    routes), which is why the revision history joins its two EHR-side twins
+    under `I_ITS_REST_REVISION_HISTORY` while the container read keeps
+    `I_ITS_REST_VERSIONED_PARTY`. Both routes now carry bindings and cases, and
+    the honest-boundary ledger row
+    `versioned-party-container-and-revision-history` retires to covered_by. The
+    realization GAP itself is unchanged and still reported: the SM has no home
+    for either route.
     SM→ITS: `has_party` and `has_party_version_id` are bound to their
     realizations rather than declared missing (existence is the 200/404 of the
     corresponding read — the AMB-108 pattern), and the two interface factories
@@ -4238,15 +4280,34 @@ AMB-137:
     local, type: SYSTEM}`) vs
     specifications/schemas/ehr/ItemTagOf{Composition,EhrStatus}.yaml (both
     `type: EHR`) — ALL CONFIRMED first-hand.
+    WHAT THOSE FIVE EXAMPLES ARE WORTH, under the oracle order: NOTHING as an
+    assignment. Restated 2026-07-28 (the #556 sweep flagged the wording, no
+    verdict change): tier 1, the ITS-REST docs text, never mentions
+    `owner_id`; tier 2, the released OAS, DECLARES the attribute
+    (`schemas/common/ItemTag.yaml` types it and the five demographic
+    `ItemTagOf<T>` schemas require it) but its `example:` blocks are not
+    declarations — an example is illustration and not a rule, the exact
+    treatment AMB-69 applies one entry over to the VERSIONED_PARTY
+    `owner_id` example on this same attribute name. Both released sources
+    therefore WITHHOLD the value, which is spec silence: the shape below is a
+    register decision, not a derivation.
   handling: >-
-    Fixed handling: a demographic tag's `owner_id` is emitted in exactly the
-    shape the five released examples show — an `OBJECT_REF` with `namespace:
-    local` and `type: SYSTEM`, whose `id` is a `HIER_OBJECT_ID` carrying the
-    server's configured system identifier. The examples are the only
-    released signal and they are unanimous across all five party kinds;
-    naming the tagged party itself would make the attribute a duplicate of
-    `target` and contradict the word "owner", and naming an EHR would invent
-    a containment the demographic package does not have. `target` is
+    Fixed handling, and honestly labelled: the demographic `owner_id` shape is
+    OUR OWN DESIGN — no openEHR spec governs this — INFORMED BY the five
+    released examples rather than derived from them. A demographic tag's
+    `owner_id` is emitted as an `OBJECT_REF` with `namespace: local` and
+    `type: SYSTEM`, whose `id` is a `HIER_OBJECT_ID` carrying the server's
+    configured system identifier — the shape all five examples show,
+    unanimously across every party kind, and the one that survives the two
+    alternatives: naming the tagged party itself would make the attribute a
+    duplicate of `target` and contradict the word "owner", and naming an EHR
+    would invent a containment the demographic package does not have.
+    THE SHAPE IS UNCHANGED by this restatement, and it stays PINNED by the
+    wire tests — unlike AMB-69, where the register declines to assert the
+    tokens, this attribute is MANDATORY (1..1) with no derivable value at all,
+    so leaving it unasserted would leave a required wire field entirely
+    unchecked; asserting our registered convention is the honest position, and
+    it is labelled as a convention wherever it is asserted. `target` is
     unaffected: it stays the bare RM `UID_BASED_ID` (`HIER_OBJECT_ID` for
     the container, `OBJECT_VERSION_ID` for a VERSION) the RM class requires,
     on both families alike. Reported upstream (UPR-101): state who owns a
@@ -5897,10 +5958,19 @@ AMB-161:
   handling: >-
     Fixed handling — a naming convention, pinned and enumerable. Such an
     operation is anchored under a reserved I_ITS_REST_<GROUP> pseudo-interface,
-    one per released resource family (I_ITS_REST_SYSTEM.options;
-    I_ITS_REST_ITEM_TAGS.<operationId> for the twenty-three tag routes, whose
+    one per released resource family — the family being the SERVED RESOURCE,
+    not the OAS tag (I_ITS_REST_SYSTEM.options;
+    I_ITS_REST_ITEM_TAGS.<operationId> for the twenty-three tag routes;
+    I_ITS_REST_REVISION_HISTORY.<operationId> for the three revision-history
+    reads, the SM declaring no revision-history operation on any interface —
+    zero occurrences of "revision_history" across SM/docs, grep-verified, the
+    abstract counterpart being the RM's own VERSIONED_OBJECT.revision_history();
+    I_ITS_REST_VERSIONED_PARTY.versioned_party_get for the demographic container
+    read, whose two EHR-side twins DO have SM anchors while I_PARTY declares no
+    container read at all — the last two extended 2026-07-28 when AMB-136 was
+    re-adjudicated against this mechanism), whose
     operation name is the RELEASED operationId verbatim so every row traces to
-    exactly one specifications/operations/<operationId>.yaml), which is a
+    exactly one specifications/operations/<operationId>.yaml, which is a
     CATALOGUE naming convention and
     NOT a claim that the SM defines the operation — exactly the distinction
     AMB-127 draws when it anchors the version get to list_queries with a
@@ -5913,8 +5983,9 @@ AMB-161:
     their own rows of the coverage report; an unpinned I_ITS_REST_* reference is
     a validator finding, so the prefix can never become a way around SM
     resolution. Revisits per family: when a future SM release models the System
-    API, or declares a tag interface, that family's anchors become real SM
-    operations and its pinned rows go.
+    API, declares a tag interface, adds a revision-history operation, or gives
+    the demographic container read an SM home (the UPR-100 ask), that family's
+    anchors become real SM operations and its pinned rows go.
   disposition: fixed_handling
 
 AMB-165:
