@@ -372,3 +372,49 @@ async fn relationship_stale_delete_conflict_echoes_latest_etag() {
         .to_owned();
     assert_eq!(echoed, r2, "the latest version_uid rides the 409 ETag");
 }
+
+// ── the ITEM_TAG identity is the (key, target_path) PAIR ─────────────────────
+
+/// Two same-key tags on different target_paths coexist on one party target and
+/// the PUT round-trips both — ITS-REST overview Requests_and_responses.md
+/// §openehr-item-tag and openehr-version-item-tag ("uniquely identified by
+/// their `key` and `target_path` pair attributes"); RM common master07-tags.
+/// The run-2 triage regression (2026-07-28): the demographic PUT deduped by
+/// key alone and silently collapsed the pair (the EHR side had the identity
+/// fix since #369; this seam did not).
+#[tokio::test]
+async fn same_key_tags_on_different_target_paths_coexist() {
+    let (_pg, app) = app().await;
+    let ovid = create_person(&app).await;
+    let vo = vo_of(&ovid).to_owned();
+    let (status, body) = put_tags(
+        &app,
+        &vo,
+        serde_json::json!([
+            { "key": "flag", "value": "a" },
+            { "key": "flag", "value": "b", "target_path": "/details" }
+        ]),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) = get_tags(&app, "person", &vo).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let tags: Vec<Value> = serde_json::from_str(&body).unwrap();
+    assert_eq!(
+        tags.len(),
+        2,
+        "both (key, target_path) identities persist: {body}"
+    );
+    assert!(
+        tags.iter().all(|t| t["key"] == "flag"),
+        "the shared key survives on both: {body}"
+    );
+    let paths: Vec<Option<&str>> = tags
+        .iter()
+        .map(|t| t.get("target_path").and_then(Value::as_str))
+        .collect();
+    assert!(
+        paths.contains(&None) && paths.contains(&Some("/details")),
+        "the two identities are distinguished by target_path: {body}"
+    );
+}

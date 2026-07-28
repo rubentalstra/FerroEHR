@@ -96,10 +96,14 @@ impl EhrbaseService {
     }
 
     /// Replace the whole tag collection of a party with the posted set (PUT
-    /// full-collection semantics; an empty list clears all). Duplicate keys in
-    /// the body are last-wins. The RM `ITEM_TAG` invariants are enforced before
-    /// any write: `Inv_key_valid` (non-empty, no surrounding whitespace) and
-    /// `Inv_value_valid` (`value /= Void implies not value.is_empty`).
+    /// full-collection semantics; an empty list clears all). Duplicates in the
+    /// body are last-wins on the ITEM_TAG identity — the (key, target_path)
+    /// PAIR (ITS-REST overview Requests_and_responses.md §openehr-item-tag and
+    /// openehr-version-item-tag: "uniquely identified by their `key` and
+    /// `target_path` pair attributes"; RM common master07-tags). The RM
+    /// `ITEM_TAG` invariants are enforced before any write: `Inv_key_valid`
+    /// (non-empty, no surrounding whitespace) and `Inv_value_valid`
+    /// (`value /= Void implies not value.is_empty`).
     pub(super) async fn replace_party_tags(
         &self,
         kind: PartyKind,
@@ -109,9 +113,13 @@ impl EhrbaseService {
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_party_tag_target(kind, vo_id, target_version)
             .await?;
-        // Validate + dedup (last wins) before touching the DB. A BTreeMap keys by
-        // tag key, matching the `ORDER BY key` read-back order.
-        let mut deduped: BTreeMap<String, (Option<String>, Option<String>)> = BTreeMap::new();
+        // Validate + dedup (last wins) before touching the DB, keyed on the
+        // ITEM_TAG identity — the (key, target_path) PAIR, never the key alone
+        // (two same-key tags on different target_paths coexist; keying by tag
+        // key collapsed them — the run-2 triage defect, 2026-07-28, mirroring
+        // the EHR-side #369 identity fix). BTreeMap ordering matches the
+        // `ORDER BY key` read-back order on the leading component.
+        let mut deduped: BTreeMap<(String, Option<String>), Option<String>> = BTreeMap::new();
         for tag in &tags {
             let key = tag
                 .get("key")
@@ -132,8 +140,8 @@ impl EhrbaseService {
             }
             let target_path = tag.get("target_path").and_then(Value::as_str);
             deduped.insert(
-                key.to_owned(),
-                (value.map(str::to_owned), target_path.map(str::to_owned)),
+                (key.to_owned(), target_path.map(str::to_owned)),
+                value.map(str::to_owned),
             );
         }
 
@@ -141,7 +149,7 @@ impl EhrbaseService {
         // are distinct), so the pre-dedup above is what enforces last-wins.
         let new_tags: Vec<tag_repo::NewTag<'_>> = deduped
             .iter()
-            .map(|(key, (value, target_path))| tag_repo::NewTag {
+            .map(|((key, target_path), value)| tag_repo::NewTag {
                 target_type: kind.rm_type(),
                 key: key.as_str(),
                 value: value.as_deref(),
