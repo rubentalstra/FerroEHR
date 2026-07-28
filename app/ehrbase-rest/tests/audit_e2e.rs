@@ -364,7 +364,12 @@ async fn composition_update_emits_update_record() {
         .body(Body::from(composition().to_string()))
         .expect("request");
     let resp = app.oneshot(request).await.expect("resp");
-    assert_eq!(resp.status(), StatusCode::OK);
+    // No Prefer header ⇒ return=minimal ⇒ 204 (ITS-REST overview
+    // Requests_and_responses.md §Prefer: "If no `Prefer` header is provided,
+    // the default behavior is assumed to be `return=minimal`"; minimal —
+    // "If no response body is returned, the service SHOULD use `204 No
+    // Content`").
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
     let xml = recv_one(&socket).await.expect("audit record");
     assert!(xml.contains(r#"EventActionCode="U""#), "update: {xml}");
     assert!(

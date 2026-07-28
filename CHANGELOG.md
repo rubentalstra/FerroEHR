@@ -512,6 +512,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The template list collapses to the latest version of each template when
+  the `version` parameter is absent** (#614). `GET
+  /definition/template/adl1.4` (and the ADL2 twin) used to return every
+  stored version regardless; the released openEHR REST API says an absent
+  `version` returns "only the latest version". Pass `version=*` to list every
+  stored version — the admin console's template inventory does exactly that,
+  so its view is unchanged.
 - **Conformance runner: a requirement the openEHR specification dates to a
   release is now judged only against the servers that claim that release**
   (#627, #628). Two rules the ITS-REST overview introduces at Release 1.1.0 —

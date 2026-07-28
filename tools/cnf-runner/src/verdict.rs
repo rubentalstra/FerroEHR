@@ -255,6 +255,34 @@ pub fn compute(
             });
         }
     }
+    // The SUT's own System-manifest advertisement, when the campaign drove
+    // it, must agree with the statement's declaration. The manifest is never
+    // the source of truth (the released `Options` schema has no `required`
+    // list, and a server could dodge every release-dated MUST by
+    // under-advertising) — but a DISAGREEMENT means either the declaration
+    // or the deployment is wrong, and a certification must not rest on that.
+    if let (Some(served), Some(declared)) = (
+        results.restapi_specs_version.as_deref(),
+        statement.spec_versions.its_rest.as_deref(),
+    ) {
+        let same = match (
+            semver::Version::parse(served),
+            semver::Version::parse(declared),
+        ) {
+            (Ok(observed), Ok(claimed)) => observed == claimed,
+            _ => served == declared,
+        };
+        if !same {
+            review.push(ReviewFinding {
+                message: format!(
+                    "the SUT's System OPTIONS manifest advertises restapi_specs_version \
+                     {served} but the statement declares spec_versions.its_rest {declared} — \
+                     the declaration and the deployment disagree; fix whichever is wrong \
+                     (the manifest member is optional and is never the source of truth)"
+                ),
+            });
+        }
+    }
     let performance = measured_verdicts(statement, results, perf_cases, &mut review);
     let selected = select(statement, results, cases, register);
 
@@ -817,6 +845,62 @@ mod tests {
             map.insert("outcomes".to_owned(), outcomes);
         }
         serde_json::from_value(value).unwrap()
+    }
+
+    /// The System-manifest advertisement check (#634): a served
+    /// `restapi_specs_version` that disagrees with the statement's
+    /// `spec_versions.its_rest` is a static-review finding; agreement (or an
+    /// absent member — it is optional in the released `Options` schema)
+    /// raises nothing.
+    #[test]
+    fn manifest_advertised_its_rest_divergence_is_a_review_finding() {
+        let cases = vec![functional_case(
+            "I_EHR_SERVICE.create_ehr-main",
+            &["EhrOperations"],
+            &["CORE"],
+        )];
+        let st = statement(&["EhrOperations"], &["CORE"], &[]);
+        let outcomes = serde_json::json!([
+            { "case": "I_EHR_SERVICE.create_ehr-main", "format": "canonical-json",
+              "status": "passed", "rows_driven": 1, "rows_total": 1 }
+        ]);
+
+        // Divergence: served 1.0.3 vs declared 1.1.0 → exactly one finding.
+        let mut diverging = results(outcomes.clone());
+        diverging.restapi_specs_version = Some("1.0.3".to_owned());
+        let report = compute(&st, &diverging, &cases, &[], &matrix(), &register());
+        assert_eq!(
+            report
+                .review
+                .iter()
+                .filter(|f| f.message.contains("restapi_specs_version"))
+                .count(),
+            1,
+            "review: {:?}",
+            report.review
+        );
+
+        // Agreement (semver-equal): no finding.
+        let mut agreeing = results(outcomes.clone());
+        agreeing.restapi_specs_version = Some("1.1.0".to_owned());
+        let report = compute(&st, &agreeing, &cases, &[], &matrix(), &register());
+        assert!(
+            report
+                .review
+                .iter()
+                .all(|f| !f.message.contains("restapi_specs_version")),
+            "review: {:?}",
+            report.review
+        );
+
+        // Absent member (optional in the released schema): no finding.
+        let report = compute(&st, &results(outcomes), &cases, &[], &matrix(), &register());
+        assert!(
+            report
+                .review
+                .iter()
+                .all(|f| !f.message.contains("restapi_specs_version"))
+        );
     }
 
     #[test]

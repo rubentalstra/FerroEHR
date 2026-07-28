@@ -550,7 +550,16 @@ fn run_verdicts(
                 }
             },
         ),
-        ("CONFORMANCE_REPORT.md", render_report(&results, &report)),
+        (
+            "CONFORMANCE_REPORT.md",
+            match render_report(&results, &report) {
+                Ok(markdown) => markdown,
+                Err(e) => {
+                    eprintln!("cannot render the report: {e}");
+                    return ExitCode::from(2);
+                }
+            },
+        ),
         (
             "CONFORMANCE_STATEMENT.md",
             render_statement(&statement, &report, served_extensions),
@@ -1643,6 +1652,7 @@ fn run_command(
                 ),
         },
         ixit_digest,
+        restapi_specs_version: report.restapi_specs_version.clone(),
         outcomes,
         measurements: carried_measurements,
         ambiguity_dispositions: Vec::new(),

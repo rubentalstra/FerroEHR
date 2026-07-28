@@ -20,9 +20,22 @@ use crate::vocab::{Family, FormatName, Tier};
 /// Render the conformance report (`CONFORMANCE_REPORT.md`): the outcome
 /// summary, a per-chapter table, and the honesty block (coverage bound +
 /// every not-executed verdict's citation).
-#[must_use]
+///
+/// The per-chapter table groups by the SAME two-level taxonomy the published
+/// chapter-bars chart renders ([`crate::conf_assets::TAXONOMY`], via
+/// [`crate::conf_assets::chapter_counts`]) — one taxonomy, one place, so the
+/// report and the chart can never disagree about what a chapter contains.
+///
+/// # Errors
+///
+/// [`crate::conf_assets::TaxonomyError`] when an outcome's case id maps to no
+/// taxonomy band — a taxonomy gap to close, never a silent bucket; the report
+/// refuses to publish rather than mis-group.
 #[allow(clippy::too_many_lines)] // one linear document renderer per published artifact
-pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
+pub fn render_report(
+    results: &Results,
+    verdicts: &VerdictReport,
+) -> Result<String, crate::conf_assets::TaxonomyError> {
     let mut out = String::new();
     let _ = writeln!(out, "# Conformance Report\n");
     let _ = writeln!(
@@ -60,33 +73,43 @@ pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
     let _ = writeln!(out, "| total | {} |\n", results.outcomes.len());
 
     // ── per-chapter table ───────────────────────────────────────────────────
-    let mut by_chapter: BTreeMap<String, BTreeMap<&'static str, usize>> = BTreeMap::new();
-    for outcome in &results.outcomes {
-        let chapter = chapter_of(outcome.case.as_str());
-        *by_chapter
-            .entry(chapter)
-            .or_default()
-            .entry(outcome.status.token())
-            .or_default() += 1;
-    }
+    // The published chart's two-level taxonomy, verbatim: chapter rows with
+    // their band sub-rows, in declaration order. `cited n/a` merges the two
+    // citation-bearing statuses (`not_applicable` + `skipped`) exactly as the
+    // chart's hatched segment does. All-empty bands are elided from the
+    // table (the chart draws them as zero-width segments; a table row of
+    // zeros carries no information), but an all-empty CHAPTER still prints
+    // its total row so the taxonomy stays visibly total.
+    let chapters = crate::conf_assets::chapter_counts(results)?;
     let _ = writeln!(out, "## By chapter\n");
     let _ = writeln!(
         out,
-        "| Chapter | passed | failed | errored | skipped | not_applicable |"
+        "Grouping is the published per-chapter chart's taxonomy: chapters \
+         with their bands; `cited n/a` counts the not-executed outcomes that \
+         carry a citation (`not_applicable` + `skipped`).\n"
     );
-    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
-    for (chapter, c) in &by_chapter {
-        let g = |s: OutcomeStatus| c.get(s.token()).copied().unwrap_or(0);
+    let _ = writeln!(
+        out,
+        "| Chapter / band | passed | failed | errored | cited n/a |"
+    );
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- |");
+    for chapter in &chapters {
+        let t = chapter.total;
         let _ = writeln!(
             out,
-            "| {} | {} | {} | {} | {} | {} |",
-            chapter,
-            g(OutcomeStatus::Passed),
-            g(OutcomeStatus::Failed),
-            g(OutcomeStatus::Errored),
-            g(OutcomeStatus::Skipped),
-            g(OutcomeStatus::NotApplicable),
+            "| **{}** | {} | {} | {} | {} |",
+            chapter.chapter, t.passed, t.failed, t.errored, t.cited_na,
         );
+        for (band, counts) in &chapter.bands {
+            if counts.is_empty() {
+                continue;
+            }
+            let _ = writeln!(
+                out,
+                "| — {} | {} | {} | {} | {} |",
+                band, counts.passed, counts.failed, counts.errored, counts.cited_na,
+            );
+        }
     }
     let _ = writeln!(out);
 
@@ -216,7 +239,7 @@ pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
         }
     }
 
-    out
+    Ok(out)
 }
 
 /// Render the conformance statement (`CONFORMANCE_STATEMENT.md`): the `SDoC`
@@ -595,17 +618,6 @@ pub fn render_certificate(
 
 // ── shared formatting helpers ────────────────────────────────────────────────
 
-/// The chapter grouping for a case id: the SM interface prefix for a
-/// `I_X.op-variant` id, else the leading family token before the first `-`.
-fn chapter_of(case_id: &str) -> String {
-    if let Some((interface, _)) = case_id.split_once('.') {
-        return interface.to_owned();
-    }
-    case_id
-        .split_once('-')
-        .map_or_else(|| case_id.to_owned(), |(head, _)| head.to_owned())
-}
-
 fn declared_versions(statement: &Statement) -> Vec<(&'static str, &str)> {
     use crate::vocab::SpecComponent;
     let mut out = Vec::new();
@@ -818,12 +830,16 @@ mod tests {
     #[test]
     fn report_is_deterministic_and_lists_citations() {
         let v = verdicts();
-        let a = render_report(&results(), &v);
-        let b = render_report(&results(), &v);
+        let a = render_report(&results(), &v).unwrap();
+        let b = render_report(&results(), &v).unwrap();
         assert_eq!(a, b);
         assert!(a.ends_with('\n'));
         assert!(a.contains("Coverage: 1 of 1"));
         assert!(a.contains("AMB-33"));
+        // The by-chapter table groups by the published chart's taxonomy:
+        // the fixture's create_ehr case lands in the EHR chapter's
+        // "EHR lifecycle" band, exactly as conf_assets::TAXONOMY declares.
+        assert!(a.contains("| **EHR** |"));
     }
 
     #[test]
