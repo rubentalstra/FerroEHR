@@ -1942,6 +1942,18 @@
       "citation": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
     },
     {
+      "case": "I_DEFINITION_ADL14.list_opts-absent_version_latest_only",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.list_opts-version_star_all_versions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
       "status": "passed",
       "rows_driven": 3,

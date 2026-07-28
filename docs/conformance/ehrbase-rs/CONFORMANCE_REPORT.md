@@ -7,41 +7,68 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 692 |
+| passed | 694 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 63 |
-| total | 755 |
+| total | 757 |
 
 ## By chapter
 
-| Chapter | passed | failed | errored | skipped | not_applicable |
-| --- | --- | --- | --- | --- | --- |
-| CONT | 123 | 0 | 0 | 0 | 0 |
-| I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
-| I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
-| I_ADMIN_SERVICE | 9 | 0 | 0 | 0 | 10 |
-| I_DEFINITION_ADL14 | 20 | 0 | 0 | 0 | 6 |
-| I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
-| I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
-| I_DEMOGRAPHIC_SERVICE | 57 | 0 | 0 | 0 | 1 |
-| I_EHR_COMPOSITION | 88 | 0 | 0 | 0 | 0 |
-| I_EHR_CONTRIBUTION | 55 | 0 | 0 | 0 | 5 |
-| I_EHR_DIRECTORY | 63 | 0 | 0 | 0 | 4 |
-| I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
-| I_EHR_SERVICE | 24 | 0 | 0 | 0 | 1 |
-| I_EHR_STATUS | 46 | 0 | 0 | 0 | 1 |
-| I_ITS_REST_ITEM_TAGS | 30 | 0 | 0 | 0 | 0 |
-| I_ITS_REST_REVISION_HISTORY | 6 | 0 | 0 | 0 | 0 |
-| I_ITS_REST_SYSTEM | 1 | 0 | 0 | 0 | 0 |
-| I_ITS_REST_VERSIONED_PARTY | 3 | 0 | 0 | 0 | 1 |
-| I_QUERY_SERVICE | 36 | 0 | 0 | 0 | 0 |
-| I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
-| SEC | 6 | 0 | 0 | 0 | 0 |
-| SF | 63 | 0 | 0 | 0 | 1 |
-| SIG | 10 | 0 | 0 | 0 | 2 |
-| SMART | 3 | 0 | 0 | 0 | 0 |
+Grouping is the published per-chapter chart's taxonomy: chapters with their bands; `cited n/a` counts the not-executed outcomes that carry a citation (`not_applicable` + `skipped`).
+
+| Chapter / band | passed | failed | errored | cited n/a |
+| --- | --- | --- | --- | --- |
+| **EHR** | 312 | 0 | 0 | 11 |
+| — EHR resource | 24 | 0 | 0 | 1 |
+| — EHR_STATUS | 46 | 0 | 0 | 1 |
+| — COMPOSITION | 88 | 0 | 0 | 0 |
+| — DIRECTORY | 63 | 0 | 0 | 4 |
+| — CONTRIBUTION | 55 | 0 | 0 | 5 |
+| — Item tags | 30 | 0 | 0 | 0 |
+| — Revision history | 6 | 0 | 0 | 0 |
+| **Definitions** | 71 | 0 | 0 | 17 |
+| — ADL 1.4 templates | 22 | 0 | 0 | 6 |
+| — ADL 2 artefacts | 21 | 0 | 0 | 8 |
+| — Stored queries | 28 | 0 | 0 | 3 |
+| **Query** | 36 | 0 | 0 | 0 |
+| — Ad-hoc AQL | 25 | 0 | 0 | 0 |
+| — Stored query execution | 11 | 0 | 0 | 0 |
+| **Demographic** | 60 | 0 | 0 | 2 |
+| — Parties | 39 | 0 | 0 | 1 |
+| — Party relationships | 15 | 0 | 0 | 0 |
+| — Versioned party | 6 | 0 | 0 | 1 |
+| **Messaging** | 0 | 0 | 0 | 14 |
+| — EHR Extract | 0 | 0 | 0 | 10 |
+| — TDD | 0 | 0 | 0 | 4 |
+| **Admin** | 9 | 0 | 0 | 16 |
+| — Admin service | 9 | 0 | 0 | 10 |
+| — Archive | 0 | 0 | 0 | 4 |
+| — Dump & load | 0 | 0 | 0 | 2 |
+| **System** | 1 | 0 | 0 | 0 |
+| — Conformance manifest | 1 | 0 | 0 | 0 |
+| **Content validation** | 123 | 0 | 0 | 0 |
+| — Data types | 52 | 0 | 0 | 0 |
+| — Interval data types | 30 | 0 | 0 | 0 |
+| — Structure & cardinality | 41 | 0 | 0 | 0 |
+| **Simplified formats** | 63 | 0 | 0 | 1 |
+| — FLAT & STRUCTURED | 21 | 0 | 0 | 0 |
+| — Web Template | 5 | 0 | 0 | 0 |
+| — Path mapping | 30 | 0 | 0 | 0 |
+| — Scope & legacy media | 7 | 0 | 0 | 1 |
+| **Security & privacy** | 6 | 0 | 0 | 0 |
+| — Authenticated access | 2 | 0 | 0 | 0 |
+| — Authorization separation | 1 | 0 | 0 | 0 |
+| — Audit accountability | 1 | 0 | 0 | 0 |
+| — Anonymous EHRs | 1 | 0 | 0 | 0 |
+| — EHR/demographic separation | 1 | 0 | 0 | 0 |
+| **Signing** | 10 | 0 | 0 | 2 |
+| — Version signing | 10 | 0 | 0 | 2 |
+| **SMART App Launch** | 3 | 0 | 0 | 0 |
+| — Discovery | 1 | 0 | 0 | 0 |
+| — Resource scopes | 2 | 0 | 0 | 0 |
+| **Performance** | 0 | 0 | 0 | 0 |
 
 ## By capability
 
@@ -50,7 +77,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
 | Adl14ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
-| Adl14OptProvisioning | pass | 17 | 0 | 0 | 5 |
+| Adl14OptProvisioning | pass | 19 | 0 | 0 | 5 |
 | Adl2ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 6 |
 | Adl2OptProvisioning | pass | 23 | 0 | 0 | 6 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
@@ -126,7 +153,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 692 of 755 selected cases driven.
+Coverage: 694 of 757 selected cases driven.
 
 Not-executed verdicts (each cited):
 

@@ -251,6 +251,11 @@ pub enum Assertion {
         equals: Option<serde_json::Value>,
         #[serde(default)]
         matches: Option<String>,
+        /// A regex the serialized body must NOT match — the negative
+        /// containment predicate (e.g. a listing that must EXCLUDE a
+        /// superseded row). Composes with `matches`: both are checked.
+        #[serde(default)]
+        omits: Option<String>,
     },
     /// Informative only — never a pass/fail criterion.
     MessageExemplar { text: String },
@@ -400,12 +405,29 @@ impl Assertion {
                     return Err("unique `over` must be a ${<capture>} reference".to_owned());
                 }
             }
-            Self::Returns { equals, matches } => {
-                if equals.is_some() == matches.is_some() {
-                    return Err("returns must carry exactly one of equals | matches".to_owned());
+            Self::Returns {
+                equals,
+                matches,
+                omits,
+            } => {
+                // Exactly one positive predicate (equals | matches); `omits`
+                // is the composable negative side (alone or beside matches,
+                // never beside equals — whole-value equality already pins the
+                // body).
+                match (equals.is_some(), matches.is_some(), omits.is_some()) {
+                    (true, false, false) | (false, true, _) | (false, false, true) => {}
+                    _ => {
+                        return Err(
+                            "returns must carry exactly one of equals | matches [+ omits] | omits"
+                                .to_owned(),
+                        );
+                    }
                 }
                 if let Some(re) = matches {
                     regex::Regex::new(re).map_err(|e| format!("returns matches regex: {e}"))?;
+                }
+                if let Some(re) = omits {
+                    regex::Regex::new(re).map_err(|e| format!("returns omits regex: {e}"))?;
                 }
             }
             Self::InstanceOf { .. }
