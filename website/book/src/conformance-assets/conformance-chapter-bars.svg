@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 908 480" width="908" height="480" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 908 1156" width="908" height="1156" role="img">
 <style>
 text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
 .title { fill: #0b0b0b; font-weight: 600; }
@@ -43,68 +43,99 @@ text { fill: #c3c2b7; }
 }
 </style>
 
+<style>
+.chap-row { fill: #f1efe9; }
+.chap-name { fill: #0b0b0b; font-size: 12.5px; font-weight: 600; }
+.band-label { fill: #52514e; font-size: 11px; }
+.band-empty { fill: #a5a39b; font-size: 10.5px; font-style: italic; }
+.count { font-size: 10.5px; }
+.count-strong { font-weight: 600; }
+.count-passed { fill: #00639b; }
+.count-failed { fill: #c0530b; font-weight: 600; }
+.count-errored { fill: #9a7100; }
+.count-na { fill: #7d7b74; }
+.na-line { stroke: #9d9b93; stroke-width: 2; }
+@media (prefers-color-scheme: dark) {
+.chap-row { fill: #2b2b29; }
+.chap-name { fill: #ffffff; }
+.band-label { fill: #c3c2b7; }
+.band-empty { fill: #6f6e68; }
+.count-passed { fill: #4f97ee; }
+.count-failed { fill: #f2696d; }
+.count-errored { fill: #d9a514; }
+.count-na { fill: #8f8e85; }
+.na-line { stroke: #6d6d69; }
+}
+</style>
+<defs>
+<pattern id="na-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="6" height="6" class="bar-na"/>
+<line x1="3" y1="0" x2="3" y2="6" class="na-line"/>
+</pattern>
+</defs>
 <text x="24" y="28" class="title">Schedule outcomes by chapter — ehrbase-rs 3.11.0</text>
+<rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="31" y="49" class="seg-label" text-anchor="middle">✓</text><text x="44" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="110.2" y="49" class="seg-label" text-anchor="middle">✕</text><text x="123.2" y="49" class="muted">FAILED</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="189.4" y="49" class="seg-label-dim" text-anchor="middle">?</text><text x="202.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" fill="url(#na-hatch)"/><text x="275.8" y="49" class="seg-label-dim" text-anchor="middle">○</text><text x="288.8" y="49" class="muted">cited N/A (not executed)</text><text x="884" y="49" class="muted" text-anchor="end">this chart's scale: 88 cases = full bar</text>
+<rect x="24" y="66" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="80.5" class="chap-name">EHR</text><text x="700" y="80.5" class="muted" text-anchor="end">323 cases</text>
+<text x="752" y="80.5" class="count count-passed count-strong" text-anchor="end">✓ 312</text><text x="878" y="80.5" class="count count-na count-strong" text-anchor="end">○ 11</text>
+<text x="220" y="102.5" class="band-label" text-anchor="end">EHR resource</text><rect x="230" y="93" width="128.1818181818182" height="12" class="bar-passed"/><rect x="358.1818181818182" y="93" width="5.340909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="102.5" class="count count-passed" text-anchor="end">✓ 24</text><text x="878" y="102.5" class="count count-na" text-anchor="end">○ 1</text>
+<text x="220" y="120.5" class="band-label" text-anchor="end">EHR_STATUS</text><rect x="230" y="111" width="245.6818181818182" height="12" class="bar-passed"/><rect x="475.6818181818182" y="111" width="5.340909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="120.5" class="count count-passed" text-anchor="end">✓ 46</text><text x="878" y="120.5" class="count count-na" text-anchor="end">○ 1</text>
+<text x="220" y="138.5" class="band-label" text-anchor="end">COMPOSITION</text><rect x="230" y="129" width="470" height="12" class="bar-passed"/><text x="752" y="138.5" class="count count-passed" text-anchor="end">✓ 88</text>
+<text x="220" y="156.5" class="band-label" text-anchor="end">DIRECTORY</text><rect x="230" y="147" width="336.47727272727275" height="12" class="bar-passed"/><rect x="566.4772727272727" y="147" width="21.363636363636363" height="12" fill="url(#na-hatch)"/><text x="752" y="156.5" class="count count-passed" text-anchor="end">✓ 63</text><text x="878" y="156.5" class="count count-na" text-anchor="end">○ 4</text>
+<text x="220" y="174.5" class="band-label" text-anchor="end">CONTRIBUTION</text><rect x="230" y="165" width="293.75" height="12" class="bar-passed"/><rect x="523.75" y="165" width="26.704545454545453" height="12" fill="url(#na-hatch)"/><text x="752" y="174.5" class="count count-passed" text-anchor="end">✓ 55</text><text x="878" y="174.5" class="count count-na" text-anchor="end">○ 5</text>
+<text x="220" y="192.5" class="band-label" text-anchor="end">Item tags</text><rect x="230" y="183" width="160.22727272727272" height="12" class="bar-passed"/><text x="752" y="192.5" class="count count-passed" text-anchor="end">✓ 30</text>
+<text x="220" y="210.5" class="band-label" text-anchor="end">Revision history</text><rect x="230" y="201" width="32.04545454545455" height="12" class="bar-passed"/><text x="752" y="210.5" class="count count-passed" text-anchor="end">✓ 6</text>
+<rect x="24" y="224" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="238.5" class="chap-name">Definitions</text><text x="700" y="238.5" class="muted" text-anchor="end">86 cases</text>
+<text x="752" y="238.5" class="count count-passed count-strong" text-anchor="end">✓ 69</text><text x="878" y="238.5" class="count count-na count-strong" text-anchor="end">○ 17</text>
+<text x="220" y="260.5" class="band-label" text-anchor="end">ADL 1.4 templates</text><rect x="230" y="251" width="106.81818181818181" height="12" class="bar-passed"/><rect x="336.8181818181818" y="251" width="32.04545454545455" height="12" fill="url(#na-hatch)"/><text x="752" y="260.5" class="count count-passed" text-anchor="end">✓ 20</text><text x="878" y="260.5" class="count count-na" text-anchor="end">○ 6</text>
+<text x="220" y="278.5" class="band-label" text-anchor="end">ADL 2 artefacts</text><rect x="230" y="269" width="112.1590909090909" height="12" class="bar-passed"/><rect x="342.1590909090909" y="269" width="42.72727272727273" height="12" fill="url(#na-hatch)"/><text x="752" y="278.5" class="count count-passed" text-anchor="end">✓ 21</text><text x="878" y="278.5" class="count count-na" text-anchor="end">○ 8</text>
+<text x="220" y="296.5" class="band-label" text-anchor="end">Stored queries</text><rect x="230" y="287" width="149.54545454545453" height="12" class="bar-passed"/><rect x="379.5454545454545" y="287" width="16.022727272727273" height="12" fill="url(#na-hatch)"/><text x="752" y="296.5" class="count count-passed" text-anchor="end">✓ 28</text><text x="878" y="296.5" class="count count-na" text-anchor="end">○ 3</text>
+<rect x="24" y="310" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="324.5" class="chap-name">Query</text><text x="700" y="324.5" class="muted" text-anchor="end">36 cases</text>
+<text x="752" y="324.5" class="count count-passed count-strong" text-anchor="end">✓ 36</text>
+<text x="220" y="346.5" class="band-label" text-anchor="end">Ad-hoc AQL</text><rect x="230" y="337" width="133.52272727272728" height="12" class="bar-passed"/><text x="752" y="346.5" class="count count-passed" text-anchor="end">✓ 25</text>
+<text x="220" y="364.5" class="band-label" text-anchor="end">Stored query execution</text><rect x="230" y="355" width="58.75" height="12" class="bar-passed"/><text x="752" y="364.5" class="count count-passed" text-anchor="end">✓ 11</text>
+<rect x="24" y="378" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="392.5" class="chap-name">Demographic</text><text x="700" y="392.5" class="muted" text-anchor="end">59 cases</text>
+<text x="752" y="392.5" class="count count-passed count-strong" text-anchor="end">✓ 45</text><text x="878" y="392.5" class="count count-na count-strong" text-anchor="end">○ 14</text>
+<text x="220" y="414.5" class="band-label" text-anchor="end">Parties</text><rect x="230" y="405" width="208.29545454545453" height="12" class="bar-passed"/><rect x="438.2954545454545" y="405" width="5.340909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="414.5" class="count count-passed" text-anchor="end">✓ 39</text><text x="878" y="414.5" class="count count-na" text-anchor="end">○ 1</text>
+<text x="220" y="432.5" class="band-label" text-anchor="end">Party relationships</text><rect x="230" y="423" width="64.0909090909091" height="12" fill="url(#na-hatch)"/><text x="878" y="432.5" class="count count-na" text-anchor="end">○ 12</text>
+<text x="220" y="450.5" class="band-label" text-anchor="end">Versioned party</text><rect x="230" y="441" width="32.04545454545455" height="12" class="bar-passed"/><rect x="262.04545454545456" y="441" width="5.340909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="450.5" class="count count-passed" text-anchor="end">✓ 6</text><text x="878" y="450.5" class="count count-na" text-anchor="end">○ 1</text>
+<rect x="24" y="464" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="478.5" class="chap-name">Messaging</text><text x="700" y="478.5" class="muted" text-anchor="end">14 cases</text>
+<text x="878" y="478.5" class="count count-na count-strong" text-anchor="end">○ 14</text>
+<text x="220" y="500.5" class="band-label" text-anchor="end">EHR Extract</text><rect x="230" y="491" width="53.40909090909091" height="12" fill="url(#na-hatch)"/><text x="878" y="500.5" class="count count-na" text-anchor="end">○ 10</text>
+<text x="220" y="518.5" class="band-label" text-anchor="end">TDD</text><rect x="230" y="509" width="21.363636363636363" height="12" fill="url(#na-hatch)"/><text x="878" y="518.5" class="count count-na" text-anchor="end">○ 4</text>
+<rect x="24" y="532" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="546.5" class="chap-name">Admin</text><text x="700" y="546.5" class="muted" text-anchor="end">25 cases</text>
+<text x="752" y="546.5" class="count count-passed count-strong" text-anchor="end">✓ 9</text><text x="878" y="546.5" class="count count-na count-strong" text-anchor="end">○ 16</text>
+<text x="220" y="568.5" class="band-label" text-anchor="end">Admin service</text><rect x="230" y="559" width="48.06818181818182" height="12" class="bar-passed"/><rect x="278.0681818181818" y="559" width="53.40909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="568.5" class="count count-passed" text-anchor="end">✓ 9</text><text x="878" y="568.5" class="count count-na" text-anchor="end">○ 10</text>
+<text x="220" y="586.5" class="band-label" text-anchor="end">Archive</text><rect x="230" y="577" width="21.363636363636363" height="12" fill="url(#na-hatch)"/><text x="878" y="586.5" class="count count-na" text-anchor="end">○ 4</text>
+<text x="220" y="604.5" class="band-label" text-anchor="end">Dump &amp; load</text><rect x="230" y="595" width="10.681818181818182" height="12" fill="url(#na-hatch)"/><text x="878" y="604.5" class="count count-na" text-anchor="end">○ 2</text>
+<rect x="24" y="618" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="632.5" class="chap-name">System</text><text x="700" y="632.5" class="muted" text-anchor="end">1 case</text>
+<text x="752" y="632.5" class="count count-passed count-strong" text-anchor="end">✓ 1</text>
+<text x="220" y="654.5" class="band-label" text-anchor="end">Conformance manifest</text><rect x="230" y="645" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="654.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<rect x="24" y="668" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="682.5" class="chap-name">Content validation</text><text x="700" y="682.5" class="muted" text-anchor="end">123 cases</text>
+<text x="752" y="682.5" class="count count-passed count-strong" text-anchor="end">✓ 123</text>
+<text x="220" y="704.5" class="band-label" text-anchor="end">Data types</text><rect x="230" y="695" width="277.72727272727275" height="12" class="bar-passed"/><text x="752" y="704.5" class="count count-passed" text-anchor="end">✓ 52</text>
+<text x="220" y="722.5" class="band-label" text-anchor="end">Interval data types</text><rect x="230" y="713" width="160.22727272727272" height="12" class="bar-passed"/><text x="752" y="722.5" class="count count-passed" text-anchor="end">✓ 30</text>
+<text x="220" y="740.5" class="band-label" text-anchor="end">Structure &amp; cardinality</text><rect x="230" y="731" width="218.97727272727272" height="12" class="bar-passed"/><text x="752" y="740.5" class="count count-passed" text-anchor="end">✓ 41</text>
+<rect x="24" y="754" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="768.5" class="chap-name">Simplified formats</text><text x="700" y="768.5" class="muted" text-anchor="end">64 cases</text>
+<text x="752" y="768.5" class="count count-passed count-strong" text-anchor="end">✓ 63</text><text x="878" y="768.5" class="count count-na count-strong" text-anchor="end">○ 1</text>
+<text x="220" y="790.5" class="band-label" text-anchor="end">FLAT &amp; STRUCTURED</text><rect x="230" y="781" width="112.1590909090909" height="12" class="bar-passed"/><text x="752" y="790.5" class="count count-passed" text-anchor="end">✓ 21</text>
+<text x="220" y="808.5" class="band-label" text-anchor="end">Web Template</text><rect x="230" y="799" width="26.704545454545453" height="12" class="bar-passed"/><text x="752" y="808.5" class="count count-passed" text-anchor="end">✓ 5</text>
+<text x="220" y="826.5" class="band-label" text-anchor="end">Path mapping</text><rect x="230" y="817" width="160.22727272727272" height="12" class="bar-passed"/><text x="752" y="826.5" class="count count-passed" text-anchor="end">✓ 30</text>
+<text x="220" y="844.5" class="band-label" text-anchor="end">Scope &amp; legacy media</text><rect x="230" y="835" width="37.38636363636363" height="12" class="bar-passed"/><rect x="267.3863636363636" y="835" width="5.340909090909091" height="12" fill="url(#na-hatch)"/><text x="752" y="844.5" class="count count-passed" text-anchor="end">✓ 7</text><text x="878" y="844.5" class="count count-na" text-anchor="end">○ 1</text>
+<rect x="24" y="858" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="872.5" class="chap-name">Security &amp; privacy</text><text x="700" y="872.5" class="muted" text-anchor="end">6 cases</text>
+<text x="752" y="872.5" class="count count-passed count-strong" text-anchor="end">✓ 6</text>
+<text x="220" y="894.5" class="band-label" text-anchor="end">Authenticated access</text><rect x="230" y="885" width="10.681818181818182" height="12" class="bar-passed"/><text x="752" y="894.5" class="count count-passed" text-anchor="end">✓ 2</text>
+<text x="220" y="912.5" class="band-label" text-anchor="end">Authorization separation</text><rect x="230" y="903" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="912.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<text x="220" y="930.5" class="band-label" text-anchor="end">Audit accountability</text><rect x="230" y="921" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="930.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<text x="220" y="948.5" class="band-label" text-anchor="end">Anonymous EHRs</text><rect x="230" y="939" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="948.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<text x="220" y="966.5" class="band-label" text-anchor="end">EHR/demographic separation</text><rect x="230" y="957" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="966.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<rect x="24" y="980" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="994.5" class="chap-name">Signing</text><text x="700" y="994.5" class="muted" text-anchor="end">12 cases</text>
+<text x="752" y="994.5" class="count count-passed count-strong" text-anchor="end">✓ 10</text><text x="878" y="994.5" class="count count-na count-strong" text-anchor="end">○ 2</text>
+<text x="220" y="1016.5" class="band-label" text-anchor="end">Version signing</text><rect x="230" y="1007" width="53.40909090909091" height="12" class="bar-passed"/><rect x="283.4090909090909" y="1007" width="10.681818181818182" height="12" fill="url(#na-hatch)"/><text x="752" y="1016.5" class="count count-passed" text-anchor="end">✓ 10</text><text x="878" y="1016.5" class="count count-na" text-anchor="end">○ 2</text>
+<rect x="24" y="1030" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="1044.5" class="chap-name">SMART App Launch</text><text x="700" y="1044.5" class="muted" text-anchor="end">3 cases</text>
+<text x="752" y="1044.5" class="count count-passed count-strong" text-anchor="end">✓ 3</text>
+<text x="220" y="1066.5" class="band-label" text-anchor="end">Discovery</text><rect x="230" y="1057" width="5.340909090909091" height="12" class="bar-passed"/><text x="752" y="1066.5" class="count count-passed" text-anchor="end">✓ 1</text>
+<text x="220" y="1084.5" class="band-label" text-anchor="end">Resource scopes</text><rect x="230" y="1075" width="10.681818181818182" height="12" class="bar-passed"/><text x="752" y="1084.5" class="count count-passed" text-anchor="end">✓ 2</text>
+<rect x="24" y="1098" width="860" height="20" rx="4" class="chap-row"/><text x="34" y="1112.5" class="chap-name">Performance</text><text x="700" y="1112.5" class="muted" text-anchor="end">no cases</text>
 
-<rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="42" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="121.2" y="49" class="muted">failed</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="200.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" class="bar-na"/><text x="286.8" y="49" class="muted">N/A (cited)</text><text x="166" y="81" text-anchor="end">EHR</text>
-<rect x="174" y="64" width="615.4703832752613" height="26" class="bar-passed"/>
-
-<text x="481.73519163763063" y="81" class="seg-label" text-anchor="middle">276</text><rect x="789.4703832752613" y="64" width="24.529616724738673" height="26" class="bar-na"/>
-
-<text x="801.7351916376306" y="81" class="seg-label-dim" text-anchor="middle">11</text><text x="822" y="81" class="muted">287</text>
-<text x="166" y="115" text-anchor="end">Definitions</text>
-<rect x="174" y="98" width="153.86759581881532" height="26" class="bar-passed"/>
-
-<text x="250.93379790940764" y="115" class="seg-label" text-anchor="middle">69</text><rect x="327.8675958188153" y="98" width="37.90940766550523" height="26" class="bar-na"/>
-
-<text x="346.8222996515679" y="115" class="seg-label-dim" text-anchor="middle">17</text><text x="373.7770034843205" y="115" class="muted">86</text>
-<text x="166" y="149" text-anchor="end">Query</text>
-<rect x="174" y="132" width="80.2787456445993" height="26" class="bar-passed"/>
-
-<text x="214.13937282229966" y="149" class="seg-label" text-anchor="middle">36</text><text x="262.2787456445993" y="149" class="muted">36</text>
-<text x="166" y="183" text-anchor="end">Demographic</text>
-<rect x="174" y="166" width="93.65853658536585" height="26" class="bar-passed"/>
-
-<text x="220.8292682926829" y="183" class="seg-label" text-anchor="middle">42</text><rect x="267.6585365853658" y="166" width="28.989547038327526" height="26" class="bar-na"/>
-
-<text x="282.15331010452957" y="183" class="seg-label-dim" text-anchor="middle">13</text><text x="304.64808362369337" y="183" class="muted">55</text>
-<text x="166" y="217" text-anchor="end">Admin</text>
-<rect x="174" y="200" width="20.069686411149824" height="26" class="bar-passed"/>
-
-<rect x="194.06968641114983" y="200" width="35.6794425087108" height="26" class="bar-na"/>
-
-<text x="211.90940766550523" y="217" class="seg-label-dim" text-anchor="middle">16</text><text x="237.74912891986062" y="217" class="muted">25</text>
-<text x="166" y="251" text-anchor="end">Messaging</text>
-<rect x="174" y="234" width="31.21951219512195" height="26" class="bar-na"/>
-
-<text x="189.609756097561" y="251" class="seg-label-dim" text-anchor="middle">14</text><text x="213.21951219512195" y="251" class="muted">14</text>
-<text x="166" y="285" text-anchor="end">Content validation</text>
-<rect x="174" y="268" width="274.2857142857143" height="26" class="bar-passed"/>
-
-<text x="311.1428571428571" y="285" class="seg-label" text-anchor="middle">123</text><text x="456.2857142857143" y="285" class="muted">123</text>
-<text x="166" y="319" text-anchor="end">Simplified formats</text>
-<rect x="174" y="302" width="140.48780487804876" height="26" class="bar-passed"/>
-
-<text x="244.2439024390244" y="319" class="seg-label" text-anchor="middle">63</text><rect x="314.4878048780488" y="302" width="2.229965156794425" height="26" class="bar-na"/>
-
-<text x="324.7177700348432" y="319" class="muted">64</text>
-<text x="166" y="353" text-anchor="end">Security &amp; privacy</text>
-<rect x="174" y="336" width="13.37979094076655" height="26" class="bar-passed"/>
-
-<text x="195.37979094076655" y="353" class="muted">6</text>
-<text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="22.29965156794425" height="26" class="bar-passed"/>
-
-<text x="185.14982578397212" y="387" class="seg-label" text-anchor="middle">10</text><rect x="196.29965156794424" y="370" width="4.45993031358885" height="26" class="bar-na"/>
-
-<text x="208.75958188153308" y="387" class="muted">12</text>
-<text x="166" y="421" text-anchor="end">Other</text>
-<rect x="174" y="404" width="89.198606271777" height="26" class="bar-passed"/>
-
-<text x="218.5993031358885" y="421" class="seg-label" text-anchor="middle">40</text><rect x="263.198606271777" y="404" width="2.229965156794425" height="26" class="bar-na"/>
-
-<text x="273.42857142857144" y="421" class="muted">41</text>
-<text x="166" y="455" text-anchor="end">SMART App Launch</text>
-<rect x="174" y="438" width="6.689895470383275" height="26" class="bar-passed"/>
-
-<text x="188.68989547038328" y="455" class="muted">3</text>
+<text x="220" y="1134.5" class="band-label" text-anchor="end">Hospital simulation</text><text x="230" y="1134.5" class="band-empty">no cases</text>
 </svg>
