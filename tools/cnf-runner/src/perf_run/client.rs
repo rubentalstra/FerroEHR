@@ -71,6 +71,21 @@ impl PerfClient {
                     .map_err(|_| format!("credential env {token_env} unset"))?;
                 Some(format!("Bearer {token}"))
             }
+            // The SMART lane's per-step token mint is a FUNCTIONAL-case
+            // mechanism: a minted token carries the scopes one case step
+            // declares, and a measured run has no steps and no scope axis —
+            // its workload is the journey catalogue, driven by one long-lived
+            // principal. A measured run against a SMART-lane instance would
+            // therefore be measuring token minting, not the CDR, so it is
+            // refused loudly rather than served a scope-less token.
+            AuthMode::BearerMint => {
+                return Err(
+                    "instance uses the SMART lane's `bearer_mint` auth mode, which mints \
+                            per-case scoped tokens for functional cases only — point a measured \
+                            run at a basic/bearer principal"
+                        .to_owned(),
+                );
+            }
         };
         let client = reqwest::blocking::Client::builder()
             .timeout(CLIENT_TIMEOUT)

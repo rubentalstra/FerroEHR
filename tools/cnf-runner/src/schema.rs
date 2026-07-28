@@ -142,6 +142,11 @@ fn flow_step_def() -> Value {
             "on": { "type": "string", "pattern": IDENT_PATTERN },
             "variant": { "type": "string" },
             "format": { "enum": tokens(FormatName::ALL) },
+            "scopes": {
+                "description": "The SMART `scope` claim this step's principal presents (ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes), space-joined into a minted RS256 access token by the addressed `bearer_mint` instance. Declaring the key at all — including as an empty list, the scope-less token the fail-closed deny branch needs — marks the step SMART-lane, so a party whose ixit declares no `smart` block records the case not-applicable.",
+                "type": "array",
+                "items": { "type": "string" }
+            },
             "with": { "type": "object" },
             "expect": { "oneOf": [
                 { "enum": tokens(OutcomeKind::ALL) },
@@ -833,7 +838,9 @@ pub fn ixit_schema() -> Value {
                                                   "password_env": { "type": "string", "minLength": 1 } } },
                                 { "additionalProperties": false, "required": ["mode", "token_env"],
                                   "properties": { "mode": { "const": "bearer" },
-                                                  "token_env": { "type": "string", "minLength": 1 } } }
+                                                  "token_env": { "type": "string", "minLength": 1 } } },
+                                { "additionalProperties": false, "required": ["mode"],
+                                  "properties": { "mode": { "const": "bearer_mint" } } }
                             ]
                         },
                         "headers": { "type": "object", "additionalProperties": { "type": "string" } }
@@ -869,6 +876,34 @@ pub fn ixit_schema() -> Value {
                       "properties": { "mode": { "const": "pgp" },
                                       "public_key": { "type": "string", "minLength": 1 } } }
                 ]
+            },
+            "smart": {
+                "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["platform_instance", "mint"],
+                "properties": {
+                    "platform_instance": {
+                        "description": "The instance whose base_url is the SMART Platform base URL — master04 §Service Discovery serves /.well-known/smart-configuration relative to it, not to the openEHR REST base the other instances address.",
+                        "type": "string",
+                        "pattern": IDENT_PATTERN
+                    },
+                    "mint": {
+                        "description": "The static test issuer the `bearer_mint` instances sign RS256 access tokens with. Committed test material, never production key material.",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["issuer", "subject", "key_file", "kid", "ttl_seconds"],
+                        "properties": {
+                            "issuer": { "type": "string", "minLength": 1 },
+                            "audience": { "type": "string", "minLength": 1 },
+                            "subject": { "type": "string", "minLength": 1 },
+                            "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                            "key_file": { "type": "string", "minLength": 1 },
+                            "kid": { "type": "string", "minLength": 1 },
+                            "ttl_seconds": { "type": "integer", "minimum": 1 }
+                        }
+                    }
+                }
             }
         }
     })

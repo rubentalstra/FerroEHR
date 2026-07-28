@@ -1810,36 +1810,51 @@ elements:
   # SMART on openEHR (ITS-REST docs/smart_app_launch/, `:spec_status:
   # DEVELOPMENT`). Prose-only: no OAS group, no schemas, no CNF anchor, and
   # exactly one RFC 2119 uppercase keyword in the whole specification — so
-  # axis 1 (SM interfaces) and axis 2 (realized bindings) cannot enumerate any
-  # of it. With an external Authorization Server, the CDR's enforceable share
-  # is exactly the three elements below; the launch flows (master07), token
+  # axis 2 (realized bindings) cannot enumerate it and axis 1 reaches only the
+  # discovery document, through the reserved I_ITS_REST_SMART pseudo-interface
+  # pinned in NON_SM_REST_OPERATIONS (the SM models no Platform component at
+  # all). With an external Authorization Server, the CDR's enforceable share is
+  # exactly the three elements below; the launch flows (master07), token
   # issuance and the deprecated-grant prohibition (master06), registration
   # (master03) and the application typology (master05) are Authorization-Server
-  # behaviour, not CDR behaviour. All three are adjudicated by register
-  # AMB-151, which also records why no case can execute them (SMART is off in
-  # the composed SUT, and a scope case needs a per-case Bearer token the runner
-  # cannot mint).
+  # behaviour, not CDR behaviour, and stay adjudicated by register AMB-151.
+  #
+  # ALL THREE ARE NOW EXECUTED (#538). The two blockers AMB-151 recorded are
+  # gone: `docker/sut-smart.yml` boots the SUT in the SMART resource-server
+  # posture, and the runner mints per-case Bearer tokens carrying a chosen
+  # `scope` claim against the party's declared static test issuer
+  # (ixit `smart` lane; the CDR itself never issues tokens — master06
+  # §Supported Authentication Flows). A party that declares no `smart` lane
+  # records these cases not-applicable with that citation, so the default
+  # (SMART-off) lane is unchanged.
   - id: smart-discovery-document-shape
-    description: "When SMART is enabled, /.well-known/smart-configuration is served relative to the Platform base URL as application/json, and its `services` map carries at minimum an `org.openehr.rest` entry whose `baseUrl` is an ABSOLUTE URL to the root of the openEHR REST API; the advertised `capabilities` claim only features the server actually supports. When SMART is disabled the document is absent and the wire is byte-identical to a non-SMART deployment."
+    description: "When SMART is enabled, /.well-known/smart-configuration is served relative to the Platform base URL as application/json, and its `services` map carries at minimum an `org.openehr.rest` entry whose `baseUrl` is an ABSOLUTE URL to the root of the openEHR REST API, alongside a `capabilities` array."
     source: "ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service Discovery (\"The configuration endpoint should be always available relative to the _Platform_ base URL\"; \"Responses to `/.well-known/smart-configuration` endpoint must be served with the `application/json` MIME type\") + §Services (\"the response from configuration endpoint must include the `services` section\"; \"At a minimum, the `services` section must include the openEHR REST API using the key `org.openehr.rest`\"; \"`baseUrl`: Absolute URL to the root of the API `*(required)*`\") + §Capabilities (\"The `capabilities` section advertises supported SMART features as an array value\"; `openehr-permission-v1`: \"Indicates support for fine-grained scopes and authorization scheme over openEHR resources\"). The document's status codes, caching and auth posture are unstated — register AMB-149; the §Authentication Endpoints list names the wrong well-known document — register AMB-146"
+    covered_by: [SMART-DISCOVERY-document_shape]
+  - id: smart-discovery-absent-when-disabled
+    description: "A deployment that does NOT run the SMART resource-server role serves no /.well-known/smart-configuration document and is byte-identical on the wire to a non-SMART deployment — the SMART surface is additive, never a change to the openEHR REST wire."
+    source: "ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Service Discovery defines the document as a *Platform* facility, and manifest_vars.adoc marks the whole specification `:spec_status: DEVELOPMENT`; ITS-REST docs/overview/Resources.md §Resources defines the openEHR resource set the REST wire serves and never requires this document of it — so a CDR that is not part of a SMART Platform owes nothing here. No released clause governs the absent state; register AMB-151 is the adjudication"
     exception:
       reason: statement_declared
       register: AMB-151
-      note: "SMART is config-gated and OFF by default, so the composed conformance SUT (default configuration) serves no such document and a case would drive an absent surface. Proven instead by app/ehrbase-rest/tests/smart_http.rs — `discovery_serves_absolute_base_urls` (the origin-prefixed org.openehr.rest baseUrl, the group-15 wire fix), `discovery_absent_when_disabled` (the zero-drift disabled state) and `permission_capability_only_in_fail_closed_mode` (capability honesty: openehr-permission-v1 is advertised only when the gate actually enforces). Becomes authorable only if the conformance stack gains a SMART-enabled SUT profile."
+      note: "The ABSENCE of a surface has no wire to drive: a case asserting a 404 would be asserting the router's fallback, not a released behaviour, and no released clause assigns the disabled state a status. Proven instead by app/ehrbase-rest/tests/smart_http.rs — `discovery_absent_when_disabled` and `smart_disabled_leaves_families_ungated` (the zero-drift disabled state, both halves). The positive direction IS executed: SMART-DISCOVERY-document_shape drives the document in the SMART lane, and it is not-applicable — never failed — on the default lane, so the two lanes together are the honest statement."
   - id: smart-resource-scope-grammar
-    description: "A token's `scope` claim is parsed by the master08 resource-scope grammar — <compartment>/<resource>.<permission> over the three compartments (patient/user/system), the three closed resource nouns (template-, composition-, aql-), the id pattern table and the CRUDS permission letters — and a granted scope narrows access to exactly what it names. Every string the grammar does not recognise is retained but INERT: it neither grants nor denies."
-    source: "ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the syntax line `<compartment>/<resource>.<permission>`; the three compartments and their meanings; \"The following openEHR REST APIs `<resource>` types are supported for use in scopes\" with its closed three-noun list; the five-row `<templateId>`/`<queryName>` pattern table; the permission letters `c`/`r`/`u`/`d`/`s`; the eight-row maximal table) + §Scopes (\"The _Platform_ must validate requested scopes …\"). The discovery example advertises two forms this grammar cannot parse — register AMB-145; `**` is named twice and never defined — AMB-147; the placeholder and validation sentences are defective — AMB-148; no scope-to-operation mapping, no tail well-formedness rule, no composition rule and no compartment-matching rule exist anywhere — AMB-150"
+    description: "A token's `scope` claim is parsed by the master08 resource-scope grammar — <compartment>/<resource>.<permission> — and a granted scope narrows access to exactly what it names: the operation the scope grants succeeds, and one whose permission letters do not cover the operation is refused. An identity scope (`openid`) presented alongside neither widens nor narrows the resource decision."
+    source: "ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the syntax line `<compartment>/<resource>.<permission>`; the three compartments and their meanings; \"The following openEHR REST APIs `<resource>` types are supported for use in scopes\" with its closed three-noun list; the five-row `<templateId>`/`<queryName>` pattern table; the permission letters `c`/`r`/`u`/`d`/`s`; the eight-row maximal table) + §Scopes (\"The _Platform_ must validate requested scopes …\"; the three scope purposes, of which `openid` is an Identity Claim). The discovery example advertises two forms this grammar cannot parse — register AMB-145; `**` is named twice and never defined — AMB-147; the placeholder and validation sentences are defective — AMB-148; no scope-to-operation mapping, no tail well-formedness rule, no composition rule and no compartment-matching rule exist anywhere — AMB-150"
+    covered_by:
+      - SMART-RESOURCE_SCOPES-granted_scope_permits
+      - SMART-RESOURCE_SCOPES-scope_deny_403
+  - id: smart-resource-scope-grammar-remaining-rows
+    description: "The grammar rows the executed cases do not yet reach on the wire: the `patient` compartment (which also needs a launch-context claim bound to a provisioned EHR), the `composition-` and `aql-` resource nouns, the four non-`*` rows of the id pattern table, and the INERT demotion of a string the grammar cannot parse (retained, granting and denying nothing)."
+    source: "ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the five-row pattern table; the `patient` compartment: \"Access is limited to the current EHR and Patient is present in the context\"; the `composition-<templateId>` and `aql-<queryName>` nouns) + master07-authorization.adoc §Context Selection (the `ehrId` launch-context claim a `patient/` scope needs). AMB-145 (unparseable example forms), AMB-147 (`**` undefined) and AMB-150 (no compartment-matching rule) are the adjudications the inert reading rests on"
     exception:
-      reason: statement_declared
+      reason: coverage_gap
       register: AMB-151
-      note: "Not executable as a case: every grammar row needs a Bearer token carrying a chosen `scope` claim, which needs an Authorization Server the conformance stack does not run and per-case token minting the runner does not have (an ixit Bearer principal is one static token). Proven instead by the grammar's own unit suite in crates/openehr-its/src/rest/smart_scopes.rs — the ONE parser both the CDR gate and scope-previewing REST clients use, covering all five pattern-table rows, all eight maximal-table rows, the compartments, the CRUDS letters, the AMB-147 `**` reading, and the inert demotion of the AMB-145 example forms."
+      note: "A GENUINE COVERAGE GAP, stated openly rather than counted: the lane machinery now exists (the SMART compose overlay + the ixit `smart` token mint), so each remaining row is a new case, not a blocked one. Coverage ratchets: this entry shrinks as rows land and retires when none is left. Meanwhile the parser itself is exhaustively covered by its unit suite in crates/openehr-its/src/rest/smart_scopes.rs — the ONE parser both the CDR gate and scope-previewing REST clients use, covering all five pattern-table rows, all eight maximal-table rows, the compartments, the CRUDS letters, the AMB-147 `**` reading, and the inert demotion of the AMB-145 example forms — which is evidence about the parser, never about the wire."
   - id: smart-scope-deny-403
-    description: "A request the granted SMART scopes do not permit is refused with 403 Forbidden — the authenticated-but-unauthorized status — and the refusal composes as an AND onto RBAC/ABAC: SMART can only narrow a decision, never widen one. In fail-closed mode a token holding no scope of the operation's resource family is refused the same way."
-    source: "ITS-REST docs/overview/Requests_and_responses.md §\"Authentication and authorization\" (\"If authentication and authorization are required, services MUST properly use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers, returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication` as applicable\") + §\"HTTP status codes\" (403 — \"The service understood the request but refuses to authorize it\") applied to ITS-REST docs/smart_app_launch/master08-scopes.adoc §Scopes (\"The _Platform_ must validate requested scopes against the _Application_ registration metadata, applicable access control policies, the authenticated user's permissions\"), which states the obligation and assigns no status — register AMB-150(4)"
-    exception:
-      reason: statement_declared
-      register: AMB-151
-      note: "Same two blockers as smart-resource-scope-grammar (SMART off in the composed SUT; no per-case scoped Bearer token). Proven instead by app/ehrbase-rest/tests/smart_http.rs — `fail_closed_denies_scopeless_template_access` and `fail_closed_denies_scopeless_query_access` (the two families that were parsed-but-never-enforced before the group-15 wire fix), `advisory_mode_defers_for_scopeless_callers` and `smart_disabled_leaves_families_ungated` (the negative directions) — plus the PEP unit tests in app/ehrbase-rest/src/extensions/access/pep.rs. The generic 401/403 discipline itself is separately gated by the SEC-BASIC cases, which do not depend on SMART."
+    description: "A request the granted SMART scopes do not permit is refused with 403 Forbidden — the authenticated-but-unauthorized status — and the refusal composes as an AND onto RBAC/ABAC: SMART can only narrow a decision, never widen one. On a Platform advertising `openehr-permission-v1`, a token holding no scope of the operation's resource family is refused the same way."
+    source: "ITS-REST docs/overview/Requests_and_responses.md §\"Authentication and authorization\" (\"If authentication and authorization are required, services MUST properly use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers, returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication` as applicable\") + §\"HTTP status codes\" (403 — \"The service understood the request but refuses to authorize it\") applied to ITS-REST docs/smart_app_launch/master08-scopes.adoc §Scopes (\"The _Platform_ must validate requested scopes against the _Application_ registration metadata, applicable access control policies, the authenticated user's permissions\"), which states the obligation and assigns no status — register AMB-150(4). The no-scope-of-the-family branch rests on the Platform's own declaration: master04-service_discovery.adoc §Capabilities, `openehr-permission-v1` — \"Indicates support for fine-grained <<_resource_scopes,scopes>> and authorization scheme over openEHR resources\""
+    covered_by: [SMART-RESOURCE_SCOPES-scope_deny_403]
 
 # ── Axis 4 — the OUTWARD axis: the non-openEHR surface this SUT serves ──────
 #
@@ -2005,9 +2020,11 @@ served_extensions:
     config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 when off, RBAC Admin class by the /admin/ path"
     spec_silence: "The released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml); nothing released deletes a template, deletes one stored-query version, or exposes a configuration tree. The query delete deliberately does NOT claim SM I_DEFINITION_QUERY.delete_query, which is keyed by name alone and removes every version (register AMB-127 keeps that operation unrealized). No released clause governs the URI space beyond the resource set. Our own design/extension, excluded from every conformance-profile claim."
     never_gates: true
-  - family: smart-discovery
-    routes:
-      - "GET /ehrbase/rest/.well-known/smart-configuration"
-    config_gate: "[smart] (default off) — absent entirely when disabled, so a non-SMART deployment's wire is byte-identical to one without the feature"
-    spec_silence: "The SMART on openEHR chapters are DEVELOPMENT-status and their subject is a Platform, not the CDR (register AMB-151). The discovery document itself is one of the three CDR-side behaviours those chapters do define (master04 §Service Discovery), but the endpoint definition is FHIR's, which master04 only \"extends\" — so the route exists in this server as a declared, statement-level capability, not as a released openEHR obligation, and this party's statement claims no SMART conformance."
-    never_gates: true
+  # The SMART discovery route was declared here while it was a
+  # statement-level capability with no case. It is NOT an extension family any
+  # more: `I_ITS_REST_SMART.discovery` is a pinned RELEASED ITS-REST operation
+  # (NON_SM_REST_OPERATIONS) with an `its-rest` binding and a covering case
+  # (SMART-DISCOVERY-document_shape), so it belongs to axes 1-3, which is
+  # exactly what the axis-4 released-path check enforces. The route's
+  # config-gated, off-by-default nature is recorded where it now belongs: the
+  # `smart-discovery-absent-when-disabled` element above.

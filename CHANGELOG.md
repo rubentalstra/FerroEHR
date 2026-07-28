@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance runner: the SMART on openEHR boundary is now executed, not
+  declared** (#538). Three behaviours that were previously carried as
+  statement-level claims are real conformance cases: the
+  `/.well-known/smart-configuration` discovery document (served from the
+  Platform base URL as `application/json`, advertising the required
+  `org.openehr.rest` service at an absolute base URL), the resource-scope
+  grammar that lets a granted scope reach exactly the operation it names, and
+  the 403 refusal of a request the granted scopes do not permit. Because SMART
+  is off by default, they run in their own **lane**:
+  `CONF_SMART_MODE=1 bash scripts/conformance.sh` boots the server with the
+  SMART resource-server posture enabled (`docker/sut-smart.yml`), drives the
+  SMART group, and writes to `docs/conformance/<sut>-smart/`; the default lane
+  is untouched and remains the published baseline. To exercise scopes at all
+  the runner now mints its own short-lived access tokens against a **committed
+  test issuer** (`tools/cnf-runner/party/smart/` — public test key material for
+  the harness, never usable for anything else), because a CDR validates tokens
+  and never issues them and the conformance stack runs no Authorization
+  Server. A conformance target that does not run the SMART role simply does not
+  declare the lane in its `ixit.json`, and these cases are recorded
+  not-applicable with that citation rather than failed.
+
 - **Conformance runner: two more wire behaviours are now measured, not
   excused** (#539, #569). The bulk admin delete's subset selector is exercised
   in the repeated `?ehr_id=a&ehr_id=b` form the openEHR path template asks

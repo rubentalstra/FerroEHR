@@ -1325,6 +1325,7 @@ dependencies = [
  "clap",
  "hdrhistogram",
  "jsonschema",
+ "jsonwebtoken",
  "pgp",
  "regex",
  "reqwest 0.13.4",

@@ -46,6 +46,12 @@
 #   CONF_PERF_HOURS sustained-window ladder for the perf stage:
 #                   1 (default) | 2 | 4 | 6 | 8 | 12 — longer holds are
 #                   stricter demonstrations; nothing shorter exists.
+#   CONF_SIGNING_MODE
+#                   pgp: run the ehrbase-rs SUT in openPGP version-signing mode
+#                   (see below). Default digest.
+#   CONF_SMART_MODE if set, run the ehrbase-rs SUT in the SMART on openEHR
+#                   resource-server posture (see below) — a FOCUSED lane, not
+#                   the conformance baseline.
 #   SKIP_BUILD      if set, compose up without --build (published image).
 #   SUT_USER/SUT_PASS, SUT_ADMIN_USER/SUT_ADMIN_PASS,
 #   SUT_RO_USER/SUT_RO_PASS
@@ -77,6 +83,36 @@ EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf)
 if [ "$SIGNING_MODE" = "pgp" ] && [ "$SUT" = "ehrbase-rs" ]; then
   EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-signing-pgp.yml")
   [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.pgp.json"
+fi
+
+# CONF_SMART_MODE=1 runs the ehrbase-rs SUT in the SMART on openEHR
+# resource-server posture (ITS-REST docs/smart_app_launch): overlay the SMART
+# compose variant (mounts the committed CNF test issuer's PUBLIC jwks.json,
+# sets smart.enabled + smart.require_smart_scopes + the advertised AS
+# endpoints, and points auth.oidc at that issuer) and use the SMART ixit
+# (which declares the `smart` lane the runner mints per-case scoped Bearer
+# tokens against) and the SMART statement (which claims SmartAppLaunch).
+#
+# THIS IS A FOCUSED LANE, NOT THE BASELINE, on two counts:
+#  - `require_smart_scopes` is the fail-closed posture master04 §Capabilities
+#    lets a Platform advertise as `openehr-permission-v1`, and SMART scopes
+#    ride Bearer tokens only, so the catalogue's Basic-auth principals hold
+#    none and every template/composition/AQL case would be (correctly)
+#    refused. The lane therefore defaults its FILTER to the SMART group; pass
+#    an explicit filter to override.
+#  - its artefacts land in their own `<sut>-smart` directory so a filtered run
+#    can never overwrite the committed conformance baseline.
+# Only meaningful for CONF_SUT=ehrbase-rs.
+if [ -n "${CONF_SMART_MODE:-}" ] && [ "$SUT" = "ehrbase-rs" ]; then
+  if [ "$SIGNING_MODE" = "pgp" ]; then
+    echo "conformance: CONF_SMART_MODE and CONF_SIGNING_MODE=pgp are separate lanes; run them one at a time" >&2
+    exit 2
+  fi
+  EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-smart.yml")
+  [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.smart.json"
+  [ -n "${CONF_STATEMENT:-}" ] || STATEMENT="$PARTY/statement.smart.json"
+  [ -n "$FILTER" ] || FILTER="SMART-"
+  OUT="$OUT-smart"
 fi
 
 # Build provenance for compose-built images: the OCI-standard REVISION arg (the

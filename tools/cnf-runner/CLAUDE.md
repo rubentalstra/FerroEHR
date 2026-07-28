@@ -9,7 +9,7 @@ language, ever.
 
 | Command | Purpose |
 |---|---|
-| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1`; **configuration lanes** `CONF_SIGNING_MODE=pgp` and `CONF_SMART_MODE=1` (mutually exclusive, ehrbase-rs only) |
 | `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
@@ -46,7 +46,19 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   (e.g. `system_id`) and a case reads it as `${ixit:<field>}` — the field set
   is closed like every other grammar. A party that declares nothing makes the
   referencing cases not-applicable with that citation, so an undeclared fact
-  costs coverage, never correctness.
+  costs coverage, never correctness. The same law covers whole **configuration
+  lanes**: `ixit.signing` declares the version-signing posture, and
+  `ixit.smart` declares the SMART resource-server posture PLUS the static test
+  issuer the runner mints per-step scoped Bearer tokens against (a flow step's
+  `scopes:` key — empty list included — marks it SMART-lane; the CDR never
+  issues tokens, ITS-REST `docs/smart_app_launch/master06-authentication.adoc`
+  §Supported Authentication Flows, so the runner takes the Authorization-Server
+  role for that lane only). Undeclared => not-applicable with the citation,
+  never a driven guess. Lanes are selected by `scripts/conformance.sh`
+  (`CONF_SIGNING_MODE=pgp`, `CONF_SMART_MODE=1`); the SMART lane is FOCUSED —
+  its fail-closed posture would correctly refuse the catalogue's Basic-auth
+  principals, so it filters to the SMART group and writes to its own
+  `<sut>-smart` artefact directory rather than the baseline.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its source under the oracle
