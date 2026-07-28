@@ -309,6 +309,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Conformance: a product is no longer excused from 186 test cases for
+  declaring an older REST release** (#635). Every conformance case may declare
+  the openEHR release its behaviour needs, and systems declaring an earlier
+  release are skipped for it. That declaration had been copied onto 343 cases
+  as authoring boilerplate, which quietly wrote off most of the EHR,
+  COMPOSITION, DIRECTORY, CONTRIBUTION, QUERY and template surface for any
+  product declaring ITS-REST 1.0.3 — behaviour those products do implement and
+  should be judged on. Each case was re-derived against the released
+  amendment record, and the requirement is kept only where the released text
+  actually dates it: ITEM_TAGs, the Demographic API, admin EHR deletion, the
+  Simplified Formats media types, `Prefer: return=identifier`, the
+  audit-details `system_id`, the reserved `aql` query name, the template
+  `/example` sub-resource, and SMART on openEHR. Everything else is now judged
+  for every product, with the two genuinely release-dated header rules (the
+  weak `W/` ETag form and the read/delete `Location` restriction) still
+  applied only to the release that introduced them. No test was removed or
+  weakened; the comparison against other openEHR products now covers what they
+  really implement.
+
 - **The conformance statement no longer claims nine capabilities it cannot
   demonstrate** (#623). ADL 1.4 and ADL 2 archetype provisioning, the admin
   Activity Report, EHR dump/load, EHR and demographic archiving, EHR Extract,
