@@ -43,6 +43,14 @@ outcomes:
       ETag: 'pattern:W/"<ehr_id>"'        # the section's own example source: "EHR.ehr_id.value"
       Location: absent                    # GET — overview §Location
   not_found: { status: 404 }              # 404.yaml (unknown ehr_id)
+  # An `Accept` the service cannot fulfil — ITS-REST overview Resources.md
+  # §"XML Format": "If the service cannot fulfill this aspect of the request,
+  # it MUST respond with HTTP status code `406 Not Acceptable`". Whether the
+  # EHR resource is served in canonical XML at all is statement-declared
+  # (register AMB-167: the published XSDs declare no EHR document element, so
+  # offering and refusing are both conformant); this branch is the refusal arm,
+  # exercised by I_EHR_SERVICE.get_ehr-xml_not_acceptable.
+  not_acceptable: { status: 406 }
   unauthenticated:
     status: 401                           # overview §HTTP status codes (401 — "lacks valid authentication credentials for the target resource")
     headers:
