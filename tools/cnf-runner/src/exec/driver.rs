@@ -2298,14 +2298,14 @@ mod tests {
 
     /// The committed CNF SMART test issuer (`tools/cnf-runner/party/smart/`) —
     /// public test material by design, never production key material.
-    fn test_mint(scopes_roles: Vec<String>) -> crate::ixit::BearerMint {
+    fn test_mint(roles: Vec<String>) -> crate::ixit::BearerMint {
         let key_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("party/smart/cnf-smart-test.key.pem");
         serde_json::from_value(serde_json::json!({
             "issuer": "https://as.cnf.test",
             "audience": "cnf-smart-sut",
             "subject": "cnf-smart-app",
-            "roles": scopes_roles,
+            "roles": roles,
             "key_file": key_file,
             "kid": "cnf-smart-test",
             "ttl_seconds": 300
