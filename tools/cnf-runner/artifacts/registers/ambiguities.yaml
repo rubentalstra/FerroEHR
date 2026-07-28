@@ -5825,3 +5825,68 @@ AMB-166:
     set the request header.
   disposition: fixed_handling
   upstream_ref: "UPR-126"
+
+AMB-169:
+  ambiguity: >-
+    NOT an openEHR ambiguity in the operative sense — a DECLARATION of an
+    implementation-defined choice the released text leaves entirely open (the
+    AMB-157 treatment, applied to a media-type parameter instead of a route
+    space). openEHR publishes canonical XML in TWO wire lineages that differ
+    only by the namespace a document declares — `http://schemas.openehr.org/v1`
+    (Release-1.0.2, which the schema repository still presents as the STABLE
+    release) and `http://schemas.openehr.org/v2` (Release-2.0.0, marked TRIAL
+    upstream). Released ITS-REST names neither: §XML Format requires
+    conformance to "the [published XSDs]" as a set, gives one media type
+    (`application/xml`) for all of it, and says nothing about which lineage a
+    response carries or how a client could ask for the other. So a service
+    serving only v1, a service serving only v2, and a service letting the
+    client choose are all consistent with every released sentence. This
+    ambiguity is therefore about the SERVED LINEAGE and, for a service that
+    lets the client choose, about the SELECTION MECHANISM — which no released
+    text supplies either.
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §"XML Format" ("When
+    resources are serialized in **canonical XML** format, both request payloads
+    and responses MUST conform to the [published XSDs]"; "A client MAY use the
+    header `Content-Type: application/xml` in the requests to specify the XML
+    payload format"; "The client SHOULD use the `Accept: application/xml`
+    request header to specify the expected XML response format") + §"Data
+    representation" ("Services MUST support at least one of the openEHR **XML**
+    or **JSON** canonical formats") — neither section names a namespace, a
+    schema release, or any media-type parameter, and a grep of
+    specifications/docs/** for `schemas.openehr.org`, `namespace` or a
+    media-type-parameter clause returns ZERO hits. The two lineages and their
+    status come from the ITS-XML component itself (README.adoc §"Releases and
+    IM Versions": "NOTE: These schemas are in *TRIAL* state and subject to
+    change. An older *STABLE* release of openEHR XML schema can be still found
+    at …Release-1.0.2"; "Simultaneously, the internal namespace used in the
+    schemas is also changed to `http://schemas.openehr.org/v2`"). Silence
+    CONFIRMED first-hand on both components.
+  handling: >-
+    Sibling option tags; the ICS options declaration selects which applies —
+    the declared behaviour MUST pass, the undeclared sibling is
+    not-applicable, and a party that serves one fixed lineage is never judged
+    by the other branch. `xml-namespace-fixed` is the no-selection branch: the
+    service emits one lineage for every XML response and offers no way to ask
+    for the other; nothing released assigns which lineage that must be, so
+    there is nothing further to assert and the branch carries no case (the tag
+    exists so such a party declares itself OUT of the negotiated branch rather
+    than failing it). `xml-namespace-negotiated` is the branch with an
+    executable case: the service reads a `version` media-type parameter on the
+    XML type (`application/xml; version=1|2`), serves the named lineage, and
+    keeps v1 the default so a parameter-less request is unchanged. THE
+    PARAMETER IS NOT SPEC-DERIVED — it is the declaring party's own
+    design/extension, and this register entry exists precisely so it can never
+    be mistaken for a released mechanism; the case
+    I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2 asserts only that
+    the requested lineage is what comes back, on the declared branch, under
+    profile OPTIONS, so no CORE or STANDARD verdict rests on it. What IS
+    released and therefore NOT part of this entry: the refusal shapes a service
+    owes once it cannot serve what was asked — an unfulfillable `Accept` is 406
+    and an unprocessable XML payload is 415 (§XML Format, both MUSTs) — which
+    apply to an unrecognized parameter value exactly as to any other
+    unsatisfiable request, and which the catalogue asserts through the ordinary
+    negotiation cases. Revisits if a future ITS-REST release names a lineage,
+    or defines a selection mechanism of its own.
+  disposition: option_select
+  options: [xml-namespace-negotiated, xml-namespace-fixed]

@@ -78,7 +78,8 @@
     "adl14-partial-id-exact",
     "directory-empty-error",
     "legacy-alt-formats-unsupported",
-    "sf-deprecated-types-unsupported"
+    "sf-deprecated-types-unsupported",
+    "xml-namespace-negotiated"
   ],
   "performance": {
     "class": "POC",
