@@ -4269,15 +4269,34 @@ AMB-137:
     local, type: SYSTEM}`) vs
     specifications/schemas/ehr/ItemTagOf{Composition,EhrStatus}.yaml (both
     `type: EHR`) — ALL CONFIRMED first-hand.
+    WHAT THOSE FIVE EXAMPLES ARE WORTH, under the oracle order: NOTHING as an
+    assignment. Restated 2026-07-28 (the #556 sweep flagged the wording, no
+    verdict change): tier 1, the ITS-REST docs text, never mentions
+    `owner_id`; tier 2, the released OAS, DECLARES the attribute
+    (`schemas/common/ItemTag.yaml` types it and the five demographic
+    `ItemTagOf<T>` schemas require it) but its `example:` blocks are not
+    declarations — an example is illustration and not a rule, the exact
+    treatment AMB-69 applies one entry over to the VERSIONED_PARTY
+    `owner_id` example on this same attribute name. Both released sources
+    therefore WITHHOLD the value, which is spec silence: the shape below is a
+    register decision, not a derivation.
   handling: >-
-    Fixed handling: a demographic tag's `owner_id` is emitted in exactly the
-    shape the five released examples show — an `OBJECT_REF` with `namespace:
-    local` and `type: SYSTEM`, whose `id` is a `HIER_OBJECT_ID` carrying the
-    server's configured system identifier. The examples are the only
-    released signal and they are unanimous across all five party kinds;
-    naming the tagged party itself would make the attribute a duplicate of
-    `target` and contradict the word "owner", and naming an EHR would invent
-    a containment the demographic package does not have. `target` is
+    Fixed handling, and honestly labelled: the demographic `owner_id` shape is
+    OUR OWN DESIGN — no openEHR spec governs this — INFORMED BY the five
+    released examples rather than derived from them. A demographic tag's
+    `owner_id` is emitted as an `OBJECT_REF` with `namespace: local` and
+    `type: SYSTEM`, whose `id` is a `HIER_OBJECT_ID` carrying the server's
+    configured system identifier — the shape all five examples show,
+    unanimously across every party kind, and the one that survives the two
+    alternatives: naming the tagged party itself would make the attribute a
+    duplicate of `target` and contradict the word "owner", and naming an EHR
+    would invent a containment the demographic package does not have.
+    THE SHAPE IS UNCHANGED by this restatement, and it stays PINNED by the
+    wire tests — unlike AMB-69, where the register declines to assert the
+    tokens, this attribute is MANDATORY (1..1) with no derivable value at all,
+    so leaving it unasserted would leave a required wire field entirely
+    unchecked; asserting our registered convention is the honest position, and
+    it is labelled as a convention wherever it is asserted. `target` is
     unaffected: it stays the bare RM `UID_BASED_ID` (`HIER_OBJECT_ID` for
     the container, `OBJECT_VERSION_ID` for a VERSION) the RM class requires,
     on both families alike. Reported upstream (UPR-101): state who owns a
