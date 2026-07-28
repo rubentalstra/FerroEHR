@@ -138,6 +138,33 @@ impl<'a> HttpDriver<'a> {
         }
     }
 
+    /// The instance the case's PRECONDITIONS are established on — templates,
+    /// the minted `${ehr_id}`, the directory tree, the commit sets.
+    ///
+    /// The default is `sut`. A flow that addresses an instance on a different
+    /// ORIGIN is driving a different DEPLOYMENT, and a precondition
+    /// established on `sut` simply would not exist there — so provisioning
+    /// follows that instance. Same-origin instances are the same server seen
+    /// through a different principal (`readonly`, `unauthenticated`,
+    /// `smart_app`) or at a different base path (`smart_platform`), and keep
+    /// provisioning on `sut` — which is the point: the ground is laid by the
+    /// party's ordinary principal and only the flow exercises the other one.
+    ///
+    /// NOTE: no openEHR spec governs this — our own design/extension (test
+    /// topology, ISO/IEC 9646 IXIT territory).
+    fn provisioning_instance(&self, case: &CaseCore) -> Result<&'a Instance, String> {
+        let default = self.ixit.default_instance()?;
+        for step in &case.flow {
+            if let Some(name) = &step.on
+                && let Some(instance) = self.ixit.instance(name)
+                && !same_deployment(&instance.base_url, &default.base_url)
+            {
+                return Ok(instance);
+            }
+        }
+        Ok(default)
+    }
+
     /// The `Authorization` header for an instance. `scopes` is the SMART
     /// `scope` claim the step declared (`None` = the step declared none), and
     /// is consumed only by the `bearer_mint` principal.
@@ -522,8 +549,8 @@ impl<'a> HttpDriver<'a> {
     /// Evaluate a `signature` assertion against a read-back `ORIGINAL_VERSION`
     /// envelope (the version-envelope read step's body). `present`/`equals` are
     /// mode-agnostic; `verifiable` reconstructs the agreed canonical form and
-    /// verifies per the ixit `signing` posture (RM common master06 §Digital
-    /// Signature; [`crate::exec::signature`]).
+    /// verifies per `signing` — the posture of the INSTANCE the step ran on
+    /// (RM common master06 §Digital Signature; [`crate::exec::signature`]).
     #[allow(clippy::too_many_arguments)] // one parameter per declared signature fact — mirrors the assertion shape
     fn eval_signature_assertion(
         &mut self,
@@ -532,6 +559,7 @@ impl<'a> HttpDriver<'a> {
         verifiable: Option<bool>,
         equals: Option<&crate::model::value::TemplatedValue>,
         distinct_from: Option<&crate::model::value::TemplatedValue>,
+        signing: Option<&crate::exec::signature::SigningMode>,
         vars: &VarStore,
     ) -> Result<(), AssertionFailure> {
         let signature = body.get("signature").and_then(Value::as_str);
@@ -594,9 +622,10 @@ impl<'a> HttpDriver<'a> {
                     "signature: verifiable requested but the envelope carries no signature".into(),
                 ));
             };
-            let Some(mode) = self.ixit.signing.as_ref() else {
+            let Some(mode) = signing else {
                 return Err(AssertionFailure(
-                    "signature: verifiable requested but the ixit declares no `signing` posture"
+                    "signature: verifiable requested but the ixit declares no `signing` posture \
+                     for the addressed instance"
                         .into(),
                 ));
             };
@@ -648,6 +677,7 @@ impl<'a> HttpDriver<'a> {
         binding: &OperationBinding,
         assertions_list: &[Assertion],
         exchange: &Exchange,
+        signing: Option<&crate::exec::signature::SigningMode>,
         vars: &VarStore,
     ) -> Vec<String> {
         let ctx_defaults: Vec<String> = self
@@ -738,7 +768,8 @@ impl<'a> HttpDriver<'a> {
                 // ORIGINAL_VERSION envelope the case's own flow reads (the
                 // version-envelope read step; RM common master06 §Digital
                 // Signature). present/equals are mode-agnostic; verifiable
-                // dispatches on the ixit signing posture.
+                // dispatches on the signing posture of the instance the step
+                // ran on (instance-first, party default second).
                 Assertion::Signature {
                     present,
                     verifiable,
@@ -751,6 +782,7 @@ impl<'a> HttpDriver<'a> {
                     *verifiable,
                     equals.as_ref(),
                     distinct_from.as_ref(),
+                    signing,
                     vars,
                 ),
                 // The version family still needs a versioned-object read the
@@ -850,6 +882,25 @@ impl<'a> HttpDriver<'a> {
             }
         };
         outcome.map_err(|e| AssertionFailure(e.0))
+    }
+}
+
+/// Whether two ixit `base_url`s address the SAME deployment: same scheme,
+/// host and effective port, whatever API path follows. A party declares
+/// several instances per deployment (different principals, and the SMART
+/// Platform base path), and exactly one instance per EXTRA deployment (the
+/// second signing posture) — the origin is what tells those two cases apart.
+/// A value neither side can parse falls back to exact comparison rather than
+/// guessing (`Url::origin` is not usable here: for a non-special scheme it is
+/// opaque and unequal even to itself).
+fn same_deployment(left: &str, right: &str) -> bool {
+    match (reqwest::Url::parse(left), reqwest::Url::parse(right)) {
+        (Ok(left), Ok(right)) => {
+            left.scheme() == right.scheme()
+                && left.host_str() == right.host_str()
+                && left.port_or_known_default() == right.port_or_known_default()
+        }
+        _ => left == right,
     }
 }
 
@@ -1410,7 +1461,7 @@ impl HttpDriver<'_> {
                 }
             };
             let binding = self.binding_for(case, "I_EHR_COMPOSITION.create_composition")?;
-            let instance = self.ixit.default_instance()?;
+            let instance = self.provisioning_instance(case)?;
             let request_spec = binding
                 .request
                 .as_ref()
@@ -1657,7 +1708,7 @@ impl HttpDriver<'_> {
     fn provision_ehr(&mut self, case: &CaseCore, vars: &mut VarStore) -> Result<(), String> {
         if matches!(case.requires.ehr, Some(EhrRequirement::Exists { .. })) {
             let binding = self.binding_for(case, "I_EHR_SERVICE.create_ehr")?;
-            let instance = self.ixit.default_instance()?;
+            let instance = self.provisioning_instance(case)?;
             let request_spec = binding
                 .request
                 .as_ref()
@@ -1956,7 +2007,7 @@ impl HttpDriver<'_> {
         .map_err(|e| e.to_string())?;
         let payload = Value::String(xml);
         let binding = self.binding_for(case, "I_DEFINITION_ADL14.upload_opt")?;
-        let instance = self.ixit.default_instance()?;
+        let instance = self.provisioning_instance(case)?;
         let request_spec = binding
             .request
             .as_ref()
@@ -2105,8 +2156,13 @@ impl StepDriver for HttpDriver<'_> {
 
         // Post-step assertions only when the expectation held (the caller
         // aborts otherwise, law b) — evaluate optimistically here.
+        // The signature assertions verify against the posture of the instance
+        // THIS step ran on (RM common master06 §Digital Signature: the mode is
+        // a deployment fact), so a party running two postures as two instances
+        // is judged per instance, never against one party-wide default.
+        let signing = self.ixit.signing_of(instance);
         let mut assertion_failures =
-            self.eval_assertions(case, binding, &step.assertions, &exchange, vars);
+            self.eval_assertions(case, binding, &step.assertions, &exchange, signing, vars);
         // The expected outcome's declared header matchers and body selector
         // are executed assertions too (issues #403 + #415 — both were parsed
         // but never evaluated). Evaluated only when the observation IS the
@@ -2156,7 +2212,7 @@ impl StepDriver for HttpDriver<'_> {
                 "I_DEFINITION_ADL14.upload_opt"
             };
             let binding = self.binding_for(case, upload_op)?;
-            let instance = self.ixit.default_instance()?;
+            let instance = self.provisioning_instance(case)?;
             let request_spec = binding
                 .request
                 .as_ref()
@@ -2197,7 +2253,7 @@ impl StepDriver for HttpDriver<'_> {
         {
             let payload = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
             let binding = self.binding_for(case, "I_EHR_DIRECTORY.create_directory")?;
-            let instance = self.ixit.default_instance()?;
+            let instance = self.provisioning_instance(case)?;
             let request_spec = binding
                 .request
                 .as_ref()
@@ -2351,6 +2407,43 @@ fn extract_list(body: &Value, path: &str) -> Vec<String> {
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
+
+    /// Preconditions follow the DEPLOYMENT the flow addresses, and the
+    /// discriminator is the origin — a party declares several instances per
+    /// deployment (principals; the SMART Platform base path) and one instance
+    /// per extra deployment (the second signing posture).
+    #[test]
+    fn same_deployment_compares_origins_not_paths() {
+        // Same server, different API base path (sut vs smart_platform).
+        assert!(same_deployment(
+            "http://localhost:8080/ehrbase/rest/openehr/v1",
+            "http://localhost:8080/ehrbase/rest"
+        ));
+        // Same server, trailing-slash noise.
+        assert!(same_deployment(
+            "http://localhost:8080/",
+            "http://localhost:8080"
+        ));
+        // The default port is the same port.
+        assert!(same_deployment("http://host/api", "http://host:80/api"));
+        // A second deployment on another port is NOT the same deployment.
+        assert!(!same_deployment(
+            "http://localhost:8081/ehrbase/rest/openehr/v1",
+            "http://localhost:8080/ehrbase/rest/openehr/v1"
+        ));
+        // Different host, and different scheme, likewise.
+        assert!(!same_deployment(
+            "http://other:8080/x",
+            "http://localhost:8080/x"
+        ));
+        assert!(!same_deployment(
+            "https://localhost/x",
+            "http://localhost/x"
+        ));
+        // Unparseable values fall back to exact comparison, never a guess.
+        assert!(same_deployment("not a url", "not a url"));
+        assert!(!same_deployment("not a url", "also not a url"));
+    }
 
     /// The committed CNF SMART test issuer (`tools/cnf-runner/party/smart/`) —
     /// public test material by design, never production key material.

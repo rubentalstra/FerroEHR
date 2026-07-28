@@ -1,16 +1,18 @@
 # CNF version-signing test keys (OpenPGP, RFC 4880)
 
-**Test-only key material** for the pgp-mode SIG-VERSION conformance run. Not a
-secret: it exists so the composed SUT can sign VERSIONs with a known OpenPGP key
-and the runner can verify the signatures against the paired public key (RM
-common `master06-change_control_package.adoc` §Digital Signature — the signature
-is generated per the openPGP standard). Never use these keys for anything real.
+**Test-only key material** for the openPGP-posture half of every conformance
+run. Not a secret: it exists so the composed SUT can sign VERSIONs with a known
+OpenPGP key and the runner can verify the signatures against the paired public
+key (RM common `master06-change_control_package.adoc` §Digital Signature — the
+signature is generated per the openPGP standard). Never use these keys for
+anything real.
 
 - `cnf-signing.sec.asc` — the armored OpenPGP **secret** key (no passphrase).
-  Mounted into the pgp-mode SUT (`docker/sut-signing-pgp.yml`) as
-  `EHRBASE__SIGNING__KEY_PATH`; the SUT signs each committed VERSION with it.
+  Mounted into the pgp-posture deployment (`docker/sut-signing-pgp.yml`) as
+  `EHRBASE__SIGNING__KEY_PATH`; that deployment signs each committed VERSION
+  with it.
 - `cnf-signing.pub.asc` — the armored OpenPGP **public** key. Inlined into the
-  pgp-mode ixit (`party/ehrbase-rs/ixit.pgp.json` → `signing.public_key`); the
+  `sut_pgp` instance's own `signing` block (`party/ehrbase-rs/ixit.json`); the
   runner verifies `ORIGINAL_VERSION.signature` against it (RFC 4880 detached
   signature over the agreed canonical form: RFC 8785 JCS of the version minus
   `signature`).
