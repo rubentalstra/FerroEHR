@@ -75,7 +75,8 @@
                         "POST",
                         "PUT",
                         "DELETE",
-                        "HEAD"
+                        "HEAD",
+                        "OPTIONS"
                       ]
                     },
                     "path": {

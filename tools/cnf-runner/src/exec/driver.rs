@@ -273,6 +273,7 @@ impl<'a> HttpDriver<'a> {
             HttpMethod::Put => reqwest::Method::PUT,
             HttpMethod::Delete => reqwest::Method::DELETE,
             HttpMethod::Head => reqwest::Method::HEAD,
+            HttpMethod::Options => reqwest::Method::OPTIONS,
         };
         let mut request = self.client.request(m, url);
         for (name, value) in headers {
