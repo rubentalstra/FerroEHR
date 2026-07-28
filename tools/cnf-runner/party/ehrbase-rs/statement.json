@@ -46,6 +46,7 @@
       "AdminApi",
       "MessageApi",
       "SystemApi",
+      "ItemTags",
       "Signing",
       "SimplifiedFormats",
       "EhrDemographicSeparation",
