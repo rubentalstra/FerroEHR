@@ -43,7 +43,8 @@ test suite that presumes our code and questions the tests.
 1. Read the observed wire exchange (results.json / transcript — what was
    actually sent, received, classified).
 2. Read the case core + operation binding (what the catalogue expects, and
-   its cited spec-text source — the OAS is stalled and is NOT an oracle).
+   its cited spec source — docs text first; the released OAS is citable ONLY
+   for behaviour the docs text is silent on, and loses on any conflict).
 3. Read the governing RELEASED spec text FIRST-HAND (`/spec-lookup`; the
    ITS-REST docs text + overview `Requests_and_responses`, SM interface,
    RM/QUERY/BASE/AM/TERM/ITS-XML). The CNF schedule is only a GUIDE to WHICH
@@ -63,19 +64,23 @@ test suite that presumes our code and questions the tests.
 
 - **Never edit `docs/specs/openehr/**` or adjust a catalogue expectation to
   match observed SUT behaviour** — expectations trace to spec text only.
-- **Only the RELEASED spec components are the oracle — the OAS, the CNF
-  schedule, and the Robot suites are all STALLED (owner ruling 2026-07-24).**
-  Adjudicate ONLY against the released components (RM / BASE / AM / QUERY /
-  TERM / ITS-XML / **SM** / ITS-REST **docs text**). NEVER treat as authority:
-  the vendored OAS (`crates/openehr-its/vendor/rest-oas/`, ITS-REST `*.yaml` /
-  `Error.yaml` / response enumerations — `emit-rest` codegen input only); the
-  CNF Platform Conformance Test Schedule (never released stable — a GUIDE to
-  which behaviour to test, not the correct answer); or the Robot suites/data
-  sets (stalled/broken, e.g. AMB-47). Where any of these conflicts with a
-  released component, the released component wins. An "ambiguity" that exists
-  ONLY because a stalled source is stale/incomplete/self-contradictory — with
-  no released-component ground — is not a spec gap: re-ground it on a released
-  component, or drop it and make the case gating. **SM and the ITS-REST docs
+- **Only the RELEASED spec components are the oracle (owner rulings
+  2026-07-24 + 2026-07-28).** Adjudicate against the released components
+  (RM / BASE / AM / QUERY / TERM / ITS-XML / **SM** / ITS-REST **docs text**),
+  with one ordered supplement: **the vendored released OAS**
+  (`crates/openehr-its/vendor/rest-oas/`) is part of the release's own
+  specification artifacts (ITS-REST overview `Specifications.md`) and grounds
+  an expectation **where the docs text is SILENT** — but it **loses to the
+  docs text on any conflict**, and an OAS-only ground is always cited AS the
+  OAS (file + element), never passed off as docs text. NEVER treat as
+  authority: the CNF Platform Conformance Test Schedule (never released
+  stable — a GUIDE to which behaviour to test, not the correct answer); or
+  the Robot suites/data sets (stalled/broken, e.g. AMB-47). Where any of
+  these conflicts with a released component, the released component wins. An
+  "ambiguity" that exists ONLY because a guide source is
+  stale/incomplete/self-contradictory — with no released-component ground —
+  is not a spec gap: re-ground it on a released component, or drop it and
+  make the case gating. **SM and the ITS-REST docs
   text are BOTH oracles** (owner ruling 2026-07-24) — SM anchors the operation
   + the naming the case cores use, ITS-REST binds it to the wire; an SM
   operation the released ITS-REST does not yet realize is a genuine SM↔ITS

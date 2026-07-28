@@ -27,32 +27,35 @@
 #    ("HTTP Methods are described by RFC 9110") — whose §10.2.1 defines the
 #    `Allow` field as the list of methods the target resource supports.
 #
-# NOT ASSERTED, and why (spec silence, registered, never guessed):
-#  - THE RESOURCE. No released sentence says which resource the System API's
-#    operation is served on; the System chapter is a stub (Purpose / Related
-#    Documents / Status) and names no path. §HTTP Methods only says "the target
-#    resource", so the probe is sent to the API base-path root — the one
-#    resource that IS the service — and that choice is recorded in register
-#    AMB-160, not presented as a released requirement.
-#  - THE BODY. The Options conformance manifest (solution, solution_version,
-#    vendor, restapi_specs_version, conformance_profile, endpoints) is described
-#    by NO released sentence — it exists only in the stalled OAS bundle, which
-#    is `emit-rest` codegen input and never a behavioural oracle (owner ruling
-#    2026-07-24). Same register entry AMB-160, same upstream report; no body
-#    selector is declared here.
-#  - NEGOTIATION. The released text assigns this exchange no media type and no
-#    negotiation branch, so the binding declares only the one canonical-JSON
-#    form the driver sends and claims no XML / 406 branch of its own; the
-#    cross-cutting negotiation elements of vocab/wire_surface.yaml carry the
-#    general rules.
+# GROUNDED IN THE RELEASED OAS (owner ruling 2026-07-28 — overview
+# Specifications.md presents the OAS files as the release's own computable
+# artifacts; where the docs text is SILENT the released OAS grounds the
+# expectation; on conflict the docs text still wins). The docs-text chapter is
+# a stub, and the released system.openapi.yaml supplies what it withholds:
+#  - THE RESOURCE: the OAS serves the operation on `/` — the API root
+#    (`paths: /`, options).
+#  - `Content-Type: application/json` and the JSON manifest body: the
+#    `200_options` response declares headers Allow + ContentType_JSON and
+#    content `application/json` with schema `Options`. The `Options` schema
+#    declares NO required member (solution, solution_version, vendor,
+#    restapi_specs_version, conformance_profile, endpoints are all optional),
+#    so no member presence is asserted — the body obligation is a JSON
+#    document, which the canonical-json format check parses.
+#  - Register AMB-160 records this ruling application; upstream ask UPR-122
+#    stands (the docs text of a STABLE API should describe its one exchange).
+#  - NEGOTIATION. Neither the docs text nor the OAS assigns this exchange a
+#    second media type or a 406 branch (the OAS request declares only an
+#    Accept: application/json header parameter), so the binding declares only
+#    the canonical-JSON form and no negotiation branch of its own.
 sm_operation: I_ITS_REST_SYSTEM.options
 its: its-rest
 request:
   method: OPTIONS
-  path: /                                 # the API base-path root (AMB-160 — no released sentence names a path)
+  path: /                                 # the API root — released system.openapi.yaml `paths: /` (AMB-160; owner ruling 2026-07-28)
 formats: [canonical-json]
 outcomes:
   ok:
     status: 200
     headers:
       Allow: present                      # overview §HTTP Methods (OPTIONS: "Describe the communication options for the target resource") over RFC 9110 §10.2.1
+      Content-Type: negotiated            # released system.openapi.yaml 200_options ContentType_JSON (application/json — the case's one declared format); grounded per the 2026-07-28 ruling
