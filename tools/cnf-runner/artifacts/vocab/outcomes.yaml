@@ -26,6 +26,30 @@
 #                       disabled-405.
 # Adding a kind does not by itself add coverage: each element stays an
 # adjudicated exception until its binding outcome and gating case land.
+# MIGRATION STATUS (2026-07-28, the release's own follow-through):
+#   accepted            DECLARED on both admin delete bindings; the branch has
+#                       no client-side trigger (the released asynchrony is a
+#                       service-side MAY), so it stays a declared-but-
+#                       unexercised `branches:` row and `ok_empty` keeps its
+#                       202 alias so an async server is never refuted.
+#   bad_request         CASED — admin-bulk-delete-malformed-id-rejection,
+#                       ehr-id-path-segment-malformed-rejection,
+#                       query-ehr-id-parameter-header-conflict and
+#                       query-post-paging-parameter-conflict all retired their
+#                       exceptions. It ALSO replaced the borrowed
+#                       `validation_failed` on the three 400 bindings the
+#                       release named (I_DEFINITION_ADL14.get_opt#
+#                       example_invalid_detail_level,
+#                       I_EHR_COMPOSITION.get_composition_at_time,
+#                       I_DEFINITION_QUERY.store_query + its `version`
+#                       variant) — vocabulary precision at an unchanged wire
+#                       status. ehr-subject-query-argument-required stays a
+#                       gap on its own second blocker (the binding request
+#                       model cannot express an omitted mandatory argument).
+#   method_not_allowed  still uncased: both its elements are blocked by
+#                       something other than vocabulary (the ixit models no
+#                       disabled-admin deployment; the runner has no
+#                       deliberate-wrong-method request form).
 created: { class: success, meaning: "New resource exists (\"positive response associated to the successful creation\")" }
 ok: { class: success, meaning: "Read/query succeeded with content" }
 ok_empty: { class: success, meaning: "Fulfilled with no content (e.g. composition logically deleted at requested time)" }

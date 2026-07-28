@@ -56,7 +56,7 @@ flow:
     with:
       ehr_id_subset: "${ehr_id}"
       ehr_id_subset_2: "${second_ehr_id}"
-    expect: ok_empty                     # 204 No Content (202 Accepted absorbed — AMB-139)
+    expect: ok_empty                     # 204 No Content; alt_status 202 kept so an async server is not refused (AMB-139)
   - step: 4                              # the first named EHR is gone
     call: I_EHR_SERVICE.has_ehr
     with: { ehr_id: "${ehr_id}" }

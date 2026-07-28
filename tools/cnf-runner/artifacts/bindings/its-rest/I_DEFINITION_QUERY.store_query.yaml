@@ -44,6 +44,11 @@ outcomes:
     status: 200                                       # 200_StoredQuery_stored.yaml
     headers:
       Location: 'pattern:.*/1\.0\.0'                  # the WRITTEN version — Location_Query.yaml + AMB-117
-  validation_failed:
+  # `bad_request`, not `validation_failed`: the 2026-07-28 schedule release
+  # (#544) added the malformed-REQUEST kind whose meaning quotes the very row
+  # cited below, while `validation_failed` means 422 (well-formed content,
+  # semantically invalid) and was only borrowed while the taxonomy had no
+  # malformed-request kind. The wire status is unchanged (400 either way).
+  bad_request:
     status: 400
     body: error_loose                                 # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

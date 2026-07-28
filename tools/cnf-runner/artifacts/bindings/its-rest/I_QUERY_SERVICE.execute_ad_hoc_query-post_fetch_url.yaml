@@ -14,11 +14,19 @@
 #   POSTs carry `offset`/`fetch`/`query_parameters` in the body.
 # - the both-places case — no released sentence assigns precedence when a value
 #   is carried in the URL and the body at once; register AMB-99's fixed handling
-#   accepts AGREEING values (a disagreement is a rejection the closed outcome
-#   taxonomy cannot yet name — recorded in vocab/wire_surface.yaml). The
-#   binding places the SAME `${fetch}` in both slots, so a case that binds it
-#   exercises the agreeing form by construction, while a case that binds only
-#   `url_fetch` exercises the URL-only form.
+#   accepts AGREEING values and REFUSES a disagreement. The two slots take
+#   SEPARATE references (`${url_fetch?}` in the query, `${fetch?}` in the body),
+#   so a case chooses which arm it drives: binding only `url_fetch` is the
+#   URL-only form, binding both to the same number is the agreeing form, and
+#   binding them to different numbers is the refusal. That last arm became
+#   nameable with the `bad_request` kind the 2026-07-28 schedule release (#544)
+#   added; `invalid_query` would be wrong (the AQL is well formed) and
+#   `validation_failed` means 422 semantic CONTENT.
+# - `400` on the disagreeing form — docs/overview/Requests_and_responses.md
+#   §"HTTP status codes", row 400: "The service cannot or will not process the
+#   request due to something that is perceived to be a client error (e.g.,
+#   malformed request syntax, syntactically invalid content)", with the clause
+#   below the table ("used when no other `4xx` error code is appropriate").
 # - `200` — docs/overview/Requests_and_responses.md §"HTTP status codes", row
 #   `200 OK`.
 # - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
@@ -49,3 +57,6 @@ outcomes:
     status: 200                              # Requests_and_responses.md §HTTP status codes, row 200
     headers: { ETag: 'pattern:W/"[^"]+"' }   # Request.md §Common Headers and Query Parameters + overview §Deprecated headers
     body: result_set_body
+  bad_request:
+    status: 400                              # §HTTP status codes row 400 — URL and body disagree on the same paging parameter (register AMB-99)
+    body: error_loose                        # §HTTP status codes — 4xx detail is a MAY under Prefer: return=representation

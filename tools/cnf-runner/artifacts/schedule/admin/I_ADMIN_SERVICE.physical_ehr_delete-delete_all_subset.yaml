@@ -48,7 +48,7 @@ flow:
     variant: delete_all                  # DELETE /admin/ehr/all?ehr_id=${ehr_id}
     on: admin                            # ADMIN-role principal (ixit)
     with: { ehr_id_subset: "${ehr_id}" }
-    expect: ok_empty                     # 204 No Content (202 Accepted absorbed — AMB-139)
+    expect: ok_empty                     # 204 No Content; alt_status 202 kept so an async server is not refused (AMB-139)
   - step: 3                              # the named EHR is gone
     call: I_EHR_SERVICE.has_ehr
     with: { ehr_id: "${ehr_id}" }
