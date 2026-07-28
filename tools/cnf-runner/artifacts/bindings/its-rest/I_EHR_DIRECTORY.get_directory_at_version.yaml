@@ -22,7 +22,7 @@ outcomes:
     status: 200                           # 200_FOLDER_retrieved.yaml
     headers:
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   ok_empty:
     # The addressed version is a logically deleted one. The by-version route
     # declares no deleted branch at all (the operation lists 200/404 only) —

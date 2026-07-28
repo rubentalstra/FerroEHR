@@ -88,6 +88,74 @@ pub(crate) fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<Str
     (!citations.is_empty()).then(|| citations.join("; "))
 }
 
+/// The binding a flow step drives — the driver's variant-aware selection, so
+/// selection-time guards judge exactly the realization the driver will send.
+fn step_binding<'a>(
+    set: &'a ArtifactSet,
+    case: &CaseCore,
+    step: &crate::model::case::FlowStep,
+) -> Option<&'a crate::model::binding::OperationBinding> {
+    let op = if step.call.contains('.') {
+        SmOperationRef::parse(&step.call).ok()?
+    } else {
+        case.sm_operation.as_ref()?.sibling(&step.call)
+    };
+    let mut bindings = set.bindings.iter().map(|(_, b)| b);
+    if let Some(variant) = step.variant.as_deref()
+        && let Some(exact) = bindings
+            .clone()
+            .find(|b| b.sm_operation == op && b.variant.as_deref() == Some(variant))
+    {
+        return Some(exact);
+    }
+    bindings.find(|b| b.sm_operation == op && b.variant.is_none())
+}
+
+/// The OPERATION-level spec-version floors this party does not meet
+/// (`OperationBinding::applies`, issue #629 — the field was deserialized and
+/// read by nothing).
+///
+/// A binding declares a floor when the WIRE itself arrived in a later
+/// release: driving it against a party that declares an earlier one asks a
+/// server for an endpoint or request form its release never defined, which is
+/// a selection question (ISO/IEC 9646), not a conformance failure. The case is
+/// therefore not-applicable with the citation, exactly as an undeclared option
+/// branch or an undeclared ixit fact is.
+///
+/// This is the OPERATION level only. A release that merely dates how an
+/// ANSWER must look (the `W/` weakness indicator, the read/DELETE `Location`
+/// restriction) puts its floor on the header expectation instead, so the
+/// operation stays driven and only that one rule is out of scope — see
+/// [`crate::model::binding::HeaderExpectation`].
+fn unmet_binding_floors(
+    set: &ArtifactSet,
+    case: &CaseCore,
+    versions: &crate::party::SpecVersions,
+) -> Vec<String> {
+    let mut unmet = Vec::new();
+    for step in &case.flow {
+        let Some(binding) = step_binding(set, case, step) else {
+            continue;
+        };
+        let Some(applies) = &binding.applies else {
+            continue;
+        };
+        if applies.satisfied_by(versions) {
+            continue;
+        }
+        let declared: Vec<String> = applies
+            .entries()
+            .into_iter()
+            .map(|(component, range)| format!("{} {}", component.token(), range.raw()))
+            .collect();
+        let citation = format!("{} requires {}", binding.sm_operation, declared.join(", "));
+        if !unmet.contains(&citation) {
+            unmet.push(citation);
+        }
+    }
+    unmet
+}
+
 /// The `${ixit:…}` facts a case reads that THIS party's ixit does not
 /// declare. A declared fact is the only source (no released operation
 /// discloses it), so a case that needs an undeclared one is not-applicable
@@ -249,6 +317,34 @@ pub fn execute(
                 .push((case.id.clone(), Exception::Unrealized(citation)));
             continue;
         }
+        // Operation-level spec-version floors (`OperationBinding.applies`):
+        // a wire a later release introduced is not this party's behaviour to
+        // answer for — the same ISO/IEC 9646 selection question the option
+        // branch above is, with the binding's own declared range as the
+        // citation.
+        if let Some(stmt) = statement {
+            let unmet = unmet_binding_floors(set, case, &stmt.spec_versions);
+            if !unmet.is_empty() {
+                let citation = format!(
+                    "operation version floor unmet ({}) — the party's declared spec versions \
+                     predate the release that introduced this wire; ISO/IEC 9646 test selection",
+                    unmet.join("; ")
+                );
+                report.records.push(CaseRecord {
+                    case: case.id.clone(),
+                    format: None,
+                    rows: vec![RowOutcome::NotApplicable {
+                        citation: citation.clone(),
+                    }],
+                    rows_driven: 0,
+                    rows_total: crate::exec::row_count(case),
+                });
+                report
+                    .exceptions
+                    .push((case.id.clone(), Exception::Unrealized(citation)));
+                continue;
+            }
+        }
         // The SMART lane is a party declaration, exactly like the ixit facts
         // below: the CDR is a SMART resource server that never issues tokens
         // (ITS-REST docs/smart_app_launch/master06-authentication.adoc
@@ -362,7 +458,7 @@ pub fn execute(
         } else {
             case.clone()
         };
-        let mut driver = HttpDriver::new(set, ixit)?;
+        let mut driver = HttpDriver::new(set, ixit, statement.map(|s| &s.spec_versions))?;
         let record = run_case(&runnable, runnable.formats.first().copied(), &mut driver)?;
         report.interpreter_run += 1;
         report.records.push(record);
@@ -496,6 +592,63 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
+
+    /// `OperationBinding.applies` is LIVE (issue #629): a binding declaring a
+    /// spec-version floor the party does not meet takes its cases out of
+    /// scope with the binding's own declared range as the citation, and a
+    /// binding without a floor is untouched.
+    #[test]
+    fn operation_version_floors_are_enforced_at_selection() {
+        let floored: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_DEFINITION_ADL14.list_opts",
+                "its": "its-rest",
+                "applies": { "its_rest": ">=1.1.0" },
+                "request": { "method": "GET", "path": "/definition/template/adl1.4" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-floored", "kind": "functional", "component": "DEFINITION_ADL14",
+            "sm_operation": "I_DEFINITION_ADL14.list_opts",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "list_opts", "expect": "ok" }]
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings
+            .push((std::path::PathBuf::from("b.yaml"), floored));
+
+        let old = crate::party::SpecVersions {
+            its_rest: Some("1.0.3".to_owned()),
+            ..crate::party::SpecVersions::default()
+        };
+        let unmet = unmet_binding_floors(&set, &case, &old);
+        assert_eq!(unmet.len(), 1, "{unmet:?}");
+        assert!(unmet[0].contains("I_DEFINITION_ADL14.list_opts"));
+        assert!(unmet[0].contains(">=1.1.0"));
+
+        let current = crate::party::SpecVersions {
+            its_rest: Some("1.1.0".to_owned()),
+            ..crate::party::SpecVersions::default()
+        };
+        assert!(unmet_binding_floors(&set, &case, &current).is_empty());
+
+        // An undeclared floor never narrows selection.
+        let unfloored: crate::model::binding::OperationBinding =
+            serde_json::from_value(serde_json::json!({
+                "sm_operation": "I_DEFINITION_ADL14.list_opts",
+                "its": "its-rest",
+                "request": { "method": "GET", "path": "/definition/template/adl1.4" },
+                "outcomes": { "ok": { "status": 200 } }
+            }))
+            .unwrap();
+        let mut plain = ArtifactSet::default();
+        plain
+            .bindings
+            .push((std::path::PathBuf::from("b.yaml"), unfloored));
+        assert!(unmet_binding_floors(&plain, &case, &old).is_empty());
+    }
 
     /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty
     /// included) or the reserved SMART pseudo-interface anchor — never a

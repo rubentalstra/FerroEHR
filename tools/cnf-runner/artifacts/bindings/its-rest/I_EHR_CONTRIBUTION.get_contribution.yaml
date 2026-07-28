@@ -52,10 +52,10 @@ outcomes:
   ok:
     status: 200                           # 200_CONTRIBUTION.yaml — the existing CONTRIBUTION
     headers:
-      ETag: 'pattern:W/"<contribution_uid>"'   # register AMB-87 + §Deprecated headers (the `W/` MUST)
+      ETag: { match: 'pattern:W/"<contribution_uid>"', applies: { its_rest: ">=1.1.0" } }  # register AMB-87 + §Deprecated headers (the `W/` MUST)
       Last-Modified: present              # register AMB-87 — the committal instant (§ETag and Last-Modified: "derived from VERSION.commit_audit.time_committed.value")
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
     body: present
   not_acceptable: { status: 406 }        # Resources.md §XML Format — an Accept the service cannot fulfill (no CONTRIBUTION XML document is published; AMB-165)
   not_found:

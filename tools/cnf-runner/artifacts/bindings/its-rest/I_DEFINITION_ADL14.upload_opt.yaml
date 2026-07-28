@@ -11,8 +11,24 @@ request:
   body: opt_xml
   headers:
     Content-Type: application/xml         # the ONLY accepted upload type (operation enum)
+    # The binding DECLARES the response representation it asks for, so the one
+    # request-construction path sends the same upload whether the call is a
+    # driven step or a case precondition (issue #629 — the two paths used to
+    # differ, and this operation answered differently to each). OAS ground
+    # (the docs text describes no template-upload exchange at all):
+    # definition_template_adl1.4_upload.yaml `$ref`s components/parameters/
+    # Accept_Template, whose enum is [application/json, application/xml,
+    # application/openehr.wt+json], and responses/201_Template_adl1_4_upload.yaml
+    # declares an `application/json` content entry (schema TemplateIdentifier).
+    Accept: application/json
 outcomes:
   created: { status: 201 }                # 201_Template_adl1_4_upload.yaml
+  # The refusal branch is MAPPED so a server that will not serve the Accept
+  # this binding declares is JUDGED rather than swallowed as an unmapped
+  # status (issue #629). Ground: docs/overview/Requests_and_responses.md
+  # §"HTTP status codes", row `406 Not Acceptable` — "The target resource does
+  # not have a current representation that would be acceptable to the user".
+  not_acceptable: { status: 406 }
   already_exists: { status: 409 }         # 409_template_already_exists.yaml: "`409 Conflict` is returned when a template with same `template_id` already exists" — AMB-4, gating for every server since 2026-07-28
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors

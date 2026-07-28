@@ -71,6 +71,6 @@ outcomes:
   deleted:
     status: 204
     headers:
-      Location: absent                    # DELETE — overview §Location ("MUST ONLY be used for resource creation … or redirect responses"); §Deprecated headers: "the `Location` response header was deprecated from responses of `DELETE` methods"
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # DELETE — overview §Location ("MUST ONLY be used for resource creation … or redirect responses"); §Deprecated headers: "the `Location` response header was deprecated from responses of `DELETE` methods"
     body: absent
   not_found: { status: 404 }

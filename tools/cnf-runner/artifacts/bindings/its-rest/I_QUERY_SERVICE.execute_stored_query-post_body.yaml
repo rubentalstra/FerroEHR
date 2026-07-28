@@ -61,5 +61,17 @@ formats: [canonical-json]
 outcomes:
   ok:
     status: 200                              # Requests_and_responses.md §HTTP status codes, row 200
-    headers: { ETag: 'pattern:W/"[^"]+"' }   # Request.md §Common Headers and Query Parameters + overview §Deprecated headers
+    # The resultSet `ETag`: presence is SHOULD-strength, the weak form is a MUST.
+    # docs/query/Request.md §"Common Headers and Query Parameters" names the header
+    # with no RFC 2119 keyword at all ("Related response headers: `ETag` - A unique
+    # identifier of the resultSet"), and the released OAS declares it without
+    # `required` (query-codegen.openapi.yaml components/headers/ETag_RESULT_SET), so
+    # the only strength anywhere is docs/overview/Requests_and_responses.md §"ETag and
+    # Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in responses
+    # for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
+    # state identifiers". A server that omits it is therefore not failed (`optional:
+    # true`), while one that emits it must weaken it — §"Deprecated headers": "all
+    # `ETag` headers that hold a resource identifier MUST include a weakness indicator
+    # `W/`", a MUST the same chapter dates to Release 1.1.0 (`applies`).
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', optional: true, applies: { its_rest: ">=1.1.0" } } }
     body: result_set_body

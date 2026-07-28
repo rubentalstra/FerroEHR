@@ -51,7 +51,7 @@ outcomes:
     # ITS-REST overview §HTTP status codes, row 201: "The request has been
     # fulfilled and has resulted in one or more new resources being created".
     status: 201
-    headers: { ETag: 'pattern:W/"[^"]+"', Last-Modified: present, Location: present }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Last-Modified: present, Location: present }
     body: prefer_conditional
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors

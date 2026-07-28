@@ -39,6 +39,6 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
     body: present
 server_assigned: [uid, "audit.time_committed"]

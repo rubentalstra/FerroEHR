@@ -29,15 +29,15 @@ outcomes:
   deleted:
     status: 204                           # 204_version_deleted.yaml — logical delete performed
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
-      Location: absent                    # DELETE — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # DELETE — overview §Deprecated headers
   already_deleted: { status: 400 }        # 400_already_deleted.yaml — resource already deleted
   not_found: { status: 404 }              # 404.yaml — unknown party or version uid (versioned_object_does_not_exist)
   conflict:
     status: 409                           # 409_PERSON_with_uid_based_id.yaml — uid_based_id is not the latest version
     headers:
       ETag: latest-version-uid
-      Location: absent                    # error response — overview §Location (creation/redirect only)
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # error response — overview §Location (creation/redirect only)
 captures:
   version_uid:
     from: header ETag                     # the new (deleted) VERSION uid (204_version_deleted.yaml ETag)

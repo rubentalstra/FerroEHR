@@ -47,9 +47,9 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }
 captures:
   status_version_uid:

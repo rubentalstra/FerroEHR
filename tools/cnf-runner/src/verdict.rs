@@ -24,7 +24,7 @@ use crate::model::case::CaseCore;
 use crate::model::register::AmbiguityRegister;
 use crate::party::{OutcomeStatus, Results, Statement};
 use crate::perf::{ClassVerdict, PerfClass, PerformanceCase, class_verdict};
-use crate::vocab::{CaseStatus, Disposition, Family, FormatName, SpecComponent, Tier};
+use crate::vocab::{CaseStatus, Disposition, Family, FormatName, Tier};
 
 /// One static-review problem with the claim (never a per-case verdict).
 #[derive(Debug, Clone, Serialize)]
@@ -63,6 +63,38 @@ pub enum Evidence {
     Unrealized,
     /// The catalogue declares no verdict-bearing case for the capability.
     NoCases,
+}
+
+/// The selected gating cases behind one capability's [`Evidence`], counted by
+/// effective outcome.
+///
+/// The headline `Evidence` is a single worst-wins token, so an inconclusive
+/// row inside a capability that also has passes is invisible in it (issue
+/// #629: 98 errored rows contributed nothing a reader of the report could
+/// see). The tally is published beside the token so an inconclusive — which
+/// is never a SUT failure, but is also never evidence of conformance — is
+/// always countable, and a real divergence can never hide behind an errored
+/// exchange.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, serde::Deserialize)]
+pub struct CapabilityTally {
+    /// Gating cases that passed.
+    pub passed: usize,
+    /// Gating cases that failed.
+    pub failed: usize,
+    /// Gating cases whose exchange was inconclusive (errored).
+    pub inconclusive: usize,
+    /// Gating cases selected but never driven to a conclusive or inconclusive
+    /// result (not-applicable, register-excused, skipped, not driven,
+    /// option-deselected).
+    pub unevidenced: usize,
+}
+
+impl CapabilityTally {
+    /// Total selected gating cases for the capability.
+    #[must_use]
+    pub fn selected(&self) -> usize {
+        self.passed + self.failed + self.inconclusive + self.unevidenced
+    }
 }
 
 /// A profile-tier verdict.
@@ -128,6 +160,10 @@ pub struct VerdictReport {
     pub review: Vec<ReviewFinding>,
     /// Per-capability evidence, in capability-matrix authored order.
     pub capabilities: Vec<(CapabilityName, Evidence)>,
+    /// The selected-gating-case counts behind each capability's evidence, in
+    /// the same order — so an inconclusive row is countable per capability
+    /// and never disappears behind a worst-wins token.
+    pub capability_tallies: Vec<(CapabilityName, CapabilityTally)>,
     /// Per-tier platform-profile verdicts (`CORE`, `STANDARD`, `OPTIONS`).
     pub profiles: Vec<(Tier, ProfileVerdict)>,
     /// The SEC-BASIC verdict when the Security profile is claimed.
@@ -227,6 +263,11 @@ pub fn compute(
         .iter()
         .map(|(name, _)| (name.clone(), capability_evidence(name, cases, &selected)))
         .collect();
+    let capability_tallies: Vec<(CapabilityName, CapabilityTally)> = matrix
+        .entries()
+        .iter()
+        .map(|(name, _)| (name.clone(), capability_tally(name, &selected)))
+        .collect();
 
     let profiles = platform_profiles(statement, matrix, &capabilities);
     let security = security_verdict(statement, matrix, &capabilities);
@@ -239,6 +280,7 @@ pub fn compute(
     VerdictReport {
         review,
         capabilities,
+        capability_tallies,
         profiles,
         security,
         performance,
@@ -481,21 +523,11 @@ fn select<'a>(
 
 /// A case applies iff every declared `applies` range is satisfied by a
 /// declared spec version. An undeclared or unparsable version fails the
-/// filter (the case is out of scope, not a defect the pipeline reports).
+/// filter (the case is out of scope, not a defect the pipeline reports) —
+/// the one polarity [`crate::model::case::Applies::satisfied_by`] fixes for
+/// every consulting site.
 fn applies_satisfied(case: &CaseCore, versions: &crate::party::SpecVersions) -> bool {
-    for (component, range) in case.applies.entries() {
-        let Some(raw) = versions.get(component) else {
-            return false;
-        };
-        let Ok(version) = semver::Version::parse(raw) else {
-            return false;
-        };
-        if !range.req().matches(&version) {
-            return false;
-        }
-    }
-    let _ = SpecComponent::Rm; // component enum kept in scope for readers
-    true
+    case.applies.satisfied_by(versions)
 }
 
 fn is_report_only(case: &CaseCore, register: &AmbiguityRegister) -> bool {
@@ -605,6 +637,28 @@ fn capability_evidence(
     } else {
         Evidence::NoCases
     }
+}
+
+/// Count the capability's selected gating cases by effective outcome — the
+/// same population `capability_evidence` reduces to one token.
+fn capability_tally(cap: &CapabilityName, selected: &[Selected<'_>]) -> CapabilityTally {
+    let mut tally = CapabilityTally::default();
+    for case in selected
+        .iter()
+        .filter(|s| s.gating && s.case.capabilities.contains(cap))
+    {
+        match case.effective {
+            Effective::Passed => tally.passed += 1,
+            Effective::Failed => tally.failed += 1,
+            Effective::Errored => tally.inconclusive += 1,
+            Effective::NotApplicable
+            | Effective::ExcusedByRegister
+            | Effective::Skipped
+            | Effective::NotDriven
+            | Effective::Deselected => tally.unevidenced += 1,
+        }
+    }
+    tally
 }
 
 fn evidence_of(caps: &[(CapabilityName, Evidence)], name: &CapabilityName) -> Option<Evidence> {

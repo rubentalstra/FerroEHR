@@ -46,8 +46,8 @@ outcomes:
   ok:
     status: 200
     headers:
-      ETag: 'pattern:W/".*"'
+      ETag: { match: 'pattern:W/".*"', applies: { its_rest: ">=1.1.0" } }
       Last-Modified: present
-      Location: absent
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
   not_found:
     status: 404

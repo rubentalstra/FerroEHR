@@ -41,9 +41,9 @@ outcomes:
     status: 200                           # overview §HTTP status codes (200 OK — payload = the ORIGINAL_VERSION)
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
       Last-Modified: present
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # overview §HTTP status codes (404 — target resource not found)
 captures:
   # The envelope's stored signature (RM common master06 §Digital Signature:

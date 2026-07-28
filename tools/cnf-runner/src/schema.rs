@@ -71,6 +71,45 @@ fn string_array(item_pattern: Option<&str>) -> Value {
     }
 }
 
+/// The `applies` spec-version filter — ONE shape wherever a version floor is
+/// declared: on a case core (the whole behaviour is release-dated), on an
+/// operation binding (the wire itself is), and on a header expectation (one
+/// released RESPONSE rule is, while the operation is not). Same components,
+/// same Cargo/semver range grammar, same
+/// [`crate::model::case::Applies::satisfied_by`] polarity at every site.
+fn applies_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Spec-version applicability ranges (Cargo/semver requirement syntax). Every declared range must be satisfied by the party's declared version; an undeclared component puts the gated item out of scope.",
+        "properties": {
+            "rm": { "type": "string" }, "base": { "type": "string" },
+            "am": { "type": "string" }, "aql": { "type": "string" },
+            "its_rest": { "type": "string" }, "term": { "type": "string" }
+        }
+    })
+}
+
+/// The `outcomes.*.headers` value: a bare matcher string, or the mapping form
+/// carrying the presence-strength and version-dating modifiers.
+fn header_expectation_def() -> Value {
+    json!({
+        "oneOf": [
+            { "type": "string",
+              "description": "A matcher from the closed vocabulary (vocab/selectors.yaml header_matchers); `present?` is the shorthand for { match: present, optional: true }" },
+            { "type": "object",
+              "additionalProperties": false,
+              "required": ["match"],
+              "properties": {
+                  "match": { "type": "string" },
+                  "optional": { "type": "boolean",
+                                "description": "Presence is SHOULD/MAY-strength: an absent or blank header satisfies the expectation, a present one is judged in full by `match` (ITS-REST overview §ETag and Last-Modified makes presence a SHOULD while §Deprecated headers makes the form a MUST)" },
+                  "applies": applies_def()
+              } }
+        ]
+    })
+}
+
 fn requires_def() -> Value {
     json!({
         "type": "object",
@@ -198,15 +237,7 @@ pub fn case_core_schema() -> Value {
             "test_purpose": { "type": "string", "minLength": 1 },
             "description": { "type": "string", "minLength": 1 },
             "spec_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-            "applies": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                    "rm": { "type": "string" }, "base": { "type": "string" },
-                    "am": { "type": "string" }, "aql": { "type": "string" },
-                    "its_rest": { "type": "string" }, "term": { "type": "string" }
-                }
-            },
+            "applies": applies_def(),
             "guards": { "type": "array", "items": { "type": "string", "minLength": 1 } },
             "capabilities": string_array(Some(IDENT_PATTERN)),
             "exercises": string_array(Some(IDENT_PATTERN)),
@@ -275,7 +306,7 @@ pub fn operation_binding_schema() -> Value {
             "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
             "its": { "enum": ["its-rest"] },
             "variant": { "type": "string", "minLength": 1 },
-            "applies": { "type": "object" },
+            "applies": applies_def(),
             "unrealized": {
                 "type": "object",
                 "additionalProperties": false,
@@ -340,7 +371,7 @@ pub fn operation_binding_schema() -> Value {
                             "items": { "type": "integer", "minimum": 100, "maximum": 599 },
                             "description": "Overview-permitted additional non-conflicting status codes beyond the OAS enumeration (ITS-REST Requests_and_responses §HTTP status codes)"
                         },
-                        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+                        "headers": { "type": "object", "additionalProperties": header_expectation_def() },
                         "body": { "enum": BODY_SELECTOR_TOKENS }
                     }
                 }
