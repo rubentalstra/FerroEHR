@@ -36,3 +36,89 @@ pub enum PlatformService {
     /// `System_log` — the system-log service.
     SystemLog,
 }
+
+impl PlatformService {
+    /// The SM enumeration literal, exactly as `platform_service.adoc` spells
+    /// it.
+    #[must_use]
+    pub fn sm_name(self) -> &'static str {
+        match self {
+            Self::Admin => "Admin",
+            Self::Definitions => "Definitions",
+            Self::Ehr => "Ehr",
+            Self::EhrIndex => "Ehr_index",
+            Self::Demographic => "Demographic",
+            Self::Message => "Message",
+            Self::Query => "Query",
+            Self::SystemLog => "System_log",
+        }
+    }
+
+    /// All eight vendored members, in `platform_service.adoc` order.
+    pub const ALL: &'static [PlatformService] = &[
+        Self::Admin,
+        Self::Definitions,
+        Self::Ehr,
+        Self::EhrIndex,
+        Self::Demographic,
+        Self::Message,
+        Self::Query,
+        Self::SystemLog,
+    ];
+}
+
+impl std::str::FromStr for PlatformService {
+    type Err = ();
+
+    /// Parse an SM enumeration literal ASCII-case-insensitively.
+    ///
+    /// NOTE (`platform_service.adoc` fixes the literals but no openEHR spec
+    /// governs how a member is spelled on a REST wire — the statistics calls
+    /// have no released endpoint at all, so the transport is our own
+    /// design/extension): the accepted spelling is the vendored literal, and
+    /// the comparison is ASCII-case-insensitive for the same reason BASE
+    /// `master05` §"Composite Identifiers and Case" gives for identifiers —
+    /// case alone must not make two spellings name different things.
+    ///
+    /// # Errors
+    /// `Err(())` when the text is not one of the eight vendored members; the
+    /// caller decides the wire status.
+    fn from_str(raw: &str) -> Result<Self, Self::Err> {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|member| member.sm_name().eq_ignore_ascii_case(raw))
+            .ok_or(())
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+mod tests {
+    use super::PlatformService;
+    use std::str::FromStr;
+
+    #[test]
+    fn sm_names_match_the_vendored_literals() {
+        assert_eq!(PlatformService::EhrIndex.sm_name(), "Ehr_index");
+        assert_eq!(PlatformService::SystemLog.sm_name(), "System_log");
+        assert_eq!(PlatformService::ALL.len(), 8);
+    }
+
+    #[test]
+    fn parses_every_member_case_insensitively() {
+        for member in PlatformService::ALL {
+            assert_eq!(PlatformService::from_str(member.sm_name()), Ok(*member));
+            assert_eq!(
+                PlatformService::from_str(&member.sm_name().to_lowercase()),
+                Ok(*member)
+            );
+        }
+        assert_eq!(PlatformService::from_str("terminology"), Err(()));
+    }
+}

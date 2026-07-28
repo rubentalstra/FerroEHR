@@ -31,7 +31,9 @@
 //!   `demographic::dispatch` + `demographic::relationship_routes` (the native
 //!   `utoipa-axum` router for the extension).
 //! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
-//!   as `admin::dispatch::dispatch` (the group publishes no re-export).
+//!   as `admin::dispatch::dispatch` (the group publishes no re-export), plus the
+//!   own-design `archive` + activity-`report` extension routes under the same
+//!   `/admin/` gates.
 //! - [`system`] — the System API manifest ([`system::SystemManifest`],
 //!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router::router`].
 //!
@@ -143,8 +145,11 @@ pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
         .merge(demographic::openapi_routes::routes())
         .merge(demographic::relationship::relationship_routes())
         .merge(definition::openapi_routes::routes())
+        .merge(definition::archetype::archetype_routes())
         .merge(query::openapi_routes::routes())
         .merge(admin::openapi_routes::routes())
+        .merge(admin::archive::archive_routes())
+        .merge(admin::report::report_routes())
         .merge(terminology::routes())
         .merge(event_subscription::routes())
         .merge(tenant_routes::routes())

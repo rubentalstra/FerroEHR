@@ -297,6 +297,18 @@ pub enum PerfOp {
     /// `GET /definition/template/adl2` → 200
     /// (`I_DEFINITION_ADL2.list_templates`).
     TemplateAdl2List,
+    /// `GET /definition/archetype/adl2` → 200
+    /// (`I_DEFINITION_ADL2.list_archetypes`) — an EXTENSION route: ITS-REST
+    /// 1.1.0 surfaces no ADL 2 archetype resource, so no openEHR spec governs
+    /// it (our own design/extension, register AMB-37, declared in
+    /// `vocab/wire_surface.yaml`).
+    ArchetypeAdl2List,
+    /// `GET /admin/report/contribution/count?a_service=Ehr` → 200
+    /// (`I_ADMIN_SERVICE.contribution_count`) — an EXTENSION route: the
+    /// released Admin API is the two EHR deletes alone, so no openEHR spec
+    /// governs it (our own design/extension, register AMB-33, declared in
+    /// `vocab/wire_surface.yaml`).
+    AdminContributionReport,
     /// `POST /query/aql` with an ORDER BY + LIMIT projection → 200
     /// (`I_QUERY_SERVICE.execute_ad_hoc_query`, the advanced-AQL class).
     AnalyticsQuery,
@@ -375,6 +387,8 @@ impl PerfOp {
         PerfOp::PartyRelationshipRead,
         PerfOp::TemplateExample,
         PerfOp::TemplateAdl2List,
+        PerfOp::ArchetypeAdl2List,
+        PerfOp::AdminContributionReport,
         PerfOp::AnalyticsQuery,
         PerfOp::TerminologyQuery,
         PerfOp::SystemOptions,
@@ -431,6 +445,8 @@ impl PerfOp {
             PerfOp::PartyRelationshipRead => "party_relationship_read",
             PerfOp::TemplateExample => "template_example",
             PerfOp::TemplateAdl2List => "template_adl2_list",
+            PerfOp::ArchetypeAdl2List => "archetype_adl2_list",
+            PerfOp::AdminContributionReport => "admin_contribution_report",
             PerfOp::AnalyticsQuery => "analytics_query",
             PerfOp::TerminologyQuery => "terminology_query",
             PerfOp::SystemOptions => "system_options",
@@ -580,6 +596,12 @@ impl PerfOp {
                 &["TemplateExamples", "Adl14OptProvisioning", "DefinitionApi"]
             }
             PerfOp::TemplateAdl2List => &["Adl2OptProvisioning", "DefinitionApi"],
+            // Extension routes (no released wire) — like the
+            // PARTY_RELATIONSHIP pair above they gate their own CAPABILITY
+            // only, so the released-wire API capabilities (DefinitionApi,
+            // AdminApi) are deliberately absent here.
+            PerfOp::ArchetypeAdl2List => &["Adl2ArchetypeProvisioning"],
+            PerfOp::AdminContributionReport => &["ActivityReport"],
             // ITEM_TAG rides the EHR API's tag resources, but it is its own
             // capability: a service that answers every EHR-API operation and
             // no tag route is still conformant (ITS-REST overview

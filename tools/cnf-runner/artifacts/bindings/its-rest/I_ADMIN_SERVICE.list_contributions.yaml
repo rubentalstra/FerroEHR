@@ -1,13 +1,52 @@
-# ITS-REST 1.1.0 surfaces no wire for I_ADMIN_SERVICE.list_contributions — an
-# explicit unrealized declaration so the master12 list_contributions cases are
-# not-applicable WITH CITATION on this ITS (never silently absent), activating
-# when a later ITS-REST release adds an admin activity-report endpoint.
+# EXTENSION realization of I_ADMIN_SERVICE.list_contributions.
+#
+# NO RELEASED WIRE EXISTS, re-derived first-hand 2026-07-29 under the oracle
+# order: the ITS-REST docs text describes the Admin API as EHR deletion only
+# (specifications/docs/admin/**), and the released
+# specifications/admin.openapi.yaml declares exactly two operations —
+# admin_ehr_delete and admin_ehr_delete_all. No reporting/statistics path
+# exists anywhere in the release. Register AMB-33.
+#
+# WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
+# design — `GET /admin/report/contribution`, declared in the
+# `admin-activity-report` family of vocab/wire_surface.yaml served_extensions.
+# NO openEHR SPEC GOVERNS IT — our own design/extension. It therefore gates the
+# ActivityReport CAPABILITY verdict only and never ITS-REST wire conformance;
+# the capability-matrix row carries `realization: extension`, which may never be
+# `required` (owner ruling 2026-07-28).
+#
+# THE ENVELOPE below is what the route serves. `a_service` carries the SM
+# `PLATFORM_SERVICE` member (platform_service.adoc) and the optional
+# `time_interval` the SM `Interval<Iso8601_date_time>` as `<lower>/<upper>` —
+# the two parameters the SM signature declares, nothing more.
 sm_operation: I_ADMIN_SERVICE.list_contributions
 its: its-rest
-unrealized:
+extension:
+  family: admin-activity-report
   reason: >-
-    No admin activity-report operation exists in ITS-REST 1.1.0. The only
-    admin_* operations in the OAS are admin_ehr_delete and admin_ehr_delete_all
-    (physical EHR deletion); there is no endpoint to list Contribution ids.
-  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_service.adoc (list_contributions)"
+    ITS-REST 1.1.0 realizes only admin_ehr_delete / admin_ehr_delete_all of the
+    SM Admin surface, so the SM list_contributions has no released wire; this product
+    serves the operation on its own /admin/report/contribution route,
+    which is what the cases drive.
+  source: >-
+    SM docs/UML/classes/i_admin_service.adoc (list_contributions) vs released ITS-REST
+    specifications/admin.openapi.yaml (admin_ehr_delete + admin_ehr_delete_all
+    only) + specifications/docs/admin/** (no reporting resource) — no openEHR
+    spec governs the extension route, our own design/extension
   ambiguity: AMB-33
+request:
+  method: GET
+  path: /admin/report/contribution
+  query:
+    a_service: "${a_service}"
+    time_interval: "${time_interval?}"      # absent => the fully open interval
+  headers:
+    Accept: application/json
+formats: [canonical-json]
+# NO `applies:` floor rides on these expectations — a floor dates a RELEASED
+# rule, and nothing released governs this route.
+outcomes:
+  ok:
+    status: 200
+    headers:
+      Content-Type: negotiated

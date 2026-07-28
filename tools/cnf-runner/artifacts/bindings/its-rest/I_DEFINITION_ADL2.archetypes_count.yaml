@@ -1,13 +1,42 @@
-# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL2.archetypes_count — there is no
-# count endpoint on the ADL2 (or any definition) surface; a count of archetypes (AUTHORED_ARCHETYPE)
-# is only derivable client-side from a list response, not returned by a
-# dedicated operation. Declared unrealized so the case is not-applicable WITH
-# CITATION and activates when a later ITS release adds a count endpoint.
+# EXTENSION realization of I_DEFINITION_ADL2.archetypes_count.
+#
+# NO RELEASED WIRE EXISTS, re-derived first-hand 2026-07-29 under the oracle
+# order: the ITS-REST docs text names no ADL 2 archetype-count resource
+# (specifications/docs/definition/** describes operational-template
+# provisioning only), and the released specifications/definition.openapi.yaml
+# declares the ADL 2 group as `/definition/template/adl2*` alone — no count path anywhere.
+# Register AMB-37.
+#
+# WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
+# design — `GET /definition/archetype/adl2/count`, declared in the `adl2-archetype` family of
+# vocab/wire_surface.yaml served_extensions. NO openEHR SPEC GOVERNS IT — our
+# own design/extension. It therefore gates the CAPABILITY verdicts of the rows
+# whose cases drive it and never ITS-REST wire conformance.
 sm_operation: I_DEFINITION_ADL2.archetypes_count
 its: its-rest
-unrealized:
+extension:
+  family: adl2-archetype
   reason: >-
-    No artefact/template/OPT count operation exists in ITS-REST 1.1.0; counts
-    are derivable from list length client-side but have no dedicated wire.
-  source: "SM docs/UML/classes/i_definition_adl2.adoc (archetypes_count) vs ITS-REST specifications/operations (no ADL2 count endpoint)"
+    ITS-REST 1.1.0 has no count endpoint on any definition path, so the SM
+    archetypes_count has no released wire; this product serves the operation on
+    its own /definition/archetype/adl2/count route, whose body is the bare
+    Integer the SM operation returns.
+  source: >-
+    SM docs/UML/classes/i_definition_adl2.adoc (archetypes_count) vs released
+    ITS-REST specifications/definition.openapi.yaml (definition_template_adl2_*
+    only — no count path anywhere) + specifications/docs/definition/** (no mention) — no
+    openEHR spec governs the extension route, our own design/extension
   ambiguity: AMB-37
+request:
+  method: GET
+  path: /definition/archetype/adl2/count
+  headers:
+    Accept: application/json
+formats: [canonical-json]
+# NO `applies:` floor rides on these expectations — a floor dates a RELEASED
+# rule, and nothing released governs this route.
+outcomes:
+  ok:
+    status: 200
+    headers:
+      Content-Type: negotiated
