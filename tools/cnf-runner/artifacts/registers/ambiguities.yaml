@@ -2858,9 +2858,16 @@ AMB-110:
     201 text is specific to these two operations and states the outcome
     directly, while the SHOULD-204 sentence is a general default in the
     overview and a SHOULD in any case; the specific released statement governs.
-    That RESOLVES AMB-62's unassigned minimal status FOR THESE TWO OPERATIONS
-    ONLY — AMB-62 continues to govern every write whose operation text assigns
-    nothing. Gated by I_DEFINITION_ADL14.upload_opt-prefer_minimal and
+    SCOPE ADJUDICATED 2026-07-28 (#543): the specific-over-general reading is
+    NOT Definition-scoped — the same shape holds wherever an operation family's
+    own released response text assigns the minimal outcome, which the AMB-62
+    re-adjudication confirmed is EVERY write family (the creates' 201 files end
+    "If the `Prefer` header is missing or set to `return=minimal`, the body is
+    empty"; 204_version_updated.yaml covers the updates). AMB-62 now carries
+    the per-family assignment as the governing entry; this branch's two upload
+    cases are simply the first instances of the general rule, and the remaining
+    families' minimal-arm cases are the AMB-62 NEW-CASE set (tracked, #584).
+    Gated by I_DEFINITION_ADL14.upload_opt-prefer_minimal and
     I_DEFINITION_ADL2.upload_artefact-prefer_minimal; the sibling identifier
     preference by -prefer_identifier on both. Reported upstream (UPR-74): add
     the semantic-rejection status to both uploads, and reconcile the 201-empty
@@ -3084,19 +3091,17 @@ AMB-115:
     I_DEFINITION_ADL14.get_opt-example_invalid_detail_level gates for every
     server: a value outside the enum has no "closest supported level" to fall
     back to, which makes the fall-back branch unreachable there.
-    THE ONE RESIDUAL, recorded rather than hidden: the two cases that exercise
-    the declared non-default enum members
+    RESIDUAL RESOLVED (#545, 2026-07-28): example generation is its own
+    OPTIONS-tier capability (TemplateExamples — the CNF profiles book has no
+    example row, the operation NOTE disclaims the output, and this entry's
+    latitude exists), so the enum-member cases
     (I_DEFINITION_ADL14.get_opt-example_type_output and
-    -example_detail_levels) expect the request to be FULFILLED. That holds for
-    a server implementing the member and for one taking the FALL-BACK branch
-    (which also answers 200 with the closest level); the only permitted
-    configuration it would fail is a server that neither implements the member
-    nor falls back. Those cases carry no option tag because their capability
-    (Adl14OptProvisioning) is a CORE-tier capability and the case model ties
-    profiles to capability tier, so an OPTIONS scoping is not expressible for
-    them; the residual is therefore carried here instead of being silently
-    asserted away. It closes when the released text assigns the branch (UPR-79)
-    or the two enum members are made mandatory.
+    -example_detail_levels) and the out-of-enum 400 case now ride that row
+    and can never gate CORE. The residual permitted configuration (a server
+    that neither implements a member nor falls back) simply does not claim
+    TemplateExamples and is not judged by these rows. The upstream ask
+    stands: it closes when the released text assigns the branch (UPR-79) or
+    the two enum members are made mandatory.
     Reported upstream (UPR-79): assign the unsupported-value branch, and give
     the ADL2 operation the same prose as its ADL 1.4 twin.
   disposition: fixed_handling
