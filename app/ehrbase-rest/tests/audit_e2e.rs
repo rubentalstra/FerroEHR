@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end ATNA audit over the real axum app (binding doc §8.5).
+//! End-to-end ATNA audit over the real axum app.
 //!
 //! Drives the assembled router (auth + audit + dispatch) with `tower`'s
 //! `oneshot`, over the **real** `EhrbaseService` (the scripted `Mock`

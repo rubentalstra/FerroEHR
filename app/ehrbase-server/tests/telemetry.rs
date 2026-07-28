@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! Telemetry tests (binding doc §6): the metric-name + bucket registry snapshot
+//! Telemetry tests: the metric-name + bucket registry snapshot
 //! (renames become deliberate), the OTLP export smokes for traces AND metrics
 //! push (against in-memory exporters — the export pipeline is exercised without
 //! a live collector), and readiness reflecting a DOWN database.
