@@ -609,7 +609,7 @@ mod tests {
             }))
             .unwrap();
         let case: CaseCore = serde_json::from_value(serde_json::json!({
-            "id": "X-floored", "kind": "functional", "component": "DEFINITIONS",
+            "id": "X-floored", "kind": "functional", "component": "DEFINITION_ADL14",
             "sm_operation": "I_DEFINITION_ADL14.list_opts",
             "test_purpose": "t", "description": "d", "spec_refs": [],
             "flow": [{ "step": 1, "call": "list_opts", "expect": "ok" }]

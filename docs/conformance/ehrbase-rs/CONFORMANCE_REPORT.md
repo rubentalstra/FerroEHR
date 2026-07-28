@@ -43,6 +43,54 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | SIG | 10 | 0 | 0 | 0 | 2 |
 | SMART | 3 | 0 | 0 | 0 | 0 |
 
+## By capability
+
+Selected gating cases per claimed capability. `inconclusive` counts cases whose exchange did not conclude (transport fault, unmapped status, step resolution) — they block a `passed` evidence token and are triaged, never absorbed.
+
+| Capability | Evidence | passed | failed | inconclusive | unevidenced |
+| --- | --- | --- | --- | --- | --- |
+| Adl14ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
+| Adl14OptProvisioning | pass | 17 | 0 | 0 | 5 |
+| Adl2ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 6 |
+| Adl2OptProvisioning | pass | 23 | 0 | 0 | 6 |
+| TemplateExamples | pass | 3 | 0 | 0 | 0 |
+| QueryProvisioning | pass | 27 | 0 | 0 | 0 |
+| EhrOperations | pass | 22 | 0 | 0 | 1 |
+| EhrStatus | pass | 45 | 0 | 0 | 1 |
+| CompositionOps | pass | 27 | 0 | 0 | 0 |
+| DirectoryOps | pass | 63 | 0 | 0 | 6 |
+| ChangeSets | pass | 48 | 0 | 0 | 5 |
+| Versioning | pass | 59 | 0 | 0 | 0 |
+| ArchetypeValidation | pass | 121 | 0 | 0 | 0 |
+| PartyOperations | pass | 50 | 0 | 0 | 2 |
+| PartyRelationshipOperations | excused (unrealized on this technology profile) | 0 | 0 | 0 | 12 |
+| AqlBasic | pass | 19 | 0 | 0 | 0 |
+| AqlAdvanced | pass | 2 | 0 | 0 | 0 |
+| AqlTerminology | pass | 1 | 0 | 0 | 0 |
+| ActivityReport | excused (unrealized on this technology profile) | 0 | 0 | 0 | 8 |
+| PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
+| EhrDumpLoad | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| EhrArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| DemographicArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| EhrExtract | excused (unrealized on this technology profile) | 0 | 0 | 0 | 10 |
+| Tds | excused (unrealized on this technology profile) | 0 | 0 | 0 | 4 |
+| DefinitionApi | pass | 1 | 0 | 0 | 0 |
+| EhrApi | pass | 2 | 0 | 0 | 0 |
+| DemographicApi | pass | 26 | 0 | 0 | 1 |
+| QueryApi | pass | 20 | 0 | 0 | 0 |
+| AdminApi | pass | 8 | 0 | 0 | 0 |
+| MessageApi | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
+| SystemApi | pass | 1 | 0 | 0 | 0 |
+| ItemTags | pass | 32 | 0 | 0 | 0 |
+| Signing | pass | 10 | 0 | 0 | 2 |
+| SimplifiedFormats | pass | 67 | 0 | 0 | 1 |
+| SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
+| EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
+| AuthenticatedAccess | pass | 2 | 0 | 0 | 0 |
+| AuthorizationSeparation | pass | 1 | 0 | 0 | 0 |
+| AuditAccountability | pass | 1 | 0 | 0 | 0 |
+| AnonymousEhrs | pass | 1 | 0 | 0 | 0 |
+
 ## Performance measurements
 
 ### PERF-hospital_sim-class_POC — class POC · EARNED
