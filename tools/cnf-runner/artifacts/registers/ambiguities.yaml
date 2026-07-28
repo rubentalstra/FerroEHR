@@ -1140,6 +1140,16 @@ AMB-62:
     change this entry has not made, and a binding asserts only what it declares.
     The body selector `prefer_conditional` is unchanged — the minimal branch is
     judged by the variant bindings' `body: absent`, not by it.
+    ONE RESIDUE, and it is a real one: the EHR CREATE is the only create family
+    the OAS does NOT close. `responses/201_EHR.yaml` stops after the
+    representation and identifier preferences and never says the minimal body
+    is empty (verified first-hand 2026-07-28), unlike 201_COMPOSITION,
+    201_PERSON, 201_directory, 201_CONTRIBUTION and the two template-upload
+    201s. Both sources are therefore still silent on the EHR minimal branch,
+    it stays unassertable, and no case pins it — the boundary the
+    `header-prefer-return-minimal` element and
+    I_EHR_SERVICE.create_ehr-return_identifier both name. Closes only if a
+    release states the EHR create's minimal answer.
   disposition: fixed_handling
 AMB-63:
   ambiguity: >-
