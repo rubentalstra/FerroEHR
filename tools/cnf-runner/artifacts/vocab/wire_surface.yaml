@@ -166,30 +166,39 @@ sm_operations:
   - operation: I_TERMINOLOGY_SERVICE.get_term
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.get_terminology_description
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.get_terminology_ids
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.get_value_set
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.has_term
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.has_terminology
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.has_value_set
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.subsumes
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_TERMINOLOGY_SERVICE.value_set_validate
     reason: off_wire
     source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+    note: "This SUT nevertheless SERVES a terminology API as a declared extension (GET /terminology and its five sub-routes) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-157. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no terminology resource. No released clause governs the URI space beyond the resource set, so serving one breaches nothing, and no conformance claim rests on those routes."
   - operation: I_VALIDITY_CHECKER.content_valid
     reason: off_wire
     source: "SM i_validity_checker.adoc — validity checking is an internal service; released ITS-REST 1.1.0 exposes no validity-checker resource (validation happens at commit)"
@@ -1463,3 +1472,174 @@ elements:
       reason: statement_declared
       register: AMB-151
       note: "Same two blockers as smart-resource-scope-grammar (SMART off in the composed SUT; no per-case scoped Bearer token). Proven instead by app/ehrbase-rest/tests/smart_http.rs — `fail_closed_denies_scopeless_template_access` and `fail_closed_denies_scopeless_query_access` (the two families that were parsed-but-never-enforced before the group-15 wire fix), `advisory_mode_defers_for_scopeless_callers` and `smart_disabled_leaves_families_ungated` (the negative directions) — plus the PEP unit tests in app/ehrbase-rest/src/extensions/access/pep.rs. The generic 401/403 discipline itself is separately gated by the SEC-BASIC cases, which do not depend on SMART."
+
+# ── Axis 4 — the OUTWARD axis: the non-openEHR surface this SUT serves ──────
+#
+# The first three axes are spec-inward (what the released text defines, and
+# whether a case reaches it). This one runs the other way: it DECLARES the
+# route families the SUT serves BEYOND the openEHR resource set, so a reader
+# of the Conformance Statement learns the extension surface exists instead of
+# discovering it on the wire. Register AMB-157 is the adjudication.
+#
+# IT NEVER GATES. No coverage obligation is derived from this axis — no case
+# is required, no branch is expected, no verdict depends on it — and every
+# entry says so in its own `never_gates: true`.
+#
+# THE STANDING SILENCE every entry rests on, verified first-hand: no released
+# clause governs the URI space beyond the ITS-REST resource set.
+# docs/overview/Resources.md §Resources defines what a resource IS ("a
+# **resource** is an instance object of a specific openEHR class (type) that
+# can be identified, addressed, handled or managed by the service") and lists
+# the openEHR resource kinds; it never constrains what else a service may
+# serve. The overview's only "Additional … MAY" sentence is about status codes
+# (Requests_and_responses.md §HTTP status codes: "Additional status codes MAY
+# be used as long as they do not conflict with the predefined codes"). A grep
+# of ITS-REST specifications/docs/** for an additional/vendor/proprietary/
+# extension endpoint clause returns zero hits. So every family below is
+# spec-silent by construction — our own design/extension — and each entry
+# records the silence, never a permission the text does not grant.
+#
+# ROUTES are written as the server mounts them under the DEFAULT deployment
+# (absolute from the server root, `server.base_path` = /ehrbase/rest/openehr/v1
+# included) — the same convention the served OpenAPI document uses. A
+# non-default `server.base_path` moves the base-path-relative ones; the served
+# document follows it.
+served_extensions:
+  # ── (1) the ten families the group-17 audit found undeclared ──────────────
+  - family: health
+    routes:
+      - "GET /health"
+      - "GET /health/liveness"
+      - "GET /health/readiness"
+    config_gate: "always on — no toggle; mounted outside the API base path and outside authentication (app/ehrbase-rest/src/extensions/health.rs)"
+    spec_silence: "ITS-REST defines no health/liveness/readiness resource anywhere (grep of specifications/docs/**: zero hits) and no released clause governs the URI space beyond the resource set — Resources.md §Resources defines resources, never a route-space constraint. Our own design/extension: a container-orchestration probe surface."
+    never_gates: true
+  - family: server-status
+    routes:
+      - "GET /ehrbase/rest/status"
+    config_gate: "always on — no toggle; mounted at the REST root (the base path minus /openehr/v1), outside authentication (app/ehrbase-rest/src/overview/status.rs)"
+    spec_silence: "No released clause defines an operational status resource; the one released self-description operation is the System API's OPTIONS on the API root (docs/system/Description.md), which this endpoint neither replaces nor duplicates. No released clause governs the URI space beyond the resource set. Our own design/extension."
+    never_gates: true
+  - family: openapi-meta
+    routes:
+      - "GET /ehrbase/rest/api-docs/openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-ehr.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-query.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-definition.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-demographic.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-admin.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-management.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-terminology.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-relationships.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-events.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-tenancy.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-fhir.openapi.json"
+      - "GET /ehrbase/rest/api-docs/ehrbase-smart.openapi.json"
+      - "GET /ehrbase/rest/swagger-ui"
+      - "GET /ehrbase/rest/swagger-ui/{*file}"
+    config_gate: "server.swagger_ui (default on) for the whole family; the document paths follow server.openapi_json_path()/swagger_ui_path(), which derive from server.base_path"
+    spec_silence: "No released clause defines an OAS-serving or API-console endpoint; the release publishes its own OpenAPI artifacts as downloads, not as a service obligation (docs/system/Description.md §Status links the bundles for validation/code generation). No released clause governs the URI space beyond the resource set. Our own design/extension: the twelve per-family documents plus the composed document are all generated from this server's own handlers — a vendored openEHR OAS is never served. The trailing `{*file}` is the embedded Swagger asset route (UI packaging, no API contract)."
+    never_gates: true
+  - family: management
+    routes:
+      - "GET /management/info"
+      - "GET /management/prometheus"
+      - "GET /management/metrics"
+      - "GET /management/metrics/{name}"
+      - "GET /management/env"
+      - "GET /management/loggers"
+      - "POST /management/loggers"
+      - "DELETE /management/loggers"
+    config_gate: "observability management.enabled (default off); with management.port set the family moves to its own listener instead of the API listener — when off, the routes are absent (a router 404), not gated in-handler"
+    spec_silence: "ITS-REST defines no operational/introspection surface at all (no metrics, no logger, no environment resource — grep of specifications/docs/**: zero hits) and no released clause governs the URI space beyond the resource set. Our own design/extension."
+    never_gates: true
+  - family: terminology
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/terminology"
+      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}"
+      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/term/{code}"
+      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/subsumes"
+      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}"
+      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}/validate"
+    config_gate: "[terminology].api_enabled (default off); the gate sits in-handler behind authentication, so a disabled group answers 401 to an unauthenticated caller and 404 to an authenticated one"
+    spec_silence: "SM i_terminology_service.adoc declares the nine terminology operations and released ITS-REST 1.1.0 surfaces NO terminology resource for any of them (the Axis-1 I_TERMINOLOGY_SERVICE off_wire rows above record that boundary). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set. These routes are our own design/extension over the TERM component, and no conformance claim rests on them."
+    never_gates: true
+  - family: event-subscription
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/admin/event_subscription"
+      - "POST /ehrbase/rest/openehr/v1/admin/event_subscription"
+      - "GET /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+      - "PUT /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+    config_gate: "[events].admin_api (default off); the gate sits in-handler behind authentication (401 unauthenticated, 404 authenticated when off)"
+    spec_silence: "ITS-REST defines no subscription/notification resource and the released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml). No released clause governs the URI space beyond the resource set. Our own design/extension: change-event subscriptions administered under the /admin prefix."
+    never_gates: true
+  - family: tenancy
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/admin/tenant"
+      - "POST /ehrbase/rest/openehr/v1/admin/tenant"
+      - "GET /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
+      - "PUT /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
+    config_gate: "[tenancy].enabled (default off); the routes stay mounted and answer 404 in-handler when off (401 first for an unauthenticated caller)"
+    spec_silence: "openEHR has no multi-tenancy concept in any released component — ITS-REST names no tenant resource, header or parameter (grep of specifications/**: zero hits) — and no released clause governs the URI space beyond the resource set. Our own design/extension."
+    never_gates: true
+  - family: fhir-r4-connector
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/fhir/r4/{resource_type}"
+      - "GET /ehrbase/rest/openehr/v1/fhir/r4/{resource_type}"
+    config_gate: "[fhir].api_enabled (default off); the gate sits in-handler behind authentication and refuses with a FHIR OperationOutcome"
+    spec_silence: "FHIR interoperability is outside every released openEHR component: ITS-REST defines no FHIR resource, media type or route, and no released clause governs the URI space beyond the resource set. Our own design/extension — the inbound HL7 FHIR R4 façade, whose contract is HL7's, not openEHR's."
+    never_gates: true
+  - family: fhir-mapping-store
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/admin/fhir_mapping"
+      - "POST /ehrbase/rest/openehr/v1/admin/fhir_mapping"
+      - "GET /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+      - "PUT /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+    config_gate: "[fhir].api_enabled (default off) — the same gate as the connector, same in-handler posture"
+    spec_silence: "The administration of FHIR↔openEHR mappings has no counterpart in any released component, and the released Admin API is exactly two EHR-deletion operations. No released clause governs the URI space beyond the resource set. Our own design/extension."
+    never_gates: true
+  - family: iti-81-audit-record-repository
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/fhir/r4/AuditEvent"
+    config_gate: "the local Audit Record Repository (ehrbase::system_log, on by default); answers 404 when the repository is disabled"
+    spec_silence: "The SM platform overview's component table carries the row \"System Log | IHE ATNA-compliant system log.\" while UML/classes/i_system_log.adoc is an EMPTY interface table (no description, no functions) — so the service model names the obligation and defines no operation, and released ITS-REST surfaces no audit resource (the same gap register AMB-144 reports upstream). No released clause governs the URI space beyond the resource set. Our own design/extension: the IHE ITI-81 Retrieve ATNA Audit Event read side, whose contract is IHE's, not openEHR's."
+    never_gates: true
+  # ── (2) the extension families earlier audits already adjudicated ─────────
+  # Declared here too: the axis is the COMPLETE outward surface, and a family
+  # already carrying a register entry is no less served than a new one.
+  - family: party-relationship
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/demographic/party_relationship"
+      - "GET /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "PUT /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}"
+      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history"
+      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version"
+      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}"
+    config_gate: "always on with the DEMOGRAPHIC group (no separate toggle)"
+    spec_silence: "SM i_party_relationship.adoc declares the operations and released ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — register AMB-32, whose its-rest bindings are explicitly unrealized so the cases verdict not-applicable WITH CITATION. These routes are the honest boundary realization: no released clause governs the URI space beyond the resource set, so serving them breaches nothing, and no conformance claim rests on them."
+    never_gates: true
+  - family: stored-query-bare-list
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/definition/query"
+    config_gate: "always on with the DEFINITION group (no separate toggle)"
+    spec_silence: "The release defines exactly one stored-query list operation, GET /definition/query/{qualified_query_name} (specifications/operations/definition_query_list.yaml), whose path parameter is required (parameters/path/qualified_query_name.yaml) — so its own \"when is empty, it will be treated as 'wildcard' in the search\" clause has no addressable released form. No released clause governs the URI space beyond the resource set. Our own design/extension: the bare form serves exactly what the released list serves for the empty prefix; the released route stays the gated one (register AMB-121 records the SM-vs-wire listing gap)."
+    never_gates: true
+  - family: admin-extension-routes
+    routes:
+      - "DELETE /ehrbase/rest/openehr/v1/admin/template/{template_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/admin/query/{qualified_query_name}/{version}"
+      - "GET /ehrbase/rest/openehr/v1/admin/config"
+    config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 when off, RBAC Admin class by the /admin/ path"
+    spec_silence: "The released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml); nothing released deletes a template, deletes one stored-query version, or exposes a configuration tree. The query delete deliberately does NOT claim SM I_DEFINITION_QUERY.delete_query, which is keyed by name alone and removes every version (register AMB-127 keeps that operation unrealized). No released clause governs the URI space beyond the resource set. Our own design/extension, excluded from every conformance-profile claim."
+    never_gates: true
+  - family: smart-discovery
+    routes:
+      - "GET /ehrbase/rest/.well-known/smart-configuration"
+    config_gate: "[smart] (default off) — absent entirely when disabled, so a non-SMART deployment's wire is byte-identical to one without the feature"
+    spec_silence: "The SMART on openEHR chapters are DEVELOPMENT-status and their subject is a Platform, not the CDR (register AMB-151). The discovery document itself is one of the three CDR-side behaviours those chapters do define (master04 §Service Discovery), but the endpoint definition is FHIR's, which master04 only \"extends\" — so the route exists in this server as a declared, statement-level capability, not as a released openEHR obligation, and this party's statement claims no SMART conformance."
+    never_gates: true

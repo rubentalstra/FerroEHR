@@ -1221,7 +1221,7 @@ pub fn wire_surface_schema() -> Value {
         "$schema": DRAFT,
         "$id": urn("wire-surface"),
         "title": "CNF 2.0 wire-surface coverage register",
-        "description": "The authored, spec-cited record of the wire surface the catalogue is measured against for TOTAL coverage (issue #271): Axis-1 SM operations with no its-rest binding, Axis-2 per-binding outcome/format branches no case exercises, and Axis-3 cross-cutting wire behaviours mapped to cases or an adjudicated exception. Every source is a released spec component / ITS-REST docs text, never the vendored OAS.",
+        "description": "The authored, spec-cited record of the wire surface the catalogue is measured against for TOTAL coverage (issue #271): Axis-1 SM operations with no its-rest binding, Axis-2 per-binding outcome/format branches no case exercises, Axis-3 cross-cutting wire behaviours mapped to cases or an adjudicated exception, and Axis-4 the outward declaration of the route families the SUT serves beyond the openEHR resource set (a declaration, never an obligation — no coverage requirement is derived from it). Every source is a released spec component / ITS-REST docs text, never the vendored OAS.",
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -1288,9 +1288,36 @@ pub fn wire_surface_schema() -> Value {
                         }
                     }
                 }
+            },
+            "served_extensions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["family", "routes", "config_gate", "spec_silence", "never_gates"],
+                    "properties": {
+                        "family": { "type": "string", "minLength": 1 },
+                        "routes": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": { "type": "string", "pattern": route_pattern() }
+                        },
+                        "config_gate": { "type": "string", "minLength": 1 },
+                        "spec_silence": { "type": "string", "minLength": 1 },
+                        "never_gates": { "const": true }
+                    }
+                }
             }
         }
     })
+}
+
+/// The Axis-4 route grammar (`"<METHOD> /<path>"`), with the method alternation
+/// derived from the closed HTTP-method vocabulary so schema and reference
+/// implementation cannot drift.
+fn route_pattern() -> String {
+    let methods: Vec<String> = HttpMethod::ALL.iter().map(token_str).collect();
+    format!("^({}) /\\S*$", methods.join("|"))
 }
 
 /// The runner-verification transcript (pack part 1).
