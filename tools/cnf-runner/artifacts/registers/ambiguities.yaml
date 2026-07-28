@@ -5447,3 +5447,114 @@ AMB-156:
     polymorphic choice alternatives a named, order-independent identifier rule.
   disposition: fixed_handling
   upstream_ref: "UPR-120"
+
+AMB-157:
+  ambiguity: >-
+    NOT an openEHR ambiguity — a DECLARATION, kept in this register so the
+    non-openEHR surface this server serves can never be mistaken for a
+    spec-derived one (the AMB-58 treatment, generalized from one operation to
+    the whole outward surface). The released ITS-REST text is SILENT on the URI
+    space beyond the openEHR resource set: it says what a resource IS and which
+    resources the API defines, and it never says whether a service may serve
+    anything ELSE at other paths. Both readings a reader could take — "the
+    listed resources are the whole permitted surface" and "the listed resources
+    are the openEHR part of a possibly larger surface" — are consistent with
+    every released sentence, and no released clause permits, forbids, or bounds
+    additional routes. This server takes the second reading and serves
+    FOURTEEN extension families beside the released groups.
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §Resources ("For the
+    openEHR API, a **resource** is an instance object of a specific openEHR
+    class (type) that can be identified, addressed, handled or managed by the
+    service", followed by the resource-kind list and "For a complete list of
+    available types, refer to the class index") — a definition of the openEHR
+    resource set, never a constraint on the URI space around it. The overview's
+    only "Additional … MAY" sentence is about STATUS CODES, not routes
+    (Requests_and_responses.md §HTTP status codes: "Additional status codes MAY
+    be used as long as they do not conflict with the predefined codes"). Silence
+    CONFIRMED first-hand: a grep of specifications/docs/** for an
+    additional/vendor/proprietary/custom endpoint clause returns ZERO hits, and
+    the overview chapter set contains no "extension" sentence at all. The
+    System API chapter that might have bounded the surface is a STUB
+    (docs/system/Description.md — purpose, related documents and status only:
+    no endpoint list, no field semantics).
+  handling: >-
+    Statement-declared, and enumerated rather than described. THE FAMILIES ARE
+    NOT LISTED HERE: they live in the `served_extensions` axis of
+    vocab/wire_surface.yaml — one entry per family with its routes (the default
+    deployment spelling), its configuration gate, and its own verified
+    spec-silence line — and the Conformance Statement renders that axis as its
+    "Additional non-openEHR surface" section, so an SDoC reader learns the
+    surface exists instead of discovering it on the wire. Keeping the
+    enumeration in exactly one machine-readable place is the point: a prose copy
+    here would rot the first time a family is added, gated differently, or
+    removed. THE AXIS NEVER GATES: no coverage obligation is derived from it —
+    no case is required, no branch is expected, no verdict depends on it —
+    which every entry states as `never_gates: true` and the surface-coverage
+    gate's own tests pin. Every family is our own design/extension, no openEHR
+    spec governs any of them, and this party's statement claims conformance for
+    NONE of them. Consequence for the inward axes, stated so the two readings of
+    "off the wire" cannot be confused: an SM operation recorded `off_wire`
+    because released ITS-REST surfaces no resource for it stays exactly right
+    about the SPEC even when this server serves an extension in that space —
+    the nine I_TERMINOLOGY_SERVICE rows carry that cross-reference explicitly.
+    WHY THIS DISPOSITION: `report_only` is wrong because there is nothing to
+    report — the silence is not a defect in openEHR's text but the ordinary
+    condition of anything outside its scope, and the disposition would force an
+    `upstream_ref` that could only be invented. `fixed_handling` is wrong
+    because no case's expectation rests on this entry; nothing in the catalogue
+    changes because of it. `statement_declared` is exactly what it is: a
+    behaviour the party declares and no normative case covers. Revisits only if
+    a future ITS-REST release states a rule about the URI space beyond the
+    resource set.
+  disposition: statement_declared
+
+AMB-158:
+  ambiguity: >-
+    The System-API conformance manifest carries an `endpoints` member and no
+    released sentence says what it must contain. The docs text describes the
+    manifest's PURPOSE and never its content; the only place `endpoints` is
+    defined at all is the OAS schema, which types it `array of string`, gives
+    it no description, and shows one example listing the five standardised
+    groups. So "which endpoints" — every mounted route family, or the openEHR
+    API groups the release names — is undefined, and a service that lists only
+    the standardised groups and a service that also lists its extension
+    families are both consistent with every released sentence.
+  source: >-
+    ITS-REST specifications/docs/system/Description.md — the whole System API
+    chapter, a STUB carrying only Purpose, Related Documents and Status; it
+    contains no endpoint list, no manifest field list and no "endpoints"
+    occurrence. Plus docs/overview/Requests_and_responses.md §HTTP Methods
+    (OPTIONS: "Describe the communication options for the target resource"),
+    the only released sentence about the method's meaning. The `endpoints`
+    member itself appears ONLY in the stalled OAS
+    (specifications/schemas/others/Options.yaml: `endpoints: {type: array,
+    items: {type: string}}` with the five-entry example, no description; and
+    specifications/operations/options.yaml, "exposing service capabilities for
+    a conformance manifest") — recorded as provenance for where the member
+    comes from, NOT as an oracle (owner ruling 2026-07-24: the OAS is stalled
+    and the docs text governs). Silence CONFIRMED first-hand.
+  handling: >-
+    Fixed handling, and the shipped decision is stated rather than left
+    implicit. The manifest lists the LIVE standardised ITS-REST group set —
+    /ehr, /definition, /query, /demographic, plus /admin when that group is
+    enabled — and omits every extension family. Two reasons, neither of them
+    convenience. (a) THE MEMBER SPEAKS ITS-REST: the one example the release
+    offers is exactly the released group set, and the manifest's stated job is
+    "exposing service capabilities for a conformance manifest" — a
+    CONFORMANCE manifest, whose subject is the openEHR API a client can hold
+    the service to. Advertising our own routes in that field would put
+    non-openEHR paths inside a conformance claim. (b) THE EXTENSION SURFACE HAS
+    ITS OWN DECLARATION LAYERS, all three of them honest and all three richer
+    than a bare path list: the served OpenAPI document (every extension
+    operation flagged our-own-extension in its own description), the
+    `served_extensions` axis of vocab/wire_surface.yaml, and the Conformance
+    Statement's "Additional non-openEHR surface" section rendered from it
+    (register AMB-157). LIVE, NOT STATIC: the list still tracks what is actually
+    mounted — /admin appears only when the admin group is enabled — so the
+    manifest never advertises a group that answers 404. This entry gates
+    nothing: the manifest behaviour itself is exercised by the SUT's own tests
+    and recorded as the `system-options-conformance-manifest` wire-surface
+    element (no SM anchor exists for the System API operation). Revisits if a
+    future release defines the member's contents.
+  disposition: fixed_handling

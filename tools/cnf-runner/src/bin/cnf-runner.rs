@@ -520,6 +520,14 @@ fn run_verdicts(
 
     let report = compute(&statement, &results, &cases, &perf_cases, matrix, register);
 
+    // The outward wire-surface axis (`vocab/wire_surface.yaml`
+    // `served_extensions`): rendered into the statement as a declaration of the
+    // non-openEHR surface, never an input to any verdict.
+    let served_extensions = match &loaded.set.wire_surface {
+        Some((_, wire_surface)) => wire_surface.served_extensions.as_slice(),
+        None => &[],
+    };
+
     if let Err(e) = std::fs::create_dir_all(out) {
         eprintln!("cannot create {}: {e}", out.display());
         return ExitCode::from(2);
@@ -541,7 +549,7 @@ fn run_verdicts(
         ("CONFORMANCE_REPORT.md", render_report(&results, &report)),
         (
             "CONFORMANCE_STATEMENT.md",
-            render_statement(&statement, &report),
+            render_statement(&statement, &report, served_extensions),
         ),
         (
             "CONFORMANCE_CERTIFICATE.md",

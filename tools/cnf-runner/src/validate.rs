@@ -19,7 +19,7 @@ use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
 use crate::model::binding::OperationBinding;
 use crate::model::case::{CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters};
-use crate::model::wire_surface::WireSurface;
+use crate::model::wire_surface::{ServedExtension, WireSurface};
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
 use crate::vocab::{CaseKind, FormatName, Iteration, OutcomeKind};
 
@@ -1288,6 +1288,75 @@ fn check_surface_coverage(
     }
     check_binding_branch_coverage(set, wire_surface, findings);
     check_wire_surface_elements(set, wire_surface, findings);
+    check_served_extensions(set, wire_surface, findings);
+}
+
+/// Axis 4 — the outward declaration is well-formed and does not claim a route
+/// the RELEASED wire already defines.
+///
+/// This check reads the axis; it never derives an obligation FROM it. Nothing
+/// here can require a case, expect a branch, or move a verdict — the axis is a
+/// declaration, and `never_gates: true` on every entry (shape-checked by
+/// [`WireSurface::check_invariants`], which
+/// [`check_wire_surface_elements`] reports) states that in the artifact
+/// itself.
+///
+/// The one cross-artifact check that IS meaningful: a family must not declare
+/// a route whose path is a realized ITS-REST binding's path, which would
+/// mislabel a released operation as our own extension. The axis writes
+/// absolute default-deployment paths while a binding path is relative to the
+/// API base, so the comparison strips a leading MOUNT prefix — and a prefix
+/// only counts as a mount when its last segment is not itself a released
+/// first segment. That distinction is what separates
+/// `/…/v1` + `/ehr` (the same released operation, re-declared) from
+/// `/…/v1/admin` + `/query/{q}/{v}` (a different resource that merely ends in
+/// the same tail).
+fn check_served_extensions(
+    set: &ArtifactSet,
+    wire_surface: &WireSurface,
+    findings: &mut Vec<Finding>,
+) {
+    let released: Vec<&str> = set
+        .bindings
+        .iter()
+        .filter(|(_, b)| !b.is_unrealized())
+        .filter_map(|(_, b)| b.request.as_ref())
+        .map(|r| r.path.raw())
+        .collect();
+    let released_roots: BTreeSet<&str> = released
+        .iter()
+        .filter_map(|p| p.trim_start_matches('/').split('/').next())
+        .collect();
+    for extension in &wire_surface.served_extensions {
+        for route in &extension.routes {
+            let Some(path) = ServedExtension::route_path(route) else {
+                continue; // shape finding already raised by check_invariants
+            };
+            for binding_path in &released {
+                let claims = path == *binding_path
+                    || path.strip_suffix(*binding_path).is_some_and(|mount| {
+                        !mount.is_empty()
+                            && !mount.ends_with('/')
+                            && mount
+                                .rsplit('/')
+                                .next()
+                                .is_some_and(|last| !released_roots.contains(last))
+                    });
+                if claims {
+                    push(
+                        findings,
+                        CheckId::SurfaceCoverage,
+                        &extension.family,
+                        format!(
+                            "served_extensions route {route:?} claims the released ITS-REST path \
+                             {binding_path} — an extension family may not declare an operation \
+                             the release defines"
+                        ),
+                    );
+                }
+            }
+        }
+    }
 }
 
 /// Axis 1 — every SM operation of a pinned platform interface has an `its-rest`
@@ -1808,6 +1877,64 @@ h|*1..1*\n\
         assert!(
             findings.is_empty(),
             "the branch exception should suppress the gap, got: {findings:?}"
+        );
+    }
+
+    /// Axis 4 is a DECLARATION: adding served extensions changes no coverage
+    /// obligation on the other three axes, and a family may not claim a
+    /// released path.
+    #[test]
+    fn axis4_declares_without_gating() {
+        let set = build_set(true);
+        let wire = set.wire_surface.as_ref().map(|(_, w)| w).unwrap();
+        let mut baseline = Vec::new();
+        check_binding_branch_coverage(&set, wire, &mut baseline);
+        check_wire_surface_elements(&set, wire, &mut baseline);
+        assert!(baseline.is_empty(), "{baseline:?}");
+
+        let declared: WireSurface = serde_json::from_value(serde_json::json!({
+            "branches": [ {
+                "binding": "I_EHR_SERVICE.create_ehr", "outcome": "already_exists",
+                "reason": "coverage_gap",
+                "source": "ITS-REST Requests_and_responses.md §HTTP status codes"
+            } ],
+            "served_extensions": [ {
+                "family": "management",
+                "routes": ["GET /management/info"],
+                "config_gate": "management.enabled",
+                "spec_silence": "no released clause governs the URI space beyond the resource set",
+                "never_gates": true
+            } ]
+        }))
+        .unwrap();
+        let mut with_axis = Vec::new();
+        check_binding_branch_coverage(&set, &declared, &mut with_axis);
+        check_wire_surface_elements(&set, &declared, &mut with_axis);
+        check_served_extensions(&set, &declared, &mut with_axis);
+        assert!(
+            with_axis.is_empty(),
+            "the outward axis must never add an obligation, got: {with_axis:?}"
+        );
+
+        // Claiming a released path IS a finding (the binding fixture serves
+        // POST /ehr; the mount prefix is stripped at the segment boundary).
+        let claiming: WireSurface = serde_json::from_value(serde_json::json!({
+            "served_extensions": [ {
+                "family": "impostor",
+                "routes": ["POST /ehrbase/rest/openehr/v1/ehr"],
+                "config_gate": "always on",
+                "spec_silence": "s",
+                "never_gates": true
+            } ]
+        }))
+        .unwrap();
+        let mut findings = Vec::new();
+        check_served_extensions(&set, &claiming, &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.message.contains("claims the released")),
+            "expected a released-path claim finding, got: {findings:?}"
         );
     }
 
