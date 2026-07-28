@@ -111,6 +111,17 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         ServiceError::Unprocessable(format!("body does not validate as {rm_type}: {e}"))
     })?;
 
+    // PARTY is unconditionally an archetype root (`demographic.party.adoc`
+    // §Invariants `Is_archetype_root: is_archetype_root` — no antecedent),
+    // so the same root-LOCATABLE rules the EHR_STATUS/EHR_ACCESS commits
+    // enforce apply here: `Archetyped_valid` (archetype_details mandatory at
+    // a root), the root `archetype_node_id` = the stringified
+    // `archetype_details.archetype_id` (`locatable.adoc`
+    // §archetype_node_id), and `Links_valid`.
+    if let Some(obj) = data.as_object() {
+        crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
+    }
+
     // PARTY invariant `Identities_valid`: `not identities.is_empty`
     // (`demographic.party.adoc`).
     let has_identities = data
@@ -312,12 +323,47 @@ mod tests {
     }
 
     fn person(identities: &Value) -> Value {
+        // Root-valid per PARTY `Is_archetype_root` (party.adoc): the
+        // ARCHETYPED block present, the root archetype_node_id equal to its
+        // archetype_id — party_check enforces both before the PARTY rules.
         json!({
             "_type": "PERSON",
             "name": { "_type": "DV_TEXT", "value": "person" },
             "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                   "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+                "rm_version": "1.1.0"
+            },
             "identities": identities
         })
+    }
+
+    /// PARTY is unconditionally an archetype root (`party.adoc`
+    /// `Is_archetype_root`): a commit without `archetype_details`, or with a
+    /// root `archetype_node_id` differing from the declared `archetype_id`,
+    /// is a 422 (`locatable.adoc` `Archetyped_valid` + `§archetype_node_id`).
+    #[test]
+    fn party_root_locatable_rules_are_enforced() {
+        let mut no_details = person(&json!([identity()]));
+        no_details
+            .as_object_mut()
+            .unwrap()
+            .remove("archetype_details");
+        let msg = match party_check("PERSON", &no_details) {
+            Err(ServiceError::Unprocessable(m)) => m,
+            other => panic!("expected Unprocessable, got {other:?}"),
+        };
+        assert!(msg.contains("archetype_details"), "got {msg}");
+
+        let mut mismatched = person(&json!([identity()]));
+        mismatched["archetype_node_id"] = json!("openEHR-DEMOGRAPHIC-PERSON.other.v1");
+        let msg = match party_check("PERSON", &mismatched) {
+            Err(ServiceError::Unprocessable(m)) => m,
+            other => panic!("expected Unprocessable, got {other:?}"),
+        };
+        assert!(msg.contains("archetype_node_id"), "got {msg}");
     }
 
     #[test]
@@ -378,6 +424,10 @@ mod tests {
                 "_type": "ROLE",
                 "name": { "_type": "DV_TEXT", "value": "role" },
                 "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+                "archetype_details": { "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID",
+                                       "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+                    "rm_version": "1.1.0" },
                 "identities": [identity()],
                 "performer": { "_type": "PARTY_REF", "namespace": "demographic",
                     "type": performer_type,
