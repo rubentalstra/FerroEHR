@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "0fe63211a089ed4f",
+  "ixit_digest": "6046ad1106580c5b",
   "outcomes": [
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_unfiltered",
@@ -4215,6 +4215,12 @@
       "rows_total": 1
     },
     {
+      "case": "SIG-VERSION-client_supplied_verbatim-pgp",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SIG-VERSION-client_supplied_verbatim",
       "status": "passed",
       "rows_driven": 1,
@@ -4235,7 +4241,19 @@
       "citation": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
     },
     {
+      "case": "SIG-VERSION-distinct_per_version-pgp",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SIG-VERSION-distinct_per_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SIG-VERSION-ehr_status_signature-pgp",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4248,6 +4266,12 @@
     },
     {
       "case": "SIG-VERSION-signature_present",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SIG-VERSION-verifiable-pgp",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

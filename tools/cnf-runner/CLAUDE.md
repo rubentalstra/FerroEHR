@@ -9,7 +9,7 @@ language, ever.
 
 | Command | Purpose |
 |---|---|
-| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1`; `CONF_SIGNING_MODE=pgp` (ehrbase-rs only; stacks on the standard SMART posture) |
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). For `ehrbase-rs` it composes TWO deployments of the one built image — the standard SMART/digest stack plus the openPGP-posture stack (`-p ehrbase-rs-cnf-pgp`, host port 8081) — so both claimed signing modes land in the one record. Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
 | `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
@@ -46,8 +46,8 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   (e.g. `system_id`) and a case reads it as `${ixit:<field>}` — the field set
   is closed like every other grammar. A party that declares nothing makes the
   referencing cases not-applicable with that citation, so an undeclared fact
-  costs coverage, never correctness. The same law covers whole **configuration
-  lanes**: `ixit.signing` declares the version-signing posture, and
+  costs coverage, never correctness. The same law extends to whole
+  **deployment postures**: `signing` declares the version-signing posture, and
   `ixit.smart` declares the SMART resource-server posture PLUS the static test
   issuer the runner mints per-step scoped Bearer tokens against (a flow step's
   `scopes:` key — empty list included — marks it SMART-lane; the CDR never
@@ -60,7 +60,23 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   Bearer tokens (per-instance standing grants; a step-level `scopes:`
   overrides for the boundary cases), and the ONE committed record covers the
   whole claimed surface in one run — no focused lanes, no sidecar artifact
-  directories. `CONF_SIGNING_MODE=pgp` stacks the signing overlay on top.
+  directories.
+- **A claimed capability is tested, and a posture the product claims BOTH
+  branches of is tested in both — in the ONE record** (owner ruling
+  2026-07-28). Version signing is the live case: RM common master06 §Digital
+  Signature defines digest and openPGP as alternative depths of one mechanism
+  and a deployment realizes exactly one, so the pipeline composes a SECOND
+  deployment of the same built image in the pgp posture
+  (`docker/sut-signing-pgp.yml` + `docker/sut-pgp-parallel.yml`, project
+  `ehrbase-rs-cnf-pgp`, host port 8081) and the ixit declares it as the
+  `sut_pgp` **instance** carrying its OWN `signing` block. `signing` is
+  therefore per-instance-first with the top-level block as the party default,
+  and the `-pgp` SIG-VERSION siblings address that instance with `on:`. One
+  `run`, one `results.json`, no outcome merging, no environment knob (the
+  retired `CONF_SIGNING_MODE`/`ixit.pgp.json` pair is gone). A case addressing
+  an instance the party does not declare is not-applicable with the citation
+  at SELECTION time (`run.rs`), never a drive-time transport error, and case
+  preconditions provision on the deployment the flow addresses.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its source under the oracle

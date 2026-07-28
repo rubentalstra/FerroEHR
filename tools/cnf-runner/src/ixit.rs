@@ -124,6 +124,19 @@ pub struct Instance {
     /// Extra headers stamped on every request to this instance.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub headers: Option<Vec<(String, String)>>,
+    /// THIS instance's version-signing posture, when it differs from the
+    /// party default ([`Ixit::signing`]).
+    ///
+    /// RM common `master06-change_control_package.adoc` §Digital Signature
+    /// defines digest and openPGP as alternative depths of ONE mechanism, and
+    /// a running deployment realizes exactly one of them — so the posture is
+    /// a property of the *deployment*, not of the party. A party that claims
+    /// both modes therefore declares two deployments as two instances, each
+    /// carrying its own block, and every signature check resolves
+    /// instance-first (see [`Ixit::signing_of`]). Absent => the top-level
+    /// default applies, so every single-posture ixit parses unchanged.
+    #[serde(default)]
+    pub signing: Option<crate::exec::signature::SigningMode>,
 }
 
 /// The environment block — mandatory for performance runs, informative
@@ -189,11 +202,12 @@ pub struct Ixit {
     /// rather than guessing.
     #[serde(default)]
     pub system_id: Option<String>,
-    /// The SUT's version-signing posture (RM common master06 §Digital
-    /// Signature). Present => the SUT claims the Signing capability and this
-    /// block declares its mode (digest | pgp) so the SIG-VERSION `verifiable`
-    /// check knows how to verify; absent => no Signing capability, and the
-    /// SIG-VERSION cases N/A on their guard.
+    /// The party's DEFAULT version-signing posture (RM common master06
+    /// §Digital Signature). Present => the SUT claims the Signing capability
+    /// and this block declares the mode (digest | pgp) every instance runs
+    /// unless it declares its own ([`Instance::signing`]) so the SIG-VERSION
+    /// `verifiable` check knows how to verify; absent => no Signing
+    /// capability, and the SIG-VERSION cases N/A on their guard.
     #[serde(default)]
     pub signing: Option<crate::exec::signature::SigningMode>,
     /// The SMART App Launch lane (ITS-REST `docs/smart_app_launch`). Present
@@ -222,6 +236,21 @@ impl Ixit {
             .iter()
             .find(|(n, _)| n == name)
             .map(|(_, i)| i)
+    }
+
+    /// The version-signing posture in force for `instance`: its own
+    /// declaration wins, the party default ([`Ixit::signing`]) fills in.
+    ///
+    /// RM common `master06-change_control_package.adoc` §Digital Signature —
+    /// the mode is a deployment fact, so a party exercising both modes runs
+    /// two deployments and the verification posture follows the instance the
+    /// step addressed, never the party-wide default.
+    #[must_use]
+    pub fn signing_of<'i>(
+        &'i self,
+        instance: &'i Instance,
+    ) -> Option<&'i crate::exec::signature::SigningMode> {
+        instance.signing.as_ref().or(self.signing.as_ref())
     }
 
     /// The default instance (`sut`) — required for every run.
@@ -355,6 +384,49 @@ mod tests {
             declared.smart.as_ref().unwrap().mint.key_file,
             PathBuf::from("/party/ehrbase-rs/../smart/cnf-smart-test.key.pem")
         );
+    }
+
+    #[test]
+    fn instance_signing_overrides_the_party_default() {
+        // Two deployments of one product, one per signing mode (RM common
+        // master06 §Digital Signature: digest and openPGP are alternative
+        // depths of one mechanism, and a deployment runs one).
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://localhost:8080", "auth": { "mode": "none" } },
+                "sut_pgp": {
+                    "base_url": "http://localhost:8081",
+                    "auth": { "mode": "none" },
+                    "signing": { "mode": "pgp", "public_key": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" }
+                }
+            },
+            "signing": { "mode": "digest", "algorithm": "sha256", "encoding": "base64", "prefix": "sha256:" }
+        }))
+        .unwrap();
+
+        let default = ixit.default_instance().unwrap();
+        assert!(default.signing.is_none());
+        assert!(matches!(
+            ixit.signing_of(default),
+            Some(crate::exec::signature::SigningMode::Digest { .. })
+        ));
+
+        let pgp = ixit
+            .instance(&InstanceName::parse("sut_pgp").unwrap())
+            .unwrap();
+        assert!(matches!(
+            ixit.signing_of(pgp),
+            Some(crate::exec::signature::SigningMode::Pgp { .. })
+        ));
+    }
+
+    #[test]
+    fn instance_signing_is_absent_without_any_declaration() {
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        assert!(ixit.signing_of(ixit.default_instance().unwrap()).is_none());
     }
 
     #[test]
