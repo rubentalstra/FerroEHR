@@ -39,8 +39,17 @@ outcomes:
     # unable to be followed due to semantic errors" versus "400 | Bad Request |
     # … (e.g., malformed request syntax, syntactically invalid content)".
     # CORRECTED 2026-07-28: this branch read 400, sourced only from the OAS
-    # `400.yaml`, which is stalled and never a wire oracle (owner ruling
-    # 2026-07-24). The identical defect class already maps to 422 everywhere
+    # `400.yaml`. RE-GROUNDED the same day under the OAS-fallback oracle
+    # order; the correction stands, on the OAS's OWN wording rather than on
+    # its tier. `responses/400.yaml` scopes itself to input that does not
+    # parse ("the request could not be parsed or is invalid (e.g. malformed
+    # request URL syntax, missing required header or parameter, or
+    # syntactically invalid header, parameter or content)"), and an RM-invalid
+    # FOLDER parses fine — so the OAS never grounded this branch even as a
+    # tier-2 source, and `directory_create.yaml` declares no 422 to ground it
+    # either. The docs-text 422 row does describe it, and §HTTP status codes
+    # permits "Additional status codes … as long as they do not conflict with
+    # the predefined codes". The identical defect class already maps to 422 everywhere
     # else in the catalogue on this same row (I_EHR_SERVICE.create_ehr,
     # I_EHR_COMPOSITION.create_composition, I_EHR_STATUS.*-invalid_body); the
     # directory was the lone OAS-grounded outlier. The 400 that REMAINS

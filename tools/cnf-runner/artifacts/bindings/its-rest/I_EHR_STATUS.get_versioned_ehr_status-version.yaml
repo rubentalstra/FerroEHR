@@ -5,7 +5,9 @@
 # sub-resource. Surfaces VERSION.signature (RM common master06 §Digital
 # Signature) for the SIG-VERSION signature family on EHR_STATUS versions
 # (master06 signs "each Version of any logical item", not just COMPOSITION).
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   - Resource: overview Resources.md §Resource identification — a VERSION is
 #     retrievable by `version_uid`; "versioned entities: VERSIONED_COMPOSITION,
 #     VERSIONED_EHR_STATUS, etc. or their contained VERSION instances". The

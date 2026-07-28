@@ -51,9 +51,12 @@ services:
       SECURITY_AUTHADMINPASSWORD: ehrbase
       # The catalogue's admin chapter (physical delete, template admin).
       ADMINAPI_ACTIVE: "true"
-      # Duplicate template upload must 409 (the AMB-4 adl14-duplicate-conflict
-      # option branch the party statement declares); the runner's provisioning
-      # is 409-tolerant, so re-runs stay idempotent.
+      # Duplicate template upload must 409 — a GATING expectation for every
+      # server since the 2026-07-28 re-adjudication of register AMB-4 (the
+      # released OAS responses/409_template_already_exists.yaml states the
+      # trigger where the ITS-REST docs text is silent), no longer an option
+      # branch the party statement selects; the runner's provisioning is
+      # 409-tolerant, so re-runs stay idempotent.
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "false"
       LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
     ports:
