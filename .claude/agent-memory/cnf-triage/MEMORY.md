@@ -14,4 +14,9 @@
 - [Non-string `with:` values dropped from URL/header templates](runner-nonstring-with-values-dropped.md) — RUNNER bin: merge_with_vars promotes only strings; `url_fetch: 4` never reaches `?fetch=`; body path is unaffected
 - [`equivalent` counts optional `_type` tags as content](equivalent-comparator-type-tags.md) — RUNNER bin: XML-commit cases fail unless their JSON twin is exhaustively `_type`-tagged; presence is a SHOULD scoped to polymorphic slots
 - [CONTRIBUTION XML read has no released document](contribution-xml-read-not-a-released-document.md) — CATALOGUE bin: no global XSD element, 406 is the §XML Format answer; AMB-165's read-side "is exercised" claim is false
+- [Prefer minimal status by operation](prefer-minimal-status-by-operation.md) — UPDATE-minimal = 204, CREATE-minimal = 201; docs text silent, released OAS fills per operation family
+- [EVENT node collapse rule](event-node-collapse-rule.md) — a sole `max=1` events slot is collapsed out of the web template (master04), so FLAT `any_event:i` paths are unauthorable there
+- [ctx/ never creates an EVENT_CONTEXT](ctx-event-context-synthesis.md) — ctx defaults FILL rm-tree nodes; `context/start_time` assertions need an event-context ctx key in the fixture
+- [XML offering is a service choice](xml-offering-is-a-service-choice.md) — AMB-167 "DOCUMENTED" ≠ mandatory offering; a 406 on Accept: application/xml is always conformant
+- [Runner masking mechanisms](runner-masking-mechanisms.md) — patched_body's RM-invalid EHR_STATUS fallback, `errored` contributing no capability evidence, report_only de-gating
 - [Upstream EHRbase Java non-conformance (#266)](upstream-ehrbase-java-nonconformance.md) — EHRbase 2.34.0 400s the spec-standard QUOTED If-Match (composition/ehr_status update classes) + 404s the STABLE item-tag surface; our driver/pack spec-valid, outcome (b), record stands

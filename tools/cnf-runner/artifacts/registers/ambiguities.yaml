@@ -5188,7 +5188,10 @@ AMB-151:
     (`smart.enabled`, `smart.require_smart_scopes` — the fail-closed posture
     master04 §Capabilities lets a Platform advertise as `openehr-permission-v1`
     —, the advertised Authorization-Server endpoints, and `auth.oidc` trusting
-    a committed static test issuer), selected by `CONF_SMART_MODE=1`.
+    a committed static test issuer) — since the owner ruling of 2026-07-28
+    this posture IS the standard ehrbase-rs conformance posture: the pipeline
+    always composes it, the ixit principals mint scoped Bearer tokens, and
+    the one committed record covers the SMART cases alongside the rest.
     (ii) A PER-CASE TOKEN MINT: a flow step declares the `scope` claim its
     principal presents and the runner signs an RS256 access token carrying
     exactly that, against the issuer the party declares in its ixit `smart`
@@ -6259,12 +6262,23 @@ AMB-167:
     branch a party can select itself out of, with nothing spec-grounded to
     assert about the positive exchange; AMB-4's `adl14-duplicate-replace`
     used to be the reference instance of that pattern and was withdrawn on
-    2026-07-28 when the released OAS turned out to define its behaviour). The
-    DOCUMENTED
-    rows stay ungated and unconditional: `-xml` cases on COMPOSITION, on the
-    VERSIONED_* container reads and their `version` sub-resources, and on
-    the OPT/archetype/example payloads assert behaviour the release fully
-    defines. ROOT ELEMENT NAME where a family IS offered: no openEHR spec
+    2026-07-28 when the released OAS turned out to define its behaviour). The DOCUMENTED
+    classification answers WHICH document an offered XML response must
+    conform to (a published global element exists); it CANNOT answer WHETHER
+    XML must be offered on a resource — §Data representation's "at least one
+    of" makes offering a SERVICE CHOICE there too (corrected 2026-07-28,
+    posture-run finding 4: the versioned-party container read's 406 is the
+    release's own designated answer on a JSON-only resource, not a
+    violation). DOCUMENTED rows on families whose XML offering the release
+    itself exercises on this SUT stay unconditional; a DOCUMENTED resource
+    whose offering the ICS does not declare takes the same two-armed option
+    gate as the undefined families (the ok-XML case on `-supported`, the
+    §XML Format 406 MUST exercised on `-unsupported` — coverage either way,
+    never a bare tolerance). First instance:
+    `versioned-party-xml-supported`/`-unsupported`, a separate offering from
+    the bare-PARTY family (the five person/agent/... routes serve XML on
+    this SUT while the container read does not — per-resource asymmetry is
+    exactly what per-family arms exist for). ROOT ELEMENT NAME where a family IS offered: no openEHR spec
     governs it — our own design/extension — so no case asserts one; the
     body floor stays "an XML document entity" and the RM-level assertions
     that read the canonical-JSON `_type` self-tag are deliberately absent.
@@ -6294,6 +6308,8 @@ AMB-167:
     - directory-xml-unsupported
     - party-xml-supported
     - party-xml-unsupported
+    - versioned-party-xml-supported
+    - versioned-party-xml-unsupported
     - contribution-xml-supported
     - contribution-xml-unsupported
   upstream_ref: "UPR-127"

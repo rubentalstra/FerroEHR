@@ -648,6 +648,7 @@ fn evidence_token(evidence: Evidence) -> &'static str {
     match evidence {
         Evidence::Passed => "pass",
         Evidence::Failed => "FAIL",
+        Evidence::Inconclusive => "INCONCLUSIVE (errored rows — never green by absorption)",
         Evidence::NotEvidenced => "not evidenced",
         Evidence::Unrealized => "excused (unrealized on this technology profile)",
         Evidence::NoCases => "no cases",

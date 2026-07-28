@@ -53,7 +53,7 @@ flow:
     call: I_EHR_STATUS.get_ehr_status
     with: { ehr_id: "${ehr_id}" }
     expect: ok
-    capture: { v1_uid: ok.status_version_uid }
+    capture: { v1_uid: ok.status_version_uid, status_body: ok.body }   # the flip binding read-modify-writes from status_body
   - step: 2                              # v2, so the history has an order to get wrong
     call: I_EHR_STATUS.set_ehr_queryable
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "${v1_uid}" }

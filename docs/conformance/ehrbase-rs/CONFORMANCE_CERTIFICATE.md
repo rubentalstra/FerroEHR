@@ -28,6 +28,7 @@ Result column: ITS its-rest (canonical-json, canonical-xml, wt-flat, wt-structur
 | Platform | Adl14OptProvisioning | Y | pass |
 | Platform | Adl2ArchetypeProvisioning | OPT | excused (unrealized on this technology profile) |
 | Platform | Adl2OptProvisioning | OPT | pass |
+| Platform | TemplateExamples | OPT | pass |
 | Platform | QueryProvisioning | Y | pass |
 | Platform | EhrOperations | Y | pass |
 | Platform | EhrStatus | Y | pass |
@@ -60,7 +61,7 @@ Result column: ITS its-rest (canonical-json, canonical-xml, wt-flat, wt-structur
 | Platform | ItemTags | OPT | pass |
 | Platform | Signing | OPT | pass |
 | Platform | SimplifiedFormats | OPT | pass |
-| Platform | SmartAppLaunch | OPT | no cases |
+| Platform | SmartAppLaunch | OPT | pass |
 | Security | EhrDemographicSeparation | Y | pass |
 | Security | AuthenticatedAccess | Y | pass |
 | Security | AuthorizationSeparation | Y | pass |
@@ -77,6 +78,7 @@ The exercised-capability set of the measured hospital-simulation workload agains
 | Adl14OptProvisioning | yes | yes |
 | Adl2ArchetypeProvisioning | yes | NO — catalogue gap |
 | Adl2OptProvisioning | yes | NO — catalogue gap |
+| TemplateExamples | yes | NO — catalogue gap |
 | QueryProvisioning | yes | yes |
 | EhrOperations | yes | yes |
 | EhrStatus | yes | yes |
@@ -107,13 +109,14 @@ The exercised-capability set of the measured hospital-simulation workload agains
 | ItemTags | yes | NO — catalogue gap |
 | Signing | yes | NO — catalogue gap |
 | SimplifiedFormats | yes | NO — catalogue gap |
+| SmartAppLaunch | yes | NO — catalogue gap |
 | EhrDemographicSeparation | yes | NO — catalogue gap |
 | AuthenticatedAccess | yes | NO — catalogue gap |
 | AuthorizationSeparation | yes | NO — catalogue gap |
 | AuditAccountability | yes | NO — catalogue gap |
 | AnonymousEhrs | yes | NO — catalogue gap |
 
-Claimed capabilities the simulation never touches (26): Adl14ArchetypeProvisioning, Adl2ArchetypeProvisioning, Adl2OptProvisioning, PartyOperations, PartyRelationshipOperations, AqlAdvanced, AqlTerminology, ActivityReport, PhysicalDeletion, EhrDumpLoad, EhrArchive, DemographicArchive, EhrExtract, Tds, DemographicApi, AdminApi, MessageApi, SystemApi, ItemTags, Signing, SimplifiedFormats, EhrDemographicSeparation, AuthenticatedAccess, AuthorizationSeparation, AuditAccountability, AnonymousEhrs. Each is either a journey-catalogue gap to close or a capability outside the measured-load surface (admin, demographics, messaging, security posture — exercised by the functional schedule, not the load instrument).
+Claimed capabilities the simulation never touches (28): Adl14ArchetypeProvisioning, Adl2ArchetypeProvisioning, Adl2OptProvisioning, TemplateExamples, PartyOperations, PartyRelationshipOperations, AqlAdvanced, AqlTerminology, ActivityReport, PhysicalDeletion, EhrDumpLoad, EhrArchive, DemographicArchive, EhrExtract, Tds, DemographicApi, AdminApi, MessageApi, SystemApi, ItemTags, Signing, SimplifiedFormats, SmartAppLaunch, EhrDemographicSeparation, AuthenticatedAccess, AuthorizationSeparation, AuditAccountability, AnonymousEhrs. Each is either a journey-catalogue gap to close or a capability outside the measured-load surface (admin, demographics, messaging, security posture — exercised by the functional schedule, not the load instrument).
 
 ## Performance Rating
 

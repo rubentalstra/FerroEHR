@@ -20,6 +20,11 @@
 # this catalogue invented.
 #
 # CARRIER: cnf.tpl.sf_interval_event, authored for this case. No previously
+# CARRIER OCCURRENCE (triage 2026-07-28): the events slot is 0..* — master04
+# §"Conditionally Collapsed Wrapper Types" collapses a sole max-1 EVENT out
+# of the web template ("An EVENT node is collapsed when … max = 1 AND no
+# sibling EVENT nodes"), which would leave this fixture's any_event:i paths
+# naming no node; the unbounded occurrence RETAINS it by the same sentence.
 # committed functional-corpus template constrains an EVENT to a concrete
 # INTERVAL_EVENT — cnf.opt.vitals types its `any_event` as the ABSTRACT EVENT,
 # which a builder must concretise to a default subtype, so the interval rows

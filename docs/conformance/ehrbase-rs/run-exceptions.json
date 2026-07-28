@@ -364,6 +364,13 @@
     }
   },
   {
+    "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_DIRECTORY.get_directory-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",

@@ -174,8 +174,10 @@ fn set_write_headers(resp: &mut Response, base: &str, segment: &str, meta: Optio
 /// own `commit_audit` for a version read, and the most recent revision-history
 /// item's first audit for a history read (`REVISION_HISTORY.items` is
 /// most-recent-last, RM common `master04-revision_history.adoc`
-/// §`REVISION_HISTORY`). A `VERSIONED_OBJECT` container body exposes no commit
-/// audit, so it carries the `ETag` alone (the header is a SHOULD).
+/// §`REVISION_HISTORY`). A `VERSIONED_OBJECT` container body exposes no
+/// commit audit — which is why the container READ does not use this seam:
+/// its `Last-Modified` rides the service metadata (the version spine's
+/// newest commit instant, overview §"ETag and Last-Modified").
 fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMeta {
     let uid = body["uid"]["value"]
         .as_str()
@@ -447,6 +449,12 @@ mod tests {
     /// no `Last-Modified` (the header is a SHOULD).
     #[test]
     fn read_meta_of_a_versioned_object_container() {
+        // The body-scrape fallback finds no commit audit in a container body
+        // — which is exactly why the container READ no longer uses this
+        // seam: versioned_party_get carries Last-Modified via the service
+        // metadata (the version spine's newest commit instant, §"ETag and
+        // Last-Modified"). This pins the fallback's honest behaviour for
+        // the remaining body-derived reads.
         let body = serde_json::json!({
             "_type": "VERSIONED_PARTY",
             "uid": { "_type": "HIER_OBJECT_ID", "value": VO }
