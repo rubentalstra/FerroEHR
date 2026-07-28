@@ -76,6 +76,13 @@ impl Seaweed {
         // The gateway is up but the filer may need a moment; create the bucket
         // with a short retry (S3 CreateBucket = PUT /<bucket>).
         create_bucket(&endpoint, BUCKET).await;
+        // CreateBucket succeeding proves only FILER metadata readiness —
+        // object writes additionally need a VOLUME server registered with the
+        // master, which lags behind on a loaded host ("no writable volumes").
+        // That gap was the #541 flake: the first offload write of the test
+        // proper failed the commit, and the nextest retry masked it. Gate on
+        // the capability the tests actually use: a probe object round-trip.
+        probe_object_write(&endpoint, BUCKET).await;
         Self {
             _container: container,
             endpoint,
@@ -116,6 +123,32 @@ async fn create_bucket(endpoint: &str, bucket: &str) {
             _ => tokio::time::sleep(Duration::from_millis(500)).await,
         }
         assert!(attempt < 89, "seaweedfs bucket creation never succeeded");
+    }
+}
+
+/// Gate on OBJECT-write readiness: PUT a probe object until the write (and its
+/// read-back) succeeds, then delete it. Bucket creation alone only proves the
+/// filer is up; the first object write needs a volume server registered with
+/// the master, which arrives later under host contention (#541).
+async fn probe_object_write(endpoint: &str, bucket: &str) {
+    let client = reqwest::Client::new();
+    let url = format!("{endpoint}/{bucket}/.readiness-probe");
+    for attempt in 0..90 {
+        let wrote = matches!(
+            client.put(&url).body("probe").send().await,
+            Ok(resp) if resp.status().is_success()
+        );
+        if wrote
+            && matches!(
+                client.get(&url).send().await,
+                Ok(resp) if resp.status().is_success()
+            )
+        {
+            let _deleted = client.delete(&url).send().await;
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        assert!(attempt < 89, "seaweedfs object writes never became ready");
     }
 }
 
