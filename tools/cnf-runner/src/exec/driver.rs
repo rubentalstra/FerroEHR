@@ -962,6 +962,20 @@ fn base64_encode(input: &[u8]) -> String {
     out
 }
 
+/// The JSON shape name of a value, for diagnostics that must say WHAT was
+/// captured instead of the expected object (a canonical-XML capture, for
+/// instance, resolves as a string).
+fn json_shape(value: &Value) -> &'static str {
+    match value {
+        Value::Null => "null",
+        Value::Bool(_) => "boolean",
+        Value::Number(_) => "number",
+        Value::String(_) => "string",
+        Value::Array(_) => "array",
+        Value::Object(_) => "object",
+    }
+}
+
 impl HttpDriver<'_> {
     /// Build the canonical CONTRIBUTION envelope from the case model's
     /// bundled `versions:` construct (ITS contribution schema:
@@ -1135,37 +1149,62 @@ impl HttpDriver<'_> {
                 ))
             }
             Some(RequestBody::Patched { from_capture, set }) => {
-                // Negatives against a non-existent resource have no captured
-                // base body (nothing to GET) — the wire still needs a valid
-                // resource payload, so fall back to the minimal canonical
-                // EHR_STATUS the recipes commit (the SUT rejects on the
-                // unknown id, not the body).
-                let mut patched = match vars.get(from_capture) {
-                    Some(crate::exec::state::Captured::Body(body)) => body.clone(),
-                    _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
-                        serde_json::json!({
-                            "_type": "EHR_STATUS",
-                            "name": { "_type": "DV_TEXT", "value": "ehr status" },
-                            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
-                            "subject": { "_type": "PARTY_SELF" },
-                            "is_queryable": true,
-                            "is_modifiable": true
-                        })
-                    }
-                    _ => {
-                        return Err(format!(
-                            "patched body: capture {from_capture} holds no resource body"
-                        ));
-                    }
-                };
-                if let Some(map) = patched.as_object_mut() {
-                    for (field, value) in set {
-                        map.insert(field.clone(), value.clone());
-                    }
-                }
-                Ok(Some(patched))
+                Self::patched_body(from_capture, set, vars).map(Some)
             }
         }
+    }
+
+    /// The read-modify-write body of an SM field-setter binding (AMB-15): the
+    /// captured resource with the declared `set:` fields overwritten.
+    ///
+    /// A captured body that is not a JSON object CANNOT carry the mutation —
+    /// a canonical-XML capture, for instance, resolves as a `Value::String`.
+    /// Applying nothing and sending the resource back unchanged would be a
+    /// FALSE GREEN: the PUT succeeds while exercising no setter at all. So a
+    /// non-object base is a loud step error, which the caller turns into a
+    /// transport-class (inconclusive, runner-side) observation — never a
+    /// silent no-op.
+    fn patched_body(
+        from_capture: &CaptureName,
+        set: &[(String, Value)],
+        vars: &VarStore,
+    ) -> Result<Value, String> {
+        // Negatives against a non-existent resource have no captured base
+        // body (nothing to GET) — the wire still needs a valid resource
+        // payload, so fall back to the minimal canonical EHR_STATUS the
+        // recipes commit (the SUT rejects on the unknown id, not the body).
+        let mut patched = match vars.get(from_capture) {
+            Some(Captured::Body(body)) => body.clone(),
+            _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
+                serde_json::json!({
+                    "_type": "EHR_STATUS",
+                    "name": { "_type": "DV_TEXT", "value": "ehr status" },
+                    "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                    "subject": { "_type": "PARTY_SELF" },
+                    "is_queryable": true,
+                    "is_modifiable": true
+                })
+            }
+            _ => {
+                return Err(format!(
+                    "patched body: capture {from_capture} holds no resource body"
+                ));
+            }
+        };
+        let Some(map) = patched.as_object_mut() else {
+            let fields: Vec<&str> = set.iter().map(|(field, _)| field.as_str()).collect();
+            return Err(format!(
+                "patched body: capture {from_capture} holds a {} base, not a JSON object, so the \
+                 declared set: [{}] cannot be applied — writing the captured resource back \
+                 unmutated would exercise nothing",
+                json_shape(&patched),
+                fields.join(", ")
+            ));
+        };
+        for (field, value) in set {
+            map.insert(field.clone(), value.clone());
+        }
+        Ok(patched)
     }
 
     /// commit: bulk-provision generated sets, binding committed uids.
@@ -2162,6 +2201,55 @@ mod tests {
         let vars = HttpDriver::merge_with_vars(&VarStore::default(), &with);
         let err = HttpDriver::build_url(&binding, "http://sut", &with, &vars).unwrap_err();
         assert!(err.contains("did not render as a scalar"), "{err}");
+    }
+
+    /// A `Patched` binding whose captured base body is NOT a JSON object
+    /// (the canonical-XML capture shape: a `Value::String`) must fail loudly.
+    /// Silently skipping the declared `set:` writes the resource back
+    /// unmutated and the step "passes" while exercising nothing.
+    #[test]
+    fn patched_body_on_a_non_object_capture_is_loud() {
+        let from = CaptureName::parse("status_body").unwrap();
+        let set = vec![("is_queryable".to_owned(), serde_json::json!(false))];
+
+        let mut xml_vars = VarStore::default();
+        xml_vars.set(
+            from.clone(),
+            Captured::Body(Value::String(
+                "<ehr_status><is_queryable>true</is_queryable></ehr_status>".to_owned(),
+            )),
+        );
+        let err = HttpDriver::patched_body(&from, &set, &xml_vars).unwrap_err();
+        assert!(err.contains("not a JSON object"), "{err}");
+        assert!(err.contains("is_queryable"), "{err}");
+
+        // The object path still patches (and only the declared fields).
+        let mut json_vars = VarStore::default();
+        json_vars.set(
+            from.clone(),
+            Captured::Body(serde_json::json!({
+                "_type": "EHR_STATUS", "is_queryable": true, "is_modifiable": true
+            })),
+        );
+        let patched = HttpDriver::patched_body(&from, &set, &json_vars).unwrap();
+        assert_eq!(patched.get("is_queryable"), Some(&serde_json::json!(false)));
+        assert_eq!(patched.get("is_modifiable"), Some(&serde_json::json!(true)));
+
+        // An unbound EHR_STATUS capture keeps its minimal-resource fallback.
+        let fallback = HttpDriver::patched_body(&from, &set, &VarStore::default()).unwrap();
+        assert_eq!(
+            fallback.get("_type"),
+            Some(&serde_json::json!("EHR_STATUS"))
+        );
+        assert_eq!(
+            fallback.get("is_queryable"),
+            Some(&serde_json::json!(false))
+        );
+
+        // An unbound capture with no fallback role is still loud.
+        let other = CaptureName::parse("composition_body").unwrap();
+        let err = HttpDriver::patched_body(&other, &set, &VarStore::default()).unwrap_err();
+        assert!(err.contains("holds no resource body"), "{err}");
     }
 
     #[test]
