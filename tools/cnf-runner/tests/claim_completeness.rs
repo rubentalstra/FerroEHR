@@ -299,6 +299,86 @@ fn a_required_extension_capability_fails_validate() {
     );
 }
 
+const RELATIONSHIP_READ_BINDING: &str =
+    "artifacts/bindings/its-rest/I_PARTY_RELATIONSHIP.get_party_relationship.yaml";
+const RELATIONSHIP_ROW_HEAD: &str = "PartyRelationshipOperations: { family: Platform, tier: \
+                                     OPTIONS, required: false, realization: extension,";
+
+/// (5) Realization scoping, issue #623 — an extension binding may only drive a
+/// route the SUT DECLARES outwardly, so an undeclared family is a finding. The
+/// fence is what keeps "our own extension" from becoming an unaudited way to
+/// claim capabilities over routes nobody wrote down.
+#[test]
+fn an_extension_binding_naming_an_undeclared_family_fails_validate() {
+    let world = World::new();
+    world.edit(RELATIONSHIP_READ_BINDING, |text| {
+        text.replace("family: party-relationship", "family: no-such-family")
+    });
+    assert_gate(
+        &world.findings(),
+        "realization-scope",
+        "extension family \"no-such-family\" is not declared in the served_extensions axis",
+    );
+}
+
+/// (5b) …and only a route that family actually lists: a path the axis never
+/// declares is an undeclared surface, however plausible it looks.
+#[test]
+fn an_extension_binding_driving_an_undeclared_route_fails_validate() {
+    let world = World::new();
+    world.edit(RELATIONSHIP_READ_BINDING, |text| {
+        text.replace(
+            "path: /demographic/party_relationship/{versioned_object_uid}",
+            "path: /demographic/party_relationship_undeclared",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "realization-scope",
+        "is not one of the routes the \"party-relationship\" served_extensions family declares",
+    );
+}
+
+/// (5c) A capability whose cases ALL drive extension routes must SAY so: a
+/// released-wire marker on such a row would claim openEHR wire conformance the
+/// release does not define.
+#[test]
+fn an_extension_only_capability_marked_released_wire_fails_validate() {
+    let world = World::new();
+    world.edit(MATRIX, |text| {
+        text.replace(
+            RELATIONSHIP_ROW_HEAD,
+            "PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "realization-scope",
+        "PartyRelationshipOperations: every one of its 15 verdict-bearing case(s) drives \
+         EXTENSION routes only",
+    );
+}
+
+/// (5d) The mirror ratchet: an `extension` marker on a capability whose cases
+/// drive RELEASED operations is stale and understates the conformance the
+/// product earned, so it must go.
+#[test]
+fn a_stale_extension_realization_marker_fails_validate() {
+    let world = World::new();
+    world.edit(MATRIX, |text| {
+        text.replace(
+            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 52,",
+            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, realization: \
+             extension, min_cases: 52,",
+        )
+    });
+    assert_gate(
+        &world.findings(),
+        "realization-scope",
+        "PartyOperations: `realization: extension` is stale",
+    );
+}
+
 /// An unresolvable register link in either adjudication block is caught — the
 /// blocks are register-LINKED by construction, never free prose.
 #[test]

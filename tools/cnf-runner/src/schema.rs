@@ -300,7 +300,7 @@ pub fn operation_binding_schema() -> Value {
         "oneOf": [
             { "required": ["request", "outcomes"], "not": { "required": ["unrealized"] } },
             { "required": ["unrealized"],
-              "not": { "anyOf": [ { "required": ["request"] }, { "required": ["outcomes"] } ] } }
+              "not": { "anyOf": [ { "required": ["request"] }, { "required": ["outcomes"] }, { "required": ["extension"] } ] } }
         ],
         "properties": {
             "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
@@ -312,6 +312,18 @@ pub fn operation_binding_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["reason", "source", "ambiguity"],
                 "properties": {
+                    "reason": { "type": "string", "minLength": 1 },
+                    "source": { "type": "string", "minLength": 1 },
+                    "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN }
+                }
+            },
+            "extension": {
+                "type": "object",
+                "description": "The realization drives a route no openEHR specification governs (our own design/extension), declared as a served_extensions family in vocab/wire_surface.yaml. Mutually exclusive with `unrealized`; the capabilities such a binding's cases carry must be `realization: extension` in the capability matrix, which may never be `required` — so the row gates a CAPABILITY verdict only, never ITS-REST wire conformance.",
+                "additionalProperties": false,
+                "required": ["family", "reason", "source", "ambiguity"],
+                "properties": {
+                    "family": { "type": "string", "minLength": 1 },
                     "reason": { "type": "string", "minLength": 1 },
                     "source": { "type": "string", "minLength": 1 },
                     "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN }

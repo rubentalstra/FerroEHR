@@ -51,6 +51,17 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `NO — catalogue gap`; a stale exclusion is a finding too). The matrix row's
   `realization: released-wire | extension` marks what the cases drive and is
   a certificate column; an `extension` row may never be `required`.
+- **A capability with no RELEASED wire is either served or unclaimed** (issue
+  #623) — never parked as excused-while-claimed. A binding may carry an
+  `extension:` block (family + reason + source + register ambiguity) beside its
+  full request/outcomes form, declaring that it drives one of the SUT's own
+  `served_extensions` routes; such a battery EXECUTES and gates the CAPABILITY
+  verdict only. The `realization-scope` gate fences it: the family and the
+  request-path shape must resolve in the served_extensions axis, the
+  adjudication must resolve in the register, and the matrix `realization`
+  marker must match what the cases actually drive (both directions). Where
+  nothing is served, the party STATEMENT drops the claim — the matrix row
+  stays, because the matrix is the Profiles book as data, not a claim list.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary

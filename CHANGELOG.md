@@ -17,6 +17,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
+  excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
+  resource, so the six relationship operations used to be reported as
+  "excused — unrealized on this technology profile" even though EHRbase-rs
+  serves them. They are now driven for real: fifteen conformance cases execute
+  against the `/demographic/party_relationship` routes this product serves of
+  its own design, covering create, read, read-at-time, read-at-version, update
+  and delete plus their refusal branches. The certificate marks the row
+  `extension`, which is a promise as much as a label — no openEHR profile
+  result may rest on a route openEHR does not specify, and the runner now
+  fails validation if that line is ever crossed (a new `realization-scope`
+  gate, with the binding's route required to appear in the published
+  extension-surface declaration).
+
 - **Conformance runner: a certification claim can no longer be hollow** (#622).
   `cnf-runner validate` now reads the committed party statements beside the
   artifact root and relates every claim to the catalogue, so three new gates
@@ -290,6 +304,18 @@ workflow refuses a tag that has no matching section here.
   the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
 
 ### Changed
+
+- **The conformance statement no longer claims nine capabilities it cannot
+  demonstrate** (#623). ADL 1.4 and ADL 2 archetype provisioning, the admin
+  Activity Report, EHR dump/load, EHR and demographic archiving, EHR Extract,
+  TDS, and the MESSAGE API were all being claimed while every one of their
+  test cases was excused: openEHR's released REST API publishes no endpoints
+  for them, and EHRbase-rs exposes none of its own either — the underlying
+  service methods exist, but nothing reaches them over HTTP, so a conformance
+  runner has nothing to drive. Claiming a capability is the obligation to
+  prove it, so those claims are withdrawn until the routes exist. Nothing was
+  removed from the product; what changed is that the published statement now
+  only claims what can be demonstrated.
 
 - **Helm chart and operator-facing comments cite durable references** (#322).
   The chart's `values.yaml`, `Chart.yaml` and post-install NOTES pointed at
