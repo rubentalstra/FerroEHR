@@ -4,9 +4,10 @@
 //! Case cores speak these forms and nothing else (CNF 2.0 artifact-set
 //! design, case-core contract): `${row.<column>}`, `${fixture.<field>}`,
 //! `${<capture>}`, `${ds:<corpus key>}`, `${ds:<corpus key>#<view>}`,
-//! `${recipe:<name>(row)}`, and the temporal expressions
-//! `${time:before(<t>)}` / `${time:after(<t>)}` / `${time:between(<t1>,<t2>)}`.
-//! There is no `${stepN}` form. Binding request templates may additionally
+//! `${recipe:<name>(row)}`, the temporal expressions
+//! `${time:before(<t>)}` / `${time:after(<t>)}` / `${time:between(<t1>,<t2>)}`,
+//! and `${ixit:<field>}` for a party-declared SUT fact no released operation
+//! discloses. There is no `${stepN}` form. Binding request templates may additionally
 //! mark a reference optional (`${offset?}`). A string outside these forms is
 //! a validator error, never runner latitude.
 
@@ -66,6 +67,34 @@ impl FixtureField {
     }
 }
 
+/// The `${ixit:<field>}` fields — closed to the environment facts a party
+/// DECLARES about its SUT because no released operation discloses them. A
+/// case may read such a fact, never invent one; a party that declares none
+/// makes the referencing cases not-applicable with that citation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IxitField {
+    /// The SUT's own configured system identifier
+    /// (`crate::ixit::Ixit::system_id`).
+    SystemId,
+}
+
+impl IxitField {
+    fn parse(s: &str) -> Option<Self> {
+        match s {
+            "system_id" => Some(Self::SystemId),
+            _ => None,
+        }
+    }
+
+    /// The field token.
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            Self::SystemId => "system_id",
+        }
+    }
+}
+
 /// A temporal at-time expression over captured commit instants. Resolution
 /// is fixed by the interpreter laws (before = t − 1 ms, after = t + 1 ms,
 /// between = midpoint) so two runners query identical instants.
@@ -97,6 +126,8 @@ pub enum ValueRef {
     FixtureDataSet,
     /// `${recipe:<name>(row)}` — row-to-instance synthesis.
     Recipe(RecipeName),
+    /// `${ixit:<field>}` — a party-declared environment fact about the SUT.
+    Ixit(IxitField),
     /// `${time:…}` — temporal reference.
     Time(TimeExpr),
 }
@@ -146,9 +177,14 @@ impl ValueRef {
                 illegal("time expression must be before(<t>) | after(<t>) | between(<t1>,<t2>)")
             });
         }
+        if let Some(field) = body.strip_prefix("ixit:") {
+            return IxitField::parse(field)
+                .map(Self::Ixit)
+                .ok_or_else(|| illegal("ixit field must be system_id"));
+        }
         if body.contains(':') || body.contains('.') {
             return Err(illegal(
-                "unknown reference form (closed grammar: row./fixture./ds:/recipe:/time:/<capture>)",
+                "unknown reference form (closed grammar: row./fixture./ds:/recipe:/time:/ixit:/<capture>)",
             ));
         }
         let (name, optional) = match body.strip_suffix('?') {
@@ -199,6 +235,7 @@ impl fmt::Display for ValueRef {
             Self::DataSet { key, view: None } => write!(f, "${{ds:{key}}}"),
             Self::FixtureDataSet => f.write_str("${ds:fixture}"),
             Self::Recipe(name) => write!(f, "${{recipe:{name}(row)}}"),
+            Self::Ixit(field) => write!(f, "${{ixit:{}}}", field.token()),
             Self::Time(TimeExpr::Before(t)) => write!(f, "${{time:before({t})}}"),
             Self::Time(TimeExpr::After(t)) => write!(f, "${{time:after({t})}}"),
             Self::Time(TimeExpr::Between(a, b)) => write!(f, "${{time:between({a},{b})}}"),
@@ -431,6 +468,22 @@ mod tests {
             parse_ref("time:between(t1,t2)"),
             ValueRef::Time(TimeExpr::Between(..))
         ));
+        assert_eq!(
+            parse_ref("ixit:system_id"),
+            ValueRef::Ixit(IxitField::SystemId)
+        );
+    }
+
+    #[test]
+    fn ixit_references_round_trip_and_stay_closed() {
+        let r = parse_ref("ixit:system_id");
+        assert_eq!(r.to_string(), "${ixit:system_id}");
+        // The rendered form parses back inside a template.
+        let template = Template::parse(&r.to_string()).unwrap();
+        assert_eq!(template.as_single_ref(), Some(&r));
+        // The field set is closed: no invented environment facts.
+        assert!(ValueRef::parse("ixit:hardware_class").is_err());
+        assert!(ValueRef::parse("ixit:").is_err());
     }
 
     #[test]

@@ -289,11 +289,11 @@ fn extract_scalar(
     ) {
         value = value.trim_start_matches("W/").trim_matches('"').to_owned();
     }
-    if matches!(
-        spec.transform,
-        Some(crate::model::binding::TransformRule::RootUid)
-    ) {
-        value = value.split("::").next().unwrap_or(&value).to_owned();
+    // The same closed transform grammar the live driver applies — one
+    // implementation, so a replayed transcript cannot judge a capture
+    // differently from the live run that recorded it.
+    if let Some(transform) = spec.transform {
+        value = transform.apply(&value)?;
     }
     Some(value)
 }

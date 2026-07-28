@@ -981,12 +981,13 @@ AMB-60:
     report them 501, contradicting the 404 row for a resource the origin
     service "did not find". A 405 without Allow is non-conformant under either
     reading and is the one outcome this entry forbids. Not executable in the
-    catalogue today: the binding request model's method vocabulary is closed to
-    {GET, POST, PUT, DELETE, HEAD} (no seam for a wrong-but-known or arbitrary
-    method on a known path) and the outcome taxonomy has no
-    method_not_allowed kind — the assertion half is no longer a blocker
-    (header matchers and body selectors are both EXECUTED assertions now,
-    exec/headers.rs and exec/bodies.rs), so the boundary
+    catalogue today: the binding request model's method vocabulary is the
+    subset the overview tabulates (GET, POST, PUT, DELETE, HEAD, OPTIONS), so
+    there is no seam for a wrong-but-known or arbitrary method on a known
+    path. The other two halves are no longer blockers — header matchers and
+    body selectors are EXECUTED assertions (exec/headers.rs, exec/bodies.rs),
+    and the 2026-07-28 schedule release added the `method_not_allowed` outcome
+    kind — so the boundary
     is carried as the cited vocab/wire_surface.yaml elements
     method-405-allow-header and method-501-unrecognized-method-deviation.
     Revisits if a future ITS-REST release raises either sentence to a MUST or
@@ -4340,16 +4341,17 @@ AMB-139:
     other way round: there the MAY clause let 405 stand against a competing
     SHOULD; here it lets 202 stand against a table that simply does not list
     it. No wire consequence and nothing to adjudicate — the branch is legal.
-    HOW THE CATALOGUE CARRIES IT, stated plainly rather than hidden: the closed
-    outcome vocabulary (vocab/outcomes.yaml) has no `accepted` kind, so the
-    async branch is NOT AUTHORABLE as a case of its own; both admin bindings
-    absorb it as `alt_status: [202]` under `ok_empty` ("Fulfilled with no
-    content"), which is the honest logical reading — a bodyless success — but
-    which also means a case expecting `ok_empty` passes on either code and no
-    case can require or distinguish the asynchronous branch. That is a
-    deliberate, recorded limit of the instrument, not coverage: it closes when
-    the outcome taxonomy gains an `accepted` kind, which is extensible only by
-    schedule release. This SUT is synchronous and always answers `204`.
+    HOW THE CATALOGUE CARRIES IT, stated plainly rather than hidden: both admin
+    bindings absorb the branch as `alt_status: [202]` under `ok_empty`
+    ("Fulfilled with no content"), which is the honest logical reading — a
+    bodyless success — but which also means a case expecting `ok_empty` passes
+    on either code and no case can require or distinguish the asynchronous
+    branch. That is a deliberate, recorded limit of the instrument, not
+    coverage. The vocabulary obstacle behind it is GONE: the 2026-07-28
+    schedule release added the `accepted` kind, so the branch is now nameable
+    and the absorption is a pending migration rather than a hard boundary (the
+    `admin-delete-async-acceptance-branch` wire-surface element carries it).
+    This SUT is synchronous and always answers `204`.
     Reported upstream (UPR-103).
   disposition: editorial
   upstream_ref: "UPR-103"

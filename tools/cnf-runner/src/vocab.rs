@@ -65,6 +65,13 @@ outcome_kinds! {
     (Deleted, "deleted", Success),
     /// Definition stored (stored-query PUT — wire 200, not 201).
     (Stored, "stored", Success),
+    /// Accepted for later processing, not yet performed — the asynchronous
+    /// branch a service MAY answer with instead of completing inline
+    /// (ITS-REST `admin_ehr_delete`/`admin_ehr_delete_all`: "The server may
+    /// execute this operation asynchronously (e.g. in batches), in which case
+    /// returns status `202 Accepted`"). Distinct from `ok_empty`: the request
+    /// was taken, the effect is not yet observable.
+    (Accepted, "accepted", Success),
     /// Duplicate identity ("an EHR with the provided `ehr_id` … should be unique"; duplicate `template_id`).
     (AlreadyExists, "already_exists", Error),
     /// Target does not exist ("EHR with `<ehr_id>` does not exist").
@@ -99,6 +106,24 @@ outcome_kinds! {
     (Unauthenticated, "unauthenticated", Error),
     /// Authenticated principal lacks authorization for the operation (403).
     (Forbidden, "forbidden", Error),
+    /// The request itself is malformed — syntactically invalid content, an
+    /// unparseable identifier, a contradictory or missing required argument
+    /// (ITS-REST `Requests_and_responses.md` §HTTP status codes row 400: "the
+    /// service cannot or will not process the request due to something that
+    /// is perceived to be a client error (e.g., malformed request syntax,
+    /// syntactically invalid content)", and below the table: "Status code
+    /// `400` indicates normally a bad request, as well as a generic
+    /// client-side error, used when no other `4xx` error code is
+    /// appropriate"). Distinct from `validation_failed`, which is the
+    /// well-formed-but-semantically-invalid content branch (422).
+    (BadRequest, "bad_request", Error),
+    /// The method is known to the service but the target resource does not
+    /// support it — including a resource a deployment's configuration has
+    /// left serving none (ITS-REST `Requests_and_responses.md` §HTTP status
+    /// codes row 405 and §HTTP Methods: "If a method is recognized but not
+    /// allowed for the target resource, the response SHOULD be `405 Method
+    /// Not Allowed` status code").
+    (MethodNotAllowed, "method_not_allowed", Error),
 }
 
 /// Which optional case-core blocks are meaningful.
@@ -385,9 +410,19 @@ mod tests {
         for kind in OutcomeKind::ALL {
             assert_eq!(OutcomeKind::from_token(kind.token()), Some(*kind));
         }
-        assert_eq!(OutcomeKind::ALL.len(), 23);
+        assert_eq!(OutcomeKind::ALL.len(), 26);
         assert_eq!(OutcomeKind::Created.class(), OutcomeClass::Success);
         assert_eq!(OutcomeKind::Timeout.class(), OutcomeClass::Error);
+        // The schedule-release additions of #544.
+        assert_eq!(OutcomeKind::Accepted.class(), OutcomeClass::Success);
+        assert_eq!(OutcomeKind::BadRequest.class(), OutcomeClass::Error);
+        assert_eq!(OutcomeKind::MethodNotAllowed.class(), OutcomeClass::Error);
+        for token in ["accepted", "bad_request", "method_not_allowed"] {
+            assert!(
+                OutcomeKind::from_token(token).is_some(),
+                "{token} must parse"
+            );
+        }
     }
 
     #[test]
