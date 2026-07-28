@@ -782,6 +782,9 @@ impl<'a> HttpDriver<'a> {
                     columns.as_deref(),
                     vars,
                 ),
+                Assertion::XmlRoot { name, namespace } => {
+                    assertions::eval_xml_root(body, name, *namespace)
+                }
                 Assertion::InstanceOf { rm_type, .. } => {
                     // Structural check: the body self-identifies as the type.
                     match body.get("_type").and_then(Value::as_str) {
@@ -2488,6 +2491,7 @@ impl StepDriver for HttpDriver<'_> {
                 | Assertion::Returns { .. }
                 | Assertion::ResultSet { .. }
                 | Assertion::InstanceOf { .. }
+                | Assertion::XmlRoot { .. }
                 | Assertion::Version { .. }
                 | Assertion::Signature { .. }
                 | Assertion::Unique { .. }

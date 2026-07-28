@@ -10,11 +10,19 @@
 # Resources.md §XML Format): "A client MAY use the header `Content-Type:
 # application/xml` in the requests to specify the XML payload format. If the
 # service cannot process the request payload as XML format, it MUST respond
-# with HTTP status code `415 Unsupported Media Type`" — and the same section
-# fixes the payload shape ("both request payloads and responses MUST conform
-# to the published XSDs"). Status/headers on success are the variant-less
-# binding's `updated` row (ehr_status_update realization; the ETag weakness
-# indicator per overview §Deprecated headers).
+# with HTTP status code `415 Unsupported Media Type`".
+#
+# ONLY THE REFUSAL BRANCH IS REALIZED HERE (register AMB-167, re-adjudicated
+# 2026-07-29). The same section's first sentence — "When resources are
+# serialized in **canonical XML** format, both request payloads and responses
+# MUST conform to the [published XSDs]" — is what removes the success branch:
+# the published XSDs declare NO document element for EHR_STATUS (the STABLE
+# 1.0.2-nsv1 bundle ships no Ehr.xsd at all, and the 2.0.0-nsv2 bundle types
+# the class as a LOCATABLE subtype with no element of its own), so no request
+# document this variant could send conforms, and a success expectation would
+# require a service to accept a payload the release's own MUST forbids. The
+# 415 refusal needs no document: it fires on the MEDIA TYPE, before anything
+# is parsed.
 sm_operation: I_EHR_STATUS.clear_ehr_queryable
 its: its-rest
 variant: xml_body
@@ -27,6 +35,14 @@ request:
     Prefer: "return=representation"
 formats: [canonical-xml]
 outcomes:
-  updated:
-    status: 200                             # the variant-less binding's updated row (200_EHR_STATUS_updated.yaml realization; Prefer representation)
-    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }
+  # The ONE branch this variant realizes. `unsupported_media` is also a
+  # UNIVERSAL outcome (vocab/selectors.yaml, "route-table-wide, never per
+  # binding"), so the status would classify without this row — it is declared
+  # here because a realized binding must map at least one outcome, and because
+  # naming it is what says the success branch is deliberately absent rather
+  # than merely unwritten.
+  unsupported_media:
+    # ITS-REST overview Resources.md §XML Format: "If the service cannot
+    # process the request payload as XML format, it MUST respond with HTTP
+    # status code `415 Unsupported Media Type`".
+    status: 415
