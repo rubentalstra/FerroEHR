@@ -36,6 +36,13 @@ outcomes:
       Location: absent
   precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
   not_found: { status: 404 }              # unknown party (versioned_object_does_not_exist)
+  # DECISION (#557, 2026-07-28): version_not_found and precondition_failed
+  # STAY distinct kinds on this binding although both realize as the identical
+  # 412 + latest-version ETag (§"If-Match and accidental overwrites" folds
+  # them: a false-evaluating If-Match MUST 412 whether the named version is
+  # unknown or stale). The kinds carry the SM-level cause; the fold is this
+  # realization's fact; exec::outcome's tie-break (the expected member's
+  # status match satisfies the expectation) is the documented norm.
   version_not_found:
     # An If-Match naming a version the ADDRESSED container never issued is a
     # condition that evaluates false, so the released If-Match rule decides it,
