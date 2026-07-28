@@ -7,17 +7,27 @@ metadata:
 
 `exec/driver.rs::provision`, confirmed 2026-07-28:
 
-- **Template upload result discarded**: `let _uploaded = self.send(request_spec
-  .method, &url, &headers, Some(&payload), false)?;` (~L2241). Any non-2xx
+- **Template upload result discarded at TWO sites**: `let _uploaded =
+  self.send(request_spec.method, &url, &headers, Some(&payload), false)?;` —
+  `provision_synthesized_opt` **driver.rs:2122** (per-row synthesized OPT) and
+  `provision` **driver.rs:2325-2326** (`requires.templates`). Any non-2xx
   (406/415/422) on `POST /definition/template/adl1.4` is swallowed and the case
   proceeds as if the template exists — downstream commits then fail on
   "validation_failed"/"template_not_found" and read as SUT defects.
   The comment only sanctions tolerating **409 already-provisioned**.
-- **Provisioning sends no `Accept`** (headers are built from the binding's
-  `request.headers` + auth only), while the normal step path defaults
-  `Accept: application/json` (L1477/L1628). So the SAME upload can succeed in
-  provisioning and 406 when driven as a case — that is exactly the ehrbase-java
-  `I_DEFINITION_ADL14.upload_opt-*` 406 class.
+- **MEASURED BLAST RADIUS (ehrbase-java, 2026-07-28): 197 of 294 in-scope red
+  rows** — the whole 123-row CONT battery plus most of composition/contribution
+  — came from ONE swallowed 406. Reproduced: provisioning POSTs the OPT with
+  `Accept: application/json` (the binding's declared header, now shared with the
+  step path per #629), EHRbase answers `406 {"error":"Not Acceptable"}` and
+  serves the upload only for `Accept: application/xml`; every following commit
+  gets `422 "Template with template_id '…' does not exist"`, reported as
+  "expected `created`, observed `validation_failed`".
+- Provisioning now uses `compose_headers` (the one request-construction path),
+  so it DOES send the binding's `Accept` — the earlier "provisioning sends no
+  Accept" note is obsolete. The failure mode moved: the shared Accept means a
+  server that refuses that representation breaks provisioning for every
+  template-dependent case at once.
 - **`requires: { server: empty }` is a NO-OP** by design ("isolation is the
   runner's tenancy concern … never destructive", ~L2197). Emptiness is achieved
   only by the freshly composed SUT plus per-case scoping — the query cases mint
