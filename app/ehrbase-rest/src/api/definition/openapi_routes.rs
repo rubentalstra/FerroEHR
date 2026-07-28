@@ -115,17 +115,15 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         ("version" = Option<String>, Query,
          description = "A glob (`*` wildcard) matched against the whole \
                         `template_id`, which is where an ADL 1.4 template's \
-                        version lives (`vital_signs.v1`). The ITS-REST DOCS TEXT \
-                        defines no such parameter — it exists only in the \
-                        stalled OAS \
-                        (`specifications/parameters/query/filter_version.yaml`: \
-                        \"Filter by version …, taken from `template_id`; if \
-                        missing, then only the latest version will be \
-                        returned\"), which is codegen input and never a \
-                        behavioural oracle — so OUR handling of that silence is: \
-                        an ABSENT `version` applies no version filter and every \
-                        stored template is listed; there is no implicit \
-                        latest-only collapse. All three filters AND together.",
+                        version lives (`vital_signs.v1`). The ITS-REST docs \
+                        text is silent, so the RELEASED OAS governs: \"Filter \
+                        by version (e.g. `1.2.*` or use `*` for all versions), \
+                        taken from `template_id`; if missing, then only the \
+                        latest version will be returned\" \
+                        (`specifications/parameters/query/filter_version.yaml`) \
+                        — an ABSENT `version` collapses the listing to the \
+                        latest `.vN` axis of each template; `*` lists every \
+                        stored version. All three filters AND together.",
          example = "*.v1"),
         ("offset" = Option<i64>, Query,
          description = "\"The row number in result-set to start result-set from \
@@ -667,14 +665,14 @@ pub(crate) async fn definition_template_adl1_4_example_get(
          description = "A glob (`*` wildcard) matched against the whole \
                         `template_id`, which for ADL2 is the HRID carrying the \
                         artefact's SEMVER `release_version` \
-                        (`…t_vital_signs.v1.0.0`). The ITS-REST DOCS TEXT defines \
-                        no such parameter — it exists only in the stalled OAS \
-                        (`specifications/parameters/query/filter_version.yaml`), \
-                        which is codegen input and never a behavioural oracle — \
-                        so OUR handling of that silence is: an ABSENT `version` \
-                        applies no version filter and every stored template is \
-                        listed; there is no implicit latest-only collapse. All \
-                        three filters AND together.",
+                        (`…t_vital_signs.v1.0.0`). The ITS-REST docs text is \
+                        silent, so the RELEASED OAS governs: \"Filter by \
+                        version …, taken from `template_id`; if missing, then \
+                        only the latest version will be returned\" \
+                        (`specifications/parameters/query/filter_version.yaml`) \
+                        — an ABSENT `version` collapses the listing to the \
+                        latest `.vN` axis of each template; `*` lists every \
+                        stored version. All three filters AND together.",
          example = "*.v1.*"),
         ("offset" = Option<i64>, Query,
          description = "\"The row number in result-set to start result-set from \
