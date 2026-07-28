@@ -40,7 +40,7 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | Versioning | Y | released-wire | pass |
 | Platform | ArchetypeValidation | Y | released-wire | pass |
 | Platform | PartyOperations | OPT | released-wire | pass |
-| Platform | PartyRelationshipOperations | OPT | released-wire | excused (unrealized on this technology profile) |
+| Platform | PartyRelationshipOperations | OPT | extension | pass |
 | Platform | DemographicArchetypeValidation | OPT | released-wire | no cases |
 | Platform | AqlBasic | Y | released-wire | pass |
 | Platform | AqlAdvanced | OPT | released-wire | pass |
