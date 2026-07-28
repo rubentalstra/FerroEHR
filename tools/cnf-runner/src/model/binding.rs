@@ -7,7 +7,7 @@
 //! body-selector vocabularies are closed.
 
 use serde::de::Error as DeError;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::ids::{CaptureName, SmOperationRef};
 use crate::model::case::Applies;
@@ -90,19 +90,60 @@ pub enum StripRule {
     WeakQuotes,
 }
 
-/// Post-extraction transform: reduce an `OBJECT_VERSION_ID` to its root uid,
-/// or flip the captured value's ASCII case. `uppercase` exists so a case can
-/// author a case-VARIANT of a captured identifier (e.g. an `If-Match` naming
-/// the same version in different case — BASE `master05` §"Composite
-/// Identifiers and Case" makes two identifiers "identical apart from case …
-/// identify the same thing"), which the reference grammar itself cannot
-/// express (issue #403).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+/// Post-extraction transform over a captured value. The grammar is closed;
+/// every member addresses a component of the value the wire actually carries.
+///
+/// `root-uid` and `creating-system-id` decompose an `OBJECT_VERSION_ID`,
+/// whose lexical form the ITS-REST overview fixes as
+/// `object_id :: creating_system_id :: version_tree_id`
+/// (`Resources.md` §Identifier types: "The `version_uid` uniquely identifies
+/// a VERSION, in the lexical form of `object_id :: creating_system_id ::
+/// version_tree_id`"). `uppercase` exists so a case can author a
+/// case-VARIANT of a captured identifier (e.g. an `If-Match` naming the same
+/// version in different case — BASE `master05` §"Composite Identifiers and
+/// Case" makes two identifiers "identical apart from case … identify the
+/// same thing"), which the reference grammar itself cannot express
+/// (issue #403).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum TransformRule {
+    /// The leading `object_id` — the VERSIONED_OBJECT identifier.
     #[serde(rename = "root-uid")]
     RootUid,
+    /// The MIDDLE segment — the identifier of the system that created the
+    /// version. Yields nothing when the value carries no middle segment, so
+    /// a truncated identifier leaves the capture unbound (loud downstream)
+    /// rather than binding the whole value as if it were a system id.
+    #[serde(rename = "creating-system-id")]
+    CreatingSystemId,
+    /// The captured value, ASCII-uppercased.
     #[serde(rename = "uppercase")]
     Uppercase,
+}
+
+impl TransformRule {
+    /// Apply the transform, or `None` when the value has no such component.
+    #[must_use]
+    pub fn apply(self, value: &str) -> Option<String> {
+        let mut segments = value.split("::");
+        match self {
+            Self::RootUid => segments.next().map(ToOwned::to_owned),
+            Self::CreatingSystemId => {
+                let _object_id = segments.next()?;
+                segments
+                    .next()
+                    .filter(|s| !s.is_empty())
+                    .map(ToOwned::to_owned)
+            }
+            Self::Uppercase => Some(value.to_ascii_uppercase()),
+        }
+    }
+
+    /// All members, in grammar order (schema emission derives from this).
+    pub const ALL: &'static [TransformRule] = &[
+        TransformRule::RootUid,
+        TransformRule::CreatingSystemId,
+        TransformRule::Uppercase,
+    ];
 }
 
 /// One logical-capture wire mapping with optional modifiers.
@@ -715,6 +756,50 @@ mod tests {
         assert!(
             serde_json::from_value::<RequestSpec>(serde_json::json!({
                 "method": "GET", "path": "/ehr/{unclosed"
+            }))
+            .is_err()
+        );
+    }
+
+    /// The closed transform grammar decomposes an OBJECT_VERSION_ID by its
+    /// released lexical form `object_id :: creating_system_id ::
+    /// version_tree_id` (ITS-REST Resources.md §Identifier types).
+    #[test]
+    fn transforms_address_object_version_id_components() {
+        let uid = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1";
+        assert_eq!(
+            TransformRule::RootUid.apply(uid).as_deref(),
+            Some("8849182c-82ad-4088-a07f-48ead4180515")
+        );
+        assert_eq!(
+            TransformRule::CreatingSystemId.apply(uid).as_deref(),
+            Some("openEHRSys.example.com")
+        );
+        assert_eq!(
+            TransformRule::Uppercase.apply("a::b::1").as_deref(),
+            Some("A::B::1")
+        );
+
+        // No middle segment => NO capture: a bare versioned_object_uid must
+        // never bind as if it were a creating system id.
+        assert_eq!(
+            TransformRule::CreatingSystemId.apply("8849182c-82ad-4088-a07f-48ead4180515"),
+            None
+        );
+        assert_eq!(TransformRule::CreatingSystemId.apply("uid::"), None);
+        // …while root-uid still answers on the same truncated value.
+        assert_eq!(TransformRule::RootUid.apply("uid").as_deref(), Some("uid"));
+
+        // The token is the authored form and the grammar stays closed.
+        let spec: WireCapture = serde_json::from_value(serde_json::json!({
+            "from": "header ETag", "strip": "weak-quotes",
+            "transform": "creating-system-id"
+        }))
+        .unwrap();
+        assert_eq!(spec.transform, Some(TransformRule::CreatingSystemId));
+        assert!(
+            serde_json::from_value::<WireCapture>(serde_json::json!({
+                "from": "header ETag", "transform": "middle-segment"
             }))
             .is_err()
         );

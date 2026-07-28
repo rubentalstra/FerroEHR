@@ -349,7 +349,7 @@ pub fn operation_binding_schema() -> Value {
                     "properties": {
                         "from": { "type": "string" },
                         "strip": { "enum": ["weak-quotes"] },
-                        "transform": { "enum": ["root-uid", "uppercase"] },
+                        "transform": { "enum": tokens(crate::model::binding::TransformRule::ALL) },
                         "fallback": { "type": "string" }
                     }
                 }

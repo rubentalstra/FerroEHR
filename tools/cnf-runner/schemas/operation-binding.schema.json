@@ -289,6 +289,7 @@
           "transform": {
             "enum": [
               "root-uid",
+              "creating-system-id",
               "uppercase"
             ]
           },

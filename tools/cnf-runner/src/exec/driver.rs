@@ -18,9 +18,7 @@ use crate::exec::{Provisioned, StepDriver, StepObservation};
 use crate::ids::{CaptureName, SmOperationRef};
 use crate::ixit::{AuthMode, Instance, Ixit};
 use crate::model::assertion::{Assertion, EquivalentTarget, RowsSpec};
-use crate::model::binding::{
-    OperationBinding, RequestBody, StripRule, TransformRule, WireCapture, WireFrom,
-};
+use crate::model::binding::{OperationBinding, RequestBody, StripRule, WireCapture, WireFrom};
 use crate::model::case::{CaseCore, EhrRequirement, FlowStep};
 use crate::refgrammar::{CaptureField, Template, ValueRef};
 use crate::vocab::{FormatName, HttpMethod, OutcomeKind};
@@ -435,14 +433,11 @@ impl<'a> HttpDriver<'a> {
         if matches!(spec.strip, Some(StripRule::WeakQuotes)) {
             value = value.trim_start_matches("W/").trim_matches('"').to_owned();
         }
-        match spec.transform {
-            Some(TransformRule::RootUid) => {
-                value = value.split("::").next().unwrap_or(&value).to_owned();
-            }
-            Some(TransformRule::Uppercase) => {
-                value = value.to_ascii_uppercase();
-            }
-            None => {}
+        // A transform that finds no such component yields NO capture — a
+        // truncated identifier must leave the capture unbound (loud at its
+        // use site), never bind the untransformed value.
+        if let Some(transform) = spec.transform {
+            value = transform.apply(&value)?;
         }
         Some(value)
     }
@@ -2443,5 +2438,23 @@ mod tests {
         );
         let root = HttpDriver::extract_capture(&exchange, &test_binding(), &spec2, &vars2).unwrap();
         assert_eq!(root, "8849182c-82ad-4088-a07f-48ead4180515");
+
+        // The middle segment — the creating system id (#570).
+        let spec3: WireCapture = serde_json::from_value(serde_json::json!({
+            "from": "header ETag", "strip": "weak-quotes",
+            "transform": "creating-system-id"
+        }))
+        .unwrap();
+        let system =
+            HttpDriver::extract_capture(&exchange, &test_binding(), &spec3, &vars).unwrap();
+        assert_eq!(system, "openEHRSys.example.com");
+
+        // A value with no middle segment binds NOTHING rather than binding
+        // the whole value as if it were a system id.
+        let truncated = Exchange {
+            headers: BTreeMap::from([("etag".to_owned(), "\"8849182c\"".to_owned())]),
+            ..exchange
+        };
+        assert!(HttpDriver::extract_capture(&truncated, &test_binding(), &spec3, &vars).is_none());
     }
 }
