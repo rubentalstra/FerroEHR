@@ -1274,9 +1274,12 @@ const PSEUDO_INTERFACE_PREFIX: &str = "I_ITS_REST_";
 /// same convention AMB-127 pins for variant anchoring, adjudicated for this
 /// table in AMB-161).
 ///
-/// Two families are pinned today, and the operation name of every row is the
+/// Four families are pinned today, and the operation name of every row is the
 /// RELEASED `operationId` verbatim, so a row is traceable to exactly one
-/// vendored `specifications/operations/<operationId>.yaml`:
+/// vendored `specifications/operations/<operationId>.yaml`. A family is the
+/// SERVED RESOURCE, not the OAS tag — which is why the demographic
+/// revision-history route sits with its EHR-side twins rather than with the
+/// container read that shares its tag:
 ///
 /// - `I_ITS_REST_SYSTEM` — the System API (ITS-REST
 ///   `docs/system/Description.md`, STABLE) defines `OPTIONS {base_path}`
@@ -1291,6 +1294,20 @@ const PSEUDO_INTERFACE_PREFIX: &str = "I_ITS_REST_";
 ///   `Requests_and_responses.md` §openehr-item-tag and
 ///   openehr-version-item-tag), so the operations are unambiguously part of
 ///   the released wire with no service-model anchor to name them by.
+/// - `I_ITS_REST_REVISION_HISTORY` — the three released revision-history
+///   reads (COMPOSITION, EHR_STATUS, PARTY). The SM declares no
+///   revision-history operation on any interface —
+///   `docs/specs/openehr/SM/docs/` contains zero occurrences of
+///   "revision_history" (grep-verified); the abstract counterpart lives in
+///   the RM (`common` `versioned_object.adoc` §Functions
+///   `revision_history`), which is a model, not a service interface.
+/// - `I_ITS_REST_VERSIONED_PARTY` — the VERSIONED_PARTY container read. Its
+///   two EHR-side twins DO have SM anchors
+///   (`I_EHR_COMPOSITION.get_versioned_composition`,
+///   `I_EHR_STATUS.get_versioned_ehr_status`); `I_PARTY` declares no
+///   container read at all, and SM
+///   `docs/openehr_platform/master06-demographic_service.adoc` includes no
+///   versioned-party interface (register AMB-136).
 ///
 /// Without this table the Axis-1 enumeration is structurally blind to such an
 /// operation: [`check_surface_sm_operations`] walks SM class exports, so a
@@ -1422,6 +1439,36 @@ const NON_SM_REST_OPERATIONS: &[(&str, &str)] = &[
         "I_ITS_REST_ITEM_TAGS.role_tags_delete",
         "ITS-REST specifications/operations/role_tags_delete.yaml — DELETE \
          /demographic/role/{uid_based_id}/tags/{key}",
+    ),
+    // ── REVISION_HISTORY: the three released revision-history reads ──
+    (
+        "I_ITS_REST_REVISION_HISTORY.versioned_composition_revision_history",
+        "ITS-REST specifications/operations/versioned_composition_revision_history.yaml \
+         — GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history, \
+         \"Retrieves revision history of the VERSIONED_COMPOSITION identified by \
+         `versioned_object_uid` and associated with the EHR identified by `ehr_id`\"",
+    ),
+    (
+        "I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history",
+        "ITS-REST specifications/operations/versioned_ehr_status_revision_history.yaml \
+         — GET /ehr/{ehr_id}/versioned_ehr_status/revision_history, \"Retrieves \
+         revision history of the VERSIONED_EHR_STATUS associated with the EHR \
+         identified by `ehr_id`\"",
+    ),
+    (
+        "I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history",
+        "ITS-REST specifications/operations/versioned_party_revision_history.yaml — \
+         GET /demographic/versioned_party/{versioned_object_uid}/revision_history, \
+         \"Retrieves revision history of the VERSIONED_PARTY identified by \
+         `versioned_object_uid`\"",
+    ),
+    // ── VERSIONED_PARTY: the container read the SM models no interface for ──
+    (
+        "I_ITS_REST_VERSIONED_PARTY.versioned_party_get",
+        "ITS-REST specifications/operations/versioned_party_get.yaml — GET \
+         /demographic/versioned_party/{versioned_object_uid}, \"Retrieves a \
+         VERSIONED_PARTY identified by `versioned_object_uid`\" (register AMB-136: \
+         I_PARTY declares no container read)",
     ),
 ];
 

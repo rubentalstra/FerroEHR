@@ -4188,9 +4188,26 @@ AMB-136:
     CATALOGUE NAMING CONVENTION and NOT a claim that SM defines the operation,
     exactly as AMB-127 anchors the stored-query single-definition read. The
     container get and the `revision_history` sub-resource are NOT anchored that
-    way, because no SM read returns either shape — they stay the cited honest
-    boundary `versioned-party-container-and-revision-history`, whose server
-    behaviour is covered by DB-backed wire tests rather than a catalogue case.
+    way, because no SM read returns either shape — the closest-SM-read
+    convention has nothing to reach for. RE-ADJUDICATED 2026-07-28: they are
+    anchored under the RESERVED PSEUDO-INTERFACE mechanism instead
+    (`I_ITS_REST_VERSIONED_PARTY.versioned_party_get`,
+    `I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history`). That is a
+    DIFFERENT mechanism from the closest-SM-read convention this entry declined,
+    and it POST-DATES the original adjudication: AMB-161 established the
+    reserved `I_ITS_REST_*` prefix plus the pinned `NON_SM_REST_OPERATIONS`
+    table (tools/cnf-runner/src/validate.rs) for exactly this shape — a RELEASED
+    ITS-REST operation the SM models no interface for — and it names no SM
+    operation at all, so unlike a closest-read anchor it asserts nothing about
+    what the SM defines. Pseudo-interface families group by the SERVED RESOURCE
+    (as `I_ITS_REST_ITEM_TAGS` already spans the EHR and demographic tag
+    routes), which is why the revision history joins its two EHR-side twins
+    under `I_ITS_REST_REVISION_HISTORY` while the container read keeps
+    `I_ITS_REST_VERSIONED_PARTY`. Both routes now carry bindings and cases, and
+    the honest-boundary ledger row
+    `versioned-party-container-and-revision-history` retires to covered_by. The
+    realization GAP itself is unchanged and still reported: the SM has no home
+    for either route.
     SM→ITS: `has_party` and `has_party_version_id` are bound to their
     realizations rather than declared missing (existence is the 200/404 of the
     corresponding read — the AMB-108 pattern), and the two interface factories
@@ -5895,10 +5912,19 @@ AMB-161:
   handling: >-
     Fixed handling — a naming convention, pinned and enumerable. Such an
     operation is anchored under a reserved I_ITS_REST_<GROUP> pseudo-interface,
-    one per released resource family (I_ITS_REST_SYSTEM.options;
-    I_ITS_REST_ITEM_TAGS.<operationId> for the twenty-three tag routes, whose
+    one per released resource family — the family being the SERVED RESOURCE,
+    not the OAS tag (I_ITS_REST_SYSTEM.options;
+    I_ITS_REST_ITEM_TAGS.<operationId> for the twenty-three tag routes;
+    I_ITS_REST_REVISION_HISTORY.<operationId> for the three revision-history
+    reads, the SM declaring no revision-history operation on any interface —
+    zero occurrences of "revision_history" across SM/docs, grep-verified, the
+    abstract counterpart being the RM's own VERSIONED_OBJECT.revision_history();
+    I_ITS_REST_VERSIONED_PARTY.versioned_party_get for the demographic container
+    read, whose two EHR-side twins DO have SM anchors while I_PARTY declares no
+    container read at all — the last two extended 2026-07-28 when AMB-136 was
+    re-adjudicated against this mechanism), whose
     operation name is the RELEASED operationId verbatim so every row traces to
-    exactly one specifications/operations/<operationId>.yaml), which is a
+    exactly one specifications/operations/<operationId>.yaml, which is a
     CATALOGUE naming convention and
     NOT a claim that the SM defines the operation — exactly the distinction
     AMB-127 draws when it anchors the version get to list_queries with a
@@ -5911,8 +5937,9 @@ AMB-161:
     their own rows of the coverage report; an unpinned I_ITS_REST_* reference is
     a validator finding, so the prefix can never become a way around SM
     resolution. Revisits per family: when a future SM release models the System
-    API, or declares a tag interface, that family's anchors become real SM
-    operations and its pinned rows go.
+    API, declares a tag interface, adds a revision-history operation, or gives
+    the demographic container read an SM home (the UPR-100 ask), that family's
+    anchors become real SM operations and its pinned rows go.
   disposition: fixed_handling
 
 AMB-165:
