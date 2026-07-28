@@ -456,3 +456,81 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
         "nothing persisted against the deleted template"
     );
 }
+
+// ── RM data_structures §ELEMENT — Inv_null_flavour_indicated ─────────────────
+
+/// Strip the `value` of the first ELEMENT that has one, leaving no
+/// `null_flavour` behind — the RM-invalid shape
+/// `Inv_null_flavour_indicated` forbids. Returns the RM path of the ELEMENT
+/// that was emptied.
+fn strip_first_element_value(v: &mut Value, path: &str) -> Option<String> {
+    match v {
+        Value::Object(map) => {
+            if map.get("_type").and_then(Value::as_str) == Some("ELEMENT")
+                && map.get("null_flavour").is_none()
+                && map.remove("value").is_some()
+            {
+                return Some(path.to_owned());
+            }
+            let keys: Vec<String> = map.keys().cloned().collect();
+            for key in keys {
+                if let Some(child) = map.get_mut(&key)
+                    && let Some(found) = strip_first_element_value(child, &format!("{path}/{key}"))
+                {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        Value::Array(items) => items
+            .iter_mut()
+            .enumerate()
+            .find_map(|(i, item)| strip_first_element_value(item, &format!("{path}/{i}"))),
+        _ => None,
+    }
+}
+
+/// An ELEMENT carrying neither `value` nor `null_flavour` violates RM
+/// data_structures §ELEMENT:
+///
+/// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
+/// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
+///
+/// The commit choke point runs the RM class-invariant pass unconditionally
+/// (template-independent), so such a COMPOSITION is a `422` naming the
+/// invariant — never a silent accept, and never a silent drop of the element
+/// at the simplified-format seam. Nothing is persisted.
+#[tokio::test]
+async fn element_without_value_or_null_flavour_is_rejected_at_commit() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = EhrbaseService::new(pool.clone());
+
+    svc.template_adl14_upload(fixture(IPS_OPT))
+        .await
+        .expect("upload IPS OPT");
+    let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
+
+    let mut broken = composition("ips_canonical.json");
+    let emptied = strip_first_element_value(&mut broken, "")
+        .expect("the IPS composition carries a valued ELEMENT to empty");
+
+    let err = svc
+        .create_composition(ehr_uuid, uv(broken, "249", None))
+        .await
+        .expect_err("an ELEMENT with neither value nor null_flavour must be rejected");
+    let ServiceError::ValidationFailed(violations) = &err else {
+        panic!("expected content_invalid (422) with per-path violations, got {err:?}");
+    };
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.message.contains("Inv_null_flavour_indicated")),
+        "the 422 must name the violated RM invariant (emptied {emptied}): {violations:?}"
+    );
+    assert_eq!(
+        composition_versions(&pool).await,
+        0,
+        "the RM-invalid composition was not persisted"
+    );
+}

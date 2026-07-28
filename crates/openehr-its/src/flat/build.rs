@@ -178,6 +178,27 @@ fn is_element_level(seg: &str) -> bool {
     )
 }
 
+/// Whether the leaf builder ([`map::build_leaf`]) already consumed the
+/// `_`-prefixed segment `seg` on a leaf of RM type `base`, so the generic
+/// `_`-family routing ([`apply_rm_attr`]) must not see it a second time.
+///
+/// One case: `/_relationship` on a PARTY_PROXY leaf. master05 §PARTY_RELATED
+/// spells the relationship sub-path `/_relationship` in its mapping table and
+/// `…/relationship|code` in both of the section's example blocks (and in the
+/// §"PARTY_RELATED performer" table); the flat builder accepts both, and
+/// `map::parties::build_party` reads whichever is present as the PARTY_PROXY
+/// **subtype discriminator**. Routing it on to [`map::build_rm_attr`] as well
+/// would either reject the spec's own table spelling as an unknown suffix, or
+/// — with a generic `relationship` arm there — attach the attribute to a party
+/// the leaf builder has already typed PARTY_IDENTIFIED.
+fn leaf_consumes_segment(base: &str, seg: &str) -> bool {
+    seg == map::parties::RELATIONSHIP_TABLE_SEGMENT
+        && matches!(
+            base,
+            "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+        )
+}
+
 /// Collect the whole template's hoisted-wrapper type narrowings as
 /// `(parsed absolute archetype path, constrained RM type)` pairs, so the builder
 /// can look a re-materialised structural node's constrained type up by its
@@ -250,11 +271,16 @@ fn build(
         // Value-level `_` attributes (`_normal_range`, `_mapping`,
         // `_accuracy`, `_language`, …) attach to the DV value itself;
         // ELEMENT-level ones are routed onto the wrapping ELEMENT by
-        // `place` (master05 per-type tables vs §ELEMENT).
+        // `place` (master05 per-type tables vs §ELEMENT); the few the leaf
+        // builder itself consumed are skipped (`leaf_consumes_segment`).
         if let Value::Object(m) = &mut dv {
+            let base = base_type(&node.rm_type);
             for (seg, child) in &sim.children {
-                if seg.starts_with('_') && !is_element_level(seg) {
-                    apply_rm_attr(m, seg, &child.occurrences, base_type(&node.rm_type), path)?;
+                if seg.starts_with('_')
+                    && !is_element_level(seg)
+                    && !leaf_consumes_segment(base, seg)
+                {
+                    apply_rm_attr(m, seg, &child.occurrences, base, path)?;
                 }
             }
         }
