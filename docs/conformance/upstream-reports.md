@@ -8,12 +8,25 @@ rather than worked around forever.
 
 ## Grounding rules (non-negotiable)
 
-- **Docs text only.** Every report cites the openEHR **docs text**
-  (`docs/specs/openehr/…`) — the normative prose. The vendored **OAS is STALLED
-  and is NOT an oracle** (owner ruling 2026-07-24): it is never a citation here.
-  A "defect" that exists ONLY because the OAS is stale/incomplete is an
-  OAS-regeneration item, NOT an openEHR spec report, and does not belong in this
-  ledger.
+- **Docs text first; the released OAS only where the docs text is silent**
+  (owner rulings 2026-07-24 + 2026-07-28). Every report cites the openEHR
+  **docs text** (`docs/specs/openehr/…`) — the normative prose — wherever the
+  prose speaks, and the docs text WINS every conflict. Where the docs text is
+  SILENT, the **released OAS**
+  (`docs/specs/openehr/ITS-REST/specifications/{operations,responses,
+  parameters,schemas,headers}/**`, the same commit as the prose) is a
+  legitimate citation, because the release presents those files as its own
+  computable specification artifacts (overview `Specifications.md`) — but it
+  is always cited **AS the OAS** (file + element), never passed off as docs
+  text, and never read for more than it states.
+  **What that changes for this ledger** (2026-07-28): a behaviour the OAS
+  DEFINES is no longer a reportable silence — it is a released expectation the
+  suite gates, so the report is withdrawn or re-scoped to what genuinely
+  remains (typically: the rule is findable only in the computable artifact and
+  not in the normative prose, or its status branch is unassigned on both
+  tiers). Conversely a "defect" that exists ONLY because the OAS is
+  stale/incomplete against the prose remains an OAS-regeneration item, NOT an
+  openEHR spec report.
 - **Proven before listed.** A report appears here ONLY after its register entry
   is CONFIRMED first-hand against the docs text (the `cnf-triage` adjudication).
   An entry the docs text actually resolves is REFUTED — removed from the
@@ -36,7 +49,7 @@ entries realized internally by an existing released endpoint, name-only
 CNF↔SM divergences, and benign released-documented behaviours carry no
 `upstream_ref` and do NOT appear here.
 
-### UPR-01 — duplicate-`template_id` handling on the ADL 1.4 upload is unassigned
+### UPR-01 — SM `upload_opt` alone omits the duplicate rule its siblings state
 
 - **Register entry:** AMB-4
 - **Channel:** SPECPR
@@ -50,15 +63,30 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   `specifications/responses/409_template_already_exists.yaml` declares the
   conflict branch on the same operation; AM ADL 1.4 `master02-overview.adoc`
   §Templates defines no template versioning (all confirmed first-hand).
-- **Problem:** A second upload under an existing `template_id` has two
-  conformant answers — refuse it as a conflict, or replace the stored template
-  — and no released sentence picks one. Declaring the 409 branch is not
-  requiring it, and `upload_opt` is the only upload in the two Definition
-  interfaces that omits the replace rule its siblings state. With no formal
-  version for an ADL 1.4 template there is no third answer available either.
-- **Ask:** State the duplicate rule on `upload_opt` (replace, as its siblings
-  do, or conflict, as the ITS branch implies) so the suite can gate one
-  behaviour rather than carry sibling option cases.
+- **Problem:** `upload_opt` is the only upload in the two Definition
+  interfaces that omits the duplicate rule its siblings state, so SM and ITS
+  do not line up on the same operation: the ITS answers the question
+  (`409_template_already_exists.yaml` — "`409 Conflict` is returned when a
+  template with same `template_id` already exists") while the service model
+  says nothing, and the SM's own two siblings say the OPPOSITE of the ITS
+  ("replace it"). A reader of SM alone cannot tell which of the two families
+  `upload_opt` belongs to, and an implementer reading SM's siblings by analogy
+  would build the wrong wire behaviour. With no formal version for an ADL 1.4
+  template there is no third answer available either.
+- **Ask:** State the duplicate rule on `upload_opt` — align it with the ITS
+  409 branch, or, if replacement is intended, reconcile the two components
+  explicitly (the ADL2 side has the same clash as an outright contradiction,
+  UPR-69).
+- **Re-scoped (2026-07-28), under the OAS-fallback oracle order.** The WIRE
+  half of this report is answered and is withdrawn: the docs text is silent on
+  duplicate template upload, so the released OAS grounds the expectation, and
+  `409_template_already_exists.yaml` states its trigger in the indicative
+  rather than merely declaring a status. AMB-4 accordingly retyped from
+  `option_select` to `fixed_handling`, the `adl14-duplicate-conflict` /
+  `adl14-duplicate-replace` option pair is withdrawn, and
+  `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict` now gates for every
+  server — so the ask is no longer "so the suite can gate one behaviour". What
+  survives is the SM↔ITS misalignment above.
 - **Note (2026-07-27):** this report was re-grounded with AMB-4. Its earlier
   framing — conflict vs a version-parameter branch, taken from the CNF
   master04 NOTE — is false for Release-1.1.0: the ADL 1.4 upload declares no
@@ -749,22 +777,37 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 ### UPR-40 — the docs text never states the body-uid vs URL rule for a COMPOSITION update
 
 - **Component:** ITS-REST (overview Resources.md + Requests_and_responses.md)
-- **Register:** AMB-78 (report_only)
+- **Register:** AMB-78 (fixed_handling)
 - **Facts:** `Resources.md` §Identifier types derives the container from the
   served identifier ("which also implies that the VERSIONED_OBJECT identifier
   is `8849182c-…`") and calls populating a COMPOSITION's inherited `uid`
   "strongly recommended"/"should"; RM types `LOCATABLE.uid` 0..1. The
   normative prose never says what a service does when an update body's
-  `uid` names a DIFFERENT container than the addressed one — the requirement
-  exists only as an API-definition operation description.
+  `uid` names a DIFFERENT container than the addressed one. The requirement
+  exists only in the release's computable artifact —
+  `operations/composition_update.yaml`, description: "If the request body
+  already contains a COMPOSITION.uid.value, it must match the `uid_based_id`
+  in the URL", repeated verbatim over `PERSON.uid.value` in the five party
+  updates. Neither tier binds the violation to one of the statuses the same
+  operation declares (200/204/400/404/412/422).
 - **Problem:** the rule that clients are actually held to is invisible in the
-  normative text, and its branch is unassigned: 422 (well-formed but
-  unfollowable), 400 (client error), or silent acceptance with the
-  server's own uid are all defensible, so implementations diverge on a
+  normative text, and its branch is unassigned on BOTH tiers: 422 (well-formed
+  but unfollowable) and 400 (client error) are both declared by the operation
+  and neither is assigned to this trigger, so implementations diverge on a
   request that is trivially easy to send by accident (a read-modify-write
   client replaying a fetched COMPOSITION at the wrong URL).
-- **Ask:** state the rule in the docs text and assign its branch (suggested:
-  reject with 422 — the request is well-formed but cannot be followed).
+- **Ask:** promote the rule into the docs text, and assign its branch on
+  whichever tier states it (suggested: reject with 422 — the request is
+  well-formed but cannot be followed, which is what both the docs-text 422 row
+  and `responses/422.yaml` describe).
+- **Re-scoped (2026-07-28), under the OAS-fallback oracle order.** The RULE
+  half of this report is answered and is withdrawn: the docs text being silent
+  rather than in conflict, the operation description is a legitimate tier-2
+  ground, so the rejection is a released expectation. AMB-78 retyped from
+  `report_only` to `fixed_handling` and
+  `I_EHR_COMPOSITION.update_composition-body_uid_mismatch` now gates at CORE
+  instead of merely reporting. What survives is the two halves above — the
+  prose omission, and the unassigned status branch.
 
 ### UPR-41 — create-on-existing-directory has no wire branch
 
@@ -2253,7 +2296,7 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Components:** ITS-REST (`docs/system/Description.md`;
   `docs/overview/Requests_and_responses.md` §"HTTP Methods", §"HTTP status
   codes")
-- **Register:** AMB-160 (report_only)
+- **Register:** AMB-160 (fixed_handling)
 - **Facts:** The System API is declared `STABLE` — `docs/system/Description.md`
   §Status, "This specification is in the `STABLE` state" — and the chapter that
   declares it is a stub: Purpose, Related Documents, Status, and nothing else.
@@ -2269,18 +2312,23 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   sentence of a STABLE specification while answering on different resources
   with different, or empty, bodies; no client can be written against the text
   as published, and no conformance test can assert more than "some 2xx".
-- **Ask:** give the System chapter the two sentences it is missing — the
-  resource the operation is served on (relative to the API base URL) and the
-  members of the response body, with which of them are mandatory — and state
-  the success status code and the response headers in the same chapter, so a
-  STABLE API is testable from its own normative text rather than from a
-  generated artifact. (Ours: the probe is answered at the API base-path root,
-  the one resource that IS the service, with `200` and an `Allow` header
-  listing the methods that resource supports; the body carries the product's
-  identity and the REST-API version it implements plus the conformance profile
-  it claims, and never out-claims the last machine-computed verdict. Our
-  conformance case asserts only the `200` and the `Allow` header — everything
-  else is recorded as this silence, not as an expectation.)
+- **Ask:** give the System chapter the sentences it is missing — the resource
+  the operation is served on (relative to the API base URL), the members of
+  the response body and which of them are mandatory, the success status code
+  and the response headers — so a STABLE API is testable from its own
+  normative text rather than only from the release's computable artifact.
+- **Re-scoped (2026-07-28), under the OAS-fallback oracle order.** The
+  testability half is answered and is withdrawn: the docs text being silent,
+  the released `system.openapi.yaml` grounds the resource (`paths: /`), the
+  `Content-Type: application/json` and the JSON manifest body, and AMB-160
+  retyped from `report_only` to `fixed_handling` — the binding and the case
+  now assert all three alongside the docs-text-grounded `200` + `Allow`. No
+  MANIFEST MEMBER is asserted, because the `Options` schema declares none
+  required and an optional member is not a presence requirement (which member
+  contents `endpoints` must carry stays open — AMB-158). What survives is
+  purely EDITORIAL and is the ask above: a STABLE specification's own chapter
+  should describe its one exchange instead of delegating it entirely to the
+  OAS artifact.
 
 ### UPR-125 — the CONTRIBUTION commit declares `application/xml` yet the release defines no XML form of the commit envelope
 

@@ -4,7 +4,9 @@
 # singleton, so the container URI carries no {versioned_object_uid} segment
 # (unlike versioned_composition).
 #
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   - Resource: overview Resources.md §Resources — "versioned entities:
 #     VERSIONED_COMPOSITION, VERSIONED_EHR_STATUS, etc. or their contained
 #     VERSION instances" is the resource this route serves.
