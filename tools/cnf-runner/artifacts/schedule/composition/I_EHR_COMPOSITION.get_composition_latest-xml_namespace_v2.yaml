@@ -36,7 +36,7 @@ kind: functional
 component: EHR_COMPOSITION
 sm_operation: I_EHR_COMPOSITION.get_composition_latest
 capabilities: [CompositionOps]
-profiles: [OPTIONS]                      # implementation-defined per AMB-169 — never gates CORE/STANDARD
+profiles: [CORE]                         # the anchoring capability's tier; the row still never gates a non-negotiating or XML-less party — the AMB-169 option gate and the canonical-xml format axis deselect it first
 option: xml-namespace-negotiated         # AMB-169 option_select branch
 ambiguities: [AMB-169]
 formats: [canonical-xml]                 # tech-profile axis: XML-less parties are not judged by this row
