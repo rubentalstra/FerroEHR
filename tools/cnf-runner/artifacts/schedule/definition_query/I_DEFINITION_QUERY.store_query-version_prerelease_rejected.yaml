@@ -2,16 +2,22 @@
 #
 # The released version grammar for a stored query is three numeric parts —
 # ITS-REST docs/query/Qualified_query_name.md: "The `version` identifier is in
-# the format specified by SEMVER style (i.e. `major.minor.patch`)" — and the
-# `{version}` parameter admits only that exact form plus the `{major}` /
-# `{major}.{minor}` READ prefixes. Nothing in the release admits a pre-release
-# suffix on this surface (the sibling question for the ADL2 read is register
-# AMB-113), and nothing assigns the write an outcome for one, so register
-# AMB-122 refuses it on the operation's own declared 400 —
-# docs/overview/Requests_and_responses.md §"HTTP status codes", row `400 Bad
-# Request`: "…(e.g., malformed request syntax, syntactically invalid content)".
-# Accepting it would also place an unorderable version inside a surface whose
-# reads must rank versions numerically.
+# the format specified by SEMVER style (i.e. `major.minor.patch`)". The
+# parenthetical gloss IS the released statement of the format, and the
+# `{version}` parameter enumerates exactly three admissible shapes to match it:
+# an exact version, `{major}`, and `{major}.{minor}` — none carrying a suffix.
+# Nothing in the release admits a pre-release form on this surface (the sibling
+# question for the ADL2 read is register AMB-113), and nothing assigns the
+# write an outcome for one, so register AMB-122 refuses it on the status the
+# docs text ASSIGNS to exactly this situation —
+# docs/overview/Requests_and_responses.md §"HTTP status codes", the sentence
+# below the table: "Status code `400` indicates normally a bad request, as well
+# as a generic client-side error, used when no other `4xx` error code is
+# appropriate. The client SHOULD NOT repeat the request without modifications."
+#
+# The ground is the three-part gloss, NOT orderability: SEMVER 2.0.0 §11 does
+# define pre-release precedence, so the earlier "unorderable version" argument
+# is withdrawn (register AMB-122 records the correction).
 id: I_DEFINITION_QUERY.store_query-version_prerelease_rejected
 kind: functional
 component: DEFINITION_QUERY

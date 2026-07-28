@@ -3385,7 +3385,10 @@ AMB-117:
     which is a resolution rule over versions that already exist and says
     nothing about which one a write creates; the single illustration is the
     Location example's `…/org.openehr::compositions/1.0.1`, a minted version
-    shown without a rule for choosing it.
+    shown without a rule for choosing it. Re-adjudicated 2026-07-28 against
+    the one reading that would close the gap — taking that rule's "or when
+    `version` is not supplied at all" clause to govern the STORE — and it is
+    affirmatively wrong, not merely strained: see the handling.
   source: >-
     ITS-REST specifications/operations/definition_query_store.yaml
     (description "Stores a new query, or updates an existing query on the
@@ -3407,6 +3410,21 @@ AMB-117:
     VERSIONED store is the immutable form, where an existing
     `(name, version)` pair is refused 409 and never replaced. Immutability is
     therefore a property of a version-ADDRESSED definition, not of the name.
+    Reading `Qualified_query_name.md`'s "or when `version` is not supplied at
+    all … the system must use the latest `version`" into the STORE is the one
+    move that would make the minted version derivable, and it is refuted twice
+    over. First, it would have a version-less store target and OVERWRITE the
+    latest EXISTING version — silently replacing a version-ADDRESSED
+    definition that the sibling route protects as immutable with a 409, and
+    destroying a definition the client never named; a rule cannot both forbid
+    a write through one route and mandate it through another. Second, it
+    assigns nothing at all on a FIRST store, when no "latest query version"
+    exists — which is exactly the moment a creation rule would be needed. The
+    clause is therefore a rule for USING a stored query, as its chapter says
+    ("Stored queries are identified by their name … and an optional `version`
+    number"), and the minted version stays genuinely unassigned: the slot
+    below is OUR adjudication of a released silence, gated as such and
+    reported upstream, not a value the release states.
     The default slot is the constant `1.0.0`: it is the lowest SEMVER a first
     store can carry, it keeps the version-less form idempotent (a second
     store updates the same slot instead of accumulating versions no client
@@ -3637,39 +3655,74 @@ AMB-122:
     number. This can be an exact version (e.g. `1.7.1`), or a pattern as
     partial prefix, in a form of `{major}` or `{major}.{minor}` (e.g. `1` or
     `1.0`), in which case the highest (latest) version matching the prefix
-    will be considered." On the versioned STORE that sentence is incoherent —
-    a prefix selects among versions that already exist, and a store creates
-    one — and no released sentence assigns an outcome to a prefix, a SEMVER
-    pre-release/build form, or any other token on the write. The operation
-    declares 200/400/409, its 409 trigger is a duplicate
-    `(name, version)` pair, and its 400 is the general syntactic one.
+    will be considered." The DOCS TEXT states the same rule and no other:
+    "When only a partial `version` pattern is supplied, or when `version` is
+    not supplied at all, the system must use the latest `version` with the
+    supplied prefix - i.e. if only `major` or `major.minor` is used, then the
+    latest query version matching supplied prefix will be used." Applied to
+    the versioned STORE that rule is not merely odd but SELF-REFUTING, and
+    nothing released replaces it. The versions it resolves among are ones that
+    ALREADY EXIST ("the latest query version matching"), so on a name that has
+    them the target it yields is by construction an existing
+    `(name, version)` pair — exactly the trigger the same operation assigns to
+    409 — which would make the operation's own declared 200 unreachable for
+    every prefix; and on a name that has none it yields no version at all,
+    leaving the write with nothing to address. Nor does the release ever
+    COMPLETE a prefix into a version to create: this surface carries no
+    minting rule anywhere. The same silence covers a SEMVER
+    pre-release/build-metadata form and any other token — the operation
+    declares 200/400/409, its 409 trigger is a duplicate `(name, version)`
+    pair, and no released sentence names the branch these take.
   source: >-
-    ITS-REST specifications/parameters/path/version.yaml (the quoted
-    description, shared by definition_query_version_store.yaml,
+    ITS-REST docs/query/Qualified_query_name.md (the quoted partial/absent
+    version rule, and "The `version` identifier is in the format specified by
+    SEMVER style (i.e. `major.minor.patch`)") +
+    specifications/parameters/path/version.yaml (the quoted description,
+    shared by definition_query_version_store.yaml,
     definition_query_version_get.yaml and the query-execution routes) +
     operations/definition_query_version_store.yaml (responses 200/400/409) +
     responses/409_StoredQuery_version.yaml (the duplicate-pair trigger) +
     responses/400.yaml ("the request could not be parsed or is invalid (e.g.
     malformed request URL syntax, missing required header or parameter, or
-    syntactically invalid header, parameter or content)") + docs/query/
-    Qualified_query_name.md ("The `version` identifier is in the format
-    specified by SEMVER style (i.e. `major.minor.patch`)") — CONFIRMED
-    first-hand.
+    syntactically invalid header, parameter or content)") + docs/overview/
+    Requests_and_responses.md §"HTTP status codes" (the `400 Bad Request` row
+    and the generic-client-error sentence below the table) — CONFIRMED
+    first-hand; RE-ADJUDICATED 2026-07-28 (the earlier grounds are corrected
+    in the handling below).
   handling: >-
     Fixed handling: the versioned store requires an EXACT three-part numeric
-    `major.minor.patch`. A prefix (`1`, `1.0`), a pre-release or
-    build-metadata form (`1.0.0-rc.1`), and any other token are all
-    "syntactically invalid … parameter" and answer the operation's own
-    declared 400. Storing the segment verbatim is not a tenable alternative:
-    the whole surface ORDERS versions numerically — the read must resolve a
-    `{major}`/`{major}.{minor}` prefix to "the highest (latest) version
-    matching", and the list is SEMVER-ascending (AMB-124) — so a stored
-    non-numeric version has no place in that order, and a stored bare `1`
-    collides with the prefix algebra that must resolve `1` to a full version.
-    Coherent with AMB-102's read-side handling and deliberately distinct from
-    it: a READ addressing an unmatchable selector is 404 because it names no
-    existing resource, while a WRITE cannot address a non-existent resource
-    at all, so its unusable segment is a bad request and not a missing one.
+    `major.minor.patch`, and every other token — a prefix (`1`, `1.0`), a
+    pre-release or build-metadata form (`1.0.0-rc.1`), a non-numeric segment —
+    is refused with the operation's declared 400. The STATUS is ASSIGNED by
+    the docs text rather than chosen: docs/overview/Requests_and_responses.md
+    §"HTTP status codes", immediately below the table — "Status code `400`
+    indicates normally a bad request, as well as a generic client-side error,
+    used when no other `4xx` error code is appropriate. The client SHOULD NOT
+    repeat the request without modifications." A store the release gives no
+    version to write is precisely that generic client error, and re-issuing
+    with an exact version is precisely the modification the sentence demands.
+    No other 4xx fits: 409 needs a duplicate pair, which a fresh name does not
+    have, and 404 would claim the resource does not exist rather than that the
+    request may not create it (the read-side counterpart is AMB-102, kept
+    deliberately distinct — a READ addressing an unmatchable selector names no
+    existing resource, while a WRITE cannot address a non-existent resource at
+    all). "Syntactically invalid … parameter" is expressly NOT the ground and
+    the earlier entry was wrong to lean on it: the prefix form is a shape
+    `version.yaml` explicitly DECLARES legal, so the defect is that a legal
+    READ selector designates no version to WRITE, not that the token is
+    malformed. The three-part restriction is released text too, not a house
+    rule: the docs text glosses the identifier as "SEMVER style (i.e.
+    `major.minor.patch`)" and the parameter enumerates exactly three
+    admissible shapes — exact, `{major}`, `{major}.{minor}` — none of which
+    carries a suffix. (The earlier "an unorderable version" argument against a
+    pre-release form is WITHDRAWN: SEMVER 2.0.0 §11 does define pre-release
+    precedence, so orderability was never the problem; the released
+    three-part gloss is.) Storing the segment verbatim remains untenable on
+    its own terms: the read must resolve a `{major}`/`{major}.{minor}` prefix
+    to "the highest (latest) version matching", and the list is
+    SEMVER-ascending (AMB-124), so a stored bare `1` collides with the very
+    algebra that must resolve `1` to a full version and a stored non-numeric
+    version has no place in that order.
     Gated by I_DEFINITION_QUERY.store_query-version_prefix_rejected,
     -version_prerelease_rejected and -version_malformed_rejected. Reported
     upstream (UPR-86): state the write-side version grammar, since the
