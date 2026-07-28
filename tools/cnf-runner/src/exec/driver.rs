@@ -1486,7 +1486,15 @@ impl HttpDriver<'_> {
                 .ok_or_else(|| "requires.commit without a provisioned ehr".to_owned())?
                 .to_owned();
             let headers = Self::compose_headers(
-                self.set, self.ixit, case, None, binding, instance, vars, None,
+                self.set,
+                self.ixit,
+                case,
+                None,
+                binding,
+                instance,
+                vars,
+                None,
+                self.spec_versions,
             )?;
             let mut uids = Vec::new();
             for item in items {
@@ -1534,6 +1542,7 @@ impl HttpDriver<'_> {
     /// `scopes` is the step's resolved SMART `scope` claim (`None` = the step
     /// declared none), consumed only by a `bearer_mint` principal.
     #[allow(clippy::too_many_arguments)] // one parameter per header source; splitting hides the assembly order
+    #[allow(clippy::too_many_arguments)] // the ONE request-construction seam: every input a driven request depends on arrives here explicitly
     fn compose_headers(
         set: &ArtifactSet,
         ixit: &Ixit,
@@ -1543,6 +1552,7 @@ impl HttpDriver<'_> {
         instance: &Instance,
         vars: &VarStore,
         scopes: Option<&[String]>,
+        spec_versions: Option<&crate::party::SpecVersions>,
     ) -> Result<BTreeMap<String, String>, String> {
         let request_spec = binding
             .request
@@ -1671,7 +1681,56 @@ impl HttpDriver<'_> {
                 headers.insert(name.clone(), value.clone());
             }
         }
-        Ok(headers)
+        Ok(Self::spell_committal_headers(headers, spec_versions))
+    }
+
+    /// Select the committal-metadata request-header SPELLING from the
+    /// party's declared ITS-REST release.
+    ///
+    /// The overview `Requests_and_responses.md` §Deprecated headers dates
+    /// the current spellings to Release 1.1.0 and maps each to its
+    /// pre-1.1.0 counterpart. Field names are case-insensitive (RFC 9110
+    /// §5.1), so three of the five rows — `openEHR-VERSION`, `openEHR-uri`,
+    /// `openEHR-EHR-id` — are literally the SAME field as their
+    /// replacements and need no selection; do not re-split them. Two rows
+    /// change an underscore to a hyphen and are therefore genuinely
+    /// distinct fields: `openEHR-AUDIT_DETAILS` → `openehr-audit-details`
+    /// and `openEHR-TEMPLATE_ID` → `openehr-template-id`. A party declaring
+    /// an ITS-REST release BEFORE 1.1.0 never defined the hyphenated names,
+    /// so a driven request rewrites those two to the pre-1.1.0 spelling —
+    /// otherwise an undated behaviour goes red for a field name the party's
+    /// release does not know, which is not the behaviour under test.
+    ///
+    /// A party declaring 1.1.0+ — or declaring nothing — keeps the
+    /// canonical spellings (scope for undeclared parties is the version
+    /// floors' job, never this function's). Bindings that deliberately
+    /// author the DEPRECATED spellings (the backward-compatibility cases)
+    /// are untouched: their declared names case-fold to the underscore
+    /// forms, which this map does not contain.
+    fn spell_committal_headers(
+        headers: BTreeMap<String, String>,
+        spec_versions: Option<&crate::party::SpecVersions>,
+    ) -> BTreeMap<String, String> {
+        let pre_1_1_0 = spec_versions
+            .and_then(|versions| versions.its_rest.as_deref())
+            .and_then(|raw| semver::Version::parse(raw).ok())
+            .is_some_and(|version| version < semver::Version::new(1, 1, 0));
+        if !pre_1_1_0 {
+            return headers;
+        }
+        headers
+            .into_iter()
+            .map(|(name, value)| {
+                let spelled = if name.eq_ignore_ascii_case("openehr-audit-details") {
+                    "openEHR-AUDIT_DETAILS".to_owned()
+                } else if name.eq_ignore_ascii_case("openehr-template-id") {
+                    "openEHR-TEMPLATE_ID".to_owned()
+                } else {
+                    name
+                };
+                (spelled, value)
+            })
+            .collect()
     }
 }
 
@@ -1750,7 +1809,15 @@ impl HttpDriver<'_> {
                 .as_ref()
                 .ok_or_else(|| "create_ehr unrealized".to_owned())?;
             let headers = Self::compose_headers(
-                self.set, self.ixit, case, None, binding, instance, vars, None,
+                self.set,
+                self.ixit,
+                case,
+                None,
+                binding,
+                instance,
+                vars,
+                None,
+                self.spec_versions,
             )?;
             let base = instance.base_url.trim_end_matches('/');
             let url = format!("{base}{}", request_spec.path.raw());
@@ -2047,6 +2114,7 @@ impl HttpDriver<'_> {
             instance,
             &VarStore::default(),
             None,
+            self.spec_versions,
         )?;
         let base = instance.base_url.trim_end_matches('/');
         let url = format!("{base}{}", request_spec.path.raw());
@@ -2128,6 +2196,7 @@ impl StepDriver for HttpDriver<'_> {
             instance,
             &header_vars,
             scopes.as_deref(),
+            self.spec_versions,
         ) {
             Ok(headers) => headers,
             Err(e) => {
@@ -2248,6 +2317,7 @@ impl StepDriver for HttpDriver<'_> {
                 instance,
                 &VarStore::default(),
                 None,
+                self.spec_versions,
             )?;
             let base = instance.base_url.trim_end_matches('/');
             let url = format!("{base}{}", request_spec.path.raw());
@@ -2277,7 +2347,15 @@ impl StepDriver for HttpDriver<'_> {
                 .ok_or_else(|| "requires.directory without a provisioned ehr".to_owned())?
                 .to_owned();
             let headers = Self::compose_headers(
-                self.set, self.ixit, case, None, binding, instance, vars, None,
+                self.set,
+                self.ixit,
+                case,
+                None,
+                binding,
+                instance,
+                vars,
+                None,
+                self.spec_versions,
             )?;
             let base = instance.base_url.trim_end_matches('/');
             let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
@@ -2877,5 +2955,63 @@ mod tests {
             ..exchange
         };
         assert!(HttpDriver::extract_capture(&truncated, &test_binding(), &spec3, &vars).is_none());
+    }
+
+    /// The committal-metadata spelling selection (overview
+    /// `Requests_and_responses.md` §Deprecated headers): a party declaring an
+    /// ITS-REST release before 1.1.0 gets the pre-1.1.0 spellings for the two
+    /// genuinely distinct fields (underscore vs hyphen under RFC 9110 §5.1);
+    /// everyone else — including an undeclared party — keeps the canonical
+    /// names, and a deliberately deprecated-authored name is never touched.
+    #[test]
+    fn committal_header_spelling_follows_the_declared_its_rest_release() {
+        let headers = BTreeMap::from([
+            ("openehr-audit-details".to_owned(), "a".to_owned()),
+            ("openehr-template-id".to_owned(), "t".to_owned()),
+            // Case-insensitively identical to its replacement (same field) —
+            // never rewritten.
+            ("openEHR-VERSION".to_owned(), "v".to_owned()),
+        ]);
+        let v103 = crate::party::SpecVersions {
+            its_rest: Some("1.0.3".to_owned()),
+            ..crate::party::SpecVersions::default()
+        };
+        let spelled = HttpDriver::spell_committal_headers(headers.clone(), Some(&v103));
+        assert_eq!(
+            spelled.get("openEHR-AUDIT_DETAILS").map(String::as_str),
+            Some("a"),
+            "the hyphenated 1.1.0 audit field is rewritten to the pre-1.1.0 spelling"
+        );
+        assert_eq!(
+            spelled.get("openEHR-TEMPLATE_ID").map(String::as_str),
+            Some("t"),
+            "the hyphenated 1.1.0 template field is rewritten to the pre-1.1.0 spelling"
+        );
+        assert!(!spelled.contains_key("openehr-audit-details"));
+        assert!(!spelled.contains_key("openehr-template-id"));
+        assert_eq!(
+            spelled.get("openEHR-VERSION").map(String::as_str),
+            Some("v")
+        );
+
+        // A deliberately DEPRECATED-authored name (the backward-compatibility
+        // cases) case-folds to the underscore form, which the map does not
+        // contain — never touched, for either party.
+        let deprecated = BTreeMap::from([("openEHR-AUDIT_DETAILS".to_owned(), "old".to_owned())]);
+        let kept = HttpDriver::spell_committal_headers(deprecated.clone(), Some(&v103));
+        assert_eq!(kept, deprecated);
+
+        // 1.1.0 party: untouched.
+        let v110 = crate::party::SpecVersions {
+            its_rest: Some("1.1.0".to_owned()),
+            ..crate::party::SpecVersions::default()
+        };
+        let same = HttpDriver::spell_committal_headers(headers.clone(), Some(&v110));
+        assert!(same.contains_key("openehr-audit-details"));
+        assert!(same.contains_key("openehr-template-id"));
+
+        // Undeclared: untouched (scope is the version floors' job).
+        let none = HttpDriver::spell_committal_headers(headers, None);
+        assert!(none.contains_key("openehr-audit-details"));
     }
 }
