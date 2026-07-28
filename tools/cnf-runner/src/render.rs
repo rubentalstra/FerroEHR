@@ -401,9 +401,16 @@ pub fn render_certificate(
     );
     let _ = writeln!(
         out,
-        "\n| Family | Capability | Required in profile | Result |"
+        "\nThe Realization column says what the row's cases were verified against: \
+         `released-wire` = released ITS-REST operations; `extension` = routes this product \
+         serves of its own design, which no openEHR specification governs and which therefore \
+         never gate an openEHR profile tier (those rows are always OPT)."
     );
-    let _ = writeln!(out, "| --- | --- | --- | --- |");
+    let _ = writeln!(
+        out,
+        "\n| Family | Capability | Required in profile | Realization | Result |"
+    );
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- |");
     for (name, entry) in matrix.entries() {
         let evidence = verdicts
             .capabilities
@@ -412,10 +419,11 @@ pub fn render_certificate(
             .map_or(Evidence::NoCases, |(_, e)| *e);
         let _ = writeln!(
             out,
-            "| {} | {} | {} | {} |",
+            "| {} | {} | {} | {} | {} |",
             family_token(entry.family),
             name,
             required_token(entry.required),
+            entry.realization.token(),
             evidence_token(evidence),
         );
     }
@@ -427,8 +435,11 @@ pub fn render_certificate(
         let _ = writeln!(
             out,
             "The exercised-capability set of the measured hospital-simulation workload \
-             against the claimed matrix — a claimed capability the simulation never \
-             touches is a gap in the journey catalogue, listed explicitly."
+             against the claimed matrix. A claimed capability the simulation never touches is \
+             either an ADJUDICATED exclusion — the capability-matrix row names the register \
+             entry that decided it and the reason is printed in the row — or an undecided \
+             catalogue gap, which the `workload-coverage` validate gate fails on, so no \
+             published certificate reaches this section carrying one."
         );
         // Exercised = the union of every measured operation label's
         // capability set (labels come from the committed measurement
@@ -451,38 +462,51 @@ pub fn render_certificate(
         let _ = writeln!(out, "\n| Capability | Claimed | Exercised by workload |");
         let _ = writeln!(out, "| --- | --- | --- |");
         let mut gaps: Vec<&str> = Vec::new();
-        for (name, _) in matrix.entries() {
+        let mut excluded: Vec<&str> = Vec::new();
+        for (name, entry) in matrix.entries() {
             let claimed = statement.claims.capabilities.iter().any(|c| c == name);
             if !claimed {
                 continue;
             }
             let touched = exercised.contains(&name.as_str());
-            if !touched {
+            let cell = if touched {
+                "yes".to_owned()
+            } else if let Some(adjudication) = &entry.workload_exclusion {
+                excluded.push(name.as_str());
+                format!(
+                    "no — adjudicated exclusion ({}): {}",
+                    adjudication.register, adjudication.reason
+                )
+            } else {
                 gaps.push(name.as_str());
-            }
+                "NO — catalogue gap (UNADJUDICATED)".to_owned()
+            };
+            let _ = writeln!(out, "| {name} | yes | {cell} |");
+        }
+        if !excluded.is_empty() {
             let _ = writeln!(
                 out,
-                "| {} | yes | {} |",
-                name,
-                if touched {
-                    "yes"
-                } else {
-                    "NO — catalogue gap"
-                },
+                "\nClaimed capabilities excluded from the measured workload by adjudication \
+                 ({}): {}. Each row above names its register entry; the exclusion bounds the \
+                 LOAD instrument only — the functional catalogue still owes every one of them \
+                 verdict-bearing cases at its `min_cases` floor.",
+                excluded.len(),
+                excluded.join(", "),
             );
         }
         if gaps.is_empty() {
             let _ = writeln!(
                 out,
-                "\nEvery workload-reachable claimed capability is exercised."
+                "\nEvery claimed capability is exercised by the simulation or carries an \
+                 adjudicated exclusion — no undecided rows."
             );
         } else {
             let _ = writeln!(
                 out,
-                "\nClaimed capabilities the simulation never touches ({}): {}. Each is \
-                 either a journey-catalogue gap to close or a capability outside the \
-                 measured-load surface (admin, demographics, messaging, security posture \
-                 — exercised by the functional schedule, not the load instrument).",
+                "\nUNADJUDICATED gaps ({}): {}. These rows are a defect in this submission, \
+                 not a property of the product: the `workload-coverage` validate gate fails on \
+                 each of them, so this certificate was rendered from an artifact tree that does \
+                 not pass its own gates.",
                 gaps.len(),
                 gaps.join(", "),
             );
@@ -807,7 +831,95 @@ mod tests {
         let text = render_certificate(&statement(), &results(), &verdicts(), &matrix());
         assert!(text.ends_with('\n'));
         assert!(text.contains("Required in profile"));
-        assert!(text.contains("| Platform | EhrOperations | Y | pass |"));
-        assert!(text.contains("| Platform | SimplifiedFormats | OPT |"));
+        assert!(text.contains("| Platform | EhrOperations | Y | released-wire | pass |"));
+        assert!(text.contains("| Platform | SimplifiedFormats | OPT | released-wire |"));
+    }
+
+    /// The realization marker is per row: an `extension` capability is
+    /// verified over routes no openEHR specification governs, and the
+    /// certificate says so instead of letting the row read like released
+    /// wire.
+    #[test]
+    fn certificate_marks_extension_realization() {
+        let matrix: CapabilityMatrix = serde_json::from_value(serde_json::json!({
+            "EhrOperations": { "family": "Platform", "tier": "CORE", "required": true,
+                                "min_cases": 1 },
+            "Tds": { "family": "Platform", "tier": "OPTIONS", "required": false,
+                      "min_cases": 4, "realization": "extension" }
+        }))
+        .unwrap();
+        let text = render_certificate(&statement(), &results(), &verdicts(), &matrix);
+        assert!(text.contains("| Platform | Tds | OPT | extension |"));
+        assert!(text.contains("| Platform | EhrOperations | Y | released-wire |"));
+    }
+
+    /// The Workload Coverage table renders an adjudicated exclusion with its
+    /// register id and reason, and names an unadjudicated gap as a defect of
+    /// the submission rather than a neutral "catalogue gap" row.
+    #[test]
+    fn workload_coverage_renders_adjudications_and_flags_bare_gaps() {
+        let matrix: CapabilityMatrix = serde_json::from_value(serde_json::json!({
+            "EhrOperations": { "family": "Platform", "tier": "CORE", "required": true,
+                                "min_cases": 1 },
+            "SimplifiedFormats": { "family": "Platform", "tier": "OPTIONS", "required": false,
+                                    "min_cases": 1,
+                                    "workload_exclusion": { "register": "AMB-170",
+                                                             "reason": "outside the load mix" } }
+        }))
+        .unwrap();
+        let statement: Statement = serde_json::from_value(serde_json::json!({
+            "product": { "name": "EHRbase-rs", "version": "3.5.0",
+                          "vendor": "Ruben Talstra", "identifier": "urn:x" },
+            "schedule_release": "CNF-2.0",
+            "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
+            "claims": { "capabilities": ["EhrOperations", "SimplifiedFormats"],
+                         "profiles": ["CORE"] },
+            "tech_profiles": [ { "its": "its-rest", "formats": ["canonical-json"] } ]
+        }))
+        .unwrap();
+        let mut results = results();
+        results.measurements = vec![measurement()];
+
+        let text = render_certificate(&statement, &results, &verdicts(), &matrix);
+        assert!(text.contains(
+            "| SimplifiedFormats | yes | no — adjudicated exclusion (AMB-170): outside the load mix |"
+        ));
+        // ehr_create is the measured label below, so EhrOperations is exercised.
+        assert!(text.contains("| EhrOperations | yes | yes |"));
+        assert!(!text.contains("UNADJUDICATED"));
+
+        // Drop the adjudication: the same row must read as a defect.
+        let bare: CapabilityMatrix = serde_json::from_value(serde_json::json!({
+            "EhrOperations": { "family": "Platform", "tier": "CORE", "required": true,
+                                "min_cases": 1 },
+            "SimplifiedFormats": { "family": "Platform", "tier": "OPTIONS", "required": false,
+                                    "min_cases": 1 }
+        }))
+        .unwrap();
+        let text = render_certificate(&statement, &results, &verdicts(), &bare);
+        assert!(text.contains("| SimplifiedFormats | yes | NO — catalogue gap (UNADJUDICATED) |"));
+        assert!(text.contains("UNADJUDICATED gaps (1): SimplifiedFormats"));
+        assert!(text.contains("does not pass its own gates"));
+    }
+
+    /// One measured record whose only operation label is `ehr_create`.
+    fn measurement() -> crate::perf::Measurement {
+        serde_json::from_value(serde_json::json!({
+            "case": "PERF-hospital_sim-class_POC",
+            "class": "POC",
+            "verdict": "not-earned",
+            "offered_load_sustained": 1.0,
+            "duration_s": 3600,
+            "warmup_s": 60,
+            "environment": { "hardware_class": "laptop", "cores": 8, "memory_gb": 16,
+                              "storage_class": "nvme", "topology": "single-node" },
+            "operations": [
+                { "operation": "ehr_create", "requests": 10, "errors": 0,
+                   "latency_ms_p50": 1.0, "latency_ms_p90": 2.0, "latency_ms_p99": 3.0,
+                   "hdr_v2_base64": "" }
+            ],
+            "violations": []
+        }))
+        .unwrap()
     }
 }
