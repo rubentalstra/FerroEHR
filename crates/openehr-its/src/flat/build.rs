@@ -93,7 +93,7 @@ pub fn build_composition(
     collect_slot_types(&wt.tree, &mut slot_types);
 
     let mut comp = match build(&wt.tree, data_root, root_id, &slot_types)? {
-        Value::Object(m) => m,
+        Some(Value::Object(m)) => m,
         _ => Map::new(),
     };
     finish_identity(&mut comp, &wt.tree, true, &wt.template_id);
@@ -230,13 +230,22 @@ fn wrapper_types(
 /// Build the RM value for `node` from the simplified occurrence `sim`.
 /// `path` is the printed simplified path (diagnostics); `slots` is the template's
 /// hoisted-wrapper type map (see [`build_composition`]).
+///
+/// `Ok(None)` means the occurrence builds **no value**: a leaf that carries no
+/// datum part, only the `/_null_flavour` (+ `/_null_reason`) rows of master05
+/// §ELEMENT. RM data_structures §ELEMENT (`Inv_null_flavour_indicated`) makes
+/// `value` and `null_flavour` mutually exclusive, so the wrapping ELEMENT is
+/// still materialised — carrying the null flavour and no `value`.
 fn build(
     node: &WebTemplateNode,
     sim: &SimNode,
     path: &str,
     slots: &[(Vec<PathSegment>, String)],
-) -> Result<Value, FlatError> {
+) -> Result<Option<Value>, FlatError> {
     if node.has_input() {
+        if is_null_flavoured(sim) {
+            return Ok(None);
+        }
         let mut dv = map::build_leaf(sim, base_type(&node.rm_type), Some(node), path)?;
         // Value-level `_` attributes (`_normal_range`, `_mapping`,
         // `_accuracy`, `_language`, …) attach to the DV value itself;
@@ -249,7 +258,7 @@ fn build(
                 }
             }
         }
-        return Ok(dv);
+        return Ok(Some(dv));
     }
 
     let mut obj = Map::new();
@@ -356,7 +365,7 @@ fn build(
     // master05 per-type tables place on a container; anything else is an
     // unknown suffix.
     if let Some(raw) = sim.attrs.get("raw") {
-        return build_raw(raw, path);
+        return build_raw(raw, path).map(Some);
     }
     apply_container_datum_attrs(node, sim, path, &mut obj)?;
 
@@ -373,7 +382,20 @@ fn build(
         }
         apply_interval_flags(m, &node.rm_type);
     }
-    Ok(value)
+    Ok(Some(value))
+}
+
+/// Whether a leaf occurrence expresses a **value-less** ELEMENT: no datum part
+/// of its own, and a `/_null_flavour` family (master05 §ELEMENT). RM
+/// data_structures §ELEMENT `Inv_null_flavour_indicated` makes `value` and
+/// `null_flavour` mutually exclusive, so this is the only shape in which a
+/// null flavour can legitimately reach the builder.
+fn is_null_flavoured(sim: &SimNode) -> bool {
+    sim.attrs.is_empty()
+        && sim
+            .children
+            .get("_null_flavour")
+            .is_some_and(|c| c.occurrences.iter().any(|o| !o.is_empty()))
 }
 
 /// An interval assembled from bound CHILDREN (a WT tree whose
@@ -643,10 +665,16 @@ fn apply_rm_attr(
 /// Insert `child_value` into `parent` at the relative RM path `rel`,
 /// re-materialising the collapsed structural nodes it passes through
 /// (`master04 §Level Removal`).
+///
+/// A `None` `child_value` is a value-less null-flavoured ELEMENT (see
+/// [`build`]): the collapsed wrapper chain is still re-materialised and the
+/// ELEMENT's own `_`-attribute family applied, but no `value` is inserted
+/// (master05 §ELEMENT; RM data_structures §ELEMENT
+/// `Inv_null_flavour_indicated`).
 fn place(
     parent: &mut Map<String, Value>,
     rel: &[PathSegment],
-    child_value: Value,
+    child_value: Option<Value>,
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
@@ -681,7 +709,7 @@ fn place_rec(
     rel: &[PathSegment],
     i: usize,
     id_idx: Option<usize>,
-    child_value: Value,
+    child_value: Option<Value>,
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
@@ -701,7 +729,9 @@ fn place_rec(
         let Some(arr) = arr else { return Ok(()) };
         if last {
             // The child value is itself the array element (a container child).
-            let mut el = child_value;
+            let Some(mut el) = child_value else {
+                return Ok(());
+            };
             set_node_id(&mut el, node_id);
             arr.push(el);
         } else {
@@ -768,7 +798,9 @@ fn place_rec(
     // A single-valued (object) attribute.
     if last {
         let wraps_element = seg.attribute == "value";
-        cur.insert(seg.attribute.clone(), child_value);
+        if let Some(child_value) = child_value {
+            cur.insert(seg.attribute.clone(), child_value);
+        }
         if wraps_element {
             // The map receiving `value` is the compacted-away ELEMENT
             // wrapper; apply its `_` attribute family (master05 §ELEMENT).
