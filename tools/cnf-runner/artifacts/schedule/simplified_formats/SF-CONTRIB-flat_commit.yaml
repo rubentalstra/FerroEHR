@@ -30,7 +30,8 @@ id: SF-CONTRIB-flat_commit
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_CONTRIBUTION.commit_contribution
-capabilities: [SimplifiedFormats, ChangeSets]
+capabilities: [SimplifiedFormats]        # the verdict-bearing capability; the tier axis is OPTIONS
+exercises: [ChangeSets]                  # the CONTRIBUTION surface the case drives (no tier of its own)
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
   A CONTRIBUTION committed with the FLAT MIME type, whose canonical envelope
@@ -67,7 +68,7 @@ flow:
       # simplified Content-Type must NOT change.
       - { assert: instance_of, rm_type: CONTRIBUTION }
   - step: 2
-    call: get_composition_at_version     # SM I_EHR_COMPOSITION.get_composition_at_version
+    call: I_EHR_COMPOSITION.get_composition_at_version   # cross-interface: the anchor is I_EHR_CONTRIBUTION
     format: canonical-json
     with: { ehr_id: "${ehr_id}", version_uid: "${first_version_uid}" }
     expect: ok

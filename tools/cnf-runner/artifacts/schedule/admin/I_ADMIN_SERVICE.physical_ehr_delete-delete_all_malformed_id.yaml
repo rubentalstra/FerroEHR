@@ -50,7 +50,7 @@ applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 guards:
   - "ITS-REST Admin API is DEVELOPMENT-stage — docs/admin/Description.md §Status: \"This specification is in the `DEVELOPMENT` state\", and docs/overview/Preface.md §Conformance is \"tbd.\"; guarded until the Admin API stabilises"
   - "admin_ehr_delete_all realizes NO SM operation — SM i_admin_service.adoc §physical_ehr_delete takes a single `an_ehr_id: UUID [1]` and the I_ADMIN_ARCHIVE list operations archive rather than delete (register AMB-33); the `delete_all` variant anchor is a catalogue naming convention, never an SM claim"
-  - "the VALIDATE-THEN-ACT ordering step 3 checks has no released sentence and rests on the AMB-140 adjudication; a server that deleted the well-formed id and then reported 400 breaches no quoted rule"
+  - "the VALIDATE-THEN-ACT ordering step 2 checks rests on the AMB-140 adjudication — ITS-REST specifications/operations/admin_ehr_delete_all.yaml states only the subset semantics and parameters/query/ehr_id_Admin.yaml only that the selector is optional, so no released sentence orders validation against deletion; a server that deleted the well-formed id and then reported 400 breaches no quoted rule"
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id} — the well-formed companion that must survive
