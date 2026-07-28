@@ -26,11 +26,15 @@
 # is the only thing narrowing the result. Row order is unspecified (no ORDER
 # BY), so the expected uids are matched as a bag (QUERY master03 §ORDER BY).
 #
-# TODO: strengthen to a deterministic two-EHR discrimination (commit into a
-# second EHR in the same case, then assert the scoped read excludes it), the
-# same gap the non-deprecated sibling carries. Not authorable today: the case
-# surface has no capture alias, so a second `create_ehr` step rebinds
-# `${ehr_id}` and the first EHR becomes unreachable.
+# THE DISCRIMINATION IS TWO-EHR AND DETERMINISTIC: the flow mints a SECOND EHR
+# and commits a COMPOSITION into it before executing, so the server holds
+# content in two EHRs and the unscoped AQL selects over both. The bag equality
+# below names exactly the first EHR's ten uids, so a server that ignores the
+# header returns eleven rows and the row fails on the extra one — the
+# expectation cannot be met by an unscoped answer. (A single-EHR corpus could
+# only fail a server that returned FEWER rows.) The second EHR's content comes
+# from a different template on purpose: it is visible to the unscoped query
+# and belongs to no view of the scoped set.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_deprecated_get
 kind: functional
 component: QUERY
@@ -51,11 +55,20 @@ spec_refs:
 applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.blood_pressure]
+  templates: [cnf.opt.blood_pressure, cnf.opt.minimal_event]
   ehr: { commits: none }                    # mints ${ehr_id}
   commit: [cnf.set.query-bp-10]             # generated: 10 BP compositions
+data_sets: [cnf.composition.minimal_event.v1]
 flow:
-  - step: 1
+  - step: 1                                 # a SECOND EHR, so the scoped read has something to exclude
+    call: I_EHR_SERVICE.create_ehr
+    expect: created
+    capture: { second_ehr_id: created.ehr_id }
+  - step: 2                                 # content in the second EHR — an unscoped answer would carry it
+    call: I_EHR_COMPOSITION.create_composition
+    with: { ehr_id: "${second_ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+  - step: 3
     call: execute_ad_hoc_query
     variant: get_ehr_id_header_deprecated   # GET /query/aql, scope via openEHR-EHR-id
     with:
