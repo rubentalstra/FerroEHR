@@ -85,6 +85,7 @@
     "legacy-alt-formats-unsupported",
     "party-xml-supported",
     "sf-deprecated-types-unsupported",
+    "versioned-party-xml-unsupported",
     "xml-namespace-negotiated"
   ],
   "performance": {

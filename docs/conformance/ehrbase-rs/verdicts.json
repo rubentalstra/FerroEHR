@@ -18,6 +18,10 @@
       "passed"
     ],
     [
+      "TemplateExamples",
+      "passed"
+    ],
+    [
       "QueryProvisioning",
       "passed"
     ],
@@ -43,7 +47,7 @@
     ],
     [
       "Versioning",
-      "passed"
+      "failed"
     ],
     [
       "ArchetypeValidation",
@@ -143,11 +147,11 @@
     ],
     [
       "SimplifiedFormats",
-      "passed"
+      "failed"
     ],
     [
       "SmartAppLaunch",
-      "no_cases"
+      "passed"
     ],
     [
       "EhrDemographicSeparation",
@@ -173,11 +177,11 @@
   "profiles": [
     [
       "CORE",
-      "pass"
+      "fail"
     ],
     [
       "STANDARD",
-      "pass"
+      "fail"
     ],
     [
       "OPTIONS",
@@ -195,7 +199,7 @@
     }
   ],
   "coverage": {
-    "selected": 708,
-    "driven": 634
+    "selected": 747,
+    "driven": 673
   }
 }

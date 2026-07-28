@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "911ec784dff4ca9b",
+  "ixit_digest": "0fe63211a089ed4f",
   "outcomes": [
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_unfiltered",
@@ -148,7 +148,19 @@
       "rows_total": 1
     },
     {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_malformed_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset_repeated",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -206,6 +218,12 @@
       "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-audit_system_id_declared",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-datetime_lexical",
       "status": "passed",
       "rows_driven": 1,
@@ -261,6 +279,20 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-persistent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-prefer_absent",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-prefer_minimal",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -669,6 +701,24 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-prefer_absent",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "status 200 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-prefer_minimal",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "status 200 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-return_identifier",
       "status": "passed",
       "rows_driven": 1,
@@ -701,6 +751,20 @@
     {
       "case": "I_EHR_COMPOSITION.update_composition-xml",
       "format": "canonical-xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_composition_revision_history-two_versions",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_composition_revision_history-unknown_container",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1600,6 +1664,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-prefer_minimal",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-return_identifier",
       "status": "passed",
       "rows_driven": 1,
@@ -1649,6 +1720,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions_orderings",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-wrong_media",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2325,6 +2402,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
       "status": "passed",
       "rows_driven": 1,
@@ -2550,6 +2634,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-unknown_container",
       "status": "passed",
       "rows_driven": 1,
@@ -2735,6 +2826,52 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-two_versions",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-container_shape",
+      "format": "canonical-json",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
+    },
+    {
+      "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-unknown_container",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml",
+      "format": "canonical-xml",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "status 406 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -2760,6 +2897,13 @@
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-prefer_minimal",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3112,7 +3256,20 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.update_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.update_directory-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-prefer_minimal",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3168,6 +3325,13 @@
       "rows_total": 2
     },
     {
+      "case": "I_EHR_SERVICE.create_ehr-subject_key_ignores_type",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient",
       "status": "passed",
       "rows_driven": 1,
@@ -3181,6 +3345,12 @@
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_SERVICE.create_ehr-wrong_method",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3212,6 +3382,12 @@
     },
     {
       "case": "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_SERVICE.get_ehr-malformed_ehr_id",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3534,6 +3710,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_queryable-prefer_minimal",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_queryable-return_identifier",
       "status": "passed",
       "rows_driven": 1,
@@ -3671,6 +3854,29 @@
       "rows_total": 1
     },
     {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-bad_ehr",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions",
+      "format": "canonical-json",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "expected `updated`, observed `validation_failed`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "expected `updated`, observed `validation_failed`"
+        }
+      ]
+    },
+    {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -3799,6 +4005,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_param_and_header_agree",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_param_and_header_conflict",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
       "status": "passed",
       "rows_driven": 1,
@@ -3842,6 +4060,12 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_conflict",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4048,6 +4272,39 @@
     },
     {
       "case": "SIG-VERSION-verifiable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-CONTRIB-flat_commit",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-CONTRIB-flat_read",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-CONTRIB-structured_commit",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "context/start_time: expected present, is absent",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "context/start_time: expected present, is absent"
+        }
+      ]
+    },
+    {
+      "case": "SF-CONTRIB-structured_read",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4270,6 +4527,27 @@
       "rows_total": 1
     },
     {
+      "case": "SF-MAP-instruction_details",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-MAP-interval_event",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `created`, observed `validation_failed`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `created`, observed `validation_failed`"
+        }
+      ]
+    },
+    {
       "case": "SF-MAP-interval_reference_range",
       "status": "passed",
       "rows_driven": 13,
@@ -4400,6 +4678,27 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "SMART-DISCOVERY-document_shape",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SMART-RESOURCE_SCOPES-granted_scope_permits",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 3,
+      "rows_total": 3
+    },
+    {
+      "case": "SMART-RESOURCE_SCOPES-scope_deny_403",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
     },
     {
       "case": "I_ITS_REST_SYSTEM.options-conformance_manifest",

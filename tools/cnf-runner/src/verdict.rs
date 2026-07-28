@@ -44,6 +44,15 @@ pub enum Evidence {
     /// A selected gating case for the capability failed (a failed case marks
     /// every verdict-bearing capability it names Failed).
     Failed,
+    /// A selected gating case ERRORED (an inconclusive exchange — a status
+    /// mapping to no declared outcome, a transport fault, a step-resolution
+    /// failure) and none failed. Inconclusive is never a SUT failure
+    /// (`cnf-triage` law) but it must not be absorbed into a green
+    /// capability either: an errored row blocks `Passed` until the run is
+    /// clean (the 2026-07-28 posture run published CompositionOps `passed`
+    /// while both minimal-Prefer cases sat errored on a wire-visible
+    /// defect — luck, not design).
+    Inconclusive,
     /// Cases exist in the catalogue but none produced a gating pass/fail
     /// (all not-applicable / skipped / not driven / errored).
     NotEvidenced,
@@ -574,6 +583,9 @@ fn capability_evidence(
 
     if relevant.iter().any(|s| s.effective == Effective::Failed) {
         return Evidence::Failed;
+    }
+    if relevant.iter().any(|s| s.effective == Effective::Errored) {
+        return Evidence::Inconclusive;
     }
     if relevant.iter().any(|s| s.effective == Effective::Passed) {
         return Evidence::Passed;

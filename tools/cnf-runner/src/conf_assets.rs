@@ -31,6 +31,7 @@ const STYLE: &str = "<style>\n\
   .cell-label-dim { fill: #0b0b0b; font-size: 11px; }\n\
   .ev-passed { fill: #0072b2; }\n\
   .ev-failed { fill: #d55e00; }\n\
+  .ev-inconclusive { fill: #e69f00; }\n\
   .ev-not-evidenced { fill: #cbc9c2; }\n\
   .ev-unrealized { fill: #e8e6e0; }\n\
   .ev-no-cases { fill: #f4f2ec; }\n\
@@ -51,6 +52,7 @@ const STYLE: &str = "<style>\n\
     .cell-label-dim { fill: #e8e6e0; }\n\
     .ev-passed { fill: #3987e5; }\n\
     .ev-failed { fill: #e5484d; }\n\
+    .ev-inconclusive { fill: #f5a623; }\n\
     .ev-not-evidenced { fill: #4a4a47; }\n\
     .ev-unrealized { fill: #3a3a38; }\n\
     .ev-no-cases { fill: #2e2e2c; }\n\
@@ -82,6 +84,7 @@ fn evidence_encoding(evidence: Evidence) -> (&'static str, &'static str, &'stati
     match evidence {
         Evidence::Passed => ("ev-passed", "✓", "passed"),
         Evidence::Failed => ("ev-failed", "✕", "FAILED"),
+        Evidence::Inconclusive => ("ev-inconclusive", "?", "INCONCLUSIVE"),
         Evidence::NotEvidenced => ("ev-not-evidenced", "○", "not evidenced"),
         Evidence::Unrealized => ("ev-unrealized", "◇", "excused (unrealized)"),
         Evidence::NoCases => ("ev-no-cases", "∅", "no cases"),

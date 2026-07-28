@@ -28,7 +28,7 @@ component: DEMOGRAPHIC
 sm_operation: I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history
 capabilities: [PartyOperations, DemographicApi]
 profiles: [OPTIONS]
-ambiguities: [AMB-68, AMB-136]
+ambiguities: [AMB-68, AMB-161]   # AMB-161 = the pseudo-interface anchor (fixed_handling — gates); the SM-gap report AMB-136 stays header-cited only (finding 8, 2026-07-28)
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "authored from the RM REVISION_HISTORY class table + the released ITS-REST demographic operation files; master10 (DEMOGRAPHIC) is a stalled schedule stub — a coverage guide only, not the authority"
