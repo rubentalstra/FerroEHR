@@ -423,6 +423,47 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Conformance runner: a requirement the openEHR specification dates to a
+  release is now judged only against the servers that claim that release**
+  (#627, #628). Two rules the ITS-REST overview introduces at Release 1.1.0 —
+  that an `ETag` carrying a resource identifier must be weak (`W/"…"`), and
+  that `Location` is no longer returned on reads and deletes — used to be
+  enforced or waived by accident, depending on whether a case happened to
+  carry a version floor for some unrelated reason. Each rule now carries the
+  floor itself, so a target declaring an earlier ITS-REST release is still
+  driven for the operation and still judged on everything else, while a target
+  declaring 1.1.0 or later faces the rule everywhere it applies; a test
+  derives the affected set from the committed catalogue so no future binding
+  can escape it. Separately, the query resultSet's `ETag` is no longer
+  required to be PRESENT: the specification names the header without any
+  requirement keyword and its only strength anywhere is a SHOULD, so a server
+  that omits it is not failed — while a server that emits it must still emit
+  it in the weak form. Conformance verdicts for this product are unchanged (it
+  declares ITS-REST 1.1.0 and returns the header).
+
+- **Conformance runner: one operation is now sent one way** (#629). The runner
+  built request headers in two places — once for a case's own steps and once
+  for the preconditions a case needs — and the two disagreed, so the same
+  operation went on the wire differently depending on which path reached it
+  (a template upload was refused as a case and accepted as a precondition).
+  There is now a single header-construction path; a binding declares the
+  `Accept` it intends; and a refusal of that `Accept` is recorded as a named
+  outcome instead of vanishing into an unmapped status. The published
+  conformance report also gains a per-capability table showing how many cases
+  passed, failed, and came back inconclusive, so a divergence can no longer
+  hide behind an inconclusive exchange. A binding may now also declare the
+  release its wire first appeared in, and cases driving it are recorded
+  not-applicable — with that citation — for targets that declare an earlier
+  one.
+
+- **Conformance runner: a create asked for a minimal response may answer
+  either `201 Created` with an empty body or `204 No Content`** (#630). The
+  specification says an empty-bodied response SHOULD use `204`, and its
+  machine-readable artifacts declare `201` for creates; both are therefore
+  conformant, and the suite now judges both instead of leaving one of them an
+  inconclusive result. Updates are unchanged (`204` only, where both sources
+  agree).
+
 - **Web Template: a template that narrows a party to `PARTY_RELATED` now
   describes its party fields** (#600). When an operational template pins a
   party slot — a subject, a composer, a participation performer — to
