@@ -1,6 +1,6 @@
 ---
 name: item-tag-ops-location
-description: Where the ITEM_TAG spec text lives — RM common master07-tags + item_tag class, the 7 EHR-side ITS-REST tag ops/schemas/params, the header wrappers; and the total SM/CNF/ITS-XML silence
+description: Where the ITEM_TAG spec text lives — RM common master07-tags + item_tag class, the 7 EHR-side + 16 demographic-side ITS-REST tag ops/schemas/params, the header wrappers; and the total SM/CNF/ITS-XML silence
 metadata:
   type: reference
 ---
@@ -43,6 +43,34 @@ metadata:
   response header files `headers/openehr-*item-tag.yaml`.
 - There is NO tag prose in `docs/ehr/Description.md` (it is a stub — see
   [[ehr-status-ops-location]]).
+
+## The DEMOGRAPHIC tag half (group 13, `demographic.openapi.yaml` L93–135)
+- **16** path-method pairs (NOT 13): `GET /demographic/tags` (1) + per party
+  subtype `person|agent|group|organisation|role` × {GET,PUT `/…/{uid_based_id}/
+  tags`, DELETE `/…/tags/{key}`} = 15.
+- Ops `{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`
+  are **byte-identical mod type-name across all 5 subtypes** (verified by
+  sed-normalized diff); so are the 10 `200_<T>_ItemTagList_{retrieved,updated}
+  .yaml` responses and the 5 `schemas/demographic/ItemTagOf<T>.yaml`.
+- Structural mirror of the EHR twin **minus `ehr_id`**: `person_tags_get` ≡
+  `composition_tags_get`, `_update` ≡ `composition_tags_update`, `_delete` ≡
+  `composition_tags_delete`, `demographic_tags_get` ≡ `ehr_tags_get`.
+  404 files swap to `404_unknown_uid_based_id[_or_key].yaml`.
+- Deltas worth remembering: `demographic_tags_get` has **no scope param at
+  all** (server-wide list) yet its description still says "within given EHR",
+  and it declares the PERSON-specific list schema; `ItemTagOf<Party>` examples
+  use `owner_id.type: SYSTEM` (EHR side uses `EHR`) and `target_path: ""`;
+  `person_tags_update` says "VERSIONED_OBJECT.uid.value" where get/delete say
+  "VERSIONED_PARTY.uid.value"; all 5 `<t>_update.yaml` declare ONLY
+  `openehr-version-item-tag` (missing `openehr-item-tag`) though their prose
+  names both — the composition/ehr_status updates declare both.
+- **RM has NO demographic-side tag anchor**: `EHR.tags` (`RM/docs/UML/classes/
+  org.openehr.rm.ehr.ehr.adoc` L53-55, prose-only "Tag `_target_` values can
+  only be within the same EHR", NO `Tags_valid` invariant) is the only
+  containment; grep of `RM/docs/demographic/` + all `org.openehr.rm.
+  demographic.*.adoc` = zero tag hits. RM `ITEM_TAG.target` is a plain
+  `UID_BASED_ID` (OAS wraps it in `UObjectRefOfUidBasedId` — RM wins),
+  target types unrestricted, `owner_id` "such as EHR" (open list).
 
 ## Total silences (verified by grep across the whole vendored tree)
 - **SM**: zero ITEM_TAG / tag-operation anchor anywhere in `SM/docs/`
