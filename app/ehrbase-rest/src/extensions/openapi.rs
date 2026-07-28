@@ -101,7 +101,24 @@ const SECURITY_SCHEME: &str = "openehr_auth";
                        ITS-REST contract version is the document-level `x-openehr-its-rest` \
                        extension. Everything outside the standardised ITS-REST groups is OUR OWN \
                        EXTENSION — no openEHR spec governs it — and every such operation says so \
-                       in its own description."
+                       in its own description.\n\n\
+                       **Canonical-XML lineage selection (our own extension).** openEHR publishes \
+                       canonical XML in two wire lineages that differ only by the document's root \
+                       namespace: `http://schemas.openehr.org/v1` (ITS-XML Release-1.0.2, the \
+                       STABLE bundle) and `http://schemas.openehr.org/v2` (ITS-XML Release-2.0.0, \
+                       TRIAL upstream). Every operation whose media type is `application/xml` \
+                       accepts a `version` media-type parameter selecting one — \
+                       `Accept: application/xml; version=2` for the response, \
+                       `Content-Type: application/xml; version=2` to declare a request payload. \
+                       Omitting it (or sending `version=1`) means the v1 default, so existing XML \
+                       clients are unaffected; a v2 response is labelled \
+                       `Content-Type: application/xml; version=2`. No openEHR specification \
+                       governs the parameter — the ITS-REST text predates the dual bundles — but \
+                       its refusal branches are the released ones: an unrecognized `version` on \
+                       `Accept` is `406 Not Acceptable` and on `Content-Type` is `415 Unsupported \
+                       Media Type` (`Resources.md` §\"XML Format\"). Operational templates \
+                       (`.../definition/template/adl1.4/...`) are always served in the v1 lineage \
+                       and ignore the parameter."
     ),
     servers(
         (url = "{origin}",
