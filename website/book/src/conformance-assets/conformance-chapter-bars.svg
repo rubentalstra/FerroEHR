@@ -44,55 +44,55 @@ text { fill: #c3c2b7; }
 <text x="24" y="28" class="title">Schedule outcomes by chapter — ehrbase-rs 3.11.0</text>
 
 <rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="42" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="121.2" y="49" class="muted">failed</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="200.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" class="bar-na"/><text x="286.8" y="49" class="muted">N/A (cited)</text><text x="166" y="81" text-anchor="end">EHR</text>
-<rect x="174" y="64" width="616.2962962962963" height="26" class="bar-passed"/>
+<rect x="174" y="64" width="616.7272727272727" height="26" class="bar-passed"/>
 
-<text x="482.14814814814815" y="81" class="seg-label" text-anchor="middle">208</text><rect x="790.2962962962963" y="64" width="23.703703703703702" height="26" class="bar-na"/>
+<text x="482.3636363636364" y="81" class="seg-label" text-anchor="middle">212</text><rect x="790.7272727272727" y="64" width="23.272727272727273" height="26" class="bar-na"/>
 
-<text x="802.1481481481482" y="81" class="seg-label-dim" text-anchor="middle">8</text><text x="822" y="81" class="muted">216</text>
+<text x="802.3636363636364" y="81" class="seg-label-dim" text-anchor="middle">8</text><text x="822" y="81" class="muted">220</text>
 <text x="166" y="115" text-anchor="end">Definitions</text>
-<rect x="174" y="98" width="106.66666666666666" height="26" class="bar-passed"/>
+<rect x="174" y="98" width="197.8181818181818" height="26" class="bar-passed"/>
 
-<text x="227.33333333333331" y="115" class="seg-label" text-anchor="middle">36</text><rect x="280.66666666666663" y="98" width="47.407407407407405" height="26" class="bar-na"/>
+<text x="272.9090909090909" y="115" class="seg-label" text-anchor="middle">68</text><rect x="371.8181818181818" y="98" width="49.45454545454545" height="26" class="bar-na"/>
 
-<text x="304.3703703703703" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="336.074074074074" y="115" class="muted">52</text>
+<text x="396.54545454545456" y="115" class="seg-label-dim" text-anchor="middle">17</text><text x="429.27272727272725" y="115" class="muted">85</text>
 <text x="166" y="149" text-anchor="end">Query</text>
-<rect x="174" y="132" width="91.85185185185185" height="26" class="bar-passed"/>
+<rect x="174" y="132" width="90.18181818181819" height="26" class="bar-passed"/>
 
-<text x="219.92592592592592" y="149" class="seg-label" text-anchor="middle">31</text><text x="273.85185185185185" y="149" class="muted">31</text>
+<text x="219.0909090909091" y="149" class="seg-label" text-anchor="middle">31</text><text x="272.1818181818182" y="149" class="muted">31</text>
 <text x="166" y="183" text-anchor="end">Demographic</text>
-<rect x="174" y="166" width="47.407407407407405" height="26" class="bar-passed"/>
+<rect x="174" y="166" width="96" height="26" class="bar-passed"/>
 
-<text x="197.7037037037037" y="183" class="seg-label" text-anchor="middle">16</text><rect x="221.4074074074074" y="166" width="35.55555555555556" height="26" class="bar-na"/>
+<text x="222" y="183" class="seg-label" text-anchor="middle">33</text><rect x="270" y="166" width="34.90909090909091" height="26" class="bar-na"/>
 
-<text x="239.18518518518516" y="183" class="seg-label-dim" text-anchor="middle">12</text><text x="264.96296296296293" y="183" class="muted">28</text>
+<text x="287.45454545454544" y="183" class="seg-label-dim" text-anchor="middle">12</text><text x="312.9090909090909" y="183" class="muted">45</text>
 <text x="166" y="217" text-anchor="end">Admin</text>
-<rect x="174" y="200" width="5.925925925925926" height="26" class="bar-passed"/>
+<rect x="174" y="200" width="20.363636363636363" height="26" class="bar-passed"/>
 
-<rect x="179.92592592592592" y="200" width="47.407407407407405" height="26" class="bar-na"/>
+<rect x="194.36363636363637" y="200" width="46.54545454545455" height="26" class="bar-na"/>
 
-<text x="203.62962962962962" y="217" class="seg-label-dim" text-anchor="middle">16</text><text x="235.33333333333331" y="217" class="muted">18</text>
+<text x="217.63636363636365" y="217" class="seg-label-dim" text-anchor="middle">16</text><text x="248.90909090909093" y="217" class="muted">23</text>
 <text x="166" y="251" text-anchor="end">Messaging</text>
-<rect x="174" y="234" width="41.48148148148148" height="26" class="bar-na"/>
+<rect x="174" y="234" width="40.72727272727273" height="26" class="bar-na"/>
 
-<text x="194.74074074074073" y="251" class="seg-label-dim" text-anchor="middle">14</text><text x="223.48148148148147" y="251" class="muted">14</text>
+<text x="194.36363636363637" y="251" class="seg-label-dim" text-anchor="middle">14</text><text x="222.72727272727272" y="251" class="muted">14</text>
 <text x="166" y="285" text-anchor="end">Content validation</text>
-<rect x="174" y="268" width="364.4444444444444" height="26" class="bar-passed"/>
+<rect x="174" y="268" width="357.8181818181818" height="26" class="bar-passed"/>
 
-<text x="356.2222222222222" y="285" class="seg-label" text-anchor="middle">123</text><text x="546.4444444444443" y="285" class="muted">123</text>
+<text x="352.9090909090909" y="285" class="seg-label" text-anchor="middle">123</text><text x="539.8181818181818" y="285" class="muted">123</text>
 <text x="166" y="319" text-anchor="end">Simplified formats</text>
-<rect x="174" y="302" width="168.88888888888889" height="26" class="bar-passed"/>
+<rect x="174" y="302" width="165.8181818181818" height="26" class="bar-passed"/>
 
-<text x="258.44444444444446" y="319" class="seg-label" text-anchor="middle">57</text><rect x="342.8888888888889" y="302" width="2.962962962962963" height="26" class="bar-na"/>
+<text x="256.9090909090909" y="319" class="seg-label" text-anchor="middle">57</text><rect x="339.8181818181818" y="302" width="2.909090909090909" height="26" class="bar-na"/>
 
-<text x="353.8518518518519" y="319" class="muted">58</text>
+<text x="350.72727272727275" y="319" class="muted">58</text>
 <text x="166" y="353" text-anchor="end">Security &amp; privacy</text>
-<rect x="174" y="336" width="17.77777777777778" height="26" class="bar-passed"/>
+<rect x="174" y="336" width="17.454545454545453" height="26" class="bar-passed"/>
 
-<text x="199.77777777777777" y="353" class="muted">6</text>
+<text x="199.45454545454544" y="353" class="muted">6</text>
 <text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="17.77777777777778" height="26" class="bar-passed"/>
+<rect x="174" y="370" width="17.454545454545453" height="26" class="bar-passed"/>
 
-<rect x="191.77777777777777" y="370" width="5.925925925925926" height="26" class="bar-na"/>
+<rect x="191.45454545454544" y="370" width="5.818181818181818" height="26" class="bar-na"/>
 
-<text x="205.7037037037037" y="387" class="muted">8</text>
+<text x="205.27272727272725" y="387" class="muted">8</text>
 </svg>
