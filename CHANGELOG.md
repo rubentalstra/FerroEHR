@@ -29,7 +29,11 @@ workflow refuses a tag that has no matching section here.
   result may rest on a route openEHR does not specify, and the runner now
   fails validation if that line is ever crossed (a new `realization-scope`
   gate, with the binding's route required to appear in the published
-  extension-surface declaration).
+  extension-surface declaration). Such cases are also skipped, with a cited
+  reason, for any system under test whose conformance statement does not claim
+  the capability — a route openEHR does not specify is an offer only the party
+  making it answers for, so the published comparison against other products
+  never charges them for routes they never offered.
 
 - **Conformance runner: a certification claim can no longer be hollow** (#622).
   `cnf-runner validate` now reads the committed party statements beside the

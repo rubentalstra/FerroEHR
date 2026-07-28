@@ -59,8 +59,11 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   verdict only. The `realization-scope` gate fences it: the family and the
   request-path shape must resolve in the served_extensions axis, the
   adjudication must resolve in the register, and the matrix `realization`
-  marker must match what the cases actually drive (both directions). Where
-  nothing is served, the party STATEMENT drops the claim — the matrix row
+  marker must match what the cases actually drive (both directions). Such a
+  case is ALSO party-scoped at selection (`run.rs`): a party claiming none of
+  its capabilities gets not-applicable-with-citation, because a route openEHR
+  does not specify is an offer only the party that CLAIMS it answers for.
+  Where nothing is served, the party STATEMENT drops the claim — the matrix row
   stays, because the matrix is the Profiles book as data, not a claim list.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
