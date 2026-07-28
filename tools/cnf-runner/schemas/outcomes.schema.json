@@ -12,6 +12,7 @@
       "updated",
       "deleted",
       "stored",
+      "accepted",
       "already_exists",
       "not_found",
       "version_not_found",
@@ -28,7 +29,9 @@
       "invalid_query",
       "timeout",
       "unauthenticated",
-      "forbidden"
+      "forbidden",
+      "bad_request",
+      "method_not_allowed"
     ]
   },
   "required": [
@@ -38,6 +41,7 @@
     "updated",
     "deleted",
     "stored",
+    "accepted",
     "already_exists",
     "not_found",
     "version_not_found",
@@ -54,7 +58,9 @@
     "invalid_query",
     "timeout",
     "unauthenticated",
-    "forbidden"
+    "forbidden",
+    "bad_request",
+    "method_not_allowed"
   ],
   "additionalProperties": {
     "type": "object",
