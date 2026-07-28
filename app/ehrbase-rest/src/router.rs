@@ -209,6 +209,27 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // the four always-on standardised groups plus `/admin` when its group is
     // enabled. Its identity/conformance fields come from `cfg.server.identity`
     //.
+    //
+    // NOTE (settled decision, registered as `AMB-158` in
+    // `tools/cnf-runner/artifacts/registers/ambiguities.yaml`): the list
+    // carries ONLY the standardised ITS-REST groups —
+    // the extension families this server also serves (terminology, tenancy,
+    // event subscriptions, the FHIR connector, management, …) are deliberately
+    // absent. No released sentence says what `endpoints` must contain: the
+    // System API chapter is a stub with no field semantics
+    // (`docs/specs/openehr/ITS-REST/specifications/docs/system/Description.md`
+    // — Purpose, Related Documents and Status only), and the member itself is
+    // defined only in the stalled OAS (`schemas/others/Options.yaml`:
+    // `array of string`, no description, one example listing exactly the
+    // released groups), which is codegen input and not an oracle. Two reasons
+    // for the omission: the operation's stated job is "exposing service
+    // capabilities for a conformance manifest", so a non-openEHR path listed
+    // there would sit inside a conformance claim; and the extension surface has
+    // its own honest declaration layers — the served OpenAPI document (every
+    // extension operation flagged our-own-extension) and the published
+    // Conformance Statement's "Additional non-openEHR surface" section. The
+    // list still tracks what is actually mounted, so it never advertises a
+    // group that answers 404.
     let mut endpoints = vec![
         "/ehr".to_owned(),
         "/definition".to_owned(),

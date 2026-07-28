@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write;
 
 use crate::model::capability::CapabilityMatrix;
+use crate::model::wire_surface::ServedExtension;
 use crate::party::{OutcomeStatus, Results, Statement};
 use crate::verdict::{Evidence, ProfileVerdict, SecBasicVerdict, VerdictReport};
 use crate::vocab::{Family, FormatName, Tier};
@@ -177,9 +178,19 @@ pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
 }
 
 /// Render the conformance statement (`CONFORMANCE_STATEMENT.md`): the `SDoC`
-/// text, the claims, the computed verdicts, and the attestation.
+/// text, the claims, the declared non-openEHR surface, the computed verdicts,
+/// and the attestation.
+///
+/// `served_extensions` is the catalogue's outward wire-surface axis
+/// (`vocab/wire_surface.yaml`); it is rendered verbatim as a declaration and
+/// never enters a verdict. An empty slice renders no section at all — a party
+/// that serves nothing beyond the openEHR resource set has nothing to declare.
 #[must_use]
-pub fn render_statement(statement: &Statement, verdicts: &VerdictReport) -> String {
+pub fn render_statement(
+    statement: &Statement,
+    verdicts: &VerdictReport,
+    served_extensions: &[ServedExtension],
+) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "# Conformance Statement (SDoC)\n");
     let _ = writeln!(
@@ -213,6 +224,9 @@ pub fn render_statement(statement: &Statement, verdicts: &VerdictReport) -> Stri
     if !statement.options.is_empty() {
         let _ = writeln!(out, "Options declared: {}\n", join_options(statement));
     }
+
+    // ── the outward surface (a declaration, never a claim) ──────────────────
+    write_served_extensions(&mut out, statement, served_extensions);
 
     // ── the computed verdicts ───────────────────────────────────────────────
     let _ = writeln!(out, "## Verdicts\n");
@@ -260,6 +274,49 @@ pub fn render_statement(statement: &Statement, verdicts: &VerdictReport) -> Stri
     }
 
     out
+}
+
+/// The statement's "Additional non-openEHR surface" section: the outward
+/// wire-surface axis rendered as a declaration — family, routes, and the
+/// configuration that enables it — under release-pinned wording that puts the
+/// whole surface outside every conformance claim in the document. Nothing is
+/// written when the party declares no extension family.
+fn write_served_extensions(
+    out: &mut String,
+    statement: &Statement,
+    served_extensions: &[ServedExtension],
+) {
+    if served_extensions.is_empty() {
+        return;
+    }
+    let _ = writeln!(out, "## Additional non-openEHR surface\n");
+    let _ = writeln!(
+        out,
+        "Beside the openEHR resources of ITS-REST {}, this product serves the route \
+         families below. **None of them is part of any conformance claim in this \
+         statement**: no openEHR specification governs them, no conformance case \
+         exercises them, and no verdict below depends on them. They are declared here \
+         so a reader of this document learns the surface exists rather than \
+         discovering it on the wire. Paths are the default deployment spelling; a \
+         non-default API base path moves the base-path-relative ones.\n",
+        statement
+            .spec_versions
+            .get(crate::vocab::SpecComponent::ItsRest)
+            .unwrap_or("(unstated)"),
+    );
+    let _ = writeln!(out, "| Family | Routes | Enabled by |");
+    let _ = writeln!(out, "| --- | --- | --- |");
+    for extension in served_extensions {
+        let routes: Vec<String> = extension.routes.iter().map(|r| format!("`{r}`")).collect();
+        let _ = writeln!(
+            out,
+            "| {} | {} | {} |",
+            extension.family,
+            routes.join("<br>"),
+            extension.config_gate,
+        );
+    }
+    let _ = writeln!(out);
 }
 
 /// Render the certificate (`CONFORMANCE_CERTIFICATE.md`), modeled on the CNF
@@ -716,10 +773,32 @@ mod tests {
 
     #[test]
     fn statement_renders_verdicts_and_attestation() {
-        let text = render_statement(&statement(), &verdicts());
+        let text = render_statement(&statement(), &verdicts(), &[]);
         assert!(text.ends_with('\n'));
         assert!(text.contains("We declare conformance."));
         assert!(text.contains("CORE"));
+        // No extensions declared → no section at all.
+        assert!(!text.contains("Additional non-openEHR surface"));
+    }
+
+    /// The outward axis renders as a declaration: the family, its routes and
+    /// its gate, under wording that says it is in no conformance claim.
+    #[test]
+    fn statement_declares_the_non_openehr_surface() {
+        let served: Vec<ServedExtension> = serde_json::from_value(serde_json::json!([
+            { "family": "management", "routes": ["GET /management/info"],
+              "config_gate": "management.enabled (default off)",
+              "spec_silence": "no released clause governs the URI space beyond the resource set",
+              "never_gates": true }
+        ]))
+        .unwrap();
+        let text = render_statement(&statement(), &verdicts(), &served);
+        assert!(text.contains("## Additional non-openEHR surface"));
+        assert!(text.contains("ITS-REST 1.1.0"));
+        assert!(text.contains(
+            "| management | `GET /management/info` | management.enabled (default off) |"
+        ));
+        assert!(text.contains("None of them is part of any conformance claim"));
     }
 
     #[test]
