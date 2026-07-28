@@ -52,7 +52,7 @@ spec_refs:
   - "ITS-REST query Request.md §Common Headers and Query Parameters"
   - "ITS-REST query Query_types.md §Single EHR queries, §Population queries"
   - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
-applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
 requires:
   server: any
   templates: [cnf.opt.blood_pressure, cnf.opt.minimal_event]

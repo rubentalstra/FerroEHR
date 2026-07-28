@@ -38,7 +38,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §Datetime format"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
   - "RM data_types §DV_DATE_TIME"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

@@ -64,7 +64,7 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses §Authentication and authorization"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_DEFINITION_ADL14.list_opts"
-applies: { its_rest: ">=1.1.0" }
+applies: { its_rest: ">=1.1.0" }   # SMART on openEHR first ships in Release-1.1.0 — ITS-REST docs/smart_app_launch/master00-amendment_record.adoc §ITS_REST Release 1.1.0 (SPECITS-69)
 guards:
   - "applies only to a deployment running the CDR's SMART resource-server role — the specification is config-gated and DEVELOPMENT-state (ITS-REST docs/smart_app_launch/manifest_vars.adoc `:spec_status: DEVELOPMENT`); the party declares the role by declaring an ixit `smart` lane"
   - "rows 2-4 apply only to a Platform advertising the `openehr-permission-v1` capability (ITS-REST docs/smart_app_launch/master04-service_discovery.adoc §Capabilities), the declaration that its scope layer decides an ungranted resource family"

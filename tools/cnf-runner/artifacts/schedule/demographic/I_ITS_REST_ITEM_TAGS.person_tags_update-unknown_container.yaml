@@ -37,7 +37,7 @@ spec_refs:
   - "ITS-REST person_tags_update.yaml §description"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "BASE base_types master05 §Identification"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # the Demographic API arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-70)
 formats: [canonical-json]
 requires: { server: any }
 flow:

@@ -32,7 +32,7 @@ description: "Update a COMPOSITION without the If-Match precondition"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §If-Match and accidental overwrites"
   - "SM openehr_platform §I_EHR_COMPOSITION.update_composition"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

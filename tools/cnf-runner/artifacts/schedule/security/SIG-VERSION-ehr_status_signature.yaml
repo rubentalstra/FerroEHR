@@ -21,7 +21,7 @@ spec_refs:
   - "RM common §change_control (Digital Signature: ORIGINAL_VERSION.signature over the canonical form — each Version of any logical item)"
   - "ITS-REST overview Resources.md §Resource identification (VERSIONED_EHR_STATUS / its contained VERSION instances)"
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "not-applicable when the SUT declares no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
 requires:

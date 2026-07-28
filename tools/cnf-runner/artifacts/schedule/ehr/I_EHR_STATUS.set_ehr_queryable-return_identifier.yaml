@@ -33,7 +33,7 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses (Prefer only identifier)"
   - "ITS-REST overview Requests_and_responses (Representation details negotiation)"
   - "SM openehr_platform §I_EHR_STATUS.set_ehr_queryable"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # `Prefer: return=identifier` arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-50) + Requests_and_responses.md §Prefer only identifier
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}

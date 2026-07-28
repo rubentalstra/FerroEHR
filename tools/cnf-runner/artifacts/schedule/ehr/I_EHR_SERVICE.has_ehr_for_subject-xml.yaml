@@ -58,7 +58,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.has_ehr_for_subject"
   - "ITS-REST overview Resources.md §Data representation"
   - "ITS-REST overview Resources.md §XML Format"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "Canonical-XML support for this resource family is statement-declared, not spec-mandated — the published XSDs declare no document element for EHR and ITS-REST overview Resources.md §Data representation leaves the format to the service, so offering and refusing are both conformant (register AMB-167)"
 formats: [canonical-xml]

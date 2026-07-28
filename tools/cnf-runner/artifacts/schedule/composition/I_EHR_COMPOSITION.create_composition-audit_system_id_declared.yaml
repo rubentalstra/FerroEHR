@@ -39,7 +39,7 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses §openehr-version and openehr-audit-details"
   - "RM common §change_control (AUDIT_DETAILS.system_id)"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # the audit-details `system_id` attribute arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECPR-472)
 guards:
   - "the identity half is only checkable against a party declaration — no released ITS-REST operation discloses a server's configured system identifier, so a party whose ixit omits system_id records this case not-applicable (ITS-REST overview Requests_and_responses §openehr-version and openehr-audit-details states the MUST but no read surface for the value)"
 requires:
