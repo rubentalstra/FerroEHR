@@ -42,7 +42,14 @@ outcomes:
       Location: absent                    # read — overview §Location / §Deprecated headers
   ok_empty: { status: 204 }               # version extant at the requested time is a logical delete (204_deleted_at_time.yaml)
   not_found: { status: 404 }              # unknown ehr_id, unknown versioned_object_uid, or no version at the requested time
-  validation_failed:
+  bad_request:
+    # The kind is `bad_request`, not `validation_failed`: the 2026-07-28
+    # schedule release (#544) added it for the malformed-REQUEST family whose
+    # meaning quotes the very row cited below, while `validation_failed` means
+    # 422 — well-formed content that is semantically invalid — and was only
+    # borrowed here while the closed taxonomy had no malformed-request kind.
+    # The wire status is unchanged (400 before and after).
+    #
     # A `version_at_time` outside the extended ISO 8601 grammar the DOCS TEXT
     # makes a MUST (overview Resources.md §Datetime format: "HTTP query
     # parameters and path segments that are dates, datetimes, or times, MUST

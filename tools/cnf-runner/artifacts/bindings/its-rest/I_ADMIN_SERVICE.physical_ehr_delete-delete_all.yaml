@@ -30,16 +30,37 @@
 #   and responses/204_deleted_hard.yaml: "`204 No Content` is returned when the
 #   requested operation succeeded and the resource(s) identified by the request
 #   parameters has been physically deleted (i.e. hard-delete)".
-# The 202 is carried as `alt_status` of the same logical kind (fulfilled, no
-# content) — stated openly in register AMB-139, which also records that 202 is
+# THE ASYNCHRONOUS ARM IS ITS OWN NAMEABLE KIND (`accepted`, added by the
+# 2026-07-28 schedule release), AND THE ABSORPTION IS KEPT ALONGSIDE IT ON
+# PURPOSE. The quoted sentence is a MAY on the SERVICE, not a choice a client
+# can make, so:
+#   * `accepted` (202) is DECLARED, so a case that could drive the async arm
+#     names it instead of hiding inside a success alias;
+#   * `ok_empty` KEEPS `alt_status: [202]`, because every case here asserts
+#     that a deletion HAPPENED and must still pass against a conformant server
+#     that answers 202 — dropping the alias would turn the released MAY into a
+#     catalogue MUST-NOT and REFUTE an asynchronous implementation.
+# The overlap (two kinds over one status) is the documented #557 tie-break
+# pattern — expectation-driven classification — not an ambiguity. No case can
+# FORCE the async arm: it is a service-side execution choice with no request
+# form behind it, so the branch stays declared-but-unexercised in
+# vocab/wire_surface.yaml (the AMB-140 / AMB-159 pattern for a declared branch
+# whose trigger the release withholds). Register AMB-139 records that 202 is
 # absent from the overview's own status-code table and legalized by that
-# table's "Additional status codes MAY be used" clause. Under this absorption a
-# case passes on either code and none can require or distinguish the async
-# branch; the 2026-07-28 schedule release (#544) added the `accepted` kind that
-# makes the branch nameable.
-# TODO: declare the 202 as its own `accepted` outcome here and on
-# I_ADMIN_SERVICE.physical_ehr_delete, and give the branch a case, retiring the
-# `admin-delete-async-acceptance-branch` wire_surface exception.
+# table's "Additional status codes MAY be used" clause.
+#
+# THE MALFORMED-SELECTOR REFUSAL (`bad_request`, 400). DOCS TEXT
+# (docs/overview/Requests_and_responses.md §"HTTP status codes", the 400 row
+# verbatim): "The service cannot or will not process the request due to
+# something that is perceived to be a client error (e.g., malformed request
+# syntax, syntactically invalid content)", with the clause below the table —
+# "Status code `400` indicates normally a bad request, as well as a generic
+# client-side error, used when no other `4xx` error code is appropriate". The
+# selector is an EHR identifier (parameters/query/ehr_id_Admin.yaml) and SM
+# i_admin_service.adoc §physical_ehr_delete types it `an_ehr_id: UUID [1]`, so
+# a token that is no identifier at all is syntactically invalid content. The
+# ORDERING half — validate the whole list, then act — has no released sentence
+# and is adjudicated in register AMB-140.
 #
 # THE `ehr_id` QUERY PARAMETER IS OPTIONAL AND MEANS "SUBSET":
 #   operations/admin_ehr_delete_all.yaml: "Deletes all or multiple EHRs, or a
@@ -75,6 +96,11 @@ request:
 outcomes:
   ok_empty:
     status: 204                           # 204_deleted_hard.yaml (synchronous hard delete)
-    alt_status: [202]                     # the operation's own async sentence; same logical kind (register AMB-139)
+    alt_status: [202]                     # the operation's own async sentence; a deletion-happened case must not refute an async server (register AMB-139)
+  accepted:
+    status: 202                           # 202.yaml — "returned when the requested operation has been accepted for processing, but processing has not been completed or may not have started"
+  bad_request:
+    status: 400                           # §HTTP status codes row 400 — a selector value that is no identifier at all
+    body: error_loose                     # §HTTP status codes — 4xx detail is a MAY under Prefer: return=representation
   not_found:
     status: 404                           # responses/404.yaml — the GENERIC 404 (not 404_unknown_ehr_id)

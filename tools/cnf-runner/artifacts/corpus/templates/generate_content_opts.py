@@ -990,6 +990,16 @@ def build_all():
     T["ecc_history_events_cardinality"] = lambda k: structural_history(k, events_card=cardinality(3, 5))
     T["ecc_history_summary_existence"] = lambda k: structural_history(k, summary_exist=(1, 1))
     T["ecc_item_structure_type_narrowing"] = lambda k: evaluation_template(k, "ITEM_TREE")
+    # The Simplified-Formats INTERVAL_EVENT carrier: the same structural_event
+    # skeleton, narrowed to the OTHER concrete EVENT subtype. It is not an
+    # `ecc_` structural case — it exists so the ITS-REST simplified_formats
+    # master05-rm_mapping §INTERVAL_EVENT rows (`/width`, `/math_function`,
+    # `|sample_count`) are reachable through a FLAT commit, which needs the
+    # CONSTRAINED type to be INTERVAL_EVENT. `width`/`math_function` stay
+    # unconstrained on purpose (as `time` does on the POINT_EVENT siblings):
+    # the master05 tables make an RM-mandatory attribute addressable even where
+    # the compacted web template carries no child for it.
+    T["sf_interval_event"] = lambda k: structural_event(k, events_slot_type="INTERVAL_EVENT")
     T["ecc_observation_state_protocol_existence"] = lambda k: structural_observation_state_protocol(k)
 
     return T
