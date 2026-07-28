@@ -79,6 +79,13 @@ cnf.composition.minimal_event.v1:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.composition.minimal_event.comma_fraction:
+  source: fixtures/composition/minimal_event.comma_fraction.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "authored 2026-07-29 for the comma-decimal-sign lexical case: minimal_event.v1 with the EVENT_CONTEXT.start_time fraction rendered with the ISO 8601 COMMA decimal sign (BASE iso8601_date_time value form [(,|.)sss] + is_decimal_sign_comma(); AMB-171 records the comma as settled-legal), extended offset kept"
 cnf.composition.minimal_event.v2:
   source: fixtures/composition/minimal_event.v2.json
   format: canonical-json
