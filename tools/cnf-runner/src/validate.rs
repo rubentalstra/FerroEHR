@@ -2563,7 +2563,7 @@ h|*1..1*\n\
                 "pinned row {name} must use the reserved pseudo-interface prefix"
             );
             assert!(!source.trim().is_empty(), "pinned row {name} has no source");
-            assert!(seen.insert(name), "pinned row {name} is listed twice");
+            assert!(seen.insert(*name), "pinned row {name} is listed twice");
             interfaces.insert(op.interface().to_owned());
         }
         assert!(
