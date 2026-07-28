@@ -17,6 +17,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Canonical XML: choose the openEHR schema namespace per request** (#196).
+  openEHR publishes its XML schemas in two lineages that differ only by the
+  namespace a document declares — `http://schemas.openehr.org/v1` (the stable
+  release) and `http://schemas.openehr.org/v2` (the newer, trial release). You
+  can now pick one with a `version` parameter on the XML media type:
+  `Accept: application/xml; version=2` returns the v2 namespace, and
+  `Content-Type: application/xml; version=2` declares a v2 request payload. A
+  v2 response is labelled `Content-Type: application/xml; version=2`. Nothing
+  changes for existing clients: omitting the parameter (or sending
+  `version=1`) serves the v1 namespace under a plain
+  `Content-Type: application/xml`, exactly as before, and request payloads in
+  either namespace have always been accepted. Asking for a namespace the
+  server does not serve is `406 Not Acceptable` on `Accept` and `415
+  Unsupported Media Type` on `Content-Type`. Operational-template XML
+  (`…/definition/template/adl1.4/{template_id}`) is always v1 and ignores the
+  parameter. The parameter is an EHRbase-rs extension — the openEHR REST
+  specification predates the two lineages and defines no way to select one.
+
 - **Conformance coverage: the ITEM_TAG routes are now measured** (#288). All
   twenty-three released tag operations — the EHR-wide and demographic-wide
   listings, the COMPOSITION and EHR_STATUS families, and the five demographic
