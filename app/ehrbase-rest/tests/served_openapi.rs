@@ -261,7 +261,8 @@ async fn versioned_writes_document_if_match_and_412() {
 /// success response, the `Prefer`-conditional 201 body as a named example
 /// pair, and a UUID-only `ehr_id`.
 ///
-/// The branches are the released ITS-REST text, not the stalled OAS:
+/// The branches are the released ITS-REST docs text (which wins every
+/// conflict with the released OAS):
 /// `Requests_and_responses.md` §"HTTP status codes" assigns `400` to
 /// "malformed request syntax, syntactically invalid content", `409` to a
 /// request that "might generate a duplicate or a conflict" and `422` to a
@@ -438,7 +439,8 @@ async fn system_options_operation_is_documented() {
 /// every success response that emits headers, released-shaped examples, and no
 /// `Location` on a read or a delete.
 ///
-/// The branches are the RELEASED ITS-REST text, not the stalled OAS. The five
+/// The branches are the RELEASED ITS-REST docs text (the OAS is the
+/// subordinate source). The five
 /// party CRUD quintets are byte-identical on the wire
 /// (`specifications/operations/{person,agent,group,organisation,role}_*.yaml`
 /// and their `$ref`d responses), so the loop below asserts each kind
@@ -978,7 +980,8 @@ async fn demographic_item_tag_operations_are_fully_documented() {
 /// completeness: every branch this server actually emits, the `Allow` header on
 /// every config-gate `405`, worked examples, and NO `Location` anywhere.
 ///
-/// The branches are the RELEASED ITS-REST text, not the stalled OAS. The two
+/// The branches are the RELEASED ITS-REST docs text (the OAS is the
+/// subordinate source). The two
 /// released operations (`operations/admin_ehr_delete.yaml`,
 /// `operations/admin_ehr_delete_all.yaml`) `$ref` only description-carrying
 /// response files (`responses/{202,204_deleted_hard,404,404_unknown_ehr_id,405}.yaml`
