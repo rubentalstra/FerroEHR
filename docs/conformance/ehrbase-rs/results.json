@@ -703,20 +703,16 @@
     {
       "case": "I_EHR_COMPOSITION.update_composition-prefer_absent",
       "format": "canonical-json",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "status 200 maps to no outcome of the operation's binding (inconclusive)"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-prefer_minimal",
       "format": "canonical-json",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "status 200 maps to no outcome of the operation's binding (inconclusive)"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-return_identifier",
@@ -2842,18 +2838,9 @@
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-container_shape",
       "format": "canonical-json",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "header Last-Modified: expected present, got none",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "header Last-Modified: expected present, got none"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-unknown_container",
@@ -2864,12 +2851,16 @@
     },
     {
       "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml",
-      "format": "canonical-xml",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "status 406 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml_not_acceptable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
@@ -3863,18 +3854,9 @@
     {
       "case": "I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions",
       "format": "canonical-json",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "expected `updated`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "expected `updated`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec",
@@ -4294,12 +4276,12 @@
       "rows_driven": 1,
       "rows_total": 1,
       "failing_step": 2,
-      "reason": "context/start_time: expected present, is absent",
+      "reason": "content/0/data/events/0/data/items/0/value/magnitude: path resolves to nothing",
       "failed_rows": [
         {
           "row": 0,
           "step": 2,
-          "reason": "context/start_time: expected present, is absent"
+          "reason": "content/0/data/events/0/data/items/0/value/magnitude: path resolves to nothing"
         }
       ]
     },
@@ -4534,18 +4516,9 @@
     },
     {
       "case": "SF-MAP-interval_event",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "expected `created`, observed `validation_failed`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "SF-MAP-interval_reference_range",

@@ -72,7 +72,7 @@ flow:
       # master06's time default is a VALUE rule for nodes that exist. The
       # ctx/time default is covered on grounded fixtures by SF-MAP-context
       # and SF-CONTRIB-flat_commit.)
-      - { assert: field, path: "content/0/data/events/0/data/items/0/value/magnitude", equals: 37.2 }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/magnitude", equals: 37.2 }
 postconditions:
   - assert: state
     text: >-

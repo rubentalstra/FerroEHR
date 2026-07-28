@@ -35,7 +35,7 @@ Result column: ITS its-rest (canonical-json, canonical-xml, wt-flat, wt-structur
 | Platform | CompositionOps | Y | pass |
 | Platform | DirectoryOps | Y | pass |
 | Platform | ChangeSets | Y | pass |
-| Platform | Versioning | Y | FAIL |
+| Platform | Versioning | Y | pass |
 | Platform | ArchetypeValidation | Y | pass |
 | Platform | PartyOperations | OPT | pass |
 | Platform | PartyRelationshipOperations | OPT | excused (unrealized on this technology profile) |
