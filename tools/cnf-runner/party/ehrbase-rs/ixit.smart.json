@@ -1,0 +1,77 @@
+{
+  "instances": {
+    "sut": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_USER",
+        "password_env": "SUT_PASS"
+      }
+    },
+    "admin": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_ADMIN_USER",
+        "password_env": "SUT_ADMIN_PASS"
+      }
+    },
+    "readonly": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_RO_USER",
+        "password_env": "SUT_RO_PASS"
+      }
+    },
+    "unauthenticated": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "none"
+      }
+    },
+    "smart_app": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "bearer_mint"
+      }
+    },
+    "smart_platform": {
+      "base_url": "http://localhost:8080/ehrbase/rest",
+      "auth": {
+        "mode": "none"
+      }
+    }
+  },
+  "containers": {
+    "sut": "ehrbase-rs-cnf-ehrbase-1",
+    "db": "ehrbase-rs-cnf-ehrbase-postgres-1"
+  },
+  "system_id": "ehrbase-rs.local",
+  "signing": {
+    "mode": "digest",
+    "algorithm": "sha256",
+    "encoding": "base64",
+    "prefix": "sha256:"
+  },
+  "smart": {
+    "platform_instance": "smart_platform",
+    "mint": {
+      "issuer": "https://as.cnf.test",
+      "audience": "cnf-smart-sut",
+      "subject": "cnf-smart-app",
+      "roles": ["USER"],
+      "key_file": "../smart/cnf-smart-test.key.pem",
+      "kid": "cnf-smart-test",
+      "ttl_seconds": 300
+    }
+  },
+  "environment": {
+    "exclusive_server": true,
+    "hardware_class": "consumer-laptop",
+    "cores": 8,
+    "memory_gb": 16,
+    "storage_class": "nvme",
+    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, SMART overlay lane (docker/sut-smart.yml)"
+  }
+}
