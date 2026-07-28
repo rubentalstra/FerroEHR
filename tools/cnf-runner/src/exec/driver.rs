@@ -262,11 +262,17 @@ impl<'a> HttpDriver<'a> {
                                 params.push((name.clone(), scalar_text(item)?));
                             }
                         }
-                        Value::Array(_) | Value::Object(_) => {
+                        Value::Array(_) => {
                             return Err(format!(
-                                "query {name}: the step's `with:` binds a {} where the binding \
-                                 declares a single-valued parameter",
-                                json_shape(v)
+                                "query {name}: the step's `with:` binds a list where the binding \
+                                 declares a single-valued parameter — repeatability is the \
+                                 binding's declaration, not the case's"
+                            ));
+                        }
+                        Value::Object(_) => {
+                            return Err(format!(
+                                "query {name}: the step's `with:` binds an object; a query \
+                                 parameter value is a scalar"
                             ));
                         }
                         other => params.push((name.clone(), other.to_string())),
