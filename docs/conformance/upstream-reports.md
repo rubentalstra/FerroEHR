@@ -2245,3 +2245,32 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   positional `value`/`value2`/`value3` alias accepted on input, the type-derived
   form being what the Web Template advertises so a client reading the Web
   Template never guesses.)
+
+### UPR-121 — the 408 query-timeout branch is declared with no client-drivable trigger
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §"HTTP status codes", row `408`; `docs/query/Request.md` §"Common Headers and Query Parameters"; `docs/query/{Response,Query_types,Qualified_query_name}.md`)
+- **Register:** AMB-159 (report_only)
+- **Facts:** The status table declares a timeout branch and names its cause —
+  "Request maximum execution time is reached, therefore the server aborted the
+  request" — but no released sentence says what that maximum is, who sets it, or
+  how a client reaches it. The complete client-settable query surface is
+  enumerated in one place, `docs/query/Request.md` §"Common Headers and Query
+  Parameters" ("All query execution requests SHOULD support at least the
+  following parameters"), and contains no execution bound: `ehr_id`, `offset`,
+  `fetch`, `query_parameters`, plus the `openehr-ehr-id` request header. The
+  QUERY chapter never mentions 408 or timeouts at all. AQL supplies no cost knob
+  either, so a query that exceeds the limit on one deployment returns instantly
+  on another. The branch is therefore declared but unverifiable: a conformance
+  suite can only reach it by choosing a query slow on one particular server —
+  an expectation derived from the implementation rather than from the
+  specification — or by fault-injecting the server, which is not a wire
+  behaviour.
+- **Ask:** either give the branch a protocol-level trigger a client can set (a
+  per-request execution bound, e.g. a `timeout` query parameter or a request
+  header, with the 408 stated as its consequence), or state explicitly that the
+  maximum is a deployment property and that 408 is therefore not
+  conformance-testable — so implementers and test suites stop having to guess
+  which it is. (Ours: both `timeout` branches stay declared on their operation
+  bindings so a service that aborts a run-away query is classified correctly,
+  and both stay recorded as cited, deliberately unexercised boundaries in the
+  wire-surface coverage register rather than being closed by an invented case.)
