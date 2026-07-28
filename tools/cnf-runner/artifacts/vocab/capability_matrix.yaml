@@ -7,6 +7,14 @@ Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: true, sour
 Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
 Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
+# Example generation split from OPT provisioning (#545, 2026-07-28): the
+# /example sub-resource is SHOULD-level surface — the CNF profiles book has
+# no example row, the released operation NOTE disclaims the output
+# ("The implementation and completeness of these examples are not specified,
+# and vendors may produce different results"), and AMB-115 carries the
+# fall-back-or-400 latitude — so no CORE verdict may rest on it. Same
+# tier-by-analogy treatment as SimplifiedFormats/SystemApi.
+TemplateExamples: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
 EhrStatus: { family: Platform, tier: CORE, required: true, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
