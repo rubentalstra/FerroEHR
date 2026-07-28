@@ -331,6 +331,17 @@ fn best_xml_range(accept: &str) -> Option<&str> {
 /// serve — the caller answers `406` (`Resources.md` §XML Format: "If the
 /// service cannot fulfill this aspect of the request, it MUST respond with
 /// HTTP status code `406 Not Acceptable`").
+///
+/// NOTE: the lineage is resolved AFTER the format, as a second gate, rather
+/// than folded into [`match_quality`] as an extra condition on the range. The
+/// two differ in exactly one case — an `Accept` naming an unserved lineage
+/// AND some other acceptable format
+/// (`application/json;q=0.5, application/xml;version=3`) — where folding it in
+/// would quietly serve JSON and this gate answers `406` instead. `406` is the
+/// deliberate choice: the parameter exists so a client can be specific about
+/// the representation it can consume, and substituting a different one
+/// defeats that. No openEHR spec governs the parameter — our own
+/// design/extension — so nothing released is bent either way.
 pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
     let Some(accept) = header_str(headers, header::ACCEPT) else {
         return Some(Namespace::V1);
@@ -1535,7 +1546,11 @@ mod tests {
         assert_eq!(ns("application/xml;version=2"), Some(Namespace::V2));
         assert_eq!(ns("application/xml; Version=\"2\""), Some(Namespace::V2));
         assert_eq!(ns("text/xml; version=2"), Some(Namespace::V2));
-        assert_eq!(ns("*/*"), Some(Namespace::V1), "a wildcard selects nothing");
+        assert_eq!(
+            ns("*/*"),
+            Some(Namespace::V1),
+            "a wildcard names no lineage, so the default stands"
+        );
         assert_eq!(
             ns("application/json"),
             Some(Namespace::V1),
