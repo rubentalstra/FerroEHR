@@ -8,6 +8,7 @@ text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sa
 .cell-label-dim { fill: #0b0b0b; font-size: 11px; }
 .ev-passed { fill: #0072b2; }
 .ev-failed { fill: #d55e00; }
+.ev-inconclusive { fill: #e69f00; }
 .ev-not-evidenced { fill: #cbc9c2; }
 .ev-unrealized { fill: #e8e6e0; }
 .ev-no-cases { fill: #f4f2ec; }
@@ -28,6 +29,7 @@ text { fill: #c3c2b7; }
 .cell-label-dim { fill: #e8e6e0; }
 .ev-passed { fill: #3987e5; }
 .ev-failed { fill: #e5484d; }
+.ev-inconclusive { fill: #f5a623; }
 .ev-not-evidenced { fill: #4a4a47; }
 .ev-unrealized { fill: #3a3a38; }
 .ev-no-cases { fill: #2e2e2c; }
