@@ -274,6 +274,13 @@ pub fn chapter_of(case_id: &str) -> &'static str {
         i if i.starts_with("SEC-") => "Security & privacy",
         i if i.starts_with("SIG-") => "Signing",
         i if i.starts_with("PERF-") => "Performance",
+        // The SMART on openEHR group gets its own band rather than falling to
+        // "Other": it is a distinct, config-gated surface (ITS-REST
+        // docs/smart_app_launch) that a reader must be able to tell apart from
+        // the openEHR resource chapters — and, unlike the single System row
+        // below, it carries a group of cases. It appears only in a run of the
+        // SMART lane; the default lane records these cases not-applicable.
+        i if i.starts_with("SMART-") => "SMART App Launch",
         // NOTE: the System API's cases (I_ITS_REST_SYSTEM.*) report under
         // "Other" by decision (#560, 2026-07-28): the surface carries ONE
         // case (the OPTIONS conformance manifest) and a dedicated chapter
@@ -496,6 +503,16 @@ mod tests {
         assert_eq!(chapter_of("SF-FLAT-commit"), "Simplified formats");
         assert_eq!(chapter_of("SEC-AUDIT-x"), "Security & privacy");
         assert_eq!(chapter_of("SIG-VERSION-x"), "Signing");
+        assert_eq!(
+            chapter_of("SMART-DISCOVERY-document_shape"),
+            "SMART App Launch"
+        );
+        assert_eq!(
+            chapter_of("SMART-RESOURCE_SCOPES-scope_deny_403"),
+            "SMART App Launch"
+        );
+        // The System API's single row stays in "Other" by decision (#560).
+        assert_eq!(chapter_of("I_ITS_REST_SYSTEM.options-x"), "Other");
         assert_eq!(chapter_of("SOMETHING-else"), "Other");
     }
 

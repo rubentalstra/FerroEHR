@@ -8,12 +8,15 @@
 //! multi-instance cases and the security principals address ixit-declared
 //! instances via the flow `on:` selector.
 
+use std::path::{Path, PathBuf};
+
 use serde::{Deserialize, Serialize};
 
 use crate::ids::InstanceName;
 
 /// Authentication mode of an instance. Credentials are REFERENCES (env-var
-/// names), never inline secrets — the ixit file is committed/shared.
+/// names or, for the SMART lane, the party's declared test-issuer key file),
+/// never inline secrets — the ixit file is committed/shared.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "mode", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AuthMode {
@@ -27,6 +30,73 @@ pub enum AuthMode {
     },
     /// `OAuth2` bearer token resolved from the named environment variable.
     Bearer { token_env: String },
+    /// A SMART *Application* principal: the runner MINTS a fresh RS256 access
+    /// token per step against the party's declared test issuer
+    /// ([`Ixit::smart`]), carrying exactly the scopes that step declares.
+    ///
+    /// This exists because the CDR is a SMART **resource server**, never an
+    /// Authorization Server (ITS-REST
+    /// `docs/smart_app_launch/master06-authentication.adoc` §Supported
+    /// Authentication Flows: token issuance is the AS's duty), so the
+    /// conformance stack runs no AS and no other principal can carry a CHOSEN
+    /// `scope` claim. An instance may only declare this mode when the ixit
+    /// declares a `smart` block; otherwise the cases that need it are
+    /// not-applicable with that citation (ISO/IEC 9646 test selection).
+    BearerMint,
+}
+
+/// The party's SMART App Launch lane declaration — a deployment fact no
+/// released operation discloses, so it is an IXIT declaration exactly like
+/// [`Ixit::system_id`] and [`Ixit::signing`].
+///
+/// Present => this deployment runs the CDR in the SMART resource-server role
+/// (ITS-REST `docs/smart_app_launch/master02-overview.adoc` §Glossary: the
+/// CDR is the Platform's `org.openehr.rest` service) and trusts the declared
+/// static test issuer, so the runner may mint per-step scoped access tokens.
+/// Absent => every SMART case is not-applicable with that citation.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SmartLane {
+    /// The ixit instance whose `base_url` is the SMART **Platform** base URL.
+    /// master04 §Service Discovery serves `/.well-known/smart-configuration`
+    /// "relative to the _Platform_ base URL" — which is NOT the openEHR REST
+    /// base the other instances address, so the topology needs its own entry.
+    pub platform_instance: InstanceName,
+    /// The token mint the `bearer_mint` instances sign with.
+    pub mint: BearerMint,
+}
+
+/// The static test issuer the runner signs access tokens with.
+///
+/// The key is a FILE reference (resolved relative to the ixit document), never
+/// inline: the ixit is committed and shared, and a PEM pasted into it would
+/// read as a credential rather than as the deliberately-public test material
+/// it is.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BearerMint {
+    /// The `iss` claim; must equal the SUT's configured `auth.oidc.issuer`.
+    pub issuer: String,
+    /// The `aud` claim. Omitted from the token when absent (a deployment that
+    /// configures no accepted audience does not check one).
+    #[serde(default)]
+    pub audience: Option<String>,
+    /// The `sub` claim — the SMART Application's authenticated user.
+    pub subject: String,
+    /// Roles minted into `realm_access.roles`, the RBAC claim path the CDR
+    /// mines by default. The SMART gate AND-composes onto RBAC, so a token
+    /// that carries the right scopes but no role would be refused one layer
+    /// earlier and the case would prove nothing about SMART.
+    #[serde(default)]
+    pub roles: Vec<String>,
+    /// The RSA private key (PEM). A relative path is resolved against the ixit
+    /// document's own directory by [`Ixit::rebase_paths`], so a party artifact
+    /// set is relocatable and never depends on the runner's working directory.
+    pub key_file: PathBuf,
+    /// The JWKS `kid` the SUT resolves the verifying key by.
+    pub kid: String,
+    /// Token lifetime in seconds (`exp` = `iat` + this).
+    pub ttl_seconds: u64,
 }
 
 /// One named SUT instance.
@@ -112,9 +182,25 @@ pub struct Ixit {
     /// SIG-VERSION cases N/A on their guard.
     #[serde(default)]
     pub signing: Option<crate::exec::signature::SigningMode>,
+    /// The SMART App Launch lane (ITS-REST `docs/smart_app_launch`). Present
+    /// => the deployment runs the CDR's SMART resource-server role and trusts
+    /// the declared test issuer, so the SMART cases are drivable; absent =>
+    /// they are not-applicable with that citation.
+    #[serde(default)]
+    pub smart: Option<SmartLane>,
 }
 
 impl Ixit {
+    /// Resolve relative file references in the document against `base` — the
+    /// directory the ixit itself was read from.
+    pub fn rebase_paths(&mut self, base: &Path) {
+        if let Some(smart) = &mut self.smart
+            && smart.mint.key_file.is_relative()
+        {
+            smart.mint.key_file = base.join(&smart.mint.key_file);
+        }
+    }
+
     /// Look up an instance by name.
     #[must_use]
     pub fn instance(&self, name: &InstanceName) -> Option<&Instance> {
@@ -200,6 +286,61 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(declared.system_id.as_deref(), Some("ehrbase-rs.local"));
+    }
+
+    #[test]
+    fn smart_lane_is_optional_and_parses() {
+        let bare: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        assert!(bare.smart.is_none());
+
+        let mut declared: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://x/openehr/v1", "auth": { "mode": "none" } },
+                "smart_app": { "base_url": "http://x/openehr/v1", "auth": { "mode": "bearer_mint" } },
+                "smart_platform": { "base_url": "http://x", "auth": { "mode": "none" } }
+            },
+            "smart": {
+                "platform_instance": "smart_platform",
+                "mint": {
+                    "issuer": "https://as.example.test",
+                    "audience": "cnf-smart-sut",
+                    "subject": "cnf-smart-app",
+                    "roles": ["USER"],
+                    "key_file": "../smart/cnf-smart-test.key.pem",
+                    "kid": "cnf-smart-test",
+                    "ttl_seconds": 300
+                }
+            }
+        }))
+        .unwrap();
+        let lane = declared.smart.as_ref().unwrap();
+        assert_eq!(lane.platform_instance.as_str(), "smart_platform");
+        assert_eq!(lane.mint.kid, "cnf-smart-test");
+        assert_eq!(lane.mint.audience.as_deref(), Some("cnf-smart-sut"));
+        assert!(matches!(
+            declared
+                .instance(&InstanceName::parse("smart_app").unwrap())
+                .unwrap()
+                .auth,
+            AuthMode::BearerMint
+        ));
+
+        // A relative key file resolves against the ixit document's directory,
+        // never the runner's working directory.
+        declared.rebase_paths(Path::new("/party/ehrbase-rs"));
+        assert_eq!(
+            declared.smart.as_ref().unwrap().mint.key_file,
+            PathBuf::from("/party/ehrbase-rs/../smart/cnf-smart-test.key.pem")
+        );
+        // Rebasing is idempotent for an already-absolute path.
+        declared.rebase_paths(Path::new("/elsewhere"));
+        assert_eq!(
+            declared.smart.as_ref().unwrap().mint.key_file,
+            PathBuf::from("/party/ehrbase-rs/../smart/cnf-smart-test.key.pem")
+        );
     }
 
     #[test]
