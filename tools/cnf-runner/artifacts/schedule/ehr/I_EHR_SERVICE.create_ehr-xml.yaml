@@ -40,6 +40,21 @@
 # The ehr_id is the deterministic per-case/per-row value the `provided` matrix
 # sentinel mints (a pure function of case id + row index), so two runners
 # choose the same id and no other case can collide with it.
+#
+# ENFORCEABILITY — this row is judged only against a statement that DECLARES
+# canonical-XML support for the EHR family (register AMB-167,
+# adjudicated 2026-07-28). ITS-REST overview Resources.md §"Data
+# representation" makes the format a service choice ("Services MUST support
+# at least one of the openEHR **XML** or **JSON** canonical formats"), and
+# the published XSDs declare no document element for EHR, and the RM
+# `EHR` complexType (ITS-XML RM Ehr.xsd) is not LOCATABLE-derived, so not
+# even the generic `items` root can carry it.
+# The release therefore DECLARES `application/xml` for this resource and
+# WITHHOLDS the document it would carry: serving the representation (under a root name no released
+# sentence assigns) and refusing it under the §XML Format 406 MUST are BOTH
+# conformant. The opposite arm is the mirror case
+# I_EHR_SERVICE.get_ehr-xml_not_acceptable, gated
+# on `ehr-xml-unsupported`.
 id: I_EHR_SERVICE.create_ehr-xml
 kind: functional
 component: EHR
@@ -47,6 +62,8 @@ sm_operation: I_EHR_SERVICE.create_ehr
 capabilities: [EhrOperations]
 exercises: [EhrApi]
 profiles: [CORE]
+option: ehr-xml-supported       # AMB-167 option_select branch
+ambiguities: [AMB-167]
 test_purpose: >-
   An EHR_STATUS sent as a canonical-XML request payload creates the EHR under
   the client-supplied ehr_id, and a second XML create for the same subject is
@@ -59,6 +76,8 @@ spec_refs:
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "Canonical-XML support for this resource family is statement-declared, not spec-mandated — the published XSDs declare no document element for EHR and ITS-REST overview Resources.md §Data representation leaves the format to the service, so offering and refusing are both conformant (register AMB-167)"
 formats: [canonical-xml]
 requires: { server: any }
 data_sets: [cnf.ehr_status.with_subject.xml]
