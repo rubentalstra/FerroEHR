@@ -532,30 +532,32 @@ branches:
   # retired with I_EHR_SERVICE.create_ehr-with_ehr_id.
   - binding: I_EHR_STATUS.clear_ehr_modifiable
     format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.clear_ehr_modifiable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+    reason: variant_of
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
   - binding: I_EHR_STATUS.clear_ehr_queryable
     format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.clear_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+    reason: variant_of
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
   # RETIRED coverage_gaps (2026-07-28) — the two EHR_STATUS READS are now
   # exercised in canonical-xml: I_EHR_STATUS.get_ehr_status-xml, and
   # I_EHR_STATUS.get_versioned_ehr_status-xml, which covers BOTH realizations
   # the retired exception scoped (the VERSIONED_EHR_STATUS container read and
-  # its version sub-resource) with one step each. The four SETTER rows stay
+  # its version sub-resource) with one step each. The four SETTER rows
   # (clear_ehr_modifiable / clear_ehr_queryable above,
-  # set_ehr_modifiable / set_ehr_queryable below): their variant-less
-  # realization is a read-modify-write whose request body the runner BUILDS
-  # from the EHR_STATUS it just read, so there is no seam through which a
-  # canonical-XML request payload can enter that wire form.
+  # set_ehr_modifiable / set_ehr_queryable below) are now variant_of: their
+  # variant-less realization is a read-modify-write whose request body the
+  # runner BUILDS from the EHR_STATUS it just read — no XML seam — so the
+  # canonical-XML request branch is exercised on the per-setter xml_body
+  # variant bindings (case-supplied codec-derived payloads, the
+  # I_EHR_STATUS.*-xml_body cases).
   - binding: I_EHR_STATUS.set_ehr_modifiable
     format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.set_ehr_modifiable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+    reason: variant_of
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
   - binding: I_EHR_STATUS.set_ehr_queryable
     format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.set_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+    reason: variant_of
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
   # RETIRED coverage_gaps (#288 slice 3): the canonical-xml representation of
   # every PARTY binding is now exercised by its own isolated case —
   # I_DEMOGRAPHIC_SERVICE.get_party-xml / -get_party_at_time-xml /
