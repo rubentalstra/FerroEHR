@@ -2,11 +2,18 @@
 # highest version of the name.
 #
 # The discriminating shape: a HIGHER version (2.0.0) is stored first, then a
-# version-less store writes the default slot. Under register AMB-117 the
-# version-less form writes `1.0.0` regardless of what else exists, so the
-# `Location` must end `/1.0.0` — a server that reports the name's latest
-# version instead answers `/2.0.0` and sends the client to a definition this
-# request did not store. The header's value is assigned by the released text:
+# version-less store writes the default slot. WHICH version a version-less
+# store mints is a released SILENCE — re-adjudicated 2026-07-28 and registered
+# in AMB-117, including the one reading that would close it: taking
+# docs/query/Qualified_query_name.md's "or when `version` is not supplied at
+# all … the system must use the latest `version`" to govern the STORE is
+# refuted twice, because it would have this request OVERWRITE the immutable,
+# version-ADDRESSED 2.0.0 that the sibling route protects with a 409, and
+# because it assigns nothing at all on a first store. So the constant `1.0.0`
+# slot is OUR adjudication of that silence, and the `Location` must end
+# `/1.0.0` — a server that reports the name's latest version instead answers
+# `/2.0.0` and sends the client to a definition this request did not store.
+# What IS assigned by the released text is the header itself:
 # ITS-REST docs/overview/Requests_and_responses.md §"Prefer minimal, identifier
 # or full representation response", `return=minimal` (the default per
 # §"Representation details negotiation", the store declaring no `Prefer`

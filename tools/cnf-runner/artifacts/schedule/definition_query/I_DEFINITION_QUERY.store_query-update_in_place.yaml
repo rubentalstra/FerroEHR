@@ -7,7 +7,11 @@
 # 400 only: no conflict branch exists for it to reach, in contrast with its
 # version-addressed sibling, which declares one. Register AMB-117 resolves the
 # apparent clash with the immutability prose BY FORM — the version-less store
-# is the overwriting form, writing the one default slot.
+# is the overwriting form, writing the one default slot; what it overwrites is
+# therefore its OWN slot, never a version the client addressed explicitly (the
+# reading that would have it overwrite the name's latest version is refuted in
+# AMB-117, because it would destroy the immutability the sibling's 409
+# declares).
 #
 # The observable consequences are both asserted: the second store succeeds
 # (no 409), and the listing afterwards holds exactly ONE row, at the same
