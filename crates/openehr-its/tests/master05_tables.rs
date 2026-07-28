@@ -45,13 +45,6 @@
 //!   asserted structurally in [`check`] — a new required row cannot be added
 //!   without stating its enforcement. Where the flat build genuinely rejects,
 //!   the section test carries the negative assertion as well.
-//!
-//! Known implementation gaps this battery documents (recorded here so a
-//! `TODO` search finds them, and asserted as `Absent` so they cannot rot):
-//!
-//! TODO: consume the master05 §EVENT_CONTEXT `/start_time` and `/setting` PATH
-//! spellings on input (they are silently ignored today in favour of the
-//! `ctx/` defaults) — stated in full at the §EVENT_CONTEXT test.
 #![allow(
     clippy::panic,
     clippy::doc_markdown,
@@ -1583,14 +1576,15 @@ fn master05_event_context() {
                 "yes",
                 "RM ehr §EVENT_CONTEXT declares `start_time` 1..1; master06 §time makes it \
                  the `ctx/time` shortcut (defaulting to `now()`), so the path form is never \
-                 required on input and is not emitted",
+                 required on input and is not emitted — but IS accepted, asserted below",
             ),
             row(
                 "/setting",
                 Elsewhere("ctx/setting"),
                 "yes",
                 "RM ehr §EVENT_CONTEXT declares `setting` 1..1; master06 §setting makes it \
-                 the `ctx/setting` shortcut, which the builder defaults",
+                 the `ctx/setting` shortcut, which the builder defaults — the path form is \
+                 accepted too, asserted below",
             ),
             row("/_end_time", Elsewhere("ctx/end_time"), "no", ""),
             row("/_location", Elsewhere("ctx/location"), "no", ""),
@@ -1599,17 +1593,8 @@ fn master05_event_context() {
         ],
     );
 
-    // The route the two required rows actually travel, in both directions
+    // The route the two required rows actually travel on output
     // (master06 §§time, setting).
-    //
-    // TODO: consume the master05 §EVENT_CONTEXT `/start_time` and `/setting`
-    // PATH spellings on input as well. The Web-Template context node always
-    // carries synthesized `start_time`/`setting` children, so the builder's
-    // "this segment is already a template child" test skips them and its
-    // `EVENT_CONTEXT` direct-RM-path arm is unreachable: a client that spells
-    // the master05 path form has its datum silently ignored in favour of the
-    // `ctx/` default, rather than either honoured or rejected
-    // (master04 §Validation).
     let built = composition_from_flat(
         &flat_of(&[
             ("ctx/time", json!("2021-12-21T14:19:31+01:00")),
@@ -1626,6 +1611,66 @@ fn master05_event_context() {
     assert_eq!(
         built["context"]["setting"]["defining_code"]["code_string"],
         json!("238")
+    );
+
+    // …and the table's own PATH spellings are honoured on input, not ignored:
+    // the Web-Template context node always carries synthesized
+    // `start_time`/`setting` children, which used to make the builder treat
+    // the path keys as "already handled" and silently drop them in favour of
+    // the `ctx/` defaults — the one outcome master04 §Validation forbids.
+    let built = composition_from_flat(
+        &flat_of(&[
+            (
+                "test/context/start_time",
+                json!("2021-12-21T14:19:31+01:00"),
+            ),
+            ("test/context/setting|code", json!("238")),
+            ("test/context/setting|value", json!("other care")),
+            ("test/context/setting|terminology", json!("openehr")),
+        ]),
+        &web_template(root_node(vec![])),
+        NOW,
+    )
+    .expect("the master05 §EVENT_CONTEXT path spellings must build");
+    assert_eq!(
+        built["context"]["start_time"]["value"],
+        json!("2021-12-21T14:19:31+01:00")
+    );
+    assert_eq!(
+        built["context"]["setting"]["defining_code"]["code_string"],
+        json!("238")
+    );
+    assert_eq!(built["context"]["setting"]["value"], json!("other care"));
+
+    // The `/setting` row's Note binds it to a ValueSet ("openEHR `setting`
+    // group"), so a bare `|code` resolves its rubric from that group exactly
+    // as `ctx/setting` does (master06 §setting) rather than standing as a
+    // `local` code.
+    let built = composition_from_flat(
+        &flat_of(&[("test/context/setting|code", json!("238"))]),
+        &web_template(root_node(vec![])),
+        NOW,
+    )
+    .expect("a bare master05 §EVENT_CONTEXT `/setting|code` must build");
+    assert_eq!(
+        built["context"]["setting"]["defining_code"]["terminology_id"]["value"],
+        json!("openehr")
+    );
+    assert_eq!(built["context"]["setting"]["value"], json!("other care"));
+
+    // A spelling master05 does NOT define on EVENT_CONTEXT is still rejected
+    // loudly (master04 §Validation: field identifiers match WT metadata
+    // structure) — the fix widens what is honoured, never what is ignored.
+    assert!(
+        matches!(
+            composition_from_flat(
+                &flat_of(&[("test/context/frobnicate", json!("x"))]),
+                &web_template(root_node(vec![])),
+                NOW,
+            ),
+            Err(FlatError::UnknownPath(_))
+        ),
+        "an undefined EVENT_CONTEXT path must be rejected, never ignored"
     );
 }
 
