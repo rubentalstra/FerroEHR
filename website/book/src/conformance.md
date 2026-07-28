@@ -62,10 +62,15 @@ is hand-typed):
 
 ![Capability conformance heat grid](conformance-assets/conformance-heat-grid.svg)
 
-The same run broken down by schedule chapter — passed, failed, errored and
-cited-N/A per chapter:
+The same run broken down two levels deep: a header per schedule chapter with
+its total, then one bar per **band** — the surface a case actually exercises
+(EHR resource, EHR_STATUS, COMPOSITION, …) — with the exact passed, FAILED,
+errored and cited-N/A counts printed beside every row. Every band the
+taxonomy declares is drawn, so one with no case for this run shows as an
+explicit `no cases` row rather than disappearing, and a hatched segment marks
+cited-N/A so it reads as neither a pass nor a failure:
 
-![Schedule outcomes by chapter](conformance-assets/conformance-chapter-bars.svg)
+![Schedule outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
 The published run against EHRbase-rs reports:
 
@@ -137,29 +142,19 @@ Useful knobs: a case-id filter as the first argument, `CONF_IXIT` /
 an already-deployed stack, and `cnf-runner verdicts` to recompute the
 documents from a previous `results.json` without re-running.
 
-### Configuration postures
+### Configuration lanes
 
-Some behaviour only exists in a particular server configuration. Rather than
-splitting those into separate runs, **every pipeline invocation exercises the
-whole claimed configuration surface**, and the party's `ixit.json` is where a
-deployment declares which postures it runs.
+Some behaviour only exists in a particular server configuration, and a run
+against the default configuration cannot reach it. Those get their own
+**lane**: a compose overlay plus the matching party artefacts, selected by one
+environment variable. Each lane is a separate, deliberate run — the default
+lane stays the published baseline.
 
-**Version signing runs in both of its modes, every run.** openEHR defines a
-version signature at two depths of one mechanism — a plain digest, which acts
-as an integrity check, and an openPGP (RFC 4880) signature, which additionally
-authenticates the author — and a running server does one or the other. Since
-the product claims both, the pipeline brings up a **second deployment of the
-same image** in the openPGP posture, on its own compose project and host port,
-alongside the standard digest stack. The ixit declares it as an extra instance
-carrying its own signing block (the verifying public key), and the openPGP
-signature cases address that instance. One run, one `results.json`: the Signing
-capability's evidence covers both modes, with no merging of separate runs and
-no environment switch to remember.
-
-Only the assertions whose meaning changes with the mode are duplicated —
-signature *presence* is the same fact either way, so it is checked once, while
-*verifiability* (a digest recompute versus an openPGP verification against the
-declared key) is checked in both.
+```bash
+# openPGP version signing instead of the default digest (stacks on the
+# standard posture)
+CONF_SIGNING_MODE=pgp bash scripts/conformance.sh
+```
 
 The **SMART resource-server posture is the standard conformance posture**
 for `ehrbase-rs` — every pipeline run boots the server with `smart.enabled`,
@@ -174,12 +169,9 @@ not-applicable with the citation instead. The tokens are signed by a
 test key material for the conformance harness, never usable for anything
 else.
 
-Cases that need a posture — or an instance — the party does not declare are
-recorded **not-applicable with a citation**, never failed: the `ixit.json` is
-where a deployment declares what it runs, and a case addressing something that
-is not there has no ground to run on rather than a defect to report. Upstream
-EHRbase, for example, declares neither the SMART lane nor a second signing
-deployment, so both families are excused with their citation in its record.
+Cases that need a lane are recorded **not-applicable with a citation** on a
+party that does not declare it, never failed: the party's `ixit.json` is
+where a deployment declares the posture it runs.
 
 ## Reading the artefacts
 
