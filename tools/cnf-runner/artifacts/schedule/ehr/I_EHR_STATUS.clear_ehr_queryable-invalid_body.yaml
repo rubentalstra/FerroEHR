@@ -1,0 +1,69 @@
+# The invalid-EHR_STATUS data-set class on the is_queryable clearer's seam. The
+# create seam already gates it (I_EHR_SERVICE.create_ehr-invalid_status) and the
+# is_queryable setter gates it on the update seam
+# (I_EHR_STATUS.set_ehr_queryable-invalid_body); this case closes the same
+# branch on the remaining clearer, because the SM setters are four distinct
+# operations even though one wire operation realizes them all.
+#
+# Decisive docs-text sentence for the outcome (ITS-REST overview
+# Requests_and_responses.md §HTTP status codes): "422 | Unprocessable Entity |
+# The request was well-formed but was unable to be followed due to semantic
+# errors". Every payload below is well-formed JSON that breaks an RM rule, so
+# the 400 row of the same table — "malformed request syntax, syntactically
+# invalid content" — does not describe it. The RM rules broken, per fixture:
+#   * subject / is_queryable / is_modifiable absent — RM ehr §EHR_STATUS
+#     §Attributes types all three 1..1 (subject as PARTY_SELF, so an EHR_STATUS
+#     whose subject is missing or is not a PARTY_SELF is not a valid one);
+#   * archetype_details absent on an archetype root — RM common locatable.adoc
+#     `Archetyped_valid` (is_archetype_root xor archetype_details = Void)
+#     together with RM ehr ehr_status.adoc `Is_archetype_root`;
+#   * other_details without its `_type` discriminator — ITS-REST Resources.md
+#     §JSON Format: `_type` "should be used to specify the RM type whenever
+#     polymorphism is involved, or when the underlying definition in RM type is
+#     abstract", and EHR_STATUS.other_details is such an attribute.
+#
+# The fixtures are the corpus's existing invalid EHR_STATUS class, driven
+# through the `invalid_body` variant binding (the variant exists because the
+# variant-less realization builds its body by read-modify-write and cannot
+# carry a case-supplied payload).
+id: I_EHR_STATUS.clear_ehr_queryable-invalid_body
+kind: functional
+component: EHR
+sm_operation: I_EHR_STATUS.clear_ehr_queryable
+capabilities: [EhrStatus]
+profiles: [CORE]
+test_purpose: >-
+  Updating an EHR's EHR_STATUS with a semantically invalid EHR_STATUS is
+  rejected, so the update seam enforces the same RM rules as the create seam.
+description: "Clear EHR queryable with invalid EHR_STATUS data sets"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "RM ehr §EHR_STATUS"
+  - "RM common §locatable (Archetyped_valid)"
+  - "SM openehr_platform §I_EHR_STATUS.clear_ehr_queryable"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.ehr_status.invalid.missing-is-queryable, expected: validation_failed, defect: "RM ehr EHR_STATUS: is_queryable is 1..1" }
+    - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: validation_failed, defect: "RM ehr EHR_STATUS: is_modifiable is 1..1" }
+    - { data_set: cnf.ehr_status.invalid.missing-subject, expected: validation_failed, defect: "RM ehr EHR_STATUS: subject is 1..1 PARTY_SELF" }
+    - { data_set: cnf.ehr_status.invalid.missing-archetype-details, expected: validation_failed, defect: "RM common locatable Archetyped_valid: an archetype root without archetype_details" }
+    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "ITS-REST Resources §JSON Format: other_details carries no _type discriminator" }
+flow:
+  - step: 1
+    call: get_ehr_status                 # the current version, for the If-Match precondition
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    capture: { status_version_uid: ok.status_version_uid }
+  - step: 2
+    call: clear_ehr_queryable
+    variant: invalid_body                # the variant binding takes the case-supplied payload
+    with:
+      ehr_id: "${ehr_id}"
+      preceding_version_uid: "${status_version_uid}"
+      ehr_status: "${ds:fixture}"
+    expect: "${fixture.expected}"
