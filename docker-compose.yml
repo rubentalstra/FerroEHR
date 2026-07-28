@@ -18,12 +18,18 @@
 # "exclusive-server ground" by design; override the *_PORT env vars for true
 # parallel coexistence.
 #
-#   | Lane      | Invocation                                   | Project           |
-#   |-----------|----------------------------------------------|-------------------|
-#   | dev       | docker compose up                            | ehrbase-rs (dir)  |
-#   | CNF (rs)  | scripts/conformance.sh                       | ehrbase-rs-cnf    |
-#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java  |
-#   | ui-e2e    | scripts/ui-e2e.sh                            | ehrbase-rs-e2e    |
+#   | Lane      | Invocation                                   | Project             |
+#   |-----------|----------------------------------------------|---------------------|
+#   | dev       | docker compose up                            | ehrbase-rs (dir)    |
+#   | CNF (rs)  | scripts/conformance.sh                       | ehrbase-rs-cnf      |
+#   | CNF (pgp) | (same run — the parallel signing posture)    | ehrbase-rs-cnf-pgp  |
+#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java    |
+#   | ui-e2e    | scripts/ui-e2e.sh                            | ehrbase-rs-e2e      |
+#
+# The CNF (rs) run brings up BOTH of its projects: the standard stack and a
+# second deployment of the same image in the openPGP version-signing posture
+# (docker/sut-pgp-parallel.yml remaps it to 8081/5433 so the two coexist), so
+# one record covers both claimed signing modes.
 #
 # ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
 # Core services (postgres, ehrbase, ehrbase-admin-ui) are profile-less and start
