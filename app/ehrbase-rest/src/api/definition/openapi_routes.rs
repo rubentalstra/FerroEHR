@@ -1909,13 +1909,20 @@ pub(crate) async fn definition_query_version_get(
                         pattern as partial prefix … the highest (latest) version \
                         matching the prefix will be considered\") is a \
                         READ-resolution semantic with nothing to resolve on a \
-                        store, and the released text assigns no meaning to a \
-                        prefix or malformed version here. Anything that is not \
+                        store — it would either name an already-stored pair, \
+                        which this operation answers `409`, or name nothing at \
+                        all — and the released text never completes a prefix \
+                        into a version to create. Anything that is not \
                         `major.minor.patch` — a prefix (`1`, `1.0`), a \
                         pre-release/build suffix (`1.0.0-rc.1`), a non-numeric \
-                        segment — is a \"syntactically invalid … parameter\" \
-                        `400` (`responses/400.yaml`). That reading of the \
-                        released silence is OURS, and it keeps the whole \
+                        segment — is therefore a `400`, the status the docs \
+                        text assigns to exactly this case \
+                        (`docs/overview/Requests_and_responses.md` §\"HTTP \
+                        status codes\": \"Status code `400` … a generic \
+                        client-side error, used when no other `4xx` error code \
+                        is appropriate. The client SHOULD NOT repeat the \
+                        request without modifications\"). Treating the released \
+                        silence this way is OURS, and it keeps the whole \
                         stored-query surface coherent: every list and get \
                         resolves versions numerically, so a non-numeric stored \
                         version would break reads of unrelated queries.",

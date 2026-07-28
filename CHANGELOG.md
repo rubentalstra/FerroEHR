@@ -38,7 +38,6 @@ workflow refuses a tag that has no matching section here.
   claim rests on the URLs — see the book's Operations page and the served
   OpenAPI document, which flags every one of them.
 
-<<<<<<< HEAD
 - **The measured hospital-simulation workload now exercises every claimed
   capability** (#625). The performance run used to touch about a third of the
   capabilities the conformance statement claims, and the rest were listed as
@@ -62,7 +61,6 @@ workflow refuses a tag that has no matching section here.
   measurable at all. Boundary probes address the read-only and
   unauthenticated principals a deployment declares; a deployment that
   declares none simply runs the workload without those journeys.
-=======
 - **Conformance: the last two untested capabilities now carry real executed
   batteries** (#624). "Demographic archetype validation" and "Bulk EHR load"
   were the two capabilities the conformance report listed with *no cases* —
@@ -83,7 +81,6 @@ workflow refuses a tag that has no matching section here.
   returning exactly the loaded set). Both capabilities are now claimed in the
   published conformance statement, and their case-count floors are recorded so
   the coverage can only grow.
->>>>>>> develop
 
 - **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
   excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
