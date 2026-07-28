@@ -348,16 +348,31 @@ by_status = {}
 for o in results.get("outcomes", []):
     by_status[o["status"]] = by_status.get(o["status"], 0) + 1
 driven = by_status.get("passed", 0) + by_status.get("failed", 0) + by_status.get("errored", 0)
+red_rows = by_status.get("failed", 0) + by_status.get("errored", 0)
 ok = tiers.get("CORE") == "pass" and tiers.get("STANDARD") == "pass"
+# Full green ONLY on a completely clean run: a red row anywhere — even in an
+# OPTIONS-tier capability that cannot fail CORE/STANDARD — is never an
+# acceptable resting state (the baseline discipline: green comes from fixing
+# the guilty component, and a brightgreen badge over a visible failure
+# invites the misread it caused on 2026-07-28). A passing-tier run with red
+# rows goes YELLOW and names the count.
+if ok and red_rows == 0:
+    message = f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
+    color = "brightgreen"
+elif ok:
+    message = (
+        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases "
+        f"({red_rows} failing)"
+    )
+    color = "yellow"
+else:
+    message = f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
+    color = "red"
 (out / "badge.json").write_text(json.dumps({
     "schemaVersion": 1,
     "label": "openEHR conformance",
-    "message": (
-        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
-        if ok
-        else f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
-    ),
-    "color": "brightgreen" if ok else "red",
+    "message": message,
+    "color": color,
 }, indent=2) + "\n")
 print("badges written")
 PY
