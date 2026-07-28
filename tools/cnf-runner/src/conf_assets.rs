@@ -1184,6 +1184,7 @@ mod tests {
                 formats: Vec::new(),
             },
             ixit_digest: "test".to_owned(),
+            restapi_specs_version: None,
             outcomes: outcomes
                 .iter()
                 .map(|(case, status)| crate::party::OutcomeRecord {

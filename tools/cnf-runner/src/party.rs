@@ -463,6 +463,16 @@ pub struct Results {
     pub tech_profile: TechProfile,
     /// The digest of the ixit topology the run drove (provenance).
     pub ixit_digest: String,
+    /// The `restapi_specs_version` the SUT's own System OPTIONS manifest
+    /// served during the campaign, when that exchange was driven (released
+    /// OAS `system.openapi.yaml` `Options` — every member optional, so
+    /// absence is normal). An independent CONFIRMATION of the statement's
+    /// declared `spec_versions.its_rest`, never a source of truth: no
+    /// `required` list binds it and a server could dodge every release-dated
+    /// MUST by under-advertising — a divergence from the declaration is a
+    /// static-review finding, not a re-declaration.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restapi_specs_version: Option<String>,
     /// The per-case×format outcomes.
     #[serde(default)]
     pub outcomes: Vec<OutcomeRecord>,
