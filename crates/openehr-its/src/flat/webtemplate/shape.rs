@@ -305,6 +305,19 @@ fn synth_entry(node: &mut WebTemplateNode) {
 
 /// The EVENT-level in-context child (master04 §"Web Template Metadata": every
 /// retained EVENT-family node carries a `time`).
+// NOTE: the EVENT family synthesizes ONLY `time`, deliberately (#606,
+// adjudicated 2026-07-28). The shape oracle is master04's own worked
+// example (`docs/specs/openehr/ITS-REST/docs/simplified_formats/
+// master04-basic_concepts.adoc` §Web Template Metadata: the blood_pressure
+// EVENT carries exactly one inContext child, `time`), and no released
+// example renders an INTERVAL_EVENT's `width`/`math_function` as
+// in-context children — fabricating them would invent a web-template
+// shape the release never shows. Both stay fully ADDRESSABLE on the wire
+// regardless: master05's §INTERVAL_EVENT rows map `/width`,
+// `/math_function` and `|sample_count` as datum paths, realized by the
+// builder's direct-RM-path route (`build.rs`) and exercised by
+// SF-MAP-interval_event. Revisit only if a release publishes an
+// INTERVAL_EVENT web-template rendering with those children.
 fn synth_event(node: &mut WebTemplateNode) {
     let base = node.aql_path.clone();
     ensure_child(
