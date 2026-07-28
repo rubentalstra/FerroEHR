@@ -38,7 +38,7 @@ flow:
     call: upload_opt
     variant: unparseable                 # pins the 400 realization
     with: { opt: "${ds:cnf.opt.invalid.empty_file}" }
-    expect: validation_failed            # §HTTP status codes row 400 — syntactically invalid content
+    expect: bad_request                  # §HTTP status codes row 400 — syntactically invalid content
 postconditions:
   - assert: state
     text: "No OPTs are loaded on the system"

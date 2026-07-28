@@ -239,6 +239,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The conformance suite now names a malformed request and invalid content
+  differently everywhere** (#605). Fifteen more conformance cases used to
+  report a rejected request as a content-validation failure when what the
+  request actually broke was its own syntax — an unparseable template upload,
+  a path segment that is not an identifier, a `version_at_time` outside the
+  ISO 8601 form the specification mandates, or a tag list sent as something
+  other than a list. Those now report as malformed requests. Nothing changes
+  on the wire (all fifteen answered `400 Bad Request` before and after) and
+  no server passes or fails differently; the published conformance report and
+  case records simply name one rejection law one way, so a reader can tell the
+  two families apart.
+
 - **Two behaviours the conformance suite used to treat as optional are now
   required of every server** (#556). openEHR publishes its REST
   specification as normative prose *and* as OpenAPI files, and the prose is

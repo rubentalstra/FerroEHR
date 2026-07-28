@@ -61,7 +61,7 @@ outcomes:
   not_found:
     status: 404                           # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
-  validation_failed:
+  bad_request:
     # A `contribution_uid` path segment that is not a well-formed identifier at
     # all. DOCS TEXT (overview §HTTP status codes, the 400 row verbatim): "The
     # service cannot or will not process the request due to something that is
@@ -73,6 +73,11 @@ outcomes:
     # sentence; register AMB-76 carries the repo-wide fixed handling (malformed
     # identifier segments are 400, well-formed-but-unknown ones stay 404) and
     # its scope names `contribution_uid`.
+    # KIND: `bad_request` — the taxonomy's kind for exactly the two sentences
+    # quoted above (vocab/outcomes.yaml). AMB-76's law is one law, so it wears
+    # one kind on every binding that realizes it; `validation_failed` would
+    # claim the addressed CONTRIBUTION's content was judged and found
+    # semantically invalid, which no part of this exchange does.
     status: 400
     body: error_loose
 # The CONTRIBUTION carries server-assigned identity + the server-set audit time
