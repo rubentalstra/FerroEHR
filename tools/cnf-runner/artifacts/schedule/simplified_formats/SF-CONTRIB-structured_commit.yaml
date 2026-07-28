@@ -63,7 +63,16 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
-      - { assert: field, path: "context/start_time", exists: true }          # ctx/time -> now() (master06 default)
+      # The STRUCTURED inner payload became a real COMPOSITION: the fixture's
+      # one clinical datum survives to the canonical read-back. (A
+      # context/start_time assertion was DROPPED at the 2026-07-28 triage:
+      # this fixture's ctx carries language/territory/composer only, no
+      # event-context content, and no released sentence obliges a server to
+      # CREATE an EVENT_CONTEXT — RM composition.adoc puts context at 0..1;
+      # master06's time default is a VALUE rule for nodes that exist. The
+      # ctx/time default is covered on grounded fixtures by SF-MAP-context
+      # and SF-CONTRIB-flat_commit.)
+      - { assert: field, path: "content/0/data/events/0/data/items/0/value/magnitude", equals: 37.2 }
 postconditions:
   - assert: state
     text: >-

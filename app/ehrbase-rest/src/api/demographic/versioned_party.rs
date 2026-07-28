@@ -38,14 +38,19 @@ pub(super) async fn run(
     match op {
         "versioned_party_get" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;
-            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .versioned_party_get(p.versioned_object_uid)
                 .await?;
-            // ETag from VERSIONED_OBJECT.uid.value (overview §"ETag and
-            // Last-Modified" names it as an ETag source).
-            Ok(super::read_versioned(h, &vo, &resp.body))
+            // ETag from VERSIONED_OBJECT.uid.value and Last-Modified from the
+            // newest version's commit instant, both via the service metadata
+            // seam (overview §"ETag and Last-Modified": VERSIONED_OBJECT is
+            // named outright; the instant is the version spine's, never
+            // scraped from the container body, which exposes no commit
+            // audit — the EHR-side container reads' pattern).
+            let mut out = crate::overview::negotiate::respond(h, ok, &resp.body);
+            super::set_versioning_headers(&mut out, resp.meta.as_ref());
+            Ok(out)
         }
         "versioned_party_revision_history" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;

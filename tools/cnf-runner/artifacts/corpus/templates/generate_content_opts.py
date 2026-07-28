@@ -737,7 +737,7 @@ def structural_history(template_id, events_card=None, summary_exist=None):
     return composition(template_id, obs)
 
 
-def structural_event(template_id, events_slot_type="EVENT", state_exist=None):
+def structural_event(template_id, events_slot_type="EVENT", state_exist=None, events_unbounded=False):
     value_attr = c_single_attr("value", dv_string_type("DV_TEXT"), exist=(0, 1))
     element = (
         '<children xsi:type="C_COMPLEX_OBJECT"><rm_type_name>ELEMENT</rm_type_name>'
@@ -751,7 +751,12 @@ def structural_event(template_id, events_slot_type="EVENT", state_exist=None):
         state_attr = c_single_attr(
             "state", c_complex("ITEM_TREE", node_id="at0005"), exist=state_exist
         )
-    event = c_complex(events_slot_type, data_attr + state_attr, node_id="at0002", occ_lu=(0, 1))
+    event = c_complex(
+        events_slot_type,
+        data_attr + state_attr,
+        node_id="at0002",
+        occ_lu=(0, None) if events_unbounded else (0, 1),
+    )
     events_attr = c_multiple_attr("events", event, cardinality(1, None), exist=(1, 1))
     history = c_complex("HISTORY", events_attr, node_id="at0001")
     hist_data = c_single_attr("data", history, exist=(1, 1))
@@ -1040,7 +1045,14 @@ def build_all():
     # unconstrained on purpose (as `time` does on the POINT_EVENT siblings):
     # the master05 tables make an RM-mandatory attribute addressable even where
     # the compacted web template carries no child for it.
-    T["sf_interval_event"] = lambda k: structural_event(k, events_slot_type="INTERVAL_EVENT")
+    # occ 0..* (upper_unbounded): master04 §"Conditionally Collapsed Wrapper
+    # Types" collapses a sole max-1 EVENT out of the web template, which
+    # would leave the SF-MAP-interval_event fixture's any_event:i paths
+    # naming no node (the 2026-07-28 posture-run triage, finding 3) — an
+    # unbounded occurrence RETAINS the node by the same released sentence.
+    T["sf_interval_event"] = lambda k: structural_event(
+        k, events_slot_type="INTERVAL_EVENT", events_unbounded=True
+    )
     T["ecc_observation_state_protocol_existence"] = lambda k: structural_observation_state_protocol(k)
 
     return T

@@ -1110,6 +1110,16 @@ fn mint_access_token(
 /// The JSON shape name of a value, for diagnostics that must say WHAT was
 /// captured instead of the expected object (a canonical-XML capture, for
 /// instance, resolves as a string).
+/// The shape name of a non-body capture, for the patched-body diagnostic.
+fn json_shape_of_captured(captured: &Captured) -> &'static str {
+    match captured {
+        Captured::Scalar(_) => "a scalar",
+        Captured::List(_) => "a list",
+        Captured::Body(_) => "a body",
+        Captured::InstantMs { .. } => "an instant",
+    }
+}
+
 fn json_shape(value: &Value) -> &'static str {
     match value {
         Value::Null => "null",
@@ -1316,21 +1326,47 @@ impl HttpDriver<'_> {
     ) -> Result<Value, String> {
         // Negatives against a non-existent resource have no captured base
         // body (nothing to GET) — the wire still needs a valid resource
-        // payload, so fall back to the minimal canonical EHR_STATUS the
-        // recipes commit (the SUT rejects on the unknown id, not the body).
+        // payload, so fall back to a minimal RM-VALID canonical EHR_STATUS
+        // (the SUT rejects on the unknown id, not the body). The fallback
+        // MUST be RM-valid: EHR_STATUS is an unconditional archetype root
+        // (RM ehr ehr_status.adoc `Is_archetype_root`) and a root without
+        // ARCHETYPED violates `Archetyped_valid` (RM common locatable.adoc,
+        // which also fixes archetype_node_id as "the stringified form of the
+        // archetype_id found in the archetype_details object") — the old
+        // details-less fallback masked a MISSING capture as a fake SUT 422
+        // (the 2026-07-28 posture-run triage, finding 7). The masking half
+        // of the fix: the fallback applies ONLY to a capture name the case
+        // never declared, i.e. the deliberate no-resource negatives; a case
+        // that DECLARED the capture and failed to bind it is a loud step
+        // error, never a substituted body.
         let mut patched = match vars.get(from_capture) {
             Some(Captured::Body(body)) => body.clone(),
-            _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
+            Some(other) => {
+                return Err(format!(
+                    "patched body: capture {from_capture} is bound but holds {} — a declared \
+                     capture that did not bind a body is a case defect, not a substitutable one",
+                    json_shape_of_captured(other)
+                ));
+            }
+            None if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
                 serde_json::json!({
                     "_type": "EHR_STATUS",
                     "name": { "_type": "DV_TEXT", "value": "ehr status" },
                     "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                    "archetype_details": {
+                        "_type": "ARCHETYPED",
+                        "archetype_id": {
+                            "_type": "ARCHETYPE_ID",
+                            "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+                        },
+                        "rm_version": "1.1.0"
+                    },
                     "subject": { "_type": "PARTY_SELF" },
                     "is_queryable": true,
                     "is_modifiable": true
                 })
             }
-            _ => {
+            None => {
                 return Err(format!(
                     "patched body: capture {from_capture} holds no resource body"
                 ));
