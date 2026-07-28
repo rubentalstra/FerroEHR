@@ -38,8 +38,8 @@ requires: { server: empty }
 parameters:
   iteration: reset_per_row
   fixture_set:
-    - { data_set: cnf.adl2.opt.invalid.unparseable, expected: validation_failed, defect: "malformed cADL block — the source does not parse" }
-    - { data_set: cnf.adl2.opt.invalid.empty, expected: validation_failed, defect: "empty source — no artefact production at all" }
+    - { data_set: cnf.adl2.opt.invalid.unparseable, expected: bad_request, defect: "malformed cADL block — the source does not parse" }
+    - { data_set: cnf.adl2.opt.invalid.empty, expected: bad_request, defect: "empty source — no artefact production at all" }
 flow:
   - step: 1
     call: upload_artefact

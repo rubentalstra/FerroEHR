@@ -154,7 +154,10 @@ pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
         for (i, id) in ids.iter().enumerate() {
             emit_identifier(
                 id,
-                out.occurrence_mut("_identifier", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+                out.occurrence_mut(
+                    IDENTIFIER_SEGMENT,
+                    Some(u32::try_from(i).unwrap_or(u32::MAX)),
+                ),
             );
         }
     }
@@ -249,7 +252,7 @@ fn external_ref(node: &SimNode, default_party_type: &str) -> Option<Value> {
 /// §PARTY_IDENTIFIED `/_identifier:i`).
 fn build_party_identifiers(node: &SimNode) -> Vec<Value> {
     node.children
-        .get("_identifier")
+        .get(IDENTIFIER_SEGMENT)
         .map(|c| {
             c.occurrences
                 .iter()
@@ -420,6 +423,14 @@ fn relationship_child(node: &SimNode) -> Option<&SimNode> {
 /// [`crate::flat::build`] excludes this segment from the generic `_`-family
 /// routing on a PARTY leaf, because [`build_party`] consumes it.
 pub(crate) const RELATIONSHIP_TABLE_SEGMENT: &str = "_relationship";
+
+/// The party identifier family's segment (master05 §§PARTY_IDENTIFIED,
+/// PARTY_RELATED `/_identifier:i`). [`build_party`] is its single consumption
+/// site — [`crate::flat::build`] excludes it from the generic `_`-family
+/// routing on a PARTY leaf, whose `identifier` arm would otherwise rebuild the
+/// same children over the key and, on an all-empty family, write the
+/// `identifiers: []` that RM `Identifiers_valid` forbids.
+pub(crate) const IDENTIFIER_SEGMENT: &str = "_identifier";
 
 #[cfg(test)]
 mod tests {
@@ -627,5 +638,42 @@ mod tests {
              `_identifier:i` family — `emit_party` already did: {:?}",
             from_rm_attrs.children.keys().collect::<Vec<_>>()
         );
+    }
+    // …and exactly ONE CONSUMPTION site on the way back: `build_party`. The
+    // generic `_`-family router (`structures::build_rm_attr`) still owns an
+    // `identifier` arm for hosts that are not parties, so the split is enforced
+    // by `crate::flat::build::leaf_consumes_segment`, which withholds the
+    // segment from the router on every PARTY base. This pins the edge the two
+    // sites do NOT agree on: an `_identifier` family whose occurrences are all
+    // empty. `build_party` omits the key; the router's arm would insert
+    // `identifiers: []`, which RM `PARTY_IDENTIFIED` invariant
+    // `Identifiers_valid` forbids ("identifiers /= Void implies not
+    // identifiers.is_empty") and ITS-REST Resources.md §JSON Format keeps off
+    // the wire ("The RM attributes … that are `Null` or an empty list (array)
+    // SHOULD be absent when serialized as JSON").
+    #[test]
+    fn an_all_empty_party_identifier_family_yields_no_identifiers_key() {
+        let mut party = SimNode::default();
+        party.attrs.insert("name".to_owned(), json!("Silvia Blake"));
+        // The parsers prune an all-empty family away, so the disagreement is
+        // only reachable here — which is exactly why it needs a pin.
+        let _ = party.occurrence_mut(IDENTIFIER_SEGMENT, Some(0));
+
+        let built = build_party(&party, "PERSON");
+        assert_eq!(built["_type"], json!("PARTY_IDENTIFIED"));
+        assert!(
+            built.get("identifiers").is_none(),
+            "an empty identifier family is absent, never `identifiers: []`: {built}"
+        );
+
+        // A non-empty family still lands, so the omission is about emptiness
+        // and not about the segment being dropped.
+        let mut with_id = SimNode::default();
+        with_id
+            .occurrence_mut(IDENTIFIER_SEGMENT, Some(0))
+            .attrs
+            .insert("id".to_owned(), json!("122"));
+        let built = build_party(&with_id, "PERSON");
+        assert_eq!(built["identifiers"][0]["id"], json!("122"));
     }
 }

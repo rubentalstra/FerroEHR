@@ -339,7 +339,12 @@ fn build_children(
         }
     }
 
-    if children.is_empty() && has_inputs(&node.rm_type) {
+    // A party node keeps its inputs even when it HAS children — master05's
+    // three PARTY_PROXY tables put the party suffixes and the `/relationship` +
+    // `/_identifier:i` sub-paths on the SAME node (the ADL 1.4 builder's rule,
+    // verbatim). Every other leaf family loses its inputs to a child, which
+    // means the node is a container rather than a datum.
+    if has_inputs(&node.rm_type) && (children.is_empty() || is_party(&node.rm_type)) {
         let (built, ptypes) = build_inputs(ctx, term, &node.rm_type, co);
         node.inputs = built;
         node.proportion_types = ptypes;
@@ -371,12 +376,26 @@ fn is_leaf_ignored(co: &CObject) -> bool {
     )
 }
 
+/// Whether a node of this RM type is a web-template LEAF — one that carries
+/// `inputs` rather than child nodes. The am24 twin of the ADL 1.4 builder's
+/// rule, including the PARTY arm: master05 §§PARTY_SELF, PARTY_IDENTIFIED,
+/// PARTY_RELATED each get their own mapping table and share the party suffix
+/// rows, so a slot narrowed to `PARTY_RELATED` is a party leaf like the other
+/// two — its `relationship` is a DV_CODED_TEXT sub-path (master05
+/// §"PARTY_RELATED performer"), not a demotion to a container.
 fn has_inputs(rm_type: &str) -> bool {
     rm_type.starts_with("DV_")
-        || rm_type == "PARTY_PROXY"
-        || rm_type == "PARTY_IDENTIFIED"
+        || is_party(rm_type)
         || rm_type == "CODE_PHRASE"
         || rm_type == "TERMINOLOGY_CODE"
+}
+
+/// The `PARTY_PROXY` family (the am24 twin of the ADL 1.4 builder's rule).
+fn is_party(rm_type: &str) -> bool {
+    matches!(
+        rm_type,
+        "PARTY_PROXY" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+    )
 }
 
 // ── inputs (the am24 RM-type → inputs mapping) ───────────────────────────────
@@ -413,10 +432,14 @@ fn build_inputs(
             .into_iter()
             .map(|s| text_input(cstring_under(co, s), Some(s)))
             .collect(),
-        "PARTY_PROXY" | "PARTY_IDENTIFIED" => ["id", "id_scheme", "id_namespace", "name"]
-            .into_iter()
-            .map(|s| text_input(cstring_under(co, s), Some(s)))
-            .collect(),
+        // The three PARTY_PROXY subtype tables share these rows — master05
+        // §§PARTY_SELF, PARTY_IDENTIFIED, PARTY_RELATED.
+        "PARTY_PROXY" | "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
+            ["id", "id_scheme", "id_namespace", "name"]
+                .into_iter()
+                .map(|s| text_input(cstring_under(co, s), Some(s)))
+                .collect()
+        }
         _ => Vec::new(),
     };
     (inputs, proportion_types)

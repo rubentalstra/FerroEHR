@@ -368,7 +368,14 @@ fn build_children(
         }
     }
 
-    if children.is_empty() && has_inputs(&node.rm_type) {
+    // A party node keeps its inputs even when it HAS children: master05's three
+    // PARTY_PROXY tables put the `|name`/`|id`/`|id_scheme`/`|id_namespace`
+    // suffixes and the `/relationship` + `/_identifier:i` SUB-PATHS on the same
+    // node, so a template that narrows a party and constrains `relationship`
+    // (the shape the vendored `Test constrained subject` / `MED - Perinatal
+    // history Summary` templates use) still owns every party suffix. For every
+    // other leaf family a child means the node is a container, not a datum.
+    if has_inputs(&node.rm_type) && (children.is_empty() || is_party(&node.rm_type)) {
         let labels = ArchetypeLabels { ctx, arch_id };
         let (built, ptypes) = inputs::build_inputs(&node.rm_type, co, &labels, group);
         node.inputs = built;
@@ -392,11 +399,31 @@ fn build_children(
     shape::post_process(node);
 }
 
+/// Whether a node of this RM type is a web-template LEAF — one that carries
+/// `inputs` rather than child nodes.
+///
+/// The PARTY arm covers all three concrete `PARTY_PROXY` subtypes the
+/// Simplified Formats spec gives their own mapping table: master05
+/// §§PARTY_SELF, PARTY_IDENTIFIED, PARTY_RELATED share the
+/// `|id`/`|id_scheme`/`|id_namespace` rows and the latter two add `|name`, so a
+/// slot an OPT narrows to `PARTY_RELATED` is the same party leaf as one left at
+/// `PARTY_IDENTIFIED` — its extra `relationship` is a DV_CODED_TEXT SUB-PATH
+/// (master05 §"PARTY_RELATED performer": "the `relationship` attribute is
+/// emitted as a sub-path under the participation, with the standard
+/// DV_CODED_TEXT suffixes"), not a reason to demote the party itself to a
+/// container.
 fn has_inputs(rm_type: &str) -> bool {
-    rm_type.starts_with("DV_")
-        || rm_type == "PARTY_PROXY"
-        || rm_type == "PARTY_IDENTIFIED"
-        || rm_type == "CODE_PHRASE"
+    rm_type.starts_with("DV_") || is_party(rm_type) || rm_type == "CODE_PHRASE"
+}
+
+/// The `PARTY_PROXY` family: the abstract type an unnarrowed slot keeps, plus
+/// the two concrete subtypes an OPT can narrow one to (`PARTY_SELF` carries no
+/// constrainable attribute of its own, so no template names it).
+fn is_party(rm_type: &str) -> bool {
+    matches!(
+        rm_type,
+        "PARTY_PROXY" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+    )
 }
 
 // ── cardinalities ────────────────────────────────────────────────────────────

@@ -51,6 +51,18 @@ workflow refuses a tag that has no matching section here.
   being checked against a guess. Both behaviours were previously carried as
   cited coverage gaps.
 
+- **Conformance coverage: calling a resource with the wrong HTTP method is
+  now measured** (#596). The openEHR REST specification says a method the
+  specification recognizes but the addressed resource does not serve should be
+  answered `405 Method Not Allowed`, and the HTTP standard it defers to
+  requires that answer to carry an `Allow` field listing the methods the
+  resource does support. The conformance suite now proves both on a real
+  resource — a `DELETE` to the EHR collection, which the specification serves
+  only under `POST` and `GET` — instead of recording the behaviour as an
+  untestable gap. The `Allow` check asserts that both specified methods are
+  listed while tolerating any order and any additional methods a server
+  chooses to support.
+
 - **Canonical XML: choose the openEHR schema namespace per request** (#196).
   openEHR publishes its XML schemas in two lineages that differ only by the
   namespace a document declares — `http://schemas.openehr.org/v1` (the stable
@@ -260,6 +272,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The conformance suite proves EHR-scoped querying against two EHRs, not
+  one** (#604). The four cases that check a query is confined to the EHR named
+  in the `openehr-ehr-id` request header used to run against a server holding
+  a single EHR, so a server that ignored the header returned the same rows and
+  passed. Each now creates a second EHR with its own content first: an
+  unscoped answer carries the extra row and fails the case. The behaviour
+  being checked is unchanged; the check can no longer be satisfied by
+  accident.
+
+- **The conformance suite now names a malformed request and invalid content
+  differently everywhere** (#605). Fifteen more conformance cases used to
+  report a rejected request as a content-validation failure when what the
+  request actually broke was its own syntax — an unparseable template upload,
+  a path segment that is not an identifier, a `version_at_time` outside the
+  ISO 8601 form the specification mandates, or a tag list sent as something
+  other than a list. Those now report as malformed requests. Nothing changes
+  on the wire (all fifteen answered `400 Bad Request` before and after) and
+  no server passes or fails differently; the published conformance report and
+  case records simply name one rejection law one way, so a reader can tell the
+  two families apart.
+
 - **Two behaviours the conformance suite used to treat as optional are now
   required of every server** (#556). openEHR publishes its REST
   specification as normative prose *and* as OpenAPI files, and the prose is
@@ -340,6 +373,19 @@ workflow refuses a tag that has no matching section here.
   the base path.
 
 ### Fixed
+
+- **Web Template: a template that narrows a party to `PARTY_RELATED` now
+  describes its party fields** (#600). When an operational template pins a
+  party slot — a subject, a composer, a participation performer — to
+  `PARTY_RELATED`, the generated Web Template used to describe that node as an
+  empty container: none of the `|name`, `|id`, `|id_scheme` and
+  `|id_namespace` fields the Simplified Formats specification gives every
+  party appeared, so a form builder reading the Web Template could not offer
+  them even though the server has always accepted and returned them. The four
+  fields are now described, alongside the `relationship` sub-path the narrowing
+  adds. The same held wherever a party node also constrained an attribute; the
+  fields survive that too. Nothing changes for stored data or for the FLAT and
+  STRUCTURED wire.
 
 - **FLAT/STRUCTURED: the specification's other spelling of a related party's
   relationship is accepted on input** (#589). The Simplified Formats mapping

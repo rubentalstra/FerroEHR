@@ -424,11 +424,39 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
             put(out, base, "", json!(value));
             put(out, base, "formalism", json!(formalism));
         }
-        // PARTY_PROXY / PARTY_IDENTIFIED value leaves are skipped rather than
-        // fabricated: an unset `ENTRY.subject` defaults to PARTY_SELF and a
-        // `COMPOSITION.composer` comes from `ctx/composer_*`, so inventing a
-        // named party here would put a fictitious person in the example.
-        // See the module NOTE.
+        // A slot NARROWED to a concrete non-default party subtype must
+        // materialize: the builder's unset-subject default is PARTY_SELF
+        // (master05 §OBSERVATION `/subject` row Note), which the template's
+        // own constraint then refuses — so the example emits the minimal
+        // members the narrowed subtype mandates. PARTY_RELATED additionally
+        // carries `relationship` 1..1 (RM common
+        // `UML/classes/org.openehr.rm.common.generic.party_related.adoc`),
+        // whose example code comes from the node's own relationship child
+        // when the template constrains one.
+        "PARTY_IDENTIFIED" => put(out, base, "name", json!("Example party")),
+        "PARTY_RELATED" => {
+            put(out, base, "name", json!("Example party"));
+            let rel_base = format!("{base}/relationship");
+            match node
+                .children
+                .iter()
+                .find(|c| c.id == "relationship" || c.aql_path.ends_with("/relationship"))
+            {
+                Some(rel) => emit_coded_text(rel, &rel_base, out),
+                // Unconstrained: the openEHR `related party relationship`
+                // group's canonical unknown (TERM 3.1.0).
+                None => {
+                    put(out, &rel_base, "code", json!("253"));
+                    put(out, &rel_base, "value", json!("unknown"));
+                    put(out, &rel_base, "terminology", json!("openehr"));
+                }
+            }
+        }
+        // Every OTHER party leaf (an unnarrowed PARTY_PROXY, PARTY_SELF) is
+        // skipped rather than fabricated: an unset `ENTRY.subject` defaults
+        // to PARTY_SELF and a `COMPOSITION.composer` comes from
+        // `ctx/composer_*`, so inventing a named party here would put a
+        // fictitious person in the example. See the module NOTE.
         _ => return false,
     }
     true
