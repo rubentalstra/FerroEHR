@@ -125,9 +125,17 @@ sm_operations:
     reason: variant_of
     source: "SM i_party.adoc + released ITS-REST 1.1.0 demographic API — versioned-PARTY existence via GET 200/404"
     note: "realized via I_PARTY.get_party_at_version (existence = GET 200/404)"
+  # RETYPED 2026-07-28 (#623) from off_wire: the RELEASED wire still has no
+  # PARTY_RELATIONSHIP resource (that boundary is unchanged and stays register
+  # AMB-32's), but the operation is now EXERCISED — the product's declared
+  # extension route realizes the existence probe exactly as the released party
+  # reads do, so the same variant_of realization I_PARTY.has_party carries
+  # applies here. The row is about the SPEC surface, and the source below says
+  # so explicitly; the realization it names is our own extension.
   - operation: I_PARTY_RELATIONSHIP.has_party_relationship
-    reason: off_wire
-    source: "SM i_party_relationship.adoc — register AMB-32: PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire"
+    reason: variant_of
+    source: "SM i_party_relationship.adoc §has_party_relationship — released ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource for it (register AMB-32); existence is the 200/404 of the read, the same realization vocab/wire_surface.yaml records for I_PARTY.has_party. The read it rides on is this product's extension route (no openEHR spec governs it — our own design/extension), so the coverage is a CAPABILITY fact, never an ITS-REST wire-conformance one"
+    note: "realized via I_PARTY_RELATIONSHIP.get_party_relationship (existence = GET 200/404; the I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa/-bbbb pair drives both arms)"
   - operation: I_SUBJECT_PROXY_SERVICE.add_binding_frame
     reason: off_wire
     source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
@@ -2022,7 +2030,7 @@ served_extensions:
       - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version"
       - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}"
     config_gate: "always on with the DEMOGRAPHIC group (no separate toggle)"
-    spec_silence: "SM i_party_relationship.adoc declares the operations and released ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — register AMB-32, whose its-rest bindings are explicitly unrealized so the cases verdict not-applicable WITH CITATION. These routes are the honest boundary realization: no released clause governs the URI space beyond the resource set, so serving them breaches nothing, and no conformance claim rests on them."
+    spec_silence: "SM i_party_relationship.adoc declares the operations and released ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — register AMB-32. These routes are the honest boundary realization: no released clause governs the URI space beyond the resource set, so serving them breaches nothing. UPDATED 2026-07-28 (#623): the six SM relationship operations now carry EXTENSION bindings onto these routes (`extension:` blocks naming this family), so the PartyRelationshipOperations battery is EXECUTED rather than excused — but the scoping is unchanged and machine-enforced: an extension binding is fenced off from every released-wire judgement (`realization-scope` gate), the capability row is `realization: extension` and therefore may never be `required`, and NO openEHR profile tier or ITS-REST wire-conformance claim rests on these routes."
     never_gates: true
   - family: stored-query-bare-list
     routes:

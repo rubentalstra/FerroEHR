@@ -1,15 +1,58 @@
-# ITS-REST 1.1.0 surfaces no wire for the PARTY_RELATIONSHIP operations —
-# demographic.openapi.yaml has no /demographic/party_relationship* path;
-# PARTY_RELATIONSHIP is a schema only (RM demographic: a relationship is held
-# by-value in the source PARTY's relationships attribute). Explicit unrealized
-# declaration (AMB-17/22/24 precedent); register entry AMB-32.
-# master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY_RELATIONSHIP.update_party_relationship.
+# EXTENSION realization of I_PARTY_RELATIONSHIP.update_party_relationship.
+#
+# NO RELEASED WIRE EXISTS (re-derived first-hand 2026-07-28): the released
+# specifications/demographic.openapi.yaml declares no `/demographic/
+# party_relationship*` path and the ITS-REST docs text never names the resource
+# — register AMB-32.
+#
+# WHAT THIS BINDING DRIVES: `PUT /demographic/party_relationship/{uid_based_id}`
+# with the preceding version in `If-Match`, a route this product serves of its
+# own design (the `party-relationship` served_extensions family). NO openEHR
+# SPEC GOVERNS IT — our own design/extension — so it gates the
+# PartyRelationshipOperations CAPABILITY verdict only, never ITS-REST wire
+# conformance. The `precondition_missing` (absent If-Match) branch is the
+# sibling variant binding `-missing_if_match`.
 sm_operation: I_PARTY_RELATIONSHIP.update_party_relationship
 its: its-rest
-unrealized:
+extension:
+  family: party-relationship
   reason: >-
-    No PARTY_RELATIONSHIP resource exists in ITS-REST 1.1.0; the SM
-    update_party_relationship has no bindable wire realization.
-  source: "SM docs/UML/classes/i_party_relationship.adoc (update_party_relationship) vs ITS-REST specifications/demographic.openapi.yaml (no party_relationship path)"
+    ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so the SM
+    update_party_relationship has no released wire; this product serves the
+    update on its own /demographic/party_relationship/{uid_based_id} route,
+    realizing the SM preceding_version_uid as the If-Match header.
+  source: >-
+    SM docs/UML/classes/i_party_relationship.adoc (update_party_relationship,
+    Pre_has_relationship) vs released ITS-REST
+    specifications/demographic.openapi.yaml (no party_relationship path) — no
+    openEHR spec governs the extension route, our own design/extension
   ambiguity: AMB-32
+request:
+  method: PUT
+  path: /demographic/party_relationship/{versioned_object_uid}
+  body: party_relationship
+  headers:
+    If-Match: '"${preceding_version_uid}"'
+    Prefer: "return=representation"
+formats: [canonical-json]
+outcomes:
+  updated:
+    status: 200
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Location: present
+      Content-Type: negotiated
+    body: prefer_conditional
+  precondition_failed:
+    status: 412
+    headers:
+      ETag: latest-version-uid
+      Location: absent
+  validation_failed:
+    status: 422
+    body: error_loose
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [uid]

@@ -1,15 +1,59 @@
-# ITS-REST 1.1.0 surfaces no wire for the PARTY_RELATIONSHIP operations —
-# demographic.openapi.yaml has no /demographic/party_relationship* path;
-# PARTY_RELATIONSHIP is a schema only (RM demographic: a relationship is held
-# by-value in the source PARTY's relationships attribute). Explicit unrealized
-# declaration (AMB-17/22/24 precedent); register entry AMB-32.
-# master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY_RELATIONSHIP.delete_party_relationship.
+# EXTENSION realization of I_PARTY_RELATIONSHIP.delete_party_relationship.
+#
+# NO RELEASED WIRE EXISTS (re-derived first-hand 2026-07-28): the released
+# specifications/demographic.openapi.yaml declares no `/demographic/
+# party_relationship*` path and the ITS-REST docs text never names the resource
+# — register AMB-32.
+#
+# WHAT THIS BINDING DRIVES: `DELETE /demographic/party_relationship/
+# {uid_based_id}` where the path id is the latest VERSION uid — the route this
+# product serves of its own design (the `party-relationship` served_extensions
+# family), carrying the preceding version IN THE PATH exactly as the released
+# party delete does. NO openEHR SPEC GOVERNS IT — our own design/extension — so
+# it gates the PartyRelationshipOperations CAPABILITY verdict only, never
+# ITS-REST wire conformance.
+#
+# The delete is LOGICAL (a deletion VERSION is committed), so the SM
+# Post_relationship_deleted postcondition is verified through the RM
+# change_control version facts, not through a get-after-delete status.
+#
+# NOTE (a real difference from the released party delete, recorded rather than
+# glossed): the `conflict` branch of this route does NOT echo the latest
+# `version_uid` in an `ETag`, so no such header is declared here. Nothing
+# released governs the route, so nothing is violated — but the divergence is
+# stated so a reader is never misled into expecting the released shape.
 sm_operation: I_PARTY_RELATIONSHIP.delete_party_relationship
 its: its-rest
-unrealized:
+extension:
+  family: party-relationship
   reason: >-
-    No PARTY_RELATIONSHIP resource exists in ITS-REST 1.1.0; the SM
-    delete_party_relationship has no bindable wire realization.
-  source: "SM docs/UML/classes/i_party_relationship.adoc (delete_party_relationship) vs ITS-REST specifications/demographic.openapi.yaml (no party_relationship path)"
+    ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so the SM
+    delete_party_relationship has no released wire; this product serves the
+    delete on its own /demographic/party_relationship/{uid_based_id} route with
+    the preceding version in the path.
+  source: >-
+    SM docs/UML/classes/i_party_relationship.adoc (delete_party_relationship,
+    Post_relationship_deleted) vs released ITS-REST
+    specifications/demographic.openapi.yaml (no party_relationship path) — no
+    openEHR spec governs the extension route, our own design/extension
   ambiguity: AMB-32
+request:
+  method: DELETE
+  path: /demographic/party_relationship/{version_uid}
+formats: [canonical-json]
+outcomes:
+  deleted:
+    status: 204
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Location: absent
+  not_found: { status: 404 }
+  conflict:
+    status: 409
+    headers:
+      Location: absent
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [uid]

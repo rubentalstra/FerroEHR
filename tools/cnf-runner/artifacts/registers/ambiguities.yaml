@@ -416,9 +416,28 @@ AMB-32:
     resource this API does not have.
     Our own `/demographic/party_relationship/**` routes are the honest boundary
     realization of SM `I_PARTY_RELATIONSHIP`: no openEHR spec governs them —
-    our own extension — and the service module documents them as excluded from
-    any conformance-profile claim, so no verdict rests on them. The demographic
-    invariant defects those routes would have to enforce are AMB-130.
+    our own extension. The demographic invariant defects those routes would have
+    to enforce are AMB-130.
+    REALIZATION RE-DERIVED 2026-07-28 (#623), and the handling above is
+    SUPERSEDED on exactly one point. The missing released wire is CONFIRMED
+    unchanged, first-hand: the ITS-REST docs text names no PARTY_RELATIONSHIP
+    resource anywhere under specifications/docs/demographic/**, and
+    specifications/demographic.openapi.yaml declares twenty-seven paths, none of
+    them `/demographic/party_relationship*`. What changed is what the CATALOGUE
+    does about it. Parking a CLAIMED capability as "not-applicable with
+    citation" was a certification hole: ISO/IEC 9646 test selection legitimizes
+    N/A only for a capability a party does NOT claim, and this party claims
+    PartyRelationshipOperations. So the six SM relationship operations now carry
+    EXTENSION bindings (`extension:` blocks naming the `party-relationship`
+    served_extensions family) onto the routes this product actually serves, and
+    the fifteen-case battery EXECUTES. The scoping the old wording achieved by
+    keeping the bindings unrealized is now MACHINE-ENFORCED instead of
+    conventional: the `realization-scope` gate fences an extension binding off
+    from every released-wire judgement and requires the capability row to carry
+    `realization: extension`, which the matrix model forbids from ever being
+    `required`. So it remains true that NO openEHR profile tier and NO ITS-REST
+    wire-conformance claim rests on these routes — the difference is that the
+    capability is now TESTED as product function rather than excused.
   disposition: fixed_handling
   upstream_ref: "UPR-11"
 AMB-33:

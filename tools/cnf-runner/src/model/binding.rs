@@ -657,7 +657,32 @@ pub struct UnrealizedDecl {
     pub ambiguity: crate::ids::AmbiguityId,
 }
 
-/// One binding file: either a full wire realization, or an explicit
+/// An EXTENSION realization: the operation is driven over a route no
+/// openEHR specification governs — our own design/extension, declared as a
+/// family of `vocab/wire_surface.yaml` `served_extensions`.
+///
+/// A binding carrying this block is still a full wire realization (request +
+/// outcomes, executed like any other), but it is fenced off from every
+/// released-wire judgement: the released-path claim check skips it, and the
+/// capabilities its cases carry must be `realization: extension` in the
+/// capability matrix, which may never be `required`. Wire-level ITS-REST
+/// conformance therefore never rests on it; only the CAPABILITY verdict does.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExtensionDecl {
+    /// The `served_extensions` family that declares the route (resolved).
+    pub family: String,
+    /// Why the released ITS surfaces no wire for the operation, and what
+    /// this product serves instead.
+    pub reason: String,
+    /// The spec citation for the gap + the explicit spec-silence flag.
+    pub source: String,
+    /// The ambiguity-register entry adjudicating the boundary.
+    pub ambiguity: crate::ids::AmbiguityId,
+}
+
+/// One binding file: a full wire realization (released or, with an
+/// `extension` block, over a declared extension route), or an explicit
 /// `unrealized` declaration.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -687,6 +712,10 @@ pub struct OperationBinding {
     pub applies: Option<Applies>,
     #[serde(default)]
     pub unrealized: Option<UnrealizedDecl>,
+    /// Present when the realization drives a declared extension route
+    /// instead of a released ITS-REST operation ([`ExtensionDecl`]).
+    #[serde(default)]
+    pub extension: Option<ExtensionDecl>,
     #[serde(default)]
     pub request: Option<RequestSpec>,
     #[serde(default)]
@@ -710,12 +739,26 @@ impl OperationBinding {
         self.unrealized.is_some()
     }
 
+    /// Whether this binding realizes the operation over a declared EXTENSION
+    /// route rather than a released ITS-REST operation.
+    #[must_use]
+    pub fn is_extension(&self) -> bool {
+        self.extension.is_some()
+    }
+
     /// Realization-shape invariant: exactly one of `unrealized` or the full
-    /// wire form (`request` + `outcomes`).
+    /// wire form (`request` + `outcomes`), and an `extension` declaration
+    /// only on the realized form (an extension route IS a realization — the
+    /// two blocks are mutually exclusive by construction).
     ///
     /// # Errors
     /// Returns a message naming the violated invariant.
     pub fn check_invariants(&self) -> Result<(), String> {
+        if self.unrealized.is_some() && self.extension.is_some() {
+            return Err(
+                "a binding is either unrealized or an extension realization, never both".to_owned(),
+            );
+        }
         match (&self.unrealized, &self.request, &self.outcomes) {
             (Some(_), None, None) | (None, Some(_), Some(_)) => Ok(()),
             (Some(_), _, _) => Err("unrealized binding must carry no request/outcomes".to_owned()),
@@ -927,6 +970,49 @@ mod tests {
             Some(RequestBody::Named { optional: true, .. })
         ));
         assert_eq!(request.path.params().len(), 0);
+    }
+
+    /// An `extension` realization is a full wire form fenced off from the
+    /// released-wire judgements, and it is never also `unrealized`.
+    #[test]
+    fn extension_realization_is_a_realized_binding_and_never_unrealized() {
+        let shape = |extra: serde_json::Value| {
+            let mut v = serde_json::json!({
+                "sm_operation": "I_PARTY_RELATIONSHIP.get_party_relationship",
+                "its": "its-rest",
+                "extension": {
+                    "family": "party-relationship",
+                    "reason": "the release surfaces no PARTY_RELATIONSHIP resource",
+                    "source": "SM i_party_relationship.adoc vs ITS-REST demographic.openapi.yaml",
+                    "ambiguity": "AMB-32"
+                },
+                "request": { "method": "GET", "path": "/demographic/party_relationship/{versioned_object_uid}" },
+                "outcomes": { "ok": { "status": 200 }, "not_found": { "status": 404 } }
+            });
+            if let (Some(object), Some(extra)) = (v.as_object_mut(), extra.as_object()) {
+                for (k, value) in extra {
+                    object.insert(k.clone(), value.clone());
+                }
+            }
+            v
+        };
+
+        let b: OperationBinding = serde_json::from_value(shape(serde_json::json!({}))).unwrap();
+        assert!(b.is_extension());
+        assert!(!b.is_unrealized());
+        assert!(b.check_invariants().is_ok());
+
+        // extension + unrealized is unrepresentable as a coherent binding.
+        let mut both: OperationBinding = serde_json::from_value(shape(serde_json::json!({
+            "unrealized": {
+                "reason": "r", "source": "s", "ambiguity": "AMB-32"
+            }
+        })))
+        .unwrap();
+        assert!(both.check_invariants().is_err());
+        both.request = None;
+        both.outcomes = None;
+        assert!(both.check_invariants().is_err());
     }
 
     #[test]
