@@ -25,3 +25,6 @@ invalid_query: { class: error, meaning: "Malformed/unprocessable AQL" }
 timeout: { class: error, meaning: "Server aborted at max execution time" }
 unauthenticated: { class: error, meaning: "Request lacks valid authentication (route-table-wide 401 rule)" }
 forbidden: { class: error, meaning: "Authenticated principal lacks authorization for the operation (403)" }
+accepted: { class: success, meaning: "Accepted for later processing, not yet performed (\"The server may execute this operation asynchronously (e.g. in batches), in which case returns status 202 Accepted\")" }
+bad_request: { class: error, meaning: "Malformed request the service will not process (\"malformed request syntax, syntactically invalid content\"; the generic client-side error \"used when no other 4xx error code is appropriate\") — distinct from validation_failed, the well-formed-but-semantically-invalid branch" }
+method_not_allowed: { class: error, meaning: "The method is known to the service but the target resource does not support it (\"If a method is recognized but not allowed for the target resource, the response SHOULD be 405 Method Not Allowed status code\"), including a resource a deployment's configuration leaves serving none" }

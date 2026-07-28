@@ -44,11 +44,10 @@
 # The released 400 branch (responses/400.yaml) is NOT declared: the three
 # filter parameters are unconstrained strings (parameters/query/tag_key.yaml,
 # tag_value.yaml, tag_target_path.yaml), so no request this catalogue can build
-# is syntactically invalid, and the closed outcome taxonomy carries no
-# malformed-request kind (the same boundary the
-# `ehr-id-path-segment-malformed-rejection` wire-surface element records).
-# Declaring a branch no case can reach, under a kind that does not mean it,
-# would be an invented mapping.
+# is syntactically invalid. Declaring a branch no case can reach would be an
+# invented mapping. (The kind itself is no longer the obstacle: the 2026-07-28
+# schedule release, #544, added `bad_request`; the unconstrained-parameter
+# reason stands on its own.)
 #
 # The filter parameters themselves are NOT exercised by this binding: their
 # semantics (repeat combination, cross-parameter combination, match mode,

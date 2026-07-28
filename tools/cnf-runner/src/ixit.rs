@@ -89,6 +89,22 @@ pub struct Ixit {
     /// see [`Containers`]).
     #[serde(default)]
     pub containers: Option<Containers>,
+    /// The SUT's OWN CONFIGURED system identifier — the value it stamps into
+    /// data it authors: `AUDIT_DETAILS.system_id` when the client supplies
+    /// none (ITS-REST `Requests_and_responses.md` §"openehr-version and
+    /// openehr-audit-details": "when `system_id` is not provided by the
+    /// client, the server MUST set it to its own configured system
+    /// identifier") and the `creating_system_id` of every
+    /// `OBJECT_VERSION_ID` it mints (RM common `master06` §Change Control).
+    ///
+    /// It is an IXIT fact because no released operation discloses it: the
+    /// value half of that MUST is not derivable from the wire, so a case that
+    /// asserts it must be told what the deployment is configured with.
+    /// Absent => the party makes no such declaration, and the cases that
+    /// reference `${ixit:system_id}` are not-applicable with that citation
+    /// rather than guessing.
+    #[serde(default)]
+    pub system_id: Option<String>,
     /// The SUT's version-signing posture (RM common master06 §Digital
     /// Signature). Present => the SUT claims the Signing capability and this
     /// block declares its mode (digest | pgp) so the SIG-VERSION `verifiable`
@@ -168,6 +184,22 @@ mod tests {
         let containers = with.containers.unwrap();
         assert_eq!(containers.sut, "ehrbase-rs-ehrbase-1");
         assert_eq!(containers.db, "ehrbase-rs-ehrbase-postgres-1");
+    }
+
+    #[test]
+    fn declared_system_id_is_optional_and_parses() {
+        let bare: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        assert!(bare.system_id.is_none());
+
+        let declared: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
+            "system_id": "ehrbase-rs.local"
+        }))
+        .unwrap();
+        assert_eq!(declared.system_id.as_deref(), Some("ehrbase-rs.local"));
     }
 
     #[test]
