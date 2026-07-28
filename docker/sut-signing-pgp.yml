@@ -7,7 +7,13 @@
 #
 # Usage (overlay on the root stack):
 #   docker compose -f docker-compose.yml -f docker/sut-signing-pgp.yml up -d --wait ehrbase
-# The reference conformance pipeline selects it with CONF_SIGNING_MODE=pgp.
+# The reference conformance pipeline composes it UNCONDITIONALLY, as the
+# second (parallel) deployment of the same image: scripts/conformance.sh
+# stacks it with docker/sut-pgp-parallel.yml under its own project so both
+# claimed signing modes are exercised in the ONE committed record, one run.
+# The ixit declares that deployment as the `sut_pgp` instance and carries the
+# verifying public key in ITS OWN `signing` block; the pgp SIG-VERSION cases
+# address it with `on: sut_pgp`.
 #
 # The mounted key is the committed TEST OpenPGP secret key
 # (tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc) — test-only, no
