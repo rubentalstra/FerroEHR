@@ -22,7 +22,11 @@
 # Env:
 #   CONF_SUT        ehrbase-rs (default) | ehrbase-java | byo.
 #                   ehrbase-rs: builds + composes the root stack (the current
-#                     sources — the phase-gate zero-drift run).
+#                     sources — the phase-gate zero-drift run), PLUS a second
+#                     deployment of the same image in the openPGP
+#                     version-signing posture on its own project/ports, so
+#                     both claimed signing modes are exercised in the one
+#                     record (the ixit's `sut_pgp` instance).
 #                   ehrbase-java: composes upstream EHRbase (Java) from
 #                     docker/sut-ehrbase-java.yml (official images, fresh
 #                     volumes, host port 8091) — the #232 comparison target
@@ -46,9 +50,6 @@
 #   CONF_PERF_HOURS sustained-window ladder for the perf stage:
 #                   1 (default) | 2 | 4 | 6 | 8 | 12 — longer holds are
 #                   stricter demonstrations; nothing shorter exists.
-#   CONF_SIGNING_MODE
-#                   pgp: run the ehrbase-rs SUT in openPGP version-signing mode
-#                   (see below). Default digest.
 #   SKIP_BUILD      if set, compose up without --build (published image).
 #   SUT_USER/SUT_PASS, SUT_ADMIN_USER/SUT_ADMIN_PASS,
 #   SUT_RO_USER/SUT_RO_PASS
@@ -66,12 +67,6 @@ PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
 IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
-# CONF_SIGNING_MODE=pgp runs the ehrbase-rs SUT in openPGP version-signing mode
-# (the dual-mode signature run): overlay the pgp compose variant (mounts the
-# test OpenPGP secret key, sets EHRBASE__SIGNING__MODE=pgp) and use the pgp ixit
-# (which carries the verifying public key for SIG-VERSION verifiable). Default:
-# digest. Only meaningful for CONF_SUT=ehrbase-rs.
-SIGNING_MODE="${CONF_SIGNING_MODE:-digest}"
 # The ehrbase-rs SUT composes as its OWN project (docs.docker.com/compose/how-tos/project-name)
 # so it coexists with — and never tears down — a running dev stack (which
 # defaults to the directory-name project `ehrbase-rs`). Its `down -v` is thus
@@ -83,10 +78,19 @@ SIGNING_MODE="${CONF_SIGNING_MODE:-digest}"
 # The ixit's principals mint scoped Bearer tokens; the scope-governed
 # families are exercised exactly as a SMART Application would reach them.
 EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-smart.yml")
-if [ "$SIGNING_MODE" = "pgp" ] && [ "$SUT" = "ehrbase-rs" ]; then
-  EHRBASE_RS_COMPOSE+=(-f "$REPO_ROOT/docker/sut-signing-pgp.yml")
-  [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.pgp.json"
-fi
+# BOTH claimed version-signing modes are exercised in the ONE record: a SECOND
+# deployment of the SAME image runs the openPGP posture in its own compose
+# project on remapped host ports (docker/sut-pgp-parallel.yml), and the ixit
+# declares it as the `sut_pgp` instance with its own `signing` block. The pgp
+# SIG-VERSION cases address that instance; everything else drives the primary.
+# RM common master06 §Digital Signature defines digest and openPGP as
+# alternative depths of ONE mechanism and a deployment realizes exactly one —
+# so testing both claims means running both deployments, never merging two runs.
+EHRBASE_RS_PGP_COMPOSE=(docker compose -p ehrbase-rs-cnf-pgp \
+  -f "$REPO_ROOT/docker-compose.yml" \
+  -f "$REPO_ROOT/docker/sut-smart.yml" \
+  -f "$REPO_ROOT/docker/sut-signing-pgp.yml" \
+  -f "$REPO_ROOT/docker/sut-pgp-parallel.yml")
 
 
 # Build provenance for compose-built images: the OCI-standard REVISION arg (the
@@ -137,6 +141,7 @@ compose_down() {
     "${JAVA_COMPOSE[@]}" down -v || true
   else
     (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
   fi
 }
 
@@ -162,6 +167,7 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
     [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
   else
     (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
     if [ -n "${SKIP_BUILD:-}" ]; then
       (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --wait ehrbase)
     else
@@ -169,6 +175,14 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
       # CURRENT sources — build the image unless explicitly skipped.
       (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --build --wait ehrbase)
     fi
+    # The parallel pgp-posture deployment of the SAME image. NEVER --build:
+    # docker-compose.yml pins explicit `image:` tags, which are project-
+    # independent, so the artefact the primary just built (or, under
+    # SKIP_BUILD, pulled) is the artefact this project starts — one build,
+    # two postures, and no chance of the two records describing different code.
+    # `up ehrbase` starts only that service and its depends_on (postgres);
+    # the admin console depends ON ehrbase, so it stays down.
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" up -d --wait ehrbase)
   fi
 fi
 
@@ -201,6 +215,15 @@ fi
 # CONF_PERF_HOURS=1|2|4|6|8|12 extends the sustained window (default 1 —
 # the case's normative hour; longer holds are stricter demonstrations).
 if [ -n "${CONF_PERF_CLASS:-}" ]; then
+  # A measured record is environment-bound, and the parallel pgp deployment is
+  # part of the environment while it is resident (a second server + database
+  # holding their own CPU/memory limits). The functional catalogue is done with
+  # it by now, and perf drives the primary alone, so tear it down BEFORE the
+  # window opens — the measured envelope must be the one the ixit declares.
+  if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" = "ehrbase-rs" ]; then
+    echo "==> Tearing down the parallel pgp deployment before the measured window"
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
+  fi
   echo "==> Measured performance run (class $CONF_PERF_CLASS, ${CONF_PERF_HOURS:-1} h window)"
   perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"
              --class "$CONF_PERF_CLASS" --hours "${CONF_PERF_HOURS:-1}")
