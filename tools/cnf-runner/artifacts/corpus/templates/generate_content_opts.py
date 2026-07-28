@@ -28,11 +28,32 @@ Design notes (no openEHR spec governs these — our own corpus-authoring design)
   * DV_SCALE has no dedicated AOM 1.4 domain constraint (C_DV_SCALE does not
     exist in AOM 1.4 — DV_SCALE is an RM >= 1.1.0 type postdating ADL 1.4);
     it is expressed as a plain C_COMPLEX_OBJECT over DV_SCALE with a C_REAL
-    `value` constraint. Flagged in the summary.
+    `value` constraint AND, where the consuming case discriminates symbols, a
+    C_CODE_PHRASE `code_list` on symbol.defining_code — DV_SCALE.symbol is
+    1..1 in the RM, so the value set is a value|symbol tuple set. Flagged in
+    the summary.
   * Where several content cases share one template key with differing
     per-row constraints (the runner's known constraint-axis-in-rows model),
     the template bakes the single representative constraint its name/manifest
     provenance declares.
+
+REPRODUCIBILITY CONTRACT (the reason this file exists):
+
+    python3 generate_content_opts.py && git diff --exit-code -- .
+
+MUST be clean. Every committed OPT in this directory is this script's output
+and nothing else — the script is the source, the .opt files are the build
+product. A re-run that changes a committed OPT is a DEFECT in one of the two,
+never a diff to accept: either the script lost a constraint the artifact
+needs, or the artifact was hand-patched behind the script's back. Both have
+happened (a hand-patch added the DV_SCALE symbol value set to scale_list.opt
+without teaching the script about it, so the next re-run silently deleted a
+load-bearing constraint), which is why the check is written down here.
+
+Resolve a drift by DERIVING which side is right from the vendored specs and
+the case that consumes the template — never by accepting the diff and never
+by reverting the artifact without asking why it differs. When the artifact
+wins, teach the script; when the script wins, the artifact is regenerated.
 
 Run:  python3 generate_content_opts.py
 It rewrites every cnf.tpl.* OPT in this directory in place, deterministically.
@@ -399,11 +420,27 @@ def dv_scale_open():
     return c_complex("DV_SCALE")
 
 
-def dv_scale_list():
+def dv_scale_list(symbol_codes=None):
     # AOM 1.4 has no C_DV_SCALE; express as C_COMPLEX_OBJECT over DV_SCALE with
-    # a C_REAL value constraint (representative). Spec-silence flagged above.
-    val = c_single_attr("value", c_primitive_object("REAL", item_c_real_list([1.5, 2.0])))
-    return c_complex("DV_SCALE", val)
+    # a C_REAL value constraint. Spec-silence flagged above.
+    #
+    # `symbol_codes` adds the value set's OTHER half: DV_SCALE.symbol is 1..1
+    # in the RM (RM data_types UML/classes/org.openehr.rm.data_types.dv_scale
+    # .adoc §Attributes: "1..1 | symbol: DV_CODED_TEXT"), so a DV_SCALE value
+    # set is a value|symbol TUPLE set and constraining only the real half
+    # leaves a wrong symbol unconstrained. It is a parameter rather than the
+    # default because the two consumers differ: the standalone scale_list
+    # template IS what CONT-DV_SCALE-validate_constraint commits against
+    # (no constraint_columns, so no per-row OPT is synthesized) and its
+    # `local::at0666` row needs the symbol code_list to have a ground, while
+    # the interval carrier's case DOES declare constraint_columns and commits
+    # against per-row OPTs the runner synthesizes instead
+    # (tools/cnf-runner/src/exec/opt_synth.rs, which emits the same
+    # value+symbol shape).
+    attrs = c_single_attr("value", c_primitive_object("REAL", item_c_real_list([1.5, 2.0])))
+    if symbol_codes:
+        attrs += c_single_attr("symbol", dv_coded_text_local(symbol_codes))
+    return c_complex("DV_SCALE", attrs)
 
 
 def dv_quantity_open():
@@ -903,7 +940,11 @@ def build_all():
     T["ordinal_open"] = lambda k: value_template(k, dv_ordinal_open())
 
     # --- DV_SCALE (CONT-DV_SCALE-validate_{constraint,open}) — C_DV_SCALE not in AOM 1.4 ---
-    T["scale_list"] = lambda k: value_template(k, dv_scale_list())
+    T["scale_list"] = lambda k: value_template(
+        k,
+        dv_scale_list(symbol_codes=["at0005", "at0006"]),
+        extra_terms={"at0005": ("scale 1.5", "scale 1.5"), "at0006": ("scale 2.0", "scale 2.0")},
+    )
     T["scale_open"] = lambda k: value_template(k, dv_scale_open())
 
     # --- DV_QUANTITY ---
