@@ -108,19 +108,16 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
                 emit_instruction_details(det, out.occurrence_mut("_instruction_details", None));
             }
         }
-        "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
-            if let Some(ids) = rm.get("identifiers").and_then(Value::as_array) {
-                for (i, id) in ids.iter().enumerate() {
-                    parties::emit_identifier(
-                        id,
-                        out.occurrence_mut(
-                            "_identifier",
-                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
-                        ),
-                    );
-                }
-            }
-        }
+        // NOTE: no PARTY arm. The party `_identifier:i` family (master05
+        // §§PARTY_IDENTIFIED, PARTY_RELATED `/_identifier:i`) is emitted by
+        // [`parties::emit_party`], which every route to a party node already
+        // goes through — a PARTY_PROXY datum leaf via
+        // [`data_values::emit_leaf`], and the `_provider` /
+        // `_health_care_facility` / FEEDER_AUDIT_DETAILS parties from this
+        // module. A PARTY arm here would emit the family a second time onto
+        // the same node: idempotent, invisible on the wire, and a trap for
+        // the next change to either site. One family, one emission site
+        // (pinned by `parties::tests::party_identifiers_have_exactly_one_emission_site`).
         "ISM_TRANSITION" => {
             if let Some(reasons) = rm.get("reason").and_then(Value::as_array) {
                 for (i, r) in reasons.iter().enumerate() {

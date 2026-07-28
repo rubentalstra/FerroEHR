@@ -1995,6 +1995,12 @@ fn master05_party_related() {
             row("|id_scheme", At(Str), "no", ""),
             row("|id_namespace", At(Str), "(yes)", ""),
             row("/_identifier:0", At(Sub("|id")), "no", ""),
+            // The table's Flat Path column reads `/_relationship`, but both
+            // example blocks of the SAME section (and the §"PARTY_RELATED
+            // performer" table + example) spell it `…/relationship|code` —
+            // the example form is the emitted one. The table spelling is
+            // accepted on INPUT as an alias; that direction is pinned by
+            // `master05_party_related_table_spelling_is_an_input_alias`.
             row(
                 "/_relationship",
                 Elsewhere(
@@ -2004,6 +2010,67 @@ fn master05_party_related() {
                 "",
             ),
         ],
+    );
+}
+
+/// master05 §PARTY_RELATED gives the relationship sub-path two spellings: the
+/// mapping table's Flat Path column reads `/_relationship`, while both example
+/// blocks of the same section write `"…/composer/relationship|code": "10"`
+/// (and the §"PARTY_RELATED performer" table + example agree with the
+/// examples). The emitted form is the example one — pinned by the
+/// `Elsewhere` row above and re-asserted here — and the table spelling is
+/// accepted on **input** as an alias, so a producer that followed the table
+/// row is not rejected with an unknown-path error.
+#[test]
+fn master05_party_related_table_spelling_is_an_input_alias() {
+    let mut subject = party_identified("Susan Doe", "199");
+    merge(
+        &mut subject,
+        json!({
+            "_type": "PARTY_RELATED",
+            "relationship": dv_coded("mother", "openehr", "10"),
+        }),
+    );
+    let (wt, flat) = entry_subject_case(subject.clone());
+
+    // Emission is unchanged: the example spelling, never the table spelling.
+    assert!(
+        flat.contains_key(&format!("{ENTRY}/subject/relationship|code")),
+        "the example spelling is the emitted one: {:?}",
+        sorted_keys(&flat)
+    );
+    assert!(
+        !addressed(&flat, &format!("{ENTRY}/subject/_relationship")),
+        "the `/_relationship` table spelling must never be emitted: {:?}",
+        sorted_keys(&flat)
+    );
+    assert_eq!(built_subject(&wt, &flat), subject, "round-trip unchanged");
+
+    // The same document re-keyed to the table spelling rebuilds the identical
+    // PARTY_RELATED: the alias is read as the PARTY_PROXY subtype
+    // discriminator, not attached to an already-decided PARTY_IDENTIFIED.
+    let aliased: Map<String, Value> = flat
+        .iter()
+        .map(|(k, v)| {
+            (
+                k.replace(
+                    &format!("{ENTRY}/subject/relationship"),
+                    &format!("{ENTRY}/subject/_relationship"),
+                ),
+                v.clone(),
+            )
+        })
+        .collect();
+    assert!(
+        aliased.contains_key(&format!("{ENTRY}/subject/_relationship|code")),
+        "the alias fixture carries the table spelling: {:?}",
+        sorted_keys(&aliased)
+    );
+    assert_eq!(
+        built_subject(&wt, &aliased),
+        subject,
+        "the `/_relationship` table spelling must build the same PARTY_RELATED \
+         as the `/relationship` example spelling"
     );
 }
 
