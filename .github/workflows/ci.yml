@@ -82,7 +82,7 @@ jobs:
           # Dockerfile change, or a change to the job's own build recipe each
           # alter what is under test, and without them a build/caching-only PR
           # could not even run the job it changes.
-          if echo "$changed" | grep -qE '^(app/ehrbase-admin-ui/|scripts/ui-e2e\.sh$|docker-compose\.yml$|docker/Dockerfile$|docker/admin-ui/|docker/keycloak/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
+          if echo "$changed" | grep -qE '^(app/ehrbase-admin-ui/|scripts/ui-e2e\.sh$|docker-compose\.yml$|docker/Dockerfile$|docker/admin-ui/|docker/keycloak/|docker/postgres/|Cargo\.lock$|\.github/workflows/ci\.yml$)' ; then
             echo "admin_ui=true" >> "$GITHUB_OUTPUT"
           else
             echo "admin_ui=false" >> "$GITHUB_OUTPUT"
