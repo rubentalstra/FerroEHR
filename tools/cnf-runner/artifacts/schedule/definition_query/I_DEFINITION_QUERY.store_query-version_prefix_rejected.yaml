@@ -40,7 +40,7 @@ flow:
       qualified_query_name: "org.openehr.cnf::version_prefix_write"
       version: "1"                       # a READ-side prefix form, not a version
       query: "SELECT c/uid/value AS v_prefix FROM EHR e CONTAINS COMPOSITION c"
-    expect: validation_failed
+    expect: bad_request
   - step: 2
     call: list_queries
     with: { qualified_query_name: "org.openehr.cnf::version_prefix_write" }

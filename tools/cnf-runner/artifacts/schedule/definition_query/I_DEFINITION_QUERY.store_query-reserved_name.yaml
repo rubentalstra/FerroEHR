@@ -25,10 +25,10 @@ flow:
     with:
       qualified_query_name: "aql"
       query: "SELECT c FROM EHR e CONTAINS COMPOSITION c"
-    expect: validation_failed              # reserved name -> 400
+    expect: bad_request              # reserved name -> 400
   - step: 2
     call: store_query
     with:
       qualified_query_name: "AQL"
       query: "SELECT c FROM EHR e CONTAINS COMPOSITION c"
-    expect: validation_failed              # case-insensitive
+    expect: bad_request              # case-insensitive
