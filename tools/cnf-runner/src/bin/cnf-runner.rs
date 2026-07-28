@@ -1652,6 +1652,7 @@ fn run_command(
                 ),
         },
         ixit_digest,
+        restapi_specs_version: report.restapi_specs_version.clone(),
         outcomes,
         measurements: carried_measurements,
         ambiguity_dispositions: Vec::new(),
