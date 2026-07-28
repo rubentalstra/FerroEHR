@@ -1123,9 +1123,23 @@ elements:
   - id: header-deprecated-version-and-ehr-id-spellings
     description: "The remaining deprecated request-header spellings — openEHR-VERSION (the committal VERSION metadata) and openEHR-EHR-id (the query EHR-scope header) — are still accepted under their Release-1.1.0 semantics."
     source: "ITS-REST Requests_and_responses.md §Deprecated headers (the openEHR-VERSION -> openehr-version and openEHR-EHR-id -> openehr-ehr-id table rows; \"the deprecated headers remain available for backward compatibility\") + §openehr-version and openehr-audit-details (the VERSION metadata the first row carries) + query Request.md §About the ehr_id parameter (the EHR-scope header the last row carries)"
-    exception:
-      reason: coverage_gap
-      note: "NEW-CASE candidates, one variant binding each: an update_composition variant sending `openEHR-VERSION: lifecycle_state.code_string=\"532\"` (asserting the lifecycle_state reaches the committed VERSION, the way update_composition-audit_bare_deprecated does for openEHR-AUDIT_DETAILS), and an ad-hoc-query variant sending `openEHR-EHR-id` (asserting the single-EHR scoping the query-ehr-id-request-header element covers under the new name). Both spellings are already exercised INDIRECTLY — the mechanism is the same case-insensitive-name fallback the openEHR-AUDIT_DETAILS and openEHR-TEMPLATE_ID rows pin with real cases — but indirect coverage is not coverage, so the two rows are registered here rather than left silent. The fifth table row, openEHR-uri, is a RESPONSE header and is a declined MAY (header-openehr-uri-declined-may), not a gap."
+    # Closed by the #288 element sweep, one variant binding + one case per
+    # table row: a create_composition variant sending `openEHR-VERSION:
+    # lifecycle_state.code_string="553"` (the committed VERSION must carry the
+    # supplied non-default lifecycle code), and a GET ad-hoc-query variant
+    # sending `openEHR-EHR-id` (the deprecated spelling alone must scope the
+    # execution to one EHR). Both differ from the two rows cased earlier
+    # (openEHR-TEMPLATE_ID, openEHR-AUDIT_DETAILS) in that they fold to exactly
+    # their replacement names under RFC 9110 §5.1 rather than to underscore
+    # names — the cases exist because the released table makes the old
+    # spellings normative and a case-SENSITIVE custom-header match fails them
+    # SILENTLY (a wrong lifecycle_state, a population-scoped answer), never
+    # with an error the client sees. The fifth table row, openEHR-uri, is a
+    # RESPONSE header and is a declined MAY
+    # (header-openehr-uri-declined-may), not a gap.
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-version_bare_deprecated
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_deprecated_get
   # Committal request headers, the base merge family (ITS-REST
   # Requests_and_responses.md §openehr-version and openehr-audit-details). The
   # change_type attribute has its own element above; these are the rest.
