@@ -45,29 +45,6 @@
 //!   asserted structurally in [`check`] — a new required row cannot be added
 //!   without stating its enforcement. Where the flat build genuinely rejects,
 //!   the section test carries the negative assertion as well.
-//!
-//! Known implementation gaps this battery documents (recorded here so a
-//! `TODO` search finds them, and asserted as `Absent` so they cannot rot):
-//!
-//! TODO: emit + consume the ENTRY `/subject` row (master05 §§ADMIN_ENTRY,
-//! INSTRUCTION, ACTION, EVALUATION, OBSERVATION — `subject`: PARTY_PROXY).
-//! The leaf datum codec has no PARTY arm, so a non-`PARTY_SELF` ENTRY subject
-//! is dropped on RM→FLAT and `…/subject|name` is rejected on FLAT→RM. The
-//! PARTY_PROXY suffix set itself is exercised here through its other carriers
-//! (`_health_care_facility`, `_participation:i`, the FEEDER_AUDIT_DETAILS
-//! parties).
-//!
-//! TODO: emit + rebuild the master05 §ELEMENT `/_null_flavour` and
-//! `/_null_reason` rows for a *value-less* ELEMENT. The flattener reaches an
-//! ELEMENT only through its `value`, but RM data_structures §ELEMENT
-//! (`Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`) makes
-//! `value` and `null_flavour` mutually exclusive — so a real null-flavoured
-//! element loses its null flavour. The mapping itself is probed below with a
-//! deliberately invariant-relaxed fixture.
-//!
-//! TODO: consume the master05 §EVENT_CONTEXT `/start_time` and `/setting` PATH
-//! spellings on input (they are silently ignored today in favour of the
-//! `ctx/` defaults) — stated in full at the §EVENT_CONTEXT test.
 #![allow(
     clippy::panic,
     clippy::doc_markdown,
@@ -208,6 +185,20 @@ fn sorted_keys(flat: &Map<String, Value>) -> Vec<&String> {
     let mut keys: Vec<&String> = flat.keys().collect();
     keys.sort();
     keys
+}
+
+/// The `(key, value)` pairs of `flat` addressing `path` — the key itself, a
+/// `|suffix` of it, or a `/child` under it — in key order. The comparison unit
+/// for a round-trip assertion scoped to one node.
+fn under(flat: &Map<String, Value>, path: &str) -> std::collections::BTreeMap<String, Value> {
+    flat.iter()
+        .filter(|(k, _)| {
+            k.as_str() == path
+                || k.starts_with(&format!("{path}|"))
+                || k.starts_with(&format!("{path}/"))
+        })
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
 }
 
 /// Assert every row of one master05 table against the FLAT document produced
@@ -534,16 +525,31 @@ fn flat_entry_with(
     entry: Value,
     comp_extra: Value,
 ) -> Map<String, Value> {
-    let archetype = entry_archetype(rm_type);
+    let wt = entry_web_template(rm_type, children);
+    composition_to_flat(&entry_composition(rm_type, entry, comp_extra), &wt)
+        .expect("composition_to_flat")
+}
+
+/// The web template an ENTRY-family fixture flattens against: the root
+/// COMPOSITION carrying a single `entry` child of `rm_type` with `children`.
+/// Exposed separately so a test can drive the build direction against the very
+/// same tree.
+fn entry_web_template(rm_type: &str, children: Vec<WebTemplateNode>) -> WebTemplate {
     let mut node = container(rm_type, &entry_aql(rm_type), "entry");
-    node.node_id = Some(archetype.clone());
+    node.node_id = Some(entry_archetype(rm_type));
     node.children = children;
+    web_template(root_node(vec![node]))
+}
+
+/// The composition [`flat_entry_with`] flattens: `entry` stamped with the
+/// fixture's archetype identity and hung under the root's `content`.
+fn entry_composition(rm_type: &str, entry: Value, comp_extra: Value) -> Value {
     let mut entry = entry;
     merge(
         &mut entry,
-        json!({"archetype_node_id": archetype, "name": dv_text("Entry")}),
+        json!({"archetype_node_id": entry_archetype(rm_type), "name": dv_text("Entry")}),
     );
-    flatten(root_node(vec![node]), &composition(entry, comp_extra))
+    composition(entry, comp_extra)
 }
 
 /// The in-context ENTRY children every ENTRY-family fixture carries
@@ -580,26 +586,34 @@ fn entry_of(rm_type: &str, extra: Value) -> Value {
     entry
 }
 
+/// The template leaf node [`flat_element`] hangs its ELEMENT value under.
+fn element_leaf_node(rm_type: &str) -> WebTemplateNode {
+    leaf(
+        rm_type,
+        &format!(
+            "{}/data[at0001]/items[at0002]/value",
+            entry_aql("EVALUATION")
+        ),
+        "leaf",
+    )
+}
+
 /// Flatten an EVALUATION whose ITEM_TREE holds `element`, with the leaf value
 /// typed `rm_type` in the template. Leaf keys are based at [`LEAF`].
 fn flat_element(rm_type: &str, element: Value) -> Map<String, Value> {
-    flat_element_node(
-        leaf(
-            rm_type,
-            &format!(
-                "{}/data[at0001]/items[at0002]/value",
-                entry_aql("EVALUATION")
-            ),
-            "leaf",
-        ),
-        element,
-    )
+    flat_element_node(element_leaf_node(rm_type), element)
 }
 
 /// [`flat_element`] with a caller-supplied leaf template node (so a fixture can
 /// set `listOpen` or a generic slot type).
 fn flat_element_node(leaf_node: WebTemplateNode, element: Value) -> Map<String, Value> {
-    let entry = json!({
+    flat_entry("EVALUATION", vec![leaf_node], element_entry(element))
+}
+
+/// The EVALUATION an element fixture lives in: one ITEM_TREE (`at0001`)
+/// holding `element` at `at0002`.
+fn element_entry(element: Value) -> Value {
+    json!({
         "_type": "EVALUATION",
         "data": {
             "_type": "ITEM_TREE",
@@ -607,8 +621,7 @@ fn flat_element_node(leaf_node: WebTemplateNode, element: Value) -> Map<String, 
             "name": dv_text("Tree"),
             "items": [element],
         },
-    });
-    flat_entry("EVALUATION", vec![leaf_node], entry)
+    })
 }
 
 /// The common leaf fixture: a plain ELEMENT wrapping `value`.
@@ -808,15 +821,10 @@ fn entry_shared_rows() -> Vec<Row> {
             "Yes",
             "unenforceable: the row names an RM attribute that does not exist",
         ),
-        row(
-            "/subject",
-            Absent(
-                "implementation gap — see the module-level TODO: the flat leaf codec has no \
-                 PARTY arm, so an ENTRY subject is not emitted",
-            ),
-            "no",
-            "",
-        ),
+        // The row's Note ("will be set to PARTY_SELF if not explicitly set")
+        // is what keeps the default out of the emission: only a subject that
+        // is NOT the bare PARTY_SELF default is real data and emits.
+        row("/subject", At(Sub("|name")), "no", ""),
         row("/_work_flow_id", At(Sub("|id")), "no", ""),
         row("/_link:0", At(Sub("|type")), "no", ""),
         row(
@@ -1019,17 +1027,118 @@ fn master05_observation() {
     assert_entry_encoding_hole(&flat);
 }
 
+/// The `(template, FLAT)` pair for an EVALUATION whose ENTRY-level `subject`
+/// is `party` — the fixture behind the master05 ENTRY `/subject` row (typed
+/// `PARTY_PROXY`, so each of the three subtype tables reaches it).
+fn entry_subject_case(party: Value) -> (WebTemplate, Map<String, Value>) {
+    // One leaf datum keeps the ENTRY representable on the wire: FLAT structure
+    // is rebuilt from datum paths (master04 §Building the RM composition), so
+    // an ENTRY whose only content is the OFF-WIRE PARTY_SELF default would
+    // have no keys at all and, correctly, never rebuild.
+    let mut children = entry_in_context("EVALUATION");
+    children.push(element_leaf_node("DV_TEXT"));
+    let wt = entry_web_template("EVALUATION", children);
+    let entry = json!({
+        "_type": "EVALUATION",
+        "subject": party,
+        "data": {
+            "_type": "ITEM_TREE",
+            "archetype_node_id": "at0001",
+            "name": dv_text("Tree"),
+            "items": [element(dv_text("anchor"))],
+        },
+    });
+    let comp = entry_composition("EVALUATION", entry, json!({}));
+    let flat = composition_to_flat(&comp, &wt).expect("composition_to_flat");
+    (wt, flat)
+}
+
+/// The rebuilt `subject` of the single ENTRY in a document built from `flat`.
+fn built_subject(wt: &WebTemplate, flat: &Map<String, Value>) -> Value {
+    let built =
+        composition_from_flat(flat, wt, NOW).expect("the master05 ENTRY `/subject` row must build");
+    built["content"][0]["subject"].clone()
+}
+
+/// master05 ENTRY `/subject` (PARTY_PROXY) in both directions, once per
+/// concrete subtype the section dispatches to (master05 §PARTY_PROXY: "See
+/// PARTY_SELF, PARTY_IDENTIFIED and PARTY_RELATED"). Each subtype must survive
+/// RM → FLAT → RM unchanged; the row's Note ("will be set to PARTY_SELF if not
+/// explicitly set") governs the default, which stays off the wire.
+#[test]
+fn master05_entry_subject_round_trips_every_party_subtype() {
+    // PARTY_IDENTIFIED — the `|name`/`|id`/`|id_scheme`/`|id_namespace` rows.
+    let subject = party_identified("Susan Doe", "199");
+    let (wt, flat) = entry_subject_case(subject.clone());
+    assert_eq!(flat[&format!("{ENTRY}/subject|name")], json!("Susan Doe"));
+    assert_eq!(flat[&format!("{ENTRY}/subject|id")], json!("199"));
+    assert_eq!(
+        flat[&format!("{ENTRY}/subject|id_scheme")],
+        json!("HOSPITAL-NS")
+    );
+    assert_eq!(
+        flat[&format!("{ENTRY}/subject|id_namespace")],
+        json!("HOSPITAL-NS")
+    );
+    assert_eq!(built_subject(&wt, &flat), subject);
+
+    // PARTY_RELATED — adds the `/relationship` DV_CODED_TEXT sub-path and the
+    // `/_identifier:i` family (master05 §PARTY_RELATED).
+    let mut subject = party_identified("Susan Doe", "199");
+    merge(
+        &mut subject,
+        json!({
+            "_type": "PARTY_RELATED",
+            "relationship": dv_coded("mother", "openehr", "10"),
+            "identifiers": [{"_type": "DV_IDENTIFIER", "id": "122", "issuer": "issuer"}],
+        }),
+    );
+    let (wt, flat) = entry_subject_case(subject.clone());
+    assert_eq!(
+        flat[&format!("{ENTRY}/subject/relationship|code")],
+        json!("10")
+    );
+    assert_eq!(
+        flat[&format!("{ENTRY}/subject/_identifier:0|id")],
+        json!("122")
+    );
+    assert_eq!(built_subject(&wt, &flat), subject);
+
+    // PARTY_SELF with an external reference — `|_type` is the discriminator
+    // (master05 §FEEDER_AUDIT_DETAILS `/subject` row Note); without it the
+    // rebuild would produce a PARTY_IDENTIFIED.
+    let subject = json!({
+        "_type": "PARTY_SELF",
+        "external_ref": {
+            "_type": "PARTY_REF", "namespace": "DEMOGRAPHIC", "type": "PERSON",
+            "id": {"_type": "GENERIC_ID", "value": "42", "scheme": "HOSPITAL-NS"},
+        },
+    });
+    let (wt, flat) = entry_subject_case(subject.clone());
+    assert_eq!(flat[&format!("{ENTRY}/subject|_type")], json!("PARTY_SELF"));
+    assert_eq!(built_subject(&wt, &flat), subject);
+
+    // The bare PARTY_SELF default never reaches the wire and is restored by
+    // the builder (the row's Note).
+    let (wt, flat) = entry_subject_case(json!({"_type": "PARTY_SELF"}));
+    assert!(
+        !addressed(&flat, &format!("{ENTRY}/subject")),
+        "the PARTY_SELF default must not be emitted: {:?}",
+        sorted_keys(&flat)
+    );
+    assert_eq!(built_subject(&wt, &flat), json!({"_type": "PARTY_SELF"}));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // master05 — structure classes
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// master05 §ELEMENT — 5 rows.
-///
-/// The `_null_flavour`/`_null_reason` probe deliberately carries a `value`
-/// alongside them, which RM data_structures §ELEMENT forbids
-/// (`Inv_null_flavour_indicated`) — the flattener only reaches an ELEMENT
-/// through its `value`, so this isolates the mapping. See the module-level
-/// TODO for the reachability gap that isolation exposes.
+/// master05 §ELEMENT — 5 rows, over an element carrying every one of them at
+/// once. The `_null_flavour`/`_null_reason` rows sit here beside a `value`,
+/// which RM data_structures §ELEMENT forbids (`Inv_null_flavour_indicated`) —
+/// the combination isolates the five rows in one fixture; the shape the RM
+/// actually admits (null flavour, no value) is asserted in both directions by
+/// [`master05_element_null_flavoured_without_value`].
 #[test]
 fn master05_element() {
     let mut el = element(dv_text("value"));
@@ -1059,6 +1168,65 @@ fn master05_element() {
             ),
             row("/_uid", At(Str), "no", ""),
         ],
+    );
+}
+
+/// master05 §ELEMENT `/_null_flavour` + `/_null_reason` on the shape the RM
+/// admits: a **value-less** ELEMENT. RM data_structures §ELEMENT
+/// (`Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`) makes
+/// `value` and `null_flavour` mutually exclusive, so this — not the
+/// value-bearing probe above — is how a real null flavour reaches the wire.
+/// The section's third example block spells exactly this document.
+#[test]
+fn master05_element_null_flavoured_without_value() {
+    let el = json!({
+        "_type": "ELEMENT",
+        "archetype_node_id": "at0002",
+        "name": dv_text("Element"),
+        "null_flavour": dv_coded("unknown", "openehr", "253"),
+        "null_reason": dv_text("sample reason"),
+    });
+    let flat = flat_element("DV_TEXT", el);
+    check(
+        &flat,
+        LEAF,
+        &[
+            row("/_null_flavour", At(Sub("|code")), "no", ""),
+            row("/_null_reason", At(Str), "no", ""),
+        ],
+    );
+    // The element itself carries no datum: `value` is exactly what a null
+    // flavour replaces.
+    assert!(
+        !flat.contains_key(LEAF),
+        "a value-less ELEMENT emits no datum, got {:?}",
+        sorted_keys(&flat)
+    );
+
+    // …and the same document rebuilds the value-less ELEMENT (the master05
+    // §ELEMENT third example block, replayed as an input).
+    let wt = entry_web_template("EVALUATION", vec![element_leaf_node("DV_TEXT")]);
+    let built = composition_from_flat(&flat, &wt, NOW)
+        .expect("a null-flavoured ELEMENT must build from its master05 §ELEMENT rows");
+    let rebuilt = &built["content"][0]["data"]["items"][0];
+    assert_eq!(rebuilt["_type"], json!("ELEMENT"));
+    assert!(
+        rebuilt.get("value").is_none(),
+        "the rebuilt ELEMENT must carry no value: {rebuilt}"
+    );
+    assert_eq!(
+        rebuilt["null_flavour"]["defining_code"]["code_string"],
+        json!("253")
+    );
+    assert_eq!(rebuilt["null_reason"]["value"], json!("sample reason"));
+
+    // RM → FLAT → RM → FLAT is stable: the null flavour survives the round
+    // trip that used to drop it.
+    let reflattened = composition_to_flat(&built, &wt).expect("composition_to_flat");
+    assert_eq!(
+        under(&reflattened, LEAF),
+        under(&flat, LEAF),
+        "the null-flavoured ELEMENT must round-trip key-for-key"
     );
 }
 
@@ -1423,14 +1591,15 @@ fn master05_event_context() {
                 "yes",
                 "RM ehr §EVENT_CONTEXT declares `start_time` 1..1; master06 §time makes it \
                  the `ctx/time` shortcut (defaulting to `now()`), so the path form is never \
-                 required on input and is not emitted",
+                 required on input and is not emitted — but IS accepted, asserted below",
             ),
             row(
                 "/setting",
                 Elsewhere("ctx/setting"),
                 "yes",
                 "RM ehr §EVENT_CONTEXT declares `setting` 1..1; master06 §setting makes it \
-                 the `ctx/setting` shortcut, which the builder defaults",
+                 the `ctx/setting` shortcut, which the builder defaults — the path form is \
+                 accepted too, asserted below",
             ),
             row("/_end_time", Elsewhere("ctx/end_time"), "no", ""),
             row("/_location", Elsewhere("ctx/location"), "no", ""),
@@ -1439,17 +1608,8 @@ fn master05_event_context() {
         ],
     );
 
-    // The route the two required rows actually travel, in both directions
+    // The route the two required rows actually travel on output
     // (master06 §§time, setting).
-    //
-    // TODO: consume the master05 §EVENT_CONTEXT `/start_time` and `/setting`
-    // PATH spellings on input as well. The Web-Template context node always
-    // carries synthesized `start_time`/`setting` children, so the builder's
-    // "this segment is already a template child" test skips them and its
-    // `EVENT_CONTEXT` direct-RM-path arm is unreachable: a client that spells
-    // the master05 path form has its datum silently ignored in favour of the
-    // `ctx/` default, rather than either honoured or rejected
-    // (master04 §Validation).
     let built = composition_from_flat(
         &flat_of(&[
             ("ctx/time", json!("2021-12-21T14:19:31+01:00")),
@@ -1466,6 +1626,66 @@ fn master05_event_context() {
     assert_eq!(
         built["context"]["setting"]["defining_code"]["code_string"],
         json!("238")
+    );
+
+    // …and the table's own PATH spellings are honoured on input, not ignored:
+    // the Web-Template context node always carries synthesized
+    // `start_time`/`setting` children, which used to make the builder treat
+    // the path keys as "already handled" and silently drop them in favour of
+    // the `ctx/` defaults — the one outcome master04 §Validation forbids.
+    let built = composition_from_flat(
+        &flat_of(&[
+            (
+                "test/context/start_time",
+                json!("2021-12-21T14:19:31+01:00"),
+            ),
+            ("test/context/setting|code", json!("238")),
+            ("test/context/setting|value", json!("other care")),
+            ("test/context/setting|terminology", json!("openehr")),
+        ]),
+        &web_template(root_node(vec![])),
+        NOW,
+    )
+    .expect("the master05 §EVENT_CONTEXT path spellings must build");
+    assert_eq!(
+        built["context"]["start_time"]["value"],
+        json!("2021-12-21T14:19:31+01:00")
+    );
+    assert_eq!(
+        built["context"]["setting"]["defining_code"]["code_string"],
+        json!("238")
+    );
+    assert_eq!(built["context"]["setting"]["value"], json!("other care"));
+
+    // The `/setting` row's Note binds it to a ValueSet ("openEHR `setting`
+    // group"), so a bare `|code` resolves its rubric from that group exactly
+    // as `ctx/setting` does (master06 §setting) rather than standing as a
+    // `local` code.
+    let built = composition_from_flat(
+        &flat_of(&[("test/context/setting|code", json!("238"))]),
+        &web_template(root_node(vec![])),
+        NOW,
+    )
+    .expect("a bare master05 §EVENT_CONTEXT `/setting|code` must build");
+    assert_eq!(
+        built["context"]["setting"]["defining_code"]["terminology_id"]["value"],
+        json!("openehr")
+    );
+    assert_eq!(built["context"]["setting"]["value"], json!("other care"));
+
+    // A spelling master05 does NOT define on EVENT_CONTEXT is still rejected
+    // loudly (master04 §Validation: field identifiers match WT metadata
+    // structure) — the fix widens what is honoured, never what is ignored.
+    assert!(
+        matches!(
+            composition_from_flat(
+                &flat_of(&[("test/context/frobnicate", json!("x"))]),
+                &web_template(root_node(vec![])),
+                NOW,
+            ),
+            Err(FlatError::UnknownPath(_))
+        ),
+        "an undefined EVENT_CONTEXT path must be rejected, never ignored"
     );
 }
 

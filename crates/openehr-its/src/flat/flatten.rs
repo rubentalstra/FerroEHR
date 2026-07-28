@@ -139,7 +139,6 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
             continue;
         }
         let rel = rmpath::relative(&node.aql_path, &child.aql_path);
-        let matches = rmpath::resolve(rm, &rel);
         // Polymorphic choice alternatives share one aqlPath; emit only under
         // the alternative whose rm type matches this value's `_type`. The
         // filter must apply to EVERY member of a choice group — the first
@@ -150,39 +149,121 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
                 .children
                 .iter()
                 .any(|c| c.id != child.id && c.aql_path == child.aql_path);
-        let matches: Vec<&Value> = if in_choice {
-            matches
-                .into_iter()
-                .filter(|m| type_matches(m, &child.rm_type))
-                .collect()
-        } else {
-            matches
-        };
-        if matches.is_empty() {
+        let occurrences = occurrences_of(child, rm, &rel, in_choice);
+        if occurrences.is_empty() {
             continue;
         }
         let repeating = child.max == -1 || child.max > 1;
         if repeating {
             out.children.entry(child.id.clone()).or_default().indexed = true;
         }
-        for (i, m) in matches.iter().enumerate() {
-            if is_default_entry_context(child, m) {
+        for (i, occurrence) in occurrences.iter().enumerate() {
+            if occurrence
+                .value
+                .is_some_and(|v| is_default_entry_context(child, v))
+            {
                 continue;
             }
             let slot = out.place_mut(&child.id, u32::try_from(i).unwrap_or(u32::MAX));
-            walk(child, m, slot);
+            if let Some(value) = occurrence.value {
+                walk(child, value, slot);
+            }
             // The leaf's wrapping ELEMENT carries its own `_` attribute
             // family (`master05 §ELEMENT`: `_uid`, `_null_flavour`,
             // `_null_reason`, `_link:i`, `_feeder_audit`); the leaf walk
             // above saw only the DV value, so surface the wrapper's here.
-            if child.has_input()
-                && let Some(element) = element_of(rm, &rel, i)
-            {
+            if let Some(element) = occurrence.element {
                 map::emit_rm_attrs(element, "ELEMENT", slot);
             }
         }
     }
     emit_direct_rm_paths(node, rm, out);
+}
+
+/// One emitted occurrence of a template child: the RM value its relative path
+/// reaches, plus the wrapping `ELEMENT` when the child is an ELEMENT-wrapped
+/// leaf (the wrapper owns the `master05 §ELEMENT` `_`-attribute rows, which
+/// belong on the same simplified node as the datum).
+struct Occurrence<'a> {
+    /// `None` for a **value-less** ELEMENT. RM data_structures §ELEMENT
+    /// (`Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`)
+    /// makes `value` and `null_flavour` mutually exclusive, so a
+    /// null-flavoured element carries no datum at all — only the
+    /// `/_null_flavour` and `/_null_reason` rows of master05 §ELEMENT.
+    value: Option<&'a Value>,
+    element: Option<&'a Value>,
+}
+
+/// The occurrences of template child `child` under RM value `rm`.
+///
+/// An ELEMENT-wrapped leaf (its relative RM path ends in the `value` step) is
+/// resolved through its **wrappers**, not through the values: the wrapper list
+/// is the authoritative occurrence list, so (a) a value-less null-flavoured
+/// ELEMENT is still reached (master05 §ELEMENT `/_null_flavour`,
+/// `/_null_reason`), and (b) wrapper↔value alignment holds even when only some
+/// wrappers carry a value. Every other child resolves straight to its values.
+fn occurrences_of<'a>(
+    child: &WebTemplateNode,
+    rm: &'a Value,
+    rel: &[openehr_rm::paths::PathSegment],
+    in_choice: bool,
+) -> Vec<Occurrence<'a>> {
+    let Some(wrappers) = value_step_owners(child, rm, rel) else {
+        return rmpath::resolve(rm, rel)
+            .into_iter()
+            .filter(|value| !in_choice || type_matches(value, &child.rm_type))
+            .map(|value| Occurrence {
+                value: Some(value),
+                element: None,
+            })
+            .collect();
+    };
+    wrappers
+        .into_iter()
+        .filter_map(|wrapper| {
+            let element = (wrapper.get("_type").and_then(Value::as_str) == Some("ELEMENT"))
+                .then_some(wrapper);
+            match wrapper.get("value").filter(|v| !v.is_null()) {
+                Some(value) if !in_choice || type_matches(value, &child.rm_type) => {
+                    Some(Occurrence {
+                        value: Some(value),
+                        element,
+                    })
+                }
+                Some(_) => None,
+                // A value-less null-flavoured ELEMENT belongs to no particular
+                // alternative of a choice group: the alternatives share one
+                // aqlPath and the datum that would select one is exactly what
+                // is absent. It is emitted once, under the group's first
+                // alternative. NOTE: no openEHR spec governs a null-flavoured
+                // choice — our own design/extension, chosen so the null flavour
+                // is neither duplicated across alternatives nor dropped.
+                None => (element
+                    .is_some_and(|e| e.get("null_flavour").is_some_and(|v| !v.is_null()))
+                    && (!in_choice || child.alt_json_id.is_none()))
+                .then_some(Occurrence {
+                    value: None,
+                    element,
+                }),
+            }
+        })
+        .collect()
+}
+
+/// The RM nodes that own the final `value` step of an ELEMENT-wrapped leaf —
+/// `Some` only when `child` is a datum leaf whose relative RM path ends in
+/// `value`. `None` selects the plain value-driven resolution (a leaf reached
+/// without a wrapper, e.g. `EVENT.time`, or a container child).
+fn value_step_owners<'a>(
+    child: &WebTemplateNode,
+    rm: &'a Value,
+    rel: &[openehr_rm::paths::PathSegment],
+) -> Option<Vec<&'a Value>> {
+    if !child.has_input() {
+        return None;
+    }
+    let (last, parents) = rel.split_last()?;
+    (last.attribute == "value").then(|| rmpath::resolve(rm, parents))
 }
 
 /// Whether the template-child walk already emitted a child that realizes RM
@@ -296,23 +377,6 @@ fn emit_ism_transition(ism: &Value, out: &mut SimNode) {
         }
     }
     map::emit_rm_attrs(ism, "ISM_TRANSITION", out);
-}
-
-/// The ELEMENT wrapper that owns the `i`-th leaf value reached by `rel`
-/// (`rel` ends in the `value` attribute step for ELEMENT-wrapped leaves;
-/// non-wrapped leaves — e.g. `EVENT.time` — have none).
-fn element_of<'a>(
-    rm: &'a Value,
-    rel: &[openehr_rm::paths::PathSegment],
-    i: usize,
-) -> Option<&'a Value> {
-    let (last, parents) = rel.split_last()?;
-    if last.attribute != "value" {
-        return None;
-    }
-    let wrappers = rmpath::resolve(rm, parents);
-    let element = *wrappers.get(i)?;
-    (element.get("_type").and_then(Value::as_str) == Some("ELEMENT")).then_some(element)
 }
 
 /// The base (generic-stripped) RM type name.
