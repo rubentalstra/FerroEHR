@@ -65,3 +65,86 @@ fn pilot_world_is_clean_under_all_gates() {
     }
     assert!(loaded.set.bindings.len() >= 10, "binding set shrank");
 }
+
+/// The two 1.1.0-dated header rules are scoped TOTALLY, by ONE mechanism
+/// (issue #627): the affected set is DERIVED from the committed bindings —
+/// never a hand-kept list that a new binding can quietly escape — and every
+/// member carries the `applies: { its_rest: ">=1.1.0" }` floor.
+///
+/// Both rules are dated by the released text itself, in the one chapter
+/// (`ITS-REST specifications/docs/overview/Requests_and_responses.md`):
+///
+/// * §"Deprecated headers" — "The `ETag` response header was used without a
+///   weakness indicator `W/`. This is now deprecated, all `ETag` headers that
+///   hold a resource identifier MUST include a weakness indicator `W/`" —
+///   with §"ETag and Last-Modified" naming the release: "DEPRECATION: Prior to
+///   Release 1.1.0, the `ETag` header was used without a weakness indicator
+///   `W/`. This usage is now deprecated, but implementations MAY still support
+///   it alongside the updated header format".
+/// * §Location — "DEPRECATION: Prior to Release 1.1.0, the `Location` header
+///   was used to indicate the canonical location of a representation in a
+///   response. This usage is now deprecated. The `Location` header MUST ONLY
+///   be used for resource creation (e.g., `201 Created`) or redirect
+///   responses" — with §"Deprecated headers" naming the two response families
+///   it was withdrawn from ("Some of the `GET` methods had a `Location`
+///   response header … Similarly, the `Location` response header was
+///   deprecated from responses of `DELETE` methods").
+///
+/// A party declaring an earlier ITS-REST release conforms to the text of that
+/// release, so neither rule may be applied to it — and a party declaring
+/// 1.1.0 or later must face BOTH on every binding that states them, or the
+/// artifact applies one MUST to one product by accident of which case
+/// happened to carry a floor for some unrelated reason.
+#[test]
+fn every_release_dated_header_rule_carries_the_same_floor() {
+    use cnf_runner::model::binding::HeaderMatcher;
+
+    let crate_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let loaded = load_root(&crate_dir.join("artifacts")).expect("schema compilation");
+
+    let mut dated = 0_usize;
+    let mut unscoped: Vec<String> = Vec::new();
+    for (path, binding) in &loaded.set.bindings {
+        for (kind, expectation) in binding.outcomes.as_deref().unwrap_or_default() {
+            for (header, declared) in expectation.headers.as_deref().unwrap_or_default() {
+                // The affected set, derived from the matcher itself: the
+                // weak-ETag FORM pin, and the `Location` absent-restriction.
+                let release_dated = match &declared.matcher {
+                    HeaderMatcher::Pattern(pattern) => pattern.starts_with("W/"),
+                    HeaderMatcher::Absent => header.eq_ignore_ascii_case("Location"),
+                    _ => false,
+                };
+                if !release_dated {
+                    continue;
+                }
+                dated += 1;
+                let floored = declared.applies.as_ref().is_some_and(|applies| {
+                    applies
+                        .its_rest
+                        .as_ref()
+                        .is_some_and(|range| range.raw() == ">=1.1.0")
+                });
+                if !floored {
+                    unscoped.push(format!(
+                        "{}: outcome {kind} header {header}",
+                        path.display()
+                    ));
+                }
+            }
+        }
+    }
+
+    assert!(
+        unscoped.is_empty(),
+        "every 1.1.0-dated header rule declares `applies: {{ its_rest: \">=1.1.0\" }}`; \
+         {} do not:\n{}",
+        unscoped.len(),
+        unscoped.join("\n")
+    );
+    // The derivation must keep finding the families it scopes: a refactor
+    // that silently emptied the set would pass the loop above vacuously.
+    assert!(
+        dated >= 100,
+        "the derived release-dated set collapsed to {dated} matchers"
+    );
+}

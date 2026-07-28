@@ -56,7 +56,29 @@
       "minLength": 1
     },
     "applies": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Spec-version applicability ranges (Cargo/semver requirement syntax). Every declared range must be satisfied by the party's declared version; an undeclared component puts the gated item out of scope.",
+      "properties": {
+        "rm": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "am": {
+          "type": "string"
+        },
+        "aql": {
+          "type": "string"
+        },
+        "its_rest": {
+          "type": "string"
+        },
+        "term": {
+          "type": "string"
+        }
+      }
     },
     "unrealized": {
       "type": "object",
@@ -250,7 +272,53 @@
           "headers": {
             "type": "object",
             "additionalProperties": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "description": "A matcher from the closed vocabulary (vocab/selectors.yaml header_matchers); `present?` is the shorthand for { match: present, optional: true }"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "match"
+                  ],
+                  "properties": {
+                    "match": {
+                      "type": "string"
+                    },
+                    "optional": {
+                      "type": "boolean",
+                      "description": "Presence is SHOULD/MAY-strength: an absent or blank header satisfies the expectation, a present one is judged in full by `match` (ITS-REST overview §ETag and Last-Modified makes presence a SHOULD while §Deprecated headers makes the form a MUST)"
+                    },
+                    "applies": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "description": "Spec-version applicability ranges (Cargo/semver requirement syntax). Every declared range must be satisfied by the party's declared version; an undeclared component puts the gated item out of scope.",
+                      "properties": {
+                        "rm": {
+                          "type": "string"
+                        },
+                        "base": {
+                          "type": "string"
+                        },
+                        "am": {
+                          "type": "string"
+                        },
+                        "aql": {
+                          "type": "string"
+                        },
+                        "its_rest": {
+                          "type": "string"
+                        },
+                        "term": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
             }
           },
           "body": {

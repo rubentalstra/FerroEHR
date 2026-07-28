@@ -161,14 +161,17 @@ pub struct WireCapture {
     pub fallback: Option<WireFrom>,
 }
 
-/// A header expectation on a wire outcome (closed matcher vocabulary):
-/// `present` · `present?` · `absent` · `negotiated` · `latest-version-uid` ·
+/// The value-side of a header expectation (closed matcher vocabulary):
+/// `present` · `absent` · `negotiated` · `latest-version-uid` ·
 /// `pattern:<regex>` · a literal string.
+///
+/// `present?` is NOT a member: it is the authored shorthand for
+/// [`HeaderExpectation`]'s `{ match: present, optional: true }`, so
+/// presence-optionality is one modifier with one meaning instead of a matcher
+/// that silently means something different from every other one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum HeaderMatcher {
     Present,
-    /// Assert only if the schedule row says so.
-    PresentOptional,
     Absent,
     /// Equals the negotiated media type.
     Negotiated,
@@ -181,29 +184,153 @@ pub enum HeaderMatcher {
     Literal(Template),
 }
 
-impl<'de> Deserialize<'de> for HeaderMatcher {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
+impl HeaderMatcher {
+    /// Parse the closed matcher vocabulary.
+    ///
+    /// # Errors
+    /// Returns a message when the pattern does not compile, when a literal
+    /// template is malformed, or when the reserved `present?` shorthand is
+    /// used where only a matcher belongs.
+    pub fn parse(raw: &str) -> Result<Self, String> {
+        Ok(match raw {
             "present" => Self::Present,
-            "present?" => Self::PresentOptional,
+            "present?" => {
+                return Err(
+                    "`present?` is the shorthand for `{ match: present, optional: true }` — \
+                     in the mapping form declare `optional: true` instead"
+                        .to_owned(),
+                );
+            }
             "absent" => Self::Absent,
             "negotiated" => Self::Negotiated,
             "latest-version-uid" => Self::LatestVersionUid,
             _ => {
-                if let Some(pattern) = s.strip_prefix("pattern:") {
+                if let Some(pattern) = raw.strip_prefix("pattern:") {
                     let probe = placeholder_wildcarded(pattern);
-                    regex::Regex::new(&probe).map_err(|e| {
-                        D::Error::custom(format!(
-                            "header pattern {pattern:?} does not compile: {e}"
-                        ))
-                    })?;
+                    regex::Regex::new(&probe)
+                        .map_err(|e| format!("header pattern {pattern:?} does not compile: {e}"))?;
                     Self::Pattern(pattern.to_owned())
                 } else {
-                    Self::Literal(Template::parse(&s).map_err(D::Error::custom)?)
+                    Self::Literal(Template::parse(raw)?)
                 }
             }
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for HeaderMatcher {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Self::parse(&s).map_err(D::Error::custom)
+    }
+}
+
+/// One declared header expectation on a wire outcome: a [`HeaderMatcher`]
+/// plus the two modifiers a released spec sentence can put on it.
+///
+/// The authored short form is a bare matcher string (`ETag: present`,
+/// `Location: absent`) — unconditional, presence-asserting. The mapping form
+/// declares the modifiers:
+///
+/// ```yaml
+/// ETag:
+///   match: 'pattern:W/"[^"]+"'
+///   optional: true                     # presence is a SHOULD; the form is a MUST
+///   applies: { its_rest: ">=1.1.0" }   # the release the rule is dated to
+/// ```
+///
+/// **`optional`** separates the strength of PRESENCE from the strength of
+/// FORM, because the released text assigns them differently. ITS-REST
+/// `specifications/docs/overview/Requests_and_responses.md` §"ETag and
+/// Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in
+/// responses for VERSION, VERSIONED_OBJECT, or other resources that have
+/// versioning or unique state identifiers" — presence is a SHOULD; while
+/// §"Deprecated headers" makes the form a MUST: "all `ETag` headers that hold
+/// a resource identifier MUST include a weakness indicator `W/`". An optional
+/// expectation is skipped entirely when the header is absent (or blank) and
+/// judged in full when it is there, so a SHOULD is never enforced as a MUST
+/// and a MUST is never lost. `present?` is the authored shorthand for
+/// `{ match: present, optional: true }`.
+///
+/// **`applies`** carries a version floor for the RULE, because a released
+/// requirement can be dated by its own text. The same overview chapter dates
+/// two of them to Release 1.1.0: §"Deprecated headers" ("The `ETag` response
+/// header was used without a weakness indicator `W/`. This is now deprecated,
+/// all `ETag` headers that hold a resource identifier MUST include a weakness
+/// indicator `W/`") with §"ETag and Last-Modified" naming the release
+/// ("DEPRECATION: Prior to Release 1.1.0, the `ETag` header was used without a
+/// weakness indicator `W/`"), and §Location ("DEPRECATION: Prior to Release
+/// 1.1.0, the `Location` header was used to indicate the canonical location of
+/// a representation in a response"). A party declaring an earlier ITS-REST
+/// release conforms to the text of THAT release, so a dated matcher is not
+/// applied to it — while the operation itself is still driven and every other
+/// expectation on the outcome still bites. The floor belongs HERE and not on
+/// the case or on the binding: it is the header rule that the release dates,
+/// not the operation, and putting it a level up would take a party out of
+/// scope for behaviour it does implement.
+#[derive(Debug, Clone)]
+pub struct HeaderExpectation {
+    /// The value-side matcher.
+    pub matcher: HeaderMatcher,
+    /// Presence is not asserted: an absent (or blank) header satisfies the
+    /// expectation, a present one is judged by `matcher`.
+    pub optional: bool,
+    /// The spec-version floor the RULE is dated to; unsatisfied ⇒ the
+    /// expectation is out of scope for this party and not judged.
+    pub applies: Option<Applies>,
+}
+
+impl HeaderExpectation {
+    /// An unconditional, presence-asserting expectation around `matcher`.
+    #[must_use]
+    pub fn new(matcher: HeaderMatcher) -> Self {
+        Self {
+            matcher,
+            optional: false,
+            applies: None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for HeaderExpectation {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Mapping {
+            #[serde(rename = "match")]
+            matcher: HeaderMatcher,
+            #[serde(default)]
+            optional: bool,
+            #[serde(default)]
+            applies: Option<Applies>,
+        }
+        let value = serde_json::Value::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(s) => {
+                if s == "present?" {
+                    return Ok(Self {
+                        matcher: HeaderMatcher::Present,
+                        optional: true,
+                        applies: None,
+                    });
+                }
+                HeaderMatcher::parse(&s)
+                    .map(Self::new)
+                    .map_err(D::Error::custom)
+            }
+            value @ serde_json::Value::Object(_) => {
+                let mapping: Mapping = serde_json::from_value(value).map_err(D::Error::custom)?;
+                Ok(Self {
+                    matcher: mapping.matcher,
+                    optional: mapping.optional,
+                    applies: mapping.applies,
+                })
+            }
+            other => Err(D::Error::custom(format!(
+                "a header expectation is a matcher string or a \
+                 {{ match, optional?, applies? }} mapping, got {other}"
+            ))),
+        }
     }
 }
 
@@ -265,7 +392,7 @@ pub struct WireExpectation {
     #[serde(default)]
     pub alt_status: Option<Vec<StatusCode>>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
-    pub headers: Option<Vec<(String, HeaderMatcher)>>,
+    pub headers: Option<Vec<(String, HeaderExpectation)>>,
     #[serde(default)]
     pub body: Option<BodySelector>,
 }
@@ -544,6 +671,18 @@ pub struct OperationBinding {
     /// binding. Absent for the sole realization of an operation.
     #[serde(default)]
     pub variant: Option<String>,
+    /// The OPERATION's spec-version floor: the releases on which this wire
+    /// realization exists at all (an endpoint, request header spelling, or
+    /// request shape a later release introduced). ENFORCED at selection time
+    /// (`crate::run`): a case whose flow drives a binding whose floor the
+    /// party's declared versions do not satisfy is not-applicable with that
+    /// citation, never driven against a server the release never asked to
+    /// serve it.
+    ///
+    /// Distinct from [`HeaderExpectation::applies`], which dates one RESPONSE
+    /// expectation rather than the operation: a release that only changed how
+    /// an answer must look leaves the operation itself in scope, so the floor
+    /// goes on the matcher and the case still runs.
     #[serde(default)]
     pub applies: Option<Applies>,
     #[serde(default)]
@@ -662,6 +801,7 @@ impl<'de> Deserialize<'de> for FormatHeaderMap {
 #[allow(clippy::unwrap_used, clippy::panic, clippy::indexing_slicing)] // test assertions/fixtures
 mod tests {
     use super::*;
+    use crate::model::case::VersionRange;
 
     #[test]
     fn wire_from_grammar_is_closed() {
@@ -689,8 +829,6 @@ mod tests {
 
     #[test]
     fn header_matchers_parse() {
-        let m: HeaderMatcher = serde_json::from_value(serde_json::json!("present?")).unwrap();
-        assert_eq!(m, HeaderMatcher::PresentOptional);
         let m: HeaderMatcher = serde_json::from_value(serde_json::json!(
             "pattern:W/\"<versioned_object_uid>::<system_id>::1\""
         ))
@@ -703,6 +841,52 @@ mod tests {
             serde_json::from_value::<HeaderMatcher>(serde_json::json!("pattern:([unclosed"))
                 .is_err()
         );
+        // `present?` is the expectation-level shorthand, never a matcher —
+        // one modifier with one meaning.
+        assert!(serde_json::from_value::<HeaderMatcher>(serde_json::json!("present?")).is_err());
+    }
+
+    #[test]
+    fn header_expectations_carry_the_two_modifiers() {
+        let short: HeaderExpectation =
+            serde_json::from_value(serde_json::json!("present")).unwrap();
+        assert_eq!(short.matcher, HeaderMatcher::Present);
+        assert!(!short.optional);
+        assert!(short.applies.is_none());
+
+        // `present?` = optional presence, no form assertion.
+        let sugar: HeaderExpectation =
+            serde_json::from_value(serde_json::json!("present?")).unwrap();
+        assert_eq!(sugar.matcher, HeaderMatcher::Present);
+        assert!(sugar.optional);
+
+        let long: HeaderExpectation = serde_json::from_value(serde_json::json!({
+            "match": "pattern:W/\"[^\"]+\"",
+            "optional": true,
+            "applies": { "its_rest": ">=1.1.0" }
+        }))
+        .unwrap();
+        assert!(matches!(long.matcher, HeaderMatcher::Pattern(_)));
+        assert!(long.optional);
+        let applies = long.applies.unwrap();
+        assert_eq!(applies.entries().len(), 1);
+        assert_eq!(
+            applies.its_rest.as_ref().map(VersionRange::raw),
+            Some(">=1.1.0")
+        );
+
+        // The mapping form is closed and `match` is mandatory.
+        assert!(
+            serde_json::from_value::<HeaderExpectation>(serde_json::json!({ "optional": true }))
+                .is_err()
+        );
+        assert!(
+            serde_json::from_value::<HeaderExpectation>(
+                serde_json::json!({ "match": "present", "since": "1.1.0" })
+            )
+            .is_err()
+        );
+        assert!(serde_json::from_value::<HeaderExpectation>(serde_json::json!(7)).is_err());
     }
 
     #[test]
