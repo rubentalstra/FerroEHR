@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 692 |
+| passed | 694 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 63 |
-| total | 755 |
+| total | 757 |
 
 ## By chapter
 
@@ -22,7 +22,7 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
 | I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
 | I_ADMIN_SERVICE | 9 | 0 | 0 | 0 | 10 |
-| I_DEFINITION_ADL14 | 20 | 0 | 0 | 0 | 6 |
+| I_DEFINITION_ADL14 | 22 | 0 | 0 | 0 | 6 |
 | I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
 | I_DEMOGRAPHIC_SERVICE | 57 | 0 | 0 | 0 | 1 |
@@ -50,7 +50,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
 | Adl14ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
-| Adl14OptProvisioning | pass | 17 | 0 | 0 | 5 |
+| Adl14OptProvisioning | pass | 19 | 0 | 0 | 5 |
 | Adl2ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 6 |
 | Adl2OptProvisioning | pass | 23 | 0 | 0 | 6 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
@@ -126,7 +126,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 692 of 755 selected cases driven.
+Coverage: 694 of 757 selected cases driven.
 
 Not-executed verdicts (each cited):
 

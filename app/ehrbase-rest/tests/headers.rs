@@ -599,7 +599,10 @@ async fn composition_read_and_write_carry_the_commit_instant() {
         .body(Body::from(updated.to_string()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK, "composition update: {body}");
+    // No Prefer header => return=minimal => 204 (overview
+    // Requests_and_responses.md §Prefer: "If no `Prefer` header is provided,
+    // the default behavior is assumed to be `return=minimal`").
+    assert_eq!(status, StatusCode::NO_CONTENT, "composition update: {body}");
     let new_ovid = etag_uid(&h);
     assert_ne!(new_ovid, ovid, "a new version was created");
     let updated_lm = last_modified(&h)
@@ -840,7 +843,10 @@ async fn composition_update_echoes_each_item_tag_target_under_its_own_header() {
         .body(Body::from(updated.to_string()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK, "composition update: {body}");
+    // No Prefer header => return=minimal => 204 (overview
+    // Requests_and_responses.md §Prefer: "If no `Prefer` header is provided,
+    // the default behavior is assumed to be `return=minimal`").
+    assert_eq!(status, StatusCode::NO_CONTENT, "composition update: {body}");
     let new_ovid = etag_uid(&h);
 
     let object_echo = raw(&h, "openehr-item-tag").expect("openehr-item-tag echoed");
@@ -897,7 +903,10 @@ async fn composition_update_echoes_nothing_for_an_absent_item_tag_header() {
         .body(Body::from(updated.to_string()))
         .unwrap();
     let (status, h, body) = send(&app, req).await;
-    assert_eq!(status, StatusCode::OK, "composition update: {body}");
+    // No Prefer header => return=minimal => 204 (overview
+    // Requests_and_responses.md §Prefer: "If no `Prefer` header is provided,
+    // the default behavior is assumed to be `return=minimal`").
+    assert_eq!(status, StatusCode::NO_CONTENT, "composition update: {body}");
     let new_ovid = etag_uid(&h);
 
     assert_eq!(

@@ -662,6 +662,7 @@ impl<'a> HttpDriver<'a> {
         body: &Value,
         equals: Option<&Value>,
         matches: Option<&str>,
+        omits: Option<&str>,
     ) -> Result<(), AssertionFailure> {
         if let Some(Value::Bool(want)) = equals {
             let observed = (200..300).contains(&exchange.status);
@@ -674,7 +675,7 @@ impl<'a> HttpDriver<'a> {
                 )))
             }
         } else {
-            assertions::eval_returns(body, equals, matches)
+            assertions::eval_returns(body, equals, matches, omits)
         }
     }
 
@@ -742,11 +743,16 @@ impl<'a> HttpDriver<'a> {
                         }
                     }
                 }
-                Assertion::Returns { equals, matches } => Self::eval_returns_assertion(
+                Assertion::Returns {
+                    equals,
+                    matches,
+                    omits,
+                } => Self::eval_returns_assertion(
                     exchange,
                     body,
                     equals.as_ref(),
                     matches.as_deref(),
+                    omits.as_deref(),
                 ),
                 Assertion::ResultSet {
                     match_mode,

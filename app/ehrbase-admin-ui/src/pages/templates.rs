@@ -52,9 +52,13 @@ pub struct TemplateRow {
 
 /// List the CDR's ADL 1.4 operational templates.
 ///
-/// GET `definition/template/adl1.4` with `Accept: application/json`; the body
-/// is an array whose elements are parsed defensively (missing fields become
-/// empty strings) into [`TemplateRow`]s.
+/// GET `definition/template/adl1.4?version=*` with
+/// `Accept: application/json`; the body is an array whose elements are parsed
+/// defensively (missing fields become empty strings) into [`TemplateRow`]s.
+/// `version=*` pins the FULL inventory: an absent `version` collapses the
+/// CDR's listing to the latest version of each template (the released OAS
+/// `parameters/query/filter_version.yaml`), and a management console must
+/// show every stored version, not just the latest.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -65,7 +69,7 @@ pub struct TemplateRow {
 pub async fn list_templates() -> Result<Vec<TemplateRow>, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
-    let url = state.cdr.rest_v1("definition/template/adl1.4");
+    let url = state.cdr.rest_v1("definition/template/adl1.4?version=*");
     let response = state
         .cdr
         .get(&session.credential, &url, "application/json")
