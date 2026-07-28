@@ -2134,8 +2134,38 @@ impl HttpDriver<'_> {
         let base = instance.base_url.trim_end_matches('/');
         let url = format!("{base}{}", request_spec.path.raw());
         // 409 tolerated: a re-run row re-uploads the same deterministic OPT.
-        let _uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
+        let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
+        if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+            return Ok(Provisioned::RowErrored { reason });
+        }
         Ok(Provisioned::Ready)
+    }
+
+    /// Judge a PROVISIONING exchange: 2xx establishes the ground and 409
+    /// means it already exists (re-runs on a shared world) — anything else
+    /// is a REFUSAL, and the case's required ground does not exist. The
+    /// refusal is surfaced as an inconclusive row naming this exchange
+    /// (the triage law: an unestablished `requires` precondition is a
+    /// step-resolution failure, never a SUT failure of the behaviour under
+    /// test — the 2026-07-28 java run reported 197 swallowed template-upload
+    /// 406s as content-validation failures).
+    fn provisioning_refusal(what: &str, exchange: &Exchange) -> Option<String> {
+        if (200..300).contains(&exchange.status) || exchange.status == 409 {
+            return None;
+        }
+        let body_head: String = exchange
+            .body
+            .as_ref()
+            .map(ToString::to_string)
+            .unwrap_or_default()
+            .chars()
+            .take(200)
+            .collect();
+        Some(format!(
+            "provisioning {what} refused: status {} — the case's required ground was never \
+             established; the behaviour under test was not driven (body: {body_head})",
+            exchange.status
+        ))
     }
 }
 
@@ -2352,8 +2382,10 @@ impl StepDriver for HttpDriver<'_> {
             let base = instance.base_url.trim_end_matches('/');
             let url = format!("{base}{}", request_spec.path.raw());
             // 409 tolerated: already provisioned (the send records it).
-            let _uploaded =
-                self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
+            let uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
+            if let Some(reason) = Self::provisioning_refusal("upload_opt", &uploaded) {
+                return Ok(Provisioned::RowErrored { reason });
+            }
         }
         if let Provisioned::RowNotApplicable { citation } =
             self.provision_synthesized_opt(case, row)?

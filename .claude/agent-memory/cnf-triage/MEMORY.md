@@ -23,4 +23,8 @@
 - [ETag `W/` is 1.1.0-scoped](etag-weak-indicator-is-1-1-0-scoped.md) — form=MUST from 1.1.0, presence=SHOULD always; the catalogue applies the `its_rest` floor inconsistently (141 in-scope vs 108 out-of-scope rows, same matcher)
 - [Query ETag presence is a SHOULD](query-etag-presence-is-should.md) — no released source requires the header on a query 200; the `pattern:` matcher over-gates presence
 - [results.json records out-of-scope rows](results-json-records-out-of-scope-rows.md) — 542 red vs 227 in verdict scope on the java record; `binding.applies` is dead metadata
-- [Provisioning silently swallows failures](provisioning-silently-swallows-failures.md) — template upload result discarded, provisioning sends no Accept, `server: empty` is a no-op
+- [Provisioning silently swallows failures](provisioning-silently-swallows-failures.md) — template upload result discarded at driver.rs:2122 + :2325; ONE swallowed 406 made 197 in-scope red rows
+- [Runner ignores case-level `applies`](runner-ignores-case-level-applies.md) — run.rs gates on options/binding-floors/ixit but never `case.applies`; 127 floored rows driven at a 1.0.3 party
+- [ITS-REST 1.1.0-dated surfaces](its-rest-1-1-0-dated-surfaces.md) — the Amendment_record dating table (SF/item-tags/demographic/admin-delete/W-ETag…) = the ground for every version floor
+- [SHOULD headers over-gated](should-headers-over-gated.md) — Last-Modified presence + the 412 ETag are SHOULDs; bare `present` matchers must be `present?`
+- [AMB-167 documented-family root-name gap](amb167-documented-family-root-name-gap.md) — the handling carve-out contradicts the classification; DOCUMENTED XML root+namespace is a MUST with no case

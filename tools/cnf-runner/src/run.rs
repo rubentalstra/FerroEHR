@@ -382,6 +382,42 @@ pub fn execute(
                 .push((case.id.clone(), Exception::Unrealized(citation)));
             continue;
         }
+        // Case-level spec-version floors (`CaseCore.applies`): a behaviour
+        // the spec dates to a release the party does not declare is out of
+        // scope for it — `Applies::satisfied_by`, the one polarity every
+        // consumer of the floor uses (`verdict` selection re-applies the
+        // same predicate). Driving such a case records a spurious failure
+        // against behaviour the party never claimed (the 2026-07-28 java
+        // run drove 127 red rows and 13 spuriously green ones this way) —
+        // excuse it at drive time with the declared ranges as the citation.
+        if let Some(stmt) = statement
+            && !case.applies.satisfied_by(&stmt.spec_versions)
+        {
+            let declared: Vec<String> = case
+                .applies
+                .entries()
+                .into_iter()
+                .map(|(component, range)| format!("{} {}", component.token(), range.raw()))
+                .collect();
+            let citation = format!(
+                "case version floor unmet ({}) — the party's declared spec versions do not \
+                 satisfy the case's applies ranges; ISO/IEC 9646 test selection",
+                declared.join(", ")
+            );
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
         // Operation-level spec-version floors (`OperationBinding.applies`):
         // a wire a later release introduced is not this party's behaviour to
         // answer for — the same ISO/IEC 9646 selection question the option
