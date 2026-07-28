@@ -56,7 +56,7 @@ outcomes:
   created:
     status: 201                           # §Prefer only identifier: "201 Created or 200 OK, never 204 No Content"
     headers:
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Content-Type: negotiated            # Resources.md §JSON Format: the Content-Type MUST be present unless the response has no content body — and this preference's body is non-empty by the sentence above
       Preference-Applied: "present?"      # MAY — overview §Representation details negotiation
     body: prefer_conditional

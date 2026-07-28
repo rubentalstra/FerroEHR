@@ -55,10 +55,10 @@ outcomes:
   ok:
     status: 200
     headers:
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # no version extant at the requested time (overview §HTTP status codes, row 404)
   bad_request:
     # The kind is `bad_request`, not `validation_failed`: what fails here is

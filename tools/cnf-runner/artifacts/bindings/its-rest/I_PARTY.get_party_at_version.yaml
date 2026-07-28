@@ -32,6 +32,6 @@ outcomes:
     status: 200                           # 200_PERSON_retrieved.yaml
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
-      Location: absent                    # GET — overview §Location / §Deprecated headers
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # GET — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # unknown version_uid (object_version_does_not_exist)

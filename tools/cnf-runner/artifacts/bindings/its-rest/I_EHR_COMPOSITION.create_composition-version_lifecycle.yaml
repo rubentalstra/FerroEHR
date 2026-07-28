@@ -53,7 +53,7 @@ outcomes:
   created:
     status: 201                           # overview §HTTP status codes, row 201
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'   # overview §ETag and Last-Modified + §Deprecated headers (the W/ indicator is a MUST)
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::1"', applies: { its_rest: ">=1.1.0" } }  # overview §ETag and Last-Modified + §Deprecated headers (the W/ indicator is a MUST)
       Location: present                   # overview §Location ("used in `201 Created` responses when a new resource is successfully created")
     body: prefer_conditional
 captures:

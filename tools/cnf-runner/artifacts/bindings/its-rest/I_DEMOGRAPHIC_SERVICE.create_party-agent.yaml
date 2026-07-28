@@ -29,7 +29,7 @@ outcomes:
   created:
     status: 201
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::1"', applies: { its_rest: ">=1.1.0" } }
       Location: present
       Content-Type: negotiated
     body: prefer_conditional

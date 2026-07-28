@@ -44,7 +44,7 @@ outcomes:
   updated:
     status: 200                           # Prefer: return=representation (204 under minimal)
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
     body: prefer_conditional
   precondition_failed:
     status: 412                           # 412_PERSON.yaml — the weak tag holds a stale version_uid
@@ -53,7 +53,7 @@ outcomes:
     # Location off a non-creation response.
     headers:
       ETag: latest-version-uid
-      Location: absent
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
 captures:
   version_uid:
     from: header ETag

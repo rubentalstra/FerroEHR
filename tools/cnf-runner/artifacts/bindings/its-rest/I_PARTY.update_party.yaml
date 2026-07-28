@@ -24,7 +24,7 @@ outcomes:
   updated:
     status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
     body: prefer_conditional
   precondition_failed:
     status: 412                           # 412_PERSON.yaml — If-Match does not match latest
@@ -33,7 +33,7 @@ outcomes:
     # headers"; §Location keeps Location off a non-creation response.
     headers:
       ETag: latest-version-uid
-      Location: absent
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
   precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
   not_found: { status: 404 }              # unknown party (versioned_object_does_not_exist)
   # DECISION (#557, 2026-07-28): version_not_found and precondition_failed
@@ -73,7 +73,7 @@ outcomes:
     status: 412
     headers:
       ETag: latest-version-uid
-      Location: absent
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }
   validation_failed: { status: 422, body: error_loose }   # content_invalid / definition_unknown
 captures:
   version_uid:

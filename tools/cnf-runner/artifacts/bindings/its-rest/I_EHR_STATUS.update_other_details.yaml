@@ -56,7 +56,7 @@ formats: [canonical-json]
 outcomes:
   updated:
     status: 200                             # 204 when Prefer minimal — overview §Representation details negotiation
-    headers: { ETag: 'pattern:W/"[^"]+"' }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } } }
     body: prefer_conditional
 captures:
   status_version_uid:

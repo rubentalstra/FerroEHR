@@ -81,9 +81,9 @@ outcomes:
     status: 200                           # 200_VERSIONED_PARTY.yaml
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
     body: present
   not_acceptable: { status: 406 }         # Resources.md §XML Format — an Accept the service cannot fulfill (offering XML on this resource is a service choice, AMB-167)
   not_found: { status: 404 }              # unknown versioned_object_uid (responses/404.yaml)

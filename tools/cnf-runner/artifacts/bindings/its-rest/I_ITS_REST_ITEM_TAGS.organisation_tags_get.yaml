@@ -68,6 +68,6 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated            # 200_ORGANISATION_ItemTagList_retrieved.yaml -> headers/ContentType_canonical.yaml
-      Location: absent                    # read — overview §Location: the header "MUST ONLY be used for resource creation (e.g., `201 Created`) or redirect responses"; §Deprecated headers deprecates it on GET responses
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location: the header "MUST ONLY be used for resource creation (e.g., `201 Created`) or redirect responses"; §Deprecated headers deprecates it on GET responses
     body: present
   not_found: { status: 404 }

@@ -25,5 +25,5 @@ outcomes:
     status: 200                           # 200_EHR.yaml — EHR exists for subject
     headers:
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }                                   # 404_EHR_subject.yaml — no EHR for subject

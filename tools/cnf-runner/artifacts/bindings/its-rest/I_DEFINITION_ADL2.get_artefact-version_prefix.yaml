@@ -40,5 +40,5 @@ outcomes:
     status: 200                                   # 200_Template_adl2_retrieved.yaml
     headers:
       Content-Type: negotiated
-      ETag: 'pattern:W/"<resolved_hrid>"'         # the RESOLVED (highest-matching) ARCHETYPE_HRID, captured by the case from the higher upload
+      ETag: { match: 'pattern:W/"<resolved_hrid>"', applies: { its_rest: ">=1.1.0" } }  # the RESOLVED (highest-matching) ARCHETYPE_HRID, captured by the case from the higher upload
   not_found: { status: 404 }                      # 404_unknown_template_id_or_version.yaml
