@@ -37,13 +37,24 @@
 #                       query-ehr-id-parameter-header-conflict and
 #                       query-post-paging-parameter-conflict all retired their
 #                       exceptions. It ALSO replaced the borrowed
-#                       `validation_failed` on the three 400 bindings the
-#                       release named (I_DEFINITION_ADL14.get_opt#
+#                       `validation_failed` on every 400 binding whose law is
+#                       the malformed-request one — vocabulary precision at an
+#                       unchanged wire status, derived per binding: the three
+#                       the release itself named (I_DEFINITION_ADL14.get_opt#
 #                       example_invalid_detail_level,
 #                       I_EHR_COMPOSITION.get_composition_at_time,
 #                       I_DEFINITION_QUERY.store_query + its `version`
-#                       variant) — vocabulary precision at an unchanged wire
-#                       status. ehr-subject-query-argument-required stays a
+#                       variant), then the remaining fifteen — the two
+#                       unparseable upload variants (AMB-110), the three
+#                       malformed-identifier reads (AMB-76:
+#                       I_EHR_COMPOSITION.get_versioned_composition,
+#                       I_EHR_CONTRIBUTION.get_contribution,
+#                       I_EHR_DIRECTORY.get_directory_at_version), the three
+#                       malformed-`version_at_time` reads, and the seven
+#                       ITEM_TAG PUTs (AMB-93's syntactic half). ONE LAW, ONE
+#                       KIND: `validation_failed` now names only the 422
+#                       content-semantics branch, including AMB-93's other
+#                       half. ehr-subject-query-argument-required stays a
 #                       gap on its own second blocker (the binding request
 #                       model cannot express an omitted mandatory argument).
 #   method_not_allowed  still uncased: both its elements are blocked by

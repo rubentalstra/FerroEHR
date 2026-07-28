@@ -46,4 +46,4 @@ flow:
   - step: 1
     call: get_contribution
     with: { ehr_id: "${ehr_id}", contribution_uid: "not-a-contribution-uid" }
-    expect: validation_failed
+    expect: bad_request                 # AMB-76's malformed-identifier law — the request's own syntax, not the content's semantics

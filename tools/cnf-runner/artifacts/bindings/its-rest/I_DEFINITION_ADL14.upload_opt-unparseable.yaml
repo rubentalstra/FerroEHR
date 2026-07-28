@@ -16,13 +16,15 @@
 # missing required header or parameter, or syntactically invalid header,
 # parameter or content)").
 #
-# The two branches cannot share one binding because the closed outcome taxonomy
-# (vocab/outcomes.yaml) has no dedicated syntactic-rejection kind — the same
-# closed-vocabulary limit recorded on `ehr-id-path-segment-malformed-rejection`
-# in vocab/wire_surface.yaml. `validation_failed` is the kind the catalogue
-# already uses at 400 wherever a released sentence puts malformed input there
-# (I_EHR_COMPOSITION.get_composition_at_time, I_DEFINITION_QUERY.store_query),
-# and the variant discriminator keeps the two statuses apart per case.
+# The two branches cannot share one binding because they answer different
+# statuses on the same operation, and they now carry DIFFERENT outcome kinds:
+# the syntactic branch here is `bad_request`, the taxonomy's malformed-request
+# kind ("malformed request syntax, syntactically invalid content"; the generic
+# client-side error "used when no other 4xx error code is appropriate" —
+# vocab/outcomes.yaml), while the variant-less binding keeps
+# `validation_failed`, the well-formed-but-semantically-invalid kind, at 422.
+# One law, one kind: the 400 the released sentence assigns here is the
+# malformed-request law, never the content-semantics one.
 # Register: AMB-110 (the branch split).
 sm_operation: I_DEFINITION_ADL14.upload_opt
 its: its-rest
@@ -34,6 +36,6 @@ request:
   headers:
     Content-Type: application/xml         # the declared body type is correct; only the CONTENT is unparseable
 outcomes:
-  validation_failed:
+  bad_request:
     status: 400                           # §HTTP status codes row 400 — "syntactically invalid content"
     body: error_loose                     # §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

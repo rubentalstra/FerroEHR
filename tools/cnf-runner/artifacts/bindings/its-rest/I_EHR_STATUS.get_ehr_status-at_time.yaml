@@ -60,8 +60,22 @@ outcomes:
       Content-Type: negotiated
       Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # no version extant at the requested time (overview §HTTP status codes, row 404)
-  validation_failed:
-    status: 400                           # a version_at_time outside the extended ISO 8601 grammar (overview §HTTP status codes, row 400)
+  bad_request:
+    # The kind is `bad_request`, not `validation_failed`: what fails here is
+    # the REQUEST's own syntax — a `version_at_time` outside the extended
+    # ISO 8601 grammar the DOCS TEXT makes a MUST (overview Resources.md
+    # §Datetime format: "HTTP query parameters and path segments that are
+    # dates, datetimes, or times, MUST always use the _extended_ ISO 8601
+    # format") — which is the overview's 400 row verbatim: "The service cannot
+    # or will not process the request due to something that is perceived to be
+    # a client error (e.g., malformed request syntax, syntactically invalid
+    # content)". `validation_failed` is the 422 kind (well-formed content,
+    # semantically invalid) and was only borrowed while the closed taxonomy
+    # had no malformed-request kind; the 2026-07-28 schedule release (#544)
+    # added one. The wire status is unchanged (400 before and after), and this
+    # is the same mapping the sibling I_EHR_COMPOSITION.get_composition_at_time
+    # binding carries.
+    status: 400
     body: error_loose
 captures:
   status_version_uid:

@@ -48,4 +48,4 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versioned_object_uid: "not-a-uid"
-    expect: validation_failed
+    expect: bad_request                 # AMB-76's malformed-identifier law — the request's own syntax, not the content's semantics

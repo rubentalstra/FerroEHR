@@ -32,4 +32,4 @@ flow:
     call: get_versioned_ehr_status
     variant: at_time
     with: { ehr_id: "${ehr_id}", a_time: "not-a-datetime" }
-    expect: validation_failed
+    expect: bad_request                 # a version_at_time outside the extended ISO 8601 grammar is malformed request syntax
