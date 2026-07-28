@@ -86,6 +86,28 @@ cnf.composition.minimal_event.v2:
   validity: { verdict: valid }
   template_id: "minimal_evaluation.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence; leaf value updated for the v2 content state"
+# The canonical-XML serializations of the two content states above — the request
+# payloads of the canonical-xml commit cases. ITS-REST overview Resources.md
+# §"XML Format": "When resources are serialized in **canonical XML** format,
+# both request payloads and responses MUST conform to the [published
+# XSDs]" — the document root element `composition` is the one the published
+# ITS-XML schema declares globally (RM documents/Composition.xsd:
+# `<xs:element name="composition" type="COMPOSITION"/>`), so these are
+# XSD-rooted documents, not an invented envelope.
+cnf.composition.minimal_event.v1.xml:
+  source: fixtures/composition/minimal_event.v1.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "codec-derived from cnf.composition.minimal_event.v1 (fixtures/composition/minimal_event.v1.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; the JSON twin's own provenance is the openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin), re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.composition.minimal_event.v2.xml:
+  source: fixtures/composition/minimal_event.v2.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "codec-derived from cnf.composition.minimal_event.v2 (fixtures/composition/minimal_event.v2.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; the JSON twin carries the v2 content state"
 cnf.composition.minimal_event.foreign_uid:
   source: fixtures/composition/minimal_event.foreign_uid.json
   format: canonical-json
@@ -1271,6 +1293,28 @@ cnf.demographic.person.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the RM demographic class model (§PERSON; §PARTY Identities_valid) — updated content state (amended identity value)"
+# The canonical-XML serializations of the two PERSON content states above — the
+# request payloads of the canonical-xml party-commit cases. ITS-REST overview
+# Resources.md §"XML Format" governs them ("both request payloads and responses
+# MUST conform to the published XSDs"); the published ITS-XML schema declares
+# the PERSON *complexType* (RM Demographic.xsd) but NO global element for it
+# (only `composition`, `version`, `extract`, `extract_request`,
+# `versioned_object`, `items` are globally declared), so the XSDs pin the
+# content model while the document ROOT NAME is unassigned by the release —
+# hence the cases that consume these assert the negotiated media type and the
+# content model, never a root element name.
+cnf.demographic.person.v1.xml:
+  source: fixtures/demographic/person.v1.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived from cnf.demographic.person.v1 (fixtures/demographic/person.v1.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; the JSON twin was authored 2026-07-21 from the RM demographic class model (§PERSON; §PARTY Identities_valid)"
+cnf.demographic.person.v2.xml:
+  source: fixtures/demographic/person.v2.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived from cnf.demographic.person.v2 (fixtures/demographic/person.v2.json) via crates/openehr-its/examples/canonical_convert.rs — the gate-proven FromJson + ToXml codec pair; the JSON twin carries the amended-identity content state"
 cnf.demographic.person.invalid:
   source: fixtures/demographic/person.invalid.json
   format: canonical-json
