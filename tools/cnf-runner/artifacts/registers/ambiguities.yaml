@@ -5344,15 +5344,16 @@ AMB-151:
     the server's own tests — `app/ehrbase-rest/tests/smart_http.rs` and the
     grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs` —
     which is evidence about the server and the parser, never about the wire.
-    THE LANE IS FOCUSED, NOT THE BASELINE: SMART scopes ride Bearer tokens
-    only, so in the fail-closed posture the catalogue's Basic-auth principals
-    hold none and every template/composition/AQL case would be (correctly)
-    refused — the configuration behaving as specified. The lane therefore
-    drives only the SMART group and writes to its own artefact directory; the
-    default lane remains the conformance baseline. The `SmartAppLaunch`
-    capability row in `vocab/capability_matrix.yaml` is claimed by the lane's
-    own party statement (`party/ehrbase-rs/statement.smart.json`) and NOT by
-    the default one, because the default deployment does not run the role.
+    THE POSTURE IS THE BASELINE (re-adjudicated for PR #611; the earlier
+    focused-lane paragraph described the retired
+    `statement.smart.json`/sidecar-directory scheme): the SMART
+    resource-server posture IS the standard ehrbase-rs conformance posture —
+    the pipeline always composes the SMART overlay, the ixit's principals
+    mint scoped Bearer tokens, and the ONE committed record drives the whole
+    claimed surface including the SMART group. The `SmartAppLaunch`
+    capability row in `vocab/capability_matrix.yaml` is claimed by THE party
+    statement (`party/ehrbase-rs/statement.json`); there is no second
+    statement and no per-lane artefact directory.
     Reported upstream (UPR-115).
   disposition: statement_declared
   upstream_ref: "UPR-115"
