@@ -196,12 +196,36 @@ cnf.ehr_status.with_subject.e:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "derived 2026-07-27 from the official Robot EHR_STATUS with a known per-case subject ref (cnf-subject-04@cnf) — subject-keyed cases must own their subject on a single-EHR-per-subject SUT"
+cnf.ehr_status.with_subject.f:
+  source: fixtures/ehr/ehr_status.with_subject.f.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-07-28 from the official Robot EHR_STATUS with a known per-case subject ref (cnf-subject-05@cnf) — subject-keyed cases must own their subject on a single-EHR-per-subject SUT"
+cnf.ehr_status.with_subject.g:
+  source: fixtures/ehr/ehr_status.with_subject.g.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-07-28 from the official Robot EHR_STATUS with a known per-case subject ref (cnf-subject-06@cnf) — subject-keyed cases must own their subject on a single-EHR-per-subject SUT"
 cnf.ehr_status.with_subject.alt:
   source: fixtures/ehr/ehr_status.with_subject.alt.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "derived 2026-07-22 from the official Robot EHR_STATUS by renaming the subject external ref (single-EHR-per-subject SUTs reject a reused subject; no openEHR spec governs subject uniqueness — SUT-policy accommodation)"
+# The canonical-XML sibling of cnf.ehr_status.with_subject: the SAME payload in
+# the other canonical representation, so a canonical-xml write case can be read
+# back and compared against the JSON twin. ITS-REST overview Resources.md §XML
+# Format governs the representation ("both request payloads and responses MUST
+# conform to the published XSDs"); the derivation is mechanical, never
+# hand-written XML.
+cnf.ehr_status.with_subject.xml:
+  source: fixtures/ehr/ehr_status.with_subject.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/ehr/ehr_status.with_subject.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence"
 # Corpus additions for the master04 (DEFINITION_ADL14) cases. Same entry
 # schema as MANIFEST.yaml; the orchestrator concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
@@ -508,6 +532,24 @@ cnf.directory.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+# The canonical-XML siblings of the two FOLDER payloads: the SAME structures in
+# the other canonical representation, so a canonical-xml create/update can be
+# read back and compared against the JSON twin. ITS-REST overview Resources.md
+# §XML Format governs the representation ("both request payloads and responses
+# MUST conform to the published XSDs"); the derivation is mechanical, never
+# hand-written XML.
+cnf.directory.root_only.xml:
+  source: fixtures/directory/root_only.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/directory/root_only.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.directory.v2.xml:
+  source: fixtures/directory/v2.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "codec-derived 2026-07-28 from fixtures/directory/v2.json via crates/openehr-its/examples/canonical_convert.rs (the gate-proven FromJson + ToXml codec pair); the JSON twin is the openEHR CNF Robot corpus payload re-adjudicated 2026-07-21 to spec-text-only evidence"
 cnf.directory.invalid.missing_name:
   source: fixtures/directory/missing_name.json
   format: canonical-json
