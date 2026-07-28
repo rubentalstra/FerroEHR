@@ -13,7 +13,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::artifacts::ArtifactSet;
-use crate::ids::{CaseId, CorpusKey, SmOperationRef, ViewName};
+use crate::ids::{CapabilityName, CaseId, CorpusKey, SmOperationRef, ViewName};
 use crate::literal::{Literal, ViolationRef};
 use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
@@ -21,7 +21,7 @@ use crate::model::binding::OperationBinding;
 use crate::model::case::{CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters};
 use crate::model::wire_surface::{ServedExtension, WireSurface};
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
-use crate::vocab::{CaseKind, FormatName, Iteration, OutcomeKind};
+use crate::vocab::{CaseKind, CaseStatus, Disposition, FormatName, Iteration, OutcomeKind};
 
 /// The check taxonomy (one id per machine gate).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -61,6 +61,25 @@ pub enum CheckId {
     /// reconciliation of every performance workload (write share inside the
     /// 10:1..50:1 derivation band; stage templates resolve in the corpus).
     JourneyEnvelope,
+    /// Claim completeness (issue #622): a capability a committed party
+    /// statement claims has ≥ 1 verdict-bearing catalogue case, and a
+    /// capability whose every case resolves excused/deselected names the
+    /// register entry that adjudicated that. Declaring a capability IS the
+    /// obligation to run the framework against it, so a hollow claim cannot
+    /// even enter a run — the gate is at validate time, before any SUT is
+    /// composed.
+    ClaimCompleteness,
+    /// Per-capability case-count floors (issue #622): one token case never
+    /// certifies a capability. The capability matrix records each row's
+    /// `min_cases`; a battery below its floor is a finding naming the
+    /// shortfall. Floors ratchet UP only.
+    CapabilityDepth,
+    /// Measured-workload coverage (issue #622): every claimed capability is
+    /// either exercised by the hospital-simulation journeys the performance
+    /// workloads name, or carries a register-linked `workload_exclusion` the
+    /// certificate renders. A bare `NO — catalogue gap` row is an undecided
+    /// hole, never a publishable one.
+    WorkloadCoverage,
     /// Total wire-surface coverage (issue #271): every spec-defined wire
     /// behaviour — SM operations (Axis 1), per-binding outcome/format branches
     /// (Axis 2), cross-cutting behaviours (Axis 3) — is exercised by ≥ 1 case
@@ -90,6 +109,9 @@ impl CheckId {
             Self::CapabilityTier => "capability-tier",
             Self::VocabDrift => "vocab-drift",
             Self::JourneyEnvelope => "journey-envelope",
+            Self::ClaimCompleteness => "claim-completeness",
+            Self::CapabilityDepth => "capability-depth",
+            Self::WorkloadCoverage => "workload-coverage",
             Self::SurfaceCoverage => "surface-coverage",
         }
     }
@@ -178,9 +200,282 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_corpus_integrity(ctx.set, &mut findings);
     check_vocab_drift(ctx.set, &mut findings);
     check_journey_envelope(ctx.set, &mut findings);
+    check_claim_completeness(ctx.set, &mut findings);
+    check_capability_depth(ctx.set, &mut findings);
+    check_workload_coverage(ctx.set, &mut findings);
     check_surface_coverage(ctx.set, ctx.spec_root, &mut findings);
 
     findings
+}
+
+// ── claim completeness, depth floors, workload coverage (issue #622) ────────
+
+/// How a catalogue case will resolve for verdict purposes, as far as the
+/// CATALOGUE alone can say — the static twin of [`crate::verdict::Evidence`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Resolution {
+    /// The case can carry executed evidence.
+    Gating,
+    /// Every operation the flow calls is `unrealized` on this ITS, so the
+    /// runner records it not-applicable with the binding's citation.
+    ExcusedUnrealized,
+    /// The case realizes one branch of an `option_select` ambiguity: it
+    /// carries evidence only for a party whose ICS declares that branch.
+    OptionGated,
+}
+
+/// The catalogue-side resolution of one case (see [`Resolution`]).
+fn resolution(set: &ArtifactSet, case: &CaseCore) -> Resolution {
+    if crate::run::fully_unrealized(set, case).is_some() {
+        Resolution::ExcusedUnrealized
+    } else if case.option.is_some() {
+        Resolution::OptionGated
+    } else {
+        Resolution::Gating
+    }
+}
+
+/// Whether a `report_only` register entry suspends the case's gating (such a
+/// case reports but never contributes to a verdict — [`crate::verdict`]).
+fn suspended_report_only(set: &ArtifactSet, case: &CaseCore) -> bool {
+    let Some((_, register)) = &set.register else {
+        return false;
+    };
+    case.ambiguities.iter().any(|id| {
+        register
+            .get(id)
+            .is_some_and(|e| e.disposition == Disposition::ReportOnly)
+    })
+}
+
+/// The verdict-bearing cases of one capability: active cases naming it whose
+/// gating is not suspended by a `report_only` register entry. This is the
+/// count the depth floor measures and the set the claim gate requires to be
+/// non-empty.
+#[must_use]
+pub fn verdict_bearing<'a>(set: &'a ArtifactSet, cap: &CapabilityName) -> Vec<&'a CaseCore> {
+    set.cases
+        .iter()
+        .map(|(_, c)| c)
+        .filter(|c| {
+            c.status == CaseStatus::Active
+                && c.capabilities.contains(cap)
+                && !suspended_report_only(set, c)
+        })
+        .collect()
+}
+
+/// A claim without cases is a certification hole, and a capability whose
+/// every case resolves excused/deselected is one too unless a register entry
+/// says otherwise.
+///
+/// ISO/IEC 9646 test selection legitimizes "not applicable" only for a
+/// capability the party does NOT claim; a claimed-but-unevidenced row is not
+/// a selection outcome (owner directive 2026-07-28).
+fn check_claim_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((matrix_path, matrix)) = &set.matrix else {
+        return;
+    };
+    let matrix_who = matrix_path.display().to_string();
+
+    for (party_path, statement) in &set.parties {
+        let who = party_path.display().to_string();
+        for cap in &statement.claims.capabilities {
+            // An unknown capability is the static review's / capability-tier
+            // gate's finding, not this one.
+            if matrix.get(cap).is_none() {
+                continue;
+            }
+            if verdict_bearing(set, cap).is_empty() {
+                push(
+                    findings,
+                    CheckId::ClaimCompleteness,
+                    &who,
+                    format!(
+                        "claimed capability {cap} has zero verdict-bearing catalogue cases — \
+                         declaring a capability is the obligation to run the CNF framework \
+                         against it; author its battery or withdraw the claim"
+                    ),
+                );
+            }
+        }
+    }
+
+    for (name, entry) in matrix.entries() {
+        let cases = verdict_bearing(set, name);
+        let all_excused = !cases.is_empty()
+            && cases
+                .iter()
+                .all(|c| resolution(set, c) != Resolution::Gating);
+        match (&entry.evidence_exception, all_excused) {
+            (None, true) => push(
+                findings,
+                CheckId::ClaimCompleteness,
+                &matrix_who,
+                format!(
+                    "{name}: every one of its {} verdict-bearing case(s) resolves excused or \
+                     deselected, so the capability can never carry executed evidence — name the \
+                     adjudicating register entry in `evidence_exception`, realize the wire, or \
+                     move the capability to the extension surface",
+                    cases.len()
+                ),
+            ),
+            (Some(adjudication), true) => {
+                if set
+                    .register
+                    .as_ref()
+                    .is_some_and(|(_, r)| r.get(&adjudication.register).is_none())
+                {
+                    push(
+                        findings,
+                        CheckId::ClaimCompleteness,
+                        &matrix_who,
+                        format!(
+                            "{name}: evidence_exception cites {} which is not in the register",
+                            adjudication.register
+                        ),
+                    );
+                }
+            }
+            (Some(adjudication), false) => push(
+                findings,
+                CheckId::ClaimCompleteness,
+                &matrix_who,
+                format!(
+                    "{name}: evidence_exception ({}) is stale — the capability now has cases \
+                     that can carry executed evidence ({} of {}); delete the exception",
+                    adjudication.register,
+                    cases
+                        .iter()
+                        .filter(|c| resolution(set, c) == Resolution::Gating)
+                        .count(),
+                    cases.len()
+                ),
+            ),
+            (None, false) => {}
+        }
+    }
+}
+
+/// One token case does not certify a capability: every matrix row records the
+/// verdict-bearing case count its battery must keep (`min_cases`), and the
+/// floors ratchet UP only.
+fn check_capability_depth(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((matrix_path, matrix)) = &set.matrix else {
+        return;
+    };
+    let who = matrix_path.display().to_string();
+    for (name, entry) in matrix.entries() {
+        let count = verdict_bearing(set, name).len();
+        if count < entry.min_cases {
+            push(
+                findings,
+                CheckId::CapabilityDepth,
+                &who,
+                format!(
+                    "{name}: {count} verdict-bearing case(s) against a floor of {} — short by \
+                     {}; coverage only ratchets up, so restore the battery (never lower the \
+                     floor)",
+                    entry.min_cases,
+                    entry.min_cases.saturating_sub(count)
+                ),
+            );
+        }
+    }
+}
+
+/// The capabilities the measured hospital simulation exercises: the union of
+/// the capability sets of every operation of every journey a performance
+/// workload names. The certificate's Workload Coverage table computes the
+/// same union from the measurement records that actually ran; this is its
+/// catalogue-side twin, so a gap is caught before a run, not after one.
+fn workload_exercised(set: &ArtifactSet) -> BTreeSet<&'static str> {
+    let mut exercised = BTreeSet::new();
+    let Some((_, catalogue)) = &set.journeys else {
+        return exercised;
+    };
+    for (_, case) in &set.performance {
+        for (name, _) in &case.workload.journeys {
+            let Some(journey) = catalogue.get(name) else {
+                continue; // the journey-envelope gate reports the dangling name
+            };
+            for stage in &journey.stages {
+                if let Ok(op) = crate::perf::PerfOp::parse(&stage.op) {
+                    exercised.extend(op.capabilities().iter().copied());
+                }
+            }
+        }
+    }
+    exercised
+}
+
+/// A claimed capability the measured workload never touches is either a
+/// journey-catalogue gap to close or an adjudicated exclusion — never a bare
+/// `NO — catalogue gap` row on a published certificate.
+fn check_workload_coverage(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((matrix_path, matrix)) = &set.matrix else {
+        return;
+    };
+    if set.performance.is_empty() {
+        return; // nothing is measured, so nothing can be excluded from it
+    }
+    let matrix_who = matrix_path.display().to_string();
+    let exercised = workload_exercised(set);
+
+    for (party_path, statement) in &set.parties {
+        let who = party_path.display().to_string();
+        for cap in &statement.claims.capabilities {
+            let Some(entry) = matrix.get(cap) else {
+                continue;
+            };
+            if exercised.contains(cap.as_str()) || entry.workload_exclusion.is_some() {
+                continue;
+            }
+            push(
+                findings,
+                CheckId::WorkloadCoverage,
+                &who,
+                format!(
+                    "claimed capability {cap} is neither exercised by the measured \
+                     hospital-simulation workload nor carries a `workload_exclusion` — extend \
+                     the journey catalogue or adjudicate the exclusion in the capability matrix"
+                ),
+            );
+        }
+    }
+
+    for (name, entry) in matrix.entries() {
+        let Some(adjudication) = &entry.workload_exclusion else {
+            continue;
+        };
+        if set
+            .register
+            .as_ref()
+            .is_some_and(|(_, r)| r.get(&adjudication.register).is_none())
+        {
+            push(
+                findings,
+                CheckId::WorkloadCoverage,
+                &matrix_who,
+                format!(
+                    "{name}: workload_exclusion cites {} which is not in the register",
+                    adjudication.register
+                ),
+            );
+        }
+        if exercised.contains(name.as_str()) {
+            push(
+                findings,
+                CheckId::WorkloadCoverage,
+                &matrix_who,
+                format!(
+                    "{name}: workload_exclusion ({}) is stale — the hospital simulation now \
+                     exercises the capability; delete the exclusion",
+                    adjudication.register
+                ),
+            );
+        }
+    }
 }
 
 /// The journey catalogue's own invariants, every performance workload's
@@ -1330,16 +1625,16 @@ fn check_vocab_drift(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             );
         }
     }
-    if let Some((path, matrix)) = &set.matrix
-        && let Err(drift) = matrix.check_tier_scoping()
-    {
-        for message in drift {
-            push(
-                findings,
-                CheckId::VocabDrift,
-                &path.display().to_string(),
-                message,
-            );
+    if let Some((path, matrix)) = &set.matrix {
+        let who = path.display().to_string();
+        for message in matrix
+            .check_tier_scoping()
+            .err()
+            .into_iter()
+            .chain(matrix.check_realization_scoping().err())
+            .flatten()
+        {
+            push(findings, CheckId::VocabDrift, &who, message);
         }
     }
     if let Some((path, register)) = &set.register {
