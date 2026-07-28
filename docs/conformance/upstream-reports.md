@@ -2307,3 +2307,82 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   it claims, and never out-claims the last machine-computed verdict. Our
   conformance case asserts only the `200` and the `Allow` header — everything
   else is recorded as this silence, not as an expectation.)
+
+### UPR-125 — the CONTRIBUTION commit declares `application/xml` yet the release defines no XML form of the commit envelope
+
+- **Components:** ITS-REST (`specifications/operations/contribution_create.yaml`; `parameters/header/ContentType_LOCATABLE.yaml`; `docs/overview/Resources.md` §"XML Format"); ITS-XML (`RM/**/Common.xsd`)
+- **Register:** AMB-165 (report_only)
+- **Facts:** The contribution commit operation declares the XML media type twice
+  — the `ContentType_LOCATABLE` enum contains `application/xml`, and the
+  operation's own description names "the canonical `application/json` /
+  `application/xml`" — yet its `requestBody.content` map carries exactly one
+  entry, `application/json`, bound to `NewContribution.yaml`, whose
+  UpdateVersion/UpdateAudit shapes have no XSD counterpart. The published XSDs
+  type CONTRIBUTION as a complexType describing a COMMITTED contribution
+  (`uid` mandatory, `versions` as OBJECT_REFs) — never the commit envelope,
+  which must carry each new version's data inline — and declare no global
+  CONTRIBUTION document element at all, so the §XML Format conformance MUST
+  ("both request payloads and responses MUST conform to the published XSDs")
+  has nothing to be satisfied against.
+- **Ask:** either publish the XML representation of the commit envelope (a
+  document element + the versions-with-inline-data and UPDATE_AUDIT
+  renderings), or withdraw `application/xml` from the operation's Content-Type
+  enum — so a client knows whether an XML commit is expressible at all.
+
+### UPR-126 — the wrapper-header response echo: §Usage in Responses says MAY while the create operations say "will return"
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §"openehr-item-tag and openehr-version-item-tag" §"Usage in Responses"; `specifications/operations/composition_create.yaml`, `person_create.yaml`)
+- **Register:** AMB-166 (fixed_handling)
+- **Facts:** The overview's §Usage in Responses states "Servers MAY include the
+  `openehr-item-tag` or `openehr-version-item-tag` header in responses to
+  confirm the actual list of ITEM_TAGs stored on the server side", while the
+  create operations' own prose states the corresponding response header(s)
+  "will return" the ITEM_TAGs as set by the server — a MAY and an unqualified
+  factual claim about the same echo. Under the repo's oracle order the
+  overview docs text wins, so the echo is declared optional (`present?`) and
+  never asserted.
+- **Ask:** align the operation descriptions with the overview's MAY (or raise
+  the echo to a requirement with an RFC 2119 keyword), so the echo's force is
+  stated once, consistently.
+
+### UPR-127 — the XSD document-element inventory does not cover the resources the REST API offers `application/xml` on
+
+- **Components:** ITS-REST (`docs/overview/Resources.md` §"Data
+  representation", §"XML Format"), ITS-XML (the published XSD bundles)
+- **Register:** AMB-167 (option_select)
+- **Facts:** `Resources.md` §"XML Format" makes conformance to the published
+  XSDs the bar for every canonical-XML exchange — "When resources are
+  serialized in **canonical XML** format, both request payloads and responses
+  MUST conform to the [published XSDs]" — and the same section states the
+  refusal rule, "If the service cannot fulfill this aspect of the request, it
+  MUST respond with HTTP status code `406 Not Acceptable`". The published XSDs
+  declare a global document element for only eight names: `composition`,
+  `version`, `items`, `template`, `extract`, `extract_request`,
+  `versioned_object` and `archetype` (the 2.0.0-lineage bundle adds
+  `result_set` and `query_request`; the STABLE 1.0.2 bundle has no QUERY
+  schema, no `Ehr.xsd` and no `Demographic.xsd` at all). The same
+  `Resources.md` addresses canonical XML to the resource surface as a whole —
+  "A client MAY use the header `Content-Type: application/xml` in the requests
+  to specify the XML payload format", "The client SHOULD use the `Accept:
+  application/xml` request header to specify the expected XML response format"
+  — and §Resources enumerates that surface as COMPOSITION, EHR_STATUS, FOLDER,
+  PARTY, the versioned entities, EHR, CONTRIBUTION, RESULT_SET and the
+  definitions. Most of those have no document element: EHR, EHR_STATUS,
+  FOLDER/directory, the five demographic PARTY types and PARTY_RELATIONSHIP,
+  CONTRIBUTION, REVISION_HISTORY, and the ITEM_TAG lists, the last of which
+  has no complexType in the published schemas at all. For those resources the
+  release therefore addresses a media type whose document it never defines: a
+  server that serves one must invent a root element name no released sentence
+  assigns, and a server that refuses is equally within the text. `Resources.md` §"Data representation" ("Services
+  MUST support at least one of the openEHR **XML** or **JSON** canonical
+  formats") makes XML optional in general but says nothing per resource, so
+  neither behaviour can be tested as required.
+- **Ask:** reconcile the two inventories. Either publish a document element
+  (or an explicit root-naming rule for a resource served under the abstract
+  `items` root) for every resource whose `Accept`/`Content-Type` enums list
+  `application/xml`, or withdraw the media type from the operations whose
+  document the schemas do not define — and say, per resource or once for all
+  of them, whether offering canonical XML is required or elective. (Ours: the
+  per-resource classification and the two-armed both-conformant handling are
+  register AMB-167; our suite gates each undefined family's XML rows on a
+  statement-declared option instead of asserting either branch.)

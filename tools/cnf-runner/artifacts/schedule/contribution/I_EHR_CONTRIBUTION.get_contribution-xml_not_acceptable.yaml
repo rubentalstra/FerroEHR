@@ -1,7 +1,7 @@
-# A CONTRIBUTION read requested as canonical XML is refused as not acceptable
-# — the release publishes no CONTRIBUTION XML document, so the request cannot
-# be fulfilled in conformance by ANY server (triage 2026-07-28; register
-# AMB-165, extended to the READ side).
+# The REFUSAL arm of the CONTRIBUTION family's canonical-XML question: a server
+# that does not serve the CONTRIBUTION read in XML refuses the unfulfillable
+# `Accept` with 406 (register AMB-167; the read half of the AMB-165 question,
+# re-adjudicated 2026-07-28).
 #
 # Decisive released sentences (ITS-REST overview Resources.md §"XML Format"):
 # "If the service cannot fulfill this aspect of the request, it MUST respond
@@ -10,25 +10,37 @@
 # [published XSDs]". The published XSDs declare global document elements only
 # for composition, version, items, template, extract, extract_request,
 # versioned_object and archetype; CONTRIBUTION exists only as a complexType
-# (RM Common.xsd), so a CONTRIBUTION XML response has no published document to
-# conform to — serving one would breach the conformance MUST, which makes the
-# 406 branch the release's own designated answer, unconditionally (the same
-# shape as I_DEFINITION_QUERY.list_queries-xml_not_acceptable). The released
-# OAS's Accept_LOCATABLE enum listing `application/xml` against a JSON-only
-# `content:` map is the internal inconsistency UPR-125 reports upstream.
+# (RM Common.xsd), so no CONTRIBUTION XML DOCUMENT is published and no
+# released sentence assigns this response a document root name.
 #
-# No format axis: this row asserts the JSON-side refusal discipline, which
-# every party is judged on regardless of its XML technology profile.
+# WHY THIS IS AN ARM AND NOT A UNIVERSAL RULE (corrected 2026-07-28, register
+# AMB-167): §"Data representation" leaves canonical XML to the service
+# ("Services MUST support at least one of the openEHR **XML** or **JSON**
+# canonical formats"), and the published complexType DOES describe the content
+# of a committed CONTRIBUTION — only the root name is withheld. Serving the
+# read in XML under a root name the release does not assign is therefore as
+# conformant as refusing it, so this row is judged only against a statement
+# that declares `contribution-xml-unsupported`. (The COMMIT side is a
+# different question and stays unexercised: its envelope carries each new
+# version's data inline and has no XSD counterpart at all — AMB-165.) The
+# released OAS's Accept_LOCATABLE enum listing `application/xml` against a
+# JSON-only `content:` map is the internal inconsistency UPR-125 reports
+# upstream; the document-element inventory itself is UPR-127.
+#
+# No format axis: this row asserts the refusal discipline itself, which is
+# judged on a declaring party regardless of its XML technology profile.
 id: I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable
 kind: functional
 component: EHR_CONTRIBUTION
 sm_operation: I_EHR_CONTRIBUTION.get_contribution
 capabilities: [ChangeSets]
 profiles: [CORE]
+option: contribution-xml-unsupported   # AMB-167 option_select branch
 test_purpose: >-
-  A CONTRIBUTION read requested with `Accept: application/xml` is refused with
-  406 rather than answered with an XML document the release never defined or
-  a representation the client did not ask for.
+  On a server that declares no canonical-XML support for the CONTRIBUTION
+  reads, a CONTRIBUTION read requested with `Accept: application/xml` is
+  refused with 406 rather than answered with an XML document the release never
+  gave a root name, or a representation the client did not ask for.
 description: "Get a CONTRIBUTION with Accept: application/xml (406)"
 spec_refs:
   - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"
@@ -40,7 +52,7 @@ requires:
   templates: [cnf.opt.minimal_event]
   ehr: { commits: none }               # mints ${ehr_id}
 data_sets: [cnf.composition.minimal_event.v1]
-ambiguities: [AMB-165]
+ambiguities: [AMB-165, AMB-167]
 flow:
   - step: 1
     call: commit_contribution          # precondition: a CONTRIBUTION of known uid
