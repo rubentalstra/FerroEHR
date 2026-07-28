@@ -328,10 +328,16 @@ branches:
   # RETIRED coverage_gap: the create_directory validation_failed branch is now
   # exercised by I_EHR_DIRECTORY.create_directory-invalid_folder (a FOLDER with
   # the 1..1 LOCATABLE.name removed). Its declared status was corrected from
-  # 400 to 422 in the same change — the 400 rested only on the stalled OAS
-  # `400.yaml`, while the released §HTTP status codes 422 row describes a
-  # well-formed body with semantic errors and the whole rest of the catalogue
-  # already maps the identical defect class that way.
+  # 400 to 422 in the same change. Re-grounded 2026-07-28 under the
+  # OAS-fallback oracle order, verdict unchanged: the 400 rested on the OAS
+  # `400.yaml`, whose OWN wording scopes it to input that does not parse
+  # ("the request could not be parsed or is invalid (e.g. … syntactically
+  # invalid header, parameter or content)"), so it never grounded an
+  # RM-invalid but well-formed FOLDER even as a tier-2 source — and
+  # `directory_create.yaml` declares no 422 to ground either. The docs-text
+  # §HTTP status codes 422 row describes a well-formed body with semantic
+  # errors, and the whole rest of the catalogue already maps the identical
+  # defect class that way.
   # RETIRED coverage_gaps: the directory precondition family is now exercised.
   # delete_directory / update_directory `precondition_failed` are gated by
   # I_EHR_DIRECTORY.{delete,update}_directory-stale_if_match, and
@@ -425,8 +431,14 @@ branches:
   # The group-12 finding recorded here — that no released sentence assigns 404 to
   # an If-Match miss, while §"If-Match and accidental overwrites" assigns it 412 —
   # was RIGHT, and the entry was closed by ACTING on it rather than by inventing
-  # a case: the binding's declared status was corrected 404 -> 412 (its only
-  # ground was the stalled OAS person_update.yaml), matching the identical
+  # a case: the binding's declared status was corrected 404 -> 412. Re-grounded
+  # 2026-07-28 under the OAS-fallback oracle order, verdict unchanged and
+  # better founded: this is not a case of the OAS lacking standing, it is a
+  # docs-text-vs-OAS DISAGREEMENT, which the docs text wins outright — and the
+  # released OAS in fact declares BOTH branches on the operation
+  # (operations/person_update.yaml: '404' + '412'), so the docs-text §If-Match
+  # MUST simply picks which of the two an If-Match miss lands on. It matches
+  # the identical
   # adjudication I_EHR_COMPOSITION.update_composition already carried, and the
   # case now names the version_tree_id the ADDRESSED container never issued —
   # distinct from -weak_etag_stale, which offers a FOREIGN container's uid, and
@@ -802,7 +814,7 @@ elements:
       - I_ITS_REST_ITEM_TAGS.person_tags_delete-version_container_disjoint
   - id: item-tag-rm-target-shape
     description: "ITEM_TAG.target is emitted as the RM UID_BASED_ID (HIER_OBJECT_ID container / OBJECT_VERSION_ID version), never an OBJECT_REF wrapper — on the demographic party routes exactly as on the EHR-side ones, the RM class being shared."
-    source: "RM common master07-tags.adoc ITEM_TAG (target: UID_BASED_ID) — one class, one shape, for every route that serves an ITEM_TAG; the RELEASED RM wins over the stalled OAS ItemTag schema. The sibling attribute owner_id has no such single answer outside an EHR — see register AMB-137."
+    source: "RM common master07-tags.adoc ITEM_TAG (target: UID_BASED_ID) — one class, one shape, for every route that serves an ITEM_TAG. The RELEASED RM wins over the OAS ItemTag schema: the ITS-REST OAS is a tier-2 wire source that fills ITS-REST docs-text silence (owner ruling 2026-07-28), never a source of RM class shape, and the RM is a released component in its own right. The sibling attribute owner_id has no such single answer outside an EHR — see register AMB-137."
     covered_by:
       - I_ITS_REST_ITEM_TAGS.composition_tags_get-container_target_shape
       - I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape
@@ -1226,8 +1238,8 @@ elements:
       note: "server behaviour fixed + tested (#401): one shared decoder (app/ehrbase/src/service/datetime.rs, with its unit matrix) now backs every at-time read of the EHR and DEMOGRAPHIC groups, so an offset-less extended datetime resolves against the server's system timezone instead of 400-ing on jiff::Timestamp's offset-requiring grammar; HTTP-tested end to end in app/ehrbase-rest/tests/directory_http.rs and tests/demographic_http.rs (`version_at_time_without_offset_resolves_in_the_local_timezone`). Not authorable as a case today: a case can only name an instant through the CLOSED reference grammar's temporal vocabulary (${time:before|after|between}, tools/cnf-runner/src/refgrammar.rs), every member of which renders a UTC `…Z` string (format_instant_ms, tools/cnf-runner/src/exec/resolve.rs) — there is no offset-less rendering form, and the three members' ±1 ms / midpoint margins would not survive reinterpretation in an unknown SUT-local zone (the runner has no way to learn the SUT's system timezone, and ITS-REST exposes none). A literal offset-less string cannot stand in either: the instants a case must address are its own commit times, known only at run time. Closes when the temporal vocabulary gains an offset-less rendering member whose margin exceeds the ±14 h UTC-offset range (extension only by schedule release) — the same closed-vocabulary precedent as method-405-allow-header."
   # The System API (ITS-REST system, STABLE) — one operation, no SM anchor.
   - id: system-options-conformance-manifest
-    description: "OPTIONS on the API base path answers 200 and carries the Allow header, describing the communication options for that resource. That is the whole of the behaviour the released docs text assigns: the response BODY (the Options conformance manifest — solution/solution_version/vendor/restapi_specs_version/conformance_profile/endpoints) and the resource the operation is served on are described by no released sentence, so no expectation rests on them here."
-    source: "ITS-REST specifications/docs/system/Description.md §Status (\"This specification is in the `STABLE` state\") + docs/overview/Requests_and_responses.md §HTTP Methods (\"| OPTIONS | Describe the communication options for the target resource. |\", over RFC 9110, the authority that section names for method semantics) + §HTTP status codes (\"| 200 | OK | The request succeeded, payload sent in a 200 response depends on the request method |\" under \"an appropriate HTTP status code MUST be used as described above\"). The manifest members and the operation's path exist ONLY in the stalled OAS bundle, which is emit-rest codegen input and never a behavioural oracle (owner ruling 2026-07-24) — register AMB-160 carries that silence and its upstream report; the ITS-only anchor the case uses is register AMB-161."
+    description: "OPTIONS on the API base path answers 200 and carries the Allow header, describing the communication options for that resource — the docs-text half. The RESOURCE the operation is served on (`/`), the negotiated `Content-Type: application/json` and the JSON manifest body are grounded in the RELEASED OAS, which fills the docs text's silence here (owner ruling 2026-07-28). No MEMBER of the manifest is asserted: the Options schema declares none required, and an optional schema member is not a presence requirement."
+    source: "TIER 1, DOCS TEXT — ITS-REST specifications/docs/system/Description.md §Status (\"This specification is in the `STABLE` state\") + docs/overview/Requests_and_responses.md §HTTP Methods (\"| OPTIONS | Describe the communication options for the target resource. |\", over RFC 9110, the authority that section names for method semantics) + §HTTP status codes (\"| 200 | OK | The request succeeded, payload sent in a 200 response depends on the request method |\" under \"an appropriate HTTP status code MUST be used as described above\"). The System chapter is a stub and states no path, no field list and no media type. TIER 2, THE RELEASED OAS, citable because tier 1 is silent (owner ruling 2026-07-28) and cited AS the OAS: system.openapi.yaml `paths: /` (options) and its `200_options` response (headers Allow + ContentType_JSON; content application/json, schema `Options`, which declares NO required member — hence no member assertion). Register AMB-160 records the ruling's application and keeps the editorial upstream ask UPR-122; the ITS-only anchor the case uses is register AMB-161."
     covered_by: [I_ITS_REST_SYSTEM.options-conformance_manifest]
   # HTTP-method discipline (ITS-REST Requests_and_responses.md §HTTP Methods).
   - id: method-405-allow-header
@@ -1401,11 +1413,11 @@ elements:
   # §Prefer minimal, identifier or full representation response).
   - id: header-prefer-return-minimal
     description: "Prefer: return=minimal — and the assumed default when no Prefer is sent — answers a minimal response pointing at the affected resource through Location rather than returning its representation."
-    source: "ITS-REST Requests_and_responses.md §Prefer minimal, identifier or full representation response (\"`Prefer: return=minimal` Indicates the client prefers a minimal response. The response SHOULD include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created`. If no response body is returned, the service SHOULD use `204 No Content`\") + §Representation details negotiation (\"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\")"
+    source: "TIER 1, DOCS TEXT — ITS-REST Requests_and_responses.md §Prefer minimal, identifier or full representation response (\"`Prefer: return=minimal` Indicates the client prefers a minimal response. The response SHOULD include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created`. If no response body is returned, the service SHOULD use `204 No Content`\") + §Representation details negotiation (\"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") — two sentences that between them settle no status. TIER 2, THE RELEASED OAS, citable because tier 1 states both and assigns neither (owner ruling 2026-07-28) and cited AS the OAS: the CREATE operations declare exactly one success status and their response files close \"If the `Prefer` header is missing or set to `return=minimal`, the body is empty\" (responses/201_COMPOSITION.yaml, 201_PERSON.yaml, 201_Template_adl1_4_upload.yaml, 201_Template_adl2_upload.yaml), while the UPDATE operations declare 200 and 204 and split them by preference — responses/204_version_updated.yaml, \"`204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\". Register AMB-62"
     exception:
       reason: coverage_gap
       register: AMB-62
-      note: "NEW-CASE candidate, but not authorable as a gating case today, and NOT authorable with an alt_status either: the released text leaves the minimal status OPEN — \"The HTTP status is typically `201 Created`\" is descriptive (an adverb, not a MUST or a SHOULD) and \"If no response body is returned, the service SHOULD use `204 No Content`\" is conditional on a body-presence fact the same text never assigns. A binding outcome would have to pick a status, or assemble a {201, 204} alt_status pair, that no docs-text sentence assigns — exactly the invention the attribution law forbids — so the branch carries no binding at all (re-affirmed under #428, which considered and rejected the alt_status route). Registered as AMB-62. What IS assertable is already executed: the `Location` header the minimal branch SHOULDs, on the create/update outcomes (header-location-on-create), and the body selector `prefer_conditional` deliberately never judges this branch. Closes when a future ITS-REST release fixes the minimal status, or when the case model gains an either-status expectation grounded in the two sentences (extension only by schedule release). The default-when-absent half is exercised indirectly: the I_DEFINITION_ADL2.upload_artefact binding sends no Prefer and reads its identifier back from Location. The SIBLING preference is fully covered — §\"Prefer only identifier\" DOES assign its status, and header-prefer-return-identifier carries a case on both a COMPOSITION and an EHR create."
+      note: "A GENUINE COVERAGE GAP since 2026-07-28, no longer an unassertable branch. AMB-62's former position — that no status could be asserted, and that even an alt_status pair would be invention (the reasoning #428 acted on) — rested on reading only the docs text; under the OAS-fallback order the released response files ASSIGN the branch per operation family, 201-with-an-empty-body on a create and 204 on an update. So a binding outcome and a gating case are now authorable and are simply MISSING on the COMPOSITION / EHR_STATUS / DIRECTORY / PARTY / CONTRIBUTION writes. NEW-CASE candidates, one behaviour each: a create sent with `Prefer: return=minimal` (201, empty body, Location present) and an update sent the same way (204). Already covered on the two template uploads, whose operation-level 201 text AMB-110(b) had read this way before the ruling generalized it: I_DEFINITION_ADL14.upload_opt-prefer_minimal and I_DEFINITION_ADL2.upload_artefact-prefer_minimal. What is separately executed: the `Location` header the minimal branch SHOULDs, on the create outcomes (header-location-on-create); the default-when-absent half indirectly, the I_DEFINITION_ADL2.upload_artefact binding sending no Prefer and reading its identifier back from Location; and the body selector `prefer_conditional` still deliberately does not judge this branch. The SIBLING preference is fully covered — §\"Prefer only identifier\" assigns its status in the docs text itself, and header-prefer-return-identifier carries a case on both a COMPOSITION and an EHR create. This exception RETIRES when the missing cases land."
   # Version-at-time semantics (RM common versioned_object.adoc; the wire form
   # in ITS-REST Resources.md §Datetime format).
   - id: version-at-time-extancy-branches

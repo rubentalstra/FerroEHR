@@ -2,26 +2,70 @@
 # silence with the normative handling a runner MUST apply. A runner that
 # resolves an ambiguity privately is non-conformant to the schedule.
 #
-# ORACLE (owner rulings 2026-07-24): only RELEASED openEHR components are
-# enforceable authority — RM, BASE, AM/ADL, QUERY, TERM, ITS-XML, SM, and the
-# ITS-REST docs text. The vendored OAS, the CNF Platform Conformance Test
-# Schedule, and the Robot suites are STALLED GUIDES (which behaviour to cover),
-# never authority. Every `source` cites a released component; a CNF/OAS/Robot
-# mention is a coverage guide, never the ground for a verdict.
+# ORACLE (owner rulings 2026-07-24 + 2026-07-28): only RELEASED openEHR
+# components are enforceable authority — RM, BASE, AM/ADL, QUERY, TERM,
+# ITS-XML, SM, and the ITS-REST docs text. For the ITS-REST wire the order is:
+#   (1) the ITS-REST DOCS TEXT (specifications/docs/**) WINS EVERY CONFLICT;
+#   (2) where the docs text is SILENT — not in conflict — the RELEASED OAS
+#       (specifications/{operations,responses,parameters,schemas,headers}/**
+#       and the assembled computable/OAS bundles, vendored for codegen at
+#       crates/openehr-its/vendor/rest-oas/) GROUNDS the expectation, because
+#       the release presents those files as its own computable specification
+#       artifacts (docs/overview/Specifications.md: "Specifications can be
+#       downloaded as YAML files in OpenAPI Specification 3.0 format"; every
+#       API Preface repeats it). An OAS ground is ALWAYS cited AS THE OAS
+#       (file + element) and is NEVER read for more than it states — an
+#       enumerated `Accept` value, an optional schema member, and an
+#       `example` are an offer or an illustration, never a presence
+#       requirement;
+#   (3) only a behaviour BOTH sources withhold is spec silence for this
+#       register.
+# The CNF Platform Conformance Test Schedule and the Robot suites remain
+# STALLED GUIDES (which behaviour to cover), never authority.
+#
+# REGISTER-WIDE RE-ADJUDICATION, 2026-07-28. Every entry was re-verified
+# first-hand against both ITS-REST sources under the order above. The AMB
+# numbering KEEPS ITS GAPS and is never renumbered. What moved:
+#  - RETYPED because the released OAS turned out to DEFINE the behaviour the
+#    entry called unassigned: AMB-4 (option_select -> fixed_handling: the
+#    duplicate ADL 1.4 upload is the OAS-declared 409, so the option pair is
+#    gone and its case gates), AMB-62 (the `Prefer: return=minimal` status is
+#    ASSIGNED per operation family by the released 201/204 response files),
+#    AMB-78 (report_only -> fixed_handling: the body-uid match rule is
+#    OAS-stated, so its case gates).
+#  - NARROWED: AMB-63(a) — the subject key is the OAS-named
+#    (subject id, namespace) pair, so only the folding question is ours.
+#  - RE-GROUNDED IN PLACE, verdict unchanged, because the entry's REASONING
+#    rested on the retired "the OAS is never an oracle" absolutism: AMB-58,
+#    AMB-132, AMB-134, AMB-152, AMB-158.
+# Every other entry stands verified with no edit.
 AMB-4:
   ambiguity: >-
-    A second ADL 1.4 OPT upload under an EXISTING template_id has two
-    conformant answers and no released sentence picks one: refuse it as a
-    conflict, or accept it and replace the stored template. The ITS-REST
-    upload declares the conflict branch, but declaring a status is not
-    requiring it — nothing says a service MUST reach that branch rather than
-    overwrite —, and the SM operation that anchors the upload is silent on
-    duplicates in a way its own siblings are not: `upload_archetype` ("If an
-    archetype with the same id already exists, replace it") and the ADL2
-    `upload_artefact` ("If an artefact with the same physical identifier and
-    namespace exists, replace it") both state the replace rule, while
-    `upload_opt` states nothing at all. Under AM ADL 1.4 an OPT has no formal
-    version either, so there is no third "new version" answer to reach for.
+    RE-ADJUDICATED 2026-07-28 under the OAS-fallback oracle order, and
+    RETYPED from `option_select` to `fixed_handling`: the wire answer is no
+    longer open. The entry's whole ground was that "declaring a status is not
+    requiring it" — that the ITS-REST upload's 409 branch could be read as an
+    offer rather than an obligation because the OAS was not an oracle. It is
+    one now wherever the docs text is silent, and here the docs text IS
+    silent (no ITS-REST prose chapter mentions duplicate template upload at
+    all) while the released OAS does not merely DECLARE the branch, it STATES
+    the trigger in the indicative: `409_template_already_exists.yaml`, which
+    `definition_template_adl1.4_upload.yaml` `$ref`s under its `'409'`
+    response, reads "`409 Conflict` is returned when a template with same
+    `template_id` already exists". So the conflict branch is a released
+    expectation, the replace branch has no released ground on this wire, and
+    the sibling option pair (`adl14-duplicate-conflict` /
+    `adl14-duplicate-replace`) is withdrawn.
+    WHAT REMAINS AN UPSTREAM DEFECT, and is why this entry survives at all:
+    the SM operation that anchors the upload is silent on duplicates in a way
+    its own siblings are not — `upload_archetype` ("If an archetype with the
+    same id already exists, replace it") and the ADL2 `upload_artefact` ("If
+    an artefact with the same physical identifier and namespace exists,
+    replace it") both state the replace rule, while `upload_opt` states
+    nothing at all. That is the SM↔ITS asymmetry AMB-105 records as an
+    outright contradiction on the ADL2 side, one interface over. Under AM
+    ADL 1.4 an OPT has no formal version, so there is no third "new version"
+    answer to reach for either.
     RE-ADJUDICATED 2026-07-27 (group-10 audit): the earlier framing —
     conflict vs a VERSION-PARAMETER branch, grounded in the CNF master04 NOTE
     ("the OPT upload service needs to handle a version parameter, for
@@ -49,24 +93,29 @@ AMB-4:
     docs/overview/Amendment_record.md SPECITS-87 ("Deprecate ADL2 'Get
     template at version' and the version query parameter from upload
     template") — all CONFIRMED first-hand.
+    Docs-text silence re-verified 2026-07-28: a grep of ITS-REST
+    specifications/docs/** for "duplicate", "already exists" and
+    "template_id" turns up no sentence governing a second upload under an
+    existing id, so the OAS response file above is the tier-2 ground and is
+    cited AS the OAS.
   handling: >-
-    Two sibling cases carry option tags; the ICS options declaration selects
-    which applies — at least the declared behaviour MUST pass; the undeclared
-    sibling is not-applicable. `adl14-duplicate-conflict` is gated by
-    I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict (the declared 409
-    branch); `adl14-duplicate-replace` has no sibling case on this ITS yet —
-    a replace-on-duplicate server answers a success status the released 201
-    text describes and leaves exactly one template loaded, but no released
-    sentence assigns that status, so the option stands declared and
-    unexercised rather than pinned by an authored expectation (the AMB-8
-    pattern). The distinct-template_id upload pair is NOT part of this
-    latitude: two different template_id strings never collide under either
-    branch, so I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict is
-    universally green and carries no option tag. Partial-template_id
-    RESOLUTION on retrieval — the other half the retired version-parameter
-    framing used to carry — is its own entry, AMB-104.
-  disposition: option_select
-  options: [adl14-duplicate-conflict, adl14-duplicate-replace]
+    Fixed handling: a second upload under an EXISTING `template_id` is
+    refused `409 Conflict` and the stored template is untouched — the
+    released OAS trigger verbatim, on the tier-2 ground the docs text's
+    silence opens (owner ruling 2026-07-28). Gated for every server by
+    I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict, which no longer
+    carries an option tag. This is the same wire position AMB-105 reaches for
+    the ADL2 upload, and deliberately so: the two uploads are siblings whose
+    409 files say the same sentence, so a catalogue that gated one and
+    optioned the other would draw a line the release does not draw. The
+    distinct-template_id upload pair was never part of the withdrawn
+    latitude — two different template_id strings never collide — so
+    I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict is unchanged.
+    Partial-template_id RESOLUTION on retrieval is its own entry, AMB-104,
+    whose option pair is unaffected. Reported upstream (UPR-01), re-scoped to
+    the SM half: give `upload_opt` the duplicate rule its two siblings state,
+    so SM and ITS agree rather than one of them being silent.
+  disposition: fixed_handling
   upstream_ref: "UPR-01"
 AMB-5:
   ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
@@ -795,10 +844,21 @@ AMB-58:
     only `application/openehr.wt+json` for the template-as-JSON case, and
     assigns the request neither a body nor a refusal. Both answers a service
     could give — serve some JSON document, or refuse 406 — are consistent with
-    every released sentence. The earlier framing of this entry as an internal
-    inconsistency has been dropped: the half that "offers" application/json
-    exists only in the OpenAPI source fragments, which are stalled and are not
-    an oracle, so it never had standing to contradict anything.
+    every released sentence.
+    RE-GROUNDED 2026-07-28 under the OAS-fallback oracle order; the VERDICT is
+    unchanged and the entry stands. The 2026-07-27 wording said the
+    application/json half "exists only in the OpenAPI source fragments, which
+    are stalled and are not an oracle, so it never had standing to contradict
+    anything" — that reasoning is retired. The OAS IS citable here, and it
+    still does not settle the question, for a reason the ruling itself states:
+    an enumerated `Accept` value is an OFFER, never a body contract.
+    `parameters/header/Accept_Template.yaml` lists `application/json` in its
+    enum, but `responses/200_Template_adl1_4_retrieved.yaml` declares content
+    for `application/xml` and `application/openehr.wt+json` ONLY — there is no
+    application/json response body anywhere in the operation — while the same
+    operation declares a `'406'` response. So tier 2 offers the request and
+    defines neither a body for it nor an obligation to fulfil it, leaving both
+    answers exactly as conformant as before.
   source: >-
     ITS-REST overview Resources.md §JSON Format ("The client SHOULD use the
     Accept: application/json request header to specify the expected JSON
@@ -810,7 +870,15 @@ AMB-58:
     Web Template JSON format") — the two rules that govern IF the request is
     fulfilled, neither of which says whether it is. No released sentence
     defines a canonical-JSON OPERATIONAL_TEMPLATE representation; silence
-    CONFIRMED first-hand across specifications/docs/**.
+    CONFIRMED first-hand across specifications/docs/**. TIER 2, cited AS the
+    OAS and re-read first-hand 2026-07-28: ITS-REST
+    specifications/parameters/header/Accept_Template.yaml (`enum:
+    application/json, application/xml, application/openehr.wt+json`) vs
+    specifications/responses/200_Template_adl1_4_retrieved.yaml (`content`:
+    application/xml + application/openehr.wt+json — no application/json entry)
+    and specifications/operations/definition_template_adl1.4_get.yaml
+    (responses 200/400/404/**406**) — the offer without a body, and the
+    declared refusal branch beside it.
   handling: >-
     Our own design/extension, documented rather than derived — no openEHR spec
     governs which of the two permitted answers a service gives. This CDR
@@ -974,17 +1042,38 @@ AMB-61:
   options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]
 AMB-62:
   ambiguity: >-
-    The `Prefer: return=minimal` branch — which is ALSO the assumed default
-    when no `Prefer` is sent — has no assigned response status. The released
-    text offers two sentences for the same exchange and neither assigns one:
-    "The HTTP status is typically `201 Created`" is descriptive ("typically",
-    not a MUST or a SHOULD), and "If no response body is returned, the service
-    SHOULD use `204 No Content`" is conditional on whether a body is returned,
-    a fact the same text never assigns either. So a conformant minimal write
-    may answer 201 or 204 and the text distinguishes neither, on any write
-    operation.
+    RE-ADJUDICATED 2026-07-28 under the OAS-fallback oracle order: the
+    DOCS-TEXT silence is real and unchanged, but the released OAS FILLS IT
+    per operation family, so the entry's former position — "the branch has no
+    assertable status at all" — is WITHDRAWN and replaced by the assignment
+    below.
+    THE DOCS-TEXT HALF (unchanged): the `Prefer: return=minimal` branch —
+    which is ALSO the assumed default when no `Prefer` is sent — is given two
+    sentences in one paragraph and neither assigns a status. "The HTTP status
+    is typically `201 Created`" is descriptive ("typically", not a MUST or a
+    SHOULD); "If no response body is returned, the service SHOULD use `204 No
+    Content`" is conditional on whether a body is returned, a fact the same
+    text never assigns either. The paragraph therefore does not speak with one
+    voice, which is a SILENCE about which status governs — not a determinate
+    rule the OAS could be in conflict with.
+    THE OAS HALF (the fill, cited AS the OAS and read for exactly what it
+    states): every released write operation declares its success statuses, and
+    the response files ASSIGN the minimal branch in the indicative on both
+    sides of the create/update split. CREATES declare exactly ONE success
+    status, 201, whose response file ends "If the `Prefer` header is missing
+    or set to `return=minimal`, the body is empty" — verified verbatim and
+    identically in `201_COMPOSITION.yaml`, `201_PERSON.yaml`,
+    `201_Template_adl1_4_upload.yaml` and `201_Template_adl2_upload.yaml`.
+    UPDATES declare 200 AND 204 and split them by preference: `200_*_updated`
+    is scoped to "when `Prefer` header is `return=representation` … or
+    `return=identifier`", while `204_version_updated.yaml` reads "`204 No
+    Content` is returned when the update operation was successful and the
+    `Prefer` header is missing or is set to `return=minimal`". So the minimal
+    status is 201-with-an-empty-body on a create and 204 on an update, and
+    nothing is left for a runner to guess.
   source: >-
-    ITS-REST specifications/docs/overview/Requests_and_responses.md §"Prefer
+    TIER 1, DOCS TEXT — ITS-REST
+    specifications/docs/overview/Requests_and_responses.md §"Prefer
     minimal, identifier or full representation response" ("`Prefer:
     return=minimal` Indicates the client prefers a minimal response. The
     response SHOULD include a `Location` header pointing to the newly created
@@ -992,36 +1081,78 @@ AMB-62:
     response body is returned, the service SHOULD use `204 No Content`.") +
     §Representation details negotiation ("If no `Prefer` header is provided,
     the default behavior is assumed to be `return=minimal`") — the absence of
-    a status assignment CONFIRMED first-hand. Contrast the SIBLING preference,
-    which IS assigned: §"Prefer only identifier" fixes "the status will be
-    `201 Created` or `200 OK`, never `204 No Content`".
+    a determinate status assignment CONFIRMED first-hand. Contrast the SIBLING
+    preference, which IS assigned in the docs text: §"Prefer only identifier"
+    fixes "the status will be `201 Created` or `200 OK`, never `204 No
+    Content`".
+    TIER 2, THE RELEASED OAS, citable because tier 1 states two answers and
+    settles on neither (owner ruling 2026-07-28) and cited AS the OAS — read
+    first-hand 2026-07-28. CREATES declare one success status:
+    specifications/operations/{composition_create,person_create,ehr_create,
+    ehr_create_with_id,directory_create,contribution_create,
+    definition_template_adl1.4_upload,definition_template_adl2_upload}.yaml
+    all map success to `'201'` and none declares a `'204'`; the response files
+    close with "If the `Prefer` header is missing or set to `return=minimal`,
+    the body is empty" (responses/201_COMPOSITION.yaml,
+    201_PERSON.yaml, 201_Template_adl1_4_upload.yaml,
+    201_Template_adl2_upload.yaml — verified verbatim). UPDATES declare both
+    and split them BY PREFERENCE: responses/200_COMPOSITION_updated.yaml (and
+    its 200_*_updated siblings) is scoped "with the full resource in the
+    response body when `Prefer` header is `return=representation`, or only its
+    identifiers when `Prefer` header is `return=identifier`", while
+    responses/204_version_updated.yaml states "`204 No Content` is returned
+    when the update operation was successful and the `Prefer` header is
+    missing or is set to `return=minimal`" — the one indicative sentence that
+    assigns the branch outright.
   handling: >-
-    No case pins the minimal status, and no binding declares a minimal
-    outcome — not even one carrying an alt_status pair. Accepting {201, 204}
-    would still be an authored expectation assembled from a descriptive
-    adverb plus a conditional SHOULD, which is the invention the attribution
-    law forbids; the honest position is that the branch has no assertable
-    status at all. What the branch DOES assign is asserted elsewhere: the
-    `Location` SHOULD is executed on the create outcomes
-    (wire_surface `header-location-on-create`), and the body selector
-    `prefer_conditional` deliberately never judges the minimal branch. The
-    default-when-absent half is exercised indirectly by the bindings that send
-    no `Prefer` (I_DEFINITION_ADL2.upload_artefact reads its identifier back
-    from `Location`). Carried as the cited wire_surface element
-    `header-prefer-return-minimal`. Activates as a gating case when a future
-    ITS-REST release fixes the minimal status, or when the case model gains an
-    either-status expectation grounded in the two sentences (extension only by
-    schedule release).
+    Fixed handling, per operation family, replacing the withdrawn
+    no-assertable-status position. A minimal write (explicit
+    `Prefer: return=minimal` or no `Prefer` at all) answers `201 Created` with
+    an EMPTY body on a create and `204 No Content` on an update; a delete is
+    the 204 family it already was. That is not an authored blend of a
+    descriptive adverb and a conditional SHOULD — it is what the release's own
+    computable artifacts state, per operation, in the indicative.
+    THE DOCS TEXT IS NOT OVERRIDDEN, because it never spoke with one voice
+    here: its "typically 201" and its "SHOULD use 204" are the two halves the
+    OAS then assigns to the two families, so the tier-2 fill is consistent
+    with both sentences rather than beating either. Where the docs text DOES
+    speak singly it still wins outright — §"Prefer only identifier" is
+    unaffected and stays docs-text-governed.
+    ALREADY GATED under this reading: the two template uploads, whose
+    operation-level 201 text AMB-110(b) had already read this way
+    (I_DEFINITION_ADL14.upload_opt-prefer_minimal,
+    I_DEFINITION_ADL2.upload_artefact-prefer_minimal) — that adjudication is
+    now the general rule rather than a two-operation exception.
+    STILL UNCOVERED, recorded as coverage to close rather than as silence: no
+    case yet pins the minimal branch on the COMPOSITION / EHR_STATUS /
+    DIRECTORY / PARTY / CONTRIBUTION writes, and the `Location` SHOULD is
+    asserted only on the create outcomes (wire_surface
+    `header-location-on-create`). The wire_surface element
+    `header-prefer-return-minimal` carries that gap with this entry's citation
+    and RETIRES when those cases land — it is a coverage gap now, not an
+    unassertable branch. The body selector `prefer_conditional` keeps its
+    current behaviour until it does.
   disposition: fixed_handling
 AMB-63:
   ambiguity: >-
-    One-EHR-per-subject is neither defined nor denied by the released sources,
-    and three sub-questions follow from that silence. (a) THE KEY: no released
-    sentence says which parts of the subject reference are compared, nor how —
-    whether `PARTY_REF.type` participates, and whether `id.value` /
-    `namespace` are matched byte-for-byte or folded (BASE gives a case rule for
-    composite IDENTIFIERS, not for a demographic id borne inside a
-    PARTY_SELF). (b) THE SCOPE: SM i_ehr_service.adoc declares the error
+    NARROWED 2026-07-28 under the OAS-fallback oracle order: sub-question (a)
+    is now mostly ANSWERED and only its folding half survives; (b) and (c)
+    stand unchanged.
+    One-EHR-per-subject is neither defined nor denied by the DOCS TEXT, which
+    never mentions a subject at all, and three sub-questions followed from
+    that silence. (a) THE KEY — PARTLY FILLED: the released OAS response the
+    id-less create declares for its conflict branch names the compared parts
+    outright, "a conflict with an already existing EHR with the same subject
+    id, namespace pair, whenever EHR_STATUS is supplied"
+    (responses/409_EHR.yaml, `$ref`d by operations/ehr_create.yaml under
+    `'409'`). That settles the two halves the entry used to call open — the
+    key IS the (id, namespace) pair, and `PARTY_REF.type` is NOT part of it —
+    and it also states the precondition under which the refusal bites (an
+    EHR_STATUS was supplied). What NO source states is HOW the pair is
+    compared: byte-for-byte or folded. BASE gives a case rule for composite
+    IDENTIFIERS, not for a demographic id borne inside a PARTY_SELF, so the
+    comparison discipline remains ours. (b) THE SCOPE: SM i_ehr_service.adoc
+    declares the error
     `ehr_for_subject_already_exists` on `create_ehr_for_subject` but NOT on
     `create_ehr_for_subject_with_id`, whose error list carries only
     `ehr_create_fail_duplicate_id` — so whether the refusal reaches the
@@ -1040,24 +1171,43 @@ AMB-63:
     + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, "The
     subject of this EHR. The `_external_ref_` attribute can be used to contain
     a direct reference to the subject in a demographic or identity service" —
-    no uniqueness, no comparison rule) + the released ITS-REST docs text, which
-    never mentions a subject at all (grep of
+    no uniqueness, no comparison rule) + the released ITS-REST DOCS TEXT,
+    which never mentions a subject at all (grep of
     specifications/docs/**: zero hits) — silence CONFIRMED first-hand.
+    TIER 2, THE RELEASED OAS, citable because the docs text is silent (owner
+    ruling 2026-07-28) and cited AS the OAS — read first-hand 2026-07-28:
+    specifications/responses/409_EHR.yaml ("`409 Conflict` Unable to create a
+    new EHR due to a conflict with an already existing EHR with the same
+    subject id, namespace pair, whenever EHR_STATUS is supplied"), `$ref`d by
+    operations/ehr_create.yaml (responses 201/400/409) — the KEY and the
+    trigger condition. CONTRASTED with the with-id path, which is the reason
+    (b) survives: operations/ehr_create_with_id.yaml `$ref`s a DIFFERENT
+    conflict file, responses/409_EHR_with_id.yaml ("Unable to create a new EHR
+    due to a conflict with an already existing EHR. Can happen when the
+    supplied `ehr_id` is already used by an existing EHR"), whose only named
+    trigger is the id collision and whose "Can happen when" is illustrative
+    rather than exhaustive — so the OAS neither carries the subject refusal to
+    that path nor excludes it.
   handling: >-
     Fixed handling, and the parts of it that rest on nothing released are
     flagged as such rather than dressed up as spec. (a) THE KEY is the
-    EHR_STATUS.subject.external_ref pair (`id.value`, `namespace`), compared
-    EXACTLY — byte-for-byte, no case folding, `type` not part of the key. No
-    openEHR spec governs this — our own design/extension: a demographic
-    identifier is opaque to the CDR, so two spellings that a demographic
-    service might reconcile are two different subjects here, and folding them
-    would silently merge two patients' records, the wrong-clinical-answer
-    failure mode. Explicitly NOT the BASE composite-identifier case rule
-    (base_types master05 §Composite Identifiers and Case), which governs
-    OBJECT_VERSION_ID-shaped ids, not a demographic id. (b) THE SCOPE: the
-    refusal is carried to EVERY create path, the client-supplied-id form
-    included — the with-id operation's text does not lift it, and a rule that
-    a client could evade by choosing its own uuid would not be a rule.
+    EHR_STATUS.subject.external_ref pair (`id.value`, `namespace`), `type` NOT
+    part of it — and that much is now RELEASED-GROUNDED rather than ours, on
+    the OAS `409_EHR.yaml` sentence above ("the same subject id, namespace
+    pair"), as is the "whenever EHR_STATUS is supplied" precondition the
+    catalogue's cases already satisfy. What stays OURS is only the COMPARISON
+    DISCIPLINE: the pair is matched EXACTLY, byte-for-byte, with no case
+    folding and no normalization. No openEHR spec governs that — our own
+    design/extension: a demographic identifier is opaque to the CDR, so two
+    spellings a demographic service might reconcile are two different subjects
+    here, and folding them would silently merge two patients' records, the
+    wrong-clinical-answer failure mode. Explicitly NOT the BASE
+    composite-identifier case rule (base_types master05 §Composite Identifiers
+    and Case), which governs OBJECT_VERSION_ID-shaped ids, not a demographic
+    id. (b) THE SCOPE: the refusal is carried to EVERY create path, the
+    client-supplied-id form included — neither released source lifts it (the
+    with-id 409 names the id collision and stops), and a rule a client could
+    evade by choosing its own uuid would not be a rule.
     Because that carry is not stated, the case resting on it
     (I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken) is kept at OPTIONS,
     reported and never gating — the AMB-58 treatment. The id-less path's
@@ -1071,7 +1221,8 @@ AMB-63:
     could not be processed because it might generate a duplicate or a
     conflict") — so the two share the `already_exists` outcome kind and are
     told apart by CASE, never by expectation. Revisits if a future release
-    states the key, the scope, or admits several EHRs per subject.
+    states the comparison discipline, carries the refusal to the with-id path,
+    or admits several EHRs per subject.
   disposition: fixed_handling
 AMB-64:
   ambiguity: >-
@@ -1529,53 +1680,71 @@ AMB-77:
 
 AMB-78:
   ambiguity: >-
-    Whether a COMPOSITION update whose request body carries a `uid` naming a
-    DIFFERENT version container than the URL's `uid_based_id` must be
-    REJECTED — and with which status — is stated by NO released docs text.
-    The match requirement appears only in the API definition's operation
-    description ("If the request body already contains a COMPOSITION.uid.value,
-    it must match the `uid_based_id` in the URL"), which is the stalled OAS
-    layer and never an oracle. The docs text says only that a
-    COMPOSITION.uid.value "implies that the VERSIONED_OBJECT identifier is
-    …", and that copying the enclosing VERSION uid into the contained object
-    is "strongly recommended"/"should" — recommendation strength, so a server
-    that accepts the commit and stamps its own uid breaches nothing released.
-    Neither the 400 row nor the 422 row of the status table is assigned to
-    this case.
+    RE-ADJUDICATED 2026-07-28 under the OAS-fallback oracle order, and
+    RETYPED from `report_only` to `fixed_handling`: the RULE is released, so
+    the case gates. The entry's whole ground for never gating was that the
+    match requirement "appears only in the API definition's operation
+    description … which is the stalled OAS layer and never an oracle". That
+    layer is tier 2 now, and the docs text is SILENT rather than in conflict
+    with it, so the requirement holds: a COMPOSITION update whose request body
+    carries a `uid` naming a DIFFERENT version container than the URL's
+    `uid_based_id` MUST be refused.
+    WHAT IS STILL NOT ASSIGNED, and is why the entry survives: the STATUS. The
+    operation declares 200/204/400/404/412/422 and no released sentence — on
+    either tier — binds the body-vs-URL contradiction to one of them. The
+    docs text's own row descriptions decide it as far as anything can (see the
+    handling), but the assignment remains ours and the upstream ask stands.
+    The DOCS-TEXT half is unchanged: it says only that a COMPOSITION.uid.value
+    "implies that the VERSIONED_OBJECT identifier is …", and that copying the
+    enclosing VERSION uid into the contained object is "strongly
+    recommended"/"should" — which is why the rule had to come from tier 2.
   source: >-
-    ITS-REST specifications/docs/overview/Resources.md §Identifier types (the
-    "implies that the VERSIONED_OBJECT identifier is `8849182c-…`" derivation
-    + the "strongly recommended … should be copied" NOTE);
-    Requests_and_responses.md §HTTP status codes (rows 400 "malformed request
-    syntax, syntactically invalid content" and 422 "well-formed but … unable
-    to be followed due to semantic errors" — neither assigned to a
-    body-vs-URL identifier contradiction); RM common
-    UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (uid 0..1) —
-    the silence confirmed first-hand across the whole ITS-REST docs tree (the
-    only "must match the `uid_based_id`" sentence lives in the OAS operation
-    file).
+    TIER 1, DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md
+    §Identifier types (the "implies that the VERSIONED_OBJECT identifier is
+    `8849182c-…`" derivation + the "strongly recommended … should be copied"
+    NOTE); Requests_and_responses.md §HTTP status codes (rows 400 "malformed
+    request syntax, syntactically invalid content" and 422 "well-formed but …
+    unable to be followed due to semantic errors" — neither ASSIGNED to a
+    body-vs-URL identifier contradiction, though the 422 row is the only one
+    whose description fits it); RM common
+    UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (uid 0..1).
+    Docs-text silence on the RULE re-confirmed first-hand 2026-07-28 across
+    the whole ITS-REST docs tree.
+    TIER 2, THE RELEASED OAS, citable because tier 1 is silent (owner ruling
+    2026-07-28) and cited AS the OAS — read first-hand 2026-07-28:
+    specifications/operations/composition_update.yaml, description, "If the
+    request body already contains a COMPOSITION.uid.value, it must match the
+    `uid_based_id` in the URL", with responses 200/204/400/404/412/422 and
+    responses/422.yaml ("returned when the content type and syntax is correct,
+    could be converted to a resource, but there are semantic validation
+    errors"). The same sentence, over the same attribute, appears in
+    operations/{person,agent,group,organisation,role}_update.yaml, each of
+    which likewise declares 422.
   handling: >-
-    Report-only: the update_composition-body_uid_mismatch case exercises the
-    branch and records the outcome without gating any tier. This server
-    REJECTS the self-contradictory request as its own design convention, and
-    the catalogue expects the SEMANTIC-error branch because the 422 row is
-    the only row that describes the exchange — the body is well-formed JSON
-    and a well-formed COMPOSITION; what cannot be followed is the
-    contradiction between body and URL — while the 400 row is scoped to
-    malformed syntax. A conformant server answering 400 instead, or accepting
-    the commit outright, breaches nothing released, so the case never gates.
-    Reported upstream (UPR-40): state the rule and its branch in the docs
-    text.
-    SCOPE EXTENDED 2026-07-27 (group-12 audit) to the five party updates, whose
-    operation descriptions carry the SAME sentence about the same body
-    attribute ("If the request body already contains a PERSON.uid.value, it
-    must match the `uid_based_id` in the URL") in the same OAS-only place, over
-    a class whose own uid rule is a released RM invariant rather than a
-    recommendation (AMB-129). The disposition is unchanged: report-only, the
-    semantic branch expected, no tier gated. The party CREATE is a different
-    question — it has no URL identifier for a body uid to contradict — and is
-    AMB-132.
-  disposition: report_only
+    Fixed handling. THE RULE GATES: a body uid naming another container is
+    REFUSED, on every update that carries the sentence — the COMPOSITION
+    update and all five party updates. `I_EHR_COMPOSITION.update_composition-body_uid_mismatch`
+    therefore drops its report-only shelter and gates at its declared CORE
+    tier, and the addressed container must keep its single version.
+    THE STATUS IS ADJUDICATED, not declared, and stays 422: the request parses
+    and carries a well-formed COMPOSITION, so the 400 row — scoped by its own
+    words to "malformed request syntax, syntactically invalid content" — does
+    not describe it, while both the docs-text 422 row ("well-formed but …
+    unable to be followed due to semantic errors") and the OAS `422.yaml`
+    ("the content type and syntax is correct, could be converted to a
+    resource, but there are semantic validation errors") describe it exactly,
+    and 422 is among the statuses the operation declares. A server answering
+    400 is answering outside that row's stated trigger; the catalogue holds
+    the 422 line and the residual risk is recorded here rather than hidden.
+    PARTY SCOPE (extended 2026-07-27, re-grounded 2026-07-28): the five party
+    updates carry the identical sentence over a class whose own uid rule is a
+    released RM invariant rather than a recommendation (AMB-129), so the rule
+    is if anything stronger there; the party CREATE is a different question —
+    it has no URL identifier for a body uid to contradict — and is AMB-132.
+    Reported upstream (UPR-40), re-scoped: the rule is now findable in the
+    release's computable artifacts but still absent from the normative prose,
+    and its branch is still unassigned on either tier.
+  disposition: fixed_handling
   upstream_ref: "UPR-40"
 
 AMB-79:
@@ -3781,7 +3950,9 @@ AMB-132:
     operations/contribution_create.yaml (the relaxed-envelope uid sentence,
     quoted above) and person_update.yaml ("If the request body already contains
     a PERSON.uid.value, it must match the `uid_based_id` in the URL" — the
-    OAS-only match rule AMB-78 carries, and in any case an UPDATE rule) + RM
+    OAS-stated match rule AMB-78 carries — tier-2 ground under the 2026-07-28
+    order, and in any case an UPDATE rule that a CREATE has no URL identifier
+    to be measured against) + RM
     demographic master02-demographic_package.adoc §Party Identification (the
     uid is the containing VERSION's OBJECT_VERSION_ID) + RM common
     master06-change_control_package.adoc §Version Identification (`object_id()`
@@ -3893,18 +4064,27 @@ AMB-134:
     on `POST /demographic/contribution` they are not accepted at all, because
     that route's own operation declares no Simplified arm and its inner
     payloads are PARTYs, which the Simplified Formats have no shape for
-    (AMB-128). No XML envelope is served on either route: §"Data
-    representation" requires "at least one of" the canonical formats and JSON
-    is that one, so serving JSON alone breaches nothing released, and the
-    `ContentType_canonical`/`ContentType_LOCATABLE` enums are OAS shape — the
-    stalled layer, never an oracle. The refusals are the negotiation section's
-    own: an XML or Simplified request payload the service cannot process is
-    `415`, an `Accept` it cannot satisfy is `406`. The divergence is worth
-    reporting even though the enum half lives in the OAS, because the OPERATION
-    DESCRIPTIONS — released prose — are where the asymmetry actually shows: one
-    route documents an inner-payload Simplified arm and the other documents
-    nothing, and neither says what an XML envelope is. Reported upstream
-    (UPR-98).
+    (AMB-128). No XML envelope is served on either route, and the reasoning
+    for that is RE-GROUNDED 2026-07-28 with the conclusion unchanged. The old
+    wording dismissed the `ContentType_canonical`/`ContentType_LOCATABLE`
+    enums as "OAS shape — the stalled layer, never an oracle"; under the
+    2026-07-28 order those enums ARE citable, and they still create no
+    obligation, for the reason the order itself states — an enumerated Accept
+    or Content-Type value is an OFFER, never a presence requirement. The
+    DOCS TEXT is not silent here either, so tier 2 could not override it in
+    any case: §"Data representation" requires "at least one of" the canonical
+    formats, JSON is that one, and serving JSON alone therefore breaches
+    nothing released. (What the release genuinely withholds about a
+    CONTRIBUTION in XML is adjudicated next door: the COMMIT envelope's shape
+    in AMB-165, the READ side's document root in AMB-167.) The refusals are
+    the negotiation section's own: an XML or Simplified request payload the
+    service cannot process is `415`, an `Accept` it cannot satisfy is `406`.
+    The upstream report stands on the OPERATION DESCRIPTIONS rather than the
+    enums — one route documents an inner-payload Simplified arm and the other
+    documents nothing, and neither says what an XML envelope is; those
+    descriptions are tier-2 text too, and citing them AS the OAS is what the
+    order requires (the 2026-07-27 wording called them "released prose", which
+    over-stated their tier). Reported upstream (UPR-98).
   disposition: fixed_handling
   upstream_ref: "UPR-98"
 
@@ -5016,10 +5196,20 @@ AMB-152:
     one of the openEHR **XML** or **JSON** canonical formats for resource
     representation. Additionally, the **Simplified Formats** format SHOULD be
     supported") + RM ehr §EHR_STATUS and RM common §FOLDER (neither is a
-    templated, OPT-derived structure) — all CONFIRMED first-hand. The
-    negotiation-enum half is OAS shape (stalled, never an oracle); the
-    load-bearing evidence is the released contribution_create prose plus the
-    Simplified Formats chapters' own scope.
+    templated, OPT-derived structure) — all CONFIRMED first-hand.
+    TIER NOTE, RE-GROUNDED 2026-07-28 with the verdict unchanged: the
+    2026-07-27 wording dismissed the negotiation enums as "OAS shape (stalled,
+    never an oracle)" and called `contribution_create`'s §Simplified Formats
+    paragraph "released text, not an OAS enum". Both tierings were wrong under
+    the current order and are corrected here — `operations/*.yaml` descriptions
+    and `parameters/header/*.yaml` enums are BOTH tier-2 OAS material, citable
+    where the docs text is silent and cited AS the OAS, which is how this entry
+    cites them now. Nothing about the adjudication moves, for two reasons that
+    survive the re-tiering intact: an enumerated MIME type is an OFFER and
+    never a presence requirement (the order says so explicitly), and the real
+    gap is not on either tier of ITS-REST at all — the Simplified Formats
+    sub-specification defines no EHR_STATUS and no FOLDER shape, and no OAS
+    element can supply a mapping table that was never written.
   handling: >-
     Fixed handling: EHR, EHR_STATUS and DIRECTORY (FOLDER) are CANONICAL-ONLY,
     and both refusals are the ones the negotiation section already mandates
@@ -5527,13 +5717,22 @@ AMB-158:
     occurrence. Plus docs/overview/Requests_and_responses.md §HTTP Methods
     (OPTIONS: "Describe the communication options for the target resource"),
     the only released sentence about the method's meaning. The `endpoints`
-    member itself appears ONLY in the stalled OAS
+    member itself appears ONLY in the RELEASED OAS
     (specifications/schemas/others/Options.yaml: `endpoints: {type: array,
     items: {type: string}}` with the five-entry example, no description; and
     specifications/operations/options.yaml, "exposing service capabilities for
-    a conformance manifest") — recorded as provenance for where the member
-    comes from, NOT as an oracle (owner ruling 2026-07-24: the OAS is stalled
-    and the docs text governs). Silence CONFIRMED first-hand.
+    a conformance manifest").
+    RE-GROUNDED 2026-07-28, verdict unchanged: the 2026-07-27 wording recorded
+    that OAS material as "provenance … NOT as an oracle (owner ruling
+    2026-07-24: the OAS is stalled and the docs text governs)". Under the
+    current order it IS the oracle for this member, the docs text being silent
+    — and AMB-160 duly grounds the resource, the Content-Type and the JSON
+    manifest body there. It still does not answer THIS question, for the
+    reason the order fixes: the OAS is never read for more than it states, and
+    what it states about `endpoints` is a TYPE (`array of string`, no
+    description, no `required`) plus an `example`. An example is an
+    illustration, not a rule, so which endpoints the member must list stays
+    undefined on both tiers. Silence CONFIRMED first-hand.
   handling: >-
     Fixed handling, and the shipped decision is stated rather than left
     implicit. The manifest lists the LIVE standardised ITS-REST group set —

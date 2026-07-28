@@ -7,7 +7,9 @@
 # VERSION.signature (RM common master06 §Digital Signature) and the
 # commit_audit / lifecycle_state facts the signature (and version) assertion
 # families verify.
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   - Resource: overview Resources.md §Resource identification — a VERSION is
 #     retrievable by `version_uid` (OBJECT_VERSION_ID = object_id::system::tree),
 #     the "explicit version reference"; its uid is the ORIGINAL_VERSION.uid.

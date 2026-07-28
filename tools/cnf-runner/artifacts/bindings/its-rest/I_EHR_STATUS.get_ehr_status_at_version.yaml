@@ -9,7 +9,9 @@
 # versioned_ehr_status/version route serves the VERSION envelope instead
 # (the SM-vs-ITS return-type mismatch AMB-72 records as defect 4).
 #
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   - the addressing form: overview Resources.md §Identifier types — "a
 #     `version_uid` for identifying a VERSION from the version container,
 #     stored under VERSION.uid.value, in a form of an OBJECT_VERSION_ID", and
