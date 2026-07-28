@@ -17,6 +17,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance coverage: the ITEM_TAG routes are now measured** (#288). All
+  twenty-three released tag operations — the EHR-wide and demographic-wide
+  listings, the COMPOSITION and EHR_STATUS families, and the five demographic
+  party families — are enumerated by the conformance instrument for the first
+  time; they have no openEHR service-model interface, so they were previously
+  invisible to its coverage derivation. Thirty-two new cases turn the five tag
+  laws into executed wire assertions: tag identity is the (key, target_path)
+  pair, a container's tag collection and a version's tag collection are
+  disjoint on read, write and delete alike, `ITEM_TAG.target` is served as the
+  bare openEHR identifier, every typed tag route answers 404 for a uid of
+  another kind (within the EHR space, within the demographic space and across
+  the two), and the `openehr-item-tag` / `openehr-version-item-tag` request
+  headers on a commit land in their own separate collections. Tag support is
+  reported under a new **ItemTags** capability at the OPTIONS tier, matching
+  the specification's own statement that a server need not support ITEM_TAGs.
+
 - **Conformance coverage: the COMPOSITION, CONTRIBUTION and PARTY resources
   are now exercised in canonical XML and in the Simplified Formats, not only
   in canonical JSON** (#288). Eighteen new CNF cases drive
