@@ -77,4 +77,11 @@ captures:
   versioned_object_uid:
     from: capture version_uid             # the VERSIONED_FOLDER container id — ITS-REST overview Resources.md §Identifier types: a version_uid's "`object_id` matches the VERSIONED_OBJECT identifier"
     transform: root-uid
-server_assigned: [uid]
+# The server-assigned uid, at EVERY FOLDER node: RM common locatable.adoc types
+# `uid` `0..1` ("Optional globally unique object identifier for root points of
+# archetyped structures") and RM common folder.adoc's NOTE recommends populating
+# it only "in _top-level_ (i.e. tree-root) `FOLDER` objects" — a uid at a nested
+# archetype-root FOLDER is permitted and unrequired, so it is a server
+# assignment, never a content difference. `**` matches every depth of the
+# recursive `folders: List<FOLDER>` shape.
+server_assigned: ["**/uid"]

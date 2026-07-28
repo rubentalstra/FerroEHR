@@ -70,12 +70,38 @@ pub fn render_template(template: &Template, vars: &VarStore) -> Result<String, S
 
 /// Strip the named ignore-sets and explicit paths from a value (top-level
 /// path removal; nested server-assigned paths use `/`-separated forms).
+///
+/// A `**` segment matches zero or more intervening attribute steps, so
+/// `**/uid` names one attribute wherever it occurs in a recursive RM
+/// structure. Recursive containment is an RM shape, not a fixture depth:
+/// `FOLDER.folders` is `List<FOLDER>` (RM common `folder.adoc`), so an
+/// ignore-set that could only be written per depth would silently
+/// under-cover a deeper tree.
 #[must_use]
 pub fn strip_ignored(value: &Value, ignored_paths: &[String]) -> Value {
     fn remove(value: &mut Value, segments: &[&str]) {
         let Some((head, rest)) = segments.split_first() else {
             return;
         };
+        if *head == "**" {
+            // Zero intervening steps: apply the remainder here …
+            remove(value, rest);
+            // … or one-or-more: descend and retry the same pattern.
+            match value {
+                Value::Object(map) => {
+                    for child in map.values_mut() {
+                        remove(child, segments);
+                    }
+                }
+                Value::Array(items) => {
+                    for item in items {
+                        remove(item, segments);
+                    }
+                }
+                _ => {}
+            }
+            return;
+        }
         match value {
             Value::Object(map) => {
                 if rest.is_empty() {
@@ -648,6 +674,41 @@ mod tests {
             &json!("t0")
         );
         assert!(resolve_path(&body, "content[1]").is_none());
+    }
+
+    #[test]
+    fn recursive_ignore_segment_strips_every_depth() {
+        // A FOLDER tree (RM common `folder.adoc`: `folders: List<FOLDER>`),
+        // with a uid on the root and on each nested node.
+        let tree = json!({
+            "_type": "FOLDER",
+            "uid": { "_type": "OBJECT_VERSION_ID", "value": "r::s::1" },
+            "folders": [
+                {
+                    "_type": "FOLDER",
+                    "uid": { "_type": "HIER_OBJECT_ID", "value": "a" },
+                    "name": { "value": "emergency" },
+                    "folders": [
+                        { "_type": "FOLDER", "uid": { "value": "b" }, "name": { "value": "episode" } }
+                    ]
+                }
+            ]
+        });
+        // A depth-anchored path reaches only the root.
+        let shallow = strip_ignored(&tree, &["uid".to_owned()]);
+        assert!(shallow.get("uid").is_none());
+        assert!(shallow["folders"][0].get("uid").is_some());
+        // `**/uid` reaches the root and every nested node.
+        let deep = strip_ignored(&tree, &["**/uid".to_owned()]);
+        assert!(deep.get("uid").is_none());
+        assert!(deep["folders"][0].get("uid").is_none());
+        assert!(deep["folders"][0]["folders"][0].get("uid").is_none());
+        // Nothing else is touched.
+        assert_eq!(deep["folders"][0]["name"]["value"], json!("emergency"));
+        assert_eq!(
+            deep["folders"][0]["folders"][0]["name"]["value"],
+            json!("episode")
+        );
     }
 
     #[test]

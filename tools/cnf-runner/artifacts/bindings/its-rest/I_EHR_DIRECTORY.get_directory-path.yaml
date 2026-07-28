@@ -43,4 +43,11 @@ outcomes:
       Content-Type: negotiated
       Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # "when `path` does not exist within the directory"
-server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks
+# The server-assigned uid, at EVERY FOLDER node: RM common locatable.adoc types
+# `uid` `0..1` ("Optional globally unique object identifier for root points of
+# archetyped structures") and RM common folder.adoc's NOTE recommends populating
+# it only "in _top-level_ (i.e. tree-root) `FOLDER` objects" — a uid at a nested
+# archetype-root FOLDER is permitted and unrequired, so it is a server
+# assignment, never a content difference. `**` matches every depth of the
+# recursive `folders: List<FOLDER>` shape.
+server_assigned: ["**/uid"]

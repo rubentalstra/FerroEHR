@@ -62,7 +62,7 @@
     "_type": "EVENT_CONTEXT",
     "start_time": {
       "_type": "DV_DATE_TIME",
-      "value": "2019-04-16T21:08:14,127+0000"
+      "value": "2019-04-16T21:08:14,127+00:00"
     },
     "setting": {
       "_type": "DV_CODED_TEXT",
@@ -121,7 +121,7 @@
         "archetype_node_id": "at0001",
         "origin": {
           "_type": "DV_DATE_TIME",
-          "value": "2019-04-16T21:08:14,129+0000"
+          "value": "2019-04-16T21:08:14,129+00:00"
         },
         "events": [
           {
@@ -133,7 +133,7 @@
             "archetype_node_id": "at0002",
             "time": {
               "_type": "DV_DATE_TIME",
-              "value": "2019-04-16T21:08:14,130+0000"
+              "value": "2019-04-16T21:08:14,130+00:00"
             },
             "data": {
               "_type": "ITEM_TREE",

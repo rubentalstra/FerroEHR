@@ -90,13 +90,46 @@ the committed `docs/conformance/ehrbase-java/results.json`.
 - **Unqualified stored-query names are rejected** although the specification
   makes the namespace optional and lists `my_compositions` as a valid
   example; a stale `If-Match` on a directory delete answers `404` where the
-  specification requires `412`; `405` responses omit the required `Allow`
-  header; and one contribution refusal surfaces as a raw `500`.
+  specification requires `412`; and `405` responses omit the required
+  `Allow` header.
+- **The stored-query listing does not match by prefix.** The specification's
+  own worked example lists "all versions of all queries with names starting
+  with `org.openehr`"; upstream returns the versions of an exactly-named
+  query but answers `200 []` for any shorter prefix, so a client cannot
+  discover what a namespace holds.
+- **A malformed identifier in the path answers `404`, not `400`.** Given a
+  path segment that is not a UUID at all, upstream detects the type
+  violation and still reports a miss — literally
+  `"EHR not found, in fact, only UUID-type IDs are supported"` — for the
+  EHR, versioned-COMPOSITION and CONTRIBUTION reads alike. (It does answer
+  `400` for a malformed *version* identifier, so the behaviour is not even
+  internally consistent.)
+- **Directory writes against an EHR that has no directory answer `412`.**
+  Both the update and the delete report `Precondition Failed` with the body
+  "does not contain a directory" — a missing resource dressed as a failed
+  precondition. HTTP requires the opposite order: a failure detectable
+  before the precondition is evaluated takes precedence over evaluating it.
+- **A contribution refusal surfaces as a raw `500`.** Committing a first
+  version whose change type is `deleted` returns `500 "An internal error has
+  occurred"`, where the specification assigns that family a `400`
+  ("the modification type does not match the operation"). The neighbouring
+  row is worse than an error: a *creation* whose lifecycle state is
+  `deleted` is **accepted** (`204`) instead of refused.
 - *(1.1.0-grounded)* The **template upload refuses `Accept:
   application/json`** (`406`), serving only XML — the released parameter
   enumeration lists JSON first. This single refusal is what makes most
   content-chapter rows inconclusive: the runner's provisioning uploads ask
   for JSON, upstream refuses, and the case's ground never exists.
+
+**Two red rows are not upstream's fault, and are called out rather than
+counted.** Storing a query with no version in the URL has to land at *some*
+version, and no released sentence says which. Our suite pins `1.0.0` because
+a suite must pin something; upstream continues the existing series instead
+(a stored `2.0.0` makes the next version-less store `3.0.0`). Both are
+defensible readings of a silence, so the two
+`store_query-{default_slot_with_higher_version,update_in_place}` rows record
+a difference of house convention, not a conformance defect — the open
+question is with openEHR, not with either implementation.
 
 ## Performance
 

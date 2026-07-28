@@ -1,9 +1,14 @@
 # Update with a random preceding_version_uid: negative. The REST binding
 # realizes preceding_version_uid as If-Match (ITS-REST overview §If-Match); the random uid also
 # names an unknown versioned-object PATH, so the unconditioned response is
-# the 404 (not_found) and RFC 9110 §13.2.2 precedence keeps it — 412
-# (precondition_failed/version_not_found) is reserved for a false If-Match
-# condition on an EXISTING resource.
+# the 404 (not_found) and RFC 9110 §13.2.1 keeps it: "A server MUST ignore all
+# received preconditions if its response to the same request without those
+# conditions, prior to processing the request content, would have been a
+# status code other than a 2xx (Successful) or 412 (Precondition Failed). In
+# other words, redirects and failures that can be detected before significant
+# processing occurs take precedence over the evaluation of preconditions."
+# 412 (precondition_failed/version_not_found) is therefore reserved for a
+# false If-Match condition on an EXISTING resource.
 id: I_EHR_COMPOSITION.update_composition-non_existent
 kind: functional
 component: EHR_COMPOSITION

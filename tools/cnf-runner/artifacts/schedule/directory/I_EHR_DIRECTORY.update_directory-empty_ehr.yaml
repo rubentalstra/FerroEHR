@@ -17,9 +17,20 @@
 # that one exists"). fixed_handling, so the case GATES.
 #
 # The wire-required If-Match IS sent (a synthetic value), so the exchange is a
-# well-formed request rather than a missing-precondition one; RFC 9110 §13.2.2
-# precedence makes the missing-resource answer win over precondition
-# evaluation.
+# well-formed request rather than a missing-precondition one — and the
+# precondition is then NOT evaluated at all. RFC 9110 §13.2.1: "A server MUST
+# ignore all received preconditions if its response to the same request
+# without those conditions, prior to processing the request content, would
+# have been a status code other than a 2xx (Successful) or 412 (Precondition
+# Failed). In other words, redirects and failures that can be detected before
+# significant processing occurs take precedence over the evaluation of
+# preconditions." With no directory, the unconditional answer is the miss, so
+# the miss is the answer. (§13.2.2 orders MULTIPLE conditional fields against
+# each other; it is §13.2.1 that subordinates all of them to a failure.) The
+# ITS-REST overview §If-Match MUST — "If a service receives this header, and
+# the condition evaluates to `false` … it MUST respond with HTTP status code
+# `412 Precondition Failed`" — is not in conflict: it governs the case where
+# the condition IS evaluated.
 #
 # GROUNDING NOTE: this case previously cited the CNF platform test schedule as
 # the authority for its 404. The schedule never released stable and is a GUIDE
