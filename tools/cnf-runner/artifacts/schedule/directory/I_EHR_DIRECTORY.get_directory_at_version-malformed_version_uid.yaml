@@ -37,7 +37,7 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "BASE base_types §identification (mutually exclusive UID string patterns)"
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory_at_version"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes (the 400 row) covers 'syntactically invalid content' generally but assigns no branch to a malformed identifier segment, and BASE base_types master05 §Identification carries no rejecting lexical invariant; a server answering 404 for a garbage token breaches no quoted rule"
 requires:

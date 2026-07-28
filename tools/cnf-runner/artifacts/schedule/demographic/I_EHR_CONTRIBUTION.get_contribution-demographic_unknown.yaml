@@ -30,7 +30,7 @@ description: "Read an unknown demographic CONTRIBUTION (404)"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # the Demographic API arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-70)
 requires: { server: empty }
 flow:
   - step: 1

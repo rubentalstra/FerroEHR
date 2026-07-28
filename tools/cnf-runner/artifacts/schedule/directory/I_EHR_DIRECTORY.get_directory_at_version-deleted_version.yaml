@@ -37,7 +37,7 @@ spec_refs:
   - "ITS-REST overview Resources §Identifier types"
   - "RM common §change_control (master06 §Logical Deletion)"
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory_at_version"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}

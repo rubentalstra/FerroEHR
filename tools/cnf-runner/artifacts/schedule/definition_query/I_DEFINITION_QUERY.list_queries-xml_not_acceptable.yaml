@@ -24,7 +24,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.list_queries"
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires: { server: any }
 flow:
   - step: 1

@@ -26,7 +26,7 @@ description: "Commit CONTRIBUTION to a non-existing EHR"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.minimal_event]     # the template exists, so the miss is the EHR alone

@@ -42,7 +42,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §Data representation"
   - "ITS-REST overview Resources.md §XML Format"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 guards:
   - "Whether the directory FOLDER is served in canonical XML is statement-declared, not spec-mandated — the published XSDs declare no document element for FOLDER and ITS-REST overview Resources.md §Data representation leaves the format to the service, so offering and refusing are both conformant (register AMB-167)"
 requires:

@@ -31,7 +31,7 @@ spec_refs:
   - "ITS-REST simplified_formats master05 §DV_IDENTIFIER"
   - "ITS-REST overview Requests_and_responses §openehr-template-id"
   - "RM common §FEEDER_AUDIT"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # Simplified-Format media types on the resource endpoints arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-61; SPECITS-84 for CONTRIBUTION)
 guards:
   - "master05 FEEDER_AUDIT table types `/originating_system_audit` as `<<PARTY_IDENTIFIED,PARTY_IDENTIFIED>>` (required yes) — an upstream editorial defect; RM common §FEEDER_AUDIT declares originating_system_audit as FEEDER_AUDIT_DETAILS, and the read-back is asserted against that correct RM type here"
 requires:

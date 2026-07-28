@@ -42,7 +42,7 @@ spec_refs:
   - "BASE base_types §object_ref (type — name of the class of object referred to)"
   - "RM common §change_control (master06 — VERSION objects are identified by a uid of type OBJECT_VERSION_ID)"
   - "SM openehr_platform §I_EHR_CONTRIBUTION.get_contribution"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}

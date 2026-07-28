@@ -29,7 +29,7 @@ description: "get a template example with type=output"
 spec_refs:
   - "ITS-REST specifications §definition_template_adl1.4_example_get"
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # the template `/example` sub-resource arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-58)
 requires:
   server: any
   templates: [cnf.opt.minimal_action]    # provisioned as precondition (idempotent; 409 tolerated)
