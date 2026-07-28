@@ -233,9 +233,10 @@ out = pathlib.Path(sys.argv[1])
 verdicts = json.load(open(out / "verdicts.json"))
 results = json.load(open(out / "results.json"))
 
-# Tier membership from the capability matrix (Name: { tier: X, family: Y }).
+# Tier membership from the capability matrix (Name: { tier, family, required }).
 tier_caps: dict[str, list[str]] = {}
 family: dict[str, str] = {}
+required: dict[str, bool] = {}
 for line in open(sys.argv[2]):
     m = re.match(r"^(\w+):\s*\{(.*)\}", line)
     if not m:
@@ -243,10 +244,12 @@ for line in open(sys.argv[2]):
     name, body = m.group(1), m.group(2)
     tier = re.search(r"tier:\s*([A-Z-]+)", body)
     fam = re.search(r"family:\s*(\w+)", body)
+    req = re.search(r"required:\s*(\w+)", body)
     if tier:
         tier_caps.setdefault(tier.group(1), []).append(name)
     if fam:
         family[name] = fam.group(1)
+    required[name] = bool(req and req.group(1) == "true")
 
 evidence = {name: ev for name, ev in verdicts["capabilities"]}
 tiers = {tier: verdict for tier, verdict in verdicts["profiles"]}
@@ -258,21 +261,60 @@ def satisfied(names):
     ok = sum(1 for n in names if evidence.get(n) in ("passed", "unrealized"))
     return ok, len(names)
 
+# The counts MIRROR the verdict pipeline's own tier semantics
+# (verdict.rs::platform_profiles): CORE and STANDARD are judged on the
+# CUMULATIVE set of REQUIRED capabilities (STANDARD = CORE+STANDARD), and
+# OPTIONS on the optional Platform set — a tier-local count next to a
+# cumulative verdict produced the self-contradictory "FAIL 5/5" badge.
 counts = {}
-for tier, names in tier_caps.items():
-    counts[tier] = satisfied(names)
+counts["CORE"] = satisfied([n for n in tier_caps.get("CORE", []) if required.get(n)])
+counts["STANDARD"] = satisfied(
+    [n for t in ("CORE", "STANDARD") for n in tier_caps.get(t, []) if required.get(n)]
+)
+counts["OPTIONS"] = satisfied(
+    [n for n in tier_caps.get("OPTIONS", []) if not required.get(n) and family.get(n) == "Platform"]
+)
 counts["SEC-BASIC"] = satisfied([n for n, f in family.items() if f == "Security"])
 
 colors = {"pass": "brightgreen", "fail": "red", "not_claimed": "lightgrey"}
 slug = {"CORE": "core", "STANDARD": "standard", "OPTIONS": "options", "SEC-BASIC": "sec-basic"}
+
+# SELF-CHECK: a badge whose count contradicts its verdict must never be
+# written (the "FAIL 5/5 capabilities" incident, 2026-07-28) — the verdict
+# pipeline is the authority and the count is a re-derivation of the same
+# rule, so any disagreement is a defect in THIS script and fails the
+# pipeline loudly instead of publishing a wrong badge.
+def check_consistency(tier, token, ok_n, total_n):
+    if token not in ("pass", "fail"):
+        return
+    if tier in ("CORE", "STANDARD"):
+        # verdict.rs::required_all_passed — every cumulative REQUIRED
+        # capability passed-or-unrealized <=> pass.
+        agrees = (ok_n == total_n) == (token == "pass")
+    elif tier == "OPTIONS":
+        # verdict.rs — ANY optional Platform capability passing <=> pass.
+        agrees = (ok_n >= 1) == (token == "pass")
+    else:
+        return  # SEC-BASIC's verdict has non-count inputs; no count check.
+    if not agrees:
+        sys.exit(
+            f"badge derivation defect: {tier} verdict {token!r} contradicts the "
+            f"capability count {ok_n}/{total_n} — refusing to write a wrong badge"
+        )
+
 for tier, verdict in tiers.items():
     token = verdict if isinstance(verdict, str) else str(verdict)
     ok_n, total_n = counts.get(tier, (0, 0))
-    amount = f" {ok_n}/{total_n}" if total_n else ""
+    check_consistency(tier, token, ok_n, total_n)
+    # A count is only meaningful next to a computed verdict; NOT CLAIMED
+    # stays a bare token (a "NOT CLAIMED 3/5" would invite the same misread).
+    show_count = total_n and token in ("pass", "fail")
+    noun = "optional capabilities" if tier == "OPTIONS" else "capabilities"
+    amount = f" {ok_n}/{total_n} {noun}" if show_count else ""
     badge = {
         "schemaVersion": 1,
         "label": f"openEHR CNF {tier}",
-        "message": f"{token.upper().replace('_', ' ')}{amount} capabilities" if total_n else f"{token.upper().replace('_', ' ')}",
+        "message": f"{token.upper().replace('_', ' ')}{amount}",
         "color": colors.get(token, "lightgrey"),
     }
     path = out / f"badge-{slug.get(tier, tier.lower())}.json"
