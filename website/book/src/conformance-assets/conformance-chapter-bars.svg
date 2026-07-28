@@ -92,11 +92,11 @@ text { fill: #c3c2b7; }
 
 <text x="195.37979094076655" y="353" class="muted">6</text>
 <text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="13.37979094076655" height="26" class="bar-passed"/>
+<rect x="174" y="370" width="22.29965156794425" height="26" class="bar-passed"/>
 
-<rect x="187.37979094076655" y="370" width="4.45993031358885" height="26" class="bar-na"/>
+<text x="185.14982578397212" y="387" class="seg-label" text-anchor="middle">10</text><rect x="196.29965156794424" y="370" width="4.45993031358885" height="26" class="bar-na"/>
 
-<text x="199.8397212543554" y="387" class="muted">8</text>
+<text x="208.75958188153308" y="387" class="muted">12</text>
 <text x="166" y="421" text-anchor="end">Other</text>
 <rect x="174" y="404" width="89.198606271777" height="26" class="bar-passed"/>
 
