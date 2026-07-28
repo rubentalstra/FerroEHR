@@ -45,7 +45,7 @@ flow:
     format: canonical-json
     with: { ehr_id: "${ehr_id}" }
     expect: ok
-    capture: { status_version_uid: ok.status_version_uid }
+    capture: { status_version_uid: ok.status_version_uid, status_body: ok.body }   # the flip step is the variant-less read-modify-write realization: its binding builds the PUT body from this capture
   - step: 2                              # make the target transition observable: is_queryable -> false first (JSON read-modify-write sibling)
     call: clear_ehr_queryable
     format: canonical-json

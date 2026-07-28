@@ -301,7 +301,8 @@ fn flat_equivalent(
 
 /// The `equivalent` comparison: structural equality after stripping the
 /// resolved ignore paths from BOTH sides (numeric leaves by value, via the
-/// result-set cell rule — canonical JSON carries RM numbers). FLAT bodies
+/// result-set cell rule — canonical JSON carries RM numbers), with canonical
+/// `_type` self-tag PRESENCE normalized (see [`rm_cells_equal`]). FLAT bodies
 /// take the master06-aware round-trip rule ([`flat_equivalent`]).
 #[must_use]
 pub fn equivalent(actual: &Value, expected: &Value, ignored_paths: &[String]) -> bool {
@@ -310,7 +311,43 @@ pub fn equivalent(actual: &Value, expected: &Value, ignored_paths: &[String]) ->
     }
     let a = strip_ignored(actual, ignored_paths);
     let b = strip_ignored(expected, ignored_paths);
-    resultset::cells_equal(&a, &b)
+    rm_cells_equal(&a, &b)
+}
+
+/// Canonical-RM structural equality for `equivalent`: the result-set cell
+/// rule everywhere, EXCEPT that a `_type` self-tag present on only one side
+/// of an object is not a content difference. ITS-REST overview Resources.md
+/// §JSON Format makes `_type` presence conditional ("should be used to
+/// specify the RM type whenever polymorphism is involved, or when the
+/// underlying definition in RM type is abstract") while the MUST governs its
+/// VALUE — so a decode→re-encode path that self-tags every object (the
+/// canonical codec) and a sparsely-tagged committed twin describe the same
+/// RM content. Present on BOTH sides, the tags must be equal (a genuine
+/// polymorphic-type substitution stays detectable).
+fn rm_cells_equal(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Object(x), Value::Object(y)) => {
+            let keys: std::collections::BTreeSet<&str> = x
+                .keys()
+                .chain(y.keys())
+                .map(String::as_str)
+                .filter(|k| *k != "_type")
+                .collect();
+            let type_tags_agree = match (x.get("_type"), y.get("_type")) {
+                (Some(ta), Some(tb)) => ta == tb,
+                _ => true,
+            };
+            type_tags_agree
+                && keys.iter().all(|k| match (x.get(*k), y.get(*k)) {
+                    (Some(va), Some(vb)) => rm_cells_equal(va, vb),
+                    _ => false,
+                })
+        }
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(va, vb)| rm_cells_equal(va, vb))
+        }
+        _ => resultset::cells_equal(a, b),
+    }
 }
 
 /// Resolve the `ignoring:` list into concrete paths: named sets come from
