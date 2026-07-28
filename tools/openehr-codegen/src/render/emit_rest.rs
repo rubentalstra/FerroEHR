@@ -239,8 +239,8 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
         let ty_name = dto_type(name);
         // The vendored OAS `required` list, minus the docs-text-wins
         // corrections (`plan::overrides::REST_OPTIONAL_OVERRIDES` — the
-        // ITS-REST docs text is the wire oracle; where it contradicts the
-        // stalled OAS shape, the field is emitted optional).
+        // ITS-REST docs text wins every conflict with the released OAS; where
+        // it contradicts the OAS shape, the field is emitted optional).
         let required: BTreeSet<&str> = schema
             .get("required")
             .and_then(Value::as_array)

@@ -8,8 +8,9 @@
 //! The Query API is one of the few groups with DEDICATED released prose
 //! (`docs/query/Request.md`, `Response.md`, `Query_types.md`,
 //! `Qualified_query_name.md` — all STABLE in Release 1.1.0), so the declarations
-//! below quote that text rather than the stalled OAS wherever the two could be
-//! read differently.
+//! below quote that text over the released OAS wherever the two conflict
+//! (the docs text wins every conflict; the OAS grounds only what the docs
+//! text leaves silent — the oracle order).
 //!
 //! ## Prose-vs-OAS reconciliations (documented real wire)
 //!
@@ -1024,7 +1025,7 @@ pub(crate) async fn query_execute_stored_query(
                        `fetch` and `query_parameters`, all OPTIONAL, and no \
                        `q` — the AQL is the stored definition. The released \
                        schema lists all three as `required`, but the docs text \
-                       wins (owner ruling: the stalled OAS is not the oracle): \
+                       wins this real conflict with the released OAS: \
                        `offset` has \"default is `0`\" and `fetch`'s \"default \
                        depends on the implementation\" (`Request.md` §Common \
                        Headers and Query Parameters), and a required member \

@@ -249,7 +249,7 @@ impl EhrbaseService {
     ///
     /// NOTE: `_type` is emitted on the tag itself for canonical-JSON
     /// consistency (ITS-REST `Resources.md` §JSON Format neither requires nor
-    /// forbids it on a concrete standalone type); the stalled OAS `ItemTag`
+    /// forbids it on a concrete standalone type); the released OAS `ItemTag`
     /// schema disagrees with the RM on `target`'s shape — the RM is the
     /// RELEASED component and wins (owner ruling 2026-07-24).
     fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {

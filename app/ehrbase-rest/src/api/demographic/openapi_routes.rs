@@ -34,7 +34,8 @@
 //! `demographic_tags_get.yaml` — see that section's own preamble, which carries
 //! the family-wide rules: canonical-JSON only, no change control, and the
 //! our-own-design `owner_id`). Everything the released files leave open is
-//! filled from the RELEASED overview chapters — never from the stalled OAS:
+//! filled from the RELEASED overview chapters first (the docs text wins every
+//! conflict; the released OAS grounds only what the docs text leaves silent):
 //! `docs/overview/Requests_and_responses.md` (the weak `W/` `ETag` MUST, the
 //! `Prefer` triad + `Preference-Applied`, the committal-header
 //! `openehr-version`/`openehr-audit-details` MUST-accept rule, the `If-Match`
@@ -6170,7 +6171,7 @@ pub(crate) async fn contribution_get(
 // `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`: `target:
 // UID_BASED_ID`, "which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") — a
 // `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
-// VERSION target; the RELEASED RM wins over the stalled OAS
+// VERSION target; the RELEASED RM wins the real conflict with the released OAS
 // `ItemTag`/`UObjectRefOfUidBasedId` envelope. `owner_id` follows the five
 // released `ItemTagOf*` examples' unanimous `{namespace: local, type: SYSTEM}`
 // shape carrying the server's system identifier — no demographic RM class

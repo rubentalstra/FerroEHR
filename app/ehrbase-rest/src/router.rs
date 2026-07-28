@@ -219,9 +219,10 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // System API chapter is a stub with no field semantics
     // (`docs/specs/openehr/ITS-REST/specifications/docs/system/Description.md`
     // — Purpose, Related Documents and Status only), and the member itself is
-    // defined only in the stalled OAS (`schemas/others/Options.yaml`:
+    // grounded only by the released OAS (`schemas/others/Options.yaml`:
     // `array of string`, no description, one example listing exactly the
-    // released groups), which is codegen input and not an oracle. Two reasons
+    // released groups) — a docs-text-silent ground that prescribes no
+    // particular content. Two reasons
     // for the omission: the operation's stated job is "exposing service
     // capabilities for a conformance manifest", so a non-openEHR path listed
     // there would sit inside a conformance claim; and the extension surface has

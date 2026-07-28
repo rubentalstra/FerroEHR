@@ -710,7 +710,7 @@ async fn authenticated_write_attributes_the_default_committer() {
 }
 
 /// The group-9 POST-body disciplines (#481): a stored-query POST accepts `{}`
-/// (all three body members are OPTIONAL — the stalled OAS required-list loses
+/// (all three body members are OPTIONAL — the released OAS required-list loses
 /// to the docs text: offset defaults 0, fetch is implementation-default), the
 /// POSTs accept the URL parameter forms (the docs-text SHOULD-list draws no
 /// GET/POST distinction), and a body-vs-URL conflict is a 400 (the AMB-59
