@@ -486,6 +486,15 @@ cnf.directory.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+cnf.directory.invalid.missing_name:
+  source: fixtures/directory/missing_name.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM: a FOLDER without a name — LOCATABLE.name is 1..1"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (name: DV_TEXT, 1..1)"
+  provenance: "derived 2026-07-28 from cnf.directory.root_only by removing the mandatory LOCATABLE.name, leaving the payload well-formed JSON with exactly ONE defect — the RM-invalid FOLDER ground the create/update directory rejection cases need"
 # Corpus additions for the CNF master17.3 (content, quantity data types)
 # schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
 # concatenates this into MANIFEST.yaml at integration (never edit
