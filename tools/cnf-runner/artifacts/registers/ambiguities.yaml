@@ -5555,9 +5555,12 @@ AMB-158:
     manifest never advertises a group that answers 404. This entry gates
     nothing: the manifest behaviour itself is exercised by the SUT's own tests
     and recorded as the `system-options-conformance-manifest` wire-surface
-    element (no SM anchor exists for the System API operation). Revisits if a
-    future release defines the member's contents.
+    element (no SM anchor exists for the System API operation; the catalogue
+    anchors the case under the reserved I_ITS_REST_SYSTEM pseudo-interface —
+    AMB-160 — and that case asserts only the 200 + Allow half, never this
+    member). Revisits if a future release defines the member's contents.
   disposition: fixed_handling
+
 AMB-159:
   ambiguity: >-
     The released text DECLARES a query-execution timeout branch and withholds
@@ -5608,3 +5611,84 @@ AMB-159:
     (UPR-121).
   disposition: report_only
   upstream_ref: "UPR-121"
+AMB-160:
+  ambiguity: >-
+    The System API is STABLE and its one operation has no released wire.
+    Neither the RESOURCE it is served on nor the BODY it answers with is
+    described by any released sentence. The System chapter is a stub, and the
+    only released prose about the method is one descriptive row of the overview
+    method table, which speaks of "the target resource" in general and names no
+    path. The manifest members a client would parse — solution,
+    solution_version, vendor, restapi_specs_version, conformance_profile,
+    endpoints — appear nowhere in the released text. So two services can both
+    satisfy every released sentence while answering on different resources with
+    different (or empty) bodies, and a client has nothing to code against.
+  source: >-
+    ITS-REST specifications/docs/system/Description.md — the whole System API
+    chapter, a STUB carrying only Purpose, Related Documents and Status ("This
+    specification is in the `STABLE` state"); it contains no path, no field
+    list and no status code. Plus docs/overview/Requests_and_responses.md
+    §HTTP Methods, the only released sentence about the method's meaning
+    ("| OPTIONS | Describe the communication options for the target resource.
+    |"), and §HTTP status codes, which assigns the success row every fulfilled
+    request takes ("| 200 | OK | The request succeeded, payload sent in a 200
+    response depends on the request method |" under "an appropriate HTTP status
+    code MUST be used as described above"). The path and the manifest members
+    exist ONLY in the stalled OAS bundle — recorded as provenance for where
+    they come from, NOT as an oracle (owner ruling 2026-07-24: the OAS is
+    stalled and the docs text governs). Silence CONFIRMED first-hand.
+  handling: >-
+    Report only, and the catalogue claims exactly what the released text
+    assigns. The binding I_ITS_REST_SYSTEM.options asserts 200 and the presence
+    of the Allow header — the header that carries "the communication options"
+    under RFC 9110, the authority §HTTP Methods names for method semantics —
+    and asserts NOTHING about the response body: no body selector, no member,
+    no media type. The probe is sent to the API base-path root because that is
+    the one resource that IS the service, which the released text neither
+    mandates nor forbids; the choice is recorded here rather than presented as
+    a requirement, and a release that names a path supersedes it unchanged.
+    Sibling entry AMB-158 fixes the CONTENT of the one member whose name is at
+    least known (endpoints); this entry is the wider silence — that no released
+    sentence describes the exchange at all. Reported upstream (UPR-122).
+  disposition: report_only
+  upstream_ref: "UPR-122"
+
+AMB-161:
+  ambiguity: >-
+    A RELEASED ITS-REST operation can have NO service-model anchor. The SM
+    defines no System component and no interface owns the System API's
+    operation, yet case cores are keyed on SM operations
+    (I_<INTERFACE>.<operation>) and the coverage gate enumerates Axis 1 by
+    walking the vendored SM class exports. A released wire behaviour the SM
+    never models is therefore unnameable AND structurally invisible: not merely
+    uncovered, but incapable of being reported as uncovered.
+  source: >-
+    docs/specs/openehr/SM/docs/UML/classes/ — there is no System interface
+    (i_system_log.adoc is the ATNA logging interface, i_status.adoc the
+    last-call status probe: last_call_failed / last_call_status), and no class
+    export in the directory contains the words "options", "manifest" or
+    "conformance" at all — against ITS-REST
+    specifications/docs/system/Description.md §Status, which puts the System
+    API in the `STABLE` state, and docs/overview/Requests_and_responses.md
+    §HTTP Methods, which tabulates the method it is served with. The same
+    ITS→SM direction AMB-127 records for the stored-query single-definition
+    read ("a released wire behaviour with no service-model anchor to name it
+    by"), here in its complete form: not one operation missing from an
+    interface, but an entire API with no interface at all.
+  handling: >-
+    Fixed handling — a naming convention, pinned and enumerable. Such an
+    operation is anchored under a reserved I_ITS_REST_<GROUP> pseudo-interface
+    (here I_ITS_REST_SYSTEM.options), which is a CATALOGUE naming convention and
+    NOT a claim that the SM defines the operation — exactly the distinction
+    AMB-127 draws when it anchors the version get to list_queries with a
+    variant. The convention is not free-form: the pseudo-interface prefix is
+    RESERVED and the operations bearing it are pinned in the
+    NON_SM_REST_OPERATIONS table (tools/cnf-runner/src/validate.rs), which is
+    the ITS-side half of the Axis-1 enumeration domain — the pinned operations
+    resolve without an SM class export, are held to the same
+    binding-or-cited-exception obligation as an SM operation, and appear as
+    their own rows of the coverage report; an unpinned I_ITS_REST_* reference is
+    a validator finding, so the prefix can never become a way around SM
+    resolution. Revisits if a future SM release models the System API, at which
+    point the anchor becomes a real SM operation and the pinned row goes.
+  disposition: fixed_handling

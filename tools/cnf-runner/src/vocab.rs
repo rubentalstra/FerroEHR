@@ -256,6 +256,10 @@ pub enum CorpusFormat {
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
+///
+/// The vocabulary is the method subset the released overview tabulates
+/// (`ITS-REST docs/overview/Requests_and_responses.md` §HTTP Methods: GET,
+/// HEAD, POST, PUT, DELETE, OPTIONS) — never a wider HTTP method set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum HttpMethod {
@@ -264,6 +268,10 @@ pub enum HttpMethod {
     Put,
     Delete,
     Head,
+    /// "Describe the communication options for the target resource"
+    /// (`Requests_and_responses.md` §HTTP Methods) — the method the STABLE
+    /// System API's one operation is served with.
+    Options,
 }
 
 /// Parameter-iteration law (`CNF platform_test_schedule master04` iteration
@@ -498,6 +506,7 @@ impl HttpMethod {
         HttpMethod::Put,
         HttpMethod::Delete,
         HttpMethod::Head,
+        HttpMethod::Options,
     ];
 }
 

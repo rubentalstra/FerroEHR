@@ -45,6 +45,7 @@
       "QueryApi",
       "AdminApi",
       "MessageApi",
+      "SystemApi",
       "Signing",
       "SimplifiedFormats",
       "EhrDemographicSeparation",

@@ -830,12 +830,34 @@ fn sm_class_file(spec_root: &Path, interface: &str) -> PathBuf {
         .join(format!("{}.adoc", interface.to_lowercase()))
 }
 
+/// Resolve an operation reference against the vendored SM, or — for a
+/// RELEASED ITS-REST operation the SM does not model — against the pinned
+/// [`NON_SM_REST_OPERATIONS`] table. The pseudo-interface prefix is reserved:
+/// an `I_ITS_REST_*` reference that is NOT pinned is a finding, so nobody can
+/// invent an anchor to dodge SM resolution.
 fn resolve_sm_operation(
     op: &SmOperationRef,
     who: &str,
     spec_root: &Path,
     findings: &mut Vec<Finding>,
 ) {
+    if non_sm_operation_source(op).is_some() {
+        return;
+    }
+    if op.interface().starts_with(PSEUDO_INTERFACE_PREFIX) {
+        push(
+            findings,
+            CheckId::SmOperation,
+            who,
+            format!(
+                "{op} uses the reserved {PSEUDO_INTERFACE_PREFIX}* pseudo-interface but is not \
+                 pinned in the NON_SM_REST_OPERATIONS table (tools/cnf-runner/src/validate.rs) — \
+                 a non-SM anchor exists only for a RELEASED ITS-REST operation the SM defines no \
+                 interface for, and that table is the only place one is declared"
+            ),
+        );
+        return;
+    }
     let file = sm_class_file(spec_root, op.interface());
     match std::fs::read_to_string(&file) {
         Err(_) => push(
@@ -1207,6 +1229,11 @@ fn check_vocab_drift(set: &ArtifactSet, findings: &mut Vec<Finding>) {
 /// Admin surface. Sub-interface navigation accessors (return type an
 /// interface — `i_ehr`, `i_party`, `i_party_relationship`) are not service
 /// operations and are excluded by [`sm_interface_operations`].
+///
+/// This table is the SM half of the Axis-1 domain only. A RELEASED ITS-REST
+/// operation the SM defines no interface for is invisible to it by
+/// construction, so it is enumerated by the second, ITS-side table
+/// [`NON_SM_REST_OPERATIONS`].
 const PLATFORM_INTERFACES: &[&str] = &[
     "I_EHR_SERVICE",
     "I_EHR_STATUS",
@@ -1234,11 +1261,48 @@ const PLATFORM_INTERFACES: &[&str] = &[
     "I_SYSTEM_LOG",
 ];
 
+/// The reserved interface prefix a non-SM ITS-REST anchor uses. It is a
+/// CATALOGUE naming convention and never a claim that the SM defines the
+/// operation — the same distinction `AMB-127` draws for variant anchoring.
+const PSEUDO_INTERFACE_PREFIX: &str = "I_ITS_REST_";
+
+/// RELEASED ITS-REST operations with NO SM interface — pinned from the docs
+/// text, never the OAS. The catalogue anchors each under a reserved
+/// `I_ITS_REST_*` pseudo-interface (a catalogue naming convention, never an
+/// SM claim — the same convention AMB-127 pins for variant anchoring).
+/// Today exactly one: the System API (ITS-REST `docs/system/Description.md`,
+/// STABLE) defines `OPTIONS {base_path}` (overview
+/// `Requests_and_responses.md` §HTTP Methods) and the SM has no corresponding
+/// interface.
+///
+/// Without this table the Axis-1 enumeration is structurally blind to such an
+/// operation: [`check_surface_sm_operations`] walks SM class exports, so a
+/// wire behaviour the SM never models could never be reported missing.
+const NON_SM_REST_OPERATIONS: &[(&str, &str)] = &[(
+    "I_ITS_REST_SYSTEM.options",
+    "ITS-REST docs/system/Description.md (STABLE System API) + overview \
+     Requests_and_responses.md §HTTP Methods (OPTIONS)",
+)];
+
+/// The pinned citation of a non-SM ITS-REST operation, or `None` when the
+/// reference is not in [`NON_SM_REST_OPERATIONS`].
+fn non_sm_operation_source(op: &SmOperationRef) -> Option<&'static str> {
+    let reference = op.to_string();
+    NON_SM_REST_OPERATIONS
+        .iter()
+        .find(|(name, _)| *name == reference)
+        .map(|(_, source)| *source)
+}
+
 /// Parse the service operations of an SM interface from its vendored UML class
 /// export — the same table shape [`resolve_sm_operation`] resolves against.
 /// Operation rows are `|*<name>* (` (a lower-snake signature name followed by
 /// its parameter list); sub-interface navigation accessors (`i_*`) are
 /// excluded (they return an interface, not a service result).
+///
+/// This reads the SM only. An ITS-REST operation with no SM interface has no
+/// class export to parse and is enumerated from [`NON_SM_REST_OPERATIONS`]
+/// instead — never through this function.
 ///
 /// # Errors
 /// Returns a message when the interface has no vendored class export.
@@ -1272,10 +1336,10 @@ fn sm_interface_operations(spec_root: &Path, interface: &str) -> Result<Vec<Stri
     Ok(ops)
 }
 
-/// The three coverage axes (Axis 1 needs the vendored SM tree; Axes 2 & 3 are
-/// pure over the artifact set). An absent `wire_surface.yaml` is treated as an
-/// empty register — so every gap surfaces as a finding rather than passing
-/// silently.
+/// The three coverage axes (Axis 1 and the Axis-3 section derivation need the
+/// vendored spec tree; the rest is pure over the artifact set). An absent
+/// `wire_surface.yaml` is treated as an empty register — so every gap surfaces
+/// as a finding rather than passing silently.
 fn check_surface_coverage(
     set: &ArtifactSet,
     spec_root: Option<&Path>,
@@ -1285,6 +1349,7 @@ fn check_surface_coverage(
     let wire_surface = set.wire_surface.as_ref().map_or(&empty, |(_, w)| w);
     if let Some(spec_root) = spec_root {
         check_surface_sm_operations(set, spec_root, wire_surface, findings);
+        check_axis3_section_derivation(wire_surface, spec_root, AXIS3_SECTION_EXCLUSIONS, findings);
     }
     check_binding_branch_coverage(set, wire_surface, findings);
     check_wire_surface_elements(set, wire_surface, findings);
@@ -1359,8 +1424,10 @@ fn check_served_extensions(
     }
 }
 
-/// Axis 1 — every SM operation of a pinned platform interface has an `its-rest`
-/// binding (realized or unrealized) or a cited `sm_operations` exception.
+/// Axis 1 — every SM operation of a pinned platform interface, PLUS every
+/// pinned non-SM RELEASED ITS-REST operation ([`NON_SM_REST_OPERATIONS`]), has
+/// an `its-rest` binding (realized or unrealized) or a cited `sm_operations`
+/// exception.
 fn check_surface_sm_operations(
     set: &ArtifactSet,
     spec_root: &Path,
@@ -1393,6 +1460,34 @@ fn check_surface_sm_operations(
                     .to_owned(),
             );
         }
+    }
+    // The ITS-side half of the domain: a RELEASED ITS-REST operation the SM
+    // models no interface for is enumerated from the pinned table, so it is
+    // held to exactly the same obligation as an SM operation.
+    for (name, source) in NON_SM_REST_OPERATIONS {
+        let Ok(op) = SmOperationRef::parse(name) else {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                name,
+                "NON_SM_REST_OPERATIONS entry is not a parsable operation reference".to_owned(),
+            );
+            continue;
+        };
+        let bound = set.bindings.iter().any(|(_, b)| b.sm_operation == op);
+        if bound || wire_surface.sm_exception(&op).is_some() {
+            continue;
+        }
+        push(
+            findings,
+            CheckId::SurfaceCoverage,
+            &op.to_string(),
+            format!(
+                "non-SM ITS-REST operation ({source}) has no its-rest binding and no \
+                 wire_surface.yaml sm_operations exception — add a binding (realized or \
+                 unrealized) or a cited off_wire/variant_of/coverage_gap entry"
+            ),
+        );
     }
     // Ratchet: an sm_operations exception for an operation that now HAS a
     // binding is stale and must be removed (coverage only ratchets up).
@@ -1636,13 +1731,232 @@ fn check_wire_surface_elements(
     }
 }
 
+// ── Axis 3 section derivation ───────────────────────────────────────────────
+
+/// The RELEASED overview documents whose section headings ARE the Axis-3
+/// enumeration domain, relative to the vendored spec root. Both are ITS-REST
+/// docs text (never the OAS): the cross-cutting wire behaviours the API defines
+/// outside any single operation live in these two chapters and nowhere else.
+const AXIS3_OVERVIEW_DOCS: &[&str] = &[
+    "ITS-REST/specifications/docs/overview/Requests_and_responses.md",
+    "ITS-REST/specifications/docs/overview/Resources.md",
+];
+
+/// Sections of [`AXIS3_OVERVIEW_DOCS`] that define no distinct testable
+/// cross-cutting wire behaviour, each with the citation saying why. A heading
+/// listed here is exempt from the derivation; every other heading must appear
+/// in at least one authored `elements`/`branches` source string.
+///
+/// Empty today: every heading of both released overview chapters is named by
+/// an authored source. The table is the pinned escape hatch for a heading that
+/// is genuinely un-testable (a pure framing paragraph), never a way to retire
+/// an inconvenient behaviour — an entry whose heading IS named by a source, or
+/// which names no heading at all, is itself a finding.
+const AXIS3_SECTION_EXCLUSIONS: &[(&str, &str)] = &[];
+
+/// Whitespace-normalized, lower-cased form used for heading↔source matching
+/// (source strings are YAML-folded, so they carry newlines and runs of spaces;
+/// one vendored heading — "Prefer only identifier " — carries a trailing space
+/// the vendored file must keep).
+fn normalize_heading(text: &str) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// The `#`/`##` section headings of a released markdown chapter, in document
+/// order, de-duplicated, with fenced code blocks skipped (a `# …` line inside
+/// a fence is code, not a heading).
+fn markdown_section_headings(text: &str) -> Vec<String> {
+    let mut headings: Vec<String> = Vec::new();
+    let mut in_fence = false;
+    for line in text.lines() {
+        let trimmed = line.trim_end();
+        if trimmed.trim_start().starts_with("```") {
+            in_fence = !in_fence;
+            continue;
+        }
+        if in_fence {
+            continue;
+        }
+        let Some(rest) = trimmed
+            .strip_prefix("# ")
+            .or_else(|| trimmed.strip_prefix("## "))
+        else {
+            continue;
+        };
+        let heading = rest.trim().to_owned();
+        if heading.is_empty() || headings.iter().any(|h| h == &heading) {
+            continue;
+        }
+        headings.push(heading);
+    }
+    headings
+}
+
+/// Every `source` string the Axis-3 register authors (elements + branches) —
+/// the corpus a derived heading must be named by.
+fn wire_surface_source_texts(wire_surface: &WireSurface) -> Vec<String> {
+    let mut sources: Vec<String> = Vec::new();
+    for element in &wire_surface.elements {
+        sources.push(normalize_heading(&element.source));
+    }
+    for branch in &wire_surface.branches {
+        sources.push(normalize_heading(&branch.source));
+    }
+    sources
+}
+
+/// One released overview chapter's derivation result.
+struct DocDerivation {
+    /// The chapter's path relative to the spec root.
+    doc: &'static str,
+    /// The chapter could not be read (its own finding).
+    unreadable: bool,
+    /// Headings named by ≥ 1 authored source.
+    covered: Vec<String>,
+    /// Headings exempted by [`AXIS3_SECTION_EXCLUSIONS`].
+    excluded: Vec<String>,
+    /// Headings with neither (each one a finding).
+    uncovered: Vec<String>,
+}
+
+/// Derive the Axis-3 enumeration domain from the released overview chapters and
+/// classify every heading. Pure over (`wire_surface`, the vendored files,
+/// `exclusions`) — the exclusion table is a parameter so the mechanism is
+/// testable without touching the pinned const.
+fn axis3_derivation(
+    wire_surface: &WireSurface,
+    spec_root: &Path,
+    exclusions: &[(&str, &str)],
+) -> Vec<DocDerivation> {
+    let sources = wire_surface_source_texts(wire_surface);
+    let mut out = Vec::new();
+    for doc in AXIS3_OVERVIEW_DOCS.iter().copied() {
+        let Ok(text) = std::fs::read_to_string(spec_root.join(doc)) else {
+            out.push(DocDerivation {
+                doc,
+                unreadable: true,
+                covered: Vec::new(),
+                excluded: Vec::new(),
+                uncovered: Vec::new(),
+            });
+            continue;
+        };
+        let mut derivation = DocDerivation {
+            doc,
+            unreadable: false,
+            covered: Vec::new(),
+            excluded: Vec::new(),
+            uncovered: Vec::new(),
+        };
+        for heading in markdown_section_headings(&text) {
+            let needle = normalize_heading(&heading);
+            if sources.iter().any(|source| source.contains(&needle)) {
+                derivation.covered.push(heading);
+            } else if exclusions
+                .iter()
+                .any(|(excluded, _)| normalize_heading(excluded) == needle)
+            {
+                derivation.excluded.push(heading);
+            } else {
+                derivation.uncovered.push(heading);
+            }
+        }
+        out.push(derivation);
+    }
+    out
+}
+
+/// Axis 3, derivation half — the register's element list is AUTHORED, so a
+/// cross-cutting behaviour nobody thought of is invisible to
+/// [`check_wire_surface_elements`]. This derives the domain instead: every
+/// `#`/`##` section of the two RELEASED overview chapters must be named by an
+/// authored `elements`/`branches` source, or be pinned in
+/// [`AXIS3_SECTION_EXCLUSIONS`] with its citation. Stale exclusions (covered,
+/// or naming no heading at all) are findings too — the table only ratchets.
+fn check_axis3_section_derivation(
+    wire_surface: &WireSurface,
+    spec_root: &Path,
+    exclusions: &[(&str, &str)],
+    findings: &mut Vec<Finding>,
+) {
+    let derivations = axis3_derivation(wire_surface, spec_root, exclusions);
+    let mut every_heading: BTreeSet<String> = BTreeSet::new();
+    let mut covered_headings: BTreeSet<String> = BTreeSet::new();
+    for derivation in &derivations {
+        if derivation.unreadable {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                derivation.doc,
+                "released overview chapter is not readable under the vendored spec root — the \
+                 Axis-3 section derivation cannot run"
+                    .to_owned(),
+            );
+            continue;
+        }
+        for heading in derivation
+            .covered
+            .iter()
+            .chain(&derivation.excluded)
+            .chain(&derivation.uncovered)
+        {
+            every_heading.insert(normalize_heading(heading));
+        }
+        for heading in &derivation.covered {
+            covered_headings.insert(normalize_heading(heading));
+        }
+        for heading in &derivation.uncovered {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                derivation.doc,
+                format!(
+                    "§{heading} is a section of a RELEASED overview chapter that no \
+                     wire_surface.yaml elements/branches source names — add a cross-cutting \
+                     element for the behaviour (covered_by a case, or a cited exception), or pin \
+                     the heading in AXIS3_SECTION_EXCLUSIONS \
+                     (tools/cnf-runner/src/validate.rs) with the citation saying why it defines \
+                     no distinct testable wire behaviour"
+                ),
+            );
+        }
+    }
+    if derivations.iter().any(|d| d.unreadable) {
+        return; // an incomplete domain cannot judge exclusion staleness
+    }
+    for (heading, _) in exclusions {
+        let needle = normalize_heading(heading);
+        if !every_heading.contains(&needle) {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                "AXIS3_SECTION_EXCLUSIONS",
+                format!("exclusion {heading:?} names no section of the released overview chapters"),
+            );
+        } else if covered_headings.contains(&needle) {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                "AXIS3_SECTION_EXCLUSIONS",
+                format!(
+                    "exclusion {heading:?} is stale — an authored wire_surface.yaml source now \
+                     names that section; remove the exclusion"
+                ),
+            );
+        }
+    }
+}
+
 /// Render the deterministic coverage report (`docs/conformance/coverage-report.md`):
 /// per-interface SM-operation status, per-binding outcome/format coverage, and
 /// the cross-cutting wire-surface table. Stable ordering, no timestamps — the
 /// same inputs always render byte-identical output.
 ///
-/// Axis 1 (the per-interface section) renders only when `spec_root` is
-/// supplied (it reads the vendored SM tree).
+/// Axis 1 (the per-interface section) and the Axis-3 section derivation render
+/// only when `spec_root` is supplied (they read the vendored spec tree).
 #[must_use]
 #[allow(clippy::too_many_lines)] // one deterministic report-rendering seam
 pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> String {
@@ -1687,6 +2001,36 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
             let _ = writeln!(
                 out,
                 "| {interface} | {} | {realized} | {unrealized} | {excepted} |",
+                ops.len()
+            );
+        }
+        // The ITS-side half of Axis 1: the pinned non-SM ITS-REST operations,
+        // grouped by their reserved pseudo-interface. Computed exactly like an
+        // SM row — the anchor differs, the obligation does not.
+        let mut pseudo: BTreeMap<String, Vec<SmOperationRef>> = BTreeMap::new();
+        for (name, _) in NON_SM_REST_OPERATIONS {
+            let Ok(op) = SmOperationRef::parse(name) else {
+                continue;
+            };
+            pseudo
+                .entry(op.interface().to_owned())
+                .or_default()
+                .push(op);
+        }
+        for (interface, ops) in pseudo {
+            let (mut realized, mut unrealized, mut excepted) = (0_usize, 0_usize, 0_usize);
+            for op in &ops {
+                match set.bindings.iter().find(|(_, b)| b.sm_operation == *op) {
+                    Some((_, b)) if b.is_unrealized() => unrealized += 1,
+                    Some(_) => realized += 1,
+                    None if wire_surface.sm_exception(op).is_some() => excepted += 1,
+                    None => {}
+                }
+            }
+            let _ = writeln!(
+                out,
+                "| {interface} (docs-text pinned, non-SM) | {} | {realized} | {unrealized} | \
+                 {excepted} |",
                 ops.len()
             );
         }
@@ -1763,6 +2107,37 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
         let _ = writeln!(out, "| `{}` | {coverage} |", element.id);
     }
     out.push('\n');
+
+    // ── Axis 3, derivation half ──
+    if let Some(spec_root) = spec_root {
+        out.push_str("### Axis 3 derivation — RELEASED overview sections\n\n");
+        out.push_str(
+            "The element list above is AUTHORED; this table is DERIVED — every `#`/`##` section \
+             of the two released overview chapters must be named by an authored \
+             `elements`/`branches` source or pinned in `AXIS3_SECTION_EXCLUSIONS`.\n\n",
+        );
+        out.push_str(
+            "| Chapter | Sections | Named by a source | Excluded (pinned) | Uncovered |\n",
+        );
+        out.push_str("|---|--:|--:|--:|--:|\n");
+        for derivation in axis3_derivation(wire_surface, spec_root, AXIS3_SECTION_EXCLUSIONS) {
+            if derivation.unreadable {
+                let _ = writeln!(out, "| `{}` | (not readable) | | | |", derivation.doc);
+                continue;
+            }
+            let sections =
+                derivation.covered.len() + derivation.excluded.len() + derivation.uncovered.len();
+            let _ = writeln!(
+                out,
+                "| `{}` | {sections} | {} | {} | {} |",
+                derivation.doc,
+                derivation.covered.len(),
+                derivation.excluded.len(),
+                derivation.uncovered.len()
+            );
+        }
+        out.push('\n');
+    }
     out
 }
 #[cfg(test)]
@@ -1956,6 +2331,209 @@ h|*1..1*\n\
                 .iter()
                 .any(|f| f.check == CheckId::SurfaceCoverage && f.message.contains("NO-SUCH-CASE")),
             "expected an unresolved covered_by finding, got: {findings:?}"
+        );
+    }
+
+    /// A pinned non-SM ITS-REST operation resolves WITHOUT an SM class export
+    /// (there is none — that is the whole point), while an unpinned
+    /// `I_ITS_REST_*` reference is a finding naming the pinned table, so the
+    /// pseudo-interface cannot become a way around SM resolution.
+    #[test]
+    fn pinned_pseudo_operation_resolves_and_an_unpinned_one_is_a_finding() {
+        let empty_root = assert_fs::TempDir::new().unwrap();
+
+        let (pinned_name, _) = *NON_SM_REST_OPERATIONS.first().unwrap();
+        let pinned = SmOperationRef::parse(pinned_name).unwrap();
+        let mut findings = Vec::new();
+        resolve_sm_operation(&pinned, "b.yaml", empty_root.path(), &mut findings);
+        assert!(findings.is_empty(), "{findings:?}");
+
+        let invented = SmOperationRef::parse("I_ITS_REST_SYSTEM.invented").unwrap();
+        let mut findings = Vec::new();
+        resolve_sm_operation(&invented, "b.yaml", empty_root.path(), &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.check == CheckId::SmOperation
+                    && f.message.contains("NON_SM_REST_OPERATIONS")),
+            "expected an unpinned-pseudo-interface finding, got: {findings:?}"
+        );
+
+        // A real SM interface is still resolved against the vendored tree.
+        let sm = SmOperationRef::parse("I_EHR_SERVICE.create_ehr").unwrap();
+        let mut findings = Vec::new();
+        resolve_sm_operation(&sm, "b.yaml", empty_root.path(), &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.message.contains("no vendored SM class export")),
+            "{findings:?}"
+        );
+    }
+
+    /// Axis 1 holds a pinned non-SM operation to the same obligation as an SM
+    /// one: no binding and no `sm_operations` exception is a finding.
+    #[test]
+    fn axis1_requires_a_binding_for_a_pinned_non_sm_operation() {
+        let set = build_set(false);
+        let empty_root = assert_fs::TempDir::new().unwrap();
+        let empty = WireSurface::default();
+        let (pinned, pinned_source) = *NON_SM_REST_OPERATIONS.first().unwrap();
+
+        let mut findings = Vec::new();
+        check_surface_sm_operations(&set, empty_root.path(), &empty, &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.artifact == pinned && f.message.contains("non-SM ITS-REST operation")),
+            "expected an unbound non-SM operation finding, got: {findings:?}"
+        );
+
+        // A cited sm_operations exception suppresses it (as for an SM op).
+        let excepted: WireSurface = serde_json::from_value(serde_json::json!({
+            "sm_operations": [ {
+                "operation": pinned,
+                "reason": "coverage_gap",
+                "source": pinned_source
+            } ]
+        }))
+        .unwrap();
+        let mut findings = Vec::new();
+        check_surface_sm_operations(&set, empty_root.path(), &excepted, &mut findings);
+        assert!(
+            !findings.iter().any(|f| f.artifact == pinned),
+            "the exception should suppress the finding, got: {findings:?}"
+        );
+    }
+
+    #[test]
+    fn markdown_headings_take_h1_h2_only_and_skip_fences() {
+        let doc = "\
+[comment]: # (title: Fixture)\n\
+\n\
+# HTTP Methods\n\
+some prose\n\
+## Prefer only identifier \n\
+```http\n\
+# not a heading\n\
+```\n\
+### too deep\n\
+#nospace\n\
+# HTTP Methods\n";
+        let headings = markdown_section_headings(doc);
+        assert_eq!(
+            headings,
+            vec![
+                "HTTP Methods".to_owned(),
+                "Prefer only identifier".to_owned()
+            ]
+        );
+    }
+
+    /// The matcher is whitespace-normalized and case-insensitive over the
+    /// YAML-folded source strings, and the exclusion table is the only other
+    /// way a heading can be accounted for.
+    #[test]
+    fn axis3_derivation_matches_sources_and_honours_exclusions() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        for doc in AXIS3_OVERVIEW_DOCS {
+            let path = dir.path().join(doc);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, "# Covered Section\n\n## Silent Section\n").unwrap();
+        }
+        let wire: WireSurface = serde_json::from_value(serde_json::json!({
+            "elements": [ {
+                "id": "x", "description": "d",
+                // folded whitespace + different case: still a match
+                "source": "ITS-REST Requests_and_responses.md §covered\n  section (the rule)",
+                "exception": { "reason": "coverage_gap" }
+            } ]
+        }))
+        .unwrap();
+
+        let derivations = axis3_derivation(&wire, dir.path(), &[]);
+        for derivation in &derivations {
+            assert!(!derivation.unreadable);
+            assert_eq!(derivation.covered, vec!["Covered Section".to_owned()]);
+            assert_eq!(derivation.uncovered, vec!["Silent Section".to_owned()]);
+        }
+
+        let excluded = axis3_derivation(&wire, dir.path(), &[("silent section", "why")]);
+        for derivation in &excluded {
+            assert_eq!(derivation.excluded, vec!["Silent Section".to_owned()]);
+            assert!(derivation.uncovered.is_empty());
+        }
+    }
+
+    /// An unnamed released section is a finding; the exclusion table only
+    /// ratchets — an exclusion that is covered, or that names no section at
+    /// all, is a finding of its own.
+    #[test]
+    fn axis3_derivation_findings_and_exclusion_ratchet() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        for doc in AXIS3_OVERVIEW_DOCS {
+            let path = dir.path().join(doc);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, "# Covered Section\n\n## Silent Section\n").unwrap();
+        }
+        let wire: WireSurface = serde_json::from_value(serde_json::json!({
+            "elements": [ {
+                "id": "x", "description": "d",
+                "source": "ITS-REST Requests_and_responses.md §Covered Section",
+                "exception": { "reason": "coverage_gap" }
+            } ]
+        }))
+        .unwrap();
+
+        let mut findings = Vec::new();
+        check_axis3_section_derivation(&wire, dir.path(), &[], &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.check == CheckId::SurfaceCoverage
+                    && f.message.contains("§Silent Section")),
+            "expected an uncovered-section finding, got: {findings:?}"
+        );
+
+        let mut findings = Vec::new();
+        check_axis3_section_derivation(
+            &wire,
+            dir.path(),
+            &[
+                ("Covered Section", "already named by a source"),
+                ("No Such Section", "names nothing"),
+                ("Silent Section", "no distinct testable wire behaviour"),
+            ],
+            &mut findings,
+        );
+        assert!(
+            findings.iter().any(|f| f.message.contains("is stale")),
+            "expected a stale-exclusion finding, got: {findings:?}"
+        );
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.message.contains("names no section")),
+            "expected an unknown-exclusion finding, got: {findings:?}"
+        );
+        assert!(
+            !findings.iter().any(|f| f.message.contains("§Silent")),
+            "the honest exclusion must suppress its section finding, got: {findings:?}"
+        );
+    }
+
+    /// A missing released chapter is itself a finding — the derivation must
+    /// never silently pass because it could not read its domain.
+    #[test]
+    fn axis3_derivation_reports_an_unreadable_chapter() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let wire = WireSurface::default();
+        let mut findings = Vec::new();
+        check_axis3_section_derivation(&wire, dir.path(), &[], &mut findings);
+        assert_eq!(findings.len(), AXIS3_OVERVIEW_DOCS.len(), "{findings:?}");
+        assert!(
+            findings.iter().all(|f| f.message.contains("not readable")),
+            "{findings:?}"
         );
     }
 }
