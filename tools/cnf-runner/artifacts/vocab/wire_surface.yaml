@@ -641,9 +641,14 @@ elements:
   - id: resource-multiple-identifier-forms
     description: "The two addressing forms of the same versioned resource agree: while the latest version is unchanged, the explicit version_uid URI and the implicit versioned_object_uid URI resolve to the identical resource."
     source: "ITS-REST Resources.md §Multiple identifiers for the same resource (\"There are circumstances when openEHR resources can be uniquely identified by two different identifiers\" — the explicit version reference and the implicit latest version reference — \"However, the implicit URI will only resolve to the same resource as the explicit versioned URI as long as no new versions are created\")"
-    exception:
-      reason: coverage_gap
-      note: "Each form is exercised on its own (I_EHR_COMPOSITION.get_composition_version reads by version_uid, I_EHR_COMPOSITION.get_composition_latest reads by versioned_object_uid), but no case asserts the EQUIVALENCE the section states — one flow reading both forms of the same head version and comparing the two representations. That is the whole behaviour, so a NEW case closes it; it is authorable today (both bindings exist and the equivalent assertion compares served payloads). Recorded rather than silently absorbed: the section is a released cross-cutting rule with no exercising case."
+    # Closed by the #288 element sweep: one flow reads BOTH forms of the same
+    # head version (a two-version container, as in the section's own example)
+    # and content-checks each against the committed head. Each form on its own
+    # was already exercised (I_EHR_COMPOSITION.get_composition_version,
+    # -get_composition_latest); the agreement between them is what this case
+    # adds. The section's proviso (the forms diverge once a new version is
+    # created) is the complement, gated by that same pair.
+    covered_by: [I_EHR_COMPOSITION.get_composition_latest-identifier_forms_agree]
   - id: ehr-subject-uniqueness-and-key
     description: "A subject owns at most one EHR: the key is the EHR_STATUS.subject.external_ref (id.value, namespace) pair compared exactly, the refusal is the same 409 as an id-duplicate, and it holds on the client-supplied-id create path as well as the id-less one."
     source: "SM i_ehr_service.adoc §create_ehr_for_subject (error `ehr_for_subject_already_exists`) — the only released sentence that establishes the refusal at all; §create_ehr_for_subject_with_id omits it, and §get_ehrs_for_subject (\"Retrieve EHR or EHRs that have `ehr_status.subject_id` = supplied subject id\", returning a List) reads against it + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, external_ref for the demographic reference — no uniqueness rule and no comparison rule) + ITS-REST Requests_and_responses.md §HTTP status codes row 409 (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"). The key's comparison rule has no released sentence at all — register AMB-63 records the exact-match choice as our own design/extension"
