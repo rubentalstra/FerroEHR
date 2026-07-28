@@ -24,10 +24,21 @@ use super::{compile_pattern, page_bounds, paginate};
 /// "stores a new query, or updates an existing query"
 /// (`definition_query_store.yaml`), so it upserts at this default version.
 ///
-/// NOTE (residue re-verified): a coherent auto-increment scheme for
-/// repeated no-version stores of *different* text (1.0.0 → 1.0.1 → …) is not
-/// attempted; the sanctioned "stores or updates" semantics is an upsert at this
-/// version, which is what a no-version store does.
+/// NOTE: **no openEHR spec governs the minted value — our own design.** No
+/// released ITS-REST sentence says which version a version-less store creates.
+/// The one candidate rule does not reach it: ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` says "when `version` is
+/// not supplied at all, the system must use the latest `version` with the
+/// supplied prefix", but reading that into the STORE would (a) overwrite the
+/// name's latest EXISTING version — silently replacing a version-addressed
+/// definition that the versioned sibling protects with a `409` — and (b)
+/// assign nothing on a first store, when no latest version exists. So it is a
+/// rule for USING a stored query, as its chapter states ("Stored queries are
+/// identified by their name … and an optional `version` number"), and the
+/// constant slot below is ours: it is the lowest SEMVER a first store can
+/// carry, it needs no minting rule, and it keeps the version-less form
+/// idempotent — a second no-version store updates the same slot rather than
+/// accumulating versions no client asked for and none can predict.
 const DEFAULT_QUERY_VERSION: &str = "1.0.0";
 
 // ── SM Definitions native API (I_DEFINITION_QUERY) — the catalog contract ────
@@ -456,17 +467,36 @@ impl EhrbaseService {
             return Ok(DEFAULT_QUERY_VERSION.to_owned());
         };
 
-        // The versioned store requires an EXACT numeric `major.minor.patch`.
-        // The prefix grammar of `parameters/path/version.yaml` is a READ-
-        // resolution semantic ("the highest (latest) version matching the
-        // prefix will be considered") and no released sentence assigns a
-        // status to a prefix or malformed version on the write, so the
-        // rejection is the released 400 branch (`responses/400.yaml`:
-        // "syntactically invalid … parameter") — register-adjudicated.
-        // Accepting the value verbatim is untenable: a non-numeric segment
-        // (`1.0.0-rc.1`) breaks the surface's SEMVER ordering
+        // The versioned store requires an EXACT numeric `major.minor.patch` —
+        // ITS-REST `specifications/docs/query/Qualified_query_name.md`: "The
+        // `version` identifier is in the format specified by SEMVER style
+        // (i.e. `major.minor.patch`)".
+        //
+        // The partial-prefix form is a READ-resolution semantic that cannot
+        // apply to a write. The same chapter states it over versions that
+        // ALREADY exist — "the system must use the latest `version` with the
+        // supplied prefix … then the latest query version matching supplied
+        // prefix will be used" — so on a store it either resolves to an
+        // existing `(name, version)` pair (which that operation assigns to
+        // `409`, making its declared `200` unreachable for every prefix) or
+        // resolves to nothing at all. No released sentence completes a prefix
+        // into a version to create, so the write outcome is a released
+        // silence, adjudicated in the conformance ambiguity register.
+        //
+        // The refusal STATUS is assigned by the docs text, not chosen:
+        // `specifications/docs/overview/Requests_and_responses.md` §"HTTP
+        // status codes", below the table — "Status code `400` indicates
+        // normally a bad request, as well as a generic client-side error,
+        // used when no other `4xx` error code is appropriate. The client
+        // SHOULD NOT repeat the request without modifications" (re-issuing
+        // with an exact version is exactly that modification). An outright
+        // malformed segment (`v1.x`) is the table's own `400` row.
+        //
+        // Accepting the value verbatim is untenable besides: a non-numeric
+        // segment (`1.0.0-rc.1`) breaks the surface's SEMVER ordering
         // (`string_to_array(semver, '.')::int[]`) and a stored prefix (`1`)
-        // collides with the read-side resolution algebra.
+        // collides with the read-side resolution algebra that must resolve
+        // `1` to a full version.
         if !is_exact_semver(v) {
             return Err(ServiceError::BadRequest(format!(
                 "`{v}` is not an exact SEMVER version: the versioned store requires \

@@ -3,7 +3,11 @@
 # Ground: the released store takes no `version`, and no released sentence says
 # which one it mints — `Qualified_query_name.md`'s absent/partial-version rule
 # is a rule for USING a stored query ("the system must use the latest `version`
-# with the supplied prefix"), not for creating one. Adjudicated in register
+# with the supplied prefix"), not for creating one. Re-adjudicated 2026-07-28:
+# reading it into the store is refuted twice, because it would overwrite the
+# name's latest EXISTING version — which the versioned sibling protects as
+# immutable with a 409 — and because it assigns nothing at all on a FIRST
+# store, exactly where a creation rule is needed. Adjudicated in register
 # AMB-117: the version-less form writes the constant `1.0.0` default slot.
 # What the released text DOES assign is the response header that names it —
 # ITS-REST docs/overview/Requests_and_responses.md §"Representation details

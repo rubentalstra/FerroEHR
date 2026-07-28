@@ -1,17 +1,30 @@
 # A PARTIAL version prefix is not a version a store can write.
 #
 # The `{version}` path parameter is described once, for the reads and the write
-# alike, and only in resolution terms — "a pattern as partial prefix, in a form
-# of `{major}` or `{major}.{minor}` …, in which case the highest (latest)
-# version matching the prefix will be considered". A prefix selects among
-# versions that already exist, so on a STORE it names nothing: the released
-# text assigns the write no outcome for it, and register AMB-122 adjudicates
-# the write-side grammar as an exact `major.minor.patch`, everything else
-# refused on the operation's own declared 400 —
-# docs/overview/Requests_and_responses.md §"HTTP status codes", row `400 Bad
-# Request`: "The service cannot or will not process the request due to
-# something that is perceived to be a client error (e.g., malformed request
-# syntax, syntactically invalid content)".
+# alike, and the DOCS TEXT states the same rule and no other — ITS-REST
+# docs/query/Qualified_query_name.md: "When only a partial `version` pattern is
+# supplied, or when `version` is not supplied at all, the system must use the
+# latest `version` with the supplied prefix - i.e. if only `major` or
+# `major.minor` is used, then the latest query version matching supplied prefix
+# will be used." That rule resolves among versions that ALREADY EXIST, so on a
+# STORE it is self-refuting rather than merely odd: on a name that has 1.x
+# versions the target it yields is by construction an existing
+# `(name, version)` pair — the operation's own 409 trigger — which would make
+# its declared 200 unreachable for every prefix; and on the FRESH name this
+# case uses it yields no version at all, leaving the write nothing to address.
+# The release completes a prefix into no version either — this surface carries
+# no minting rule — so the write outcome is a released silence, adjudicated in
+# register AMB-122 as an exact `major.minor.patch` write grammar.
+#
+# The refusal STATUS is assigned, not chosen —
+# docs/overview/Requests_and_responses.md §"HTTP status codes", the sentence
+# below the table: "Status code `400` indicates normally a bad request, as well
+# as a generic client-side error, used when no other `4xx` error code is
+# appropriate. The client SHOULD NOT repeat the request without
+# modifications." Re-issuing with an exact version is exactly that
+# modification. (NOT the "syntactically invalid … parameter" reading: the
+# prefix is a shape `parameters/path/version.yaml` explicitly declares legal —
+# the defect is that a legal READ selector designates no version to WRITE.)
 #
 # Step 2 discriminates a refusal from a silent store under the literal prefix:
 # nothing may be registered at `1` (which would also poison the read-side

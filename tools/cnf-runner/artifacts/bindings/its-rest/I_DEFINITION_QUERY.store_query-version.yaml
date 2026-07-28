@@ -30,12 +30,17 @@
 #   immutable, so re-storing an existing pair is exactly that duplicate
 #   (register AMB-117).
 # - `400` on a version segment that is not an exact `major.minor.patch` —
-#   §"HTTP status codes", row `400 Bad Request`: "The service cannot or will not
-#   process the request due to something that is perceived to be a client error
-#   (e.g., malformed request syntax, syntactically invalid content)". The
-#   `{version}` parameter's prefix semantics are RESOLUTION semantics over
-#   versions that already exist and cannot apply to a write; the write-side
-#   grammar is adjudicated in register AMB-122.
+#   §"HTTP status codes": an outright malformed segment is the row `400 Bad
+#   Request` ("The service cannot or will not process the request due to
+#   something that is perceived to be a client error (e.g., malformed request
+#   syntax, syntactically invalid content)"), and a segment that is WELL-FORMED
+#   but unwritable — a `{major}`/`{major}.{minor}` prefix, a pre-release form —
+#   is the sentence below that table: "Status code `400` indicates normally a
+#   bad request, as well as a generic client-side error, used when no other
+#   `4xx` error code is appropriate. The client SHOULD NOT repeat the request
+#   without modifications." The `{version}` parameter's prefix semantics are
+#   RESOLUTION semantics over versions that already exist and cannot apply to a
+#   write; the write-side grammar is adjudicated in register AMB-122.
 #
 # `query_type` — parameters/query/query_type.yaml, as on the variant-less
 # binding: optional, released default "AQL".
@@ -68,5 +73,5 @@ outcomes:
   # semantically invalid) and was only borrowed while the taxonomy had no
   # malformed-request kind. The wire status is unchanged (400 either way).
   bad_request:
-    status: 400                               # §HTTP status codes, row 400 (syntactically invalid content) — AMB-122
+    status: 400                               # §HTTP status codes — the row (malformed) + the generic-client-error sentence (well-formed but unwritable) — AMB-122
     body: error_loose
