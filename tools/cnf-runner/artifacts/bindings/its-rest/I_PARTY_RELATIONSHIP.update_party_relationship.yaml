@@ -35,6 +35,9 @@ request:
     If-Match: '"${preceding_version_uid}"'
     Prefer: "return=representation"
 formats: [canonical-json]
+# NO `applies:` floor rides on these header expectations — see the note in
+# I_PARTY_RELATIONSHIP.get_party_relationship.yaml: a floor dates a RELEASED
+# rule, and nothing released governs this route.
 outcomes:
   updated:
     status: 200

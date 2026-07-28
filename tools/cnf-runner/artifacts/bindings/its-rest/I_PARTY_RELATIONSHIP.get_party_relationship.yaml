@@ -34,6 +34,12 @@ request:
   method: GET
   path: /demographic/party_relationship/{versioned_object_uid}
 formats: [canonical-json]
+# NO `applies:` FLOOR ON THESE HEADER EXPECTATIONS, unlike the released party
+# reads. A floor dates a RELEASED rule to the release that introduced it (the
+# overview dates the weak-`ETag` MUST and the read/DELETE `Location`
+# restriction to 1.1.0). Nothing released governs this route, so there is no
+# release to date these expectations to: they assert what the route serves,
+# unconditionally. The same reasoning applies to every binding of this family.
 outcomes:
   ok:
     status: 200
