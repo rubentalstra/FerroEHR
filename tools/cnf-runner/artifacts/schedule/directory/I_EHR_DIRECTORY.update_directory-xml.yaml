@@ -1,0 +1,74 @@
+# The canonical-XML REQUEST-payload branch of the directory update: PUT
+# /ehr/{ehr_id}/directory carrying the replacement FOLDER as canonical XML.
+#
+# Decisive released sentence (ITS-REST overview Resources.md §XML Format): "A
+# client MAY use the header `Content-Type: application/xml` in the requests to
+# specify the XML payload format. If the service cannot process the request
+# payload as XML format, it MUST respond with HTTP status code `415
+# Unsupported Media Type`." A service inside the XML technology profile
+# therefore processes the payload, and the same section fixes its shape: "both
+# request payloads and responses MUST conform to the published XSDs".
+#
+# The directory is created in-flow (canonical JSON) so its version uid is known
+# — the required If-Match / preceding_version_uid (ITS-REST overview
+# Requests_and_responses.md §If-Match and accidental overwrites). Only the
+# UPDATE payload is XML; the response is negotiated canonical JSON, which is
+# what makes step 3 the real assertion: the FOLDER read back must equal the
+# canonical-JSON twin of the XML fixture that replaced it (cnf.directory.v2.xml
+# is codec-derived from cnf.directory.v2), so the XML payload is proven to have
+# been understood as the same resource, not merely accepted.
+#
+# Technology-profile scope: canonical XML is OPTIONAL support — Resources.md
+# §Data representation, "Services MUST support at least one of the openEHR
+# **XML** or **JSON** canonical formats for resource representation" — so the
+# case declares the canonical-xml format axis and is counted only against a
+# statement whose technology profile declares that format.
+id: I_EHR_DIRECTORY.update_directory-xml
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.update_directory
+capabilities: [DirectoryOps]
+exercises: [Versioning]
+profiles: [STANDARD]
+test_purpose: >-
+  update_directory with a canonical-XML FOLDER payload replaces the directory,
+  and the new structure is the one the payload described.
+description: "Test update_directory with a canonical-XML FOLDER payload"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.update_directory"
+  - "ITS-REST overview Resources.md §Data representation"
+  - "ITS-REST overview Resources.md §XML Format"
+  - "ITS-REST overview Requests_and_responses §If-Match and accidental overwrites"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+formats: [canonical-xml]
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.directory.root_only, cnf.directory.v2.xml, cnf.directory.v2]
+flow:
+  - step: 1
+    call: create_directory               # the version to update from
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
+    expect: created
+    capture: { preceding_version_uid: created.version_uid }
+  - step: 2
+    call: update_directory
+    format: canonical-xml                # Content-Type: application/xml
+    with:
+      ehr_id: "${ehr_id}"
+      directory: "${ds:cnf.directory.v2.xml}"
+      preceding_version_uid: "${preceding_version_uid}"
+    expect: updated
+  - step: 3                              # the XML payload landed as that FOLDER
+    call: get_directory
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR ehr_id has the updated directory structure the XML payload
+      described (verified by step 3)

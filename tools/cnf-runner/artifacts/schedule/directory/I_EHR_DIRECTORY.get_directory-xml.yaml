@@ -1,0 +1,46 @@
+# The canonical-XML representation branch of the directory read:
+# GET /ehr/{ehr_id}/directory under `Accept: application/xml`.
+#
+# Decisive released sentences (ITS-REST overview Resources.md §XML Format):
+# "The client SHOULD use the `Accept: application/xml` request header to
+# specify the expected XML response format. If the service cannot fulfill this
+# aspect of the request, it MUST respond with HTTP status code `406 Not
+# Acceptable`." and "Proper header `Content-Type: application/xml` MUST be
+# present in the response of the service unless the response has no content
+# body (HTTP status code `204`)." A 200 answer therefore has exactly one
+# conformant Content-Type, and the binding's `Content-Type: negotiated`
+# matcher is what asserts it — an XML body is not JSON, so the RM-level
+# assertions the canonical-JSON sibling carries
+# (I_EHR_DIRECTORY.get_directory-ehr_root_directory) cannot apply here and are
+# deliberately absent.
+#
+# Technology-profile scope: canonical XML is OPTIONAL support — Resources.md
+# §Data representation, "Services MUST support at least one of the openEHR
+# **XML** or **JSON** canonical formats for resource representation" — so the
+# case declares the canonical-xml format axis and is counted only against a
+# statement whose technology profile declares that format.
+id: I_EHR_DIRECTORY.get_directory-xml
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.get_directory
+capabilities: [DirectoryOps]
+profiles: [STANDARD]
+test_purpose: >-
+  get_directory requested as canonical XML answers the directory FOLDER in the
+  negotiated XML representation.
+description: "Test get_directory with Accept: application/xml"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.get_directory"
+  - "ITS-REST overview Resources.md §Data representation"
+  - "ITS-REST overview Resources.md §XML Format"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+formats: [canonical-xml]
+requires:
+  ehr: { commits: any }                  # mints ${ehr_id}
+  directory: cnf.directory.root_only     # a single empty root FOLDER (provisioned)
+flow:
+  - step: 1
+    call: get_directory
+    format: canonical-xml                # Accept: application/xml
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok

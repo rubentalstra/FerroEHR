@@ -1,0 +1,64 @@
+# The canonical-XML REQUEST-payload branch of directory creation: POST
+# /ehr/{ehr_id}/directory carrying the FOLDER as canonical XML.
+#
+# Decisive released sentence (ITS-REST overview Resources.md §XML Format): "A
+# client MAY use the header `Content-Type: application/xml` in the requests to
+# specify the XML payload format. If the service cannot process the request
+# payload as XML format, it MUST respond with HTTP status code `415
+# Unsupported Media Type`." A service inside the XML technology profile
+# therefore processes the payload, and the same section fixes its shape: "both
+# request payloads and responses MUST conform to the published XSDs".
+#
+# Only the REQUEST representation is XML: the runner's format role on a
+# body-carrying request names the request payload and the response is
+# negotiated canonical JSON. That is what makes step 2 the real assertion —
+# the FOLDER read back from the XML create must equal the canonical-JSON twin
+# of the very fixture that was posted (cnf.directory.root_only.xml is
+# codec-derived from cnf.directory.root_only), so the XML payload is proven to
+# have been understood as the same resource, not merely accepted.
+#
+# Technology-profile scope: canonical XML is OPTIONAL support — Resources.md
+# §Data representation, "Services MUST support at least one of the openEHR
+# **XML** or **JSON** canonical formats for resource representation" — so the
+# case declares the canonical-xml format axis and is counted only against a
+# statement whose technology profile declares that format.
+id: I_EHR_DIRECTORY.create_directory-xml
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.create_directory
+capabilities: [DirectoryOps]
+exercises: [Versioning]
+profiles: [STANDARD]
+test_purpose: >-
+  create_directory with a canonical-XML FOLDER payload creates the directory,
+  and the created structure is the one the payload described.
+description: "Test create_directory with a canonical-XML FOLDER payload"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.create_directory"
+  - "ITS-REST overview Resources.md §Data representation"
+  - "ITS-REST overview Resources.md §XML Format"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+formats: [canonical-xml]
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR exists, no directory — mints ${ehr_id}
+data_sets: [cnf.directory.root_only.xml, cnf.directory.root_only]
+flow:
+  - step: 1
+    call: create_directory
+    format: canonical-xml                # Content-Type: application/xml
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only.xml}" }
+    expect: created
+  - step: 2                              # the XML payload landed as that FOLDER
+    call: get_directory
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: FOLDER }
+      - { assert: equivalent, to: "${ds:cnf.directory.root_only}", ignoring: server_assigned }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR ehr_id has a directory whose structure is the XML payload's
+      FOLDER (verified by step 2)
