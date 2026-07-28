@@ -1,11 +1,51 @@
-# ITS-REST 1.1.0 surfaces no archive wire — unrealized so the master12
-# archive_parties cases are not-applicable with citation (AMB-33).
+# EXTENSION realization of I_ADMIN_ARCHIVE.archive_parties.
+#
+# NO RELEASED WIRE EXISTS, re-derived first-hand 2026-07-29 under the oracle
+# order: the ITS-REST docs text describes the Admin API as EHR deletion only
+# (specifications/docs/admin/**), and the released
+# specifications/admin.openapi.yaml declares exactly two operations —
+# admin_ehr_delete and admin_ehr_delete_all. Nothing in the release moves a
+# resource to archival storage. Register AMB-33.
+#
+# WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
+# design — `POST /admin/archive/parties`, declared in the `admin-archive`
+# family of vocab/wire_surface.yaml served_extensions. NO openEHR SPEC GOVERNS
+# IT — our own design/extension. It therefore gates the DemographicArchive CAPABILITY
+# verdict only and never ITS-REST wire conformance; the capability-matrix row
+# carries `realization: extension`, which may never be `required` (owner ruling
+# 2026-07-28).
 sm_operation: I_ADMIN_ARCHIVE.archive_parties
 its: its-rest
-unrealized:
+extension:
+  family: admin-archive
   reason: >-
-    No archive operation exists in ITS-REST 1.1.0. The only admin operations in
-    the OAS are admin_ehr_delete and admin_ehr_delete_all; there is no endpoint
-    that moves Parties and their relationships to archival storage.
-  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_archive.adoc (archive_parties)"
+    ITS-REST 1.1.0 realizes only admin_ehr_delete / admin_ehr_delete_all of the
+    SM Admin surface, so the SM archive_parties has no released wire; this product
+    serves the operation on its own /admin/archive/parties route, which is what the cases
+    drive.
+  source: >-
+    SM docs/UML/classes/i_admin_archive.adoc (archive_parties) vs released ITS-REST
+    specifications/admin.openapi.yaml (admin_ehr_delete + admin_ehr_delete_all
+    only) + specifications/docs/admin/** (no archive resource) — no openEHR
+    spec governs the extension route, our own design/extension
   ambiguity: AMB-33
+request:
+  method: POST
+  path: /admin/archive/parties
+  # The SM parameter is a `List<String>`; the route carries it as the single
+  # member of a JSON object so the request has a named, extensible shape.
+  body:
+    party_ids: "${party_ids}"
+  headers:
+    Content-Type: application/json
+outcomes:
+  # `archive_parties` returns nothing (SM: the operation is a move, not a
+  # read), and archival is read-neutral here, so the fulfilled call carries no
+  # body. Nothing released governs this route; the status choice is ours
+  # (RFC 9110 §15.3.5: 204 for a successful request with no content to send).
+  ok:
+    status: 204
+  # SM error `party_id_does_not_exist` — the whole request is refused before any
+  # marker is written (all-or-nothing).
+  not_found:
+    status: 404

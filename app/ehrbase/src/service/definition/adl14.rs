@@ -76,13 +76,20 @@ impl EhrbaseService {
     /// the id in the same transaction, then inserts the source verbatim — so a
     /// re-upload with different case *replaces* rather than duplicates.
     ///
+    /// Returns the stored `ARCHETYPE_ID` — the identity read out of the
+    /// submitted source. NOTE (`i_definition_adl14.adoc` types the operation's
+    /// return as void; no openEHR spec governs what a transport does with the
+    /// stored identity — our own design/extension): the id is returned so a
+    /// caller that persisted the artefact can address it without re-parsing the
+    /// source it just sent.
+    ///
     /// # Errors
     ///
     /// - Source that fails to parse (S-codes) or fails the ADL 1.4 phase-1
     ///   catalogue (V-codes) → `invalid_archetype` (`422`), the offending
     ///   rule-code mnemonics carried as the validation detail.
     /// - A database failure (`exception` → `500`).
-    pub async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
+    pub async fn upload_archetype(&self, adl: String) -> Result<String, SmError> {
         archetype_validate(&adl)?;
         Ok(self.archetype_upload(&adl).await?)
     }
@@ -352,7 +359,8 @@ impl EhrbaseService {
 
     /// Store a valid ADL 1.4 archetype, replacing any case-variant of the same
     /// id in the same transaction; invalid source → `invalid_archetype` (`422`).
-    async fn archetype_upload(&self, adl: &str) -> Result<(), ServiceError> {
+    /// Returns the stored `ARCHETYPE_ID`.
+    async fn archetype_upload(&self, adl: &str) -> Result<String, ServiceError> {
         let id = extract_archetype_id(adl).ok_or_else(|| {
             ServiceError::sm(
                 CallStatusType::InvalidArchetype,
@@ -371,7 +379,7 @@ impl EhrbaseService {
             .execute(&mut *tx)
             .await?;
         tx.commit().await?;
-        Ok(())
+        Ok(id.value)
     }
 
     /// The ADL 1.4 source of the archetype with id `an_id`; absent →

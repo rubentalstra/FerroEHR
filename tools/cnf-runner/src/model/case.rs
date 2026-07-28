@@ -164,6 +164,35 @@ impl<'de> Deserialize<'de> for DirectoryRequirement {
     }
 }
 
+/// The `requires.party` precondition.
+///
+/// A demographic PARTY is precondition STATE for the cases that operate ON an
+/// existing party without testing its creation — exactly the role
+/// `requires.ehr` plays for EHR-scoped cases. Provisioning it here rather than
+/// as a flow step is what keeps such a case's FLOW pure: an admin case whose
+/// only driven call is `archive_parties` must not also drive the released
+/// `create_party`, or the realization it evidences stops being the one it is
+/// about (`validate::check_realization_markers`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PartyRequirement {
+    None,
+    /// A PARTY exists, created from the named corpus set (mints
+    /// `${party_id}`, its `VERSIONED_OBJECT` uid).
+    Exists(CorpusKey),
+}
+
+impl<'de> Deserialize<'de> for PartyRequirement {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        if s == "none" {
+            return Ok(Self::None);
+        }
+        CorpusKey::parse(&s)
+            .map(Self::Exists)
+            .map_err(D::Error::custom)
+    }
+}
+
 /// Typed prerequisites — the schedule's precondition vocabulary. Every
 /// provisioned object mints a named handle usable as a flow variable.
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -181,6 +210,10 @@ pub struct Requires {
     /// A FOLDER tree provisioned in the EHR (master09).
     #[serde(default)]
     pub directory: Option<DirectoryRequirement>,
+    /// A demographic PARTY provisioned before the flow; `Exists` mints
+    /// `${party_id}`.
+    #[serde(default)]
+    pub party: Option<PartyRequirement>,
     /// Corpus set keys pre-committed into the EHR by the runner (bulk setup
     /// is precondition state, never an un-anchored flow call).
     #[serde(default)]
@@ -204,6 +237,12 @@ impl Requires {
         // a provisioned FOLDER tree publishes its created VERSION uid
         if self.directory.is_some()
             && let Ok(handle) = CaptureName::parse("directory_version_uid")
+        {
+            handles.push(handle);
+        }
+        // a provisioned PARTY publishes its VERSIONED_OBJECT uid
+        if matches!(self.party, Some(PartyRequirement::Exists(_)))
+            && let Ok(handle) = CaptureName::parse("party_id")
         {
             handles.push(handle);
         }

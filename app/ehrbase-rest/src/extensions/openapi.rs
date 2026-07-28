@@ -166,6 +166,9 @@ const SECURITY_SCHEME: &str = "openehr_auth";
         (name = "management", description = "Ops-introspection surface — info/prometheus/metrics/env/loggers (config-gated: EHRBASE__MANAGEMENT__*); each endpoint opt-in via its access level. Health probes are NOT here: see the `status` tag."),
         (name = "terminology", description = "Terminology extension wire — SM I_TERMINOLOGY_SERVICE (config-gated: EHRBASE_REST_TERMINOLOGY__ENABLED)."),
         (name = "demographic-relationship", description = "PARTY_RELATIONSHIP demographic extension (SM-3; no ITS-REST contract)."),
+        (name = "definition-archetype", description = "ADL 1.4 / ADL 2 archetype + artefact provisioning — SM I_DEFINITION_ADL14 / I_DEFINITION_ADL2 operations the released Definition API never surfaced (it provisions operational templates only). OUR OWN EXTENSION: no ITS-REST operation governs these routes."),
+        (name = "admin-report", description = "The SM I_ADMIN_SERVICE activity-report calls (contribution/version statistics per PLATFORM_SERVICE). OUR OWN EXTENSION: the released Admin API is the two EHR deletes alone, so no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
+        (name = "admin-archive", description = "The SM I_ADMIN_ARCHIVE calls (move selected EHRs / parties to archival storage). OUR OWN EXTENSION: no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
         (name = "event-subscription", description = "Event-subscription CRUD extension (config-gated: EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED)."),
         (name = "tenancy", description = "Multi-tenancy admin extension (config-gated: EHRBASE_REST_TENANCY__ENABLED)."),
         (name = "fhir", description = "FHIR R4 inbound connector + mapping store (config-gated: EHRBASE_REST_FHIR__ENABLED)."),
@@ -515,10 +518,11 @@ const FAMILIES: &[(&str, &str, Members)] = &[
             include: "/admin/ehr",
             exclude: &[],
             // The ADMIN group's own-design routes (template delete, stored-query
-            // version delete, the redacted config read) live under sibling
-            // `/admin/*` paths, not under `/admin/ehr`; they are part of this
-            // group and belong in its document.
-            also_tagged: &["ADMIN"],
+            // version delete, the redacted config read, the activity report and
+            // the archive pair) live under sibling `/admin/*` paths, not under
+            // `/admin/ehr`; they are part of this group and belong in its
+            // document.
+            also_tagged: &["ADMIN", "admin-report", "admin-archive"],
         },
     ),
     // The server's own extension families, by tag.
