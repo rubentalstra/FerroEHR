@@ -40,13 +40,14 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   values enter only by schedule release, never ad hoc.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
-  operation bindings, each mapping cited to its ITS-REST docs-text source (the
-  OAS is stalled — `emit-rest` codegen input only, not a wire oracle; owner
-  ruling 2026-07-24).
-- **Expectations trace to spec text** (`docs/specs/openehr/CNF/`, `QUERY`,
-  `ITS-REST` docs text) — never to observed SUT behaviour, and NEVER to the
-  vendored OAS (stalled — codegen input only, not an oracle; owner ruling
-  2026-07-24); EHRbase and the retired ECC
+  operation bindings, each mapping cited to its source under the oracle
+  order (owner rulings 2026-07-24 + 2026-07-28): the ITS-REST docs text
+  first and on every conflict; the released OAS only for behaviour the docs
+  text is silent on, cited AS the OAS.
+- **Expectations trace to the released spec** (`docs/specs/openehr/CNF/`,
+  `QUERY`, `ITS-REST` docs text; the released OAS fills docs-text silence
+  per the 2026-07-28 ruling and loses every conflict) — never to observed
+  SUT behaviour; EHRbase and the retired ECC
   harness (its final catalogue in git history; retired 2026-07-22) are
   prior art, not oracles. Spec silences go through the ambiguity register
   with a typed `disposition`, never private resolution.

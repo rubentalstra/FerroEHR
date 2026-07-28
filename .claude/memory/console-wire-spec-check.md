@@ -29,7 +29,7 @@ client accommodating it. Same law as CNF red-run triage
   per `.claude/rules/testing.md` §CNF coverage; the UI is built against the
   SPEC-required behaviour.
 - Worker briefs must hand spec paths + verified source paths; workers cite
-  those, never the OAS yaml or any standing endpoint map (deleted; see
+  those under the oracle order (docs text first; released OAS only for docs-text-silent behaviour — owner 2026-07-28), never any standing endpoint map (deleted; see
   [[session-workflow-gotchas]]).
 - Related precedent: the terminology-browser brief was course-corrected the
   same day (bundle vs external FHIR TS routing verified in
