@@ -62,10 +62,15 @@ is hand-typed):
 
 ![Capability conformance heat grid](conformance-assets/conformance-heat-grid.svg)
 
-The same run broken down by schedule chapter — passed, failed, errored and
-cited-N/A per chapter:
+The same run broken down two levels deep: a header per schedule chapter with
+its total, then one bar per **band** — the surface a case actually exercises
+(EHR resource, EHR_STATUS, COMPOSITION, …) — with the exact passed, FAILED,
+errored and cited-N/A counts printed beside every row. Every band the
+taxonomy declares is drawn, so one with no case for this run shows as an
+explicit `no cases` row rather than disappearing, and a hatched segment marks
+cited-N/A so it reads as neither a pass nor a failure:
 
-![Schedule outcomes by chapter](conformance-assets/conformance-chapter-bars.svg)
+![Schedule outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
 The published run against EHRbase-rs reports:
 
