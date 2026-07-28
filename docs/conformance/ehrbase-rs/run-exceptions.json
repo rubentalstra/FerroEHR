@@ -301,6 +301,13 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa",
     "exception": {
       "kind": "unrealized",
@@ -357,6 +364,13 @@
     }
   },
   {
+    "case": "I_EHR_DIRECTORY.get_directory-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_DIRECTORY.get_versioned_directory-bad_ehr",
     "exception": {
       "kind": "unrealized",
@@ -375,6 +389,20 @@
     "exception": {
       "kind": "unrealized",
       "detail": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
+    }
+  },
+  {
+    "case": "I_EHR_SERVICE.get_ehr-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.get_ehr_status-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {

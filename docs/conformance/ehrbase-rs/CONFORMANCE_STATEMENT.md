@@ -57,7 +57,7 @@ Capabilities claimed:
 - AuditAccountability
 - AnonymousEhrs
 
-Options declared: adl14-duplicate-conflict, adl14-partial-id-exact, directory-empty-error, legacy-alt-formats-unsupported, sf-deprecated-types-unsupported
+Options declared: adl14-duplicate-conflict, adl14-partial-id-exact, contribution-xml-unsupported, directory-empty-error, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, legacy-alt-formats-unsupported, party-xml-supported, sf-deprecated-types-unsupported, xml-namespace-negotiated
 
 ## Additional non-openEHR surface
 
