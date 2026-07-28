@@ -29,6 +29,7 @@ requires: { ehr: { commits: any } }        # commits exist so there is something
 flow:
   - step: 1
     call: list_contributions
+    on: admin                              # ADMIN-role principal (ixit) — the route is admin-gated
     with: { a_service: "ehr" }
     expect: ok
 ambiguities: [AMB-33]

@@ -927,7 +927,7 @@ fn stress_command(
         }
         return ExitCode::from(2);
     }
-    let ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
+    let mut ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
         .map_err(|e| format!("cannot read {}: {e}", ixit_path.display()))
         .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("ixit: {e}")))
     {
@@ -937,6 +937,11 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
+    // File references in the ixit (the SMART lane's signing key) are relative
+    // to the ixit document, not to the runner's working directory — the same
+    // rebase the `run` command applies (the measured client minted against an
+    // unresolved relative path and died at seeding, 2026-07-29 POC run).
+    ixit.rebase_paths(ixit_path.parent().unwrap_or(std::path::Path::new(".")));
     let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
@@ -1127,7 +1132,7 @@ fn probe_command(
         }
         return ExitCode::from(2);
     }
-    let ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
+    let mut ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
         .map_err(|e| format!("cannot read {}: {e}", ixit_path.display()))
         .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("ixit: {e}")))
     {
@@ -1137,6 +1142,11 @@ fn probe_command(
             return ExitCode::from(2);
         }
     };
+    // File references in the ixit (the SMART lane's signing key) are relative
+    // to the ixit document, not to the runner's working directory — the same
+    // rebase the `run` command applies (the measured client minted against an
+    // unresolved relative path and died at seeding, 2026-07-29 POC run).
+    ixit.rebase_paths(ixit_path.parent().unwrap_or(std::path::Path::new(".")));
     let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
@@ -1264,7 +1274,7 @@ fn perf_command(
         }
         return ExitCode::from(2);
     }
-    let ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
+    let mut ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
         .map_err(|e| format!("cannot read {}: {e}", ixit_path.display()))
         .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("ixit: {e}")))
     {
@@ -1274,6 +1284,11 @@ fn perf_command(
             return ExitCode::from(2);
         }
     };
+    // File references in the ixit (the SMART lane's signing key) are relative
+    // to the ixit document, not to the runner's working directory — the same
+    // rebase the `run` command applies (the measured client minted against an
+    // unresolved relative path and died at seeding, 2026-07-29 POC run).
+    ixit.rebase_paths(ixit_path.parent().unwrap_or(std::path::Path::new(".")));
     let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
