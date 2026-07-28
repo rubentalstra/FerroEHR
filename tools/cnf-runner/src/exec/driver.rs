@@ -53,6 +53,14 @@ pub struct HttpDriver<'a> {
     /// matcher (overview §"If-Match and accidental overwrites": the 412
     /// "SHOULD return also latest `version_uid` in the `ETag`").
     last_version_uid: Option<String>,
+    /// The `restapi_specs_version` member the System OPTIONS manifest served,
+    /// when the campaign drove that exchange (released OAS
+    /// `system.openapi.yaml` `Options` schema — every member optional). An
+    /// independent CONFIRMATION of the party's declared
+    /// `spec_versions.its_rest`, never a source of truth: no `required` list
+    /// binds it, and a server could dodge every dated MUST by
+    /// under-advertising — divergence surfaces as a static-review finding.
+    observed_restapi_specs_version: Option<String>,
     /// Recorded exchanges (the transcript seam).
     pub exchanges: Vec<Exchange>,
 }
@@ -97,8 +105,15 @@ impl<'a> HttpDriver<'a> {
             committed: Vec::new(),
             last_body: None,
             last_version_uid: None,
+            observed_restapi_specs_version: None,
             exchanges: Vec::new(),
         })
+    }
+
+    /// Take the System-manifest `restapi_specs_version` this driver observed,
+    /// if the campaign drove that exchange (see the field NOTE).
+    pub fn take_observed_restapi_specs_version(&mut self) -> Option<String> {
+        self.observed_restapi_specs_version.take()
     }
 
     fn binding_for(&self, case: &CaseCore, call: &str) -> Result<&'a OperationBinding, String> {
@@ -2238,6 +2253,21 @@ impl StepDriver for HttpDriver<'_> {
             self.committed.push(b.clone());
         }
         self.last_body.clone_from(&exchange.body);
+
+        // The System OPTIONS manifest's `restapi_specs_version`, when served
+        // (released OAS `system.openapi.yaml` `Options` — every member
+        // optional): observed as an independent confirmation of the party's
+        // declared its_rest version, never as the truth (see the field NOTE).
+        if binding.sm_operation.interface() == "I_ITS_REST_SYSTEM"
+            && binding.sm_operation.operation() == "options"
+            && let Some(version) = exchange
+                .body
+                .as_ref()
+                .and_then(|b| b.get("restapi_specs_version"))
+                .and_then(Value::as_str)
+        {
+            self.observed_restapi_specs_version = Some(version.to_owned());
+        }
 
         // Classify (law c) and bind captures.
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
