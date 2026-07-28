@@ -123,6 +123,26 @@ fn undeclared_ixit_facts(case: &CaseCore, ixit: &Ixit) -> Vec<&'static str> {
         .collect()
 }
 
+/// The reserved catalogue pseudo-interface anchoring the SMART Platform
+/// operations the SM models no interface for (pinned in
+/// `validate::NON_SM_REST_OPERATIONS`; register AMB-161 adjudicates the
+/// naming convention).
+const SMART_PSEUDO_INTERFACE: &str = "I_ITS_REST_SMART";
+
+/// Whether the case needs the party's SMART App Launch lane
+/// (`ixit.smart`) — either because a flow step declares a SMART `scope`
+/// claim the runner must mint a token for, or because the case drives a
+/// SMART Platform operation that only a SMART-enabled deployment serves.
+fn needs_smart_lane(case: &CaseCore) -> bool {
+    case.flow
+        .iter()
+        .any(crate::model::case::FlowStep::declares_scopes)
+        || case
+            .sm_operation
+            .as_ref()
+            .is_some_and(|op| op.interface() == SMART_PSEUDO_INTERFACE)
+}
+
 /// Execute every runnable case against the ixit's default topology.
 ///
 /// `statement` (the party ICS), when supplied, drives ISO/IEC 9646-style
@@ -200,6 +220,34 @@ pub fn execute(
             report
                 .exceptions
                 .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
+        // The SMART lane is a party declaration, exactly like the ixit facts
+        // below: the CDR is a SMART resource server that never issues tokens
+        // (ITS-REST docs/smart_app_launch/master06-authentication.adoc
+        // §Supported Authentication Flows), so a chosen `scope` claim exists
+        // only where the party declares a trusted test issuer to mint
+        // against, and the discovery document exists only where the party
+        // runs the SMART role at all. Undeclared => not-applicable with the
+        // citation, never a spurious failure against a deployment that
+        // legitimately does not run SMART.
+        if needs_smart_lane(case) && ixit.smart.is_none() {
+            let citation = "the ixit declares no `smart` lane — the case needs a SMART-enabled \
+                 deployment and a minted, scope-carrying access token, neither of which any \
+                 released operation discloses or provides; ISO/IEC 9646 test selection"
+                .to_owned();
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Guarded(citation)));
             continue;
         }
         // A case reading a party-declared SUT fact this ixit does not carry
@@ -396,6 +444,42 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
+
+    /// The SMART-lane marker is the DECLARATION of a `scopes:` key (empty
+    /// included) or the reserved SMART pseudo-interface anchor — never a
+    /// heuristic over case ids, so an ordinary case can never be excused.
+    #[test]
+    fn smart_lane_need_is_declared_not_guessed() {
+        let plain: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-plain", "kind": "functional", "component": "SECURITY",
+            "sm_operation": "I_DEFINITION_ADL14.list_opts",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "list_opts", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(!needs_smart_lane(&plain));
+
+        let scoped: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-scoped", "kind": "functional", "component": "SECURITY",
+            "sm_operation": "I_DEFINITION_ADL14.list_opts",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "list_opts", "scopes": [], "expect": "forbidden" }]
+        }))
+        .unwrap();
+        assert!(
+            needs_smart_lane(&scoped),
+            "an EMPTY scopes declaration is still a SMART-lane declaration"
+        );
+
+        let discovery: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-discovery", "kind": "functional", "component": "SECURITY",
+            "sm_operation": "I_ITS_REST_SMART.discovery",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "discovery", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(needs_smart_lane(&discovery));
+    }
 
     #[test]
     fn coverage_gate_holds_on_the_committed_catalogue() {

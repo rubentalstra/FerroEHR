@@ -138,7 +138,14 @@ impl<'a> HttpDriver<'a> {
         }
     }
 
-    fn auth_header(auth: &AuthMode) -> Result<Option<String>, String> {
+    /// The `Authorization` header for an instance. `scopes` is the SMART
+    /// `scope` claim the step declared (`None` = the step declared none), and
+    /// is consumed only by the `bearer_mint` principal.
+    fn auth_header(
+        ixit: &Ixit,
+        auth: &AuthMode,
+        scopes: Option<&[String]>,
+    ) -> Result<Option<String>, String> {
         match auth {
             AuthMode::None => Ok(None),
             AuthMode::Basic {
@@ -155,6 +162,15 @@ impl<'a> HttpDriver<'a> {
             AuthMode::Bearer { token_env } => {
                 let token = std::env::var(token_env)
                     .map_err(|_| format!("credential env {token_env} unset"))?;
+                Ok(Some(format!("Bearer {token}")))
+            }
+            AuthMode::BearerMint => {
+                let lane = ixit.smart.as_ref().ok_or_else(|| {
+                    "instance declares auth mode `bearer_mint` but the ixit declares no `smart` \
+                     lane to mint against"
+                        .to_owned()
+                })?;
+                let token = mint_access_token(&lane.mint, scopes.unwrap_or_default())?;
                 Ok(Some(format!("Bearer {token}")))
             }
         }
@@ -1022,6 +1038,55 @@ fn base64_encode(input: &[u8]) -> String {
     out
 }
 
+/// Mint one RS256 access token against the party's declared static test
+/// issuer, carrying the step's SMART `scope` claim.
+///
+/// The CDR is a SMART **resource server** — it validates presented tokens and
+/// never issues them (ITS-REST
+/// `docs/smart_app_launch/master06-authentication.adoc` §Supported
+/// Authentication Flows; token issuance is the Authorization Server's duty) —
+/// so the conformance stack runs no Authorization Server and the driver takes
+/// that role for the SMART lane only. The token is deliberately minimal: the
+/// registered `iss`/`aud`/`sub`/`iat`/`exp` claims, the space-delimited
+/// `scope` claim master08 §Resource Scopes defines, and the RBAC role claim
+/// the SUT mines (the SMART gate AND-composes onto RBAC, so a role-less token
+/// would be refused a layer earlier and prove nothing about SMART).
+fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Result<String, String> {
+    let pem = std::fs::read(&mint.key_file).map_err(|e| {
+        format!(
+            "smart mint: cannot read key file {}: {e}",
+            mint.key_file.display()
+        )
+    })?;
+    let key = jsonwebtoken::EncodingKey::from_rsa_pem(&pem)
+        .map_err(|e| format!("smart mint: key file is not an RSA PEM: {e}"))?;
+    let mut header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
+    header.kid = Some(mint.kid.clone());
+
+    let issued_at = now_ms() / 1000;
+    let expires_at = issued_at.saturating_add(i64::try_from(mint.ttl_seconds).unwrap_or(i64::MAX));
+    let mut claims = serde_json::Map::new();
+    claims.insert("iss".to_owned(), Value::String(mint.issuer.clone()));
+    if let Some(audience) = &mint.audience {
+        claims.insert("aud".to_owned(), Value::String(audience.clone()));
+    }
+    claims.insert("sub".to_owned(), Value::String(mint.subject.clone()));
+    claims.insert("iat".to_owned(), Value::from(issued_at));
+    claims.insert("exp".to_owned(), Value::from(expires_at));
+    // master08 §Resource Scopes: scopes ride the OAuth 2.0 `scope` claim,
+    // space-delimited (RFC 6749 §3.3). An empty declaration mints the claim
+    // as an empty string — the scope-less token the fail-closed deny branch
+    // needs, distinct from a token with no `scope` claim at all.
+    claims.insert("scope".to_owned(), Value::String(scopes.join(" ")));
+    claims.insert(
+        "realm_access".to_owned(),
+        serde_json::json!({ "roles": mint.roles }),
+    );
+
+    jsonwebtoken::encode(&header, &claims, &key)
+        .map_err(|e| format!("smart mint: cannot sign the access token: {e}"))
+}
+
 /// The JSON shape name of a value, for diagnostics that must say WHAT was
 /// captured instead of the expected object (a canonical-XML capture, for
 /// instance, resolves as a string).
@@ -1304,7 +1369,7 @@ impl HttpDriver<'_> {
                 headers.insert("Content-Type".to_owned(), "application/json".to_owned());
                 headers.insert("Accept".to_owned(), "application/json".to_owned());
                 headers.insert("Prefer".to_owned(), "return=representation".to_owned());
-                if let Some(auth) = Self::auth_header(&instance.auth)? {
+                if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
                     headers.insert("Authorization".to_owned(), auth);
                 }
                 let base = instance.base_url.trim_end_matches('/');
@@ -1330,14 +1395,18 @@ impl HttpDriver<'_> {
 
 impl HttpDriver<'_> {
     /// Headers: binding request headers + format headers + auth + instance
-    /// extras.
+    /// extras. `scopes` is the step's resolved SMART `scope` claim (`None` =
+    /// the step declared none), consumed only by a `bearer_mint` principal.
+    #[allow(clippy::too_many_arguments)] // one parameter per header source; splitting hides the assembly order
     fn build_headers(
         set: &ArtifactSet,
+        ixit: &Ixit,
         case: &CaseCore,
         step: &FlowStep,
         binding: &OperationBinding,
         instance: &Instance,
         vars: &VarStore,
+        scopes: Option<&[String]>,
     ) -> Result<BTreeMap<String, String>, String> {
         let request_spec = binding
             .request
@@ -1452,7 +1521,7 @@ impl HttpDriver<'_> {
                 headers.insert("Accept".to_owned(), "application/json".to_owned());
             }
         }
-        if let Some(auth) = Self::auth_header(&instance.auth)? {
+        if let Some(auth) = Self::auth_header(ixit, &instance.auth, scopes)? {
             headers.insert("Authorization".to_owned(), auth);
         }
         if let Some(extra) = &instance.headers {
@@ -1547,7 +1616,7 @@ impl HttpDriver<'_> {
             }
             headers.insert("Accept".to_owned(), "application/json".to_owned());
             headers.insert("Content-Type".to_owned(), "application/json".to_owned());
-            if let Some(auth) = Self::auth_header(&instance.auth)? {
+            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
                 headers.insert("Authorization".to_owned(), auth);
             }
             let base = instance.base_url.trim_end_matches('/');
@@ -1662,6 +1731,39 @@ impl HttpDriver<'_> {
             with.insert(key.clone(), v);
         }
         Ok(with)
+    }
+
+    /// Resolve the step's declared SMART `scope` claim. `None` when the step
+    /// declares no `scopes:` key at all; `Some(vec![])` for an explicitly
+    /// empty declaration — the scope-less token the fail-closed deny branch
+    /// needs (master08 §Scopes ¶2), which is a different request from "this
+    /// step is not a SMART step".
+    fn resolve_scopes(
+        &mut self,
+        step: &FlowStep,
+        vars: &VarStore,
+    ) -> Result<Option<Vec<String>>, String> {
+        if !step.declares_scopes() {
+            return Ok(None);
+        }
+        let mut scopes = Vec::new();
+        for value in step.scope_templates() {
+            let resolved = self
+                .resolver
+                .resolve_value(value, vars)
+                .map_err(|e| format!("step {}: scopes: {e}", step.step))?;
+            match resolved {
+                Value::String(s) => scopes.push(s),
+                other => {
+                    return Err(format!(
+                        "step {}: scopes entry resolved to a {}, expected a scope string",
+                        step.step,
+                        json_shape(&other)
+                    ));
+                }
+            }
+        }
+        Ok(Some(scopes))
     }
 
     /// Captures plus the step's own scalar `with` values (the header/query
@@ -1814,7 +1916,7 @@ impl HttpDriver<'_> {
         headers
             .entry("Content-Type".to_owned())
             .or_insert_with(|| "application/xml".to_owned());
-        if let Some(auth) = Self::auth_header(&instance.auth)? {
+        if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
             headers.insert("Authorization".to_owned(), auth);
         }
         let base = instance.base_url.trim_end_matches('/');
@@ -1871,6 +1973,14 @@ impl StepDriver for HttpDriver<'_> {
             }
         };
 
+        // The step's SMART `scope` claim resolves on the same footing as
+        // `with` (row-parameterized scope strings are how the master08
+        // grammar is exercised across its rows).
+        let scopes = match self.resolve_scopes(step, vars) {
+            Ok(scopes) => scopes,
+            Err(e) => return Ok(StepObservation::transport(e)),
+        };
+
         let binding = self.auto_variant(binding, step, &with);
         let request_spec = binding
             .request
@@ -1880,16 +1990,24 @@ impl StepDriver for HttpDriver<'_> {
         // resolved `with` values (e.g. update_composition-non_existent
         // supplies preceding_version_uid inline, not as a capture).
         let header_vars = Self::merge_with_vars(vars, &with);
-        let headers =
-            match Self::build_headers(self.set, case, step, binding, instance, &header_vars) {
-                Ok(headers) => headers,
-                Err(e) => {
-                    return Ok(StepObservation {
-                        observation: Observation::Transport(e),
-                        assertion_failures: Vec::new(),
-                    });
-                }
-            };
+        let headers = match Self::build_headers(
+            self.set,
+            self.ixit,
+            case,
+            step,
+            binding,
+            instance,
+            &header_vars,
+            scopes.as_deref(),
+        ) {
+            Ok(headers) => headers,
+            Err(e) => {
+                return Ok(StepObservation {
+                    observation: Observation::Transport(e),
+                    assertion_failures: Vec::new(),
+                });
+            }
+        };
 
         let body = match self.select_body(request_spec, &with, step, vars) {
             Ok(body) => body,
@@ -2002,7 +2120,7 @@ impl StepDriver for HttpDriver<'_> {
                     "application/xml".to_owned()
                 }
             });
-            if let Some(auth) = Self::auth_header(&instance.auth)? {
+            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
                 headers.insert("Authorization".to_owned(), auth);
             }
             let base = instance.base_url.trim_end_matches('/');
@@ -2036,7 +2154,7 @@ impl StepDriver for HttpDriver<'_> {
             headers.insert("Content-Type".to_owned(), "application/json".to_owned());
             headers.insert("Accept".to_owned(), "application/json".to_owned());
             headers.insert("Prefer".to_owned(), "return=representation".to_owned());
-            if let Some(auth) = Self::auth_header(&instance.auth)? {
+            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
                 headers.insert("Authorization".to_owned(), auth);
             }
             let base = instance.base_url.trim_end_matches('/');
@@ -2177,6 +2295,90 @@ fn extract_list(body: &Value, path: &str) -> Vec<String> {
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
+
+    /// The committed CNF SMART test issuer (`tools/cnf-runner/party/smart/`) —
+    /// public test material by design, never production key material.
+    fn test_mint(roles: Vec<String>) -> crate::ixit::BearerMint {
+        let key_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("party/smart/cnf-smart-test.key.pem");
+        serde_json::from_value(serde_json::json!({
+            "issuer": "https://as.cnf.test",
+            "audience": "cnf-smart-sut",
+            "subject": "cnf-smart-app",
+            "roles": roles,
+            "key_file": key_file,
+            "kid": "cnf-smart-test",
+            "ttl_seconds": 300
+        }))
+        .unwrap()
+    }
+
+    /// Verify a minted token against the COMMITTED PUBLIC JWKS — the same
+    /// document the compose overlay mounts as the SUT's
+    /// `auth.oidc.jwks_json_file` — so the key pair itself is under test, not
+    /// just the encoder. Mirrors the SUT's own resolution
+    /// (`kid` → JWKS entry → `DecodingKey::from_jwk`).
+    fn decode_against_committed_jwks(token: &str) -> serde_json::Map<String, Value> {
+        let header = jsonwebtoken::decode_header(token).unwrap();
+        assert_eq!(header.alg, jsonwebtoken::Algorithm::RS256);
+        assert_eq!(header.kid.as_deref(), Some("cnf-smart-test"));
+
+        let jwks_path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("party/smart/jwks.json");
+        let jwks: jsonwebtoken::jwk::JwkSet =
+            serde_json::from_str(&std::fs::read_to_string(jwks_path).unwrap()).unwrap();
+        let jwk = jwks.find("cnf-smart-test").unwrap();
+        let key = jsonwebtoken::DecodingKey::from_jwk(jwk).unwrap();
+        let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::RS256);
+        validation.set_issuer(&["https://as.cnf.test"]);
+        validation.set_audience(&["cnf-smart-sut"]);
+        jsonwebtoken::decode::<serde_json::Map<String, Value>>(token, &key, &validation)
+            .unwrap()
+            .claims
+    }
+
+    /// The minted token is a real RS256 JWT the SUT's own validator reads:
+    /// `kid`-tagged header, the registered claims, the master08 `scope` claim
+    /// space-delimited (RFC 6749 §3.3), and the RBAC role claim.
+    #[test]
+    fn mint_signs_a_scope_carrying_rs256_token() {
+        let mint = test_mint(vec!["USER".to_owned()]);
+        let token = mint_access_token(
+            &mint,
+            &["user/template-*.r".to_owned(), "openid".to_owned()],
+        )
+        .unwrap();
+        let claims = decode_against_committed_jwks(&token);
+
+        assert_eq!(claims["sub"], Value::from("cnf-smart-app"));
+        assert_eq!(claims["scope"], Value::from("user/template-*.r openid"));
+        assert_eq!(claims["realm_access"]["roles"][0], Value::from("USER"));
+        assert!(claims["exp"].as_i64().unwrap() > claims["iat"].as_i64().unwrap());
+    }
+
+    /// An empty scope declaration is a DIFFERENT request from "no SMART
+    /// step": it mints the scope-less token the fail-closed deny branch needs
+    /// (master08 §Scopes ¶2), so the claim is present and empty.
+    #[test]
+    fn mint_emits_an_empty_scope_claim_for_a_scopeless_token() {
+        let token = mint_access_token(&test_mint(vec!["USER".to_owned()]), &[]).unwrap();
+        let claims = decode_against_committed_jwks(&token);
+        assert_eq!(claims["scope"], Value::from(""));
+    }
+
+    /// `bearer_mint` without a declared lane is a runner-visible authoring
+    /// defect, never a silently un-authenticated request.
+    #[test]
+    fn bearer_mint_without_a_lane_is_an_error() {
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "bearer_mint" } } }
+        }))
+        .unwrap();
+        let no_scopes: &[String] = &[];
+        let error =
+            HttpDriver::auth_header(&ixit, &AuthMode::BearerMint, Some(no_scopes)).unwrap_err();
+        assert!(error.contains("no `smart` lane"), "{error}");
+    }
 
     fn test_binding() -> OperationBinding {
         serde_json::from_value(serde_json::json!({
