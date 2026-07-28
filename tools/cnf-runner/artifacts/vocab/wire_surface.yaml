@@ -1393,9 +1393,21 @@ elements:
   - id: simplified-interval-event-sample-count
     description: "INTERVAL_EVENT carries |sample_count (INTEGER -> sample_count) as a datum suffix on the event node itself, alongside the /width and /math_function sub-paths."
     source: "ITS-REST simplified_formats master05-rm_mapping.adoc §INTERVAL_EVENT (the `\\|sample_count` row, Flat type INTEGER, RM Path sample_count, Required no; the second worked example spelling it `…/any_event:0|sample_count: 5`, a suffix on the event and not a sub-path) + RM data_structures §INTERVAL_EVENT (sample_count: Integer 0..1)"
-    exception:
-      reason: coverage_gap
-      note: "A corpus gap, not a spec silence: the mapping is unambiguous and is implemented and proven by the master05 semantic battery (crates/openehr-its/tests/master05_tables.rs §INTERVAL_EVENT), but no template the FUNCTIONAL corpus provisions constrains an EVENT to INTERVAL_EVENT, so no case can reach the suffix — a FLAT commit cannot conjure an interval event the template does not declare. NARROWED AND CORRECTED 2026-07-28: the earlier wording said no committed OPT constrains one at all, which is false — three CKM templates do (cnf.ckm.sars_notification, cnf.ckm.covid19_report, cnf.ckm.ccta_report each carry a C_COMPLEX_OBJECT with rm_type_name INTERVAL_EVENT). They do not close this row: the CKM pack is the MEASUREMENT template set (COMPOSITION-rooted journey payloads), its committed companions are canonical-JSON example skeletons generated once from a SUT rather than FLAT payloads, and hand-deriving a FLAT payload against a five-thousand-line OPT is the kind of invention this ledger exists to prevent. Nor does the unconstrained route work: cnf.opt.vitals types its any_event node as the ABSTRACT EVENT, which a builder must concretise to a default concrete subtype, so the |sample_count and /width suffixes — keyed on the CONSTRAINED type being INTERVAL_EVENT — are unreachable there. Closes with a SMALL functional-corpus OPT constraining one EVENT node to INTERVAL_EVENT (the cnf.tpl.ecc_event_type_narrowing.opt shape, which already narrows the same node to POINT_EVENT) plus a FLAT fixture carrying |sample_count and its canonical read-back in the SF-MAP-* group."
+    # RETIRED coverage_gap (2026-07-28): the exception's own closing condition —
+    # "a SMALL functional-corpus OPT constraining one EVENT node to
+    # INTERVAL_EVENT (the cnf.tpl.ecc_event_type_narrowing.opt shape, which
+    # already narrows the same node to POINT_EVENT) plus a FLAT fixture
+    # carrying |sample_count and its canonical read-back in the SF-MAP-* group"
+    # — is met, verbatim. cnf.tpl.sf_interval_event IS that skeleton with its
+    # one events slot narrowed to the other concrete subtype, emitted by the
+    # same generator builder, so nothing about the carrier was invented; the
+    # fixture carries all three §INTERVAL_EVENT rows with the section's own
+    # example values. The CKM route stays rejected for the reason the old note
+    # gave (measurement templates, canonical-JSON companions, and a FLAT
+    # payload hand-derived against a five-thousand-line OPT would be exactly
+    # the invention this ledger prevents), and the unconstrained cnf.opt.vitals
+    # route stays unreachable because its any_event is the ABSTRACT EVENT.
+    covered_by: [SF-MAP-interval_event]
   # openehr-uri response header (ITS-REST Requests_and_responses.md §openehr-uri).
   - id: header-openehr-uri-declined-may
     description: "The openehr-uri response header advertising a DV_EHR_URI form of the resource is a service-level MAY that this catalogue declines to require: the released text conditions it on the service supporting DV_EHR_URI generation at all, and defines neither an operation set nor an obligation, so neither presence nor absence is assertable."
