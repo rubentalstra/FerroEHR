@@ -21,8 +21,8 @@ id: I_EHR_COMPOSITION.get_composition_at_version-xml
 kind: functional
 component: EHR_COMPOSITION
 sm_operation: I_EHR_COMPOSITION.get_composition_at_version
-capabilities: [CompositionOps]
-exercises: [Versioning]
+capabilities: [Versioning]
+exercises: [CompositionOps]
 profiles: [CORE]
 formats: [canonical-xml]               # tech-profile axis: XML-less parties are not judged by this row
 test_purpose: >-
