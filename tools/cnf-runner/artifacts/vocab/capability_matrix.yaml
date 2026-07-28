@@ -128,7 +128,7 @@ TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases:
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 23, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 46, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
-CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
+CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 28, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
 ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 53, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
