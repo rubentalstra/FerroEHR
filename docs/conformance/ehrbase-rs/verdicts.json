@@ -47,7 +47,7 @@
     ],
     [
       "Versioning",
-      "failed"
+      "passed"
     ],
     [
       "ArchetypeValidation",
@@ -177,11 +177,11 @@
   "profiles": [
     [
       "CORE",
-      "fail"
+      "pass"
     ],
     [
       "STANDARD",
-      "fail"
+      "pass"
     ],
     [
       "OPTIONS",
@@ -199,7 +199,7 @@
     }
   ],
   "coverage": {
-    "selected": 747,
+    "selected": 748,
     "driven": 673
   }
 }
