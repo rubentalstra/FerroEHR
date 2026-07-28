@@ -83,6 +83,25 @@ workflow refuses a tag that has no matching section here.
   depends on them. A reader of the statement no longer has to discover the
   extension surface on the wire.
 
+- **Canonical-XML support is now declared per resource family in the
+  Conformance Statement, instead of being assumed for every resource**
+  (#572). The openEHR release publishes an XML document element for only
+  eight names — `composition`, `version`, `items`, `template`, `extract`,
+  `extract_request`, `versioned_object`, `archetype` — while its REST API
+  addresses `application/xml` to the whole resource surface. For a resource
+  with no published document (EHR, EHR_STATUS, the directory FOLDER, the
+  demographic party types, CONTRIBUTION) the specification therefore neither
+  requires a server to serve XML nor forbids it, so the suite no longer
+  asserts either answer: the statement declares, per family, whether this
+  server offers canonical XML there, and the conformance run judges the
+  matching branch — the XML read, or the `406 Not Acceptable` refusal the
+  specification designates for an `Accept` a service cannot fulfil. This
+  server declares XML support for EHR, EHR_STATUS, directory and the party
+  families and declares it unsupported for CONTRIBUTION reads, exactly as it
+  behaves. The full per-resource classification, its citations and the
+  upstream report asking openEHR to reconcile the two inventories are
+  recorded in the conformance ambiguity register as `AMB-167` / `UPR-127`.
+
 ### Fixed
 
 - **The SMART discovery endpoint is fully described in the published API
