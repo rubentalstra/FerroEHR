@@ -1,0 +1,72 @@
+# Backward compatibility of the DEPRECATED custom-header spellings,
+# openEHR-EHR-id row. The §"Deprecated headers" table (ITS-REST overview
+# Requests_and_responses.md) maps `openEHR-EHR-id` -> `openehr-ehr-id` and
+# states: "While the deprecated headers remain available for backward
+# compatibility, their use is strongly discouraged." What the header MEANS is
+# assigned by docs/query/Request.md §"About the ehr_id parameter" — "Depending
+# on the needs, clients MAY supply it as a query parameter `ehr_id` or
+# alternatively as a request header named `openehr-ehr-id`" — and
+# §"Common Headers and Query Parameters": "Related request headers:
+# `openehr-ehr-id` - used to execute the query within a single EHR context: an
+# EHR identifier taken from EHR.ehr_id.value". So the deprecated spelling must
+# scope the execution exactly as the current one does.
+#
+# Like the `openEHR-VERSION` row, and unlike the two underscore-folding rows
+# (`openEHR-TEMPLATE_ID`, `openEHR-AUDIT_DETAILS`), `openEHR-EHR-id` folds to
+# exactly `openehr-ehr-id` under RFC 9110 §5.1 ("Field names are
+# case-insensitive"). The row is cased rather than assumed because the released
+# table makes the old spelling normative, and a server that matches custom
+# field names case-sensitively answers a POPULATION query instead — a silent
+# wrong answer, not a visible error.
+#
+# One behaviour per case: identical to
+# I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_get in every respect
+# except which of the two header spellings carries the EHR scope. The AQL is
+# deliberately UNSCOPED (Query_types.md §"Population queries"), so the header
+# is the only thing narrowing the result. Row order is unspecified (no ORDER
+# BY), so the expected uids are matched as a bag (QUERY master03 §ORDER BY).
+#
+# TODO: strengthen to a deterministic two-EHR discrimination (commit into a
+# second EHR in the same case, then assert the scoped read excludes it), the
+# same gap the non-deprecated sibling carries. Not authorable today: the case
+# surface has no capture alias, so a second `create_ehr` step rebinds
+# `${ehr_id}` and the first EHR becomes unreachable.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_deprecated_get
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic, QueryApi]
+profiles: [STANDARD]
+test_purpose: >-
+  A GET ad-hoc execution whose EHR scope is supplied ONLY as the deprecated
+  `openEHR-EHR-id` request header returns exactly that EHR's compositions — the
+  deprecated spelling remains available for backward compatibility.
+description: "Accept the deprecated openEHR-EHR-id request header name"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §Deprecated headers"
+  - "ITS-REST query Request.md §About the ehr_id parameter"
+  - "ITS-REST query Request.md §Common Headers and Query Parameters"
+  - "ITS-REST query Query_types.md §Single EHR queries, §Population queries"
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }
+requires:
+  server: any
+  templates: [cnf.opt.blood_pressure]
+  ehr: { commits: none }                    # mints ${ehr_id}
+  commit: [cnf.set.query-bp-10]             # generated: 10 BP compositions
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    variant: get_ehr_id_header_deprecated   # GET /query/aql, scope via openEHR-EHR-id
+    with:
+      ehr_id: "${ehr_id}"                   # travels in the deprecated header, not the query string
+      q: >-
+        SELECT c/uid/value AS uid
+        FROM EHR e CONTAINS COMPOSITION c
+      fetch: 100                            # fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: set                          # no ORDER BY: bag equality (QUERY master03 §ORDER BY)
+        rows: { from: "${ds:cnf.set.query-bp-10#all_uids_asc}" }
+        columns: [{ name: uid }]

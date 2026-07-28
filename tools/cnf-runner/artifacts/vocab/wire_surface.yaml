@@ -500,21 +500,27 @@ branches:
   # commit "via `PUT` or `POST` methods" (overview Requests_and_responses.md
   # §openehr-template-id) — the header the update binding now declares.
   #
-  # The CONTRIBUTION READ branches retire with them: canonical-xml on
-  # get_contribution and has_contribution is exercised by
-  # I_EHR_CONTRIBUTION.get_contribution-xml / -has_contribution-xml. Only the
-  # COMMIT side stays an exception, immediately below.
+  # The CONTRIBUTION READS (triage 2026-07-28): the first live run showed the
+  # read is in the SAME declared-but-undefined position as the commit — the
+  # published XSDs declare no CONTRIBUTION document element, so the §XML
+  # Format response MUST cannot be satisfied and its 406 MUST is the
+  # release's designated answer. The read bindings now declare canonical-json
+  # only + the not_acceptable branch, exercised by
+  # I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable /
+  # -has_contribution-xml_not_acceptable (register AMB-165, extended to the
+  # read). The COMMIT side stays the exception immediately below.
   - binding: I_EHR_CONTRIBUTION.commit_contribution
     format: canonical-xml
     reason: coverage_gap
     source: "The released sources DECLARE the media type for this operation and WITHHOLD the shape of the document it would carry, so no conformance case can drive it without inventing one. DOCS TEXT — the only sentence governing an XML request payload is Resources.md §\"XML Format\": \"When resources are serialized in **canonical XML** format, both request payloads and responses MUST conform to the [published XSDs]\"; the EHR API chapter adds nothing (docs/ehr/Description.md is a 25-line stub — Purpose, Related Documents, Status — with no occurrence of CONTRIBUTION). PUBLISHED XSD — ITS-XML RM Common.xsd types the resource `<xs:complexType name=\"CONTRIBUTION\"><xs:sequence><xs:element name=\"uid\" type=\"HIER_OBJECT_ID\"/><xs:element name=\"versions\" type=\"OBJECT_REF\" maxOccurs=\"unbounded\"/><xs:element name=\"audit\" type=\"AUDIT_DETAILS\"/></xs:sequence></xs:complexType>`: `versions` are REFERENCES and `uid` is mandatory, so the type describes a COMMITTED contribution, never the commit envelope, which must carry each new version's DATA inline; no global element is declared for it either. RELEASED OAS (citable only because the docs text is silent on the envelope — owner ruling 2026-07-28) — operations/contribution_create.yaml DECLARES the type twice, via parameters/header/ContentType_LOCATABLE.yaml (whose `enum` contains `application/xml`) and its own description (\"in addition to the canonical `application/json` / `application/xml`\"), yet its `requestBody.content` has exactly ONE entry, `application/json`, bound to schemas/ehr/NewContribution.yaml, whose UpdateVersion/UpdateAudit shapes have no XSD counterpart and no XML schema, example or XSD reference anywhere in the release. Register AMB-165"
-    note: "A case would have to invent the root element, the versions-with-inline-data shape and the UPDATE_AUDIT rendering the release withholds — writing specification rather than testing it (the AMB-140 / AMB-159 pattern for a declared branch whose shape or trigger the release withholds). The READ side is unaffected and IS exercised: the retrieved CONTRIBUTION (responses/200_CONTRIBUTION.yaml -> schemas/common/Contribution.yaml) is exactly the XSD complexType, so I_EHR_CONTRIBUTION.get_contribution-xml and -has_contribution-xml gate the canonical-XML CONTRIBUTION representation. Closes when a release publishes an XML representation of the commit envelope, or withdraws application/xml from the operation's Content-Type enum (UPR-125)."
-  # RETIRED coverage_gaps (2026-07-28, slice 3b) — the canonical-xml branch
-  # of the two CONTRIBUTION reads is now exercised
-  # (I_EHR_CONTRIBUTION.get_contribution-xml, -has_contribution-xml), so
-  # those two exceptions are gone; the commit_contribution row above stays,
-  # adjudicated (AMB-165/UPR-125): both released sources declare the media
-  # type and withhold the envelope shape.
+    note: "A case would have to invent the root element, the versions-with-inline-data shape and the UPDATE_AUDIT rendering the release withholds — writing specification rather than testing it (the AMB-140 / AMB-159 pattern for a declared branch whose shape or trigger the release withholds). CORRECTED 2026-07-28 (triage): the READ side is in the SAME position — matching the complexType is not a document; the read bindings dropped canonical-xml and their 406 branch is gated by -xml_not_acceptable cases (AMB-165 extended). Closes when a release publishes an XML representation of the commit envelope, or withdraws application/xml from the operation's Content-Type enum (UPR-125)."
+  # The two CONTRIBUTION-read canonical-xml exceptions retired with slice 3b
+  # and STAY retired after the 2026-07-28 triage — not because the branch is
+  # exercised as ok (the first run refuted that authoring), but because the
+  # read bindings no longer declare the format at all: no published
+  # CONTRIBUTION document exists to serve. Their released behaviour is the
+  # §XML Format 406 MUST, exercised by the -xml_not_acceptable pair. The
+  # commit_contribution row above stays, adjudicated (AMB-165/UPR-125).
   # RETIRED coverage_gaps (2026-07-28) — the canonical-xml branch of the whole
   # EHR_DIRECTORY surface and of the EHR-service surface is now exercised, so
   # the fourteen exceptions are gone rather than reworded (coverage only
@@ -835,9 +841,14 @@ elements:
   - id: resource-multiple-identifier-forms
     description: "The two addressing forms of the same versioned resource agree: while the latest version is unchanged, the explicit version_uid URI and the implicit versioned_object_uid URI resolve to the identical resource."
     source: "ITS-REST Resources.md §Multiple identifiers for the same resource (\"There are circumstances when openEHR resources can be uniquely identified by two different identifiers\" — the explicit version reference and the implicit latest version reference — \"However, the implicit URI will only resolve to the same resource as the explicit versioned URI as long as no new versions are created\")"
-    exception:
-      reason: coverage_gap
-      note: "Each form is exercised on its own (I_EHR_COMPOSITION.get_composition_version reads by version_uid, I_EHR_COMPOSITION.get_composition_latest reads by versioned_object_uid), but no case asserts the EQUIVALENCE the section states — one flow reading both forms of the same head version and comparing the two representations. That is the whole behaviour, so a NEW case closes it; it is authorable today (both bindings exist and the equivalent assertion compares served payloads). Recorded rather than silently absorbed: the section is a released cross-cutting rule with no exercising case."
+    # Closed by the #288 element sweep: one flow reads BOTH forms of the same
+    # head version (a two-version container, as in the section's own example)
+    # and content-checks each against the committed head. Each form on its own
+    # was already exercised (I_EHR_COMPOSITION.get_composition_version,
+    # -get_composition_latest); the agreement between them is what this case
+    # adds. The section's proviso (the forms diverge once a new version is
+    # created) is the complement, gated by that same pair.
+    covered_by: [I_EHR_COMPOSITION.get_composition_latest-identifier_forms_agree]
   - id: ehr-subject-uniqueness-and-key
     description: "A subject owns at most one EHR: the key is the EHR_STATUS.subject.external_ref (id.value, namespace) pair compared exactly, the refusal is the same 409 as an id-duplicate, and it holds on the client-supplied-id create path as well as the id-less one."
     source: "SM i_ehr_service.adoc §create_ehr_for_subject (error `ehr_for_subject_already_exists`) — the only released sentence that establishes the refusal at all; §create_ehr_for_subject_with_id omits it, and §get_ehrs_for_subject (\"Retrieve EHR or EHRs that have `ehr_status.subject_id` = supplied subject id\", returning a List) reads against it + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, external_ref for the demographic reference — no uniqueness rule and no comparison rule) + ITS-REST Requests_and_responses.md §HTTP status codes row 409 (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"). The key's comparison rule has no released sentence at all — register AMB-63 records the exact-match choice as our own design/extension"
@@ -1312,9 +1323,23 @@ elements:
   - id: header-deprecated-version-and-ehr-id-spellings
     description: "The remaining deprecated request-header spellings — openEHR-VERSION (the committal VERSION metadata) and openEHR-EHR-id (the query EHR-scope header) — are still accepted under their Release-1.1.0 semantics."
     source: "ITS-REST Requests_and_responses.md §Deprecated headers (the openEHR-VERSION -> openehr-version and openEHR-EHR-id -> openehr-ehr-id table rows; \"the deprecated headers remain available for backward compatibility\") + §openehr-version and openehr-audit-details (the VERSION metadata the first row carries) + query Request.md §About the ehr_id parameter (the EHR-scope header the last row carries)"
-    exception:
-      reason: coverage_gap
-      note: "NEW-CASE candidates, one variant binding each: an update_composition variant sending `openEHR-VERSION: lifecycle_state.code_string=\"532\"` (asserting the lifecycle_state reaches the committed VERSION, the way update_composition-audit_bare_deprecated does for openEHR-AUDIT_DETAILS), and an ad-hoc-query variant sending `openEHR-EHR-id` (asserting the single-EHR scoping the query-ehr-id-request-header element covers under the new name). Both spellings are already exercised INDIRECTLY — the mechanism is the same case-insensitive-name fallback the openEHR-AUDIT_DETAILS and openEHR-TEMPLATE_ID rows pin with real cases — but indirect coverage is not coverage, so the two rows are registered here rather than left silent. The fifth table row, openEHR-uri, is a RESPONSE header and is a declined MAY (header-openehr-uri-declined-may), not a gap."
+    # Closed by the #288 element sweep, one variant binding + one case per
+    # table row: a create_composition variant sending `openEHR-VERSION:
+    # lifecycle_state.code_string="553"` (the committed VERSION must carry the
+    # supplied non-default lifecycle code), and a GET ad-hoc-query variant
+    # sending `openEHR-EHR-id` (the deprecated spelling alone must scope the
+    # execution to one EHR). Both differ from the two rows cased earlier
+    # (openEHR-TEMPLATE_ID, openEHR-AUDIT_DETAILS) in that they fold to exactly
+    # their replacement names under RFC 9110 §5.1 rather than to underscore
+    # names — the cases exist because the released table makes the old
+    # spellings normative and a case-SENSITIVE custom-header match fails them
+    # SILENTLY (a wrong lifecycle_state, a population-scoped answer), never
+    # with an error the client sees. The fifth table row, openEHR-uri, is a
+    # RESPONSE header and is a declined MAY
+    # (header-openehr-uri-declined-may), not a gap.
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-version_bare_deprecated
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_deprecated_get
   # Committal request headers, the base merge family (ITS-REST
   # Requests_and_responses.md §openehr-version and openehr-audit-details). The
   # change_type attribute has its own element above; these are the rest.
@@ -1330,11 +1355,27 @@ elements:
       # into the EHR_STATUS version's commit_audit like any other commit.
       - I_EHR_SERVICE.create_ehr-committal_headers
   - id: header-committal-version-lifecycle-and-system-id
-    description: "The two committal attributes no case supplies yet: VERSION.lifecycle_state through the openehr-version header, and the system_id server-default rule (a client-supplied system_id is merged, and when absent the server MUST substitute its own configured system identifier)."
+    description: "The last two committal attributes: VERSION.lifecycle_state supplied through the openehr-version header reaches the committed VERSION, and the system_id rule holds in both arms — a client-supplied system_id is merged verbatim, and a commit that supplies none carries a server-set identifier instead of the earlier client value or nothing."
     source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (the worked example's `openehr-version: lifecycle_state.code_string=\"532\"` line; \"whatever is provided it MUST be merged with the default VERSION and VERSION.audit_details attributes on commit runtime\"; \"In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier\") + TERM SupportTerminology §Version Lifecycle State (the code_string vocabulary the header carries)"
+    # Closed by the #288 element sweep. The lifecycle case supplies
+    # 553|incomplete| rather than the example's 532|complete| because 532 is
+    # the default (RM common master06 §Incomplete Content: "Usually content
+    # will be committed in the `complete` state") and could not tell a merging
+    # server from one ignoring the header; the same section's transition table
+    # has no `complete` -> `incomplete` transition, so the state is authored on
+    # the FIRST commit. The system_id case drives both arms in one flow, the
+    # supplied arm establishing the client token the defaulted arm must NOT
+    # carry. The residual identity claim — that the defaulted value IS the
+    # server's configured identifier — is its own element below.
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-version_lifecycle
+      - I_EHR_COMPOSITION.update_composition-audit_system_id
+  - id: header-committal-system-id-server-value
+    description: "The defaulted AUDIT_DETAILS.system_id is the server's OWN CONFIGURED system identifier — not merely some server-set non-blank token."
+    source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (\"In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier\")"
     exception:
       reason: coverage_gap
-      note: "NEW-CASE candidates on one shared update_composition variant binding that sends both headers: assert the committed VERSION's lifecycle_state carries the supplied code, and — in a sibling that supplies no system_id — that the version uid's creating-system segment is the server's own configured identifier rather than empty or client-echoed. Neither needs a runner capability that does not exist; they are simply unauthored. The sibling attributes of the same header family ARE covered (header-committal-merge-family, header-committal-change-type-merge, header-committal-on-delete), so the mechanism is exercised and only these two attributes are open."
+      note: "The MUST's checkable half IS gated (I_EHR_COMPOSITION.update_composition-audit_system_id asserts the defaulted value is present, non-blank, and not the client token the same flow supplied one version earlier). Its IDENTITY half is not checkable by a client: the released ITS-REST exposes no operation from which the configured system identifier can be read — the System API is a one-operation conformance manifest (system-options-conformance-manifest) and no response carries the value — and the runner cannot derive it either, since the closed capture grammar (tools/cnf-runner/src/model/binding.rs: header | body | capture, with only weak-quote strip and root-uid/uppercase transforms) has no middle-segment extraction to lift the creating-system component out of an OBJECT_VERSION_ID. Asserting a literal would be inventing a deployment fact; asserting nothing would be silence. Closes when the ixit declares the SUT's configured system identifier as an environment fact a case may reference, or a released sentence surfaces it on the wire."
   # The default representation preference (ITS-REST Requests_and_responses.md
   # §Prefer minimal, identifier or full representation response).
   - id: header-prefer-return-minimal
