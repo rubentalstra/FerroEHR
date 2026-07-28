@@ -273,94 +273,10 @@
     }
   },
   {
-    "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32"
-    }
-  },
-  {
     "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
       "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
-    }
-  },
-  {
-    "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
     }
   },
   {

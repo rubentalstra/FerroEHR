@@ -2431,17 +2431,15 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party-aaaa",
@@ -2469,17 +2467,21 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.delete_party_relationship-stale_version_conflict",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party-aaaa",
@@ -2559,45 +2561,39 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.get_party_relationship_at_version: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-aaaa",
@@ -2669,17 +2665,27 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-invalid_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_at_time",
