@@ -274,6 +274,14 @@ pub fn chapter_of(case_id: &str) -> &'static str {
         i if i.starts_with("SEC-") => "Security & privacy",
         i if i.starts_with("SIG-") => "Signing",
         i if i.starts_with("PERF-") => "Performance",
+        // NOTE: the System API's cases (I_ITS_REST_SYSTEM.*) report under
+        // "Other" by decision (#560, 2026-07-28): the surface carries ONE
+        // case (the OPTIONS conformance manifest) and a dedicated chapter
+        // band would be visual noise for a single row. Revisit when the
+        // System surface grows past a handful of cases (a released docs-text
+        // System chapter, or the manifest body gaining member assertions).
+        // No openEHR spec governs the visuals' chapter taxonomy — our own
+        // presentation design over the CNF schedule chapters.
         _ => "Other",
     }
 }
