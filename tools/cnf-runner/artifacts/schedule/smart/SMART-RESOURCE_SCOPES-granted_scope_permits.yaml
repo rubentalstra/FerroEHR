@@ -85,6 +85,7 @@ flow:
     expect: ok
 postconditions:
   - assert: state
+    verified_by: SMART-RESOURCE_SCOPES-scope_deny_403   # the mirror case: grant-permits and deny-refuses are one law's two halves
     text: >-
       Every scope string the master08 grammar defines as granting read access
       to the template resource does grant it, so a SMART Application holding

@@ -90,6 +90,7 @@ flow:
     expect: forbidden                      # universal 403 (selectors.yaml universal_outcomes, route-table-wide)
 postconditions:
   - assert: state
+    verified_by: SMART-RESOURCE_SCOPES-granted_scope_permits   # the mirror case: grant-permits and deny-refuses are one law's two halves
     text: >-
       A SMART Application is held to exactly the grant it presents: a scope
       naming other permissions, another resource family, or nothing at all
