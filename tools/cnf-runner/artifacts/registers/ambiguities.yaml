@@ -1212,7 +1212,12 @@ AMB-63:
     wrong-clinical-answer failure mode. Explicitly NOT the BASE
     composite-identifier case rule (base_types master05 §Composite Identifiers
     and Case), which governs OBJECT_VERSION_ID-shaped ids, not a demographic
-    id. (b) THE SCOPE: the refusal is carried to EVERY create path, the
+    id. The type EXCLUSION is now CASED, not merely recorded:
+    I_EHR_SERVICE.create_ehr-subject_key_ignores_type commits two EHRs whose
+    subject external_ref differs ONLY in `type` (same id cnf-subject-11, same
+    namespace cnf; both values legal under BASE `PARTY_REF.Type_validity`) and
+    expects the conflict — so a server that widened the key to three parts is a
+    red row rather than an unnoticed divergence. (b) THE SCOPE: the refusal is carried to EVERY create path, the
     client-supplied-id form included — neither released source lifts it (the
     with-id 409 names the id collision and stops), and a rule a client could
     evade by choosing its own uuid would not be a rule.
