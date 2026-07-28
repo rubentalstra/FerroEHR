@@ -31,10 +31,15 @@
 #   requested operation succeeded and the resource(s) identified by the request
 #   parameters has been physically deleted (i.e. hard-delete)".
 # The 202 is carried as `alt_status` of the same logical kind (fulfilled, no
-# content) because the closed outcome vocabulary has no `accepted` kind — stated
-# openly in register AMB-139, which also records that 202 is absent from the
-# overview's own status-code table and legalized by that table's
-# "Additional status codes MAY be used" clause.
+# content) — stated openly in register AMB-139, which also records that 202 is
+# absent from the overview's own status-code table and legalized by that
+# table's "Additional status codes MAY be used" clause. Under this absorption a
+# case passes on either code and none can require or distinguish the async
+# branch; the 2026-07-28 schedule release (#544) added the `accepted` kind that
+# makes the branch nameable.
+# TODO: declare the 202 as its own `accepted` outcome here and on
+# I_ADMIN_SERVICE.physical_ehr_delete, and give the branch a case, retiring the
+# `admin-delete-async-acceptance-branch` wire_surface exception.
 #
 # THE `ehr_id` QUERY PARAMETER IS OPTIONAL AND MEANS "SUBSET":
 #   operations/admin_ehr_delete_all.yaml: "Deletes all or multiple EHRs, or a
@@ -48,10 +53,11 @@
 # is not expressible in the binding query model — a name→single-value map — and
 # is carried as the cited wire_surface element `admin-bulk-delete-subset-form`.
 #
-# THE 405-WHEN-DISABLED BRANCH IS NOT DECLARED HERE: the closed outcome
-# taxonomy has no method_not_allowed kind (the standing `method-405-allow-header`
-# boundary), so it is carried as the wire_surface element
-# `admin-bulk-delete-disabled-405` rather than as an unassertable outcome.
+# THE 405-WHEN-DISABLED BRANCH IS NOT DECLARED HERE: it exists only under a
+# deployment setting the ixit does not model, so no case can reach it and it is
+# carried as the wire_surface element `admin-bulk-delete-disabled-405`. (The
+# `method_not_allowed` kind added by the 2026-07-28 schedule release, #544,
+# removes the vocabulary half of that boundary; the topology half stands.)
 sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
 its: its-rest
 variant: delete_all

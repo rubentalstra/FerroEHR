@@ -21,10 +21,14 @@
 # to in the first place. Our position on the either/or itself is register entry
 # AMB-115.
 #
-# The closed outcome taxonomy has no dedicated malformed-request kind, so the
-# 400 is expressed with `validation_failed` — the kind the catalogue already
-# uses at 400 wherever a released sentence puts malformed input there
+# The 400 is expressed with `validation_failed` — the kind the catalogue
+# already uses at 400 wherever a released sentence puts malformed input there
 # (I_EHR_COMPOSITION.get_composition_at_time, I_DEFINITION_QUERY.store_query).
+# That was forced when the closed taxonomy had no malformed-request kind; the
+# 2026-07-28 schedule release (#544) added `bad_request`.
+# TODO: move this 400 (and its siblings on get_composition_at_time and
+# store_query) from `validation_failed` to `bad_request`, together with the
+# `expect:` of every case that drives them.
 sm_operation: I_DEFINITION_ADL14.get_opt
 its: its-rest
 variant: example_invalid_detail_level
