@@ -110,10 +110,18 @@ pub(crate) fn build_inputs(
             .into_iter()
             .map(|s| text_input(primitive_under(co, s), Some(s)))
             .collect(),
-        "PARTY_PROXY" | "PARTY_IDENTIFIED" => ["id", "id_scheme", "id_namespace", "name"]
-            .into_iter()
-            .map(|s| text_input(primitive_under(co, s), Some(s)))
-            .collect(),
+        // The three PARTY_PROXY subtype tables share the
+        // `|id`/`|id_scheme`/`|id_namespace` rows and the latter two add
+        // `|name` — master05 §§PARTY_SELF, PARTY_IDENTIFIED, PARTY_RELATED. A
+        // PARTY_RELATED's extra `relationship` is a DV_CODED_TEXT sub-path
+        // (master05 §"PARTY_RELATED performer"), never a party suffix, so it
+        // adds no input here.
+        "PARTY_PROXY" | "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
+            ["id", "id_scheme", "id_namespace", "name"]
+                .into_iter()
+                .map(|s| text_input(primitive_under(co, s), Some(s)))
+                .collect()
+        }
         _ => Vec::new(),
     };
     (inputs, proportion_types)

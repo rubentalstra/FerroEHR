@@ -353,6 +353,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Web Template: a template that narrows a party to `PARTY_RELATED` now
+  describes its party fields** (#600). When an operational template pins a
+  party slot — a subject, a composer, a participation performer — to
+  `PARTY_RELATED`, the generated Web Template used to describe that node as an
+  empty container: none of the `|name`, `|id`, `|id_scheme` and
+  `|id_namespace` fields the Simplified Formats specification gives every
+  party appeared, so a form builder reading the Web Template could not offer
+  them even though the server has always accepted and returned them. The four
+  fields are now described, alongside the `relationship` sub-path the narrowing
+  adds. The same held wherever a party node also constrained an attribute; the
+  fields survive that too. Nothing changes for stored data or for the FLAT and
+  STRUCTURED wire.
+
 - **FLAT/STRUCTURED: the specification's other spelling of a related party's
   relationship is accepted on input** (#589). The Simplified Formats mapping
   table for a `PARTY_RELATED` writes the relationship sub-path

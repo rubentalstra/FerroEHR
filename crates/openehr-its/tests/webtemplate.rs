@@ -443,3 +443,104 @@ fn multiple_coded_text_alternatives_compact_to_one_node() {
     assert_ne!(id, "coded_text_value");
     assert_ne!(id, "coded_text_value2");
 }
+// ── the PARTY_PROXY family (master05 §§PARTY_SELF, PARTY_IDENTIFIED, PARTY_RELATED) ──
+
+/// The four party TEXT suffixes every `PARTY_PROXY`-family node carries — the
+/// rows master05's three subtype tables share (`|id`/`|id_scheme`/
+/// `|id_namespace`, plus `|name` on the two identified subtypes).
+const PARTY_SUFFIXES: [&str; 4] = ["id", "id_scheme", "id_namespace", "name"];
+
+fn party_suffixes(node: &WebTemplateNode) -> Vec<&str> {
+    node.inputs
+        .iter()
+        .filter_map(|i| i.suffix.as_deref())
+        .collect()
+}
+
+/// A slot an OPT narrows to `PARTY_RELATED` is a party LEAF, exactly like one
+/// left at `PARTY_PROXY`/`PARTY_IDENTIFIED`: master05 gives all three subtypes
+/// their own mapping table and they share the party suffix rows. The subtype's
+/// extra `relationship` is a DV_CODED_TEXT SUB-PATH (master05 §"PARTY_RELATED
+/// performer": "the `relationship` attribute is emitted as a sub-path under the
+/// participation, with the standard DV_CODED_TEXT suffixes"), so it is a CHILD
+/// of the party node — never a reason to demote the party to an inputless
+/// container, which is the divergence this asserts against.
+#[test]
+fn party_related_narrowing_is_a_party_leaf_with_a_relationship_child() {
+    let wt = build_from_file(&better_fixtures_dir().join("Test constrained subject.opt"))
+        .expect("build Test constrained subject");
+    let party = find_node(&wt.tree, &|n| n.rm_type == "PARTY_RELATED")
+        .expect("the template narrows a party slot to PARTY_RELATED");
+
+    assert_eq!(
+        party_suffixes(party),
+        PARTY_SUFFIXES,
+        "a PARTY_RELATED node carries the shared party suffixes"
+    );
+    assert!(
+        party
+            .inputs
+            .iter()
+            .all(|i| matches!(i.input_type, WebTemplateInputType::Text)),
+        "every party suffix is a TEXT input: {:?}",
+        party.inputs
+    );
+
+    let relationship = party
+        .children
+        .iter()
+        .find(|c| c.aql_path.ends_with("/relationship"))
+        .expect("the narrowed relationship is a child sub-path of the party node");
+    assert_eq!(
+        relationship.rm_type, "DV_CODED_TEXT",
+        "master05 §PARTY_RELATED types the relationship sub-path DV_CODED_TEXT"
+    );
+    assert!(
+        relationship
+            .inputs
+            .iter()
+            .any(|i| i.suffix.as_deref() == Some("code")),
+        "the relationship child carries the DV_CODED_TEXT suffixes"
+    );
+}
+
+/// The same rule as a standing invariant over every readable OPT in both
+/// corpora: no node of the `PARTY_PROXY` family may come out inputless.
+/// Constraining an attribute of a party — which is exactly what a
+/// `PARTY_RELATED` narrowing does — must not cost the node its own suffixes.
+#[test]
+fn no_party_node_is_inputless() {
+    let mut checked = 0_usize;
+    let mut offenders: Vec<String> = Vec::new();
+    let mut files: Vec<PathBuf> = opt_files(&better_fixtures_dir());
+    files.extend(opt_files(&corpus_dir()));
+    for path in files {
+        let Ok(wt) = build_from_file(&path) else {
+            continue; // parser gaps are reported by the smoke gate, not here
+        };
+        for_each_node(&wt.tree, &mut |n| {
+            if !matches!(
+                n.rm_type.as_str(),
+                "PARTY_PROXY" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+            ) {
+                return;
+            }
+            checked += 1;
+            if party_suffixes(n) != PARTY_SUFFIXES {
+                offenders.push(format!(
+                    "{}: {} at {} has inputs {:?}",
+                    path.display(),
+                    n.rm_type,
+                    n.aql_path,
+                    party_suffixes(n)
+                ));
+            }
+        });
+    }
+    assert!(checked > 0, "expected the corpora to contain party nodes");
+    assert!(
+        offenders.is_empty(),
+        "party nodes without the master05 party suffixes:\n{}",
+        offenders.join("\n")
+    );
+}
