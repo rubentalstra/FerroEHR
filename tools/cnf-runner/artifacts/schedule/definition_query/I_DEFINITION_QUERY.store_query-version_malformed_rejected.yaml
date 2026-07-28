@@ -4,14 +4,17 @@
 # docs/query/Qualified_query_name.md, "The `version` identifier is in the
 # format specified by SEMVER style (i.e. `major.minor.patch`)" — nor one of the
 # `{major}` / `{major}.{minor}` read prefixes the `{version}` parameter
-# defines. It is a syntactically invalid parameter, which
-# docs/overview/Requests_and_responses.md §"HTTP status codes", row `400 Bad
-# Request`, assigns directly: "The service cannot or will not process the
-# request due to something that is perceived to be a client error (e.g.,
-# malformed request syntax, syntactically invalid content)". Register AMB-122
-# carries the write-side grammar; the READ side of the same token family is
-# register AMB-102 (404, because a read addresses a resource that does not
-# exist, while a write cannot address one at all).
+# defines. Unlike the prefix and pre-release siblings it IS malformed outright,
+# so the `400 Bad Request` row of
+# docs/overview/Requests_and_responses.md §"HTTP status codes" assigns it
+# directly: "The service cannot or will not process the request due to
+# something that is perceived to be a client error (e.g., malformed request
+# syntax, syntactically invalid content)". Register AMB-122 carries the
+# write-side grammar for all three (and the generic-client-error sentence
+# below that same table, which assigns the two well-formed-but-unwritable
+# tokens); the READ side of the same token family is register AMB-102 (404,
+# because a read addresses a resource that does not exist, while a write
+# cannot address one at all).
 id: I_DEFINITION_QUERY.store_query-version_malformed_rejected
 kind: functional
 component: DEFINITION_QUERY

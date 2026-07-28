@@ -167,7 +167,7 @@ which of the two openEHR store operations a click will perform:
 
 | Version field | What a save does |
 | --- | --- |
-| empty | `PUT /definition/query/{name}` — the server assigns the version and **replaces** the query stored at it |
+| empty | `PUT /definition/query/{name}` — the CDR files it at the default slot `1.0.0` and **replaces** whatever was stored there |
 | `1.2.0` | `PUT /definition/query/{name}/{version}` — stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
 
 Because an explicit version is immutable, **Open in editor** and **Open in
@@ -181,7 +181,14 @@ A shorter pattern like `1` or `1.0` is a **read** form, not a store form: when
 the latest one matching that prefix, and omitting the version entirely means
 the latest of all. The console therefore refuses a partial version in the save
 field (with an explanation) rather than filing a definition under a string that
-later lookups would treat as a pattern.
+later lookups would treat as a pattern. The CDR refuses one too, with a `400`:
+a prefix names no version a store could create, and openEHR assigns the write
+no other outcome.
+
+The default slot `1.0.0` is the CDR's own choice — openEHR does not say which
+version a version-less store mints, so the version-less form always writes and
+reports that one slot, even when higher versions of the same name already
+exist. If you need a specific version, type it.
 
 ### Deleting a stored query
 
