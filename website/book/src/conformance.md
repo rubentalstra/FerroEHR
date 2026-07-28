@@ -146,21 +146,21 @@ environment variable. Each lane is a separate, deliberate run — the default
 lane stays the published baseline.
 
 ```bash
-# openPGP version signing instead of the default digest
+# openPGP version signing instead of the default digest (stacks on the
+# standard posture)
 CONF_SIGNING_MODE=pgp bash scripts/conformance.sh
-
-# the SMART on openEHR resource-server posture
-CONF_SMART_MODE=1 bash scripts/conformance.sh
 ```
 
-The SMART lane boots the server with `smart.enabled`,
-`smart.require_smart_scopes` and an `auth.oidc` issuer it trusts, so the
-SMART discovery document and the resource-scope grammar become executable
-cases rather than declared claims. Because SMART scopes ride Bearer tokens
-only, the fail-closed posture would (correctly) refuse the rest of the
-catalogue's Basic-auth principals, so the lane drives only the SMART group
-and writes to `docs/conformance/<sut-name>-smart/`. Its tokens are signed by
-a **committed test issuer** under `tools/cnf-runner/party/smart/` — public
+The **SMART resource-server posture is the standard conformance posture**
+for `ehrbase-rs` — every pipeline run boots the server with `smart.enabled`,
+`smart.require_smart_scopes` and an `auth.oidc` issuer it trusts
+(`docker/sut-smart.yml`), and the runner's principals present minted Bearer
+tokens carrying the roles and resource scopes each case needs. The SMART
+discovery document, the resource-scope grammar, and the fail-closed 403 are
+executable cases in the same committed record as everything else; a SUT
+whose ixit declares no `smart` block (upstream EHRbase) records those cases
+not-applicable with the citation instead. The tokens are signed by a
+**committed test issuer** under `tools/cnf-runner/party/smart/` — public
 test key material for the conformance harness, never usable for anything
 else.
 

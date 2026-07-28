@@ -18,6 +18,10 @@
       "passed"
     ],
     [
+      "TemplateExamples",
+      "passed"
+    ],
+    [
       "QueryProvisioning",
       "passed"
     ],
@@ -147,7 +151,7 @@
     ],
     [
       "SmartAppLaunch",
-      "no_cases"
+      "passed"
     ],
     [
       "EhrDemographicSeparation",
@@ -195,7 +199,7 @@
     }
   ],
   "coverage": {
-    "selected": 708,
-    "driven": 634
+    "selected": 748,
+    "driven": 673
   }
 }

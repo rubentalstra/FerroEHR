@@ -3,29 +3,60 @@
     "sut": {
       "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
       "auth": {
-        "mode": "basic",
-        "user_env": "SUT_USER",
-        "password_env": "SUT_PASS"
+        "mode": "bearer_mint",
+        "subject": "cnf-user",
+        "roles": [
+          "USER"
+        ],
+        "default_scopes": [
+          "user/template-*.cruds",
+          "user/aql-*.cruds"
+        ]
       }
     },
     "admin": {
       "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
       "auth": {
-        "mode": "basic",
-        "user_env": "SUT_ADMIN_USER",
-        "password_env": "SUT_ADMIN_PASS"
+        "mode": "bearer_mint",
+        "subject": "cnf-admin",
+        "roles": [
+          "ADMIN",
+          "USER"
+        ],
+        "default_scopes": [
+          "user/template-*.cruds",
+          "user/aql-*.cruds"
+        ]
       }
     },
     "readonly": {
       "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
       "auth": {
-        "mode": "basic",
-        "user_env": "SUT_RO_USER",
-        "password_env": "SUT_RO_PASS"
+        "mode": "bearer_mint",
+        "subject": "cnf-readonly",
+        "roles": [
+          "READONLY"
+        ],
+        "default_scopes": [
+          "user/template-*.r",
+          "user/aql-*.r"
+        ]
       }
     },
     "unauthenticated": {
       "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "none"
+      }
+    },
+    "smart_app": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "bearer_mint"
+      }
+    },
+    "smart_platform": {
+      "base_url": "http://localhost:8080/ehrbase/rest",
       "auth": {
         "mode": "none"
       }
@@ -48,6 +79,20 @@
     "cores": 8,
     "memory_gb": 16,
     "storage_class": "nvme",
-    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2"
+    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, the SMART resource-server posture (docker/sut-smart.yml overlays the base stack)"
+  },
+  "smart": {
+    "platform_instance": "smart_platform",
+    "mint": {
+      "issuer": "https://as.cnf.test",
+      "audience": "cnf-smart-sut",
+      "subject": "cnf-smart-app",
+      "roles": [
+        "USER"
+      ],
+      "key_file": "../smart/cnf-smart-test.key.pem",
+      "kid": "cnf-smart-test",
+      "ttl_seconds": 300
+    }
   }
 }

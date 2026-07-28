@@ -491,7 +491,26 @@ impl EhrbaseService {
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&versioned_object_uid)?;
-        Ok(ServiceResponse::plain(self.versioned_party(vo_id).await?))
+        let body = self.versioned_party(vo_id).await?;
+        // The container response carries `Last-Modified` from the newest
+        // version's commit instant — ITS-REST overview §"ETag and
+        // Last-Modified": "Both ETag and Last-Modified SHOULD be included in
+        // responses for VERSION, VERSIONED_OBJECT, or other resources that
+        // have versioning", derived "from VERSION.commit_audit.
+        // time_committed.value". The container BODY exposes no commit audit,
+        // so the instant comes from the version spine (the EHR-side
+        // versioned_composition precedent), never scraped from the body.
+        let newest = crate::storage::version_repo::meta::all_version_meta(&self.pool, vo_id)
+            .await
+            .map_err(ServiceError::from)?
+            .last()
+            .map(|m| m.time_committed);
+        let meta = ResourceMeta::new(String::new(), vo_id.to_string());
+        let meta = match newest {
+            Some(at) => meta.with_last_modified(at),
+            None => meta,
+        };
+        Ok(ServiceResponse::new(body, meta))
     }
 
     /// The `REVISION_HISTORY` of a party (RM common master04 §Revision

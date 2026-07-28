@@ -47,6 +47,7 @@ spec_refs:
   - "RM demographic §versioned_party"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 formats: [canonical-xml]
+option: versioned-party-xml-supported   # AMB-167 offering arm (finding 4, 2026-07-28): §Data representation makes offering XML a service choice even on a DOCUMENTED resource
 requires: { server: empty }
 data_sets: [cnf.demographic.person.v1]
 flow:

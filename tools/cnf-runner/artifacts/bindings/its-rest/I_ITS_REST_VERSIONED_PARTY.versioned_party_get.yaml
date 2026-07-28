@@ -85,4 +85,5 @@ outcomes:
       Last-Modified: present
       Location: absent                    # read — overview §Location / §Deprecated headers
     body: present
+  not_acceptable: { status: 406 }         # Resources.md §XML Format — an Accept the service cannot fulfill (offering XML on this resource is a service choice, AMB-167)
   not_found: { status: 404 }              # unknown versioned_object_uid (responses/404.yaml)

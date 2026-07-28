@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 634 |
+| passed | 673 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 74 |
-| total | 708 |
+| not_applicable | 75 |
+| total | 748 |
 
 ## By chapter
 
@@ -21,24 +21,27 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | CONT | 123 | 0 | 0 | 0 | 0 |
 | I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
 | I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
-| I_ADMIN_SERVICE | 7 | 0 | 0 | 0 | 10 |
+| I_ADMIN_SERVICE | 9 | 0 | 0 | 0 | 10 |
 | I_DEFINITION_ADL14 | 20 | 0 | 0 | 0 | 6 |
 | I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
-| I_DEMOGRAPHIC_SERVICE | 40 | 0 | 0 | 0 | 13 |
-| I_EHR_COMPOSITION | 83 | 0 | 0 | 0 | 0 |
-| I_EHR_CONTRIBUTION | 53 | 0 | 0 | 0 | 5 |
-| I_EHR_DIRECTORY | 60 | 0 | 0 | 0 | 4 |
+| I_DEMOGRAPHIC_SERVICE | 42 | 0 | 0 | 0 | 13 |
+| I_EHR_COMPOSITION | 88 | 0 | 0 | 0 | 0 |
+| I_EHR_CONTRIBUTION | 55 | 0 | 0 | 0 | 5 |
+| I_EHR_DIRECTORY | 63 | 0 | 0 | 0 | 4 |
 | I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
-| I_EHR_SERVICE | 21 | 0 | 0 | 0 | 1 |
-| I_EHR_STATUS | 45 | 0 | 0 | 0 | 1 |
+| I_EHR_SERVICE | 24 | 0 | 0 | 0 | 1 |
+| I_EHR_STATUS | 46 | 0 | 0 | 0 | 1 |
 | I_ITS_REST_ITEM_TAGS | 30 | 0 | 0 | 0 | 0 |
+| I_ITS_REST_REVISION_HISTORY | 6 | 0 | 0 | 0 | 0 |
 | I_ITS_REST_SYSTEM | 1 | 0 | 0 | 0 | 0 |
-| I_QUERY_SERVICE | 33 | 0 | 0 | 0 | 0 |
+| I_ITS_REST_VERSIONED_PARTY | 3 | 0 | 0 | 0 | 1 |
+| I_QUERY_SERVICE | 36 | 0 | 0 | 0 | 0 |
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
 | SEC | 6 | 0 | 0 | 0 | 0 |
-| SF | 57 | 0 | 0 | 0 | 1 |
+| SF | 63 | 0 | 0 | 0 | 1 |
 | SIG | 6 | 0 | 0 | 0 | 2 |
+| SMART | 3 | 0 | 0 | 0 | 0 |
 
 ## Performance measurements
 
@@ -75,7 +78,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 634 of 708 selected cases driven.
+Coverage: 673 of 748 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -148,6 +151,7 @@ Not-executed verdicts (each cited):
 | I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
 | I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_TDD_SERVICE.import_tdd-invalid | I_TDD_SERVICE.import_tdd: AMB-34 |
 | I_TDD_SERVICE.import_tdd-valid | I_TDD_SERVICE.import_tdd: AMB-34 |
 | I_TDD_SERVICE.import_tdds-bulk_invalid | I_TDD_SERVICE.import_tdds: AMB-34 |

@@ -248,8 +248,17 @@ pub(super) async fn run(
                         super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &new_uid, h)
                             .await?;
                     let meta = commit_meta(ehr_id, new_uid, &committed);
+                    // The minimal-preference update is 204 — the docs text's
+                    // §"Prefer minimal…" ("If no response body is returned,
+                    // the service SHOULD use `204 No Content`") over the
+                    // released 204_version_updated.yaml ("returned when the
+                    // update operation was successful and the `Prefer` header
+                    // is missing or is set to `return=minimal`"); a bodyless
+                    // 200 matches neither declared response. Create stays
+                    // 201-only (composition_create.yaml declares no 204).
                     let mut resp =
-                        composition_write_response(&state, h, &base, ehr_id, meta, ok, ok).await?;
+                        composition_write_response(&state, h, &base, ehr_id, meta, no_content, ok)
+                            .await?;
                     super::echo_item_tags(&mut resp, &stored_tags);
                     Ok(resp)
                 }

@@ -6,29 +6,23 @@
 # (ITS-REST docs/smart_app_launch/master04-service_discovery.adoc), the
 # master08 resource-scope grammar, and the 403-on-scope-deny discipline.
 #
-# Usage (overlay on the root stack):
-#   docker compose -f docker-compose.yml -f docker/sut-smart.yml up -d --wait ehrbase
-# The reference conformance pipeline selects it with CONF_SMART_MODE=1, which
-# also picks the lane's ixit + statement and writes to its own artefact
-# directory (scripts/conformance.sh).
+# Usage: this overlay IS the standard conformance posture for ehrbase-rs —
+# scripts/conformance.sh composes it on the root stack for every run, so the
+# ONE committed record (docs/conformance/ehrbase-rs/) covers the whole
+# claimed surface, SMART cases included, in one invocation (owner ruling
+# 2026-07-28: no focused lanes, no sidecar artifact directories). The ixit's
+# principals mint scoped RS256 Bearer tokens against the committed static
+# test issuer; per-step `scopes:` declarations override the standing grant
+# for the SMART boundary cases. The signing lane (sut-signing-pgp.yml)
+# STACKS on top of this overlay.
 #
-# WHY A SEPARATE LANE, AND WHY IT DOES NOT RUN THE WHOLE CATALOGUE.
-# `require_smart_scopes` is the fail-closed posture master04 §Capabilities lets
-# a Platform advertise as `openehr-permission-v1`: a caller holding no SMART
-# resource scope for a scope-governed family is refused. SMART scopes ride
-# Bearer tokens only, so the catalogue's Basic-auth principals hold none and
-# every template / composition / AQL case would be refused in this posture.
-# That is the configuration behaving exactly as specified, not a defect — so
-# the lane deliberately drives only the SMART group, and the DEFAULT lane
-# (SMART off, zero wire drift) remains the conformance baseline.
-#
-# THE ISSUER IS COMMITTED TEST MATERIAL. `tools/cnf-runner/party/smart/` holds
-# a passphrase-less RSA test keypair in public version control, so the runner
-# can mint per-case scope-carrying access tokens — the CDR validates tokens and
-# never issues them (master06 §Supported Authentication Flows), and the
-# conformance stack runs no Authorization Server. Only the PUBLIC half is
-# mounted here. Never point a deployment holding real data at this issuer:
-# every token it would accept is forgeable by anyone with a checkout.
+# THE ISSUER IS COMMITTED TEST MATERIAL. `tools/cnf-runner/party/smart/`
+# holds a passphrase-less RSA test keypair in public version control, so the
+# runner can mint per-case scope-carrying access tokens — the CDR validates
+# tokens and never issues them (master06 §Supported Authentication Flows),
+# and the conformance stack runs no Authorization Server. Only the PUBLIC
+# half is mounted here. Never point a deployment holding real data at this
+# issuer: every token it would accept is forgeable by anyone with a checkout.
 services:
   ehrbase:
     environment:

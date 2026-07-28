@@ -164,13 +164,25 @@ impl<'a> HttpDriver<'a> {
                     .map_err(|_| format!("credential env {token_env} unset"))?;
                 Ok(Some(format!("Bearer {token}")))
             }
-            AuthMode::BearerMint => {
+            AuthMode::BearerMint {
+                subject,
+                roles,
+                default_scopes,
+            } => {
                 let lane = ixit.smart.as_ref().ok_or_else(|| {
                     "instance declares auth mode `bearer_mint` but the ixit declares no `smart` \
                      lane to mint against"
                         .to_owned()
                 })?;
-                let token = mint_access_token(&lane.mint, scopes.unwrap_or_default())?;
+                // A step-level `scopes:` always wins (the SMART cases probe
+                // exact grants); a plain catalogue step rides the instance's
+                // standing grant.
+                let token = mint_access_token(
+                    &lane.mint,
+                    subject.as_deref(),
+                    roles.as_deref(),
+                    scopes.unwrap_or(default_scopes),
+                )?;
                 Ok(Some(format!("Bearer {token}")))
             }
         }
@@ -1051,7 +1063,12 @@ fn base64_encode(input: &[u8]) -> String {
 /// `scope` claim master08 §Resource Scopes defines, and the RBAC role claim
 /// the SUT mines (the SMART gate AND-composes onto RBAC, so a role-less token
 /// would be refused a layer earlier and prove nothing about SMART).
-fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Result<String, String> {
+fn mint_access_token(
+    mint: &crate::ixit::BearerMint,
+    subject: Option<&str>,
+    roles: Option<&[String]>,
+    scopes: &[String],
+) -> Result<String, String> {
     let pem = std::fs::read(&mint.key_file).map_err(|e| {
         format!(
             "smart mint: cannot read key file {}: {e}",
@@ -1070,7 +1087,10 @@ fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Resul
     if let Some(audience) = &mint.audience {
         claims.insert("aud".to_owned(), Value::String(audience.clone()));
     }
-    claims.insert("sub".to_owned(), Value::String(mint.subject.clone()));
+    claims.insert(
+        "sub".to_owned(),
+        Value::String(subject.unwrap_or(&mint.subject).to_owned()),
+    );
     claims.insert("iat".to_owned(), Value::from(issued_at));
     claims.insert("exp".to_owned(), Value::from(expires_at));
     // master08 §Resource Scopes: scopes ride the OAuth 2.0 `scope` claim,
@@ -1080,7 +1100,7 @@ fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Resul
     claims.insert("scope".to_owned(), Value::String(scopes.join(" ")));
     claims.insert(
         "realm_access".to_owned(),
-        serde_json::json!({ "roles": mint.roles }),
+        serde_json::json!({ "roles": roles.unwrap_or(&mint.roles) }),
     );
 
     jsonwebtoken::encode(&header, &claims, &key)
@@ -1090,6 +1110,16 @@ fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Resul
 /// The JSON shape name of a value, for diagnostics that must say WHAT was
 /// captured instead of the expected object (a canonical-XML capture, for
 /// instance, resolves as a string).
+/// The shape name of a non-body capture, for the patched-body diagnostic.
+fn json_shape_of_captured(captured: &Captured) -> &'static str {
+    match captured {
+        Captured::Scalar(_) => "a scalar",
+        Captured::List(_) => "a list",
+        Captured::Body(_) => "a body",
+        Captured::InstantMs { .. } => "an instant",
+    }
+}
+
 fn json_shape(value: &Value) -> &'static str {
     match value {
         Value::Null => "null",
@@ -1296,21 +1326,47 @@ impl HttpDriver<'_> {
     ) -> Result<Value, String> {
         // Negatives against a non-existent resource have no captured base
         // body (nothing to GET) — the wire still needs a valid resource
-        // payload, so fall back to the minimal canonical EHR_STATUS the
-        // recipes commit (the SUT rejects on the unknown id, not the body).
+        // payload, so fall back to a minimal RM-VALID canonical EHR_STATUS
+        // (the SUT rejects on the unknown id, not the body). The fallback
+        // MUST be RM-valid: EHR_STATUS is an unconditional archetype root
+        // (RM ehr ehr_status.adoc `Is_archetype_root`) and a root without
+        // ARCHETYPED violates `Archetyped_valid` (RM common locatable.adoc,
+        // which also fixes archetype_node_id as "the stringified form of the
+        // archetype_id found in the archetype_details object") — the old
+        // details-less fallback masked a MISSING capture as a fake SUT 422
+        // (the 2026-07-28 posture-run triage, finding 7). The masking half
+        // of the fix: the fallback applies ONLY to a capture name the case
+        // never declared, i.e. the deliberate no-resource negatives; a case
+        // that DECLARED the capture and failed to bind it is a loud step
+        // error, never a substituted body.
         let mut patched = match vars.get(from_capture) {
             Some(Captured::Body(body)) => body.clone(),
-            _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
+            Some(other) => {
+                return Err(format!(
+                    "patched body: capture {from_capture} is bound but holds {} — a declared \
+                     capture that did not bind a body is a case defect, not a substitutable one",
+                    json_shape_of_captured(other)
+                ));
+            }
+            None if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
                 serde_json::json!({
                     "_type": "EHR_STATUS",
                     "name": { "_type": "DV_TEXT", "value": "ehr status" },
                     "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                    "archetype_details": {
+                        "_type": "ARCHETYPED",
+                        "archetype_id": {
+                            "_type": "ARCHETYPE_ID",
+                            "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+                        },
+                        "rm_version": "1.1.0"
+                    },
                     "subject": { "_type": "PARTY_SELF" },
                     "is_queryable": true,
                     "is_modifiable": true
                 })
             }
-            _ => {
+            None => {
                 return Err(format!(
                     "patched body: capture {from_capture} holds no resource body"
                 ));
@@ -2345,6 +2401,8 @@ mod tests {
         let mint = test_mint(vec!["USER".to_owned()]);
         let token = mint_access_token(
             &mint,
+            None,
+            None,
             &["user/template-*.r".to_owned(), "openid".to_owned()],
         )
         .unwrap();
@@ -2361,7 +2419,8 @@ mod tests {
     /// (master08 §Scopes ¶2), so the claim is present and empty.
     #[test]
     fn mint_emits_an_empty_scope_claim_for_a_scopeless_token() {
-        let token = mint_access_token(&test_mint(vec!["USER".to_owned()]), &[]).unwrap();
+        let token =
+            mint_access_token(&test_mint(vec!["USER".to_owned()]), None, None, &[]).unwrap();
         let claims = decode_against_committed_jwks(&token);
         assert_eq!(claims["scope"], Value::from(""));
     }
@@ -2375,8 +2434,16 @@ mod tests {
         }))
         .unwrap();
         let no_scopes: &[String] = &[];
-        let error =
-            HttpDriver::auth_header(&ixit, &AuthMode::BearerMint, Some(no_scopes)).unwrap_err();
+        let error = HttpDriver::auth_header(
+            &ixit,
+            &AuthMode::BearerMint {
+                subject: None,
+                roles: None,
+                default_scopes: Vec::new(),
+            },
+            Some(no_scopes),
+        )
+        .unwrap_err();
         assert!(error.contains("no `smart` lane"), "{error}");
     }
 

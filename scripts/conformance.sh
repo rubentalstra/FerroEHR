@@ -49,9 +49,6 @@
 #   CONF_SIGNING_MODE
 #                   pgp: run the ehrbase-rs SUT in openPGP version-signing mode
 #                   (see below). Default digest.
-#   CONF_SMART_MODE if set, run the ehrbase-rs SUT in the SMART on openEHR
-#                   resource-server posture (see below) — a FOCUSED lane, not
-#                   the conformance baseline.
 #   SKIP_BUILD      if set, compose up without --build (published image).
 #   SUT_USER/SUT_PASS, SUT_ADMIN_USER/SUT_ADMIN_PASS,
 #   SUT_RO_USER/SUT_RO_PASS
@@ -79,41 +76,18 @@ SIGNING_MODE="${CONF_SIGNING_MODE:-digest}"
 # so it coexists with — and never tears down — a running dev stack (which
 # defaults to the directory-name project `ehrbase-rs`). Its `down -v` is thus
 # scoped to `ehrbase-rs-cnf` only (issue #282 D3/F7).
-EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf)
+# The conformance posture for ehrbase-rs is the SMART resource-server role
+# (docker/sut-smart.yml): SMART on, fail-closed scopes, the committed static
+# test issuer trusted — the strongest claimed posture, so the ONE committed
+# record covers the whole claimed surface (SMART cases included) in one run.
+# The ixit's principals mint scoped Bearer tokens; the scope-governed
+# families are exercised exactly as a SMART Application would reach them.
+EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-smart.yml")
 if [ "$SIGNING_MODE" = "pgp" ] && [ "$SUT" = "ehrbase-rs" ]; then
-  EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-signing-pgp.yml")
+  EHRBASE_RS_COMPOSE+=(-f "$REPO_ROOT/docker/sut-signing-pgp.yml")
   [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.pgp.json"
 fi
 
-# CONF_SMART_MODE=1 runs the ehrbase-rs SUT in the SMART on openEHR
-# resource-server posture (ITS-REST docs/smart_app_launch): overlay the SMART
-# compose variant (mounts the committed CNF test issuer's PUBLIC jwks.json,
-# sets smart.enabled + smart.require_smart_scopes + the advertised AS
-# endpoints, and points auth.oidc at that issuer) and use the SMART ixit
-# (which declares the `smart` lane the runner mints per-case scoped Bearer
-# tokens against) and the SMART statement (which claims SmartAppLaunch).
-#
-# THIS IS A FOCUSED LANE, NOT THE BASELINE, on two counts:
-#  - `require_smart_scopes` is the fail-closed posture master04 §Capabilities
-#    lets a Platform advertise as `openehr-permission-v1`, and SMART scopes
-#    ride Bearer tokens only, so the catalogue's Basic-auth principals hold
-#    none and every template/composition/AQL case would be (correctly)
-#    refused. The lane therefore defaults its FILTER to the SMART group; pass
-#    an explicit filter to override.
-#  - its artefacts land in their own `<sut>-smart` directory so a filtered run
-#    can never overwrite the committed conformance baseline.
-# Only meaningful for CONF_SUT=ehrbase-rs.
-if [ -n "${CONF_SMART_MODE:-}" ] && [ "$SUT" = "ehrbase-rs" ]; then
-  if [ "$SIGNING_MODE" = "pgp" ]; then
-    echo "conformance: CONF_SMART_MODE and CONF_SIGNING_MODE=pgp are separate lanes; run them one at a time" >&2
-    exit 2
-  fi
-  EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-smart.yml")
-  [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.smart.json"
-  [ -n "${CONF_STATEMENT:-}" ] || STATEMENT="$PARTY/statement.smart.json"
-  [ -n "$FILTER" ] || FILTER="SMART-"
-  OUT="$OUT-smart"
-fi
 
 # Build provenance for compose-built images: the OCI-standard REVISION arg (the
 # compose build.args block forwards it; the server Dockerfile bridges it into
@@ -259,9 +233,10 @@ out = pathlib.Path(sys.argv[1])
 verdicts = json.load(open(out / "verdicts.json"))
 results = json.load(open(out / "results.json"))
 
-# Tier membership from the capability matrix (Name: { tier: X, family: Y }).
+# Tier membership from the capability matrix (Name: { tier, family, required }).
 tier_caps: dict[str, list[str]] = {}
 family: dict[str, str] = {}
+required: dict[str, bool] = {}
 for line in open(sys.argv[2]):
     m = re.match(r"^(\w+):\s*\{(.*)\}", line)
     if not m:
@@ -269,10 +244,12 @@ for line in open(sys.argv[2]):
     name, body = m.group(1), m.group(2)
     tier = re.search(r"tier:\s*([A-Z-]+)", body)
     fam = re.search(r"family:\s*(\w+)", body)
+    req = re.search(r"required:\s*(\w+)", body)
     if tier:
         tier_caps.setdefault(tier.group(1), []).append(name)
     if fam:
         family[name] = fam.group(1)
+    required[name] = bool(req and req.group(1) == "true")
 
 evidence = {name: ev for name, ev in verdicts["capabilities"]}
 tiers = {tier: verdict for tier, verdict in verdicts["profiles"]}
@@ -284,21 +261,60 @@ def satisfied(names):
     ok = sum(1 for n in names if evidence.get(n) in ("passed", "unrealized"))
     return ok, len(names)
 
+# The counts MIRROR the verdict pipeline's own tier semantics
+# (verdict.rs::platform_profiles): CORE and STANDARD are judged on the
+# CUMULATIVE set of REQUIRED capabilities (STANDARD = CORE+STANDARD), and
+# OPTIONS on the optional Platform set — a tier-local count next to a
+# cumulative verdict produced the self-contradictory "FAIL 5/5" badge.
 counts = {}
-for tier, names in tier_caps.items():
-    counts[tier] = satisfied(names)
+counts["CORE"] = satisfied([n for n in tier_caps.get("CORE", []) if required.get(n)])
+counts["STANDARD"] = satisfied(
+    [n for t in ("CORE", "STANDARD") for n in tier_caps.get(t, []) if required.get(n)]
+)
+counts["OPTIONS"] = satisfied(
+    [n for n in tier_caps.get("OPTIONS", []) if not required.get(n) and family.get(n) == "Platform"]
+)
 counts["SEC-BASIC"] = satisfied([n for n, f in family.items() if f == "Security"])
 
 colors = {"pass": "brightgreen", "fail": "red", "not_claimed": "lightgrey"}
 slug = {"CORE": "core", "STANDARD": "standard", "OPTIONS": "options", "SEC-BASIC": "sec-basic"}
+
+# SELF-CHECK: a badge whose count contradicts its verdict must never be
+# written (the "FAIL 5/5 capabilities" incident, 2026-07-28) — the verdict
+# pipeline is the authority and the count is a re-derivation of the same
+# rule, so any disagreement is a defect in THIS script and fails the
+# pipeline loudly instead of publishing a wrong badge.
+def check_consistency(tier, token, ok_n, total_n):
+    if token not in ("pass", "fail"):
+        return
+    if tier in ("CORE", "STANDARD"):
+        # verdict.rs::required_all_passed — every cumulative REQUIRED
+        # capability passed-or-unrealized <=> pass.
+        agrees = (ok_n == total_n) == (token == "pass")
+    elif tier == "OPTIONS":
+        # verdict.rs — ANY optional Platform capability passing <=> pass.
+        agrees = (ok_n >= 1) == (token == "pass")
+    else:
+        return  # SEC-BASIC's verdict has non-count inputs; no count check.
+    if not agrees:
+        sys.exit(
+            f"badge derivation defect: {tier} verdict {token!r} contradicts the "
+            f"capability count {ok_n}/{total_n} — refusing to write a wrong badge"
+        )
+
 for tier, verdict in tiers.items():
     token = verdict if isinstance(verdict, str) else str(verdict)
     ok_n, total_n = counts.get(tier, (0, 0))
-    amount = f" {ok_n}/{total_n}" if total_n else ""
+    check_consistency(tier, token, ok_n, total_n)
+    # A count is only meaningful next to a computed verdict; NOT CLAIMED
+    # stays a bare token (a "NOT CLAIMED 3/5" would invite the same misread).
+    show_count = total_n and token in ("pass", "fail")
+    noun = "optional capabilities" if tier == "OPTIONS" else "capabilities"
+    amount = f" {ok_n}/{total_n} {noun}" if show_count else ""
     badge = {
         "schemaVersion": 1,
         "label": f"openEHR CNF {tier}",
-        "message": f"{token.upper().replace('_', ' ')}{amount} capabilities" if total_n else f"{token.upper().replace('_', ' ')}",
+        "message": f"{token.upper().replace('_', ' ')}{amount}",
         "color": colors.get(token, "lightgrey"),
     }
     path = out / f"badge-{slug.get(tier, tier.lower())}.json"
@@ -332,16 +348,31 @@ by_status = {}
 for o in results.get("outcomes", []):
     by_status[o["status"]] = by_status.get(o["status"], 0) + 1
 driven = by_status.get("passed", 0) + by_status.get("failed", 0) + by_status.get("errored", 0)
+red_rows = by_status.get("failed", 0) + by_status.get("errored", 0)
 ok = tiers.get("CORE") == "pass" and tiers.get("STANDARD") == "pass"
+# Full green ONLY on a completely clean run: a red row anywhere — even in an
+# OPTIONS-tier capability that cannot fail CORE/STANDARD — is never an
+# acceptable resting state (the baseline discipline: green comes from fixing
+# the guilty component, and a brightgreen badge over a visible failure
+# invites the misread it caused on 2026-07-28). A passing-tier run with red
+# rows goes YELLOW and names the count.
+if ok and red_rows == 0:
+    message = f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
+    color = "brightgreen"
+elif ok:
+    message = (
+        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases "
+        f"({red_rows} failing)"
+    )
+    color = "yellow"
+else:
+    message = f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
+    color = "red"
 (out / "badge.json").write_text(json.dumps({
     "schemaVersion": 1,
     "label": "openEHR conformance",
-    "message": (
-        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
-        if ok
-        else f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
-    ),
-    "color": "brightgreen" if ok else "red",
+    "message": message,
+    "color": color,
 }, indent=2) + "\n")
 print("badges written")
 PY

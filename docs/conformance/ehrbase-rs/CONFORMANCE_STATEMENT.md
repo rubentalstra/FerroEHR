@@ -21,6 +21,7 @@ Capabilities claimed:
 - Adl14OptProvisioning
 - Adl2ArchetypeProvisioning
 - Adl2OptProvisioning
+- TemplateExamples
 - QueryProvisioning
 - EhrOperations
 - EhrStatus
@@ -56,8 +57,9 @@ Capabilities claimed:
 - AuthorizationSeparation
 - AuditAccountability
 - AnonymousEhrs
+- SmartAppLaunch
 
-Options declared: adl14-duplicate-conflict, adl14-partial-id-exact, contribution-xml-unsupported, directory-empty-error, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, legacy-alt-formats-unsupported, party-xml-supported, sf-deprecated-types-unsupported, xml-namespace-negotiated
+Options declared: adl14-partial-id-exact, contribution-xml-unsupported, directory-empty-error, directory-xml-supported, ehr-status-xml-supported, ehr-xml-supported, legacy-alt-formats-unsupported, party-xml-supported, sf-deprecated-types-unsupported, versioned-party-xml-unsupported, xml-namespace-negotiated
 
 ## Additional non-openEHR surface
 
@@ -78,7 +80,6 @@ Beside the openEHR resources of ITS-REST 1.1.0, this product serves the route fa
 | party-relationship | `POST /ehrbase/rest/openehr/v1/demographic/party_relationship`<br>`GET /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}`<br>`PUT /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}`<br>`DELETE /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}`<br>`GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}`<br>`GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`<br>`GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version`<br>`GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}` | always on with the DEMOGRAPHIC group (no separate toggle) |
 | stored-query-bare-list | `GET /ehrbase/rest/openehr/v1/definition/query` | always on with the DEFINITION group (no separate toggle) |
 | admin-extension-routes | `DELETE /ehrbase/rest/openehr/v1/admin/template/{template_id}`<br>`DELETE /ehrbase/rest/openehr/v1/admin/query/{qualified_query_name}/{version}`<br>`GET /ehrbase/rest/openehr/v1/admin/config` | [admin].enabled (default off) — the same gate as the released admin deletes; 405 when off, RBAC Admin class by the /admin/ path |
-| smart-discovery | `GET /ehrbase/rest/.well-known/smart-configuration` | [smart] (default off) — absent entirely when disabled, so a non-SMART deployment's wire is byte-identical to one without the feature |
 
 ## Verdicts
 

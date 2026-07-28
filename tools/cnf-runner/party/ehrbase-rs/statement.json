@@ -54,7 +54,8 @@
       "AuthenticatedAccess",
       "AuthorizationSeparation",
       "AuditAccountability",
-      "AnonymousEhrs"
+      "AnonymousEhrs",
+      "SmartAppLaunch"
     ],
     "profiles": [
       "CORE",
@@ -84,6 +85,7 @@
     "legacy-alt-formats-unsupported",
     "party-xml-supported",
     "sf-deprecated-types-unsupported",
+    "versioned-party-xml-unsupported",
     "xml-namespace-negotiated"
   ],
   "performance": {
