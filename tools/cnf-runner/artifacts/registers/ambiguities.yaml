@@ -5748,14 +5748,21 @@ AMB-165:
     AMB-159 apply to a branch whose trigger the release withholds. Authoring a
     fixture would mean choosing a root element name, a versions-with-inline-data
     element shape and an UPDATE_AUDIT rendering that NO released source states,
-    i.e. writing specification rather than testing it. The READ side is not
-    affected and is exercised: the retrieved CONTRIBUTION
-    (responses/200_CONTRIBUTION.yaml -> schemas/common/Contribution.yaml) is
-    exactly the XSD complexType — uid, versions as OBJECT_REF, audit — so
-    I_EHR_CONTRIBUTION.get_contribution-xml and
-    I_EHR_CONTRIBUTION.has_contribution-xml gate the canonical-XML CONTRIBUTION
-    representation. Closes when a release publishes an XML representation of the
-    commit envelope (or withdraws `application/xml` from the operation's
-    Content-Type enum). Reported upstream (UPR-125).
+    i.e. writing specification rather than testing it. CORRECTED 2026-07-28
+    (triage of the first run that drove the read cases): the READ side is in
+    the SAME declared-but-undefined position, not exempt as this entry first
+    claimed. Matching the CONTRIBUTION complexType is not a document — the
+    published XSDs declare global document elements only for composition,
+    version, items, template, extract, extract_request, versioned_object and
+    archetype, so no CONTRIBUTION XML DOCUMENT exists to conform to and the
+    §XML Format response MUST cannot be satisfied on the read either. The
+    read bindings therefore declare canonical-json only plus the
+    not_acceptable branch, and the read is gated by the 406 MUST
+    (I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable,
+    -has_contribution-xml_not_acceptable) — refusal is the only conformant
+    answer a server can give. Closes when a release publishes a CONTRIBUTION
+    XML document (root element + the commit envelope's XML representation) or
+    withdraws `application/xml` from the operations' Accept/Content-Type
+    enums. Reported upstream (UPR-125).
   disposition: report_only
   upstream_ref: "UPR-125"
