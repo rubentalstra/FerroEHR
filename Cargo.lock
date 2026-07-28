@@ -1327,6 +1327,7 @@ dependencies = [
  "jsonschema",
  "jsonwebtoken",
  "pgp",
+ "quick-xml 0.41.0",
  "regex",
  "reqwest 0.13.4",
  "semver",

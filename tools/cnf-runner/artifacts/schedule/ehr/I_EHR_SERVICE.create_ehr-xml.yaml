@@ -2,59 +2,50 @@
 # of the operation: the client-supplied-id PUT /ehr/{ehr_id} and the id-less
 # POST /ehr. One case, one step per wire form — the accept-forms shape
 # (SF-EXAMPLE-accept_forms), because both steps drive the SAME SM operation and
-# the behaviour under test is a single one: an EHR_STATUS sent as canonical XML
-# is processed as the resource it represents.
+# the behaviour under test is a single one: an `application/xml` request
+# payload a service cannot process is refused with the released status code.
 #
-# Decisive released sentence for the payload branch (ITS-REST overview
-# Resources.md §XML Format): "A client MAY use the header `Content-Type:
-# application/xml` in the requests to specify the XML payload format. If the
-# service cannot process the request payload as XML format, it MUST respond
-# with HTTP status code `415 Unsupported Media Type`." A service inside the
-# XML technology profile therefore processes the payload, and the same section
-# fixes the payload's shape: "both request payloads and responses MUST conform
-# to the published XSDs". Only the REQUEST representation is XML here: the
-# runner's format role on a body-carrying request names the request payload
-# and the response is negotiated canonical JSON, which is what lets step 3 read
-# the created EHR back and compare identifiers.
+# WHY THIS ROW IS THE REFUSAL ARM AND NOT THE OFFER ARM (register AMB-167,
+# re-adjudicated 2026-07-29). The payload this operation carries is an
+# EHR_STATUS, and the published XSDs declare no document element for it: the
+# STABLE 1.0.2-nsv1 bundle ships no Ehr.xsd at all, so EHR_STATUS has no
+# complexType there either, and the 2.0.0-nsv2 bundle types it as a LOCATABLE
+# subtype with no element of its own. So a WRITE row cannot be authored on the
+# offer side: it must commit to one request root element, and ITS-REST overview
+# Resources.md §"XML Format" opens with "When resources are serialized in
+# **canonical XML** format, both request payloads and responses MUST conform to
+# the [published XSDs]" — a payload whose root no published schema declares
+# does not conform, so requiring a service to accept it would mark a
+# conformant validating service non-conformant. (A READ row escapes this
+# because the SERVER picks the document, and the row can assert the released
+# conduct — the negotiated `Content-Type` and an XML document entity — without
+# ever naming a root.)
 #
-# Why step 2 is the refusal rather than a second creation. The XML EHR_STATUS
-# carries a subject, and a subject owns at most one EHR — SM
-# i_ehr_service.adoc §create_ehr_for_subject, error
-# `ehr_for_subject_already_exists`, the same ground the canonical-JSON sibling
-# I_EHR_SERVICE.create_ehr-two_ehrs_same_patient gates on. So the id-less POST
-# of the same XML payload is a duplicate, answered per ITS-REST overview
-# Requests_and_responses.md §HTTP status codes, row 409 ("Indicates that the
-# request could not be processed because it might generate a duplicate or a
-# conflict"). That refusal is itself evidence the XML body was parsed: the
-# service can only see the duplicate subject by reading the payload. Committing
-# a second XML EHR would need a second XML EHR_STATUS fixture with its own
-# subject, which buys no additional wire behaviour.
+# What IS released here is the other half of the same section: "A client MAY
+# use the header `Content-Type: application/xml` in the requests to specify the
+# XML payload format. If the service cannot process the request payload as XML
+# format, it MUST respond with HTTP status code `415 Unsupported Media Type`."
+# A party declaring `ehr-xml-unsupported` declares exactly the antecedent, so
+# the MUST is enforceable against it — and it fires on the MEDIA TYPE, before
+# any document is parsed, which is why the row keeps the codec-derived fixture:
+# the payload's root name is not part of what is asserted, and picking the
+# generic `items`+`xsi:type` spelling instead would be the catalogue endorsing
+# a wire form the release withholds.
+#
+# Step 3 is the state proof: neither refusal may have created anything, so the
+# client-supplied ehr_id must still be unknown (ITS-REST overview
+# Requests_and_responses.md §HTTP status codes, row 404 — "The requested
+# resource could not be found but may be available in the future").
 #
 # Technology-profile scope: canonical XML is OPTIONAL support — Resources.md
 # §Data representation, "Services MUST support at least one of the openEHR
 # **XML** or **JSON** canonical formats for resource representation" — so the
 # case declares the canonical-xml format axis and is counted only against a
-# statement whose technology profile declares that format, rather than gating
-# CORE on a representation the release leaves open.
+# statement whose technology profile declares that format.
 #
 # The ehr_id is the deterministic per-case/per-row value the `provided` matrix
 # sentinel mints (a pure function of case id + row index), so two runners
 # choose the same id and no other case can collide with it.
-#
-# ENFORCEABILITY — this row is judged only against a statement that DECLARES
-# canonical-XML support for the EHR family (register AMB-167,
-# adjudicated 2026-07-28). ITS-REST overview Resources.md §"Data
-# representation" makes the format a service choice ("Services MUST support
-# at least one of the openEHR **XML** or **JSON** canonical formats"), and
-# the published XSDs declare no document element for EHR, and the RM
-# `EHR` complexType (ITS-XML RM Ehr.xsd) is not LOCATABLE-derived, so not
-# even the generic `items` root can carry it.
-# The release therefore DECLARES `application/xml` for this resource and
-# WITHHOLDS the document it would carry: serving the representation (under a
-# root name no released sentence assigns) and refusing it under the §XML
-# Format 406 MUST are BOTH conformant. The opposite arm is the mirror case
-# I_EHR_SERVICE.get_ehr-xml_not_acceptable, gated
-# on `ehr-xml-unsupported`.
 id: I_EHR_SERVICE.create_ehr-xml
 kind: functional
 component: EHR
@@ -62,13 +53,14 @@ sm_operation: I_EHR_SERVICE.create_ehr
 capabilities: [EhrOperations]
 exercises: [EhrApi]
 profiles: [CORE]
-option: ehr-xml-supported       # AMB-167 option_select branch
+option: ehr-xml-unsupported       # AMB-167 option_select branch (the refusal arm)
 ambiguities: [AMB-167]
 test_purpose: >-
-  An EHR_STATUS sent as a canonical-XML request payload creates the EHR under
-  the client-supplied ehr_id, and a second XML create for the same subject is
-  refused as a duplicate.
-description: "Create EHR from a canonical-XML EHR_STATUS payload"
+  On a service that declares it cannot process canonical-XML request payloads
+  for the EHR family, both wire forms of EHR creation refuse an
+  `application/xml` EHR_STATUS payload as unsupported media, and no EHR is
+  created.
+description: "Refuse a canonical-XML EHR_STATUS create payload as unsupported media"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr_for_subject_with_id"
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr_for_subject"
@@ -77,7 +69,7 @@ spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "Canonical-XML support for this resource family is statement-declared, not spec-mandated — the published XSDs declare no document element for EHR and ITS-REST overview Resources.md §Data representation leaves the format to the service, so offering and refusing are both conformant (register AMB-167)"
+  - "Canonical-XML support for this resource family is statement-declared, not spec-mandated — the published XSDs declare no document element for the EHR_STATUS this operation's payload carries and ITS-REST overview Resources.md §Data representation leaves the format to the service, so this row judges only a party that declares it cannot process such a payload (register AMB-167)"
 formats: [canonical-xml]
 requires: { server: any }
 data_sets: [cnf.ehr_status.with_subject.xml]
@@ -92,22 +84,19 @@ flow:
     with:
       ehr_id: "${row.ehr_id}"
       ehr_status: "${ds:cnf.ehr_status.with_subject.xml}"
-    expect: created
+    expect: unsupported_media            # Resources.md §XML Format 415 MUST
   - step: 2
-    call: create_ehr                     # POST /ehr — same subject, same XML payload
+    call: create_ehr                     # POST /ehr — same payload, id-less wire form
     format: canonical-xml                # Content-Type: application/xml
     with: { ehr_status: "${ds:cnf.ehr_status.with_subject.xml}" }
-    expect: already_exists
-  - step: 3                              # the XML payload really created THAT EHR
+    expect: unsupported_media            # Resources.md §XML Format 415 MUST
+  - step: 3                              # the refusals left no EHR behind
     call: get_ehr
     format: canonical-json
     with: { ehr_id: "${row.ehr_id}" }
-    expect: ok
-    assert:
-      - { assert: instance_of, rm_type: EHR }
-      - { assert: field, path: "ehr_id/value", equals: "${row.ehr_id}" }
+    expect: not_found
 postconditions:
   - assert: state
     text: >-
-      Exactly one EHR exists for the XML payload's subject — the one created
-      under the client-supplied ehr_id in step 1 (verified by step 3)
+      No EHR exists under the client-supplied ehr_id — both XML creates were
+      refused before any resource was committed (verified by step 3)

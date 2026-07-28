@@ -507,6 +507,115 @@ pub fn eval_returns(
     Ok(())
 }
 
+/// The root element of an XML document entity: its LOCAL name and, when the
+/// document binds one, the namespace URI it resolves to.
+///
+/// Namespace resolution is delegated to `quick_xml::NsReader` rather than
+/// pattern-matched out of the text: a conforming document may bind the
+/// namespace with any prefix (or as the default `xmlns`), and only a real
+/// resolver relates the root's prefix to the URI in scope for it.
+///
+/// The whole document is read to end-of-input, not just its first tag: a
+/// payload that is not well-formed cannot be valid against any schema either,
+/// so the same §"XML Format" MUST that fixes the root also rules it out.
+///
+/// # Errors
+/// A message when the payload is not a well-formed XML document entity.
+fn xml_root_element(text: &str) -> Result<(String, Option<String>), AssertionFailure> {
+    let mut reader = quick_xml::NsReader::from_str(text);
+    let mut root: Option<(String, Option<String>)> = None;
+    // Element balance, tracked here rather than left to the reader's
+    // configuration: at end of input an unclosed element is a truncated
+    // document, which no schema can validate.
+    let mut depth: i64 = 0;
+    loop {
+        let (resolved, event) = reader
+            .read_resolved_event()
+            .map_err(|e| AssertionFailure(format!("xml_root: body is not well-formed XML: {e}")))?;
+        if matches!(event, quick_xml::events::Event::Start(_)) {
+            depth += 1;
+        } else if matches!(event, quick_xml::events::Event::End(_)) {
+            depth -= 1;
+        }
+        match event {
+            quick_xml::events::Event::Eof => break,
+            quick_xml::events::Event::Start(e) | quick_xml::events::Event::Empty(e)
+                if root.is_none() =>
+            {
+                let local = String::from_utf8_lossy(e.local_name().as_ref()).into_owned();
+                let namespace = match resolved {
+                    quick_xml::name::ResolveResult::Bound(ns) => {
+                        Some(String::from_utf8_lossy(ns.as_ref()).into_owned())
+                    }
+                    quick_xml::name::ResolveResult::Unbound => None,
+                    quick_xml::name::ResolveResult::Unknown(prefix) => {
+                        return Err(AssertionFailure(format!(
+                            "xml_root: the root element's prefix `{}` is not bound to any namespace",
+                            String::from_utf8_lossy(&prefix)
+                        )));
+                    }
+                };
+                root = Some((local, namespace));
+            }
+            // The prolog (declaration, doctype, comments, whitespace) before
+            // the root, and the whole content after it: read through, so an
+            // ill-formed document fails rather than passing on its first tag.
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return Err(AssertionFailure(
+            "xml_root: body is not well-formed XML: the document ends with unclosed elements"
+                .to_owned(),
+        ));
+    }
+    root.ok_or_else(|| AssertionFailure("xml_root: body carries no XML element at all".to_owned()))
+}
+
+/// Evaluate an `xml_root` assertion over a canonical-XML response body.
+///
+/// # Errors
+/// [`AssertionFailure`] when the body is not an XML document entity, when the
+/// root's local name differs, or when its namespace is not the expected
+/// published openEHR ITS-XML target namespace.
+pub fn eval_xml_root(
+    body: &Value,
+    name: &str,
+    namespace: Option<crate::vocab::XmlNamespace>,
+) -> Result<(), AssertionFailure> {
+    let Value::String(text) = body else {
+        return Err(AssertionFailure(format!(
+            "xml_root: expected a canonical-XML document body, got {}",
+            match body {
+                Value::Null => "no body".to_owned(),
+                other => other.to_string().chars().take(80).collect::<String>(),
+            }
+        )));
+    };
+    let (local, uri) = xml_root_element(text)?;
+    if local != name {
+        return Err(AssertionFailure(format!(
+            "xml_root: document root is `{local}`, expected the published document element `{name}`"
+        )));
+    }
+    let Some(expected) = namespace else {
+        return Ok(());
+    };
+    match uri {
+        Some(uri) if expected.accepts(&uri) => Ok(()),
+        Some(uri) => Err(AssertionFailure(format!(
+            "xml_root: root `{local}` is in namespace {uri:?}, expected {}",
+            expected.token()
+        ))),
+        None => Err(AssertionFailure(format!(
+            "xml_root: root `{local}` is in NO namespace, expected {} — every published \
+             ITS-XML schema declares elementFormDefault=\"qualified\" over its targetNamespace, \
+             so a conforming document's root is namespace-qualified",
+            expected.token()
+        ))),
+    }
+}
+
 /// Whether an assertion is wire-dependent (its facts need a driver read:
 /// versioned-object reads for `version`/`signature`, schema validation for
 /// `instance_of`). The pure evaluators above handle the rest.
@@ -596,6 +705,47 @@ mod tests {
         });
         assert!(equivalent(&served, &committed, &["uid".to_owned()]));
         assert!(!equivalent(&served, &committed, &[])); // nothing stripped -> uid differs
+    }
+
+    #[test]
+    fn xml_root_judges_the_published_element_and_its_namespace() {
+        use crate::vocab::XmlNamespace;
+
+        let v1 = Value::String(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+               <composition xmlns="http://schemas.openehr.org/v1"><name/></composition>"#
+                .to_owned(),
+        );
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::Published)).is_ok());
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V1)).is_ok());
+        assert!(eval_xml_root(&v1, "composition", Some(XmlNamespace::V2)).is_err());
+
+        // A prefix binding is equally conforming — only the URI is asserted.
+        let prefixed = Value::String(
+            r#"<oe:composition xmlns:oe="http://schemas.openehr.org/v2"/>"#.to_owned(),
+        );
+        assert!(eval_xml_root(&prefixed, "composition", Some(XmlNamespace::Published)).is_ok());
+
+        // The defect this assertion exists for: a root in NO namespace, against
+        // schemas that are elementFormDefault="qualified" over a targetNamespace.
+        let unqualified = Value::String(r#"<composition archetype_node_id="x"/>"#.to_owned());
+        let failure = eval_xml_root(&unqualified, "composition", Some(XmlNamespace::Published))
+            .expect_err("an unqualified root must fail");
+        assert!(failure.0.contains("NO namespace"), "{failure:?}");
+        // …and the name-only row still passes it, which is why the namespace
+        // fact needs its own assertion rather than a regex over the body.
+        assert!(eval_xml_root(&unqualified, "composition", None).is_ok());
+
+        let wrong_name =
+            Value::String(r#"<folder xmlns="http://schemas.openehr.org/v1"/>"#.to_owned());
+        assert!(eval_xml_root(&wrong_name, "composition", None).is_err());
+
+        // A JSON body is not an XML document entity.
+        assert!(eval_xml_root(&json!({ "_type": "COMPOSITION" }), "composition", None).is_err());
+        assert!(eval_xml_root(&Value::Null, "composition", None).is_err());
+        // Malformed XML fails loudly rather than silently passing.
+        let malformed = Value::String("<composition>".to_owned());
+        assert!(eval_xml_root(&malformed, "composition", None).is_err());
     }
 
     #[test]
