@@ -471,6 +471,7 @@ pub fn eval_returns(
     body: &Value,
     equals: Option<&Value>,
     matches: Option<&str>,
+    omits: Option<&str>,
 ) -> Result<(), AssertionFailure> {
     if let Some(want) = equals {
         if resultset::cells_equal(body, want) {
@@ -480,19 +481,28 @@ pub fn eval_returns(
             "returns: {body} != expected {want}"
         )));
     }
+    let text = match body {
+        Value::String(s) => s.clone(),
+        other => other.to_string(),
+    };
     if let Some(pattern) = matches {
         let re = regex::Regex::new(pattern)
             .map_err(|e| AssertionFailure(format!("returns pattern does not compile: {e}")))?;
-        let text = match body {
-            Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-        if re.is_match(&text) {
-            return Ok(());
+        if !re.is_match(&text) {
+            return Err(AssertionFailure(format!(
+                "returns: {text:?} does not match {pattern:?}"
+            )));
         }
-        return Err(AssertionFailure(format!(
-            "returns: {text:?} does not match {pattern:?}"
-        )));
+    }
+    if let Some(pattern) = omits {
+        let re = regex::Regex::new(pattern).map_err(|e| {
+            AssertionFailure(format!("returns omits pattern does not compile: {e}"))
+        })?;
+        if re.is_match(&text) {
+            return Err(AssertionFailure(format!(
+                "returns: {text:?} matches {pattern:?} but must omit it"
+            )));
+        }
     }
     Ok(())
 }

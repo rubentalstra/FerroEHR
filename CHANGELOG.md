@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+<<<<<<< HEAD
 - **The measured hospital-simulation workload now exercises every claimed
   capability** (#625). The performance run used to touch about a third of the
   capabilities the conformance statement claims, and the rest were listed as
@@ -40,6 +41,28 @@ workflow refuses a tag that has no matching section here.
   measurable at all. Boundary probes address the read-only and
   unauthenticated principals a deployment declares; a deployment that
   declares none simply runs the workload without those journeys.
+=======
+- **Conformance: the last two untested capabilities now carry real executed
+  batteries** (#624). "Demographic archetype validation" and "Bulk EHR load"
+  were the two capabilities the conformance report listed with *no cases* —
+  named in openEHR's conformance profiles book, but never actually exercised.
+  Both are now tested against the released REST wire. Demographic archetype
+  validation gets eight isolated cases over the party-commit endpoints: a
+  committed PERSON/ROLE is refused when it is not archetype-rooted, when its
+  root archetype identifier contradicts its own archetype details, when an
+  optional list (contacts, roles, capabilities) is present but empty, and when
+  an identity's value is missing or carries the wrong openEHR type — plus an
+  accept case proving a fully archetyped party, contacts, addresses and
+  languages included, is stored and read back intact. Bulk EHR load is
+  verified as what it actually is on released wire — a population loaded
+  through the ordinary EHR and composition endpoints — with one case covering
+  breadth (eight EHRs, one composition each, all identities distinct and every
+  document read back unchanged) and one covering depth (four commits into a
+  single EHR, each independently addressable, with an AQL query over that EHR
+  returning exactly the loaded set). Both capabilities are now claimed in the
+  published conformance statement, and their case-count floors are recorded so
+  the coverage can only grow.
+>>>>>>> develop
 
 - **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
   excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
@@ -515,6 +538,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The template list collapses to the latest version of each template when
+  the `version` parameter is absent** (#614). `GET
+  /definition/template/adl1.4` (and the ADL2 twin) used to return every
+  stored version regardless; the released openEHR REST API says an absent
+  `version` returns "only the latest version". Pass `version=*` to list every
+  stored version — the admin console's template inventory does exactly that,
+  so its view is unchanged.
 - **Conformance runner: a requirement the openEHR specification dates to a
   release is now judged only against the servers that claim that release**
   (#627, #628). Two rules the ITS-REST overview introduces at Release 1.1.0 —

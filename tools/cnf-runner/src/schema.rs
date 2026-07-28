@@ -788,6 +788,11 @@ pub fn results_schema() -> Value {
             "schedule_release": { "type": "string", "minLength": 1 },
             "tech_profile": tech_profile_def(),
             "ixit_digest": { "type": "string", "minLength": 1 },
+            "restapi_specs_version": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The restapi_specs_version member the SUT's System OPTIONS manifest served during the campaign, when that exchange was driven (released OAS system.openapi.yaml Options — every member optional, so absence is normal). An independent confirmation of the statement's declared spec_versions.its_rest, never a source of truth: divergence from the declaration is a static-review finding, not a re-declaration."
+            },
             "outcomes": {
                 "type": "array",
                 "items": {

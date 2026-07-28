@@ -52,6 +52,9 @@ fn person(name: &str) -> Value {
     json!({
         "_type": "PERSON",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0" },
         "name": { "_type": "DV_TEXT", "value": name },
         "identities": [{
             "_type": "PARTY_IDENTITY",
@@ -76,6 +79,9 @@ fn organisation(name: &str) -> Value {
     json!({
         "_type": "ORGANISATION",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1" },
+            "rm_version": "1.1.0" },
         "name": { "_type": "DV_TEXT", "value": name },
         "identities": [{
             "_type": "PARTY_IDENTITY",
@@ -100,6 +106,9 @@ fn role(name: &str) -> Value {
     json!({
         "_type": "ROLE",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+            "rm_version": "1.1.0" },
         "name": { "_type": "DV_TEXT", "value": name },
         "identities": [{
             "_type": "PARTY_IDENTITY",

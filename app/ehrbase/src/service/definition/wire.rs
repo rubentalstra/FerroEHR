@@ -59,23 +59,19 @@ impl EhrbaseService {
     /// lifecycle-state model exists, because that would re-model what the id
     /// already carries.
     ///
+    /// With `version` ABSENT the listing collapses to the latest version of
+    /// each template; `version=*` (or any glob) lists every matching stored
+    /// version. The ITS-REST docs text is silent, so the RELEASED OAS grounds
+    /// the behaviour: "Filter by version (e.g. `1.2.*` or use `*` for all
+    /// versions), taken from `template_id`; if missing, then only the latest
+    /// version will be returned"
+    /// (`docs/specs/openehr/ITS-REST/specifications/parameters/query/filter_version.yaml`,
+    /// bundled as `computable/OAS/definition-codegen.openapi.yaml`
+    /// §`components.parameters.filter_version`).
+    ///
     /// # Errors
     ///
     /// A database failure (`exception` → `500`).
-    // TODO: an ABSENT `version` parameter must collapse the listing to the
-    // latest version of each template. The ITS-REST docs text is silent, so
-    // the RELEASED OAS grounds the behaviour (oracle order: docs text first,
-    // the released OAS fills docs-text silence) — and it is explicit:
-    // "Filter by version (e.g. `1.2.*` or use `*` for all versions), taken
-    // from `template_id`; if missing, then only the latest version will be
-    // returned"
-    // (`docs/specs/openehr/ITS-REST/specifications/parameters/query/filter_version.yaml`,
-    // bundled as `computable/OAS/definition-codegen.openapi.yaml`
-    // §`components.parameters.filter_version`). `filter_templates` below
-    // currently applies NO filtering when the parameter is absent, so every
-    // stored version is listed. Completing this means collapsing to the
-    // highest `.vN` per template id when `version` is absent, plus a CNF case
-    // covering both branches (absent → latest-only, `*` → all).
     pub async fn template_adl14_list(
         &self,
         filter: TemplateListFilter,
@@ -304,7 +300,11 @@ impl EhrbaseService {
 ///
 /// `template_id`/`version` glob-match the `template_id` field, `concept`
 /// glob-matches the `concept` field (a record lacking a filtered field does not
-/// match); `page` then applies `offset`/`fetch`
+/// match); with `version` ABSENT the survivors collapse to the latest version
+/// of each template ("if missing, then only the latest version will be
+/// returned" — the released OAS
+/// `parameters/query/filter_version.yaml`, grounding docs-text silence);
+/// `page` then applies `offset`/`fetch`
 /// (`parameters/query/filter_template_id.yaml` — "supports wildcards `*`";
 /// `master02-overview.adoc` §List Handling).
 fn filter_templates(list: Vec<Value>, filter: &TemplateListFilter, page: Page) -> Vec<Value> {
@@ -315,14 +315,102 @@ fn filter_templates(list: Vec<Value>, filter: &TemplateListFilter, page: Page) -
         None => true,
         Some(re) => field.is_some_and(|v| re.is_match(v)),
     };
-    let filtered = list.into_iter().filter(|row| {
-        let template_id = row.get("template_id").and_then(Value::as_str);
-        let concept_field = row.get("concept").and_then(Value::as_str);
-        matches(&tid, template_id)
-            && matches(&concept, concept_field)
-            && matches(&version, template_id)
-    });
-    paginate(filtered, page)
+    let filtered = list
+        .into_iter()
+        .filter(|row| {
+            let template_id = row.get("template_id").and_then(Value::as_str);
+            let concept_field = row.get("concept").and_then(Value::as_str);
+            matches(&tid, template_id)
+                && matches(&concept, concept_field)
+                && matches(&version, template_id)
+        })
+        .collect();
+    let effective = if version.is_none() {
+        collapse_to_latest(filtered)
+    } else {
+        filtered
+    };
+    paginate(effective.into_iter(), page)
+}
+
+/// Collapse a filtered template listing to the latest version of each
+/// template — the ABSENT-`version` wire behaviour
+/// (`parameters/query/filter_version.yaml`: "if missing, then only the latest
+/// version will be returned").
+///
+/// "The same template" means the same base identifier once the `.vN` version
+/// axis (`crate::templates::identity::template_version`) is stripped, compared
+/// case-insensitively like every template identity
+/// (`crate::templates::identity::canonical_key`). Version axes order
+/// numerically segment by segment (`1.10` > `1.2`); on a numeric-prefix tie
+/// the longer, more precise axis wins (`1.0` > `1`).
+///
+/// NOTE: no openEHR spec relates an id WITHOUT a version axis to a versioned
+/// sibling (`Foo` vs `Foo.v1`) or orders numerically equal axes — treating an
+/// unversioned id as a version of another id would be a guess, so an
+/// unversioned id stays its own identity and is always listed; the
+/// prefix-tie rule is our own deterministic tiebreak (no openEHR spec governs
+/// this — our own design/extension).
+fn collapse_to_latest(rows: Vec<Value>) -> Vec<Value> {
+    // The best (row index, version axis) seen per base identity, in first-seen
+    // order so the collapse is stable with respect to the store's listing.
+    let mut best: Vec<(String, usize, String)> = Vec::new();
+    let mut keep: Vec<Option<Value>> = Vec::new();
+    for row in rows {
+        let idx = keep.len();
+        let Some((base, axis)) = row
+            .get("template_id")
+            .and_then(Value::as_str)
+            .and_then(split_version_axis)
+        else {
+            // No template_id (already unmatched by any filter) or no version
+            // axis: its own identity, always listed.
+            keep.push(Some(row));
+            continue;
+        };
+        keep.push(Some(row));
+        match best.iter_mut().find(|(b, _, _)| *b == base) {
+            None => best.push((base, idx, axis)),
+            Some((_, held_idx, held_axis)) => {
+                if version_axis_gt(&axis, held_axis) {
+                    keep[*held_idx] = None;
+                    *held_idx = idx;
+                    *held_axis = axis;
+                } else {
+                    keep[idx] = None;
+                }
+            }
+        }
+    }
+    keep.into_iter().flatten().collect()
+}
+
+/// Split a template id into its case-folded base identity and its version
+/// axis; `None` when the id carries no `.vN` axis.
+fn split_version_axis(template_id: &str) -> Option<(String, String)> {
+    let axis = crate::templates::identity::template_version(template_id)?;
+    let trimmed = template_id.trim();
+    let base = trimmed
+        .get(..trimmed.len() - (".v".len() + axis.len()))
+        .unwrap_or(trimmed);
+    Some((crate::templates::identity::canonical_key(base), axis))
+}
+
+/// `true` iff version axis `a` orders strictly after `b`: dotted segments
+/// compare numerically (digits-only by construction, so longer segment ⇒
+/// larger number; equal length ⇒ lexicographic), and on a numeric-prefix tie
+/// the axis with more segments wins.
+fn version_axis_gt(a: &str, b: &str) -> bool {
+    let seg = |s: &str| s.split('.').map(str::to_owned).collect::<Vec<_>>();
+    let (a, b) = (seg(a), seg(b));
+    for (x, y) in a.iter().zip(&b) {
+        match (x.len(), x.as_str()).cmp(&(y.len(), y.as_str())) {
+            std::cmp::Ordering::Greater => return true,
+            std::cmp::Ordering::Less => return false,
+            std::cmp::Ordering::Equal => {}
+        }
+    }
+    a.len() > b.len()
 }
 
 /// Compile a glob pattern (`*` wildcard, per `filter_template_id.yaml`) into an
@@ -349,6 +437,102 @@ fn glob_to_regex(pattern: &str) -> Regex {
 )] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
+
+    fn rows(ids: &[&str]) -> Vec<Value> {
+        ids.iter()
+            .map(|id| serde_json::json!({ "template_id": id, "concept": id }))
+            .collect()
+    }
+
+    fn ids(rows: &[Value]) -> Vec<&str> {
+        rows.iter()
+            .filter_map(|r| r.get("template_id").and_then(Value::as_str))
+            .collect()
+    }
+
+    #[test]
+    fn absent_version_collapses_to_the_latest_axis() {
+        // filter_version.yaml: "if missing, then only the latest version will
+        // be returned" — one row per base id, the highest `.vN` axis.
+        let out = filter_templates(
+            rows(&[
+                "Encounter.v1",
+                "Encounter.v2",
+                "Encounter.v1.9",
+                "Vital Signs.v0",
+            ]),
+            &TemplateListFilter::default(),
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["Encounter.v2", "Vital Signs.v0"]);
+    }
+
+    #[test]
+    fn version_axes_order_numerically_not_lexically() {
+        // `1.10` > `1.9`, and `2` > `1.999`.
+        let out = filter_templates(
+            rows(&["T.v1.9", "T.v1.10", "U.v1.999", "U.v2"]),
+            &TemplateListFilter::default(),
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["T.v1.10", "U.v2"]);
+    }
+
+    #[test]
+    fn base_identity_is_case_insensitive_and_prefix_ties_prefer_precision() {
+        // `ENCOUNTER.V2` vs `Encounter.v1`: same base identity
+        // (identity::canonical_key) — but note template_version only
+        // recognizes the lowercase `.v` axis, so the uppercase id is its own
+        // unversioned identity and both survive. Same-case bases collapse;
+        // a numeric-prefix tie keeps the more precise axis (`1.0` > `1`).
+        let out = filter_templates(
+            rows(&["Report.v1", "report.v1.0"]),
+            &TemplateListFilter::default(),
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["report.v1.0"]);
+    }
+
+    #[test]
+    fn unversioned_ids_are_their_own_identity_and_always_listed() {
+        // No spec relates `Foo` to `Foo.v1` — the unversioned id stays listed
+        // beside the latest versioned sibling.
+        let out = filter_templates(
+            rows(&["Foo", "Foo.v1", "Foo.v3", "Foo.verified"]),
+            &TemplateListFilter::default(),
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["Foo", "Foo.v3", "Foo.verified"]);
+    }
+
+    #[test]
+    fn star_version_glob_lists_every_stored_version() {
+        // `*` — "use `*` for all versions" (filter_version.yaml): no collapse.
+        let all = rows(&["Encounter.v1", "Encounter.v2"]);
+        let out = filter_templates(
+            all.clone(),
+            &TemplateListFilter {
+                version: Some("*".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert_eq!(out, all);
+    }
+
+    #[test]
+    fn concrete_version_glob_filters_without_collapsing() {
+        // A partial glob (`1.*`) behaves as today: every matching version.
+        let out = filter_templates(
+            rows(&["T.v1.0", "T.v1.5", "T.v2.0"]),
+            &TemplateListFilter {
+                version: Some("*v1.*".into()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        );
+        assert_eq!(ids(&out), vec!["T.v1.0", "T.v1.5"]);
+    }
 
     #[test]
     fn glob_matches_literally_with_star_wildcard() {
