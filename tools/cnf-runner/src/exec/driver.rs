@@ -812,14 +812,78 @@ fn template_ref_name(template: &Template) -> Option<&str> {
 
 /// Minimal base64 (standard alphabet, padding) — avoids a crypto dep for
 /// one Basic-auth header.
-/// The equivalence-failure diagnostic (80-char previews of both sides).
+/// The equivalence-failure diagnostic: the first differing paths (path, got,
+/// want), so a red row carries triage-usable evidence — two 80-char head
+/// previews forced the 2026-07-28 composition-XML triage to reconstruct the
+/// diff offline from the codec instead of reading it from results.json.
 fn equivalence_mismatch(body: &Value, expected: &Value) -> AssertionFailure {
-    let brief = |v: &Value| v.to_string().chars().take(80).collect::<String>();
+    let mut diffs: Vec<String> = Vec::new();
+    diff_paths(body, expected, "$", &mut diffs);
+    let shown = 6;
+    let suffix = if diffs.len() > shown {
+        format!(" … and {} more differing path(s)", diffs.len() - shown)
+    } else {
+        String::new()
+    };
     AssertionFailure(format!(
-        "equivalent: retrieved content differs from committed (modulo the normative ignore-set); got {} … want {} …",
-        brief(body),
-        brief(expected)
+        "equivalent: retrieved content differs from committed (modulo the normative ignore-set); {}{}",
+        diffs
+            .iter()
+            .take(shown)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; "),
+        suffix
     ))
+}
+
+/// Collect the paths where two JSON trees differ (leaf previews truncated,
+/// structure-first): missing keys, length mismatches, and unequal leaves.
+fn diff_paths(got: &Value, want: &Value, path: &str, out: &mut Vec<String>) {
+    let brief = |v: &Value| {
+        let s = v.to_string();
+        if s.chars().count() > 60 {
+            let head: String = s.chars().take(60).collect();
+            format!("{head}…")
+        } else {
+            s
+        }
+    };
+    match (got, want) {
+        (Value::Object(x), Value::Object(y)) => {
+            // `_type` presence on one side only is tolerated by the
+            // comparator (assertions::rm_cells_equal) — keep the diagnostic
+            // aligned so a red row never lists only tolerated diffs.
+            for (k, vw) in y {
+                match x.get(k) {
+                    Some(vg) => diff_paths(vg, vw, &format!("{path}/{k}"), out),
+                    None if k == "_type" => {}
+                    None => out.push(format!(
+                        "{path}/{k}: absent in retrieved (want {})",
+                        brief(vw)
+                    )),
+                }
+            }
+            for (k, vg) in x {
+                if !y.contains_key(k) && k != "_type" {
+                    out.push(format!("{path}/{k}: surplus in retrieved ({})", brief(vg)));
+                }
+            }
+        }
+        (Value::Array(x), Value::Array(y)) => {
+            if x.len() != y.len() {
+                out.push(format!("{path}: array length {} vs {}", x.len(), y.len()));
+            }
+            for (i, (vg, vw)) in x.iter().zip(y).enumerate() {
+                diff_paths(vg, vw, &format!("{path}[{i}]"), out);
+            }
+        }
+        _ => {
+            if !crate::exec::resultset::cells_equal(got, want) {
+                out.push(format!("{path}: got {} want {}", brief(got), brief(want)));
+            }
+        }
+    }
 }
 
 /// Parse an IMF-fixdate `Date` header ("Sun, 06 Nov 1994 08:49:37 GMT") to
