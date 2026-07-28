@@ -587,6 +587,20 @@ impl SpecComponent {
         SpecComponent::ItsRest,
         SpecComponent::Term,
     ];
+
+    /// The authored key of this component in an `applies` map / a statement's
+    /// `spec_versions` — the one spelling every renderer and citation uses.
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            SpecComponent::Rm => "rm",
+            SpecComponent::Base => "base",
+            SpecComponent::Am => "am",
+            SpecComponent::Aql => "aql",
+            SpecComponent::ItsRest => "its_rest",
+            SpecComponent::Term => "term",
+        }
+    }
 }
 
 impl ChangeType {

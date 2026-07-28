@@ -83,6 +83,25 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   order (owner rulings 2026-07-24 + 2026-07-28): the ITS-REST docs text
   first and on every conflict; the released OAS only for behaviour the docs
   text is silent on, cited AS the OAS.
+- **A version floor is the SAME `applies` block at every level, and it goes
+  where the SPEC puts the requirement.** One struct
+  (`rm`/`base`/`am`/`aql`/`its_rest`/`term`, semver ranges), one predicate
+  (`Applies::satisfied_by`, undeclared ⇒ out of scope), three legal homes:
+  a CASE core when the whole behaviour is release-dated; an OPERATION binding
+  (`OperationBinding.applies`, enforced at selection in `run.rs`) when the
+  wire itself arrived in a later release; a HEADER expectation
+  (`HeaderExpectation.applies`) when only one response RULE is dated and the
+  operation is not — the live case, since the overview dates the `W/` ETag
+  MUST and the read/DELETE `Location` restriction to Release 1.1.0. Never
+  raise a header rule's floor to the case: that takes a party out of scope
+  for behaviour it does implement. A header expectation also carries
+  `optional: true` (authored bare as `present?`) when the released text makes
+  PRESENCE a SHOULD while the FORM stays a MUST.
+- **One request-construction path** (`exec/driver.rs::compose_headers`): a
+  driven step and a case precondition build headers in the SAME function, so
+  an operation can never go on the wire two ways by code path. Bindings
+  declare the `Accept`/`Content-Type` they intend; provisioning passes
+  `step: None` and that is the only difference a caller may express.
 - **Expectations trace to the released spec** (`docs/specs/openehr/CNF/`,
   `QUERY`, `ITS-REST` docs text; the released OAS fills docs-text silence
   per the 2026-07-28 ruling and loses every conflict) — never to observed

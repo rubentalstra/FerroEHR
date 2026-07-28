@@ -52,6 +52,26 @@ impl Applies {
         .filter_map(|(c, r)| r.as_ref().map(|r| (c, r)))
         .collect()
     }
+
+    /// Whether every declared range is satisfied by the party's declared spec
+    /// versions.
+    ///
+    /// An UNDECLARED or unparsable version fails the filter: the party has
+    /// not claimed the release the range names, so whatever the range gates —
+    /// a case, an operation binding, a version-dated header expectation — is
+    /// out of scope for it. This is one rule with one polarity everywhere it
+    /// is consulted (`crate::verdict` selection, `crate::run` selection,
+    /// `crate::exec::headers` matcher scoping), never an exemption invented
+    /// per call site.
+    #[must_use]
+    pub fn satisfied_by(&self, versions: &crate::party::SpecVersions) -> bool {
+        self.entries().into_iter().all(|(component, range)| {
+            versions
+                .get(component)
+                .and_then(|raw| semver::Version::parse(raw).ok())
+                .is_some_and(|version| range.req().matches(&version))
+        })
+    }
 }
 
 /// A semver requirement, validated at parse.

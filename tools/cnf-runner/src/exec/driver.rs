@@ -37,6 +37,10 @@ pub struct Exchange {
 pub struct HttpDriver<'a> {
     set: &'a ArtifactSet,
     ixit: &'a Ixit,
+    /// The party statement's declared spec versions — the right-hand side of
+    /// every `applies` floor consulted while driving (the version-dated
+    /// header expectations). `None` on a statement-blind sweep.
+    spec_versions: Option<&'a crate::party::SpecVersions>,
     client: reqwest::blocking::Client,
     resolver: Resolver<'a>,
     /// The payloads committed this row (the `equivalent to: committed`
@@ -67,7 +71,11 @@ impl<'a> HttpDriver<'a> {
     /// # Errors
     /// A message when the artifact set lacks a corpus or the client cannot
     /// be constructed.
-    pub fn new(set: &'a ArtifactSet, ixit: &'a Ixit) -> Result<Self, String> {
+    pub fn new(
+        set: &'a ArtifactSet,
+        ixit: &'a Ixit,
+        spec_versions: Option<&'a crate::party::SpecVersions>,
+    ) -> Result<Self, String> {
         let (_, manifest) = set
             .corpus
             .as_ref()
@@ -83,6 +91,7 @@ impl<'a> HttpDriver<'a> {
         Ok(Self {
             set,
             ixit,
+            spec_versions,
             client,
             resolver: Resolver::new(manifest, corpus_dir, Some(ixit)),
             committed: Vec::new(),
@@ -1470,15 +1479,11 @@ impl HttpDriver<'_> {
                 .scalar(&CaptureName::parse("ehr_id").map_err(|e| e.to_string())?)
                 .ok_or_else(|| "requires.commit without a provisioned ehr".to_owned())?
                 .to_owned();
+            let headers = Self::compose_headers(
+                self.set, self.ixit, case, None, binding, instance, vars, None,
+            )?;
             let mut uids = Vec::new();
             for item in items {
-                let mut headers = BTreeMap::new();
-                headers.insert("Content-Type".to_owned(), "application/json".to_owned());
-                headers.insert("Accept".to_owned(), "application/json".to_owned());
-                headers.insert("Prefer".to_owned(), "return=representation".to_owned());
-                if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
-                    headers.insert("Authorization".to_owned(), auth);
-                }
                 let base = instance.base_url.trim_end_matches('/');
                 let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
                 let url = format!("{base}{path}");
@@ -1501,15 +1506,33 @@ impl HttpDriver<'_> {
 }
 
 impl HttpDriver<'_> {
-    /// Headers: binding request headers + format headers + auth + instance
-    /// extras. `scopes` is the step's resolved SMART `scope` claim (`None` =
-    /// the step declared none), consumed only by a `bearer_mint` principal.
+    /// **The ONE request-header construction path** (issue #629): binding
+    /// request headers + format headers + auth + instance extras, for every
+    /// request the runner sends — a driven flow step AND precondition
+    /// provisioning alike.
+    ///
+    /// It is one function because it was two: the step path injected
+    /// `Accept: application/json` while the provisioning path for the SAME
+    /// operation sent none, so one operation went on the wire two different
+    /// ways depending on which code path reached it (the ADL 1.4 template
+    /// upload 406'd as a case and succeeded as a precondition). A binding
+    /// declares the request it intends; nothing else may quietly send a
+    /// different one.
+    ///
+    /// `step` is `None` for provisioning. That is the only difference the
+    /// caller may express, and it means exactly one thing: no step/case
+    /// FORMAT applies, because a precondition lays its ground through the
+    /// canonical wire the binding pins, never through the simplified format
+    /// the case happens to exercise.
+    ///
+    /// `scopes` is the step's resolved SMART `scope` claim (`None` = the step
+    /// declared none), consumed only by a `bearer_mint` principal.
     #[allow(clippy::too_many_arguments)] // one parameter per header source; splitting hides the assembly order
-    fn build_headers(
+    fn compose_headers(
         set: &ArtifactSet,
         ixit: &Ixit,
         case: &CaseCore,
-        step: &FlowStep,
+        step: Option<&FlowStep>,
         binding: &OperationBinding,
         instance: &Instance,
         vars: &VarStore,
@@ -1519,6 +1542,10 @@ impl HttpDriver<'_> {
             .request
             .as_ref()
             .ok_or_else(|| "binding is unrealized".to_owned())?;
+        let site = step.map_or_else(
+            || "provisioning".to_owned(),
+            |step| format!("step {}", step.step),
+        );
         let mut headers: BTreeMap<String, String> = BTreeMap::new();
         if let Some(request_headers) = &request_spec.headers {
             for (name, template) in request_headers {
@@ -1527,12 +1554,12 @@ impl HttpDriver<'_> {
                         headers.insert(name.clone(), value);
                     }
                     Err(e) => {
-                        return Err(format!("step {}: header {name}: {e}", step.step));
+                        return Err(format!("{site}: header {name}: {e}"));
                     }
                 }
             }
         }
-        let format = step.format.or_else(|| case.formats.first().copied());
+        let format = step.and_then(|step| step.format.or_else(|| case.formats.first().copied()));
         if let Some(format) = format {
             let media = Self::media_type(format);
             // The step's format has two distinct roles by request shape: on a
@@ -1551,7 +1578,7 @@ impl HttpDriver<'_> {
                 headers
                     .entry("Accept".to_owned())
                     .or_insert_with(|| "application/json".to_owned());
-            } else if step.format.is_some() {
+            } else if step.is_some_and(|step| step.format.is_some()) {
                 // An EXPLICIT step-level format names the desired RESPONSE
                 // representation and overrides any binding-pinned Accept
                 // (e.g. get_opt pins application/xml, but `format: wt`
@@ -1586,7 +1613,7 @@ impl HttpDriver<'_> {
                             // `requires.templates` is rightly empty). Fallback:
                             // the case's provisioned template list (corpus key
                             // itself for entries that predate the metadata).
-                            let body_ds_template_id =
+                            let body_ds_template_id = step.and_then(|step| {
                                 step.with_entries().iter().find_map(|(_, v)| {
                                     v.refs().iter().find_map(|r| match r {
                                         crate::refgrammar::ValueRef::DataSet { key, .. } => set
@@ -1596,7 +1623,8 @@ impl HttpDriver<'_> {
                                             .and_then(|e| e.template_id.clone()),
                                         _ => None,
                                     })
-                                });
+                                })
+                            });
                             let template_id = body_ds_template_id.or_else(|| {
                                 case.requires.templates.first().map(|key| {
                                     set.corpus
@@ -1614,7 +1642,8 @@ impl HttpDriver<'_> {
                 }
             }
         } else {
-            // Format-less step: the canonical JSON default representation.
+            // Format-less request (a provisioning call, or a step whose case
+            // names no format): the canonical JSON default representation.
             // A body-carrying request MUST label its payload — a strict SUT
             // rightly 415s an unlabeled body (ITS-REST overview Resources
             // §Data representation: JSON is the default representation;
@@ -1656,6 +1685,7 @@ impl HttpDriver<'_> {
         let header_ctx = crate::exec::headers::RequestContext {
             accept: sent_headers.get("Accept").map(String::as_str),
             last_version_uid: self.last_version_uid.as_deref(),
+            spec_versions: self.spec_versions,
         };
         let mut failures =
             crate::exec::headers::evaluate(expectation, &exchange.headers, &header_ctx, vars);
@@ -1713,19 +1743,9 @@ impl HttpDriver<'_> {
                 .request
                 .as_ref()
                 .ok_or_else(|| "create_ehr unrealized".to_owned())?;
-            let mut headers = BTreeMap::new();
-            if let Some(hs) = &request_spec.headers {
-                for (name, template) in hs {
-                    if let Ok(v) = assertions::render_template(template, vars) {
-                        headers.insert(name.clone(), v);
-                    }
-                }
-            }
-            headers.insert("Accept".to_owned(), "application/json".to_owned());
-            headers.insert("Content-Type".to_owned(), "application/json".to_owned());
-            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
-                headers.insert("Authorization".to_owned(), auth);
-            }
+            let headers = Self::compose_headers(
+                self.set, self.ixit, case, None, binding, instance, vars, None,
+            )?;
             let base = instance.base_url.trim_end_matches('/');
             let url = format!("{base}{}", request_spec.path.raw());
             let exchange = self.send(request_spec.method, &url, &headers, None, true)?;
@@ -2012,20 +2032,16 @@ impl HttpDriver<'_> {
             .request
             .as_ref()
             .ok_or_else(|| "upload_opt unrealized".to_owned())?;
-        let mut headers = BTreeMap::new();
-        if let Some(hs) = &request_spec.headers {
-            for (name, template) in hs {
-                if let Ok(v) = assertions::render_template(template, &VarStore::default()) {
-                    headers.insert(name.clone(), v);
-                }
-            }
-        }
-        headers
-            .entry("Content-Type".to_owned())
-            .or_insert_with(|| "application/xml".to_owned());
-        if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
-            headers.insert("Authorization".to_owned(), auth);
-        }
+        let headers = Self::compose_headers(
+            self.set,
+            self.ixit,
+            case,
+            None,
+            binding,
+            instance,
+            &VarStore::default(),
+            None,
+        )?;
         let base = instance.base_url.trim_end_matches('/');
         let url = format!("{base}{}", request_spec.path.raw());
         // 409 tolerated: a re-run row re-uploads the same deterministic OPT.
@@ -2097,11 +2113,11 @@ impl StepDriver for HttpDriver<'_> {
         // resolved `with` values (e.g. update_composition-non_existent
         // supplies preceding_version_uid inline, not as a capture).
         let header_vars = Self::merge_with_vars(vars, &with);
-        let headers = match Self::build_headers(
+        let headers = match Self::compose_headers(
             self.set,
             self.ixit,
             case,
-            step,
+            Some(step),
             binding,
             instance,
             &header_vars,
@@ -2217,24 +2233,16 @@ impl StepDriver for HttpDriver<'_> {
                 .request
                 .as_ref()
                 .ok_or_else(|| "upload_opt unrealized".to_owned())?;
-            let mut headers = BTreeMap::new();
-            if let Some(hs) = &request_spec.headers {
-                for (name, template) in hs {
-                    if let Ok(v) = assertions::render_template(template, &VarStore::default()) {
-                        headers.insert(name.clone(), v);
-                    }
-                }
-            }
-            headers.entry("Content-Type".to_owned()).or_insert_with(|| {
-                if is_adl2 {
-                    "text/plain".to_owned()
-                } else {
-                    "application/xml".to_owned()
-                }
-            });
-            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
-                headers.insert("Authorization".to_owned(), auth);
-            }
+            let headers = Self::compose_headers(
+                self.set,
+                self.ixit,
+                case,
+                None,
+                binding,
+                instance,
+                &VarStore::default(),
+                None,
+            )?;
             let base = instance.base_url.trim_end_matches('/');
             let url = format!("{base}{}", request_spec.path.raw());
             // 409 tolerated: already provisioned (the send records it).
@@ -2262,13 +2270,9 @@ impl StepDriver for HttpDriver<'_> {
                 .scalar(&CaptureName::parse("ehr_id").map_err(|e| e.to_string())?)
                 .ok_or_else(|| "requires.directory without a provisioned ehr".to_owned())?
                 .to_owned();
-            let mut headers = BTreeMap::new();
-            headers.insert("Content-Type".to_owned(), "application/json".to_owned());
-            headers.insert("Accept".to_owned(), "application/json".to_owned());
-            headers.insert("Prefer".to_owned(), "return=representation".to_owned());
-            if let Some(auth) = Self::auth_header(self.ixit, &instance.auth, None)? {
-                headers.insert("Authorization".to_owned(), auth);
-            }
+            let headers = Self::compose_headers(
+                self.set, self.ixit, case, None, binding, instance, vars, None,
+            )?;
             let base = instance.base_url.trim_end_matches('/');
             let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
             let url = format!("{base}{path}");
