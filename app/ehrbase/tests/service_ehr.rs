@@ -1317,8 +1317,8 @@ async fn item_tag_wire_shape_is_the_rm_item_tag() {
     assert_eq!(tag["target_path"], "/context");
     // target: the RM shape — a bare UID_BASED_ID (`item_tag.adoc`:
     // `target: UID_BASED_ID`, "may be a VERSIONED_OBJECT<T> or a VERSION<T>");
-    // a container target is its HIER_OBJECT_ID. The stalled OAS's OBJECT_REF
-    // wrapper lost to the RELEASED RM (owner ruling 2026-07-24).
+    // a container target is its HIER_OBJECT_ID. The released OAS's OBJECT_REF
+    // wrapper lost the real conflict to the RELEASED RM (owner ruling 2026-07-24).
     assert_eq!(tag["target"]["_type"], "HIER_OBJECT_ID");
     assert_eq!(tag["target"]["value"], vo_id);
     // owner_id: OBJECT_REF naming the owning EHR.

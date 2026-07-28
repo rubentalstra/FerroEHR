@@ -5387,9 +5387,9 @@ pub(crate) async fn contribution_get(
 /// every taggable kind (COMPOSITION, `EHR_STATUS`, FOLDER). Each row names its
 /// own `target` by identifier, but NOT by RM class: the RM types `target` as a
 /// bare `UID_BASED_ID` (`item_tag.adoc`), which carries no `type` member, so a
-/// client that needs the target's kind resolves the uid. (The stalled OAS
-/// models `target` as an `OBJECT_REF`, which would carry it; the released RM
-/// wins.)
+/// client that needs the target's kind resolves the uid. (The released OAS
+/// models `target` as an `OBJECT_REF`, which would carry it — a real
+/// conflict; the released RM wins.)
 ///
 /// The list is unbounded: the released operation declares no `offset`/`fetch`,
 /// ordering or limit parameter, so every matching tag is returned. The
@@ -5453,7 +5453,7 @@ pub(crate) async fn contribution_get(
                                         target — and `owner_id` is the RM \
                                         `OBJECT_REF` of the owning EHR \
                                         (`{namespace: local, type: EHR, id: \
-                                        <ehr_id>}`). The stalled OAS `ItemTag` \
+                                        <ehr_id>}`). The released OAS `ItemTag` \
                                         schema types `target` as an OBJECT_REF \
                                         instead; the RM is the RELEASED \
                                         component and wins. The example shows \
@@ -5587,7 +5587,7 @@ pub(crate) async fn ehr_tags_get(
                                         the container form, `OBJECT_VERSION_ID` \
                                         for the version form — and `owner_id` \
                                         the OBJECT_REF of the owning EHR. \
-                                        (The stalled OAS `ItemTag` schema \
+                                        (The released OAS `ItemTag` schema \
                                         types `target` as an OBJECT_REF; the \
                                         RM is the RELEASED component and \
                                         wins.) `target_path` is present only \
@@ -6115,7 +6115,7 @@ pub(crate) async fn composition_tags_delete(
                                         the container form, `OBJECT_VERSION_ID` \
                                         for the version form — and `owner_id` \
                                         the OBJECT_REF of the owning EHR. \
-                                        (The stalled OAS `ItemTag` schema \
+                                        (The released OAS `ItemTag` schema \
                                         types `target` as an OBJECT_REF; the \
                                         RM is the RELEASED component and \
                                         wins.) `target_path` is present only \

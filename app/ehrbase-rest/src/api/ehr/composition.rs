@@ -207,9 +207,10 @@ pub(super) async fn run(
             let body = decode_composition_body(&state, h, &parts.body).await?;
             // A body-supplied COMPOSITION.uid must identify the same
             // versioned object as the path `uid_based_id` — never a silent
-            // write to the path's object. NOTE: no released ITS-REST sentence
-            // assigns this rejection (the "must match" rule appears only in
-            // the stalled OAS operation description); the body is well-formed,
+            // write to the path's object. NOTE: the "must match" rule is
+            // grounded by the released OAS operation description (the docs
+            // text is silent), but neither source assigns the rejection a
+            // status; the body is well-formed,
             // so the fitting released row is 422 ("well-formed but was unable
             // to be followed due to semantic errors",
             // Requests_and_responses.md §HTTP status codes) — our register-

@@ -191,8 +191,8 @@ impl EhrbaseService {
 /// optional `value`/`target_path`, `target` as a bare `UID_BASED_ID` — a
 /// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
 /// VERSION target ("may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") —
-/// exactly the EHR sibling's shape (the settled RM-target law; the stalled OAS
-/// `ItemTag` schema's `OBJECT_REF` wrapper loses to the released RM).
+/// exactly the EHR sibling's shape (the settled RM-target law; the released
+/// OAS `ItemTag` schema's `OBJECT_REF` wrapper loses the conflict to the RM).
 ///
 /// NOTE: `owner_id` follows the released examples' shape — an `OBJECT_REF`
 /// `{namespace: local, type: SYSTEM}` whose `id` carries the server's

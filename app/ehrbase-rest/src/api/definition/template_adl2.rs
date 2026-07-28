@@ -171,7 +171,7 @@ pub(super) async fn example_get(
         .backend()
         .template_adl2_example(p.template_id.clone(), p.detail_level, p.r#type)
         .await?;
-    // Negotiate the four representations the dev-OAS `Accept_LOCATABLE`
+    // Negotiate the four representations the released OAS `Accept_LOCATABLE`
     // enumerates (json / xml / wt.flat+json / wt.structured+json). Any other
     // media type is a `406`.
     match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {

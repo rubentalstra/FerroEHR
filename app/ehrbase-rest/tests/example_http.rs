@@ -5,8 +5,8 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the template-example endpoint
-//! (`GET /definition/template/adl1.4/{template_id}/example`, a post-1.0.3
-//! dev-OAS operation).
+//! (`GET /definition/template/adl1.4/{template_id}/example`, a Release-1.1.0
+//! operation — ITS-REST overview `Amendment_record` §Release-1.1.0, SPECITS-58).
 //!
 //! The Demo Vitals OPT is uploaded through the real wire
 //! (`POST /definition/template/adl1.4`, `application/xml`); the real service
