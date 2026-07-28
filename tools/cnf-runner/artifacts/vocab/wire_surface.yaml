@@ -1103,6 +1103,26 @@ elements:
     covered_by:
       - SF-LEGACY-nc_flat_media_unsupported
       - SF-LEGACY-tds2_accept_unsupported
+  # Simplified-Formats mapping rows the FLAT wire cannot carry, or cannot carry
+  # on this corpus (ITS-REST docs/simplified_formats/master05-rm_mapping.adoc).
+  - id: simplified-participation-time-not-emitted
+    description: "PARTICIPATION.time has no FLAT representation: the mapping table defines |function, |mode, |name, |id, |id_scheme, |id_namespace and the |identifiers_* family, and the section's own NOTE states that the RM time interval is not emitted at all, directing such entries to canonical RM JSON."
+    source: "ITS-REST simplified_formats master05-rm_mapping.adoc §PARTICIPATION (the ten-row mapping table, which has no time row, and the closing NOTE: \"PARTICIPATION's `time` (RM `DV_INTERVAL<DV_DATE_TIME>`) is not currently emitted by FLAT mappings. Entries with a constrained participation `time` interval require the canonical RM JSON form.\") + RM common §PARTICIPATION (time: DV_INTERVAL<DV_DATE_TIME> 0..1)"
+    exception:
+      reason: off_wire
+      note: "The specification itself puts this attribute off the simplified wire, so there is nothing for a case to assert: `present` would demand a serialization no released table defines, and `absent` would pin a hole the same NOTE marks as provisional (\"not currently\"). The canonical route the NOTE names IS exercised — a participation time interval round-trips through the canonical JSON/XML composition cases — so the datum is not unreachable, only unreachable in FLAT/STRUCTURED. Revisits if a future release gives PARTICIPATION.time a suffix; the master05 semantic battery (crates/openehr-its/tests/master05_tables.rs) records the row's absence explicitly rather than skipping it."
+  - id: simplified-instruction-details-suffixes
+    description: "The ACTION _instruction_details node carries three flat suffixes on the node itself — |path -> instruction_id.path, |composition_uid -> instruction_id.id, |activity_id -> activity_id, all required — and not a nested instruction_id child with OBJECT_REF suffixes."
+    source: "ITS-REST simplified_formats master05-rm_mapping.adoc §INSTRUCTION_DETAILS (the three-row mapping table and its worked example, which agree: `…/_instruction_details|path`, `…/_instruction_details|composition_uid`, `…/_instruction_details|activity_id`) + §ACTION (the `/_instruction_details` row typing the node INSTRUCTION_DETAILS) + RM composition §INSTRUCTION_DETAILS (instruction_id: LOCATABLE_REF 1..1, activity_id: String 1..1)"
+    exception:
+      reason: coverage_gap
+      note: "A corpus gap, not a spec silence: the mapping is unambiguous and is implemented and proven row-by-row by the master05 semantic battery (crates/openehr-its/tests/master05_tables.rs §INSTRUCTION_DETAILS), but no committed FLAT fixture commits ACTION content — the SF cases run on cnf.opt.vitals (OBSERVATION) and cnf.opt.maximal (OBSERVATION + EVALUATION), and cnf.opt.minimal_action is provisioned only as a template-endpoint carrier. Closes with a FLAT fixture that commits an ACTION carrying _instruction_details plus its canonical read-back assertions in the SF-MAP-* group; until then the wire behaviour is stated here rather than silently omitted."
+  - id: simplified-interval-event-sample-count
+    description: "INTERVAL_EVENT carries |sample_count (INTEGER -> sample_count) as a datum suffix on the event node itself, alongside the /width and /math_function sub-paths."
+    source: "ITS-REST simplified_formats master05-rm_mapping.adoc §INTERVAL_EVENT (the `\\|sample_count` row, Flat type INTEGER, RM Path sample_count, Required no; the second worked example spelling it `…/any_event:0|sample_count: 5`, a suffix on the event and not a sub-path) + RM data_structures §INTERVAL_EVENT (sample_count: Integer 0..1)"
+    exception:
+      reason: coverage_gap
+      note: "A corpus gap, not a spec silence: the mapping is unambiguous and is implemented and proven by the master05 semantic battery (crates/openehr-its/tests/master05_tables.rs §INTERVAL_EVENT), but no committed operational template constrains an EVENT to INTERVAL_EVENT, so no case can reach the suffix — a FLAT commit cannot conjure an interval event the template does not declare. Closes with an INTERVAL_EVENT-constrained OPT plus a FLAT fixture carrying |sample_count and its canonical read-back in the SF-MAP-* group."
   # openehr-uri response header (ITS-REST Requests_and_responses.md §openehr-uri).
   - id: header-openehr-uri-declined-may
     description: "The openehr-uri response header advertising a DV_EHR_URI form of the resource is a service-level MAY that this catalogue declines to require: the released text conditions it on the service supporting DV_EHR_URI generation at all, and defines neither an operation set nor an obligation, so neither presence nor absence is assertable."
