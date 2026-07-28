@@ -1391,6 +1391,34 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         operations: 3,
     },
     NonSpecFamily {
+        // SM I_ADMIN_SERVICE's four statistics calls; the released Admin API
+        // is the two EHR deletes alone.
+        label: "the ADMIN activity-report extension",
+        prefixes: &["/ehrbase/rest/openehr/v1/admin/report/"],
+        flag: "no its-rest operation governs this",
+        operations: 4,
+    },
+    NonSpecFamily {
+        // SM I_ADMIN_ARCHIVE's two calls; nothing released moves a resource to
+        // archival storage.
+        label: "the ADMIN archive extension",
+        prefixes: &["/ehrbase/rest/openehr/v1/admin/archive/"],
+        flag: "no its-rest operation governs this",
+        operations: 2,
+    },
+    NonSpecFamily {
+        // The SM archetype/artefact operations of I_DEFINITION_ADL14 +
+        // I_DEFINITION_ADL2; the released Definition API provisions
+        // operational templates only.
+        label: "the ADL 1.4 / ADL 2 archetype + artefact extension",
+        prefixes: &[
+            "/ehrbase/rest/openehr/v1/definition/archetype/",
+            "/ehrbase/rest/openehr/v1/definition/artefact/",
+        ],
+        flag: "no its-rest operation governs this",
+        operations: 9,
+    },
+    NonSpecFamily {
         label: "the operational status document",
         prefixes: &["/ehrbase/rest/status"],
         flag: "no openehr spec governs an operational status endpoint",

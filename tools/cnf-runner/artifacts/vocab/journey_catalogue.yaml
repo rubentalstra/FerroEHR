@@ -276,6 +276,12 @@ audit_review:
   stages:
     - { op: contribution_read, at: PT0S }
     - { op: ehr_read, at: PT20S }
+    # The aggregate read side of the same accountability trail: the admin
+    # activity report counts the CONTRIBUTIONs of the EHR service. EXTENSION
+    # route (register AMB-33) — no openEHR spec governs it; it is a pure read
+    # and mutates nothing, so it joins this journey rather than growing a
+    # workload share of its own.
+    - { op: admin_contribution_report, at: PT40S }
 
 signature_review:
   description: >-
@@ -331,6 +337,11 @@ integration_poll:
     - { op: template_get, at: PT30S }
     - { op: template_example, at: PT1M }
     - { op: template_adl2_list, at: PT90S }
+    # The same background poll against the ADL 2 ARCHETYPE store beside the
+    # template store. EXTENSION route (register AMB-37) — no openEHR spec
+    # governs it; a pure read on the same definition surface the journey
+    # already polls.
+    - { op: archetype_adl2_list, at: PT2M }
 
 tagging:
   description: >-

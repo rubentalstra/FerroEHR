@@ -1,14 +1,41 @@
-# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL2.list_artefacts — the
-# only ADL2 list endpoint (GET /definition/template/adl2) is operational-template
-# specific; there is no generic "all AOM2 artefacts" listing (archetypes +
-# templates + OPTs). Declared unrealized so the case is not-applicable WITH
-# CITATION on this ITS and activates when a later ITS release adds the endpoint.
+# EXTENSION realization of I_DEFINITION_ADL2.list_artefacts.
+#
+# NO RELEASED WIRE EXISTS, re-derived first-hand 2026-07-29 under the oracle
+# order: the ITS-REST docs text names no ADL 2 artefact resource
+# (specifications/docs/definition/** describes operational-template
+# provisioning only), and the released specifications/definition.openapi.yaml
+# declares the ADL 2 group as `/definition/template/adl2*` alone — no generic artefact path anywhere.
+# Register AMB-37.
+#
+# WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
+# design — `GET /definition/artefact/adl2`, declared in the `adl2-archetype` family of
+# vocab/wire_surface.yaml served_extensions. NO openEHR SPEC GOVERNS IT — our
+# own design/extension. It therefore gates the CAPABILITY verdicts of the rows
+# whose cases drive it and never ITS-REST wire conformance.
 sm_operation: I_DEFINITION_ADL2.list_artefacts
 its: its-rest
-unrealized:
+extension:
+  family: adl2-archetype
   reason: >-
-    No generic artefact-listing operation exists in ITS-REST 1.1.0; the ADL2
-    surface lists only operational templates (definition_template_adl2_list),
-    not archetypes or the artefact union.
-  source: "SM docs/UML/classes/i_definition_adl2.adoc (list_artefacts) vs ITS-REST specifications/operations (only definition_template_adl2_list)"
+    ITS-REST 1.1.0 lists operational templates only, never the AOM2 artefact
+    union, so the SM list_artefacts has no released wire; this product serves
+    the operation on its own /definition/artefact/adl2 route.
+  source: >-
+    SM docs/UML/classes/i_definition_adl2.adoc (list_artefacts) vs released
+    ITS-REST specifications/definition.openapi.yaml (definition_template_adl2_*
+    only — no generic artefact path anywhere) + specifications/docs/definition/** (no mention) — no
+    openEHR spec governs the extension route, our own design/extension
   ambiguity: AMB-37
+request:
+  method: GET
+  path: /definition/artefact/adl2
+  headers:
+    Accept: application/json
+formats: [canonical-json]
+# NO `applies:` floor rides on these expectations — a floor dates a RELEASED
+# rule, and nothing released governs this route.
+outcomes:
+  ok:
+    status: 200
+    headers:
+      Content-Type: negotiated

@@ -3,7 +3,9 @@
 Implements the **generated** ITS-REST contract (server traits + DTOs from
 `openehr-its`) over axum 0.8, calling the concrete `EhrbaseService` directly.
 Modules (`src/`): `api` (one impl group per API area —
-ehr/definition/demographic/query/admin/system), `router`, `state`, `formats`
+ehr/definition/demographic/query/admin/system, each group carrying its own
+spec-flagged extension routes beside the released ones: `demographic::relationship`,
+`definition::archetype`, `admin::{archive, report}`), `router`, `state`, `formats`
 (content negotiation), `overview`, `overload` (shed), `config`, `system_log`
 (ATNA audit middleware), `smart` (SMART App Launch resource-server role), and
 `extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus health / fhir /
