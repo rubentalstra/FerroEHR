@@ -145,6 +145,19 @@ pub struct Coverage {
     pub selected: usize,
     /// Of those, cases with an executed result (`passed`/`failed`/`errored`).
     pub driven: usize,
+    /// Of the driven, cases whose effective outcome is passed — the
+    /// IN-SCOPE pass count the published comparison headlines (the raw
+    /// record books release-dated and unclaimed surfaces a party never
+    /// claimed; these three fields never do).
+    #[serde(default)]
+    pub passed: usize,
+    /// Of the driven, cases whose effective outcome is failed.
+    #[serde(default)]
+    pub failed: usize,
+    /// Of the driven, cases whose effective outcome is errored
+    /// (inconclusive — never a failure of the behaviour under test).
+    #[serde(default)]
+    pub inconclusive: usize,
 }
 
 /// The computed verdict report.
@@ -303,6 +316,18 @@ pub fn compute(
     let coverage = Coverage {
         selected: selected.len(),
         driven: selected.iter().filter(|s| s.effective.driven()).count(),
+        passed: selected
+            .iter()
+            .filter(|s| s.effective == Effective::Passed)
+            .count(),
+        failed: selected
+            .iter()
+            .filter(|s| s.effective == Effective::Failed)
+            .count(),
+        inconclusive: selected
+            .iter()
+            .filter(|s| s.effective == Effective::Errored)
+            .count(),
     };
 
     VerdictReport {

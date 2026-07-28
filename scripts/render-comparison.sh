@@ -69,6 +69,10 @@ fail_rows=$(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.j
   | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($rs["\(.case)|\(.format // "-")"].status // "—") |"')
 
 # Profile verdict tokens from verdicts.json (pass/fail/not_claimed).
+# The verdict pipeline's own in-scope tallies (verdicts.json .coverage) —
+# the ONLY numbers the presentation rule lets the comparison headline.
+scope() { jq -r ".coverage.${2} // 0" "$1/verdicts.json"; }
+
 pverdict() { jq -r --arg t "$2" '.profiles[] | select(.[0]==$t) | .[1] // "—"' "$1/verdicts.json" | sed -e 's/^$/—/' -e 's/_/ /g'; }
 sverdict() { jq -r '.security // "not claimed"' "$1/verdicts.json"; }
 
@@ -89,10 +93,22 @@ Both systems execute the **same committed CNF 2.0 catalogue** ($(jq '(.cases // 
 executions) through the same reference runner (\`tools/cnf-runner\`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
-ICS) declares the claimed capabilities and ambiguity-register options —
-ISO/IEC 9646-style test selection excuses undeclared option branches as N/A
-with a citation, never as silent skips. Verdicts are pure functions of
-(statement, results, catalogue, capability matrix).
+ICS) declares the claimed capabilities, spec versions, and ambiguity-register
+options — ISO/IEC 9646-style test selection excuses undeclared option
+branches, unclaimed capabilities, and release-dated behaviour outside the
+declared versions as N/A with a citation, never as silent skips. Verdicts are
+pure functions of (statement, results, catalogue, capability matrix).
+
+**The declared-version delta matters and is stated, not hidden:** ehrbase-rs
+declares ITS-REST **$(jq -r '.spec_versions.its_rest // "—"' tools/cnf-runner/party/ehrbase-rs/statement.json)**
+while upstream EHRbase declares ITS-REST
+**$(jq -r '.spec_versions.its_rest // "—"' tools/cnf-runner/party/ehrbase-java/statement.json)** —
+the catalogue realizes 1.1.0, so every Release-1.1.0-dated behaviour (the
+Demographic API, ITEM_TAGs, Simplified Formats on the wire, the admin EHR
+delete, the weak-\`ETag\`/\`Location\` header forms, …) is cited N/A for the
+1.0.3 declaration rather than driven against a release upstream never
+claimed. The verdict-bearing comparison below is therefore each party's
+**in-scope subset**, never the raw record.
 
 ## Profile verdicts
 
@@ -103,22 +119,29 @@ with a citation, never as silent skips. Verdicts are pure functions of
 | OPTIONS | $(pverdict "$RS" OPTIONS) | $(pverdict "$JV" OPTIONS) |
 | SEC-BASIC | $(sverdict "$RS") | $(sverdict "$JV") |
 
-## Outcome totals
+## In-scope outcomes
 
 Runs compared: **ehrbase-rs** (run of ${rs_date}) vs **upstream EHRbase
 ${jv_version}** (run of ${jv_date}) — the SAME catalogue through the same
-runner, each with its own committed party statement.
+runner, each with its own committed party statement. Per the presentation
+rule, the headline is each party's VERDICT SCOPE (the cases its own
+declarations select), never the raw record: a raw count would book
+release-dated and unclaimed surfaces against a party that never claimed
+them.
 
-| | executed | passed | failed | errored | skipped | N/A |
-|---|---|---|---|---|---|---|
-| **ehrbase-rs** | ${rs_total} | $(count "$RS" passed) | $(count "$RS" failed) | $(count "$RS" errored) | $(count "$RS" skipped) | $(count "$RS" not_applicable) |
-| **upstream (Java)** | ${jv_total} | $(count "$JV" passed) | $(count "$JV" failed) | $(count "$JV" errored) | $(count "$JV" skipped) | $(count "$JV" not_applicable) |
+| | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
+|---|---|---|---|---|---|
+| **ehrbase-rs** | $(scope "$RS" selected) | $(scope "$RS" driven) | $(scope "$RS" passed) | $(scope "$RS" failed) | $(scope "$RS" inconclusive) |
+| **upstream (Java)** | $(scope "$JV" selected) | $(scope "$JV" driven) | $(scope "$JV" passed) | $(scope "$JV" failed) | $(scope "$JV" inconclusive) |
 
-An **errored** row is inconclusive (the wire answered outside the operation's
-bound outcome map), never counted as a failure. An **N/A** row carries a
-machine-readable citation (an undeclared option branch, an unrealizable wire
-on the technology profile, or a ground the party's topology cannot
-establish).
+An **inconclusive** row's wire answered outside the operation's bound outcome
+map, or its required ground could not be established (e.g. a refused
+provisioning exchange) — never counted as a failure of the behaviour under
+test. Every not-run row in the full committed record
+(\`docs/conformance/<sut>/results.json\`) carries a machine-readable
+citation: an undeclared option branch, an unclaimed capability, a
+release-dated behaviour outside the declared spec versions, or a ground the
+party's topology cannot establish.
 
 ## Capability-by-capability
 

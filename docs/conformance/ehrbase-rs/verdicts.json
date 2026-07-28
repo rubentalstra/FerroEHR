@@ -589,6 +589,9 @@
   ],
   "coverage": {
     "selected": 767,
-    "driven": 704
+    "driven": 704,
+    "passed": 704,
+    "failed": 0,
+    "inconclusive": 0
   }
 }

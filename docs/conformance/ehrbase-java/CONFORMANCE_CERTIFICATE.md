@@ -6,7 +6,7 @@
 | --- | --- |
 | Solution | ehrbase-java 2.34.0 |
 | Vendor | EHRbase (vitagroup / upstream open-source project) |
-| Runner | cnf-runner 3.8.0 |
+| Runner | cnf-runner 3.11.0 |
 | Infrastructure | — |
 
 ## Scope of Test
@@ -16,62 +16,69 @@
 | Functional | CORE, STANDARD |
 | Sec & Priv | — |
 | Performance | — |
-| Ext Data Fmt | canonical-json |
+| Ext Data Fmt | canonical-json, canonical-xml |
 
 ## Profile Report
 
-Result column: ITS its-rest (canonical-json)
+Result column: ITS its-rest (canonical-json, canonical-xml)
 
-| Family | Capability | Required in profile | Result |
-| --- | --- | --- | --- |
-| Platform | Adl14ArchetypeProvisioning | Y | excused (unrealized on this technology profile) |
-| Platform | Adl14OptProvisioning | Y | FAIL |
-| Platform | Adl2ArchetypeProvisioning | OPT | not evidenced |
-| Platform | Adl2OptProvisioning | OPT | not evidenced |
-| Platform | QueryProvisioning | Y | pass |
-| Platform | EhrOperations | Y | FAIL |
-| Platform | EhrStatus | Y | FAIL |
-| Platform | CompositionOps | Y | FAIL |
-| Platform | DirectoryOps | Y | FAIL |
-| Platform | ChangeSets | Y | FAIL |
-| Platform | Versioning | Y | FAIL |
-| Platform | ArchetypeValidation | Y | FAIL |
-| Platform | PartyOperations | OPT | not evidenced |
-| Platform | PartyRelationshipOperations | OPT | not evidenced |
-| Platform | DemographicArchetypeValidation | OPT | no cases |
-| Platform | AqlBasic | Y | FAIL |
-| Platform | AqlAdvanced | OPT | not evidenced |
-| Platform | AqlTerminology | OPT | not evidenced |
-| Platform | ActivityReport | OPT | not evidenced |
-| Platform | PhysicalDeletion | OPT | FAIL |
-| Platform | EhrDumpLoad | OPT | not evidenced |
-| Platform | BulkEhrLoad | OPT | no cases |
-| Platform | EhrArchive | OPT | not evidenced |
-| Platform | DemographicArchive | OPT | not evidenced |
-| Platform | EhrExtract | OPT | not evidenced |
-| Platform | Tds | OPT | not evidenced |
-| Platform | DefinitionApi | Y | not evidenced |
-| Platform | EhrApi | Y | pass |
-| Platform | DemographicApi | OPT | not evidenced |
-| Platform | QueryApi | Y | pass |
-| Platform | AdminApi | OPT | FAIL |
-| Platform | MessageApi | OPT | not evidenced |
-| Platform | Signing | OPT | not evidenced |
-| Platform | SimplifiedFormats | OPT | not evidenced |
-| Security | EhrDemographicSeparation | Y | pass |
-| Security | AuthenticatedAccess | Y | pass |
-| Security | AuthorizationSeparation | Y | not evidenced |
-| Security | AuditAccountability | Y | not evidenced |
-| Security | AnonymousEhrs | Y | not evidenced |
+The Realization column says what the row's cases were verified against: `released-wire` = released ITS-REST operations; `extension` = routes this product serves of its own design, which no openEHR specification governs and which therefore never gate an openEHR profile tier (those rows are always OPT).
+
+| Family | Capability | Required in profile | Realization | Result |
+| --- | --- | --- | --- | --- |
+| Platform | Adl14ArchetypeProvisioning | Y | released-wire | excused (unrealized on this technology profile) |
+| Platform | Adl14OptProvisioning | Y | released-wire | FAIL |
+| Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not evidenced |
+| Platform | Adl2OptProvisioning | OPT | released-wire | not evidenced |
+| Platform | TemplateExamples | OPT | released-wire | not evidenced |
+| Platform | QueryProvisioning | Y | released-wire | FAIL |
+| Platform | EhrOperations | Y | released-wire | FAIL |
+| Platform | EhrStatus | Y | released-wire | FAIL |
+| Platform | CompositionOps | Y | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
+| Platform | DirectoryOps | Y | released-wire | FAIL |
+| Platform | ChangeSets | Y | released-wire | FAIL |
+| Platform | Versioning | Y | released-wire | FAIL |
+| Platform | ArchetypeValidation | Y | released-wire | FAIL |
+| Platform | PartyOperations | OPT | released-wire | not evidenced |
+| Platform | PartyRelationshipOperations | OPT | extension | not evidenced |
+| Platform | DemographicArchetypeValidation | OPT | released-wire | not evidenced |
+| Platform | AqlBasic | Y | released-wire | FAIL |
+| Platform | AqlAdvanced | OPT | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
+| Platform | AqlTerminology | OPT | released-wire | not evidenced |
+| Platform | ActivityReport | OPT | released-wire | not evidenced |
+| Platform | PhysicalDeletion | OPT | released-wire | excused (unrealized on this technology profile) |
+| Platform | EhrDumpLoad | OPT | released-wire | not evidenced |
+| Platform | BulkEhrLoad | OPT | released-wire | not evidenced |
+| Platform | EhrArchive | OPT | released-wire | not evidenced |
+| Platform | DemographicArchive | OPT | released-wire | not evidenced |
+| Platform | EhrExtract | OPT | released-wire | not evidenced |
+| Platform | Tds | OPT | released-wire | not evidenced |
+| Platform | DefinitionApi | Y | released-wire | FAIL |
+| Platform | EhrApi | Y | released-wire | FAIL |
+| Platform | DemographicApi | OPT | released-wire | not evidenced |
+| Platform | QueryApi | Y | released-wire | FAIL |
+| Platform | AdminApi | OPT | released-wire | not evidenced |
+| Platform | MessageApi | OPT | released-wire | not evidenced |
+| Platform | SystemApi | OPT | released-wire | not evidenced |
+| Platform | ItemTags | OPT | released-wire | not evidenced |
+| Platform | Signing | OPT | released-wire | excused (unrealized on this technology profile) |
+| Platform | SimplifiedFormats | OPT | released-wire | not evidenced |
+| Platform | SmartAppLaunch | OPT | released-wire | not evidenced |
+| Security | EhrDemographicSeparation | Y | released-wire | pass |
+| Security | AuthenticatedAccess | Y | released-wire | pass |
+| Security | AuthorizationSeparation | Y | released-wire | not evidenced |
+| Security | AuditAccountability | Y | released-wire | not evidenced |
+| Security | AnonymousEhrs | Y | released-wire | not evidenced |
 
 ## Workload Coverage
 
-The exercised-capability set of the measured hospital-simulation workload against the claimed matrix — a claimed capability the simulation never touches is a gap in the journey catalogue, listed explicitly.
+The exercised-capability set of the measured hospital-simulation workload against the claimed matrix. A claimed capability the simulation never touches is either an ADJUDICATED exclusion — the capability-matrix row names the register entry that decided it and the reason is printed in the row — or an undecided catalogue gap, which the `workload-coverage` validate gate fails on, so no published certificate reaches this section carrying one.
 
 | Capability | Claimed | Exercised by workload |
 | --- | --- | --- |
-| Adl14ArchetypeProvisioning | yes | NO — catalogue gap |
+| Adl14ArchetypeProvisioning | yes | no — adjudicated exclusion (AMB-170): no request exists for the load instrument to send: ITS-REST 1.1.0 defines no wire for this capability and this product serves no extension route for it either, so the hospital simulation has nothing to drive - the exclusion lapses the day the routes exist |
 | Adl14OptProvisioning | yes | yes |
+| TemplateExamples | yes | NO — catalogue gap (UNADJUDICATED) |
 | QueryProvisioning | yes | yes |
 | EhrOperations | yes | yes |
 | EhrStatus | yes | yes |
@@ -81,17 +88,19 @@ The exercised-capability set of the measured hospital-simulation workload agains
 | Versioning | yes | yes |
 | ArchetypeValidation | yes | yes |
 | AqlBasic | yes | yes |
-| AqlAdvanced | yes | NO — catalogue gap |
-| PhysicalDeletion | yes | NO — catalogue gap |
+| AqlAdvanced | yes | NO — catalogue gap (UNADJUDICATED) |
+| PhysicalDeletion | yes | no — adjudicated exclusion (AMB-170): destructive mid-measurement: the released admin operations erase an EHR and its whole version history outright, so every arrival would shrink the population-anchored corpus the measured window is bound to and the earned class would no longer describe the declared volumetric class |
 | DefinitionApi | yes | yes |
 | EhrApi | yes | yes |
 | QueryApi | yes | yes |
-| AdminApi | yes | NO — catalogue gap |
-| EhrDemographicSeparation | yes | NO — catalogue gap |
-| AuthenticatedAccess | yes | NO — catalogue gap |
-| AuthorizationSeparation | yes | NO — catalogue gap |
+| AdminApi | yes | no — adjudicated exclusion (AMB-170): destructive mid-measurement: the released ADMIN API of ITS-REST 1.1.0 is exactly admin_ehr_delete and admin_ehr_delete_all, so the only wire this claim covers is the same corpus-erasing pair PhysicalDeletion excludes (the further /admin routes this server mounts are extensions no claim rests on) |
+| EhrDemographicSeparation | yes | yes |
+| AuthenticatedAccess | yes | NO — catalogue gap (UNADJUDICATED) |
+| AuthorizationSeparation | yes | NO — catalogue gap (UNADJUDICATED) |
 
-Claimed capabilities the simulation never touches (7): Adl14ArchetypeProvisioning, AqlAdvanced, PhysicalDeletion, AdminApi, EhrDemographicSeparation, AuthenticatedAccess, AuthorizationSeparation. Each is either a journey-catalogue gap to close or a capability outside the measured-load surface (admin, demographics, messaging, security posture — exercised by the functional schedule, not the load instrument).
+Claimed capabilities excluded from the measured workload by adjudication (3): Adl14ArchetypeProvisioning, PhysicalDeletion, AdminApi. Each row above names its register entry; the exclusion bounds the LOAD instrument only — the functional catalogue still owes every one of them verdict-bearing cases at its `min_cases` floor.
+
+UNADJUDICATED gaps (4): TemplateExamples, AqlAdvanced, AuthenticatedAccess, AuthorizationSeparation. These rows are a defect in this submission, not a property of the product: the `workload-coverage` validate gate fails on each of them, so this certificate was rendered from an artifact tree that does not pass its own gates.
 
 ## Performance Rating
 
