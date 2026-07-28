@@ -33,6 +33,19 @@ outcomes:
       Location: present
       Content-Type: negotiated
     body: prefer_conditional
+  validation_failed:
+    # ROLE carries a model rule the other four subtypes do not
+    # (role.adoc §Invariants `Capabilities_valid`), so the refusal branch is
+    # reachable ONLY through this route family and the binding must map it.
+    # DOCS TEXT (overview Requests_and_responses.md §HTTP status codes, the
+    # 422 row verbatim): "The request was well-formed but was unable to be
+    # followed due to semantic errors." The released role_create operation
+    # declares the response (specifications/operations/role_create.yaml → the
+    # 422 response; the vendored OAS renders it at
+    # crates/openehr-its/vendor/rest-oas/demographic-validation.openapi.yaml
+    # `/demographic/role` post responses '422').
+    status: 422
+    body: error_loose                     # overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
 captures:
   version_uid:
     from: header ETag

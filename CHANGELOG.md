@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance: the last two untested capabilities now carry real executed
+  batteries** (#624). "Demographic archetype validation" and "Bulk EHR load"
+  were the two capabilities the conformance report listed with *no cases* —
+  named in openEHR's conformance profiles book, but never actually exercised.
+  Both are now tested against the released REST wire. Demographic archetype
+  validation gets eight isolated cases over the party-commit endpoints: a
+  committed PERSON/ROLE is refused when it is not archetype-rooted, when its
+  root archetype identifier contradicts its own archetype details, when an
+  optional list (contacts, roles, capabilities) is present but empty, and when
+  an identity's value is missing or carries the wrong openEHR type — plus an
+  accept case proving a fully archetyped party, contacts, addresses and
+  languages included, is stored and read back intact. Bulk EHR load is
+  verified as what it actually is on released wire — a population loaded
+  through the ordinary EHR and composition endpoints — with one case covering
+  breadth (eight EHRs, one composition each, all identities distinct and every
+  document read back unchanged) and one covering depth (four commits into a
+  single EHR, each independently addressable, with an AQL query over that EHR
+  returning exactly the loaded set). Both capabilities are now claimed in the
+  published conformance statement, and their case-count floors are recorded so
+  the coverage can only grow.
+
 - **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
   excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
   resource, so the six relationship operations used to be reported as

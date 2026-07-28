@@ -116,7 +116,20 @@ PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 
 # function, and no openEHR profile tier or ITS-REST wire-conformance claim rests
 # on it (owner ruling 2026-07-28).
 PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 15, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Relationship Operations)" }
-DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 0, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
+# REALIZED ON RELEASED WIRE (#624, 2026-07-28) — the row carried `min_cases: 0`
+# and no battery. The realization is the party commit seam: the released
+# demographic create operations validate the committed PARTY against the
+# archetyped demographic model, and a violation is the released 422
+# (ITS-REST overview Requests_and_responses.md §HTTP status codes: "The request
+# was well-formed but was unable to be followed due to semantic errors"). The
+# battery is the demographic twin of the CONT- family: the archetype-root rules
+# (RM demographic party.adoc §Is_archetype_root + RM common locatable.adoc
+# §Archetyped_valid and §archetype_node_id), the present-implies-non-empty
+# cardinality rules on PARTY/ACTOR/ROLE, the PARTY_IDENTITY value-type and
+# mandatory-attribute rules, and the accept case that proves the validator
+# passes fully archetyped content rather than refusing what it does not
+# recognize.
+DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
 AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
 AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
@@ -135,7 +148,21 @@ PhysicalDeletion: { family: Platform, tier: OPTIONS, required: false, min_cases:
 # SM I_ADMIN_DUMP_LOAD export_ehrs/load_ehrs pair is service-layer only
 # (`ehrbase::service::admin::dump_load`). Claim withdrawn 2026-07-28 (#623).
 EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface and this product serves no dump/load route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
-BulkEhrLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 0, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Bulk EHR load)" }
+# REALIZED ON RELEASED WIRE (#624, 2026-07-28) — the row carried `min_cases: 0`
+# and no battery. Derived first-hand: the SM Admin chapter
+# (SM openehr_platform master15-admin_service.adoc — I_ADMIN_SERVICE,
+# I_ADMIN_ARCHIVE, I_ADMIN_DUMP_LOAD) declares NO bulk-load operation (the only
+# load-shaped one, I_ADMIN_DUMP_LOAD.load_ehrs, is the separate EhrDumpLoad
+# book row and reads a file-system archive), and the released admin API
+# declares only /admin/ehr/{ehr_id} and /admin/ehr/all. So the load itself is
+# the realization, and it is entirely RELEASED wire: a population created and
+# filled through the ordinary EHR + COMPOSITION operations — the same path this
+# runner seeds its scale corpora on. The battery covers the two axes of a
+# loaded corpus (population breadth, per-EHR depth) and the two ways a bulk
+# load fails (identity collision, content bleed), asserting count + integrity
+# through the query surface and per-container reads. N stays small: this is the
+# FUNCTIONAL catalogue, not the measured instrument.
+BulkEhrLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Bulk EHR load)" }
 # (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
 # SM I_ADMIN_ARCHIVE archive_ehrs operation is service-layer only
 # (`ehrbase::service::admin::archive`). Claim withdrawn 2026-07-28 (#623).
