@@ -325,6 +325,17 @@
             }
           ]
         },
+        "party": {
+          "anyOf": [
+            {
+              "const": "none"
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+            }
+          ]
+        },
         "commit": {
           "type": "array",
           "items": {

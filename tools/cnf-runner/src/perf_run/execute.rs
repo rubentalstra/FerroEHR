@@ -803,6 +803,33 @@ pub(crate) fn perform(
             )?;
             note(observed, reply.status) == 200
         }
+        PerfOp::ArchetypeAdl2List => {
+            // EXTENSION route (register AMB-37) — no openEHR spec governs it;
+            // it loads the ADL 2 archetype listing this product serves of its
+            // own design.
+            let reply = client.request(
+                reqwest::Method::GET,
+                "/definition/archetype/adl2",
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::AdminContributionReport => {
+            // EXTENSION route (register AMB-33) — no openEHR spec governs it.
+            // The EHR service is the only versioned-content service this
+            // arrival reports on (SM platform_service.adoc); the count is a
+            // pure read and mutates nothing.
+            let reply = client.request(
+                reqwest::Method::GET,
+                "/admin/report/contribution/count?a_service=Ehr",
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
         PerfOp::AnalyticsQuery => {
             let body = serde_json::json!({
                 "q": ANALYTICS_AQL,

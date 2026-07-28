@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The admin API gained an activity report and archiving, and the definition
+  API gained archetype provisioning** — service capabilities that had no HTTP
+  route until now. Under the existing `EHRBASE__ADMIN__ENABLED` gate and
+  `ADMIN` role: `GET /admin/report/contribution[/count]`,
+  `GET /admin/report/versioned_composition/count` and
+  `GET /admin/report/composition_version/count` report CONTRIBUTION and
+  COMPOSITION-version activity per service over an optional ISO 8601 time
+  interval, and `POST /admin/archive/ehrs` / `POST /admin/archive/parties`
+  mark a named set of EHRs or demographic parties archived (a read-neutral,
+  idempotent, all-or-nothing marker — never a delete). Alongside the released
+  template routes, the definition API now serves the ADL 1.4 archetype store
+  (`POST`/`GET /definition/archetype/adl1.4`,
+  `GET`/`DELETE /definition/archetype/adl1.4/{archetype_id}`) and the ADL 2
+  archetype/artefact views (`GET /definition/archetype/adl2[/count]`,
+  `GET /definition/artefact/adl2[/count]`,
+  `DELETE /definition/artefact/adl2/{artefact_id}`). All of these are
+  ehrbase-rs extensions: the openEHR service model defines the operations, the
+  released REST API surfaces no endpoint for them, and no openEHR conformance
+  claim rests on the URLs — see the book's Operations page and the served
+  OpenAPI document, which flags every one of them.
+
 - **The measured hospital-simulation workload now exercises every claimed
   capability** (#625). The performance run used to touch about a third of the
   capabilities the conformance statement claims, and the rest were listed as
