@@ -1,0 +1,48 @@
+# Wire realization of I_EHR_CONTRIBUTION.commit_contribution, variant
+# `return_minimal`: the CONTRIBUTION commit states the minimal preference
+# EXPLICITLY. The variant-less binding pins `Prefer: return=representation`, so
+# this preference needs its own realization.
+#
+# ORACLE ORDER for the status/body pair (register AMB-62, re-adjudicated
+# 2026-07-28). TIER 1, THE DOCS TEXT, is SILENT — not conflicting: overview
+# `Requests_and_responses.md` §"Prefer minimal, identifier or full
+# representation response" offers "The HTTP status is typically `201 Created`"
+# (descriptive) and "If no response body is returned, the service SHOULD use
+# `204 No Content`" (conditional on a fact the same text never assigns). TIER 2,
+# THE RELEASED OAS, fills exactly that silence and is cited AS the OAS:
+# `operations/contribution_create.yaml` maps success to a single `'201'` and
+# declares no `'204'`, and `responses/201_CONTRIBUTION.yaml` closes "If the
+# `Prefer` header is missing or set to `return=minimal`, the body is empty"
+# (verified first-hand 2026-07-28 — the same closing sentence the COMPOSITION,
+# PERSON, directory and template-upload 201 files carry verbatim).
+#
+# `Location` IS declared, on the docs text's own SHOULD — §Prefer minimal: "The
+# response SHOULD include a `Location` header pointing to the newly created or
+# updated resource" — corroborated by the released 201 header block
+# (`headers/Location_CONTRIBUTION.yaml`). No `Content-Type`: Resources.md §JSON
+# Format requires it "unless the response has no content body".
+#
+# NOTE: header matchers and body selectors are EXECUTED assertions — a violated
+# declaration is a red row.
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+its: its-rest
+variant: return_minimal
+request:
+  method: POST
+  path: /ehr/{ehr_id}/contribution
+  body: contribution                      # CONTRIBUTION envelope: versions[] + audit
+  headers:
+    Prefer: "return=minimal"
+formats: [canonical-json]
+outcomes:
+  created:
+    status: 201                           # OAS operations/contribution_create.yaml — the one declared success status
+    body: absent                          # OAS responses/201_CONTRIBUTION.yaml — "If the `Prefer` header is missing or set to `return=minimal`, the body is empty"
+    headers:
+      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      Location: present                   # overview §Prefer minimal — "The response SHOULD include a `Location` header pointing to the newly created or updated resource"
+      Preference-Applied: "present?"      # MAY — overview §Representation details negotiation
+captures:
+  contribution_uid:
+    from: header ETag
+    strip: weak-quotes

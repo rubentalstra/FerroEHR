@@ -1093,7 +1093,10 @@ AMB-62:
     close with "If the `Prefer` header is missing or set to `return=minimal`,
     the body is empty" (responses/201_COMPOSITION.yaml,
     201_PERSON.yaml, 201_Template_adl1_4_upload.yaml,
-    201_Template_adl2_upload.yaml — verified verbatim). UPDATES declare both
+    201_Template_adl2_upload.yaml — verified verbatim; 201_directory.yaml and
+    201_CONTRIBUTION.yaml carry the identical closing sentence and were
+    verified first-hand 2026-07-28 when the create branch was cased on those
+    two families too). UPDATES declare both
     and split them BY PREFERENCE: responses/200_COMPOSITION_updated.yaml (and
     its 200_*_updated siblings) is scoped "with the full resource in the
     response body when `Prefer` header is `return=representation`, or only its
@@ -1121,15 +1124,22 @@ AMB-62:
     (I_DEFINITION_ADL14.upload_opt-prefer_minimal,
     I_DEFINITION_ADL2.upload_artefact-prefer_minimal) — that adjudication is
     now the general rule rather than a two-operation exception.
-    STILL UNCOVERED, recorded as coverage to close rather than as silence: no
-    case yet pins the minimal branch on the COMPOSITION / EHR_STATUS /
-    DIRECTORY / PARTY / CONTRIBUTION writes, and the `Location` SHOULD is
-    asserted only on the create outcomes (wire_surface
-    `header-location-on-create`). The wire_surface element
-    `header-prefer-return-minimal` carries that gap with this entry's citation
-    and RETIRES when those cases land — it is a coverage gap now, not an
-    unassertable branch. The body selector `prefer_conditional` keeps its
-    current behaviour until it does.
+    NOW COVERED (2026-07-28, the same day): the branch is cased on every
+    write family this entry named — COMPOSITION create + update, EHR_STATUS
+    update, DIRECTORY create + update, PARTY create + update, CONTRIBUTION
+    create — each through a `-return_minimal` variant binding that pins the
+    header, one behaviour per case, plus the DEFAULT-WHEN-ABSENT half on one
+    create and one update through `-prefer_absent` variant bindings that send
+    no `Prefer` at all (the §Representation details negotiation sentence
+    asserted as an identity with the explicit form). The wire_surface element
+    `header-prefer-return-minimal` retires from coverage_gap to covered_by
+    accordingly. The `Location` SHOULD stays asserted on the CREATE outcomes
+    only (wire_surface `header-location-on-create`): the same sentence does say
+    "newly created or updated resource" and `204_version_updated.yaml` declares
+    the header, but widening the assertion to the update outcomes is a scope
+    change this entry has not made, and a binding asserts only what it declares.
+    The body selector `prefer_conditional` is unchanged — the minimal branch is
+    judged by the variant bindings' `body: absent`, not by it.
   disposition: fixed_handling
 AMB-63:
   ambiguity: >-

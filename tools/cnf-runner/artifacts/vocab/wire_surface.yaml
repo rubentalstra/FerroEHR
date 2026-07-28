@@ -1428,10 +1428,37 @@ elements:
   - id: header-prefer-return-minimal
     description: "Prefer: return=minimal — and the assumed default when no Prefer is sent — answers a minimal response pointing at the affected resource through Location rather than returning its representation."
     source: "TIER 1, DOCS TEXT — ITS-REST Requests_and_responses.md §Prefer minimal, identifier or full representation response (\"`Prefer: return=minimal` Indicates the client prefers a minimal response. The response SHOULD include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created`. If no response body is returned, the service SHOULD use `204 No Content`\") + §Representation details negotiation (\"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") — two sentences that between them settle no status. TIER 2, THE RELEASED OAS, citable because tier 1 states both and assigns neither (owner ruling 2026-07-28) and cited AS the OAS: the CREATE operations declare exactly one success status and their response files close \"If the `Prefer` header is missing or set to `return=minimal`, the body is empty\" (responses/201_COMPOSITION.yaml, 201_PERSON.yaml, 201_Template_adl1_4_upload.yaml, 201_Template_adl2_upload.yaml), while the UPDATE operations declare 200 and 204 and split them by preference — responses/204_version_updated.yaml, \"`204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`\". Register AMB-62"
-    exception:
-      reason: coverage_gap
-      register: AMB-62
-      note: "A GENUINE COVERAGE GAP since 2026-07-28, no longer an unassertable branch. AMB-62's former position — that no status could be asserted, and that even an alt_status pair would be invention (the reasoning #428 acted on) — rested on reading only the docs text; under the OAS-fallback order the released response files ASSIGN the branch per operation family, 201-with-an-empty-body on a create and 204 on an update. So a binding outcome and a gating case are now authorable and are simply MISSING on the COMPOSITION / EHR_STATUS / DIRECTORY / PARTY / CONTRIBUTION writes. NEW-CASE candidates, one behaviour each: a create sent with `Prefer: return=minimal` (201, empty body, Location present) and an update sent the same way (204). Already covered on the two template uploads, whose operation-level 201 text AMB-110(b) had read this way before the ruling generalized it: I_DEFINITION_ADL14.upload_opt-prefer_minimal and I_DEFINITION_ADL2.upload_artefact-prefer_minimal. What is separately executed: the `Location` header the minimal branch SHOULDs, on the create outcomes (header-location-on-create); the default-when-absent half indirectly, the I_DEFINITION_ADL2.upload_artefact binding sending no Prefer and reading its identifier back from Location; and the body selector `prefer_conditional` still deliberately does not judge this branch. The SIBLING preference is fully covered — §\"Prefer only identifier\" assigns its status in the docs text itself, and header-prefer-return-identifier carries a case on both a COMPOSITION and an EHR create. This exception RETIRES when the missing cases land."
+    # RETIRED coverage_gap (2026-07-28): the exception's own retirement
+    # condition — "RETIRES when the missing cases land" — is met. The five
+    # write families the note named are now cased, one behaviour each, through
+    # `-return_minimal` variant bindings that pin the header, plus the
+    # default-when-absent half on a create and an update through
+    # `-prefer_absent` variant bindings that send no `Prefer` at all. The
+    # per-family statuses are the ones AMB-62's re-adjudication assigns from
+    # the released response files: 201-with-an-empty-body on a create, 204 on
+    # an update. The body selector `prefer_conditional` is untouched — the
+    # minimal branch is judged by the bindings' `body: absent`, not by it.
+    covered_by:
+      # CREATE — 201 with an empty body, plus the Location the branch SHOULDs.
+      - I_EHR_COMPOSITION.create_composition-prefer_minimal
+      - I_EHR_DIRECTORY.create_directory-prefer_minimal
+      - I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal
+      - I_EHR_CONTRIBUTION.commit_contribution-prefer_minimal
+      # The two template uploads, already gated under AMB-110(b) before the
+      # 2026-07-28 ruling generalized the reading.
+      - I_DEFINITION_ADL14.upload_opt-prefer_minimal
+      - I_DEFINITION_ADL2.upload_artefact-prefer_minimal
+      # UPDATE — 204 No Content, the identity in the ETag alone.
+      - I_EHR_COMPOSITION.update_composition-prefer_minimal
+      - I_EHR_STATUS.set_ehr_queryable-prefer_minimal
+      - I_EHR_DIRECTORY.update_directory-prefer_minimal
+      - I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal
+      # THE DEFAULT-WHEN-ABSENT HALF — no `Prefer` header at all, asserted to
+      # answer exactly what the explicit form answers, on one create and one
+      # update (§Representation details negotiation: "If no `Prefer` header is
+      # provided, the default behavior is assumed to be `return=minimal`").
+      - I_EHR_COMPOSITION.create_composition-prefer_absent
+      - I_EHR_COMPOSITION.update_composition-prefer_absent
   # Version-at-time semantics (RM common versioned_object.adoc; the wire form
   # in ITS-REST Resources.md §Datetime format).
   - id: version-at-time-extancy-branches
