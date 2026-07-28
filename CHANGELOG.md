@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The published Conformance Statement now declares the non-openEHR surface
+  this server serves** (#527). A new "Additional non-openEHR surface" section
+  lists every extension route family — health, status, the OpenAPI/Swagger
+  meta routes, management, terminology, event subscriptions, multi-tenancy,
+  the FHIR R4 connector and its mapping store, the ITI-81 audit read,
+  `PARTY_RELATIONSHIP`, the bare stored-query list, the admin
+  template/query/config routes and SMART discovery — with the routes it
+  serves and the configuration that enables it. The section states plainly
+  that none of it is part of any conformance claim: no openEHR specification
+  governs these routes, no conformance case exercises them, and no verdict
+  depends on them. A reader of the statement no longer has to discover the
+  extension surface on the wire.
+
 ### Fixed
 
 - **The SMART discovery endpoint is fully described in the published API
