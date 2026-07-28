@@ -127,6 +127,10 @@ fn requires_def() -> Value {
                 { "const": "none" },
                 { "type": "string", "pattern": CORPUS_KEY_PATTERN }
             ] },
+            "party": { "anyOf": [
+                { "const": "none" },
+                { "type": "string", "pattern": CORPUS_KEY_PATTERN }
+            ] },
             "commit": string_array(Some(CORPUS_KEY_PATTERN)),
             "instances": { "type": "object",
                 "propertyNames": { "pattern": IDENT_PATTERN },

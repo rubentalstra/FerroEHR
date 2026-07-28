@@ -142,8 +142,6 @@ fn the_measured_workload_exercises_every_claimed_capability_but_the_adjudicated_
     /// Destructive mid-measurement, or no request the instrument can send.
     const ADJUDICATED: &[&str] = &[
         "Adl14ArchetypeProvisioning",
-        "Adl2ArchetypeProvisioning",
-        "ActivityReport",
         "AdminApi",
         // The bulk load IS every measured run's own seeding phase — a
         // sustained bulk-load ARRIVAL would be a second population grower

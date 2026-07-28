@@ -89,11 +89,8 @@ async fn run(
     // has been temporarily disabled by configuration." While `admin.enabled` is
     // off the resource serves no method at all, so no non-empty list would be
     // truthful.
-    if !state.config().admin.enabled {
-        return Ok(crate::overview::error::method_not_allowed_response(
-            "",
-            "the admin API is disabled on this server",
-        ));
+    if let Some(refusal) = admin_group_gate(&state) {
+        return Ok(refusal);
     }
     let h = &parts.headers;
     let q = parts.query.as_deref();
@@ -172,6 +169,23 @@ async fn run(
             "unrouted admin operation: {other}"
         )))),
     }
+}
+
+/// The ADMIN group's config gate, shared by every dispatcher mounted under
+/// `/admin/` (this one plus the [`archive`](super::archive) and
+/// [`report`](super::report) extension groups): `Some(refusal)` while
+/// `AppConfig::admin.enabled` is off, `None` when the group serves.
+///
+/// The grounds and the empty `Allow` are stated at the call site in [`run`];
+/// this is that one decision, in one place, so no route under `/admin/` can
+/// drift out of the gate.
+pub(super) fn admin_group_gate(state: &AppState) -> Option<Response> {
+    (!state.config().admin.enabled).then(|| {
+        crate::overview::error::method_not_allowed_response(
+            "",
+            "the admin API is disabled on this server",
+        )
+    })
 }
 
 /// Read a required path segment for the admin extension routes (not modelled by

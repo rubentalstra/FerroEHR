@@ -1857,6 +1857,55 @@ impl HttpDriver<'_> {
         Ok(())
     }
 
+    /// party: mint `${party_id}` via `create_party` from the named corpus set.
+    ///
+    /// The handle is the party's `VERSIONED_OBJECT` uid — the identifier the SM
+    /// admin operations take (`i_admin_archive.adoc` `archive_parties`,
+    /// `i_admin_service.adoc` `physical_party_delete`), not the version uid the
+    /// create's `ETag` carries; the `create_party` binding maps both captures,
+    /// so the container uid is read straight off it.
+    fn provision_party(&mut self, case: &CaseCore, vars: &mut VarStore) -> Result<(), String> {
+        let Some(crate::model::case::PartyRequirement::Exists(key)) = case.requires.party.clone()
+        else {
+            return Ok(());
+        };
+        let payload = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
+        let binding = self.binding_for(case, "I_DEMOGRAPHIC_SERVICE.create_party")?;
+        let instance = self.provisioning_instance(case)?;
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| "create_party unrealized".to_owned())?;
+        let headers = Self::compose_headers(
+            self.set,
+            self.ixit,
+            case,
+            None,
+            binding,
+            instance,
+            vars,
+            None,
+            self.spec_versions,
+        )?;
+        let base = instance.base_url.trim_end_matches('/');
+        let url = format!("{base}{}", request_spec.path.raw());
+        let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
+        if let Some((_, spec)) = binding
+            .captures
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .find(|(n, _)| n.as_str() == "versioned_object_uid")
+            && let Some(value) = Self::extract_capture(&exchange, binding, spec, vars)
+        {
+            vars.set(
+                CaptureName::parse("party_id").map_err(|e| e.to_string())?,
+                Captured::Scalar(value),
+            );
+        }
+        Ok(())
+    }
+
     /// Bind the step's captures from the exchange when the observation
     /// matched a mapped kind (the closed capture-source grammar).
     fn bind_step_captures(
@@ -2443,6 +2492,7 @@ impl StepDriver for HttpDriver<'_> {
                 );
             }
         }
+        self.provision_party(case, vars)?;
         self.provision_commit_sets(case, vars)?;
         Ok(Provisioned::Ready)
     }

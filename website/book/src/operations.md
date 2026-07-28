@@ -193,6 +193,54 @@ but currently serves no method (see
 > extensions — the openEHR admin API defines only EHR deletes. They share the
 > same admin gate and authorization as the EHR deletes.
 
+## The admin API: activity report
+
+Four **read-only** counters over the repository's change history, behind the
+same `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role as the deletes above.
+Every route takes `a_service` — the service whose versioned content to report
+on, one of `Admin`, `Definitions`, `Ehr`, `Ehr_index`, `Demographic`,
+`Message`, `Query`, `System_log` (case-insensitive) — and an optional
+`time_interval=<lower>/<upper>` of ISO 8601 date-times matched inclusively
+against each commit time. Either bound may be left empty for an open interval
+(`?time_interval=2026-01-01T00:00:00Z/`); an absent parameter reports over all
+time. A service that holds no versioned content reports an empty list or `0`
+rather than failing.
+
+- `GET {base}/admin/report/contribution` — the ids of the matching
+  CONTRIBUTIONs, ordered by commit time. **200** with a JSON array.
+- `GET {base}/admin/report/contribution/count` — how many there are. **200**
+  with a bare JSON number.
+- `GET {base}/admin/report/versioned_composition/count` — how many distinct
+  COMPOSITION version containers had a version committed in the interval.
+- `GET {base}/admin/report/composition_version/count` — how many individual
+  COMPOSITION versions were committed in the interval.
+
+An unknown `a_service`, or a `time_interval` that is not `<lower>/<upper>`
+with valid ISO 8601 bounds, is **400**.
+
+## The admin API: archiving
+
+Two routes that mark a selected set of records as archived, behind the same
+gate and role. Archiving is **not** a delete: it is a lifecycle marker, and
+the archived records stay fully readable through the normal API.
+
+- `POST {base}/admin/archive/ehrs` with `{"ehr_ids": ["…"]}` — mark every
+  named EHR (and all its versioned content) archived. **204** on success.
+- `POST {base}/admin/archive/parties` with `{"party_ids": ["…"]}` — mark every
+  named demographic party archived. **204** on success.
+
+Both are **all-or-nothing and idempotent**: a malformed id is **400** and an
+id that names nothing is **404**, in both cases before anything is marked;
+re-archiving an already-archived record changes nothing. An empty list
+succeeds and archives nothing.
+
+> [!NOTE]
+> The activity report and the archive routes are ehrbase-rs extensions too —
+> the openEHR *service model* defines these operations, but the released REST
+> API surfaces no endpoint for them, so their URLs are our own. They gate no
+> openEHR conformance claim; see
+> [Conformance](conformance.md).
+
 > [!WARNING]
 > `DELETE /admin/ehr/all` without a parameter empties the repository — there
 > is no confirmation step and no undo. Keep the admin API disabled unless a

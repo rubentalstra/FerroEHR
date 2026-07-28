@@ -65,6 +65,12 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   does not specify is an offer only the party that CLAIMS it answers for.
   Where nothing is served, the party STATEMENT drops the claim — the matrix row
   stays, because the matrix is the Profiles book as data, not a claim list.
+  Corollary on the FLOW side: a case whose subject is one extension operation
+  must not drive a released one just to reach its precondition, or the
+  realization it evidences stops being the one it is about. Provisioning
+  therefore belongs in `requires` (`server`/`templates`/`ehr`/`directory`/
+  `party`/`commit` — `requires.party` mints `${party_id}`, the VERSIONED_OBJECT
+  uid the SM admin operations take), never as a flow step.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary
