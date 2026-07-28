@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! Trace-shape test (binding doc §6): drive a request through the root-span
+//! Trace-shape test: drive a request through the root-span
 //! middleware with a capturing subscriber and assert the span is named/attributed
 //! by **route template** and carries **no PHI** (the `ehr_id` never appears in
 //! any span field name or value).

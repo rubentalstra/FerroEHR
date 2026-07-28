@@ -1,4 +1,4 @@
-//! The per-request HTTP observability middleware (binding doc §1.1/§1.2/§3).
+//! The per-request HTTP observability middleware.
 //!
 //! Two `axum` middlewares, applied to the API router beside the ATNA audit
 //! layer:

@@ -9,10 +9,10 @@
   stays ITS-REST-bound.
 
 Deleted in the PR that closes #152. The prior plan generations and the two
-design studies (`docs/design/ehrbase-admin-ui.md` — the §7.1/§7A feature
-catalog and wireframes — and `docs/design/cabolabs-query-builder-ux.md`)
-are deleted with this consolidation and retrievable from git history;
-everything from them that remains unbuilt is itemized below.
+design studies (the admin-UI feature catalog + wireframes, and the
+query-builder UX study) were deleted with this consolidation and are
+retrievable from git history; everything from them that remains unbuilt is
+itemized below.
 
 ## Audit baseline (2026-07-20): what is VERIFIED SHIPPED
 

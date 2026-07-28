@@ -49,25 +49,33 @@ impl EhrbaseService {
     }
 
     /// `GET /definition/template/adl1.4` — the stored template summaries,
-    /// filtered by the wire's `filter_template_id`/`concept`/`filter_version`
-    /// globs (`*` wildcard) and cursored by `offset`/`fetch`
-    /// (`operations/definition_template_adl1.4_list.yaml`).
+    /// filtered by the wire's `filter_template_id`/`concept`/`version` globs
+    /// (`*` wildcard) and cursored by `offset`/`fetch`
+    /// (`docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl1.4_list.yaml`).
     ///
-    /// NOTE (adjudicated): the ITS-REST docs text does not define
-    /// `filter_version` at all (the parameter exists only in the stalled OAS,
-    /// which is codegen input, never a behavioural oracle) — an ABSENT
-    /// `filter_version` therefore applies no version filtering and the list
-    /// carries every stored template; there is no implicit latest-only
-    /// collapse. The version value itself derives from the `template_id`'s
-    /// `.vN` axis (`crate::templates::identity::template_version`), which is
-    /// also the template's whole version/lifecycle mechanism — no parallel
-    /// lifecycle-state model exists or is planned (adjudicated 2026-07-25:
-    /// that would re-model what the id already carries). Our own
-    /// spec-silence reading, flagged as such.
+    /// NOTE: the version value derives from the `template_id`'s `.vN` axis
+    /// (`crate::templates::identity::template_version`), which is also the
+    /// template's whole version/lifecycle mechanism — no parallel
+    /// lifecycle-state model exists, because that would re-model what the id
+    /// already carries.
     ///
     /// # Errors
     ///
     /// A database failure (`exception` → `500`).
+    // TODO: an ABSENT `version` parameter must collapse the listing to the
+    // latest version of each template. The ITS-REST docs text is silent, so
+    // the RELEASED OAS grounds the behaviour (oracle order: docs text first,
+    // the released OAS fills docs-text silence) — and it is explicit:
+    // "Filter by version (e.g. `1.2.*` or use `*` for all versions), taken
+    // from `template_id`; if missing, then only the latest version will be
+    // returned"
+    // (`docs/specs/openehr/ITS-REST/specifications/parameters/query/filter_version.yaml`,
+    // bundled as `computable/OAS/definition-codegen.openapi.yaml`
+    // §`components.parameters.filter_version`). `filter_templates` below
+    // currently applies NO filtering when the parameter is absent, so every
+    // stored version is listed. Completing this means collapsing to the
+    // highest `.vN` per template id when `version` is absent, plus a CNF case
+    // covering both branches (absent → latest-only, `*` → all).
     pub async fn template_adl14_list(
         &self,
         filter: TemplateListFilter,
@@ -82,8 +90,10 @@ impl EhrbaseService {
 
     /// `GET /definition/template/adl1.4/{template_id}/example` — an example
     /// COMPOSITION built from the template's `WebTemplate` by the templates
-    /// layer. `kind`/`detail_level` are the dev-OAS
-    /// `example_type`/`example_detail_level` enums.
+    /// layer. `kind`/`detail_level` are the released-OAS
+    /// `example_type`/`example_detail_level` enums
+    /// (`docs/specs/openehr/ITS-REST/computable/OAS/definition-codegen.openapi.yaml`
+    /// §`components.parameters`).
     ///
     /// # Errors
     ///

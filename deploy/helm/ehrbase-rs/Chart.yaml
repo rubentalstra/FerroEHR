@@ -5,7 +5,7 @@ description: >-
   1.1). A single static binary deployed with a hardened-by-default security posture:
   runs as a non-root, read-only-rootfs, default-deny-ingress workload that
   connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
-  are run by a separate migrator role — see docs/enterprise/deployment.md).
+  are run out of band by a separate migrator role).
 type: application
 
 # Chart versioning is independent of the application version.

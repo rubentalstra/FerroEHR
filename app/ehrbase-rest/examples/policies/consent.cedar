@@ -1,7 +1,7 @@
 // Illustrative embedded-Cedar policy set for the ehrbase-rs ABAC layer,
 // reproducing the *shape* of EHRbase v1's external consent checks
-// (`has_consent_patient` + `has_consent_template`) against the shipped schema
-// (see `docs/enterprise/access-control.md` §5.6).
+// (`has_consent_patient` + `has_consent_template`) against the shipped schema.
+// No openEHR spec governs consent-based authorization — our own extension.
 //
 // Cedar is DENY-BY-DEFAULT and `forbid` overrides `permit`. v1 ran each
 // configured policy independently and required ALL to return 200 (logical AND);

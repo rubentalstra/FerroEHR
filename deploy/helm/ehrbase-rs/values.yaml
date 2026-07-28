@@ -1,6 +1,6 @@
 # Default values for ehrbase-rs.
 #
-# Configuration model (W-13 redesign): the server reads ONE `ehrbase.toml`. This
+# Configuration model: the server reads ONE `ehrbase.toml`. This
 # chart renders that file from the `config:` block below (typed values mapped
 # 1:1 onto the ehrbase.toml schema) into a ConfigMap mounted at
 # /etc/ehrbase/ehrbase.toml — the server's config search order discovers it
@@ -20,10 +20,12 @@
 #
 # The env-mapping grammar for overrides is EHRBASE_ + the TOML path upper-cased
 # with `__` between segments (e.g. config.db.max_connections ⇔
-# EHRBASE__DB__MAX_CONNECTIONS). See docs/design/configuration.md.
+# EHRBASE__DB__MAX_CONNECTIONS). Run `ehrbase config default` to print the
+# complete TOML schema with every key and its default.
 #
-# See docs/enterprise/deployment.md for the role architecture, the pgaudit/TLS/
-# PITR posture, and the optional-integrations security notes.
+# The database role architecture, the pgaudit/TLS/PITR posture, and the
+# optional-integrations security notes are deployment concerns: no openEHR spec
+# governs them, so each is summarised inline at the setting it applies to.
 
 # -- Number of replicas (ignored when autoscaling.enabled is true).
 replicaCount: 2
@@ -55,14 +57,17 @@ serviceAccount:
   automountServiceAccountToken: false
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Database credential (external PostgreSQL 18 — ADR-008/ADR-013).
+# Database credential (external PostgreSQL 18).
 #
 # There is NO in-chart PostgreSQL. A clinical data repository stores PHI; its
 # database MUST be an externally-managed, backed-up, PITR-capable PostgreSQL 18
 # (managed service or an operator-run cluster) — never a chart-side sidecar.
 #
-# The application connects as the UNPRIVILEGED `ehrbase_app` writer role
-# (ADR-013 §3). The DSN is a SECRET: it is injected as EHRBASE__DB__URL env from a
+# The application connects as the UNPRIVILEGED `ehrbase_app` writer role: a
+# LOGIN role granted the DML privileges the runtime needs and none of the DDL
+# ones, so a compromised app process cannot alter the schema (PostgreSQL 18
+# docs, "Database Roles": https://www.postgresql.org/docs/18/user-manag.html).
+# The DSN is a SECRET: it is injected as EHRBASE__DB__URL env from a
 # Secret (never the ConfigMap). The non-secret pool bounds live in
 # config.db.{max_connections,min_connections,acquire_timeout_secs}.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -79,7 +84,7 @@ database:
   url: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Migrations (ADR-013 §3): who runs the schema.
+# Migrations: who runs the schema.
 #
 # Migrations are append-only and are applied by the `ehrbase_migrator` role, NOT
 # by the runtime app role. The app binary DOES call run_migrations on boot, so
@@ -87,8 +92,11 @@ database:
 #   (a) grant the runtime DSN the migrator role (simplest; single-tenant), OR
 #   (b) disable in-app migration and run them out-of-band as a Job/CI step with
 #       a migrator DSN (recommended for least-privilege prod).
-# This chart does not ship a migration Job; see docs/enterprise/deployment.md
-# for the recommended out-of-band flow and the lock_timeout wrapper.
+# This chart does not ship a migration Job. Run the out-of-band flow with a
+# migrator DSN and a short `lock_timeout`, so DDL blocked behind live traffic
+# fails fast instead of queueing (PostgreSQL 18 docs, "Client Connection
+# Defaults" § lock_timeout:
+# https://www.postgresql.org/docs/18/runtime-config-client.html).
 # ─────────────────────────────────────────────────────────────────────────────
 migrations:
   # -- Purely informational marker rendered into NOTES for the operator; the
@@ -128,8 +136,8 @@ metrics:
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ehrbase.toml — rendered VERBATIM into the ConfigMap as /etc/ehrbase/ehrbase.toml
-# (keys map 1:1 onto the server config schema; see docs/design/configuration.md
-# §3 and `ehrbase config default`). Secrets are NOT here — see `secrets:` above.
+# (keys map 1:1 onto the server config schema — `ehrbase config default` prints
+# it in full). Secrets are NOT here — see `secrets:` above.
 # The `files:` key is NOT part of the TOML (see below); it is mounted separately.
 # ═════════════════════════════════════════════════════════════════════════════
 config:
@@ -173,7 +181,8 @@ config:
   admin:
     enabled: false
 
-  # [tenancy] — multi-tenancy (ADR-015). Off by default.
+  # [tenancy] — multi-tenancy. Our own extension; no openEHR spec governs it.
+  # Off by default.
   tenancy:
     enabled: false
     claim: tenant
@@ -221,7 +230,8 @@ config:
       enabled: true
       retention_days: 0
 
-  # [events] — contribution-outbox eventing → AMQP (ADR-014). Off by default.
+  # [events] — contribution-outbox eventing → AMQP. Our own extension; no
+  # openEHR spec governs it. Off by default.
   # Envelopes are PHI-FREE by design. The broker URL is the secrets.eventsUrl secret.
   events:
     enabled: false
@@ -245,7 +255,8 @@ config:
       enabled: false
       fail_on_error: false
 
-  # [multimedia] — DV_MULTIMEDIA externalization → S3 (ADR-017). Off by default
+  # [multimedia] — DV_MULTIMEDIA externalization → S3. Our own extension; no
+  # openEHR spec governs it. Off by default
   # (inline behaviour byte-identical). WARNING: offloaded blobs are PHI — bucket
   # must be private, encrypted, HTTPS. Credentials are the secrets.multimedia* secrets.
   multimedia:
@@ -311,8 +322,11 @@ networkPolicy:
     rules: []
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Pod / container security (ADR-013 posture: non-root, read-only rootfs,
-# seccomp RuntimeDefault, all caps dropped).
+# Pod / container security: the Kubernetes Pod Security Standards "Restricted"
+# profile — non-root, no privilege escalation, seccomp RuntimeDefault, all
+# capabilities dropped
+# (https://kubernetes.io/docs/concepts/security/pod-security-standards/) —
+# plus a read-only root filesystem.
 # ─────────────────────────────────────────────────────────────────────────────
 podSecurityContext:
   runAsNonRoot: true

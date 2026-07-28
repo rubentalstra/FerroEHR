@@ -272,6 +272,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Helm chart and operator-facing comments cite durable references** (#322).
+  The chart's `values.yaml`, `Chart.yaml` and post-install NOTES pointed at
+  internal design documents that no longer exist (the deleted design and
+  enterprise doc trees) and at retired decision-record numbers. Each is now
+  either the official upstream documentation it was standing in for (the
+  PostgreSQL docs for the unprivileged app role and the `lock_timeout`
+  migration wrapper, the Kubernetes Pod Security Standards for the container
+  security posture), an explicit "our own extension, no openEHR spec governs it"
+  flag on the optional integrations, or the rationale written out inline —
+  so an operator reading the chart is never sent to a dead path. No default
+  value, template, or rendered manifest changed.
+
 - **The conformance suite proves EHR-scoped querying against two EHRs, not
   one** (#604). The four cases that check a query is confined to the EHR named
   in the `openehr-ehr-id` request header used to run against a server holding
@@ -2651,7 +2663,7 @@ workflow refuses a tag that has no matching section here.
   is the foundational access-decision layer, evaluated after authentication
   and before dispatch on every EHR-scoped route; the enterprise RBAC/ABAC
   layers compose on top of it. Its `settings` use the
-  `ehrbase.access_control.v1` scheme (`docs/design/ehr-access-scheme.md`):
+  `ehrbase.access_control.v1` scheme:
   a `default_access` (`open`/`restricted`) with a `user:`/`role:` access
   list gating the EHR, per-Composition privacy-level ceilings on Composition
   reads, and a gate-keeper that guards changes to the settings themselves

@@ -1,5 +1,4 @@
-//! `GET /management/env` — the effective configuration, with secrets masked
-//! (binding doc §2/§8.4).
+//! `GET /management/env` — the effective configuration, with secrets masked.
 //!
 //! The binary composes a snapshot of the effective configuration (REST, auth,
 //! management, telemetry, DB) as a JSON value; this endpoint returns it after a
