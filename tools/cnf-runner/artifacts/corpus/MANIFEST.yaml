@@ -644,7 +644,7 @@ cnf.tpl.scale_list:
   rm_versions: [">=1.1.0"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.scale_list"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-DV_SCALE-validate_constraint (AM 1.4 C_COMPLEX_OBJECT over DV_SCALE with C_REAL value; C_DV_SCALE absent from AM 1.4); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-DV_SCALE-validate_constraint (AM 1.4 C_COMPLEX_OBJECT over DV_SCALE with a C_REAL value list AND a C_CODE_PHRASE code_list at0005/at0006 on symbol.defining_code — DV_SCALE.symbol is 1..1 per RM data_types UML/classes/org.openehr.rm.data_types.dv_scale.adoc, so the value set is a value|symbol tuple set and the case's no-matching-symbol row needs both halves; C_DV_SCALE absent from AM 1.4); validated against the SUT 2026-07-21"
 cnf.tpl.count_open:
   source: templates/count_open.opt
   format: opt-xml

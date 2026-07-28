@@ -52,4 +52,4 @@ flow:
   - step: 2
     call: get_directory_at_version
     with: { ehr_id: "${ehr_id}", version_uid: "not-a-version-uid" }
-    expect: validation_failed
+    expect: bad_request                 # AMB-76's malformed-identifier law — the request's own syntax, not the content's semantics

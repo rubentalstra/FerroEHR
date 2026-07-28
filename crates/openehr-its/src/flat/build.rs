@@ -182,21 +182,41 @@ fn is_element_level(seg: &str) -> bool {
 /// `_`-prefixed segment `seg` on a leaf of RM type `base`, so the generic
 /// `_`-family routing ([`apply_rm_attr`]) must not see it a second time.
 ///
-/// One case: `/_relationship` on a PARTY_PROXY leaf. master05 §PARTY_RELATED
-/// spells the relationship sub-path `/_relationship` in its mapping table and
-/// `…/relationship|code` in both of the section's example blocks (and in the
-/// §"PARTY_RELATED performer" table); the flat builder accepts both, and
-/// `map::parties::build_party` reads whichever is present as the PARTY_PROXY
-/// **subtype discriminator**. Routing it on to [`map::build_rm_attr`] as well
-/// would either reject the spec's own table spelling as an unknown suffix, or
-/// — with a generic `relationship` arm there — attach the attribute to a party
-/// the leaf builder has already typed PARTY_IDENTIFIED.
+/// Both cases are on a PARTY_PROXY leaf, and both are consumed by
+/// `map::parties::build_party` — the build-side mirror of the emit side's "one
+/// family, one emission site" rule (`map::structures::emit_rm_attrs` carries no
+/// PARTY arm for the same reason).
+///
+/// `/_relationship`: master05 §PARTY_RELATED spells the relationship sub-path
+/// `/_relationship` in its mapping table and `…/relationship|code` in both of
+/// the section's example blocks (and in the §"PARTY_RELATED performer" table);
+/// the flat builder accepts both, and `build_party` reads whichever is present
+/// as the PARTY_PROXY **subtype discriminator**. Routing it on to
+/// [`map::build_rm_attr`] as well would either reject the spec's own table
+/// spelling as an unknown suffix, or — with a generic `relationship` arm there
+/// — attach the attribute to a party the leaf builder has already typed
+/// PARTY_IDENTIFIED.
+///
+/// `/_identifier:i`: master05 §§PARTY_IDENTIFIED, PARTY_RELATED put the family
+/// on the party itself, and `build_party` already reads it into `identifiers`.
+/// `build_rm_attr`'s generic `identifier` arm would then overwrite the key with
+/// its own build of the same children — idempotent for any input the parsers
+/// can produce, but NOT identical at the empty edge, where the generic arm
+/// inserts `identifiers: []` over the key `build_party` deliberately omits. An
+/// empty list there is doubly wrong: RM `PARTY_IDENTIFIED` invariant
+/// `Identifiers_valid` ("identifiers /= Void implies not identifiers.is_empty")
+/// forbids the value, and ITS-REST Resources.md §JSON Format keeps an empty
+/// list off the wire ("The RM attributes (even required ones) that are `Null`
+/// or an empty list (array) SHOULD be absent when serialized as JSON"). One
+/// family, one consumption site.
 fn leaf_consumes_segment(base: &str, seg: &str) -> bool {
-    seg == map::parties::RELATIONSHIP_TABLE_SEGMENT
-        && matches!(
-            base,
-            "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
-        )
+    matches!(
+        seg,
+        map::parties::RELATIONSHIP_TABLE_SEGMENT | map::parties::IDENTIFIER_SEGMENT
+    ) && matches!(
+        base,
+        "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+    )
 }
 
 /// Collect the whole template's hoisted-wrapper type narrowings as
@@ -1612,6 +1632,29 @@ mod tests {
             name_value("Systolic", None),
             json!({"_type": "DV_TEXT", "value": "Systolic"})
         );
+    }
+
+    /// The two `_`-families a PARTY leaf builder consumes itself, so the
+    /// generic router never sees them twice (master05 §§PARTY_IDENTIFIED,
+    /// PARTY_RELATED). The empty-edge consequence of the identifier half is
+    /// pinned in `map::parties::tests`.
+    #[test]
+    fn a_party_leaf_consumes_its_relationship_and_identifier_families() {
+        for base in [
+            "PARTY_PROXY",
+            "PARTY_SELF",
+            "PARTY_IDENTIFIED",
+            "PARTY_RELATED",
+        ] {
+            assert!(leaf_consumes_segment(base, "_relationship"), "{base}");
+            assert!(leaf_consumes_segment(base, "_identifier"), "{base}");
+            // Everything else still routes generically.
+            assert!(!leaf_consumes_segment(base, "_feeder_audit"), "{base}");
+        }
+        // Only a party consumes them: on any other host the router owns the
+        // segment (and reports an unknown suffix where there is no arm).
+        assert!(!leaf_consumes_segment("DV_TEXT", "_identifier"));
+        assert!(!leaf_consumes_segment("ELEMENT", "_relationship"));
     }
 
     #[test]

@@ -41,7 +41,7 @@ outcomes:
       Last-Modified: present
       Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # unknown ehr_id or versioned_object_uid (404_unknown_ehr_id_or_versioned_object_uid.yaml)
-  validation_failed:
+  bad_request:
     # A `versioned_object_uid` path segment that parses as no UID form at all
     # is a syntactically invalid parameter, the overview's 400 row: "The
     # service cannot or will not process the request due to something that is
@@ -50,5 +50,11 @@ outcomes:
     # takes is assigned by no released sentence — register AMB-76 carries the
     # adjudicated repo-wide fixed handling (malformed identifier segments are
     # 400; unknown-but-well-formed identifiers stay 404).
+    # KIND: `bad_request`, the taxonomy's malformed-request kind, not
+    # `validation_failed` — nothing about the addressed CONTENT is judged
+    # here, only the request's own syntax (vocab/outcomes.yaml: bad_request is
+    # "distinct from validation_failed, the well-formed-but-semantically-
+    # invalid branch"). One law, one kind: this is AMB-76's law, the same one
+    # the other malformed-identifier reads carry.
     status: 400
     body: error_loose

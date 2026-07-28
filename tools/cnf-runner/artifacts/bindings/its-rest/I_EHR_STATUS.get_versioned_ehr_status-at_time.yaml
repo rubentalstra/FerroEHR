@@ -62,7 +62,18 @@ outcomes:
       Last-Modified: present
       Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }
-  validation_failed:
+  bad_request:
+    # A `version_at_time` outside the extended ISO 8601 grammar the DOCS TEXT
+    # makes a MUST (overview Resources.md §Datetime format: "HTTP query
+    # parameters and path segments that are dates, datetimes, or times, MUST
+    # always use the _extended_ ISO 8601 format") is the overview's 400 row
+    # verbatim: "The service cannot or will not process the request due to
+    # something that is perceived to be a client error (e.g., malformed
+    # request syntax, syntactically invalid content)". The kind is therefore
+    # `bad_request`, the taxonomy's malformed-request kind, not the 422
+    # content-semantics kind `validation_failed` it borrowed before the
+    # 2026-07-28 schedule release (#544) added one; the wire status is
+    # unchanged (400 before and after).
     status: 400
     body: error_loose
 captures:

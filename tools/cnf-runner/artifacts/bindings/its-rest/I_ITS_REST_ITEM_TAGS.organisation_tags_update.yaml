@@ -65,13 +65,19 @@
 #    cross-cutting minimal-preference behaviour, carried by the
 #    `header-prefer-return-minimal` wire-surface element, not re-litigated per
 #    tag operation.
-#  - `validation_failed` 400: responses/400.yaml, "returned when the request
+#  - `bad_request` 400: responses/400.yaml, "returned when the request
 #    could not be parsed or is invalid (e.g. malformed request URL syntax,
 #    missing required header or parameter, or syntactically invalid header,
 #    parameter or content)" — content schemas/others/Error.yaml, whose required
 #    members are `message` + `validationErrors`. Register AMB-93 splits the
 #    body-defect families: syntactic failures (non-array body, non-string key,
 #    unparseable JSON) are this 400; an RM-invariant violation answers 422.
+#    THE KIND is `bad_request`, the taxonomy's malformed-request kind
+#    ("malformed request syntax, syntactically invalid content" —
+#    vocab/outcomes.yaml), because the family this 400 carries is exactly the
+#    syntactic half of that split. `validation_failed` is the kind of the
+#    OTHER half — 422, "well-formed but ... semantic errors" — so binding it
+#    to this status would make one status wear the other law's name.
 #  - `not_found` 404: responses/404_unknown_uid_based_id.yaml —
 #    "`404 Not Found` is returned when the `uid_based_id` does not exist".
 #  - `not_found` ALSO covers a well-formed `uid_based_id` that resolves to a
@@ -100,7 +106,7 @@ outcomes:
       Content-Type: negotiated            # 200_ORGANISATION_ItemTagList_updated.yaml -> headers/ContentType_canonical.yaml
       Preference-Applied: "present?"      # MAY — overview §Representation details negotiation
     body: prefer_conditional
-  validation_failed:
+  bad_request:
     status: 400
     body: error_loose
   not_found: { status: 404 }

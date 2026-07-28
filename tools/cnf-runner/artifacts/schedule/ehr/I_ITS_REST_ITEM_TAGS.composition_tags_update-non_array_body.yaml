@@ -63,7 +63,7 @@ flow:
       ehr_id: "${ehr_id}"
       uid_based_id: "${versioned_object_uid}"
       tags: { key: "not-an-array" }             # a JSON object where the release declares an array
-    expect: validation_failed
+    expect: bad_request                 # AMB-93's syntactic half — a non-array body is malformed request content
   - step: 3
     call: I_ITS_REST_ITEM_TAGS.composition_tags_get
     with: { ehr_id: "${ehr_id}", uid_based_id: "${versioned_object_uid}" }
