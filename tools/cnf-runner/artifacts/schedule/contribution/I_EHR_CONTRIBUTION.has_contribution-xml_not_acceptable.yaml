@@ -1,19 +1,24 @@
 # The existence read's mirror of get_contribution-xml_not_acceptable: the
-# release publishes no CONTRIBUTION XML document (register AMB-165, extended
-# to the READ side, triage 2026-07-28), so an `Accept: application/xml` on
-# the GET-realized has_contribution is refused per the §XML Format 406 MUST —
-# see the sibling case's header for the full derivation (the XSD
-# global-element inventory + the OAS inconsistency UPR-125 reports).
+# release publishes no CONTRIBUTION document element, so a server that does not
+# serve the CONTRIBUTION reads in XML refuses an `Accept: application/xml` on
+# the GET-realized has_contribution per the §XML Format 406 MUST — see the
+# sibling case's header for the full derivation (the XSD global-element
+# inventory + the OAS inconsistency UPR-125 reports). Offering the read under a
+# root name the release does not assign is equally conformant (register
+# AMB-167), so this row is judged only against a statement that declares
+# `contribution-xml-unsupported`.
 id: I_EHR_CONTRIBUTION.has_contribution-xml_not_acceptable
 kind: functional
 component: EHR_CONTRIBUTION
 sm_operation: I_EHR_CONTRIBUTION.has_contribution
 capabilities: [ChangeSets]
 profiles: [CORE]
+option: contribution-xml-unsupported   # AMB-167 option_select branch
 test_purpose: >-
-  A CONTRIBUTION existence read requested with `Accept: application/xml` is
-  refused with 406 rather than answered with an XML document the release
-  never defined.
+  On a server that declares no canonical-XML support for the CONTRIBUTION
+  reads, a CONTRIBUTION existence read requested with `Accept: application/xml`
+  is refused with 406 rather than answered with an XML document the release
+  never gave a root name.
 description: "has_contribution with Accept: application/xml (406)"
 spec_refs:
   - "SM openehr_platform §I_EHR_CONTRIBUTION.has_contribution"
@@ -25,7 +30,7 @@ requires:
   templates: [cnf.opt.minimal_event]
   ehr: { commits: none }               # mints ${ehr_id}
 data_sets: [cnf.composition.minimal_event.v1]
-ambiguities: [AMB-165]
+ambiguities: [AMB-165, AMB-167]
 flow:
   - step: 1
     call: commit_contribution          # precondition: a CONTRIBUTION of known uid

@@ -500,27 +500,29 @@ branches:
   # commit "via `PUT` or `POST` methods" (overview Requests_and_responses.md
   # §openehr-template-id) — the header the update binding now declares.
   #
-  # The CONTRIBUTION READS (triage 2026-07-28): the first live run showed the
-  # read is in the SAME declared-but-undefined position as the commit — the
-  # published XSDs declare no CONTRIBUTION document element, so the §XML
-  # Format response MUST cannot be satisfied and its 406 MUST is the
-  # release's designated answer. The read bindings now declare canonical-json
-  # only + the not_acceptable branch, exercised by
-  # I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable /
-  # -has_contribution-xml_not_acceptable (register AMB-165, extended to the
-  # read). The COMMIT side stays the exception immediately below.
+  # The CONTRIBUTION READS (adjudicated 2026-07-28, register AMB-167): the
+  # published XSDs declare no CONTRIBUTION document element, so the release
+  # assigns the read no document ROOT NAME — but its complexType DOES describe
+  # the content, so serving the read in XML and refusing it under the §XML
+  # Format 406 MUST are BOTH conformant and neither is asserted of every
+  # server. The read bindings declare canonical-json + canonical-xml, and the
+  # canonical-xml branch is exercised by the option-gated refusal arm
+  # (I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable /
+  # -has_contribution-xml_not_acceptable, both `contribution-xml-unsupported`).
+  # The COMMIT side — whose envelope has no XSD counterpart at all, root name
+  # or not — stays the exception immediately below.
   - binding: I_EHR_CONTRIBUTION.commit_contribution
     format: canonical-xml
     reason: coverage_gap
     source: "The released sources DECLARE the media type for this operation and WITHHOLD the shape of the document it would carry, so no conformance case can drive it without inventing one. DOCS TEXT — the only sentence governing an XML request payload is Resources.md §\"XML Format\": \"When resources are serialized in **canonical XML** format, both request payloads and responses MUST conform to the [published XSDs]\"; the EHR API chapter adds nothing (docs/ehr/Description.md is a 25-line stub — Purpose, Related Documents, Status — with no occurrence of CONTRIBUTION). PUBLISHED XSD — ITS-XML RM Common.xsd types the resource `<xs:complexType name=\"CONTRIBUTION\"><xs:sequence><xs:element name=\"uid\" type=\"HIER_OBJECT_ID\"/><xs:element name=\"versions\" type=\"OBJECT_REF\" maxOccurs=\"unbounded\"/><xs:element name=\"audit\" type=\"AUDIT_DETAILS\"/></xs:sequence></xs:complexType>`: `versions` are REFERENCES and `uid` is mandatory, so the type describes a COMMITTED contribution, never the commit envelope, which must carry each new version's DATA inline; no global element is declared for it either. RELEASED OAS (citable only because the docs text is silent on the envelope — owner ruling 2026-07-28) — operations/contribution_create.yaml DECLARES the type twice, via parameters/header/ContentType_LOCATABLE.yaml (whose `enum` contains `application/xml`) and its own description (\"in addition to the canonical `application/json` / `application/xml`\"), yet its `requestBody.content` has exactly ONE entry, `application/json`, bound to schemas/ehr/NewContribution.yaml, whose UpdateVersion/UpdateAudit shapes have no XSD counterpart and no XML schema, example or XSD reference anywhere in the release. Register AMB-165"
     note: "A case would have to invent the root element, the versions-with-inline-data shape and the UPDATE_AUDIT rendering the release withholds — writing specification rather than testing it (the AMB-140 / AMB-159 pattern for a declared branch whose shape or trigger the release withholds). CORRECTED 2026-07-28 (triage): the READ side is in the SAME position — matching the complexType is not a document; the read bindings dropped canonical-xml and their 406 branch is gated by -xml_not_acceptable cases (AMB-165 extended). Closes when a release publishes an XML representation of the commit envelope, or withdraws application/xml from the operation's Content-Type enum (UPR-125)."
   # The two CONTRIBUTION-read canonical-xml exceptions retired with slice 3b
-  # and STAY retired after the 2026-07-28 triage — not because the branch is
-  # exercised as ok (the first run refuted that authoring), but because the
-  # read bindings no longer declare the format at all: no published
-  # CONTRIBUTION document exists to serve. Their released behaviour is the
-  # §XML Format 406 MUST, exercised by the -xml_not_acceptable pair. The
-  # commit_contribution row above stays, adjudicated (AMB-165/UPR-125).
+  # and STAY retired: the read bindings declare the format and its exercised
+  # branch is the option-gated refusal arm (AMB-167 — the release withholds
+  # the root name, not the content model, so offer-or-refuse are both
+  # conformant and the catalogue cases the arm a declaring party is judged
+  # on). The commit_contribution row above stays, adjudicated
+  # (AMB-165/UPR-125).
   # RETIRED coverage_gaps (2026-07-28) — the canonical-xml branch of the whole
   # EHR_DIRECTORY surface and of the EHR-service surface is now exercised, so
   # the fourteen exceptions are gone rather than reworded (coverage only
@@ -536,14 +538,21 @@ branches:
   # judged by each binding's `Content-Type: negotiated` matcher. The
   # canonical-json exception on the create_ehr with_ehr_id variant had already
   # retired with I_EHR_SERVICE.create_ehr-with_ehr_id.
+  # RE-GROUNDED (register AMB-167): neither EHR nor FOLDER has a published
+  # document element, so those `-xml` rows are the OFFER arm and carry their
+  # family's `ehr-xml-supported` / `directory-xml-supported` option; the
+  # REFUSAL arm is cased too (I_EHR_SERVICE.get_ehr-xml_not_acceptable,
+  # I_EHR_DIRECTORY.get_directory-xml_not_acceptable). The branches stay
+  # exercised either way — the option decides which arm a party is judged on,
+  # not whether the surface is covered.
   - binding: I_EHR_STATUS.clear_ehr_modifiable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
   - binding: I_EHR_STATUS.clear_ehr_queryable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
   # RETIRED coverage_gaps (2026-07-28) — the two EHR_STATUS READS are now
   # exercised in canonical-xml: I_EHR_STATUS.get_ehr_status-xml, and
   # I_EHR_STATUS.get_versioned_ehr_status-xml, which covers BOTH realizations
@@ -556,14 +565,21 @@ branches:
   # canonical-XML request branch is exercised on the per-setter xml_body
   # variant bindings (case-supplied codec-derived payloads, the
   # I_EHR_STATUS.*-xml_body cases).
+  # RE-GROUNDED (register AMB-167): EHR_STATUS has no published document
+  # element, so every EHR_STATUS-bodied `-xml` / `-xml_body` row is the OFFER
+  # arm and carries `ehr-status-xml-supported`; the REFUSAL arm is
+  # I_EHR_STATUS.get_ehr_status-xml_not_acceptable. The VERSIONED_EHR_STATUS
+  # container read and its version sub-resource stay UNGATED: `versioned_object`
+  # and `version` ARE published document elements, so their XML branch is
+  # released behaviour, not a service choice.
   - binding: I_EHR_STATUS.set_ehr_modifiable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
   - binding: I_EHR_STATUS.set_ehr_queryable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
   # RETIRED coverage_gaps (#288 slice 3): the canonical-xml representation of
   # every PARTY binding is now exercised by its own isolated case —
   # I_DEMOGRAPHIC_SERVICE.get_party-xml / -get_party_at_time-xml /
@@ -574,6 +590,11 @@ branches:
   # document root name), and I_DEMOGRAPHIC_SERVICE.update_party-xml on the write
   # side (an XML request payload read back and compared against its
   # canonical-JSON twin).
+  # RE-GROUNDED (register AMB-167): that missing global element is exactly why
+  # these rows are the OFFER arm and carry `party-xml-supported` — one option
+  # for all five party types, which share one binding family and one document
+  # question. The REFUSAL arm is
+  # I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable.
 
   # ── ITEM_TAG (#288): the per-binding residue of the 23 released tag
   # operations. The five cross-cutting ITEM_TAG LAWS are exercised (see the

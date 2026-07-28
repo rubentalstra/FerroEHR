@@ -5764,22 +5764,22 @@ AMB-165:
     AMB-159 apply to a branch whose trigger the release withholds. Authoring a
     fixture would mean choosing a root element name, a versions-with-inline-data
     element shape and an UPDATE_AUDIT rendering that NO released source states,
-    i.e. writing specification rather than testing it. CORRECTED 2026-07-28
-    (triage of the first run that drove the read cases): the READ side is in
-    the SAME declared-but-undefined position, not exempt as this entry first
-    claimed. Matching the CONTRIBUTION complexType is not a document — the
-    published XSDs declare global document elements only for composition,
-    version, items, template, extract, extract_request, versioned_object and
-    archetype, so no CONTRIBUTION XML DOCUMENT exists to conform to and the
-    §XML Format response MUST cannot be satisfied on the read either. The
-    read bindings therefore declare canonical-json only plus the
-    not_acceptable branch, and the read is gated by the 406 MUST
+    i.e. writing specification rather than testing it. SCOPE, settled
+    2026-07-28: this entry is the COMMIT envelope only. The READ side is a
+    different question — the published CONTRIBUTION complexType DOES describe
+    a committed contribution, so only the document ROOT NAME is withheld
+    there, not the shape — and it is adjudicated in AMB-167 with the rest of
+    the declared-but-undefined resource types: offering the read in XML under
+    an unstated root and refusing it under the §XML Format 406 MUST are BOTH
+    conformant, so the two read cases
     (I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable,
-    -has_contribution-xml_not_acceptable) — refusal is the only conformant
-    answer a server can give. Closes when a release publishes a CONTRIBUTION
-    XML document (root element + the commit envelope's XML representation) or
-    withdraws `application/xml` from the operations' Accept/Content-Type
-    enums. Reported upstream (UPR-125).
+    -has_contribution-xml_not_acceptable) are option-gated on
+    `contribution-xml-unsupported` rather than asserted for every server.
+    Nothing about the COMMIT changes: its envelope has no XSD counterpart at
+    all, so it stays unexercised. Closes when a release publishes a
+    CONTRIBUTION XML document (root element + the commit envelope's XML
+    representation) or withdraws `application/xml` from the operations'
+    Accept/Content-Type enums. Reported upstream (UPR-125).
   disposition: report_only
   upstream_ref: "UPR-125"
 
@@ -5825,3 +5825,160 @@ AMB-166:
     set the request header.
   disposition: fixed_handling
   upstream_ref: "UPR-126"
+
+AMB-167:
+  ambiguity: >-
+    Canonical-XML enforceability is assigned PER RESOURCE TYPE by the
+    release, and for most REST resources it is assigned neither way. The
+    published XSDs declare a global document element for only EIGHT names
+    — `composition`, `version`, `items`, `template`, `extract`,
+    `extract_request`, `versioned_object`, `archetype` (plus `result_set` /
+    `query_request` in the 2.0.0-lineage QUERY schema) — while the released
+    ITS-REST offers `application/xml` on nearly every EHR/DEMOGRAPHIC
+    resource. For a resource WITH a document element, offering XML is fully
+    released behaviour and the §XML Format MUSTs are enforceable as written.
+    For a resource WITHOUT one (EHR, EHR_STATUS, FOLDER/directory, the five
+    demographic PARTY types + PARTY_RELATIONSHIP, CONTRIBUTION on the read
+    side, REVISION_HISTORY, the ITEM_TAG lists) the release DECLARES the
+    media type and WITHHOLDS the document: a server MAY offer XML (the
+    complexType describes the content; the ROOT ELEMENT NAME is spec-silent)
+    or MAY refuse it under the §XML Format 406 MUST. Neither answer is
+    non-conformant, so neither may be asserted unconditionally — which is
+    exactly what the catalogue did in both directions before this entry: the
+    CONTRIBUTION reads asserted refusal unconditionally while the
+    EHR/EHR_STATUS/directory/PARTY reads asserted a 200 XML answer
+    unconditionally, a line drawn by what one SUT happens to serve rather
+    than by the release.
+    PER-RESOURCE CLASSIFICATION (verified first-hand against both vendored
+    bundles; "documented" = a published global element can carry the served
+    payload, "undefined" = complexType only or absent):
+    (1) DOCUMENTED — COMPOSITION reads/writes and the OPT example payload
+    (`composition`); every VERSION sub-resource read of any container
+    (`version`, whose ORIGINAL_VERSION.data is `xs:anyType`, so the payload
+    type is unconstrained); the VERSIONED_* container reads
+    (`versioned_object`); the ADL 1.4 OPT (`template`, type
+    OPERATIONAL_TEMPLATE) and the ADL 1.4/2 archetype (`archetype`);
+    EHR_EXTRACT (`extract` / `extract_request`); any LOCATABLE served under
+    the generic abstract root (`items`, type LOCATABLE).
+    (2) UNDEFINED, media type declared — EHR (Ehr.xsd complexType, NOT
+    LOCATABLE-derived, so not even the generic `items` root is available;
+    absent entirely from the 1.0.2-nsv1 bundle); EHR_STATUS (LOCATABLE
+    subtype, no element; absent from nsv1); FOLDER (LOCATABLE subtype, no
+    element; present in BOTH bundles); PERSON/ORGANISATION/GROUP/AGENT/ROLE
+    and PARTY_RELATIONSHIP (LOCATABLE subtypes, no element; absent from
+    nsv1); CONTRIBUTION (complexType, NOT LOCATABLE-derived; absent from
+    nsv1); REVISION_HISTORY (complexType, no element — no binding declares
+    canonical-xml on the three revision-history reads, so no case is gated);
+    ITEM_TAG (no complexType at ALL in either bundle — the RM 1.2.0 class is
+    not in the published ITS-XML; the tag bindings declare canonical-json
+    only).
+    (3) OUT OF THE LATITUDE — RESULT_SET: the 2.0.0-lineage QUERY schema DOES
+    declare a `result_set` document element, but the released ITS-REST offers
+    JSON only on every query and stored-query operation (Accept_JSON), so no
+    XML branch exists on that wire at all; the unconditional 406 cases there
+    stand on the media type never being offered, not on a missing document.
+  source: >-
+    ALL THREE SOURCES READ FIRST-HAND, in the oracle order.
+    (1) DOCS TEXT — ITS-REST specifications/docs/overview/Resources.md
+    §"Data representation": "Services MUST support at least one of the
+    openEHR **XML** or **JSON** canonical formats for resource
+    representation" (so offering XML is a SERVICE CHOICE, never an
+    obligation), and §"XML Format", whose four sentences govern CONDUCT once
+    XML is in play, not the offer: "When resources are serialized in
+    **canonical XML** format, both request payloads and responses MUST
+    conform to the [published XSDs]"; "If the service cannot process the
+    request payload as XML format, it MUST respond with HTTP status code
+    `415 Unsupported Media Type`"; "If the service cannot fulfill this
+    aspect of the request, it MUST respond with HTTP status code `406 Not
+    Acceptable`"; "Proper header `Content-Type: application/xml` MUST be
+    present in the response of the service unless the response has no
+    content body (HTTP status code `204`)". No released sentence assigns a
+    document ROOT NAME to any resource, and none obliges a service to offer
+    XML for a resource whose document the schemas do not publish.
+    (2) THE PUBLISHED XSDs (the §XML Format link target, ITS-XML) — the
+    global `xs:element` inventory of BOTH vendored bundles,
+    crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/** and
+    its-xml-2.0.0-nsv2/**, enumerated exhaustively: nsv1 `ALL/` declares
+    `archetype` (Archetype.xsd), `composition` (Composition.xsd), `template`
+    (CompositionTemplate.xsd, type TEMPLATE), `template` (Template.xsd, type
+    OPERATIONAL_TEMPLATE), `extract_request` + `extract` +
+    `versioned_object` (Extract.xsd), `items` (Structure.xsd, type
+    LOCATABLE, `abstract="true"`), `version` (Version.xsd, type VERSION,
+    `abstract="true"`), plus `archetype` twice under `AOM2/`; nsv2 repeats
+    the RM set per RM release (1.0.2/1.0.3/1.0.4/1.1.0/latest
+    `documents/`), the AM/OET template + archetype elements, and ADDS
+    `result_set` + `query_request` (QUERY/latest/Query.xsd) which nsv1 has
+    no schema for at all. BUNDLE DELTA, also first-hand: the STABLE nsv1
+    bundle has no Ehr.xsd and no Demographic.xsd — EHR, EHR_STATUS,
+    CONTRIBUTION and the demographic PARTY types have no complexType there
+    either, only FOLDER (Structure.xsd) exists. Type facts that decide the
+    classification: nsv2 RM/latest Ehr.xsd `EHR` extends nothing, while
+    `EHR_STATUS`, `FOLDER`, `PARTY`/`ACTOR`/`PERSON`/`ORGANISATION`/`GROUP`/
+    `AGENT`/`ROLE` and `PARTY_RELATIONSHIP` all derive from `LOCATABLE`
+    (Common.xsd / Demographic.xsd), `CONTRIBUTION` (Common.xsd) does not;
+    `ORIGINAL_VERSION.data` is `xs:anyType`; the `versioned_object` element
+    is typed X_VERSIONED_OBJECT (EhrExtract.xsd — the EXTRACT-package shape,
+    with mandatory `total_version_count` + `extract_version_count` and
+    ORIGINAL_VERSION-restricted `versions`), NOT the RM `VERSIONED_OBJECT`
+    complexType, which has no element of its own; no XSD in either bundle
+    mentions ITEM_TAG.
+    (3) THE RELEASED OAS, citable only where the docs text is silent (owner
+    ruling 2026-07-28) and cited AS the OAS — the per-operation declaration
+    of the media type:
+    specifications/parameters/header/Accept_LOCATABLE.yaml and
+    Accept_canonical.yaml both `enum` `application/xml` (referenced by
+    ehr_get_by_id, ehr_status_get_at_time, directory_get_at_time,
+    person_get, contribution_get, versioned_*_get, … ), while
+    Accept_JSON.yaml enumerates `application/json` alone and is what every
+    query_*, definition_query_* and options operation references.
+  handling: >-
+    Two-armed, per resource FAMILY, selected by the ICS — the AMB-39
+    precedent. For each declared-but-undefined family the catalogue carries
+    BOTH branches and the statement's `options` declaration says which one
+    the party is judged on: `<family>-xml-supported` gates the ok-XML rows
+    (the existing `-xml` cases, which assert only the released conduct — the
+    negotiated `Content-Type` and an XML document entity — never a root
+    name), `<family>-xml-unsupported` gates the mirror
+    `-xml_not_acceptable` row (the §XML Format 406 MUST, the release's own
+    designated answer for an Accept it cannot fulfil). The undeclared
+    sibling is not-applicable, never a failure. Families: `ehr`,
+    `ehr-status`, `directory`, `party` (one seam for all five PARTY types —
+    the demographic routes share one binding family and one document
+    question), `contribution` (the READ side; the ok arm has no authored
+    case yet, the AMB-4 `adl14-duplicate-replace` pattern). The DOCUMENTED
+    rows stay ungated and unconditional: `-xml` cases on COMPOSITION, on the
+    VERSIONED_* container reads and their `version` sub-resources, and on
+    the OPT/archetype/example payloads assert behaviour the release fully
+    defines. ROOT ELEMENT NAME where a family IS offered: no openEHR spec
+    governs it — our own design/extension — so no case asserts one; the
+    body floor stays "an XML document entity" and the RM-level assertions
+    that read the canonical-JSON `_type` self-tag are deliberately absent.
+    CONTRIBUTION: the READ half of AMB-165 re-grounds here — refusal is one
+    conformant answer, not the only one, so
+    I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable and
+    -has_contribution-xml_not_acceptable carry `contribution-xml-unsupported`
+    instead of asserting the 406 for every server; the COMMIT envelope stays
+    AMB-165 report_only and unexercised (its shape, not merely its root
+    name, is withheld). ICS-COMPLETENESS CAVEAT: the verdict pipeline's
+    option_select review is satisfied by ANY one declared option of an
+    entry, so this entry's ten tags are checked as a set, not per family; a
+    statement that declares no arm for a family silently deselects both of
+    its rows rather than being flagged. Reported upstream (UPR-127):
+    reconcile the XSD document-element inventory with the REST resource
+    surface — publish a document element (or an explicit root-name rule) for
+    every resource whose Accept/Content-Type enums offer `application/xml`,
+    or withdraw the media type from the operations whose document the
+    schemas do not define.
+  disposition: option_select
+  options:
+    - ehr-xml-supported
+    - ehr-xml-unsupported
+    - ehr-status-xml-supported
+    - ehr-status-xml-unsupported
+    - directory-xml-supported
+    - directory-xml-unsupported
+    - party-xml-supported
+    - party-xml-unsupported
+    - contribution-xml-supported
+    - contribution-xml-unsupported
+  upstream_ref: "UPR-127"
