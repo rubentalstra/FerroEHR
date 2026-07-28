@@ -1155,11 +1155,27 @@ elements:
       # into the EHR_STATUS version's commit_audit like any other commit.
       - I_EHR_SERVICE.create_ehr-committal_headers
   - id: header-committal-version-lifecycle-and-system-id
-    description: "The two committal attributes no case supplies yet: VERSION.lifecycle_state through the openehr-version header, and the system_id server-default rule (a client-supplied system_id is merged, and when absent the server MUST substitute its own configured system identifier)."
+    description: "The last two committal attributes: VERSION.lifecycle_state supplied through the openehr-version header reaches the committed VERSION, and the system_id rule holds in both arms — a client-supplied system_id is merged verbatim, and a commit that supplies none carries a server-set identifier instead of the earlier client value or nothing."
     source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (the worked example's `openehr-version: lifecycle_state.code_string=\"532\"` line; \"whatever is provided it MUST be merged with the default VERSION and VERSION.audit_details attributes on commit runtime\"; \"In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier\") + TERM SupportTerminology §Version Lifecycle State (the code_string vocabulary the header carries)"
+    # Closed by the #288 element sweep. The lifecycle case supplies
+    # 553|incomplete| rather than the example's 532|complete| because 532 is
+    # the default (RM common master06 §Incomplete Content: "Usually content
+    # will be committed in the `complete` state") and could not tell a merging
+    # server from one ignoring the header; the same section's transition table
+    # has no `complete` -> `incomplete` transition, so the state is authored on
+    # the FIRST commit. The system_id case drives both arms in one flow, the
+    # supplied arm establishing the client token the defaulted arm must NOT
+    # carry. The residual identity claim — that the defaulted value IS the
+    # server's configured identifier — is its own element below.
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-version_lifecycle
+      - I_EHR_COMPOSITION.update_composition-audit_system_id
+  - id: header-committal-system-id-server-value
+    description: "The defaulted AUDIT_DETAILS.system_id is the server's OWN CONFIGURED system identifier — not merely some server-set non-blank token."
+    source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (\"In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier\")"
     exception:
       reason: coverage_gap
-      note: "NEW-CASE candidates on one shared update_composition variant binding that sends both headers: assert the committed VERSION's lifecycle_state carries the supplied code, and — in a sibling that supplies no system_id — that the version uid's creating-system segment is the server's own configured identifier rather than empty or client-echoed. Neither needs a runner capability that does not exist; they are simply unauthored. The sibling attributes of the same header family ARE covered (header-committal-merge-family, header-committal-change-type-merge, header-committal-on-delete), so the mechanism is exercised and only these two attributes are open."
+      note: "The MUST's checkable half IS gated (I_EHR_COMPOSITION.update_composition-audit_system_id asserts the defaulted value is present, non-blank, and not the client token the same flow supplied one version earlier). Its IDENTITY half is not checkable by a client: the released ITS-REST exposes no operation from which the configured system identifier can be read — the System API is a one-operation conformance manifest (system-options-conformance-manifest) and no response carries the value — and the runner cannot derive it either, since the closed capture grammar (tools/cnf-runner/src/model/binding.rs: header | body | capture, with only weak-quote strip and root-uid/uppercase transforms) has no middle-segment extraction to lift the creating-system component out of an OBJECT_VERSION_ID. Asserting a literal would be inventing a deployment fact; asserting nothing would be silence. Closes when the ixit declares the SUT's configured system identifier as an environment fact a case may reference, or a released sentence surfaces it on the wire."
   # The default representation preference (ITS-REST Requests_and_responses.md
   # §Prefer minimal, identifier or full representation response).
   - id: header-prefer-return-minimal
