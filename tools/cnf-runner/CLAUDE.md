@@ -62,7 +62,16 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   never the OAS) and fails on any SM operation, realized-binding
   outcome/format branch, or cross-cutting behaviour with neither a covering
   case nor a cited `artifacts/vocab/wire_surface.yaml` exception; `validate
-  --specs` refreshes `docs/conformance/coverage-report.md`.
+  --specs` refreshes `docs/conformance/coverage-report.md`. Two halves of the
+  domain are not authored but DERIVED, so nothing can hide by never being
+  written down: a RELEASED ITS-REST operation the SM models no interface for
+  is enumerated from the pinned `NON_SM_REST_OPERATIONS` table under a
+  reserved `I_ITS_REST_*` pseudo-interface (a catalogue naming convention,
+  never an SM claim — register AMB-160; an unpinned use of the prefix is a
+  finding), and the Axis-3 domain is parsed from the `#`/`##` sections of the
+  two released overview chapters — every section must be named by an authored
+  `elements`/`branches` source or pinned in `AXIS3_SECTION_EXCLUSIONS` with
+  its citation.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
 - **The measurement machinery is conformance-by-measurement** (`perf.rs`,

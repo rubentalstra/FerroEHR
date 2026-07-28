@@ -1833,7 +1833,7 @@ fn axis3_derivation(
 ) -> Vec<DocDerivation> {
     let sources = wire_surface_source_texts(wire_surface);
     let mut out = Vec::new();
-    for doc in AXIS3_OVERVIEW_DOCS {
+    for doc in AXIS3_OVERVIEW_DOCS.iter().copied() {
         let Ok(text) = std::fs::read_to_string(spec_root.join(doc)) else {
             out.push(DocDerivation {
                 doc,

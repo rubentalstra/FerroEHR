@@ -2245,3 +2245,37 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   positional `value`/`value2`/`value3` alias accepted on input, the type-derived
   form being what the Web Template advertises so a client reading the Web
   Template never guesses.)
+
+### UPR-121 — the STABLE System API describes neither the resource its operation is served on nor the body it answers with
+
+- **Components:** ITS-REST (`docs/system/Description.md`;
+  `docs/overview/Requests_and_responses.md` §"HTTP Methods", §"HTTP status
+  codes")
+- **Register:** AMB-159 (report_only)
+- **Facts:** The System API is declared `STABLE` — `docs/system/Description.md`
+  §Status, "This specification is in the `STABLE` state" — and the chapter that
+  declares it is a stub: Purpose, Related Documents, Status, and nothing else.
+  It contains no path, no HTTP status code, no header and no field list. The
+  only released prose about the method the API is served with is one
+  descriptive row of the overview method table ("| OPTIONS | Describe the
+  communication options for the target resource. |"), which speaks of "the
+  target resource" in general and names no resource for this API. The manifest
+  a client would parse — the fields a conformance-reporting client needs, such
+  as the implementing product, its version and the REST-API version it
+  implements — is described by no released sentence anywhere in the
+  documentation. Two services can therefore both satisfy every released
+  sentence of a STABLE specification while answering on different resources
+  with different, or empty, bodies; no client can be written against the text
+  as published, and no conformance test can assert more than "some 2xx".
+- **Ask:** give the System chapter the two sentences it is missing — the
+  resource the operation is served on (relative to the API base URL) and the
+  members of the response body, with which of them are mandatory — and state
+  the success status code and the response headers in the same chapter, so a
+  STABLE API is testable from its own normative text rather than from a
+  generated artifact. (Ours: the probe is answered at the API base-path root,
+  the one resource that IS the service, with `200` and an `Allow` header
+  listing the methods that resource supports; the body carries the product's
+  identity and the REST-API version it implements plus the conformance profile
+  it claims, and never out-claims the last machine-computed verdict. Our
+  conformance case asserts only the `200` and the `Allow` header — everything
+  else is recorded as this silence, not as an expectation.)
