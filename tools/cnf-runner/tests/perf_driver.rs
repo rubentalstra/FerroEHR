@@ -13,9 +13,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use cnf_runner::ixit::{Environment, Ixit};
 use cnf_runner::perf::{ClassVerdict, JourneyCatalogue, PerformanceCase};
-use cnf_runner::perf_run::client::PerfClient;
+use cnf_runner::perf_run::client::{PerfClient, PerfPrincipals};
 use cnf_runner::perf_run::corpus::{SeededCorpus, seed_scale_ladder, seed_ward};
-use cnf_runner::perf_run::pack::{JourneyPack, PackTemplate};
+use cnf_runner::perf_run::pack::{AuxPayloads, FlatPayload, JourneyPack, PackTemplate};
 use cnf_runner::perf_run::window::{drive_case, rederive_verdict};
 
 /// A minimal keep-alive HTTP stub realizing the journey wire shapes: OPT
@@ -65,6 +65,7 @@ fn serve(
             return; // connection closed
         }
         let mut content_length = 0usize;
+        let mut principal = String::new();
         loop {
             let mut header = String::new();
             if reader.read_line(&mut header).unwrap_or(0) == 0 {
@@ -73,8 +74,12 @@ fn serve(
             if header == "\r\n" {
                 break;
             }
-            if let Some(v) = header.to_ascii_lowercase().strip_prefix("content-length:") {
+            let lower = header.to_ascii_lowercase();
+            if let Some(v) = lower.strip_prefix("content-length:") {
                 content_length = v.trim().parse().unwrap_or(0);
+            }
+            if let Some(v) = lower.strip_prefix("x-cnf-stub-principal:") {
+                v.trim().clone_into(&mut principal);
             }
         }
         let mut body = vec![0u8; content_length];
@@ -88,6 +93,7 @@ fn serve(
         let (status, extra, body) = route(
             method,
             path,
+            &principal,
             reads,
             ehr_counter,
             uid_counter,
@@ -103,10 +109,11 @@ fn serve(
     }
 }
 
-#[allow(clippy::too_many_lines)] // one arm per stubbed wire shape
+#[allow(clippy::too_many_lines, clippy::too_many_arguments)] // one arm per stubbed wire shape
 fn route(
     method: &str,
     path: &str,
+    principal: &str,
     reads: &AtomicU64,
     ehr_counter: &AtomicU64,
     uid_counter: &AtomicU64,
@@ -116,7 +123,51 @@ fn route(
         let n = counter.fetch_add(1, Ordering::Relaxed);
         format!("uid-{n}::stub::1")
     };
+    // The boundary principals: a credential-less caller is refused outright,
+    // and a read-only caller is refused any write — the DENY branches the
+    // access-control probe measures.
+    match principal {
+        "unauthenticated" => return ("401 Unauthorized", String::new(), "{}".to_owned()),
+        "readonly" if method != "GET" => {
+            return ("403 Forbidden", String::new(), "{}".to_owned());
+        }
+        _ => {}
+    }
     match (method, path) {
+        ("OPTIONS", _) => (
+            "200 OK",
+            "Allow: GET, OPTIONS\r\n".to_owned(),
+            "{}".to_owned(),
+        ),
+        ("GET", p) if p.ends_with("/.well-known/smart-configuration") => {
+            ("200 OK", String::new(), "{}".to_owned())
+        }
+        ("GET", p) if p.ends_with("/definition/template/adl2") => {
+            ("200 OK", String::new(), "[]".to_owned())
+        }
+        ("POST", p) if p.ends_with("/demographic/person") => (
+            "201 Created",
+            format!("ETag: W/\"{}\"\r\n", fresh_uid(uid_counter)),
+            String::new(),
+        ),
+        ("PUT", p) if p.contains("/demographic/person/") => (
+            "200 OK",
+            format!("ETag: W/\"{}\"\r\n", fresh_uid(uid_counter)),
+            String::new(),
+        ),
+        ("GET", p) if p.contains("/demographic/person/") => {
+            ("200 OK", String::new(), "{\"_type\":\"PERSON\"}".to_owned())
+        }
+        ("POST", p) if p.ends_with("/demographic/party_relationship") => (
+            "201 Created",
+            format!("ETag: W/\"{}\"\r\n", fresh_uid(uid_counter)),
+            String::new(),
+        ),
+        ("GET", p) if p.contains("/demographic/party_relationship/") => (
+            "200 OK",
+            String::new(),
+            "{\"_type\":\"PARTY_RELATIONSHIP\"}".to_owned(),
+        ),
         ("POST", p) if p.ends_with("/definition/template/adl1.4") => {
             ("201 Created", String::new(), String::new())
         }
@@ -224,11 +275,13 @@ fn route(
 
 /// A compact journey catalogue exercising every dependency shape: standing
 /// ward reads + versioned updates, a fresh-EHR admission chain, an
-/// order→result pipeline with an in-window dependent stage, and the
-/// governance surface.
+/// order→result pipeline with an in-window dependent stage, the governance
+/// surface, the demographic chain, the Simplified-Format channel, the
+/// definition/platform probes, and the two access-control DENY branches —
+/// i.e. every operation of the closed vocabulary that drives a wire.
 fn catalogue() -> JourneyCatalogue {
     serde_saphyr::from_str(
-        "chart_review:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_read, at: PT0S }\n    - { op: composition_revision_history, at: PT1S }\n    - { op: adhoc_query, at: PT2S }\n    - { op: directory_read, at: PT3S }\nadmission:\n  description: d\n  derivation: g\n  stages:\n    - { op: ehr_create, at: PT0S }\n    - { op: ehr_read, at: PT1S }\n    - { op: ehr_status_read, at: PT2S }\n    - { op: ehr_status_update, at: PT3S }\n    - { op: composition_commit, template: cnf.ckm.gp_data_set, at: PT4S }\n    - { op: directory_create, at: PT5S }\nlab_pipeline:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_commit, template: cnf.ckm.gp_data_set, at: PT0S }\n    - { op: contribution_commit, template: cnf.ckm.lab_result, at: { uniform: [PT2S, PT3S] } }\n    - { op: composition_read_current, at: PT4S }\n    - { op: contribution_read, at: PT5S }\ncorrection:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_read_current, at: PT0S }\n    - { op: composition_update, template: cnf.ckm.gp_data_set, at: PT1S }\nward_dashboard:\n  description: d\n  derivation: g\n  stages:\n    - { op: ward_query, at: PT0S }\n    - { op: stored_query_execute, at: PT1S }\n    - { op: template_list, at: PT2S }\n    - { op: template_get, at: PT3S }\n    - { op: tags_put, at: PT4S }\n    - { op: tags_read, at: PT5S }\n",
+        "chart_review:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_read, at: PT0S }\n    - { op: composition_revision_history, at: PT1S }\n    - { op: adhoc_query, at: PT2S }\n    - { op: directory_read, at: PT3S }\nadmission:\n  description: d\n  derivation: g\n  stages:\n    - { op: ehr_create, at: PT0S }\n    - { op: ehr_read, at: PT1S }\n    - { op: ehr_status_read, at: PT2S }\n    - { op: ehr_status_update, at: PT3S }\n    - { op: composition_commit, template: cnf.ckm.gp_data_set, at: PT4S }\n    - { op: directory_create, at: PT5S }\nlab_pipeline:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_commit, template: cnf.ckm.gp_data_set, at: PT0S }\n    - { op: contribution_commit, template: cnf.ckm.lab_result, at: { uniform: [PT2S, PT3S] } }\n    - { op: composition_read_current, at: PT4S }\n    - { op: contribution_read, at: PT5S }\ncorrection:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_read_current, at: PT0S }\n    - { op: composition_update, template: cnf.ckm.gp_data_set, at: PT1S }\nward_dashboard:\n  description: d\n  derivation: g\n  stages:\n    - { op: ward_query, at: PT0S }\n    - { op: stored_query_execute, at: PT1S }\n    - { op: template_list, at: PT2S }\n    - { op: template_get, at: PT3S }\n    - { op: tags_put, at: PT4S }\n    - { op: tags_read, at: PT5S }\ndemographic_admission:\n  description: d\n  derivation: g\n  stages:\n    - { op: party_create, at: PT0S }\n    - { op: party_read, at: PT1S }\n    - { op: party_relationship_create, at: PT2S }\n    - { op: party_relationship_read, at: PT3S }\n    - { op: party_update, at: PT4S }\nplatform_surface:\n  description: d\n  derivation: g\n  stages:\n    - { op: system_options, at: PT0S }\n    - { op: smart_configuration_read, at: PT1S }\n    - { op: template_example, at: PT2S }\n    - { op: template_adl2_list, at: PT3S }\n    - { op: analytics_query, at: PT4S }\n    - { op: terminology_query, at: PT5S }\nsimplified_formats_exchange:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_commit_flat, at: PT0S }\n    - { op: composition_read_flat, at: PT1S }\n    - { op: composition_version_read, at: PT2S }\naccess_control_probe:\n  description: d\n  derivation: g\n  stages:\n    - { op: unauthenticated_probe, at: PT0S }\n    - { op: readonly_write_denied, template: cnf.ckm.gp_data_set, at: PT1S }\n",
     )
     .unwrap()
 }
@@ -255,27 +308,66 @@ fn journey_pack() -> JourneyPack {
             ),
             template("cnf.ckm.medicines_list", "Medicines list item R1"),
         ],
+        aux: AuxPayloads {
+            flat: Some(FlatPayload {
+                template_id: "minimal_action.en.v1".to_owned(),
+                opt_xml: "<template/>".to_owned(),
+                body: serde_json::json!({ "ctx/language": "en" }),
+            }),
+            person: Some(serde_json::json!({
+                "_type": "PERSON",
+                "identities": [{ "_type": "PARTY_IDENTITY",
+                    "details": { "_type": "ITEM_TREE", "items": [{ "_type": "ELEMENT",
+                        "value": { "_type": "DV_TEXT", "value": "Person One" } }] } }]
+            })),
+            person_amended: Some(serde_json::json!({
+                "_type": "PERSON",
+                "identities": [{ "_type": "PARTY_IDENTITY",
+                    "details": { "_type": "ITEM_TREE", "items": [{ "_type": "ELEMENT",
+                        "value": { "_type": "DV_TEXT", "value": "Person Two" } }] } }]
+            })),
+            party_relationship: Some(serde_json::json!({
+                "_type": "PARTY_RELATIONSHIP",
+                "source": { "_type": "PARTY_REF",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": "placeholder" } }
+            })),
+        },
     }
 }
 
 fn poc_case() -> PerformanceCase {
     serde_saphyr::from_str(
-        "id: PERF-hospital_sim-class_POC\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: POC\ncorpus: cnf.scale.10k\nworkload:\n  arrival_rate: 20/s\n  warmup: PT5M\n  duration: PT1H\n  journeys: { chart_review: 82%, admission: 4%, lab_pipeline: 4%, correction: 4%, ward_dashboard: 6% }\nthresholds:\n  - { metric: latency_p99, max: 1000 }\n  - { metric: error_rate, max: 0 }\n  - { metric: offered_load_sustained, min: 2 }\n",
+        "id: PERF-hospital_sim-class_POC\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: POC\ncorpus: cnf.scale.10k\nworkload:\n  arrival_rate: 60/s\n  warmup: PT5M\n  duration: PT1H\n  journeys: { chart_review: 78%, admission: 3%, lab_pipeline: 2%, correction: 2%, ward_dashboard: 5%, demographic_admission: 3%, platform_surface: 3%, simplified_formats_exchange: 2%, access_control_probe: 2% }\nthresholds:\n  - { metric: latency_p99, max: 1000 }\n  - { metric: error_rate, max: 0 }\n  - { metric: offered_load_sustained, min: 2 }\n",
     )
     .unwrap()
 }
 
-fn client_and_env(base_url: &str) -> (PerfClient, Environment) {
+fn client_and_env(base_url: &str) -> (PerfPrincipals, Environment) {
     let ixit: Ixit = serde_json::from_value(serde_json::json!({
-        "instances": { "sut": { "base_url": base_url, "auth": { "mode": "none" } } },
+        "instances": {
+            "sut": { "base_url": base_url, "auth": { "mode": "none" } },
+            // The boundary principals the access-control probe addresses. The
+            // stub answers 401/403 on their marker header, so the DENY
+            // branches are measured exactly as a real deployment's are.
+            "unauthenticated": { "base_url": base_url, "auth": { "mode": "none" },
+                                  "headers": { "x-cnf-stub-principal": "unauthenticated" } },
+            "readonly": { "base_url": base_url, "auth": { "mode": "none" },
+                           "headers": { "x-cnf-stub-principal": "readonly" } },
+            "smart_platform": { "base_url": base_url, "auth": { "mode": "none" } }
+        },
+        "smart": {
+            "platform_instance": "smart_platform",
+            "mint": { "issuer": "https://as.stub", "subject": "stub",
+                       "key_file": "unused.pem", "kid": "stub", "ttl_seconds": 300 }
+        },
         "environment": { "exclusive_server": true, "hardware_class": "test-stub",
                           "cores": 1, "memory_gb": 1, "storage_class": "ram",
                           "topology": "in-process stub" }
     }))
     .unwrap();
-    let client = PerfClient::from_instance(ixit.default_instance().unwrap()).unwrap();
+    let principals = PerfPrincipals::from_ixit(&ixit).unwrap();
     let environment = ixit.environment.clone().unwrap();
-    (client, environment)
+    (principals, environment)
 }
 
 fn seeded(client: &PerfClient, pack: &JourneyPack) -> SeededCorpus {
@@ -292,16 +384,16 @@ fn seeded(client: &PerfClient, pack: &JourneyPack) -> SeededCorpus {
 #[test]
 fn the_open_loop_journey_run_earns_the_class_on_a_healthy_sut() {
     let (base_url, _server) = spawn_stub(0);
-    let (client, environment) = client_and_env(&base_url);
+    let (principals, environment) = client_and_env(&base_url);
     let progress = |_message: String| {};
     let pack = journey_pack();
     let catalogue = catalogue();
-    let corpus = seeded(&client, &pack);
+    let corpus = seeded(principals.primary(), &pack);
 
     let case = poc_case();
     let measurement = drive_case(
         &case,
-        &client,
+        &principals,
         &corpus,
         &pack,
         &catalogue,
@@ -314,7 +406,7 @@ fn the_open_loop_journey_run_earns_the_class_on_a_healthy_sut() {
 
     // The schedule dispatched the planned aggregate operation rate.
     assert!(
-        measurement.offered_load_sustained >= 19.0,
+        measurement.offered_load_sustained >= 57.0,
         "offered load {} below the schedule rate",
         measurement.offered_load_sustained
     );
@@ -346,6 +438,22 @@ fn the_open_loop_journey_run_earns_the_class_on_a_healthy_sut() {
         "template_get",
         "tags_put",
         "tags_read",
+        "party_create",
+        "party_read",
+        "party_update",
+        "party_relationship_create",
+        "party_relationship_read",
+        "system_options",
+        "smart_configuration_read",
+        "template_example",
+        "template_adl2_list",
+        "analytics_query",
+        "terminology_query",
+        "composition_commit_flat",
+        "composition_read_flat",
+        "composition_version_read",
+        "unauthenticated_probe",
+        "readonly_write_denied",
     ] {
         assert!(labels.contains(&expected), "operation {expected} missing");
     }
@@ -367,16 +475,16 @@ fn the_open_loop_journey_run_earns_the_class_on_a_healthy_sut() {
 #[test]
 fn a_faulting_sut_cannot_earn_the_class() {
     let (base_url, _server) = spawn_stub(5); // every 5th composition read is a 500
-    let (client, environment) = client_and_env(&base_url);
+    let (principals, environment) = client_and_env(&base_url);
     let progress = |_message: String| {};
     let pack = journey_pack();
     let catalogue = catalogue();
-    let corpus = seeded(&client, &pack);
+    let corpus = seeded(principals.primary(), &pack);
 
     let case = poc_case();
     let measurement = drive_case(
         &case,
-        &client,
+        &principals,
         &corpus,
         &pack,
         &catalogue,

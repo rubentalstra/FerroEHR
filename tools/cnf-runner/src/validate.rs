@@ -713,6 +713,54 @@ fn check_journey_envelope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             }
         }
     }
+    // Every AUXILIARY payload a stage carries resolves in the corpus
+    // manifest too: the Simplified-FLAT pair and the demographic fixtures
+    // are committed corpus entries the functional catalogue already
+    // adjudicates — the load instrument never invents a payload, so a
+    // missing entry is an authoring defect, not a run-time surprise.
+    if let Some((_, manifest)) = &set.corpus {
+        let mut needed: Vec<crate::perf::AuxPayloadKind> = Vec::new();
+        for (_, journey) in &catalogue.0 {
+            for stage in &journey.stages {
+                if let Some(kind) = crate::perf::PerfOp::parse(&stage.op)
+                    .ok()
+                    .and_then(crate::perf::PerfOp::aux_payload)
+                    && !needed.contains(&kind)
+                {
+                    needed.push(kind);
+                }
+            }
+        }
+        for kind in needed {
+            let keys: &[&str] = match kind {
+                crate::perf::AuxPayloadKind::Flat => &[
+                    crate::perf_run::pack::FLAT_OPT_KEY,
+                    crate::perf_run::pack::FLAT_BODY_KEY,
+                ],
+                crate::perf::AuxPayloadKind::Person => &[
+                    crate::perf_run::pack::PERSON_KEY,
+                    crate::perf_run::pack::PERSON_AMENDED_KEY,
+                ],
+                crate::perf::AuxPayloadKind::PartyRelationship => {
+                    &[crate::perf_run::pack::PARTY_RELATIONSHIP_KEY]
+                }
+            };
+            for key in keys {
+                match CorpusKey::parse(key) {
+                    Ok(parsed) if manifest.get(&parsed).is_some() => {}
+                    _ => push(
+                        findings,
+                        CheckId::JourneyEnvelope,
+                        &who,
+                        format!(
+                            "the catalogue names a stage whose payload is {kind:?}, but the \
+                             corpus manifest has no entry {key}"
+                        ),
+                    ),
+                }
+            }
+        }
+    }
     for (case_path, case) in &set.performance {
         if let Err(message) = catalogue.expansion(&case.workload.journeys) {
             push(

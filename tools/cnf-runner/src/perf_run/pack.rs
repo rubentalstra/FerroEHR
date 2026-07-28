@@ -47,10 +47,48 @@ pub struct PackTemplate {
     pub skeleton: Value,
 }
 
-/// The loaded pack: every template the journey catalogue names.
+/// The Simplified-FLAT payload one journey stage commits: the OPT that
+/// constrains it, that OPT's `template_id` (the `openehr-template-id`
+/// channel — ITS-REST overview `Requests_and_responses` §openehr-template-id)
+/// and the committed FLAT body.
+#[derive(Debug, Clone)]
+pub struct FlatPayload {
+    pub template_id: String,
+    pub opt_xml: String,
+    pub body: Value,
+}
+
+/// The committed payloads the journey stages that do NOT commit a CKM
+/// COMPOSITION carry. Every one is a corpus fixture the functional
+/// catalogue already adjudicates — the load instrument invents no payload
+/// of its own. A field is `Some` exactly when the catalogue names an
+/// operation that needs it (see [`crate::perf::PerfOp::aux_payload`]).
+#[derive(Debug, Clone, Default)]
+pub struct AuxPayloads {
+    pub flat: Option<FlatPayload>,
+    /// `PERSON`, first content state (the create body).
+    pub person: Option<Value>,
+    /// `PERSON`, amended content state (the versioned update body).
+    pub person_amended: Option<Value>,
+    pub party_relationship: Option<Value>,
+}
+
+/// The corpus keys the auxiliary payloads come from. Fixed, because they
+/// are the payloads the functional batteries already adjudicate; the
+/// `journey-envelope` validate gate checks the manifest carries them
+/// whenever the catalogue names an operation that needs one.
+pub const FLAT_OPT_KEY: &str = "cnf.opt.minimal_action";
+pub const FLAT_BODY_KEY: &str = "cnf.flat.vitals.minimal_ctx";
+pub const PERSON_KEY: &str = "cnf.demographic.person.v1";
+pub const PERSON_AMENDED_KEY: &str = "cnf.demographic.person.v2";
+pub const PARTY_RELATIONSHIP_KEY: &str = "cnf.demographic.party_relationship.v1";
+
+/// The loaded pack: every template the journey catalogue names, plus the
+/// auxiliary payloads its non-COMPOSITION stages carry.
 #[derive(Debug, Clone)]
 pub struct JourneyPack {
     pub templates: Vec<PackTemplate>,
+    pub aux: AuxPayloads,
 }
 
 impl JourneyPack {
@@ -76,25 +114,30 @@ impl JourneyPack {
             }
         }
         keys.sort();
+        let entry = |k: &str| {
+            crate::ids::CorpusKey::parse(k)
+                .ok()
+                .and_then(|parsed| manifest.get(&parsed).cloned())
+                .ok_or_else(|| format!("corpus manifest has no entry {k}"))
+        };
+        let read = |source: Option<&String>, what: &str| {
+            let source = source.ok_or_else(|| format!("{what} entry has no source"))?;
+            std::fs::read_to_string(corpus_dir.join(source))
+                .map_err(|e| format!("cannot read {source}: {e}"))
+        };
+        let read_json = |key: &str| -> Result<Value, String> {
+            let e = entry(key)?;
+            serde_json::from_str(&read(e.source.as_ref(), key)?)
+                .map_err(|error| format!("corpus fixture {key}: {error}"))
+        };
         let mut templates = Vec::with_capacity(keys.len());
         for key in keys {
-            let entry = |k: &str| {
-                crate::ids::CorpusKey::parse(k)
-                    .ok()
-                    .and_then(|parsed| manifest.get(&parsed).cloned())
-                    .ok_or_else(|| format!("corpus manifest has no entry {k}"))
-            };
             let opt_entry = entry(&key)?;
             let example_entry = entry(&format!("{key}.example"))?;
             let template_id = opt_entry
                 .template_id
                 .clone()
                 .ok_or_else(|| format!("manifest entry {key} carries no template_id"))?;
-            let read = |source: Option<&String>, what: &str| {
-                let source = source.ok_or_else(|| format!("{what} entry has no source"))?;
-                std::fs::read_to_string(corpus_dir.join(source))
-                    .map_err(|e| format!("cannot read {source}: {e}"))
-            };
             let opt_xml = read(opt_entry.source.as_ref(), &key)?;
             let skeleton: Value = serde_json::from_str(&read(example_entry.source.as_ref(), &key)?)
                 .map_err(|e| format!("example skeleton {key}: {e}"))?;
@@ -108,7 +151,45 @@ impl JourneyPack {
         if templates.is_empty() {
             return Err("the journey catalogue names no templates".to_owned());
         }
-        Ok(Self { templates })
+
+        // The auxiliary payloads: loaded exactly when the catalogue names an
+        // operation that carries one, so a party's catalogue never pays for
+        // fixtures its journeys do not touch.
+        let mut needed: Vec<crate::perf::AuxPayloadKind> = Vec::new();
+        for (_, journey) in &catalogue.0 {
+            for stage in &journey.stages {
+                if let Some(kind) = crate::perf::PerfOp::parse(&stage.op)
+                    .ok()
+                    .and_then(crate::perf::PerfOp::aux_payload)
+                    && !needed.contains(&kind)
+                {
+                    needed.push(kind);
+                }
+            }
+        }
+        let mut aux = AuxPayloads::default();
+        for kind in needed {
+            match kind {
+                crate::perf::AuxPayloadKind::Flat => {
+                    let opt_entry = entry(FLAT_OPT_KEY)?;
+                    aux.flat = Some(FlatPayload {
+                        template_id: opt_entry.template_id.clone().ok_or_else(|| {
+                            format!("manifest entry {FLAT_OPT_KEY} carries no template_id")
+                        })?,
+                        opt_xml: read(opt_entry.source.as_ref(), FLAT_OPT_KEY)?,
+                        body: read_json(FLAT_BODY_KEY)?,
+                    });
+                }
+                crate::perf::AuxPayloadKind::Person => {
+                    aux.person = Some(read_json(PERSON_KEY)?);
+                    aux.person_amended = Some(read_json(PERSON_AMENDED_KEY)?);
+                }
+                crate::perf::AuxPayloadKind::PartyRelationship => {
+                    aux.party_relationship = Some(read_json(PARTY_RELATIONSHIP_KEY)?);
+                }
+            }
+        }
+        Ok(Self { templates, aux })
     }
 
     /// Look up a template by corpus key.
@@ -262,6 +343,61 @@ pub(crate) fn folder_body(closed: bool) -> Vec<u8> {
         "folders": folders
     });
     serde_json::to_vec(&body).unwrap_or_default()
+}
+
+/// A demographic `PERSON` body for one arrival: the committed corpus
+/// fixture with its legal-identity name stamped from the arrival index, so
+/// successive registrations are distinct records and the render stays
+/// deterministic. Nothing structural is touched — the payload's RM validity
+/// is the fixture's (RM demographic §PARTY `Identities_valid`).
+///
+/// # Errors
+/// A serialization failure message.
+pub(crate) fn person_body(person: &Value, arrival: u64) -> Result<Vec<u8>, String> {
+    let mut body = person.clone();
+    if let Some(Value::String(name)) = body
+        .get_mut("identities")
+        .and_then(|i| i.get_mut(0))
+        .and_then(|identity| identity.get_mut("details"))
+        .and_then(|details| details.get_mut("items"))
+        .and_then(|items| items.get_mut(0))
+        .and_then(|item| item.get_mut("value"))
+        .and_then(|value| value.get_mut("value"))
+    {
+        *name = format!("{} (registration {arrival})", staff(arrival));
+    }
+    serde_json::to_vec(&body).map_err(|e| e.to_string())
+}
+
+/// A `PARTY_RELATIONSHIP` body: the committed corpus fixture with its
+/// `source` pointed at the party this journey instance just registered (RM
+/// demographic master02 §Party Relationships — the relationship names the
+/// parties it relates).
+///
+/// # Errors
+/// A serialization failure message.
+pub(crate) fn party_relationship_body(
+    relationship: &Value,
+    source_uid: &str,
+) -> Result<Vec<u8>, String> {
+    let mut body = relationship.clone();
+    if let Some(Value::String(id)) = body
+        .get_mut("source")
+        .and_then(|source| source.get_mut("id"))
+        .and_then(|id| id.get_mut("value"))
+    {
+        source_uid.clone_into(id);
+    }
+    serde_json::to_vec(&body).map_err(|e| e.to_string())
+}
+
+/// The Simplified-FLAT composition body (the committed fixture verbatim —
+/// FLAT paths are template-derived, so nothing in it may be stamped).
+///
+/// # Errors
+/// A serialization failure message.
+pub(crate) fn flat_body(payload: &FlatPayload) -> Result<Vec<u8>, String> {
+    serde_json::to_vec(&payload.body).map_err(|e| e.to_string())
 }
 
 /// The `ITEM_TAG` set the tagging journey replaces (ITS-REST TAGS API).

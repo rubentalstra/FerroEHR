@@ -6508,11 +6508,20 @@ AMB-170:
     measured-performance instrument — the hospital simulation, its journeys,
     its arrival shapes, the volumetric classes it earns — is our own
     design/extension, and so is the decision that a particular claimed
-    capability sits outside it. Two kinds of capability sit outside a
-    sustained open-loop measurement for reasons that are ours, not openEHR's:
-    ones whose exercise would destroy the measured population mid-run
-    (physical deletion, dump/load), and ones whose surface the simulation does
-    not yet reach. Both are DECISIONS and must read as decisions.
+    capability sits outside it. Exactly two kinds of capability sit outside a
+    sustained open-loop measurement, and both reasons are ours, not
+    openEHR's: (1) DESTRUCTIVE MID-MEASUREMENT — the arrival would erase part
+    of the population-anchored corpus the measured window is bound to, so the
+    class the run earns would no longer describe the declared volume
+    (physical deletion, and the released two-operation ADMIN API that IS that
+    erase pair); (2) NO REQUEST TO SEND — the capability has neither a
+    released ITS-REST wire nor a served extension route, so a black-box load
+    instrument has nothing to drive at all (the same nine capabilities whose
+    `evidence_exception` records the identical absence; both lapse together
+    the day the product serves the routes). "Not reached yet" is NOT a
+    legitimate third kind and no longer appears: every other claimed
+    capability is exercised by the simulation. Both surviving kinds are
+    DECISIONS and must read as decisions.
   source: >-
     CNF guide master03-overview.adoc §Product Scope — the assessment table
     enumerates exactly what conformance covers for a Platform Component: "API

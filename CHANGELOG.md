@@ -17,6 +17,30 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The measured hospital-simulation workload now exercises every claimed
+  capability** (#625). The performance run used to touch about a third of the
+  capabilities the conformance statement claims, and the rest were listed as
+  "not yet exercised" catalogue gaps. Sixteen new operations joined the
+  measured workload — demographic registration (person create/read/amend plus
+  relationship churn), template example and ADL 2 definition polls, advanced
+  and terminology-backed AQL reads, Simplified-FLAT commit and read-back,
+  version-provenance (signature) reads, the System API options probe, the
+  SMART service-discovery fetch, and the two access-control refusals — so the
+  published Workload Coverage table now answers "yes" for every claimed
+  capability except eleven that carry a per-capability, register-linked
+  reason: either the operation would destroy the measured population
+  mid-run (physical deletion and the released admin delete API), or openEHR
+  defines no wire and this product serves no route for it, leaving the load
+  instrument nothing to send. No row is left undecided, and a future journey
+  that lands one of those capabilities is forced to delete its exclusion.
+- Measured runs can now drive a SMART-secured deployment: the load client
+  mints the scope-limited access token its ixit principal declares (once per
+  token lifetime, never per request), so a deployment running the SMART
+  resource-server posture — the standard EHRbase-rs conformance posture — is
+  measurable at all. Boundary probes address the read-only and
+  unauthenticated principals a deployment declares; a deployment that
+  declares none simply runs the workload without those journeys.
+
 - **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
   excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
   resource, so the six relationship operations used to be reported as

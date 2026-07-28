@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ixit::Environment;
 use crate::perf::OperationMeasurement;
-use crate::perf_run::client::PerfClient;
+use crate::perf_run::client::PerfPrincipals;
 use crate::perf_run::corpus::SeededCorpus;
 use crate::perf_run::schedule::JourneyWorkload;
 use crate::perf_run::window::run_window;
@@ -163,7 +163,7 @@ fn step_breaches(
 /// step is a finding, never an error).
 #[allow(clippy::too_many_lines)] // one linear procedure: climb → bisect → report
 pub fn run_stress(
-    client: &PerfClient,
+    principals: &PerfPrincipals,
     corpus: &SeededCorpus,
     workload: &JourneyWorkload<'_>,
     environment: &Environment,
@@ -208,7 +208,7 @@ pub fn run_stress(
             )
         });
         let window = run_window(
-            client,
+            principals,
             corpus,
             workload,
             rate,
