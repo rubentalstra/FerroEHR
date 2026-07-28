@@ -29,9 +29,9 @@
 # abstract `items` root could carry it, and no released sentence assigns
 # that root to this resource).
 # The release therefore DECLARES `application/xml` for this resource and
-# WITHHOLDS the document it would carry: serving the representation (under a root name no released
-# sentence assigns) and refusing it under the §XML Format 406 MUST are BOTH
-# conformant. The opposite arm is the mirror case
+# WITHHOLDS the document it would carry: serving the representation (under a
+# root name no released sentence assigns) and refusing it under the §XML
+# Format 406 MUST are BOTH conformant. The opposite arm is the mirror case
 # I_EHR_STATUS.get_ehr_status-xml_not_acceptable, gated
 # on `ehr-status-xml-unsupported`.
 id: I_EHR_STATUS.set_ehr_modifiable-xml_body
