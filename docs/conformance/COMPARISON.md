@@ -19,21 +19,33 @@
 
 | | ehrbase-rs | upstream (Java) |
 |---|---|---|
-| Product | ehrbase-rs 3.9.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-25 | 2026-07-24 |
+| Product | ehrbase-rs 3.11.0 | ehrbase-java 2.34.0 |
+| Run date | 2026-07-28 | 2026-07-28 |
 | Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (445 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (767 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
-ICS) declares the claimed capabilities and ambiguity-register options —
-ISO/IEC 9646-style test selection excuses undeclared option branches as N/A
-with a citation, never as silent skips. Verdicts are pure functions of
-(statement, results, catalogue, capability matrix).
+ICS) declares the claimed capabilities, spec versions, and ambiguity-register
+options — ISO/IEC 9646-style test selection excuses undeclared option
+branches, unclaimed capabilities, and release-dated behaviour outside the
+declared versions as N/A with a citation, never as silent skips. Verdicts are
+pure functions of (statement, results, catalogue, capability matrix).
+
+**The declared-version delta matters and is stated, not hidden:** ehrbase-rs
+declares ITS-REST **1.1.0**
+while upstream EHRbase declares ITS-REST
+**1.0.3** —
+the catalogue realizes 1.1.0, so every Release-1.1.0-dated behaviour (the
+Demographic API, ITEM_TAGs, Simplified Formats on the wire, the admin EHR
+delete, the weak-`ETag`/`Location` header forms, …) is cited N/A for the
+1.0.3 declaration rather than driven against a release upstream never
+claimed. The verdict-bearing comparison below is therefore each party's
+**in-scope subset**, never the raw record.
 
 ## Profile verdicts
 
@@ -44,22 +56,29 @@ with a citation, never as silent skips. Verdicts are pure functions of
 | OPTIONS | pass | not claimed |
 | SEC-BASIC | pass | not claimed |
 
-## Outcome totals
+## In-scope outcomes
 
-Runs compared: **ehrbase-rs** (run of 2026-07-25) vs **upstream EHRbase
-2.34.0** (run of 2026-07-24) — the SAME catalogue through the same
-runner, each with its own committed party statement.
+Runs compared: **ehrbase-rs** (run of 2026-07-28) vs **upstream EHRbase
+2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
+runner, each with its own committed party statement. Per the presentation
+rule, the headline is each party's VERDICT SCOPE (the cases its own
+declarations select), never the raw record: a raw count would book
+release-dated and unclaimed surfaces against a party that never claimed
+them.
 
-| | executed | passed | failed | errored | skipped | N/A |
-|---|---|---|---|---|---|---|
-| **ehrbase-rs** | 445 | 376 | 0 | 0 | 0 | 69 |
-| **upstream (Java)** | 393 | 159 | 128 | 38 | 0 | 68 |
+| | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
+|---|---|---|---|---|---|
+| **ehrbase-rs** | 767 | 704 | 704 | 0 | 0 |
+| **upstream (Java)** | 492 | 466 | 136 | 135 | 195 |
 
-An **errored** row is inconclusive (the wire answered outside the operation's
-bound outcome map), never counted as a failure. An **N/A** row carries a
-machine-readable citation (an undeclared option branch, an unrealizable wire
-on the technology profile, or a ground the party's topology cannot
-establish).
+An **inconclusive** row's wire answered outside the operation's bound outcome
+map, or its required ground could not be established (e.g. a refused
+provisioning exchange) — never counted as a failure of the behaviour under
+test. Every not-run row in the full committed record
+(`docs/conformance/<sut>/results.json`) carries a machine-readable
+citation: an undeclared option branch, an unclaimed capability, a
+release-dated behaviour outside the declared spec versions, or a ground the
+party's topology cannot establish.
 
 ## Capability-by-capability
 
@@ -76,39 +95,43 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | Adl14OptProvisioning | passed | failed |
 | Adl2ArchetypeProvisioning | unrealized | not_evidenced |
 | Adl2OptProvisioning | passed | not_evidenced |
-| AdminApi | passed | failed |
+| AdminApi | passed | not_evidenced |
 | AnonymousEhrs | passed | not_evidenced |
-| AqlAdvanced | passed | not_evidenced |
+| AqlAdvanced | passed | inconclusive |
 | AqlBasic | passed | failed |
 | AqlTerminology | passed | not_evidenced |
 | ArchetypeValidation | passed | failed |
 | AuditAccountability | passed | not_evidenced |
 | AuthenticatedAccess | passed | passed |
 | AuthorizationSeparation | passed | not_evidenced |
-| BulkEhrLoad | no_cases | no_cases |
+| BulkEhrLoad | passed | not_evidenced |
 | ChangeSets | passed | failed |
-| CompositionOps | passed | failed |
-| DefinitionApi | passed | not_evidenced |
+| CompositionOps | passed | inconclusive |
+| DefinitionApi | passed | failed |
 | DemographicApi | passed | not_evidenced |
-| DemographicArchetypeValidation | no_cases | no_cases |
+| DemographicArchetypeValidation | passed | not_evidenced |
 | DemographicArchive | unrealized | not_evidenced |
 | DirectoryOps | passed | failed |
-| EhrApi | passed | passed |
+| EhrApi | passed | failed |
 | EhrArchive | unrealized | not_evidenced |
 | EhrDemographicSeparation | passed | passed |
 | EhrDumpLoad | unrealized | not_evidenced |
 | EhrExtract | unrealized | not_evidenced |
 | EhrOperations | passed | failed |
 | EhrStatus | passed | failed |
+| ItemTags | passed | not_evidenced |
 | MessageApi | unrealized | not_evidenced |
 | PartyOperations | passed | not_evidenced |
-| PartyRelationshipOperations | unrealized | not_evidenced |
-| PhysicalDeletion | passed | failed |
-| QueryApi | passed | passed |
-| QueryProvisioning | passed | passed |
-| Signing | passed | not_evidenced |
+| PartyRelationshipOperations | passed | not_evidenced |
+| PhysicalDeletion | passed | unrealized |
+| QueryApi | passed | failed |
+| QueryProvisioning | passed | failed |
+| Signing | passed | unrealized |
 | SimplifiedFormats | passed | not_evidenced |
+| SmartAppLaunch | passed | not_evidenced |
+| SystemApi | passed | not_evidenced |
 | Tds | unrealized | not_evidenced |
+| TemplateExamples | passed | not_evidenced |
 | Versioning | passed | failed |
 
 ## Failures — both directions
@@ -123,152 +146,167 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 
 | Chapter | failed cases |
 |---|---|
-| CONT | 47 |
-| SF | 42 |
-| I_EHR_COMPOSITION | 9 |
-| I_EHR_STATUS | 8 |
-| I_QUERY_SERVICE | 5 |
-| I_EHR_CONTRIBUTION | 4 |
-| I_EHR_DIRECTORY | 4 |
-| I_DEFINITION_ADL2 | 3 |
-| I_DEFINITION_QUERY | 2 |
-| I_ADMIN_SERVICE | 1 |
-| I_DEFINITION_ADL14 | 1 |
-| I_EHR_SERVICE | 1 |
+| CONT | 67 |
+| I_EHR_STATUS | 24 |
+| I_EHR_DIRECTORY | 12 |
+| I_DEFINITION_QUERY | 10 |
+| I_DEFINITION_ADL2 | 7 |
+| I_EHR_CONTRIBUTION | 7 |
+| I_DEFINITION_ADL14 | 6 |
+| I_EHR_SERVICE | 5 |
+| I_QUERY_SERVICE | 3 |
+| I_EHR_COMPOSITION | 1 |
+| I_ITS_REST_REVISION_HISTORY | 1 |
 | SIG | 1 |
 
 <details><summary>Every upstream-failed case, with the ehrbase-rs outcome on the identical case</summary>
 
 | Case | Format | Upstream failure | ehrbase-rs outcome |
 |---|---|---|---|
-| CONT-COMPOSITION-content_cardinality | — | expected `validation_failed`, observed `created` | — |
-| CONT-DV_CODED_TEXT-validate_local_codes | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DATE-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DATE-validate_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DATE_TIME-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DATE_TIME-validate_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DURATION-validate_fields | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DURATION-validate_fields_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_DURATION-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_IDENTIFIER-validate_all_list | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_IDENTIFIER-validate_all_pattern | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DATE-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DATE_TIME-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_INTERVAL_DV_DURATION-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_DURATION-validate_open | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_1plus-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_1plus-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_3plus-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_3plus-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_3to5-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_3to5-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_any-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_any-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_mand-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_mand-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_opt-context_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMP-content_card_opt-context_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMPOSITION-content_cardinality_count6 | — | expected `created`, observed `validation_failed` | passed |
+| CONT-COMPOSITION-context_existence | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_CODED_TEXT-validate_open | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DATE-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DATE-validate_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DATE_TIME-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DATE_TIME-validate_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DURATION-validate_fields | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DURATION-validate_fields_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_DURATION-validate_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_IDENTIFIER-validate_all_list | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_IDENTIFIER-validate_all_pattern | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DURATION-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_DURATION-validate_range | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_INTERVAL_DV_ORDINAL-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_SCALE-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_SCALE-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_INTERVAL_DV_TIME-validate_open | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_MULTIMEDIA-validate_media_type | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_ORDINAL-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_PARSABLE-validate_value_formalism | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_PROPORTION-validate_any_fraction | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_PROPORTION-validate_fraction | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_PROPORTION-validate_integer_fraction | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_PROPORTION-validate_open | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_PROPORTION-validate_ratio | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_QUANTITY-validate_property | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_SCALE-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_TIME-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_TIME-validate_range | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_URI-validate_list | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_URI-validate_open | — | expected `validation_failed`, observed `created` | passed |
-| CONT-DV_URI-validate_pattern | — | expected `validation_failed`, observed `created` | passed |
-| CONT-EVENT-type_narrowing | — | expected `validation_failed`, observed `created` | — |
-| CONT-HISTORY-events_cardinality | — | expected `created`, observed `validation_failed` | — |
-| CONT-ITEM_STRUCTURE-type_narrowing | — | expected `created`, observed `validation_failed` | — |
-| I_ADMIN_SERVICE.physical_ehr_delete-delete_existing | — | expected `ok_empty`, observed `not_found` | passed |
-| I_DEFINITION_ADL14.get_opt-retrieve_single | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
-| I_DEFINITION_ADL2.get_artefact-example | canonical-json | expected `ok`, observed `not_acceptable` | passed |
+| CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_SCALE-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_MULTIMEDIA-validate_media_type | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_PARSABLE-validate_value_formalism | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_TEXT-validate_open | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_TIME-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_TIME-validate_range | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-state_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-state_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-type_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-type_interval_event | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-type_point_event | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_1plus-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_1plus-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_3plus-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_3plus-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_3to5-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_3to5-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_any-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_any-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_mand-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_mand-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_opt-summary_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HIST-events_card_opt-summary_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-HISTORY-events_cardinality_count6 | — | expected `created`, observed `validation_failed` | passed |
+| CONT-ITEM_STR-type_any | — | expected `created`, observed `validation_failed` | passed |
+| CONT-ITEM_STR-type_item_list | — | expected `created`, observed `validation_failed` | passed |
+| CONT-ITEM_STR-type_item_single | — | expected `created`, observed `validation_failed` | passed |
+| CONT-ITEM_STR-type_item_table | — | expected `created`, observed `validation_failed` | passed |
+| CONT-ITEM_STR-type_item_tree | — | expected `created`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_mand-protocol_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_mand-protocol_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_opt-protocol_ex_mand | — | expected `created`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_opt-protocol_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| I_DEFINITION_ADL14.upload_opt-invalid_opt | — | expected `validation_failed`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.upload_opt-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.validate_opt-invalid_opt | — | expected `validation_failed`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.validate_opt-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL2.get_artefact-example_unknown | — | expected `not_found`, observed `not_acceptable` | passed |
-| I_DEFINITION_ADL2.get_artefact-retrieve | — | expected `ok`, observed `not_found` | passed |
-| I_DEFINITION_QUERY.store_query-dotted_name | — | expected `stored`, observed `validation_failed` | passed |
-| I_DEFINITION_QUERY.store_query-unqualified_name | — | expected `stored`, observed `validation_failed` | passed |
-| I_EHR_COMPOSITION.get_composition_at_time | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
-| I_EHR_COMPOSITION.get_composition_at_time-no_time_arg | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.get_composition_at_times | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.get_composition_latest | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.get_composition_version | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
-| I_EHR_COMPOSITION.get_composition_versions | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.update_composition-event | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.update_composition-non_existent | — | expected `not_found`, observed `precondition_missing` | passed |
-| I_EHR_COMPOSITION.update_composition-wrong_template | — | expected `template_mismatch`, observed `precondition_missing` | passed |
+| I_DEFINITION_ADL2.get_artefact-version_prefix | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL2.upload_artefact-duplicate_conflict | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL2.upload_artefact-invalid_artefacts | — | expected `validation_failed`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL2.upload_artefact-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL2.valid_artefact-invalid | — | expected `validation_failed`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL2.valid_artefact-valid | — | expected `created`, observed `not_acceptable` | passed |
+| I_DEFINITION_QUERY.list_queries-prefix_all_versions | — | [0]/name: path resolves to nothing | passed |
+| I_DEFINITION_QUERY.list_queries-version_get_xml_not_acceptable | — | expected `not_acceptable`, observed `ok` | passed |
+| I_DEFINITION_QUERY.list_queries-xml_not_acceptable | — | expected `not_acceptable`, observed `ok` | passed |
+| I_DEFINITION_QUERY.store_query-default_slot_with_higher_version | — | header Location: value "http://localhost:8091/ehrbase/rest/openehr/v1/definition/query/org | passed |
+| I_DEFINITION_QUERY.store_query-dotted_name | — | expected `stored`, observed `bad_request` | passed |
+| I_DEFINITION_QUERY.store_query-unqualified_name | — | expected `stored`, observed `bad_request` | passed |
+| I_DEFINITION_QUERY.store_query-update_in_place | — | header Location: value "http://localhost:8091/ehrbase/rest/openehr/v1/definition/query/org | passed |
+| I_DEFINITION_QUERY.store_query-version_duplicate_case_variant_name | — | expected `conflict`, observed `stored` | passed |
+| I_DEFINITION_QUERY.store_query-version_prefix_rejected | — | expected `bad_request`, observed `stored` | passed |
+| I_DEFINITION_QUERY.store_query-version_prerelease_rejected | — | expected `bad_request`, observed `stored` | passed |
+| I_EHR_COMPOSITION.get_versioned_composition-malformed_uid | — | expected `bad_request`, observed `not_found` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-delete_directory | — | expected `created`, observed `not_found` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-deleted_member_with_data | — | expected `validation_failed`, observed `created` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-ehr_status_incomplete_lifecycle | — | expected `validation_failed`, observed `created` | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type | — | expected `conflict`, observed `validation_failed` | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted | — | expected `conflict`, observed `not_found` | passed |
-| I_EHR_CONTRIBUTION.commit_contribution-persistent_composition | — | expected `created`, observed `validation_failed` | passed |
-| I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation | — | expected `created`, observed `validation_failed` | passed |
-| I_EHR_DIRECTORY.delete_directory-ehr_with_directory | — | expected `ok_empty`, observed `not_found` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory | — | expected `validation_failed`, observed `precondition_failed` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt | — | expected `template_not_found`, observed `validation_failed` | passed |
+| I_EHR_DIRECTORY.create_directory-ehr_not_modifiable | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_DIRECTORY.delete_directory-ehr_with_directory | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.delete_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
-| I_EHR_DIRECTORY.get_directory-directory_with_structure | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
+| I_EHR_DIRECTORY.delete_directory-etag_names_new_version | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_DIRECTORY.get_directory-deleted_head | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_DIRECTORY.get_directory-directory_with_structure | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); $/ | passed |
+| I_EHR_DIRECTORY.get_directory_at_time-deleted_at_time | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_DIRECTORY.get_directory_at_version-deleted_version | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.update_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
+| I_EHR_DIRECTORY.update_directory-invalid_folder | — | expected `validation_failed`, observed `precondition_missing` | passed |
+| I_EHR_DIRECTORY.update_directory-stale_if_match | — | header ETag: expected the latest version uid, got none | passed |
+| I_EHR_DIRECTORY.update_directory-xml | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_SERVICE.create_ehr-bulk_load_population | — | expected `created`, observed `validation_failed` | passed |
+| I_EHR_SERVICE.create_ehr-committal_headers | — | commit_audit/description/value: path resolves to nothing | passed |
 | I_EHR_SERVICE.create_ehr-invalid_status | — | expected `validation_failed`, observed `created` | passed |
+| I_EHR_SERVICE.create_ehr-wrong_method | — | header Allow: expected a value matching ".*(GET.*POST\\|POST.*GET).*", got none | passed |
+| I_EHR_SERVICE.get_ehr-malformed_ehr_id | — | expected `bad_request`, observed `not_found` | passed |
 | I_EHR_STATUS.clear_ehr_modifiable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_modifiable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.clear_ehr_modifiable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_queryable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_queryable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.clear_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_ehr_status-at_time_future | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_ehr_status-at_time_omitted | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_ehr_status_at_version-addressed_version | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_versioned_ehr_status-at_time_future | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_versioned_ehr_status-at_time_omitted | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.get_versioned_ehr_status-contained_uid_form | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_STATUS.get_versioned_ehr_status-container_shape | — | owner_id/type: "ehr" != expected "EHR" | passed |
+| I_EHR_STATUS.get_versioned_ehr_status-xml | canonical-xml | header Last-Modified: expected present, got none | passed |
 | I_EHR_STATUS.set_ehr_modifiable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_modifiable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_modifiable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
+| I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions | canonical-json | expected `updated`, observed `precondition_missing` | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr | — | row count 100 != expected 1 | passed |
-| I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes | — | row count 100 != expected 0 | passed |
-| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches | — | expected `ok`, observed `invalid_query` | passed |
-| I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude | — | row count 36 != expected 6 | passed |
-| I_QUERY_SERVICE.execute_stored_query-empty_db | — | row count 100 != expected 0 | passed |
-| SF-CTX-composer_name | — | expected `created`, observed `unsupported_media` | passed |
-| SF-CTX-composer_self | — | expected `created`, observed `unsupported_media` | passed |
-| SF-CTX-missing_mandatory | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-CTX-participations_forms | — | expected `created`, observed `unsupported_media` | passed |
-| SF-CTX-vocabulary_mapping | — | expected `created`, observed `unsupported_media` | passed |
-| SF-EXAMPLE-accept_forms | — | expected `ok`, observed `not_acceptable` | passed |
-| SF-FIELDID-structure | — | expected `created`, observed `unsupported_media` | passed |
-| SF-FLAT-commit_roundtrip_ctx_defaults | — | expected `created`, observed `unsupported_media` | passed |
-| SF-FLAT-missing_template_id | — | expected `missing_template_id`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_cardinality | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_datatype_mismatch | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_other_closed_list | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_other_with_code | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_terminology_binding | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-FLAT-reject_unknown_field | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-INDEX-multi_event_commit | — | expected `created`, observed `unsupported_media` | passed |
-| SF-INDEX-semantics | — | expected `created`, observed `unsupported_media` | passed |
-| SF-LEVELS-collapsed_wrappers | — | expected `created`, observed `unsupported_media` | passed |
-| SF-LEVELS-container_attribute_elision | — | expected `created`, observed `unsupported_media` | passed |
-| SF-LEVELS-lab_panel_example | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-attribute_suffix_table | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-context | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-dv_ordinal_proportion_count | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-dv_quantity | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-dv_text_coded | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-entries | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-events_audit | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-interval_reference_range | — | expected `created`, observed `validation_failed` | passed |
-| SF-MAP-multimedia_parsable | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-party | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-simple_values | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-structure | — | expected `created`, observed `unsupported_media` | passed |
-| SF-MAP-temporal | — | expected `created`, observed `unsupported_media` | passed |
-| SF-RAW-embedding | — | expected `created`, observed `unsupported_media` | passed |
-| SF-RAW-missing_type | — | expected `validation_failed`, observed `unsupported_media` | passed |
-| SF-RAW-structured_embedding | — | expected `created`, observed `unsupported_media` | passed |
-| SF-RMATTR-normal_range_commit | — | expected `created`, observed `unsupported_media` | passed |
-| SF-RMATTR-underscore_mapping | — | expected `created`, observed `unsupported_media` | passed |
-| SF-STRUCT-arrays_single_cardinality | — | expected `created`, observed `unsupported_media` | passed |
-| SF-STRUCT-empty_object_omission | — | expected `created`, observed `validation_failed` | passed |
-| SF-STRUCT-style_rules | — | expected `created`, observed `validation_failed` | passed |
-| SF-STRUCTURED-commit_roundtrip | — | expected `created`, observed `unsupported_media` | passed |
-| SIG-VERSION-across_version_kinds | — | expected `updated`, observed `precondition_missing` | passed |
+| I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope | — | expected `not_found`, observed `ok` | passed |
+| I_QUERY_SERVICE.execute_stored_query-fetch_with_top | — | expected `stored`, observed `bad_request` | passed |
+| SIG-VERSION-ehr_status_signature | — | signature: expected present, the ORIGINAL_VERSION envelope carries no signature | passed |
 
 </details>
 

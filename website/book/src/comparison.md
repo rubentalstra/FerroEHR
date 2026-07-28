@@ -55,13 +55,48 @@ catalogue pins strict specification behaviour — archetype-constraint
 validation depth (the content chapter), exact status codes and version
 headers, canonical-format details — that upstream implements differently or
 predates. An **inconclusive** row means upstream answered with a status the
-operation's specification-cited outcome map does not contain, so the runner
-refuses to guess a verdict. And where upstream simply does not implement a
-surface (the ITS-REST simplified-format media types, ADL 2 provisioning,
-demographics), its statement does not claim the capability and the result
-reads *not claimed* or *not evidenced* — upstream is never counted as
-failing a surface it never claimed, and never as failing an
-ehrbase-rs-only extension.
+operation's specification-cited outcome map does not contain, or refused the
+exchange that would have established the case's required ground, so the
+runner refuses to guess a verdict. And where upstream simply does not
+implement a surface (the ITS-REST simplified-format media types, ADL 2
+provisioning, demographics), or where the specification dates a behaviour to
+a REST-API release newer than the one upstream declares (upstream declares
+ITS-REST 1.0.3; the catalogue realizes 1.1.0), the result reads *not
+claimed* or *N/A with a citation* — upstream is never counted as failing a
+surface it never claimed, never against a release it never declared, and
+never on an ehrbase-rs-only extension.
+
+### The principal upstream divergences, stated plainly
+
+Each of these was reproduced live against the composed upstream stack during
+triage of the committed record, and each is grounded at or below upstream's
+own declared ITS-REST 1.0.3 unless marked; the full wire evidence lives in
+the committed `docs/conformance/ehrbase-java/results.json`.
+
+- A **quoted `If-Match` value is rejected** (`400 "UUID string too large"`)
+  — including the server's own echoed `ETag` — while only the non-standard
+  unquoted form is accepted. The quoted form dates to Release 1.0.2.
+- **Semantic model violations answer `400` instead of `422`** (a Release
+  1.0.1 correction), and some model-invalid documents are **accepted
+  outright** — an `EHR_STATUS` without its mandatory archetype details
+  commits as `201`.
+- The **`openehr-audit-details` committal header is ignored** (both the
+  current and the deprecated spelling), and the stored audit description is
+  itself model-invalid (a `DV_TEXT` with no `value`).
+- **Canonical XML is served with the root element in no namespace**, against
+  the published XSD's qualified target namespace; the stored-query list even
+  serves an XML `<List/>` document that conforms to no published schema on a
+  JSON-only operation.
+- **Unqualified stored-query names are rejected** although the specification
+  makes the namespace optional and lists `my_compositions` as a valid
+  example; a stale `If-Match` on a directory delete answers `404` where the
+  specification requires `412`; `405` responses omit the required `Allow`
+  header; and one contribution refusal surfaces as a raw `500`.
+- *(1.1.0-grounded)* The **template upload refuses `Accept:
+  application/json`** (`406`), serving only XML — the released parameter
+  enumeration lists JSON first. This single refusal is what makes most
+  content-chapter rows inconclusive: the runner's provisioning uploads ask
+  for JSON, upstream refuses, and the case's ground never exists.
 
 ## Performance
 
