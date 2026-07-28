@@ -2308,6 +2308,43 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   conformance case asserts only the `200` and the `Allow` header — everything
   else is recorded as this silence, not as an expectation.)
 
+### UPR-125 — the CONTRIBUTION commit declares `application/xml` yet the release defines no XML form of the commit envelope
+
+- **Components:** ITS-REST (`specifications/operations/contribution_create.yaml`; `parameters/header/ContentType_LOCATABLE.yaml`; `docs/overview/Resources.md` §"XML Format"); ITS-XML (`RM/**/Common.xsd`)
+- **Register:** AMB-165 (report_only)
+- **Facts:** The contribution commit operation declares the XML media type twice
+  — the `ContentType_LOCATABLE` enum contains `application/xml`, and the
+  operation's own description names "the canonical `application/json` /
+  `application/xml`" — yet its `requestBody.content` map carries exactly one
+  entry, `application/json`, bound to `NewContribution.yaml`, whose
+  UpdateVersion/UpdateAudit shapes have no XSD counterpart. The published XSDs
+  type CONTRIBUTION as a complexType describing a COMMITTED contribution
+  (`uid` mandatory, `versions` as OBJECT_REFs) — never the commit envelope,
+  which must carry each new version's data inline — and declare no global
+  CONTRIBUTION document element at all, so the §XML Format conformance MUST
+  ("both request payloads and responses MUST conform to the published XSDs")
+  has nothing to be satisfied against.
+- **Ask:** either publish the XML representation of the commit envelope (a
+  document element + the versions-with-inline-data and UPDATE_AUDIT
+  renderings), or withdraw `application/xml` from the operation's Content-Type
+  enum — so a client knows whether an XML commit is expressible at all.
+
+### UPR-126 — the wrapper-header response echo: §Usage in Responses says MAY while the create operations say "will return"
+
+- **Components:** ITS-REST (`docs/overview/Requests_and_responses.md` §"openehr-item-tag and openehr-version-item-tag" §"Usage in Responses"; `specifications/operations/composition_create.yaml`, `person_create.yaml`)
+- **Register:** AMB-166 (fixed_handling)
+- **Facts:** The overview's §Usage in Responses states "Servers MAY include the
+  `openehr-item-tag` or `openehr-version-item-tag` header in responses to
+  confirm the actual list of ITEM_TAGs stored on the server side", while the
+  create operations' own prose states the corresponding response header(s)
+  "will return" the ITEM_TAGs as set by the server — a MAY and an unqualified
+  factual claim about the same echo. Under the repo's oracle order the
+  overview docs text wins, so the echo is declared optional (`present?`) and
+  never asserted.
+- **Ask:** align the operation descriptions with the overview's MAY (or raise
+  the echo to a requirement with an RFC 2119 keyword), so the echo's force is
+  stated once, consistently.
+
 ### UPR-127 — the XSD document-element inventory does not cover the resources the REST API offers `application/xml` on
 
 - **Components:** ITS-REST (`docs/overview/Resources.md` §"Data
