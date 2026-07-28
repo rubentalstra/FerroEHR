@@ -549,65 +549,21 @@ branches:
     format: canonical-xml
     reason: coverage_gap
     source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.has_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.create_directory
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.create_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.get_directory
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.get_directory_at_time
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.get_directory_at_version
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.has_directory
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.has_directory_version
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_directory_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.has_path
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_path is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_DIRECTORY.update_directory
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.update_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  # canonical-json on the with_ehr_id variant is EXERCISED by
-  # I_EHR_SERVICE.create_ehr-with_ehr_id — the exception is retired.
-  - binding: I_EHR_SERVICE.create_ehr
-    variant: with_ehr_id
-    format: canonical-xml
-    reason: coverage_gap
-    source: "released ITS-REST 1.1.0 — the create-EHR-with-id path (PUT /ehr/{ehr_id}) is unexercised in canonical-xml; a create-EHR-with-id case is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.create_ehr
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.create_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.get_ehr
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.get_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.get_ehrs_for_subject
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.get_ehrs_for_subject is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.has_ehr
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.has_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.has_ehr_for_subject
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.has_ehr_for_subject is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  # RETIRED coverage_gaps (2026-07-28) — the canonical-xml branch of the whole
+  # EHR_DIRECTORY surface and of the EHR-service surface is now exercised, so
+  # the fourteen exceptions are gone rather than reworded (coverage only
+  # ratchets up). One `-xml` case per operation: the writes
+  # (I_EHR_DIRECTORY.{create,update}_directory-xml,
+  # I_EHR_SERVICE.create_ehr-xml — the last driving BOTH create wire forms,
+  # the with_ehr_id PUT and the id-less POST) send a codec-derived canonical-
+  # XML request payload and read the resource back to prove it was understood,
+  # and the reads (I_EHR_DIRECTORY.{get_directory, get_directory_at_time,
+  # get_directory_at_version, has_directory, has_directory_version,
+  # has_path}-xml, I_EHR_SERVICE.{get_ehr, get_ehrs_for_subject, has_ehr,
+  # has_ehr_for_subject}-xml) negotiate `Accept: application/xml` and are
+  # judged by each binding's `Content-Type: negotiated` matcher. The
+  # canonical-json exception on the create_ehr with_ehr_id variant had already
+  # retired with I_EHR_SERVICE.create_ehr-with_ehr_id.
   - binding: I_EHR_STATUS.clear_ehr_modifiable
     format: canonical-xml
     reason: coverage_gap
@@ -616,16 +572,16 @@ branches:
     format: canonical-xml
     reason: coverage_gap
     source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.clear_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_STATUS.get_ehr_status
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.get_ehr_status is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  # Scoped to every realization of the operation (container read + version
-  # sub-resource): neither declares a canonical-xml case yet.
-  - binding: I_EHR_STATUS.get_versioned_ehr_status
-    format: canonical-xml
-    reason: coverage_gap
-    source: "ITS-REST §content negotiation — the canonical-xml representation of the VERSIONED_EHR_STATUS container read and of its version sub-resource is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  # RETIRED coverage_gaps (2026-07-28) — the two EHR_STATUS READS are now
+  # exercised in canonical-xml: I_EHR_STATUS.get_ehr_status-xml, and
+  # I_EHR_STATUS.get_versioned_ehr_status-xml, which covers BOTH realizations
+  # the retired exception scoped (the VERSIONED_EHR_STATUS container read and
+  # its version sub-resource) with one step each. The four SETTER rows stay
+  # (clear_ehr_modifiable / clear_ehr_queryable above,
+  # set_ehr_modifiable / set_ehr_queryable below): their variant-less
+  # realization is a read-modify-write whose request body the runner BUILDS
+  # from the EHR_STATUS it just read, so there is no seam through which a
+  # canonical-XML request payload can enter that wire form.
   - binding: I_EHR_STATUS.set_ehr_modifiable
     format: canonical-xml
     reason: coverage_gap
