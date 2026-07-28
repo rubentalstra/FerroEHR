@@ -6,7 +6,7 @@
 # cores speak SM operations only, so the pinned NON_SM_REST_OPERATIONS table in
 # tools/cnf-runner/src/validate.rs is what makes a RELEASED ITS-REST operation
 # with no SM anchor enumerable at all; the naming convention (and the fact that
-# it claims nothing about the SM) is adjudicated in register AMB-160, the same
+# it claims nothing about the SM) is adjudicated in register AMB-161, the same
 # distinction AMB-127 draws for variant anchoring.
 #
 # BEHAVIOUR — the decisive released sentence, and the only one: the System API
@@ -33,12 +33,12 @@
 #    Documents / Status) and names no path. §HTTP Methods only says "the target
 #    resource", so the probe is sent to the API base-path root — the one
 #    resource that IS the service — and that choice is recorded in register
-#    AMB-159, not presented as a released requirement.
+#    AMB-160, not presented as a released requirement.
 #  - THE BODY. The Options conformance manifest (solution, solution_version,
 #    vendor, restapi_specs_version, conformance_profile, endpoints) is described
 #    by NO released sentence — it exists only in the stalled OAS bundle, which
 #    is `emit-rest` codegen input and never a behavioural oracle (owner ruling
-#    2026-07-24). Same register entry AMB-159, same upstream report; no body
+#    2026-07-24). Same register entry AMB-160, same upstream report; no body
 #    selector is declared here.
 #  - NEGOTIATION. The released text assigns this exchange no media type and no
 #    negotiation branch, so the binding declares only the one canonical-JSON
@@ -49,7 +49,7 @@ sm_operation: I_ITS_REST_SYSTEM.options
 its: its-rest
 request:
   method: OPTIONS
-  path: /                                 # the API base-path root (AMB-159 — no released sentence names a path)
+  path: /                                 # the API base-path root (AMB-160 — no released sentence names a path)
 formats: [canonical-json]
 outcomes:
   ok:
