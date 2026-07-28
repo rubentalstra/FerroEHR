@@ -12,6 +12,7 @@
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use crate::model::capability::Realization;
 use crate::model::vocab_files::{BODY_SELECTOR_TOKENS, HEADER_MATCHER_FORMS};
 use crate::model::wire_surface::SurfaceReason;
 use crate::party::{OutcomeStatus, VerificationPackStatus};
@@ -443,8 +444,24 @@ pub fn selectors_schema() -> Value {
     })
 }
 
+/// A capability row's register-linked adjudication block: the register entry
+/// that decided the exception plus the reason the certificate renders.
+fn register_adjudication() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["register", "reason"],
+        "properties": {
+            "register": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN },
+            "reason": { "type": "string", "minLength": 1 }
+        }
+    })
+}
+
 /// `vocab/capability_matrix.yaml` — capability → family/tier/required, with
-/// family-scoped tiers enforced in-schema.
+/// family-scoped tiers enforced in-schema, the per-capability depth floor
+/// (`min_cases`), the realization marker, and the two register-linked
+/// adjudication blocks.
 #[must_use]
 pub fn capability_matrix_schema() -> Value {
     json!({
@@ -458,11 +475,15 @@ pub fn capability_matrix_schema() -> Value {
         "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["family", "tier", "required"],
+            "required": ["family", "tier", "required", "min_cases"],
             "properties": {
                 "family": { "enum": ["Platform", "Enterprise", "Security"] },
                 "tier": { "enum": tokens(Tier::ALL) },
                 "required": { "type": "boolean" },
+                "realization": { "enum": tokens(Realization::ALL) },
+                "min_cases": { "type": "integer", "minimum": 0 },
+                "evidence_exception": register_adjudication(),
+                "workload_exclusion": register_adjudication(),
                 "source": { "type": "string" }
             },
             "oneOf": [
