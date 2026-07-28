@@ -21,14 +21,17 @@
 # to in the first place. Our position on the either/or itself is register entry
 # AMB-115.
 #
-# The 400 is expressed with `validation_failed` — the kind the catalogue
-# already uses at 400 wherever a released sentence puts malformed input there
-# (I_EHR_COMPOSITION.get_composition_at_time, I_DEFINITION_QUERY.store_query).
-# That was forced when the closed taxonomy had no malformed-request kind; the
-# 2026-07-28 schedule release (#544) added `bad_request`.
-# TODO: move this 400 (and its siblings on get_composition_at_time and
-# store_query) from `validation_failed` to `bad_request`, together with the
-# `expect:` of every case that drives them.
+# The 400 is expressed with `bad_request`, the kind the 2026-07-28 schedule
+# release (#544) added for exactly this family and whose meaning quotes the row
+# this binding cites ("malformed request syntax, syntactically invalid
+# content"; the generic client-side error "used when no other 4xx error code is
+# appropriate"). It replaced `validation_failed` here and on the two siblings
+# the same release named (I_EHR_COMPOSITION.get_composition_at_time,
+# I_DEFINITION_QUERY.store_query + its `version` variant): `validation_failed`
+# means 422 — well-formed content that is semantically invalid — and was only
+# ever borrowed because the closed taxonomy had no malformed-request kind. The
+# WIRE STATUS IS UNCHANGED (400 before and after); this is vocabulary
+# precision, not a changed expectation.
 sm_operation: I_DEFINITION_ADL14.get_opt
 its: its-rest
 variant: example_invalid_detail_level
@@ -39,6 +42,6 @@ request:
     type: input
     detail_level: verbose                # outside the declared enum [required, medium, complete]
 outcomes:
-  validation_failed:
+  bad_request:
     status: 400                          # §HTTP status codes row 400 — syntactically invalid parameter
     body: error_loose                    # §HTTP status codes — 4xx detail is a MAY under Prefer: return=representation

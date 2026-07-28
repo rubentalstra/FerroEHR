@@ -1,0 +1,52 @@
+# An ehr_id path segment that is not an identifier at all: the request is
+# refused for its SHAPE, before any lookup, and never resolves to some other
+# EHR.
+#
+# SPEC SILENCE, adjudicated as AMB-76 (fixed_handling), whose scope names
+# `ehr_id` first. ITS-REST overview Glossary_and_conventions.md types `ehr_id`
+# as HIER_OBJECT_ID and no operation declares a branch for a malformed one;
+# overview Requests_and_responses.md §HTTP status codes offers two rows that
+# both fit and assigns neither — 400 ("The service cannot or will not process
+# the request due to something that is perceived to be a client error (e.g.,
+# malformed request syntax, syntactically invalid content)") and 404 ("The
+# origin service did not find the target resource or is not willing to
+# disclose that one exists"). The register's repo-wide handling puts a segment
+# that parses as none of this repository's identifier forms in the 400 row,
+# while a well-formed-but-unknown ehr_id keeps the 404 the sibling
+# -get_ehr_by_invalid_ehr_id case pins — so the 400/404 split is exercised
+# rather than assumed. BASE base_types master05-identification_package.adoc
+# ("all three subtypes have mutually exclusive string patterns") is why the
+# token below is a UID of no kind: not a UUID, and not any composite form.
+#
+# The outcome kind is `bad_request`, which the 2026-07-28 schedule release
+# (#544) added for exactly this family; before it the closed taxonomy had only
+# `validation_failed` (422 — semantically invalid CONTENT), which is why this
+# behaviour was carried as the `ehr-id-path-segment-malformed-rejection`
+# ledger exception rather than as a case.
+id: I_EHR_SERVICE.get_ehr-malformed_ehr_id
+kind: functional
+component: EHR
+sm_operation: I_EHR_SERVICE.get_ehr
+capabilities: [EhrOperations]
+profiles: [CORE]
+ambiguities: [AMB-76]
+test_purpose: >-
+  An EHR read whose ehr_id path segment is not a well-formed identifier is
+  rejected as a client error rather than answered as a miss.
+description: "Get EHR with a malformed ehr_id path segment"
+spec_refs:
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "ITS-REST overview Glossary_and_conventions (the identifier table: ehr_id as HIER_OBJECT_ID)"
+  - "BASE base_types §identification (mutually exclusive UID string patterns)"
+  - "SM openehr_platform §I_EHR_SERVICE.get_ehr"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes offers both the 400 row ('syntactically invalid content') and the 404 row ('did not find the target resource') and assigns neither to a malformed segment; a server answering 404 for a garbage token breaches no quoted rule"
+requires:
+  server: any
+  ehr: { commits: none }                 # mints ${ehr_id} — so the server is not empty and the refusal is the token alone
+flow:
+  - step: 1
+    call: get_ehr
+    with: { ehr_id: "not-an-ehr-id" }
+    expect: bad_request

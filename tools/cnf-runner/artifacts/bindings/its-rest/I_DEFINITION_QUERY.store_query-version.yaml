@@ -62,6 +62,11 @@ outcomes:
     headers:
       Location: present                       # §Prefer minimal — "SHOULD include a `Location` header pointing to the newly created or updated resource"
   conflict: { status: 409 }                   # §HTTP status codes, row 409 (duplicate) — the immutable version-addressed definition
-  validation_failed:
+  # `bad_request`, not `validation_failed`: the 2026-07-28 schedule release
+  # (#544) added the malformed-REQUEST kind whose meaning quotes the very row
+  # cited below, while `validation_failed` means 422 (well-formed content,
+  # semantically invalid) and was only borrowed while the taxonomy had no
+  # malformed-request kind. The wire status is unchanged (400 either way).
+  bad_request:
     status: 400                               # §HTTP status codes, row 400 (syntactically invalid content) — AMB-122
     body: error_loose
