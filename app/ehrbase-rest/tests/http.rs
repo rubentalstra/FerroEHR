@@ -350,6 +350,88 @@ async fn malformed_xml_composition_body_is_400() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
+/// End-to-end ITS-XML lineage negotiation on a real resource read.
+///
+/// openEHR publishes canonical XML in two lineages differing only by the root
+/// namespace (`docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM
+/// Versions"); a client picks one with the `version` media-type parameter.
+/// NOTE: no openEHR spec governs the parameter — our own design/extension —
+/// but its refusal branch is the released MUST (ITS-REST overview
+/// `Resources.md` §"XML Format": "If the service cannot fulfill this aspect of
+/// the request, it MUST respond with HTTP status code `406 Not Acceptable`").
+#[tokio::test]
+async fn xml_response_lineage_is_negotiated_by_the_version_parameter() {
+    let (_pg, app) = app(true).await;
+
+    let create = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr"))
+        .header(header::AUTHORIZATION, basic("alice", "pw"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _b) = send(app.clone(), create).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let ehr_id = etag_uid(&headers).expect("ETag carries the new ehr_id");
+
+    fn read(ehr_id: &str, accept: &str) -> Request<Body> {
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}"))
+            .header(header::AUTHORIZATION, basic("alice", "pw"))
+            .header(header::ACCEPT, accept)
+            .body(Body::empty())
+            .unwrap()
+    }
+
+    // Default (bare `application/xml`): the v1 lineage, bare Content-Type.
+    let (status, headers, xml) = send(app.clone(), read(&ehr_id, "application/xml")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/xml"
+    );
+    assert!(
+        xml.contains("xmlns=\"http://schemas.openehr.org/v1\""),
+        "the default XML response stays v1: {xml}"
+    );
+
+    // Negotiated v2: the v2 root namespace, and the response says so.
+    let (status, headers, xml) =
+        send(app.clone(), read(&ehr_id, "application/xml; version=2")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/xml; version=2"
+    );
+    assert!(
+        xml.contains("xmlns=\"http://schemas.openehr.org/v2\""),
+        "the negotiated XML response is v2: {xml}"
+    );
+
+    // A lineage this server does not serve cannot be fulfilled → 406.
+    let (status, _h, _b) = send(app, read(&ehr_id, "application/xml; version=3")).await;
+    assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
+}
+
+/// The request-side mirror: a canonical-XML payload declaring a lineage the
+/// service cannot process is `415` before any parsing (ITS-REST overview
+/// `Resources.md` §"XML Format": "If the service cannot process the request
+/// payload as XML format, it MUST respond with HTTP status code `415
+/// Unsupported Media Type`").
+#[tokio::test]
+async fn xml_request_payload_in_an_unserved_lineage_is_415() {
+    let (_pg, app) = app(true).await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header(header::AUTHORIZATION, basic("alice", "pw"))
+        .header(header::CONTENT_TYPE, "application/xml; version=3")
+        .body(Body::from("<composition/>"))
+        .unwrap();
+    let (status, _h, _b) = send(app, req).await;
+    assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+}
+
 #[tokio::test]
 async fn unknown_route_is_404() {
     let (_pg, app) = app(true).await;

@@ -47,6 +47,11 @@ case "$path" in
   */docs/specs/openehr/* | docs/specs/openehr/*)
     block "docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor-spec-docs.sh; pins live in that script + docs/VERSIONS.md."
     ;;
+  # PROVENANCE.md files inside vendored trees are REPO-AUTHORED records (the
+  # very files a pin bump updates) — never upstream content; exempt them.
+  */PROVENANCE.md)
+    exit 0
+    ;;
   */tools/openehr-codegen/vendor/* | tools/openehr-codegen/vendor/* | \
   */crates/openehr-its/vendor/*     | crates/openehr-its/vendor/*     | \
   */crates/openehr-its/schemas/*    | crates/openehr-its/schemas/*)

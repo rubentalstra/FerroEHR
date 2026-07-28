@@ -32,6 +32,56 @@ curl -u ehrbase:ehrbase \
   http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition
 ```
 
+### Choosing the XML namespace
+
+openEHR publishes its canonical XML schemas in two lineages that differ only
+by the namespace the document declares:
+
+| Lineage | Root namespace | Status |
+|---|---|---|
+| v1 (**default**) | `http://schemas.openehr.org/v1` | The stable schema release most openEHR tooling reads |
+| v2 | `http://schemas.openehr.org/v2` | The newer schema release, still marked *trial* by openEHR |
+
+Pick one per request with a `version` parameter on the XML media type:
+
+```shell
+# Read a composition in the v2 namespace
+curl -u ehrbase:ehrbase \
+  -H 'Accept: application/xml; version=2' \
+  "http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition/$UID"
+
+# Commit one whose payload already uses the v2 namespace
+curl -u ehrbase:ehrbase \
+  -H 'Content-Type: application/xml; version=2' \
+  -H 'Accept: application/xml; version=2' \
+  --data-binary @composition-v2.xml \
+  "http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition"
+```
+
+What to expect:
+
+- **Leave the parameter off and nothing changes.** No parameter (or
+  `version=1`) means v1, exactly as before, and the response header stays
+  `Content-Type: application/xml`.
+- A v2 response says so: `Content-Type: application/xml; version=2`.
+- **On requests the parameter is a courtesy, not a requirement.** The server
+  reads both namespaces regardless of what you declare, so you only need it
+  when you want the declaration to be accurate.
+- Asking for a namespace the server does not serve (`version=3`, say) is
+  **406 Not Acceptable** on `Accept` and **415 Unsupported Media Type** on
+  `Content-Type`.
+- **Operational templates are always v1.** `GET
+  …/definition/template/adl1.4/{template_id}` returns OPT XML in the v1
+  namespace and ignores the parameter — it is a template document, not a
+  canonical RM resource.
+
+> [!NOTE]
+> The `version` parameter is an EHRbase-rs extension: the openEHR REST
+> specification predates the two schema lineages and says nothing about
+> selecting one. It never changes the media type itself — responses are always
+> `application/xml` — so a client that ignores it behaves exactly as the
+> specification describes.
+
 ## Simplified formats (FLAT and STRUCTURED)
 
 Beyond the canonical formats, the server implements the openEHR **Simplified

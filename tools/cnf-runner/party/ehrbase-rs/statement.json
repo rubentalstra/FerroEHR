@@ -83,7 +83,8 @@
     "ehr-xml-supported",
     "legacy-alt-formats-unsupported",
     "party-xml-supported",
-    "sf-deprecated-types-unsupported"
+    "sf-deprecated-types-unsupported",
+    "xml-namespace-negotiated"
   ],
   "performance": {
     "class": "POC",
