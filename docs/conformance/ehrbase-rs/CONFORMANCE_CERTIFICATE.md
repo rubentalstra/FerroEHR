@@ -60,7 +60,7 @@ Result column: ITS its-rest (canonical-json, canonical-xml, wt-flat, wt-structur
 | Platform | SystemApi | OPT | pass |
 | Platform | ItemTags | OPT | pass |
 | Platform | Signing | OPT | pass |
-| Platform | SimplifiedFormats | OPT | FAIL |
+| Platform | SimplifiedFormats | OPT | pass |
 | Platform | SmartAppLaunch | OPT | pass |
 | Security | EhrDemographicSeparation | Y | pass |
 | Security | AuthenticatedAccess | Y | pass |

@@ -4272,18 +4272,9 @@
     },
     {
       "case": "SF-CONTRIB-structured_commit",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "content/0/data/events/0/data/items/0/value/magnitude: path resolves to nothing",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "content/0/data/events/0/data/items/0/value/magnitude: path resolves to nothing"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "SF-CONTRIB-structured_read",

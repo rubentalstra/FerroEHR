@@ -7,8 +7,8 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 672 |
-| failed | 1 |
+| passed | 673 |
+| failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 75 |
@@ -39,7 +39,7 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_QUERY_SERVICE | 36 | 0 | 0 | 0 | 0 |
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
 | SEC | 6 | 0 | 0 | 0 | 0 |
-| SF | 62 | 1 | 0 | 0 | 1 |
+| SF | 63 | 0 | 0 | 0 | 1 |
 | SIG | 6 | 0 | 0 | 0 | 2 |
 | SMART | 3 | 0 | 0 | 0 | 0 |
 

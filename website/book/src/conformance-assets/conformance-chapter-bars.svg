@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 908 446" width="908" height="446" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 908 480" width="908" height="480" role="img">
 <style>
 text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
 .title { fill: #0b0b0b; font-weight: 600; }
@@ -8,6 +8,7 @@ text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sa
 .cell-label-dim { fill: #0b0b0b; font-size: 11px; }
 .ev-passed { fill: #0072b2; }
 .ev-failed { fill: #d55e00; }
+.ev-inconclusive { fill: #e69f00; }
 .ev-not-evidenced { fill: #cbc9c2; }
 .ev-unrealized { fill: #e8e6e0; }
 .ev-no-cases { fill: #f4f2ec; }
@@ -28,6 +29,7 @@ text { fill: #c3c2b7; }
 .cell-label-dim { fill: #e8e6e0; }
 .ev-passed { fill: #3987e5; }
 .ev-failed { fill: #e5484d; }
+.ev-inconclusive { fill: #f5a623; }
 .ev-not-evidenced { fill: #4a4a47; }
 .ev-unrealized { fill: #3a3a38; }
 .ev-no-cases { fill: #2e2e2c; }
@@ -44,59 +46,65 @@ text { fill: #c3c2b7; }
 <text x="24" y="28" class="title">Schedule outcomes by chapter — ehrbase-rs 3.11.0</text>
 
 <rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="42" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="121.2" y="49" class="muted">failed</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="200.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" class="bar-na"/><text x="286.8" y="49" class="muted">N/A (cited)</text><text x="166" y="81" text-anchor="end">EHR</text>
-<rect x="174" y="64" width="614.2124542124542" height="26" class="bar-passed"/>
+<rect x="174" y="64" width="615.4703832752613" height="26" class="bar-passed"/>
 
-<text x="481.1062271062271" y="81" class="seg-label" text-anchor="middle">262</text><rect x="788.2124542124542" y="64" width="25.78754578754579" height="26" class="bar-na"/>
+<text x="481.73519163763063" y="81" class="seg-label" text-anchor="middle">276</text><rect x="789.4703832752613" y="64" width="24.529616724738673" height="26" class="bar-na"/>
 
-<text x="801.106227106227" y="81" class="seg-label-dim" text-anchor="middle">11</text><text x="822" y="81" class="muted">273</text>
+<text x="801.7351916376306" y="81" class="seg-label-dim" text-anchor="middle">11</text><text x="822" y="81" class="muted">287</text>
 <text x="166" y="115" text-anchor="end">Definitions</text>
-<rect x="174" y="98" width="161.75824175824175" height="26" class="bar-passed"/>
+<rect x="174" y="98" width="153.86759581881532" height="26" class="bar-passed"/>
 
-<text x="254.87912087912088" y="115" class="seg-label" text-anchor="middle">69</text><rect x="335.75824175824175" y="98" width="39.853479853479854" height="26" class="bar-na"/>
+<text x="250.93379790940764" y="115" class="seg-label" text-anchor="middle">69</text><rect x="327.8675958188153" y="98" width="37.90940766550523" height="26" class="bar-na"/>
 
-<text x="355.68498168498166" y="115" class="seg-label-dim" text-anchor="middle">17</text><text x="383.6117216117216" y="115" class="muted">86</text>
+<text x="346.8222996515679" y="115" class="seg-label-dim" text-anchor="middle">17</text><text x="373.7770034843205" y="115" class="muted">86</text>
 <text x="166" y="149" text-anchor="end">Query</text>
-<rect x="174" y="132" width="77.36263736263737" height="26" class="bar-passed"/>
+<rect x="174" y="132" width="80.2787456445993" height="26" class="bar-passed"/>
 
-<text x="212.6813186813187" y="149" class="seg-label" text-anchor="middle">33</text><text x="259.3626373626374" y="149" class="muted">33</text>
+<text x="214.13937282229966" y="149" class="seg-label" text-anchor="middle">36</text><text x="262.2787456445993" y="149" class="muted">36</text>
 <text x="166" y="183" text-anchor="end">Demographic</text>
-<rect x="174" y="166" width="93.77289377289378" height="26" class="bar-passed"/>
+<rect x="174" y="166" width="93.65853658536585" height="26" class="bar-passed"/>
 
-<text x="220.8864468864469" y="183" class="seg-label" text-anchor="middle">40</text><rect x="267.7728937728938" y="166" width="30.476190476190478" height="26" class="bar-na"/>
+<text x="220.8292682926829" y="183" class="seg-label" text-anchor="middle">42</text><rect x="267.6585365853658" y="166" width="28.989547038327526" height="26" class="bar-na"/>
 
-<text x="283.010989010989" y="183" class="seg-label-dim" text-anchor="middle">13</text><text x="306.24908424908426" y="183" class="muted">53</text>
+<text x="282.15331010452957" y="183" class="seg-label-dim" text-anchor="middle">13</text><text x="304.64808362369337" y="183" class="muted">55</text>
 <text x="166" y="217" text-anchor="end">Admin</text>
-<rect x="174" y="200" width="16.410256410256412" height="26" class="bar-passed"/>
+<rect x="174" y="200" width="20.069686411149824" height="26" class="bar-passed"/>
 
-<rect x="190.4102564102564" y="200" width="37.50915750915751" height="26" class="bar-na"/>
+<rect x="194.06968641114983" y="200" width="35.6794425087108" height="26" class="bar-na"/>
 
-<text x="209.16483516483515" y="217" class="seg-label-dim" text-anchor="middle">16</text><text x="235.91941391941393" y="217" class="muted">23</text>
+<text x="211.90940766550523" y="217" class="seg-label-dim" text-anchor="middle">16</text><text x="237.74912891986062" y="217" class="muted">25</text>
 <text x="166" y="251" text-anchor="end">Messaging</text>
-<rect x="174" y="234" width="32.820512820512825" height="26" class="bar-na"/>
+<rect x="174" y="234" width="31.21951219512195" height="26" class="bar-na"/>
 
-<text x="190.4102564102564" y="251" class="seg-label-dim" text-anchor="middle">14</text><text x="214.82051282051282" y="251" class="muted">14</text>
+<text x="189.609756097561" y="251" class="seg-label-dim" text-anchor="middle">14</text><text x="213.21951219512195" y="251" class="muted">14</text>
 <text x="166" y="285" text-anchor="end">Content validation</text>
-<rect x="174" y="268" width="288.35164835164835" height="26" class="bar-passed"/>
+<rect x="174" y="268" width="274.2857142857143" height="26" class="bar-passed"/>
 
-<text x="318.1758241758242" y="285" class="seg-label" text-anchor="middle">123</text><text x="470.35164835164835" y="285" class="muted">123</text>
+<text x="311.1428571428571" y="285" class="seg-label" text-anchor="middle">123</text><text x="456.2857142857143" y="285" class="muted">123</text>
 <text x="166" y="319" text-anchor="end">Simplified formats</text>
-<rect x="174" y="302" width="133.62637362637363" height="26" class="bar-passed"/>
+<rect x="174" y="302" width="140.48780487804876" height="26" class="bar-passed"/>
 
-<text x="240.8131868131868" y="319" class="seg-label" text-anchor="middle">57</text><rect x="307.6263736263736" y="302" width="2.3443223443223444" height="26" class="bar-na"/>
+<text x="244.2439024390244" y="319" class="seg-label" text-anchor="middle">63</text><rect x="314.4878048780488" y="302" width="2.229965156794425" height="26" class="bar-na"/>
 
-<text x="317.97069597069594" y="319" class="muted">58</text>
+<text x="324.7177700348432" y="319" class="muted">64</text>
 <text x="166" y="353" text-anchor="end">Security &amp; privacy</text>
-<rect x="174" y="336" width="14.065934065934066" height="26" class="bar-passed"/>
+<rect x="174" y="336" width="13.37979094076655" height="26" class="bar-passed"/>
 
-<text x="196.06593406593407" y="353" class="muted">6</text>
+<text x="195.37979094076655" y="353" class="muted">6</text>
 <text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="14.065934065934066" height="26" class="bar-passed"/>
+<rect x="174" y="370" width="13.37979094076655" height="26" class="bar-passed"/>
 
-<rect x="188.06593406593407" y="370" width="4.688644688644689" height="26" class="bar-na"/>
+<rect x="187.37979094076655" y="370" width="4.45993031358885" height="26" class="bar-na"/>
 
-<text x="200.75457875457877" y="387" class="muted">8</text>
+<text x="199.8397212543554" y="387" class="muted">8</text>
 <text x="166" y="421" text-anchor="end">Other</text>
-<rect x="174" y="404" width="72.67399267399267" height="26" class="bar-passed"/>
+<rect x="174" y="404" width="89.198606271777" height="26" class="bar-passed"/>
 
-<text x="210.33699633699632" y="421" class="seg-label" text-anchor="middle">31</text><text x="254.67399267399267" y="421" class="muted">31</text>
+<text x="218.5993031358885" y="421" class="seg-label" text-anchor="middle">40</text><rect x="263.198606271777" y="404" width="2.229965156794425" height="26" class="bar-na"/>
+
+<text x="273.42857142857144" y="421" class="muted">41</text>
+<text x="166" y="455" text-anchor="end">SMART App Launch</text>
+<rect x="174" y="438" width="6.689895470383275" height="26" class="bar-passed"/>
+
+<text x="188.68989547038328" y="455" class="muted">3</text>
 </svg>
