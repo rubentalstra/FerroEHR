@@ -482,6 +482,68 @@ async fn template_adl14_list_filters_and_paginates() {
     }
 }
 
+/// The `version`-absent listing collapses a versioned template family to its
+/// latest `.vN` axis; `version=*` lists every stored version. The ITS-REST
+/// docs text is silent on template-list version filtering, so the RELEASED
+/// OAS grounds the behaviour: "Filter by version (e.g. `1.2.*` or use `*`
+/// for all versions), taken from `template_id`; if missing, then only the
+/// latest version will be returned"
+/// (`specifications/parameters/query/filter_version.yaml`).
+#[tokio::test]
+async fn template_adl14_list_absent_version_collapses_to_latest() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    // Two versions of the one family: the v0 fixture, and a v9 sibling made
+    // by re-versioning its template_id (the store keys by template_id, so
+    // this is a distinct stored template of the same base identity).
+    svc.template_adl14_upload(fixture(OPT_REL))
+        .await
+        .expect("upload v0");
+    svc.template_adl14_upload(
+        fixture(OPT_REL).replace("IDCR Allergies List.v0", "IDCR Allergies List.v9"),
+    )
+    .await
+    .expect("upload v9");
+
+    let template_ids = |list: &[serde_json::Value]| -> Vec<String> {
+        list.iter()
+            .map(|t| t["template_id"].as_str().unwrap_or_default().to_owned())
+            .collect()
+    };
+
+    // `version` absent → only the latest version of the family.
+    let latest = svc
+        .template_adl14_list(TemplateListFilter::default(), Page::all())
+        .await
+        .expect("list latest");
+    assert_eq!(
+        template_ids(&latest),
+        vec!["IDCR Allergies List.v9".to_owned()],
+        "the absent-version listing carries only the latest version"
+    );
+
+    // `version=*` → every stored version.
+    let all = svc
+        .template_adl14_list(
+            TemplateListFilter {
+                version: Some("*".to_owned()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        )
+        .await
+        .expect("list all versions");
+    assert_eq!(
+        template_ids(&all),
+        vec![
+            "IDCR Allergies List.v0".to_owned(),
+            "IDCR Allergies List.v9".to_owned(),
+        ],
+        "`version=*` lists every stored version"
+    );
+}
+
 /// The wire `query_type` formalism: a non-AQL formalism is an honest
 /// *unsupported-formalism* reject (a distinct `precondition_violation`/`400`,
 /// per `operations/definition_query_store.yaml`'s `200/400` set +

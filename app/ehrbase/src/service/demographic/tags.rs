@@ -97,8 +97,8 @@ impl EhrbaseService {
 
     /// Replace the whole tag collection of a party with the posted set (PUT
     /// full-collection semantics; an empty list clears all). Duplicates in the
-    /// body are last-wins on the ITEM_TAG identity — the (key, target_path)
-    /// PAIR (ITS-REST overview Requests_and_responses.md §openehr-item-tag and
+    /// body are last-wins on the `ITEM_TAG` identity — the `(key, target_path)`
+    /// PAIR (ITS-REST overview `Requests_and_responses.md` §openehr-item-tag and
     /// openehr-version-item-tag: "uniquely identified by their `key` and
     /// `target_path` pair attributes"; RM common master07-tags). The RM
     /// `ITEM_TAG` invariants are enforced before any write: `Inv_key_valid`

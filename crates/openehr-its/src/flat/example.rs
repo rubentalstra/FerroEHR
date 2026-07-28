@@ -437,19 +437,18 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         "PARTY_RELATED" => {
             put(out, base, "name", json!("Example party"));
             let rel_base = format!("{base}/relationship");
-            match node
+            if let Some(rel) = node
                 .children
                 .iter()
                 .find(|c| c.id == "relationship" || c.aql_path.ends_with("/relationship"))
             {
-                Some(rel) => emit_coded_text(rel, &rel_base, out),
+                emit_coded_text(rel, &rel_base, out);
+            } else {
                 // Unconstrained: the openEHR `related party relationship`
                 // group's canonical unknown (TERM 3.1.0).
-                None => {
-                    put(out, &rel_base, "code", json!("253"));
-                    put(out, &rel_base, "value", json!("unknown"));
-                    put(out, &rel_base, "terminology", json!("openehr"));
-                }
+                put(out, &rel_base, "code", json!("253"));
+                put(out, &rel_base, "value", json!("unknown"));
+                put(out, &rel_base, "terminology", json!("openehr"));
             }
         }
         // Every OTHER party leaf (an unnarrowed PARTY_PROXY, PARTY_SELF) is

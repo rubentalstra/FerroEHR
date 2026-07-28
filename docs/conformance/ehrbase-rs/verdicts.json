@@ -187,7 +187,7 @@
     [
       "Adl14OptProvisioning",
       {
-        "passed": 17,
+        "passed": 19,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -588,7 +588,7 @@
     }
   ],
   "coverage": {
-    "selected": 755,
-    "driven": 692
+    "selected": 757,
+    "driven": 694
   }
 }
