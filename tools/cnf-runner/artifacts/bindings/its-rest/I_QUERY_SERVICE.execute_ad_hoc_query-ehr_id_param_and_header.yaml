@@ -28,7 +28,8 @@
 #   `bad_request`, added by the 2026-07-28 schedule release (#544);
 #   `invalid_query` would be wrong (the AQL is well formed) and
 #   `validation_failed` means 422 semantic CONTENT.
-# - `not_found` (404) — a well-formed but unknown ehr_id scope, register
+# - not_found stays on the VARIANT-LESS binding (its cases gate it); this
+#   variant declares only the branches its two cases drive, register
 #   AMB-101, as on the sibling variants.
 # - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
 #   "Related response headers: `ETag` - A unique identifier of the resultSet";
@@ -58,4 +59,3 @@ outcomes:
   bad_request:
     status: 400                           # §HTTP status codes row 400 — the self-contradictory scope (register AMB-59)
     body: error_loose                     # §HTTP status codes — 4xx detail is a MAY under Prefer: return=representation
-  not_found: { status: 404 }              # Requests_and_responses.md §HTTP status codes, row 404 (register AMB-101)

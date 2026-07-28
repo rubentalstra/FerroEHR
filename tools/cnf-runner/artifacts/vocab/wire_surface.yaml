@@ -234,14 +234,12 @@ branches:
   - binding: I_ADMIN_SERVICE.physical_ehr_delete
     outcome: accepted
     reason: coverage_gap
-    register: AMB-139
     source: "ITS-REST specifications/operations/admin_ehr_delete.yaml, verbatim: \"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`. If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.\" + responses/202.yaml (\"`202 Accepted` is returned when the requested operation has been accepted for processing, but processing has not been completed or may not have started\") vs docs/overview/Requests_and_responses.md §\"HTTP status codes\", whose sixteen-row subset contains no 202 row and whose closing clause legalizes it (\"Additional status codes MAY be used as long as they do not conflict with the predefined codes\") — the omission is register AMB-139"
     note: "Declared so the branch is nameable, deliberately unexercised because no client-side request form selects it (the MAY is the service's). See the section comment above this row."
   - binding: I_ADMIN_SERVICE.physical_ehr_delete
     variant: delete_all
     outcome: accepted
     reason: coverage_gap
-    register: AMB-139
     source: "ITS-REST specifications/operations/admin_ehr_delete_all.yaml, verbatim: \"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`. If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.\" + responses/202.yaml, against docs/overview/Requests_and_responses.md §\"HTTP status codes\" (no 202 row; \"Additional status codes MAY be used\") — register AMB-139"
     note: "The bulk-route half of the same unforceable service-side choice; see the section comment above."
   - binding: I_ADMIN_SERVICE.physical_ehr_delete
