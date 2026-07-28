@@ -1,11 +1,13 @@
 //! The typed assertion vocabulary (`flow[].assert` + `postconditions`).
 //!
-//! Nine assertion forms, closed by schedule release. Semantics per the
+//! Ten assertion forms, closed by schedule release. Semantics per the
 //! CNF 2.0 artifact-set design: `equivalent` is the master07 "content
 //! check" with normative ignore-sets; `version` asserts RM versioning facts
 //! (`RM common §change_control`); `result_set` compares under the normative
 //! AQL `RESULT_SET` equivalence rules (QUERY master03/04 + the ITS-REST query
-//! schemas); `unique` is aggregate (evaluated once after all rows);
+//! schemas); `xml_root` judges a served canonical-XML document against the
+//! published ITS-XML element declarations (ITS-REST overview `Resources.md`
+//! §"XML Format"); `unique` is aggregate (evaluated once after all rows);
 //! `message_exemplar` is informative only, never pass/fail.
 
 use serde::de::Error as DeError;
@@ -14,7 +16,7 @@ use serde::{Deserialize, Deserializer};
 use crate::ids::CaseId;
 use crate::model::value::TemplatedValue;
 use crate::refgrammar::{RefError, Template, ValueRef};
-use crate::vocab::{ChangeType, FormatName, IgnoreSetName, ResultSetMatch};
+use crate::vocab::{ChangeType, FormatName, IgnoreSetName, ResultSetMatch, XmlNamespace};
 
 /// The `equivalent` assertion's comparison target.
 #[derive(Debug, Clone, PartialEq)]
@@ -257,6 +259,35 @@ pub enum Assertion {
         #[serde(default)]
         omits: Option<String>,
     },
+    /// The served canonical-XML document's ROOT element, judged against the
+    /// published ITS-XML schemas: its local name and the namespace it is
+    /// qualified with.
+    ///
+    /// The released ground is one sentence, ITS-REST overview `Resources.md`
+    /// §"XML Format": "When resources are serialized in **canonical XML**
+    /// format, both request payloads and responses MUST conform to the
+    /// [published XSDs]". Conformance to a schema is not satisfied by matching
+    /// a complexType: the instance's root must be a globally declared element
+    /// of the schema set, and since every ITS-XML schema declares
+    /// `elementFormDefault="qualified"` over a `targetNamespace`, that element
+    /// is namespace-qualified. So the two facts this assertion carries are the
+    /// two the MUST fixes for a resource the schemas DO publish an element for
+    /// — nothing more. A resource with no published element is out of scope by
+    /// construction (register AMB-167), and no case may assert a root for one.
+    ///
+    /// `matches`-style regex over the raw body cannot express this: it cannot
+    /// tell the root element from a descendant, and it cannot resolve a prefix
+    /// to its namespace URI, so a `<oe:composition xmlns:oe="…">` document and
+    /// an unqualified `<composition>` document are indistinguishable to it.
+    XmlRoot {
+        /// The expected root element's local name (a globally declared element
+        /// of the published XSDs).
+        name: String,
+        /// The expected namespace of the root element; omitted only where a
+        /// row deliberately judges the name alone.
+        #[serde(default)]
+        namespace: Option<XmlNamespace>,
+    },
     /// Informative only — never a pass/fail criterion.
     MessageExemplar { text: String },
     /// A prose postcondition whose machine verification lives in a linked
@@ -430,6 +461,18 @@ impl Assertion {
                     regex::Regex::new(re).map_err(|e| format!("returns omits regex: {e}"))?;
                 }
             }
+            Self::XmlRoot { name, .. } => {
+                if name.trim().is_empty() {
+                    return Err(
+                        "xml_root assertion needs the expected root element local name".to_owned(),
+                    );
+                }
+                if name.contains(':') {
+                    return Err(format!(
+                        "xml_root name {name:?} must be the LOCAL name — the prefix is a document's own choice and the namespace is asserted by `namespace:`"
+                    ));
+                }
+            }
             Self::InstanceOf { .. }
             | Self::Equivalent { .. }
             | Self::MessageExemplar { .. }
@@ -509,6 +552,7 @@ pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
         Assertion::Unique { over, .. } => out.push(over.0.clone()),
         Assertion::InstanceOf { .. }
         | Assertion::Returns { .. }
+        | Assertion::XmlRoot { .. }
         | Assertion::MessageExemplar { .. }
         | Assertion::State { .. } => {}
     }
@@ -578,6 +622,34 @@ mod tests {
         // A signature assertion with no fact at all still bites.
         let a = parse(serde_json::json!({ "assert": "signature", "of": "${v}" }));
         assert!(a.check_invariants().is_err());
+    }
+
+    #[test]
+    fn xml_root_takes_a_local_name_and_a_published_namespace() {
+        let a = parse(serde_json::json!({
+            "assert": "xml_root", "name": "composition", "namespace": "openehr-published"
+        }));
+        assert!(a.check_invariants().is_ok());
+        assert!(assertion_refs(&a).is_empty());
+
+        // The name alone is a legal, narrower row.
+        let a = parse(serde_json::json!({ "assert": "xml_root", "name": "composition" }));
+        assert!(a.check_invariants().is_ok());
+
+        // A prefixed name is a document's own choice, never the assertion's.
+        let a = parse(serde_json::json!({ "assert": "xml_root", "name": "oe:composition" }));
+        assert!(a.check_invariants().is_err());
+
+        let a = parse(serde_json::json!({ "assert": "xml_root", "name": "  " }));
+        assert!(a.check_invariants().is_err());
+
+        // The namespace vocabulary is closed.
+        assert!(
+            serde_json::from_value::<Assertion>(serde_json::json!({
+                "assert": "xml_root", "name": "composition", "namespace": "http://example.org"
+            }))
+            .is_err()
+        );
     }
 
     #[test]

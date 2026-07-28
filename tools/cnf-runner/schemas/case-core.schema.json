@@ -561,6 +561,7 @@
             "result_set",
             "unique",
             "returns",
+            "xml_root",
             "message_exemplar",
             "state"
           ]
