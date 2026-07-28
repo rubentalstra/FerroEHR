@@ -123,6 +123,29 @@ fn undeclared_ixit_facts(case: &CaseCore, ixit: &Ixit) -> Vec<&'static str> {
         .collect()
 }
 
+/// The ixit instances a case's flow addresses (`on:`) that THIS party does
+/// not declare.
+///
+/// An instance is a topology declaration exactly like the ixit facts above:
+/// a party that runs no such deployment (no `readonly` principal, no second
+/// signing posture) cannot have the case driven against it, and the
+/// alternative to a declaration is driving it somewhere it does not belong.
+/// So the case is not-applicable WITH the citation at selection time — never
+/// a drive-time transport error, which would surface as an inconclusive row
+/// that reads like a SUT defect.
+fn undeclared_instances(case: &CaseCore, ixit: &Ixit) -> Vec<String> {
+    let mut missing: Vec<String> = Vec::new();
+    for step in &case.flow {
+        if let Some(name) = &step.on
+            && ixit.instance(name).is_none()
+            && !missing.iter().any(|m| m == name.as_str())
+        {
+            missing.push(name.as_str().to_owned());
+        }
+    }
+    missing
+}
+
 /// The reserved catalogue pseudo-interface anchoring the SMART Platform
 /// operations the SM models no interface for (pinned in
 /// `validate::NON_SM_REST_OPERATIONS`; register AMB-161 adjudicates the
@@ -236,6 +259,31 @@ pub fn execute(
                  deployment and a minted, scope-carrying access token, neither of which any \
                  released operation discloses or provides; ISO/IEC 9646 test selection"
                 .to_owned();
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Guarded(citation)));
+            continue;
+        }
+        // A flow step addressing an instance this party does not declare has
+        // no ground to run on (the deployment or principal simply does not
+        // exist here) — not-applicable with the citation, like every other
+        // undeclared topology fact.
+        let missing_instances = undeclared_instances(case, ixit);
+        if !missing_instances.is_empty() {
+            let citation = format!(
+                "the ixit declares no instance {} — the case's flow addresses it with `on:` and \
+                 this party runs no such deployment/principal; ISO/IEC 9646 test selection",
+                missing_instances.join(", ")
+            );
             report.records.push(CaseRecord {
                 case: case.id.clone(),
                 format: None,
@@ -479,6 +527,40 @@ mod tests {
         }))
         .unwrap();
         assert!(needs_smart_lane(&discovery));
+    }
+
+    /// A flow step addressing an instance the party does not declare is a
+    /// SELECTION outcome (not-applicable with citation), never a drive-time
+    /// error — the same law the SMART lane and the `${ixit:…}` facts follow.
+    #[test]
+    fn undeclared_addressed_instances_are_collected() {
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-two-deployments", "kind": "functional", "component": "SECURITY",
+            "sm_operation": "I_DEFINITION_ADL14.list_opts",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [
+                { "step": 1, "call": "list_opts", "expect": "ok" },
+                { "step": 2, "call": "list_opts", "on": "sut_pgp", "expect": "ok" },
+                { "step": 3, "call": "list_opts", "on": "sut_pgp", "expect": "ok" }
+            ]
+        }))
+        .unwrap();
+
+        let without: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        // Reported once, however many steps address it.
+        assert_eq!(undeclared_instances(&case, &without), vec!["sut_pgp"]);
+
+        let with: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://x", "auth": { "mode": "none" } },
+                "sut_pgp": { "base_url": "http://y", "auth": { "mode": "none" } }
+            }
+        }))
+        .unwrap();
+        assert!(undeclared_instances(&case, &with).is_empty());
     }
 
     #[test]
