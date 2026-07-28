@@ -59,7 +59,7 @@
     ],
     [
       "PartyRelationshipOperations",
-      "unrealized"
+      "passed"
     ],
     [
       "DemographicArchetypeValidation",
@@ -304,10 +304,10 @@
     [
       "PartyRelationshipOperations",
       {
-        "passed": 0,
+        "passed": 15,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 12
+        "unevidenced": 0
       }
     ],
     [
@@ -588,7 +588,7 @@
     }
   ],
   "coverage": {
-    "selected": 752,
-    "driven": 677
+    "selected": 755,
+    "driven": 692
   }
 }
