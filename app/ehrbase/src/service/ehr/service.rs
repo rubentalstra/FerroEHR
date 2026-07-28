@@ -314,7 +314,7 @@ impl EhrbaseService {
             // uid is a HIER_OBJECT_ID), consistent with the `ehr_access` ref
             // below. NOTE (spec defect): the non-normative ITS-REST example
             // shows `type: EHR_STATUS` with an OBJECT_VERSION_ID id — the
-            // stalled OAS reading; the RM wins on both counts.
+            // released-OAS reading; the RM wins this real conflict on both counts.
             "ehr_status": {
                 "_type": "OBJECT_REF",
                 "namespace": "local",

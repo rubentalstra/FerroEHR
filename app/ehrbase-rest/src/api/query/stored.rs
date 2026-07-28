@@ -122,8 +122,8 @@ fn stored_body_request(
     body: &bytes::Bytes,
 ) -> Result<AqlQueryRequest, RestError> {
     // All three body members are OPTIONAL (`Request.md` §Common Headers:
-    // offset defaults 0, fetch is implementation-default — the stalled OAS
-    // required-list loses to the docs text): `{}` executes a parameterless
+    // offset defaults 0, fetch is implementation-default — the released OAS
+    // required-list loses this real conflict to the docs text): `{}` executes a parameterless
     // stored query.
     let parsed: StoredQueryBody = response::decode_body(h, body)?;
     // The docs-text SHOULD-list draws no GET/POST distinction ("All query

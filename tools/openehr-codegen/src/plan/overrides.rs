@@ -341,8 +341,9 @@ pub(crate) fn class_binding(class: &str) -> BTreeMap<String, String> {
 
 /// One REST-contract required-list correction: `(dto, field)` is emitted as
 /// OPTIONAL although the vendored OAS schema lists it under `required`. Used
-/// only where the ITS-REST **docs text** (the wire oracle — owner ruling
-/// 2026-07-24) contradicts the stalled OAS shape.
+/// only where the ITS-REST **docs text** (which wins every conflict with the
+/// released OAS — owner rulings 2026-07-24 + 2026-07-28) contradicts the OAS
+/// shape.
 pub(crate) struct RestOptionalOverride {
     pub dto: &'static str,
     pub field: &'static str,
