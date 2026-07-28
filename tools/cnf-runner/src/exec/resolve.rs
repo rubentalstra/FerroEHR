@@ -36,6 +36,10 @@ pub enum ResolveError {
     Recipe(#[from] recipes::RecipeError),
     #[error("row reference {0} outside the current row")]
     Row(String),
+    /// A `${ixit:…}` fact the party's ixit does not declare. Never guessed:
+    /// the run records the case not-applicable with this citation.
+    #[error("the ixit declares no {0}")]
+    Ixit(&'static str),
     #[error("{0}")]
     Vars(String),
 }
@@ -44,6 +48,10 @@ pub enum ResolveError {
 pub struct Resolver<'a> {
     manifest: &'a CorpusManifest,
     corpus_dir: &'a Path,
+    /// The party's declared SUT facts — the only source of a `${ixit:…}`
+    /// reference. `None` in the pure-artifact contexts that resolve no
+    /// party facts.
+    ixit: Option<&'a crate::ixit::Ixit>,
     /// Cache of loaded corpus payloads.
     cache: BTreeMap<CorpusKey, Value>,
     /// The current matrix row (when the case has one).
@@ -69,12 +77,18 @@ impl std::fmt::Debug for Resolver<'_> {
 }
 
 impl<'a> Resolver<'a> {
-    /// A resolver rooted at the corpus manifest + its directory.
+    /// A resolver rooted at the corpus manifest + its directory, and the
+    /// party ixit whose declared facts `${ixit:…}` reads.
     #[must_use]
-    pub fn new(manifest: &'a CorpusManifest, corpus_dir: &'a Path) -> Self {
+    pub fn new(
+        manifest: &'a CorpusManifest,
+        corpus_dir: &'a Path,
+        ixit: Option<&'a crate::ixit::Ixit>,
+    ) -> Self {
         Self {
             manifest,
             corpus_dir,
+            ixit,
             cache: BTreeMap::new(),
             row: None,
             fixture: None,
@@ -377,6 +391,11 @@ impl<'a> Resolver<'a> {
                 let ms = vars.resolve_time(expr).map_err(ResolveError::Vars)?;
                 Ok(Value::String(format_instant_ms(ms)))
             }
+            ValueRef::Ixit(crate::refgrammar::IxitField::SystemId) => self
+                .ixit
+                .and_then(|ixit| ixit.system_id.clone())
+                .map(Value::String)
+                .ok_or(ResolveError::Ixit("system_id")),
         }
     }
 
@@ -513,7 +532,7 @@ mod tests {
     fn generated_sets_and_instants() {
         let m = manifest();
         let dir = std::path::PathBuf::from(".");
-        let mut r = Resolver::new(&m, &dir);
+        let mut r = Resolver::new(&m, &dir, None);
         let set = r
             .data_set(&CorpusKey::parse("cnf.set.bp-10").unwrap())
             .unwrap();
@@ -527,11 +546,49 @@ mod tests {
         assert_eq!(format_instant_ms(999), "1970-01-01T00:00:00.999Z");
     }
 
+    /// `${ixit:system_id}` reads the PARTY declaration and nothing else: a
+    /// party that declares none gets a typed error the run turns into a
+    /// not-applicable record, never a guessed identifier.
+    #[test]
+    fn ixit_system_id_resolves_only_from_the_declaration() {
+        let m = manifest();
+        let dir = std::path::PathBuf::from(".");
+        let vars = VarStore::default();
+        let reference = crate::refgrammar::ValueRef::parse("ixit:system_id").unwrap();
+
+        let declared: crate::ixit::Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
+            "system_id": "ehrbase-rs.local"
+        }))
+        .unwrap();
+        let mut r = Resolver::new(&m, &dir, Some(&declared));
+        assert_eq!(
+            r.resolve_ref(&reference, &vars).unwrap(),
+            Value::String("ehrbase-rs.local".to_owned())
+        );
+
+        let bare: crate::ixit::Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        let mut r = Resolver::new(&m, &dir, Some(&bare));
+        assert!(matches!(
+            r.resolve_ref(&reference, &vars),
+            Err(ResolveError::Ixit("system_id"))
+        ));
+
+        let mut r = Resolver::new(&m, &dir, None);
+        assert!(matches!(
+            r.resolve_ref(&reference, &vars),
+            Err(ResolveError::Ixit("system_id"))
+        ));
+    }
+
     #[test]
     fn absent_cells_drop_from_payloads() {
         let m = manifest();
         let dir = std::path::PathBuf::from(".");
-        let mut r = Resolver::new(&m, &dir);
+        let mut r = Resolver::new(&m, &dir, None);
         let case: CaseCore = serde_json::from_value(serde_json::json!({
             "id": "I_EHR_SERVICE.create_ehr-x", "kind": "functional", "component": "EHR",
             "sm_operation": "I_EHR_SERVICE.create_ehr",

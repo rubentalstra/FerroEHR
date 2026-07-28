@@ -1406,9 +1406,20 @@ elements:
   - id: header-committal-system-id-server-value
     description: "The defaulted AUDIT_DETAILS.system_id is the server's OWN CONFIGURED system identifier — not merely some server-set non-blank token."
     source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (\"In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier\")"
-    exception:
-      reason: coverage_gap
-      note: "The MUST's checkable half IS gated (I_EHR_COMPOSITION.update_composition-audit_system_id asserts the defaulted value is present, non-blank, and not the client token the same flow supplied one version earlier). Its IDENTITY half is not checkable by a client: the released ITS-REST exposes no operation from which the configured system identifier can be read — the System API is a one-operation conformance manifest (system-options-conformance-manifest) and no response carries the value — and the runner cannot derive it either, since the closed capture grammar (tools/cnf-runner/src/model/binding.rs: header | body | capture, with only weak-quote strip and root-uid/uppercase transforms) has no middle-segment extraction to lift the creating-system component out of an OBJECT_VERSION_ID. Asserting a literal would be inventing a deployment fact; asserting nothing would be silence. Closes when the ixit declares the SUT's configured system identifier as an environment fact a case may reference, or a released sentence surfaces it on the wire."
+    covered_by:
+      # The IDENTITY half, against the value the party DECLARES its SUT is
+      # configured with: the closing condition this element named — "the ixit
+      # declares the SUT's configured system identifier as an environment
+      # fact a case may reference" — was met by the 2026-07-28 schedule
+      # release (#569), which added the ixit `system_id` declaration and the
+      # `${ixit:system_id}` reference. A party that declares none records the
+      # case not-applicable with that citation; the identifier is still never
+      # invented, and no released operation discloses it.
+      - I_EHR_COMPOSITION.create_composition-audit_system_id_declared
+      # The halves that need no declaration: a supplied system_id is merged
+      # verbatim, and the defaulted one is present, non-blank, and not the
+      # client token the same flow supplied a version earlier.
+      - I_EHR_COMPOSITION.update_composition-audit_system_id
   # The default representation preference (ITS-REST Requests_and_responses.md
   # §Prefer minimal, identifier or full representation response).
   - id: header-prefer-return-minimal

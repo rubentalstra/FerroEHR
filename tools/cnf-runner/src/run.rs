@@ -11,7 +11,9 @@ use crate::exec::driver::HttpDriver;
 use crate::exec::{CaseRecord, RowOutcome, run_case};
 use crate::ids::SmOperationRef;
 use crate::ixit::Ixit;
+use crate::model::assertion::assertion_refs;
 use crate::model::case::CaseCore;
+use crate::refgrammar::{IxitField, ValueRef};
 use crate::vocab::CaseStatus;
 
 /// Why a case was not interpreter-run (the registered-exception taxonomy).
@@ -80,6 +82,45 @@ fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
         }
     }
     (!citations.is_empty()).then(|| citations.join("; "))
+}
+
+/// The `${ixit:…}` facts a case reads that THIS party's ixit does not
+/// declare. A declared fact is the only source (no released operation
+/// discloses it), so a case that needs an undeclared one is not-applicable
+/// on this party — never driven against a guessed value.
+fn undeclared_ixit_facts(case: &CaseCore, ixit: &Ixit) -> Vec<&'static str> {
+    fn note(reference: &ValueRef, into: &mut Vec<IxitField>) {
+        if let ValueRef::Ixit(field) = reference
+            && !into.contains(field)
+        {
+            into.push(*field);
+        }
+    }
+    let mut referenced: Vec<IxitField> = Vec::new();
+    for step in &case.flow {
+        for (_, value) in step.with_entries() {
+            for reference in value.refs() {
+                note(reference, &mut referenced);
+            }
+        }
+        for assertion in &step.assertions {
+            for reference in assertion_refs(assertion) {
+                note(&reference, &mut referenced);
+            }
+        }
+    }
+    for assertion in &case.postconditions {
+        for reference in assertion_refs(assertion) {
+            note(&reference, &mut referenced);
+        }
+    }
+    referenced
+        .into_iter()
+        .filter(|field| match field {
+            IxitField::SystemId => ixit.system_id.is_none(),
+        })
+        .map(IxitField::token)
+        .collect()
 }
 
 /// Execute every runnable case against the ixit's default topology.
@@ -159,6 +200,30 @@ pub fn execute(
             report
                 .exceptions
                 .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
+        // A case reading a party-declared SUT fact this ixit does not carry
+        // cannot be driven: the fact is not on the wire, so the alternative
+        // to a declaration is a guess.
+        let missing = undeclared_ixit_facts(case, ixit);
+        if !missing.is_empty() {
+            let citation = format!(
+                "the ixit declares no {} — the case reads it as ${{ixit:…}} and no released \
+                 operation discloses the value; ISO/IEC 9646 test selection",
+                missing.join(", ")
+            );
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Guarded(citation)));
             continue;
         }
         // Global-state grounds (an empty template list, a globally-absent

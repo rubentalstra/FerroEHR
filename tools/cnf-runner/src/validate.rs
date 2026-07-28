@@ -550,6 +550,12 @@ fn check_one_ref(
                 );
             }
         }
+        // A `${ixit:…}` fact is declared by the PARTY, not by the catalogue,
+        // so there is nothing in the artifact tree to resolve it against —
+        // the closed field set is enforced at parse. A party that declares
+        // the fact runs the case; one that does not records it
+        // not-applicable with that citation (crate::run).
+        ValueRef::Ixit(_) => {}
         ValueRef::Time(expr) => {
             let (a, b) = match expr {
                 TimeExpr::Before(t) | TimeExpr::After(t) => (t, None),

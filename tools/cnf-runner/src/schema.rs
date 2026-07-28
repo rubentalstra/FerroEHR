@@ -850,6 +850,11 @@ pub fn ixit_schema() -> Value {
                     "db": { "type": "string", "minLength": 1 }
                 }
             },
+            "system_id": {
+                "description": "The SUT's own configured system identifier — the value it stamps into AUDIT_DETAILS.system_id when the client supplies none (ITS-REST Requests_and_responses §openehr-version and openehr-audit-details) and into every OBJECT_VERSION_ID.creating_system_id it mints. Declared here because no released operation discloses it; absent => the cases reading ${ixit:system_id} are not-applicable with that citation.",
+                "type": "string",
+                "minLength": 1
+            },
             "signing": {
                 "description": "The SUT's version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode the deployment runs (a deployment runs one). digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",
                 "type": "object",

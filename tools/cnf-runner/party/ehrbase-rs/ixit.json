@@ -35,6 +35,7 @@
     "sut": "ehrbase-rs-cnf-ehrbase-1",
     "db": "ehrbase-rs-cnf-ehrbase-postgres-1"
   },
+  "system_id": "ehrbase-rs.local",
   "signing": {
     "mode": "digest",
     "algorithm": "sha256",
