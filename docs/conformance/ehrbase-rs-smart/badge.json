@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "label": "openEHR conformance",
+  "message": "NOT PASSING \u00b7 3/3 cases",
+  "color": "red"
+}
