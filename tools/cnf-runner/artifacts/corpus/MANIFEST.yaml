@@ -208,6 +208,24 @@ cnf.ehr_status.with_subject.g:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "derived 2026-07-28 from the official Robot EHR_STATUS with a known per-case subject ref (cnf-subject-06@cnf) — subject-keyed cases must own their subject on a single-EHR-per-subject SUT"
+# The type-insensitivity PAIR: two EHR_STATUS payloads whose subject
+# external_ref carries the SAME id and namespace and DIFFERS ONLY in
+# PARTY_REF.type. Both types are legal — BASE
+# UML/classes/org.openehr.base.base_types.party_ref.adoc §Invariants
+# `Type_validity` admits exactly PERSON / ORGANISATION / GROUP / AGENT / ROLE /
+# PARTY / ACTOR — so the pair isolates the conflict key from payload validity.
+cnf.ehr_status.with_subject.l:
+  source: fixtures/ehr/ehr_status.with_subject.l.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-07-28 from the official Robot EHR_STATUS with a known per-case subject ref (cnf-subject-11@cnf, type PERSON) — subject-keyed cases must own their subject on a single-EHR-per-subject SUT"
+cnf.ehr_status.with_subject.m:
+  source: fixtures/ehr/ehr_status.with_subject.m.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-07-28 from cnf.ehr_status.with_subject.l by changing PARTY_REF.type PERSON -> ORGANISATION and NOTHING else (same id cnf-subject-11, same namespace cnf) — the type-insensitive subject-conflict key of ITS-REST responses/409_EHR.yaml (register AMB-63)"
 cnf.ehr_status.with_subject.alt:
   source: fixtures/ehr/ehr_status.with_subject.alt.json
   format: canonical-json
