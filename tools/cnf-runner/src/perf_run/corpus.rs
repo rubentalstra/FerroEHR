@@ -43,6 +43,23 @@ pub(crate) const STORED_QUERY_AQL: &str = "SELECT c/uid/value, o/data[at0001]/ev
      FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
      LIMIT 10";
 
+/// The advanced-AQL analytics read: the same per-patient series ORDERED and
+/// truncated server-side (QUERY AQL §ORDER BY, §LIMIT — the advanced query
+/// class the functional battery pins in
+/// `I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit`).
+pub(crate) const ANALYTICS_AQL: &str = "SELECT c/uid/value AS uid \
+     FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+     WHERE e/ehr_id/value = $ehr_id \
+     ORDER BY o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude DESC LIMIT 3";
+
+/// The terminology-backed AQL read (QUERY AQL §TERMINOLOGY): the value-set
+/// expansion form the functional battery pins in
+/// `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches`.
+pub(crate) const TERMINOLOGY_AQL: &str = "SELECT c/uid/value AS uid \
+     FROM EHR e CONTAINS COMPOSITION c \
+     WHERE c/category/defining_code/code_string matches TERMINOLOGY('expand', 'openehr', 'composition_category') \
+     LIMIT 10";
+
 /// The cross-EHR ward worklist (the population query class).
 pub(crate) const WARD_AQL: &str = "SELECT e/ehr_id/value, c/uid/value \
      FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
@@ -349,12 +366,21 @@ pub fn seed_ward(
         return Ok(());
     }
 
-    // Pack OPTs — every journey template's constraint carrier.
-    for template in &journey_pack.templates {
+    // Pack OPTs — every journey template's constraint carrier — plus the
+    // Simplified-FLAT payload's own OPT when the catalogue commits one.
+    let mut opts: Vec<(&str, &str)> = journey_pack
+        .templates
+        .iter()
+        .map(|t| (t.key.as_str(), t.opt_xml.as_str()))
+        .collect();
+    if let Some(flat) = &journey_pack.aux.flat {
+        opts.push((pack::FLAT_OPT_KEY, flat.opt_xml.as_str()));
+    }
+    for (key, opt_xml) in opts {
         let upload = client.request(
             reqwest::Method::POST,
             "/definition/template/adl1.4",
-            Some(("application/xml", template.opt_xml.as_bytes().to_vec())),
+            Some(("application/xml", opt_xml.as_bytes().to_vec())),
             false,
             None,
         )?;
@@ -362,8 +388,7 @@ pub fn seed_ward(
             201 | 409 => {}
             other => {
                 return Err(format!(
-                    "OPT upload for {} returned {other} (expected 201/409)",
-                    template.key
+                    "OPT upload for {key} returned {other} (expected 201/409)"
                 ));
             }
         }
@@ -396,6 +421,28 @@ pub fn seed_ward(
             return Err(format!(
                 "pack preflight: template {} example returned {} — the committed payload                  ground is invalid for this SUT; fix the pack (or the SUT's validation)                  before measuring",
                 template.key, reply.status
+            ));
+        }
+    }
+    // The Simplified-FLAT payload rides the same preflight: its FLAT paths
+    // are template-derived, so a mismatch against the OPT is an
+    // instrument-ground defect exactly like an RM-invalid example.
+    if let Some(flat) = &journey_pack.aux.flat {
+        let reply = client.request_negotiated(
+            reqwest::Method::POST,
+            &format!("/ehr/{scratch_ehr}/composition"),
+            Some(("application/openehr.wt.flat+json", pack::flat_body(flat)?)),
+            true,
+            None,
+            None,
+            &[("openehr-template-id", flat.template_id.clone())],
+        )?;
+        if !created(reply.status) {
+            return Err(format!(
+                "pack preflight: the Simplified-FLAT payload returned {} — the committed payload \
+                 ground is invalid for this SUT; fix the pack (or the SUT's validation) before \
+                 measuring",
+                reply.status
             ));
         }
     }

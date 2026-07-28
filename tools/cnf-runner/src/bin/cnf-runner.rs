@@ -937,20 +937,14 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
-    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
+    let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    let client = match perf_run::client::PerfClient::from_instance(instance) {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!("{e}");
-            return ExitCode::from(2);
-        }
-    };
+    let client = principals.primary().clone();
     // The class token is the STANDARDIZED corpus selector (data volume +
     // workload mix); no class floor enters the stress report or chart.
     let Some((_, case)) = loaded
@@ -1005,9 +999,10 @@ fn stress_command(
         pack: &journey_pack,
         // Stress steps are short — the day curve has no meaning there.
         curve: cnf_runner::perf::ArrivalCurve::Uniform,
+        principals: &principals,
     };
     let report = match cnf_runner::stress::run_stress(
-        &client,
+        &principals,
         &corpus,
         &workload,
         environment,
@@ -1142,20 +1137,14 @@ fn probe_command(
             return ExitCode::from(2);
         }
     };
-    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
+    let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    let client = match perf_run::client::PerfClient::from_instance(instance) {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!("{e}");
-            return ExitCode::from(2);
-        }
-    };
+    let client = principals.primary().clone();
     let Some((_, case)) = loaded
         .set
         .performance
@@ -1285,20 +1274,14 @@ fn perf_command(
             return ExitCode::from(2);
         }
     };
-    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
+    let (principals, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    let client = match perf_run::client::PerfClient::from_instance(instance) {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!("{e}");
-            return ExitCode::from(2);
-        }
-    };
+    let client = principals.primary().clone();
     let selected: Vec<_> = loaded
         .set
         .performance
@@ -1412,7 +1395,7 @@ fn perf_command(
             .map(|c| perf_run::resources::ResourceSampler::start(c, warmup_s, duration_s));
         let mut measurement = match perf_run::window::drive_case(
             case,
-            &client,
+            &principals,
             &corpus,
             &journey_pack,
             &catalogue,

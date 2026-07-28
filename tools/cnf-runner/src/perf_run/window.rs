@@ -9,11 +9,11 @@ use std::time::Instant;
 
 use hdrhistogram::Histogram;
 
-use crate::ixit::{Environment, Instance, Ixit};
+use crate::ixit::{Environment, Ixit};
 use crate::perf::{
     ClassVerdict, Measurement, OperationMeasurement, PerfOp, PerformanceCase, class_verdict,
 };
-use crate::perf_run::client::PerfClient;
+use crate::perf_run::client::PerfPrincipals;
 use crate::perf_run::corpus::SeededCorpus;
 use crate::perf_run::execute::{CaptureStore, perform};
 use crate::perf_run::pack::JourneyPack;
@@ -68,7 +68,7 @@ pub struct WindowOutcome {
 /// arrival faults are error observations, not run failures).
 #[allow(clippy::too_many_lines)] // one measured-window procedure: schedule → collect → aggregate
 pub fn run_window(
-    client: &PerfClient,
+    principals: &PerfPrincipals,
     corpus: &SeededCorpus,
     workload: &JourneyWorkload<'_>,
     rate: f64,
@@ -77,6 +77,13 @@ pub fn run_window(
     progress: &(dyn Fn(String) + Sync),
 ) -> Result<WindowOutcome, String> {
     let schedule = build_schedule(workload, rate, warmup_s, duration_s, corpus.ward.len())?;
+    if !schedule.dropped_journeys.is_empty() {
+        progress(format!(
+            "journeys not scheduled (the ixit declares no principal for them; the remaining \
+             shares were renormalized): {}",
+            schedule.dropped_journeys.join(", ")
+        ));
+    }
     let total = schedule.arrivals.len();
     let captures = CaptureStore::new();
 
@@ -149,14 +156,14 @@ pub fn run_window(
                 dispatched_measured.fetch_add(1, Ordering::Relaxed);
             }
             let tx = tx.clone();
-            let client = client.clone();
+            let principals = principals.clone();
             let captures = &captures;
             let arrival_index = u64::try_from(i).unwrap_or(u64::MAX);
             let failure_samples = Arc::clone(&failure_samples);
             scope.spawn(move || {
                 let mut observed: Option<u16> = None;
                 let outcome = perform(
-                    &client,
+                    &principals,
                     arrival_index,
                     planned_arrival,
                     corpus,
@@ -269,7 +276,7 @@ pub fn run_window(
 #[allow(clippy::too_many_arguments)] // the one case-drive seam
 pub fn drive_case(
     case: &PerformanceCase,
-    client: &PerfClient,
+    principals: &PerfPrincipals,
     corpus: &SeededCorpus,
     journey_pack: &JourneyPack,
     catalogue: &crate::perf::JourneyCatalogue,
@@ -284,9 +291,10 @@ pub fn drive_case(
         shares: &case.workload.journeys,
         pack: journey_pack,
         curve: case.workload.arrival_curve,
+        principals,
     };
     let window = run_window(
-        client,
+        principals,
         corpus,
         &workload,
         case.workload.arrival_rate.0,
@@ -312,18 +320,19 @@ pub fn drive_case(
     })
 }
 
-/// Convenience: the ixit precondition for a measured run — the `sut`
-/// instance and a present environment block.
+/// Convenience: the ixit precondition for a measured run — every principal
+/// the party declares (the `sut` instance is mandatory) and a present
+/// environment block.
 ///
 /// # Errors
 /// A message naming the missing piece (the environment block is mandatory
 /// for performance runs).
-pub fn measured_run_context(ixit: &Ixit) -> Result<(&Instance, &Environment), String> {
-    let instance = ixit.default_instance()?;
+pub fn measured_run_context(ixit: &Ixit) -> Result<(PerfPrincipals, &Environment), String> {
+    let principals = PerfPrincipals::from_ixit(ixit)?;
     let environment = ixit.environment.as_ref().ok_or_else(|| {
         "ixit has no environment block (mandatory for performance runs)".to_owned()
     })?;
-    Ok((instance, environment))
+    Ok((principals, environment))
 }
 
 /// Whether a measurement's verdict re-derives to the same value from its
