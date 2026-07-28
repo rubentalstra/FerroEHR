@@ -47,6 +47,8 @@ Capabilities claimed:
 - QueryApi
 - AdminApi
 - MessageApi
+- SystemApi
+- ItemTags
 - Signing
 - SimplifiedFormats
 - EhrDemographicSeparation
