@@ -101,6 +101,12 @@ The ADL 1.4 list accepts three filters — `template_id`, `concept`, and
 (maximum rows; absent or 0 = all). The ADL2 list accepts the same
 `offset`/`fetch` pagination.
 
+> [!NOTE]
+> When the `version` parameter is absent, the list collapses to the **latest
+> version** of each template (the highest `.vN` axis of its `template_id`).
+> Pass `version=*` to list every stored version, or a partial glob
+> (`version=*.v1*`) to select specific ones.
+
 ## The WebTemplate
 
 The **WebTemplate** is a JSON description of a template that is far easier for
