@@ -74,7 +74,11 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary
-  values enter only by schedule release, never ad hoc.
+  values enter only by schedule release, never ad hoc. The one OPEN grammar
+  beside them is an `ignoring:`/`server_assigned` PATH, and it carries a
+  `**` segment matching zero or more attribute steps (`**/uid`): recursive
+  containment is an RM shape (`FOLDER.folders: List<FOLDER>`), so a
+  depth-anchored ignore path would silently under-cover a deeper tree.
 - **A deployment fact no released operation discloses is an IXIT
   declaration, never a runner guess**: the party's `ixit.json` declares it
   (e.g. `system_id`) and a case reads it as `${ixit:<field>}` — the field set
