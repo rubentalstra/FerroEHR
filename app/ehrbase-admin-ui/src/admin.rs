@@ -3,9 +3,12 @@
 //! (template delete, stored-query delete, physical EHR delete).
 //!
 //! The CDR's admin group is **off by default**, and while it is disabled every
-//! admin route answers `404` inside the dispatcher (never a `403`). The console
-//! therefore discovers the group before offering any of it, and renders no
-//! destructive affordance at all when it is not mounted.
+//! admin route answers `405 Method Not Allowed` with an empty `Allow` (the
+//! route exists but supports no method — ITS-REST overview
+//! Requests_and_responses.md §HTTP Methods: "If a method is recognized but not
+//! allowed for the target resource, the response SHOULD be 405 Method Not
+//! Allowed"). The console therefore discovers the group before offering any of
+//! it, and renders no destructive affordance at all when it is not mounted.
 //!
 //! NOTE: admin availability is discovered via the System API conformance
 //! manifest (ITS-REST 1.1.0 System API, `OPTIONS {base_path}` → `endpoints[]`) —
@@ -55,7 +58,8 @@ pub enum AdminAvailability {
     /// destructive affordances render (authorization is still per request).
     Available,
     /// The manifest does not list `/admin` — the CDR runs with the admin group
-    /// disabled and every admin route answers `404`.
+    /// disabled and every admin route answers `405` with an empty `Allow`
+    /// (overview Requests_and_responses.md §HTTP Methods).
     Disabled,
 }
 
