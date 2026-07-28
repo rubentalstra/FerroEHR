@@ -78,7 +78,7 @@ pin accepts every valid older-minor instance.
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
 | LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version |
 | TERM (Terminology) | **3.1.0** (WIP generation) | 3.0.0 (26-Jun-2023) | 3.1.0 | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
-| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL vendored) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`; namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
+| ITS-XML (XSDs) | **both published lineages vendored**: tag `Release-1.0.2v2` @ `f7a93777` (namespace `…/v1`, the STABLE bundle) + tag `Release-2.0.0v2` @ `de8b37ba` (namespace `…/v2`, TRIAL upstream) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`, one generated codec for both (the lineages differ only in the root `xmlns`); bundles at `crates/openehr-its/schemas/xml/`. **Served wire = v1 by default, v2 on request** (owner ruling 2026-07-28): a client selects the lineage with the `version` media-type parameter on `application/xml` — our own extension, no openEHR spec governs namespace selection on the REST wire. OPT 1.4 template XML is always v1. |
 | ITS-REST (REST API) | **Release-1.1.0** @ `24058992d` | 1.1.0 (19-Jul-2026) | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** (tag Release-1.1.0). Per-API lifecycle within the release: Overview/System/EHR/Query/Definition/Formats **STABLE**; Demographic/Admin/SMART **DEVELOPMENT** (the OAS bundle artifacts are marked TRIAL) — all 7 API groups vendored |
 | ITS-JSON (JSON Schemas) | development @ `5acae056` | (1.0.0 itself still WIP) | dev | validation oracle for the fidelity gate; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance. Exception: the BASE 1.3.0 json is taken from `specifications-BASE` @ `e4879576` (2026-07-25) pending ITS-BMM republication — see that PROVENANCE.md |
@@ -119,6 +119,18 @@ possibly data migration".
 - **ITS-REST is single-version: always the latest RELEASED API** — no legacy
   REST surface. The 1.1.0 adoption is tracked on issue #178; future releases
   are detected automatically (the spec-update/release watcher workflows).
+- **ITS-XML is the one place a lineage is negotiated, and it is not a second
+  generation** (owner ruling 2026-07-28). The `Release-2.0.0` restructure
+  changed the schemas' target namespace and nothing else about the document
+  shape, and upstream marks 2.0.0 TRIAL while directing stable consumers to
+  `Release-1.0.2`. So there is exactly ONE generated codec: the two bundles
+  merge into one emission closure and the lineage is a serialize-time choice
+  of root `xmlns`. The CDR serves v1 by default (the released-STABLE bundle)
+  and v2 when a request asks for it via the `version` media-type parameter on
+  `application/xml`. That parameter is our own extension — no openEHR spec
+  governs namespace selection on the REST wire — and it is not the
+  dual-generation exception the AM rule above describes, because no second
+  model, crate module, or impl set exists.
 - The acceptance instrument is the openEHR CNF conformance schedule, **not**
   an EHRbase parity harness; EHRbase is prior art. Stock EHRbase/`archie`
   emits an RM 1.1.0-era wire format — compatible under this policy, and the

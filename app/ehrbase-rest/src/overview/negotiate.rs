@@ -30,6 +30,32 @@
 //! canonical JSON into its `openehr-rm` type so the generated `ToXml` runs (see
 //! [`respond_rm`]). The Simplified-Formats payload conversion is the sibling
 //! `crate::formats` adapter.
+//!
+//! ## The `version` media-type parameter (ITS-XML lineage selection)
+//!
+//! openEHR publishes canonical XML in two wire lineages that differ only by
+//! the document's root namespace — `http://schemas.openehr.org/v1`
+//! (`Release-1.0.2v2`, STABLE) and `http://schemas.openehr.org/v2`
+//! (`Release-2.0.0v2`, TRIAL upstream); see
+//! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions".
+//! A client selects one per request with a media-type parameter on the XML
+//! type — `Accept: application/xml; version=2` for the response,
+//! `Content-Type: application/xml; version=2` to declare a request payload.
+//! Absent (or `version=1`) means the v1 default, so an existing XML client
+//! sees no drift whatsoever.
+//!
+//! NOTE: no openEHR spec governs this — our own design/extension. The
+//! ITS-REST text predates the dual bundles: `Resources.md` §XML Format
+//! requires conformance to "the [published XSDs]" without naming a lineage
+//! and says nothing about media-type parameters. What the released text DOES
+//! fix is the refusal shape once a service cannot serve what was asked, and
+//! both branches here are exactly those MUSTs — an unrecognized `version` on
+//! `Accept` is an aspect of the request the service cannot fulfill ("it MUST
+//! respond with HTTP status code `406 Not Acceptable`") and an unrecognized
+//! `version` on `Content-Type` is a payload it cannot process as XML ("it
+//! MUST respond with HTTP status code `415 Unsupported Media Type`").
+//! Selection applies to canonical RM documents only; the OPT 1.4 template
+//! representation is always v1 (`openehr_its::opt14`).
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -37,7 +63,7 @@ use http::{HeaderMap, HeaderValue, StatusCode, header};
 
 use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::rest::runtime::ApiError;
-use openehr_its::xml::{FromXml, ToXml};
+use openehr_its::xml::{FromXml, Namespace, ToXml};
 
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
@@ -226,6 +252,142 @@ fn choose(
     }
 }
 
+// ── ITS-XML lineage selection (the `version` media-type parameter) ─────────
+//
+// NOTE: no openEHR spec governs this — our own design/extension (module docs
+// above carry the full reasoning and the two released refusal MUSTs it reuses).
+
+/// The name of the media-type parameter that selects the ITS-XML lineage.
+/// Parameter names are case-insensitive (RFC 9110 §8.3.1).
+const XML_VERSION_PARAM: &str = "version";
+
+/// `application/xml` labelled with the non-default v2 lineage — the response
+/// `Content-Type` when v2 was negotiated, so a client is told which lineage it
+/// received rather than having to sniff the root `xmlns`.
+const APPLICATION_XML_V2: &str = "application/xml; version=2";
+
+/// What the `version` parameter of ONE media range says about the lineage.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum XmlLineage {
+    /// No `version` parameter: the default (v1) lineage.
+    Default,
+    /// A recognized lineage selector.
+    Selected(Namespace),
+    /// A `version` value this server does not serve — the caller answers
+    /// `406` (response side) or `415` (request side).
+    Unrecognized,
+}
+
+/// Read the `version` parameter off one media range (`application/xml;
+/// version=2`). Quoted and bare forms are both accepted (RFC 9110 §5.6.6
+/// makes a parameter value a token OR a quoted-string).
+fn xml_lineage_of(range: &str) -> XmlLineage {
+    for param in range.split(';').skip(1) {
+        let Some((name, value)) = param.split_once('=') else {
+            continue;
+        };
+        if !name.trim().eq_ignore_ascii_case(XML_VERSION_PARAM) {
+            continue;
+        }
+        return match value.trim().trim_matches('"') {
+            "1" => XmlLineage::Selected(Namespace::V1),
+            "2" => XmlLineage::Selected(Namespace::V2),
+            _ => XmlLineage::Unrecognized,
+        };
+    }
+    XmlLineage::Default
+}
+
+/// The XML media range an `Accept` header offers with the highest
+/// `(quality, specificity)` — the range whose `version` parameter governs the
+/// response lineage. Mirrors [`match_quality`]'s ordering so the parameter is
+/// read off the very range that won the negotiation.
+fn best_xml_range(accept: &str) -> Option<&str> {
+    let mut best: Option<(&str, f64, u8)> = None;
+    for range in accept.split(',') {
+        let range = range.trim();
+        if range.is_empty() {
+            continue;
+        }
+        let token = media_token(range).to_ascii_lowercase();
+        let Some(spec) = specificity_for(&token, WireFormat::CanonicalXml) else {
+            continue;
+        };
+        let q = quality_of(range);
+        if q <= 0.0 {
+            continue;
+        }
+        best = Some(match best {
+            None => (range, q, spec),
+            Some((_, bq, bs)) if q > bq || (q >= bq && spec > bs) => (range, q, spec),
+            Some(current) => current,
+        });
+    }
+    best.map(|(range, _, _)| range)
+}
+
+/// The ITS-XML lineage an XML RESPONSE must be serialized in, resolved from
+/// `Accept`. `None` means the client asked for a lineage this server does not
+/// serve — the caller answers `406` (`Resources.md` §XML Format: "If the
+/// service cannot fulfill this aspect of the request, it MUST respond with
+/// HTTP status code `406 Not Acceptable`").
+///
+/// NOTE: the lineage is resolved AFTER the format, as a second gate, rather
+/// than folded into [`match_quality`] as an extra condition on the range. The
+/// two differ in exactly one case — an `Accept` naming an unserved lineage
+/// AND some other acceptable format
+/// (`application/json;q=0.5, application/xml;version=3`) — where folding it in
+/// would quietly serve JSON and this gate answers `406` instead. `406` is the
+/// deliberate choice: the parameter exists so a client can be specific about
+/// the representation it can consume, and substituting a different one
+/// defeats that. No openEHR spec governs the parameter — our own
+/// design/extension — so nothing released is bent either way.
+pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
+    let Some(accept) = header_str(headers, header::ACCEPT) else {
+        return Some(Namespace::V1);
+    };
+    let Some(range) = best_xml_range(&accept) else {
+        return Some(Namespace::V1);
+    };
+    match xml_lineage_of(range) {
+        XmlLineage::Default => Some(Namespace::V1),
+        XmlLineage::Selected(ns) => Some(ns),
+        XmlLineage::Unrecognized => None,
+    }
+}
+
+/// Refuse a request whose `Content-Type` declares canonical XML in a lineage
+/// this server cannot read.
+///
+/// A declared lineage is otherwise inert: the `openehr-its` reader dispatches
+/// on local element names and `xsi:type` and never inspects the root `xmlns`,
+/// so a v1 and a v2 payload parse identically. This guard exists so an
+/// unrecognized `version` is refused loudly instead of being parsed as
+/// whatever the body happens to contain.
+///
+/// # Errors
+/// [`ApiError::UnsupportedMediaType`] for an unrecognized `version` value
+/// (`Resources.md` §XML Format: "If the service cannot process the request
+/// payload as XML format, it MUST respond with HTTP status code `415
+/// Unsupported Media Type`").
+pub(crate) fn require_known_xml_lineage(headers: &HeaderMap) -> Result<(), ApiError> {
+    let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
+        return Ok(());
+    };
+    if classify_media(&media_token(&declared).to_ascii_lowercase())
+        != Some(WireFormat::CanonicalXml)
+    {
+        return Ok(());
+    }
+    match xml_lineage_of(&declared) {
+        XmlLineage::Default | XmlLineage::Selected(_) => Ok(()),
+        XmlLineage::Unrecognized => Err(ApiError::UnsupportedMediaType(format!(
+            "canonical XML is served in the openEHR ITS-XML lineages \
+             `version=1` (default) and `version=2`, got {declared}"
+        ))),
+    }
+}
+
 /// Fixed tie-break order: canonical JSON is the server's preferred default.
 fn pref_rank(fmt: WireFormat) -> u8 {
     match fmt {
@@ -337,7 +499,9 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
 /// [`ApiError::BadRequest`] if the body cannot be parsed in the declared
 /// format; [`ApiError::UnsupportedMediaType`] for any `Content-Type` other than
 /// canonical JSON or XML (a Simplified-Formats or unknown type on a canonical
-/// RM endpoint, Resources.md §Simplified Formats MUST).
+/// RM endpoint, Resources.md §Simplified Formats MUST), and for canonical XML
+/// declared in an unrecognized ITS-XML lineage (see
+/// [`require_known_xml_lineage`]).
 pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<serde_json::Value, ApiError>
 where
     T: FromXml + ToJson,
@@ -345,6 +509,7 @@ where
     match content_type_format(headers) {
         Some(WireFormat::CanonicalJson) => parse_json(body),
         Some(WireFormat::CanonicalXml) => {
+            require_known_xml_lineage(headers)?;
             let xml = text_body(body)?;
             let value: T = openehr_its::xml::from_canonical_xml(&xml)
                 .map_err(|e| ApiError::BadRequest(format!("invalid canonical XML body: {e}")))?;
@@ -500,6 +665,17 @@ where
             if value.is_null() {
                 return empty(status);
             }
+            // The lineage is read off the winning XML media range; an
+            // unrecognized `version` is an aspect of the request the service
+            // cannot fulfill → 406 (Resources.md §XML Format).
+            let Some(ns) = accept_xml_namespace(headers) else {
+                return ApiError::NotAcceptable(
+                    "canonical XML is served in the openEHR ITS-XML lineages \
+                     `version=1` (default) and `version=2`"
+                        .to_owned(),
+                )
+                .into_response_body();
+            };
             let typed: T = match openehr_its::json::from_canonical_value(value) {
                 Ok(t) => t,
                 Err(e) => {
@@ -509,8 +685,8 @@ where
                     .into_response_body();
                 }
             };
-            match openehr_its::xml::to_canonical_xml(&typed, root_tag) {
-                Ok(xml) => xml_body(status, xml),
+            match openehr_its::xml::to_canonical_xml_ns(&typed, root_tag, ns) {
+                Ok(xml) => xml_body_ns(status, xml, ns),
                 Err(e) => ApiError::Internal(format!("XML serialization failed: {e}"))
                     .into_response_body(),
             }
@@ -908,11 +1084,37 @@ pub(crate) fn error_with_meta(
 }
 
 /// Serve a pre-formed XML document verbatim as `application/xml`.
+///
+/// The lineage-agnostic builder: the OPT 1.4 template representation (always
+/// v1) and the `return=identifier` `<uid>` body use it. A canonical RM
+/// document goes through [`xml_body_ns`], which labels the lineage it carries.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
     let mut resp = (status, xml).into_response();
     resp.headers_mut().insert(
         header::CONTENT_TYPE,
         HeaderValue::from_static(APPLICATION_XML),
+    );
+    resp
+}
+
+/// Serve a canonical-XML RM document, labelling the ITS-XML lineage it carries.
+///
+/// The default (v1) response `Content-Type` is exactly `application/xml` —
+/// byte-identical to what every XML client has always received — and only the
+/// negotiated v2 response adds the `version=2` parameter, so the client that
+/// asked for the non-default lineage is told it got it. Either way the media
+/// type itself is `application/xml`, which is what `Resources.md` §XML Format
+/// makes a MUST ("Proper header `Content-Type: application/xml` MUST be
+/// present in the response of the service unless the response has no content
+/// body").
+fn xml_body_ns(status: StatusCode, xml: String, ns: Namespace) -> Response {
+    let mut resp = (status, xml).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(match ns {
+            Namespace::V1 => APPLICATION_XML,
+            Namespace::V2 => APPLICATION_XML_V2,
+        }),
     );
     resp
 }
@@ -1318,6 +1520,187 @@ mod tests {
         assert!(xml.contains("<value"), "root element present: {xml}");
         assert!(xml.contains("hello"), "leaf value present: {xml}");
         assert!(!xml.contains("_type"), "not a serialized JSON blob: {xml}");
+    }
+
+    // ── the `version` media-type parameter (our own extension) ────────────
+
+    const V1_NS: &str = "xmlns=\"http://schemas.openehr.org/v1\"";
+    const V2_NS: &str = "xmlns=\"http://schemas.openehr.org/v2\"";
+
+    /// The parameter grammar: absent → default, `1`/`2` → that lineage
+    /// (quoted or bare, name case-insensitive per RFC 9110 §8.3.1), anything
+    /// else → unrecognized. Reading is done off the winning XML media range,
+    /// so a q-value contest picks the parameter with the range.
+    #[test]
+    fn xml_lineage_reads_the_winning_accept_range() {
+        let ns = |accept: &str| accept_xml_namespace(&headers(&[("accept", accept)]));
+
+        assert_eq!(
+            accept_xml_namespace(&HeaderMap::new()),
+            Some(Namespace::V1),
+            "no Accept at all is the v1 default"
+        );
+        assert_eq!(ns("application/xml"), Some(Namespace::V1));
+        assert_eq!(ns("application/xml; version=1"), Some(Namespace::V1));
+        assert_eq!(ns("application/xml; version=2"), Some(Namespace::V2));
+        assert_eq!(ns("application/xml;version=2"), Some(Namespace::V2));
+        assert_eq!(ns("application/xml; Version=\"2\""), Some(Namespace::V2));
+        assert_eq!(ns("text/xml; version=2"), Some(Namespace::V2));
+        assert_eq!(
+            ns("*/*"),
+            Some(Namespace::V1),
+            "a wildcard names no lineage, so the default stands"
+        );
+        assert_eq!(
+            ns("application/json"),
+            Some(Namespace::V1),
+            "a JSON-only Accept leaves the XML default in place"
+        );
+        // The highest-q XML range carries the governing parameter.
+        assert_eq!(
+            ns("application/xml;q=0.5, application/xml;version=2;q=0.9"),
+            Some(Namespace::V2)
+        );
+        assert_eq!(
+            ns("application/xml;version=2;q=0.2, application/xml;q=0.9"),
+            Some(Namespace::V1)
+        );
+        // …and a q=0 rejection does not get to choose the lineage.
+        assert_eq!(
+            ns("application/xml;version=2;q=0, application/xml"),
+            Some(Namespace::V1)
+        );
+        for unknown in [
+            "application/xml; version=3",
+            "application/xml; version=0",
+            "application/xml; version=v2",
+            "application/xml; version=",
+        ] {
+            assert_eq!(
+                ns(unknown),
+                None,
+                "{unknown} names a lineage this server does not serve"
+            );
+        }
+    }
+
+    /// `Accept: application/xml; version=2` serves the v2 lineage and labels
+    /// it; a bare `application/xml` is unchanged (v1, bare `Content-Type`).
+    #[tokio::test]
+    async fn respond_rm_serves_the_negotiated_xml_lineage() {
+        async fn body_of(accept: &str) -> (Option<String>, StatusCode, String) {
+            use http_body_util::BodyExt;
+            use openehr_rm::prelude::DvText;
+
+            let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
+            let resp = respond_rm::<DvText>(
+                &headers(&[("accept", accept)]),
+                StatusCode::OK,
+                &value,
+                "value",
+            );
+            let ct = content_type(&resp);
+            let status = resp.status();
+            let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+            (ct, status, String::from_utf8(bytes.to_vec()).expect("utf8"))
+        }
+
+        let (ct, status, xml) = body_of("application/xml").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            ct.as_deref(),
+            Some(APPLICATION_XML),
+            "the default response Content-Type is unchanged"
+        );
+        assert!(xml.contains(V1_NS), "default lineage is v1: {xml}");
+
+        let (ct, status, xml) = body_of("application/xml; version=2").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            ct.as_deref(),
+            Some(APPLICATION_XML_V2),
+            "a v2 response names the lineage it carries"
+        );
+        assert!(xml.contains(V2_NS), "negotiated lineage is v2: {xml}");
+        assert!(!xml.contains(V1_NS), "v1 namespace not declared: {xml}");
+
+        let (ct, status, xml) = body_of("application/xml; version=1").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(ct.as_deref(), Some(APPLICATION_XML));
+        assert!(xml.contains(V1_NS), "explicit v1 is the default: {xml}");
+    }
+
+    /// An `Accept` naming a lineage this server does not serve is an aspect of
+    /// the request it cannot fulfill → `406` (`Resources.md` §XML Format).
+    #[test]
+    fn respond_rm_refuses_an_unknown_xml_lineage_with_406() {
+        use openehr_rm::prelude::DvText;
+        let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
+        let resp = respond_rm::<DvText>(
+            &headers(&[("accept", "application/xml; version=3")]),
+            StatusCode::OK,
+            &value,
+            "value",
+        );
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE);
+    }
+
+    /// A request payload declared in either lineage is read (the reader is
+    /// namespace-agnostic); an unrecognized `version` is a payload the service
+    /// cannot process as XML → `415` (`Resources.md` §XML Format).
+    #[test]
+    fn rm_value_accepts_both_lineages_and_refuses_an_unknown_one() {
+        use openehr_rm::prelude::DvText;
+
+        let dv: DvText = openehr_its::json::from_canonical_value(
+            &serde_json::json!({"_type": "DV_TEXT", "value": "hello"}),
+        )
+        .expect("dv_text");
+
+        for (declared, ns) in [
+            ("application/xml", Namespace::V1),
+            ("application/xml; version=1", Namespace::V1),
+            ("application/xml; version=2", Namespace::V2),
+        ] {
+            let xml = openehr_its::xml::to_canonical_xml_ns(&dv, "value", ns).expect("to xml");
+            let decoded = rm_value::<DvText>(
+                &headers(&[("content-type", declared)]),
+                &Bytes::from(xml.clone()),
+            )
+            .unwrap_or_else(|e| panic!("{declared} must decode: {e:?} ({xml})"));
+            assert_eq!(decoded["value"], "hello");
+        }
+
+        let xml = openehr_its::xml::to_canonical_xml(&dv, "value").expect("to xml");
+        let err = rm_value::<DvText>(
+            &headers(&[("content-type", "application/xml; version=3")]),
+            &Bytes::from(xml),
+        )
+        .expect_err("an unserved lineage is refused");
+        assert!(
+            matches!(err, ApiError::UnsupportedMediaType(_)),
+            "an XML payload in a lineage the service cannot process is 415: {err:?}"
+        );
+    }
+
+    /// The guard is scoped to canonical XML: a `version` parameter on any
+    /// other declared media type is not this parameter and is left alone.
+    #[test]
+    fn xml_lineage_guard_ignores_non_xml_content_types() {
+        for declared in [
+            "application/json; version=3",
+            "application/openehr.wt.flat+json; version=3",
+            "text/plain; version=3",
+        ] {
+            assert!(
+                require_known_xml_lineage(&headers(&[("content-type", declared)])).is_ok(),
+                "{declared} is not canonical XML — the lineage guard must not fire"
+            );
+        }
+        assert!(
+            require_known_xml_lineage(&HeaderMap::new()).is_ok(),
+            "an absent Content-Type declares no lineage"
+        );
     }
 
     #[tokio::test]

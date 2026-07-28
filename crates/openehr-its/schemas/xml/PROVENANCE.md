@@ -1,4 +1,4 @@
-# Vendored ITS-XML schemas (provenance + parity policy)
+# Vendored ITS-XML schemas (provenance + serving policy)
 
 XSD schemas from `openEHR/specifications-ITS-XML`, vendored **verbatim** (full
 upstream `components/` trees) for canonical-XML (de)serialization. Reference /
@@ -16,32 +16,28 @@ vendored as the upstream `components/` tree, verbatim:
 
 | Vendored dir | Repo ref | Namespace | What it is |
 |---|---|---|---|
-| `its-xml-1.0.2-nsv1/` | tag `Release-1.0.2v2` @ `f7a937778bf9ea43b01b0f9d8a616e47f35017c1` | `http://schemas.openehr.org/v1` | The STABLE pre-2.0.0 bundle: flat `ALL/` (11 XSDs) + `AOM2/` (6 XSDs + examples). This is the archie schema set. |
-| `its-xml-2.0.0-nsv2/` | `master` @ `de8b37ba6c9a5e126623a063cafba3b58ebf1107` | `http://schemas.openehr.org/v2` | Latest openEHR spec: full `components/` — RM (1.0.2/1.0.3/1.0.4/1.1.0/latest), BASE (1.1.0/1.2.0/latest), AM (1.4/latest), OET (1.0.1/latest), QUERY/latest (70 XSDs). |
+| `its-xml-1.0.2-nsv1/` | tag `Release-1.0.2v2` @ `f7a937778bf9ea43b01b0f9d8a616e47f35017c1` | `http://schemas.openehr.org/v1` | The STABLE pre-2.0.0 bundle: flat `ALL/` (11 XSDs) + `AOM2/` (6 XSDs + examples). |
+| `its-xml-2.0.0-nsv2/` | tag `Release-2.0.0v2` @ `de8b37ba6c9a5e126623a063cafba3b58ebf1107` (also repo HEAD at vendoring) | `http://schemas.openehr.org/v2` | The 2.0.0 release (TRIAL upstream): full `components/` — RM (1.0.2/1.0.3/1.0.4/1.1.0/latest), BASE (1.1.0/1.2.0/latest), AM (1.4/latest), OET (1.0.1/latest), QUERY/latest (70 XSDs). |
 
 Fetched: 2026-07-04. (The `openEHR/v1/Template` namespace in the OET/Template
 schemas is the separate template-document namespace, not the RM namespace.)
 
-## Which one does stock EHRbase actually speak? -> v1
+## Which namespace does the CDR serve? — v1 default, v2 negotiated
 
-Confirmed from EHRbase's own Java + XML test fixtures in this repo (parity
-baseline = EHRbase v2.33.0):
+- Upstream marks 2.0.0 **TRIAL** and directs stable consumers to
+  `Release-1.0.2` (`docs/specs/openehr/ITS-XML/README.adoc` §Releases and IM
+  Versions), so the **v1** namespace is the released-STABLE lineage and the
+  served default under the released-spec policy (`docs/VERSIONS.md`).
+- Owner ruling 2026-07-28 (#196): the **v2** namespace is served **on
+  request** via the `version` media-type parameter on the canonical-XML
+  media type (`Accept: application/xml; version=2`). No openEHR spec governs
+  namespace selection on the REST wire — the parameter is our own
+  design/extension (register AMB-169, `option_select`).
 
-- `crates/openehr-server/.../TemplateServiceImp.java` sets the OPT root QName to
-  namespace `http://schemas.openehr.org/v1`.
-- `crates/openehr-server/tests/resources/service/samples/*.xml` (real
-  composition fixtures) declare `xmlns:v1="http://schemas.openehr.org/v1"` and
-  use attribute-based `xsi:type="OBJECT_VERSION_ID"` discriminators.
-
-EHRbase gets its RM canonical XML from the external `archie` library, which
-bundles the **v1-namespace** schemas. So for a 1:1 faithful port, our XML
-*output* must be v1-namespace to match EHRbase byte-for-byte at the REST surface.
-
-## Decision status — SETTLED (both namespaces generated)
+## Generation status — SETTLED (one codec, both namespaces)
 
 - RM *model* stays 1.2.0 internally (JSON serialization unaffected).
-- `emit-xml` generates **both** wire lineages: **v1**
-  (`its-xml-1.0.2-nsv1/`, namespace `.../v1`) is the **default / Stage-1 parity
-  target** (what stock EHRbase emits); **v2** (`its-xml-2.0.0-nsv2/`,
-  `.../v2`) is generated behind a flag as the latest-spec target for the
-  eventual Stage-3 improvement.
+- `emit-xml` generates ONE impl set serving **both** wire lineages — they
+  differ only by the root `xmlns`, selected at serialize time
+  (`crates/openehr-its/src/xml/runtime.rs`); this is NOT an AM-style dual
+  generation.

@@ -17,12 +17,18 @@ pub use quick_xml::events::BytesStart as XmlStart;
 /// The `xsi` namespace, declared on every serialized root element.
 pub const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
-/// The two openEHR ITS-XML wire lineages (see `schemas/xml/PROVENANCE.md`).
+/// The two openEHR ITS-XML wire lineages. Both bundles are vendored under
+/// `schemas/xml/` and merged into one emission closure by `emit-xml`; they
+/// differ only in the root namespace a document declares
+/// (`docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Namespace {
-    /// `http://schemas.openehr.org/v1` — what stock EHRbase emits (parity target).
+    /// `http://schemas.openehr.org/v1` — the `Release-1.0.2v2` bundle, the
+    /// RELEASED-STABLE lineage upstream directs stable consumers to, and this
+    /// crate's serialization default.
     V1,
-    /// `http://schemas.openehr.org/v2` — latest openEHR ITS-XML.
+    /// `http://schemas.openehr.org/v2` — the `Release-2.0.0v2` bundle, TRIAL
+    /// upstream ("These schemas are in *TRIAL* state and subject to change").
     V2,
 }
 

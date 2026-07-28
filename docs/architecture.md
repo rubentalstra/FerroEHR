@@ -145,7 +145,13 @@ ADL 1.4 and ADL 2 side by side. A future major release triggers a
 per-component decision (dual generation via the `am14`/`am24` codegen
 pattern only if the ecosystem runs both; otherwise cutover). ITS-REST is
 single-version by owner ruling: the CDR implements the latest released REST
-API, nothing else. Upstream spec changes and releases are detected
+API, nothing else. **ITS-XML is not a second generation either**: its 2.0.0
+restructure changed only the schemas' target namespace, so one generated
+codec serves both published lineages and the wire namespace is a
+serialize-time choice — v1 (the released-STABLE bundle) by default, v2 when
+a request selects it with the `version` media-type parameter on
+`application/xml` (our own extension; no openEHR spec governs namespace
+selection on the REST wire). Upstream spec changes and releases are detected
 automatically by the scheduled watcher workflows and filed as `spec-update`
 issues for triage.
 
