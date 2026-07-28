@@ -33,7 +33,10 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   ambiguity register, party artifacts statement/results/ixit). The committed
   JSON Schemas under `schemas/` are the published norm — emission is
   deterministic and drift-guarded by a nextest test; never hand-edit an
-  emitted schema.
+  emitted schema. **A binding file is named after the binding it declares** —
+  `<sm_operation>[-<variant>].yaml` — machine-enforced by the
+  `binding-filename` gate: selection is by the declared fields, so a
+  disagreeing name misleads only the reader and the grep, silently.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary

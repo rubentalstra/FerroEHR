@@ -42,6 +42,9 @@ pub enum CheckId {
     SpecRef,
     /// Every used outcome kind mapped, every used capture wired, per binding.
     BindingCompleteness,
+    /// A binding file's stem states the binding it holds:
+    /// `<sm_operation>[-<variant>]`.
+    BindingFilename,
     /// `verified_by` targets exist.
     VerifiedBy,
     /// Corpus keys/views/sources exist; entry invariants hold.
@@ -79,6 +82,7 @@ impl CheckId {
             Self::SmOperation => "sm-operation",
             Self::SpecRef => "spec-ref",
             Self::BindingCompleteness => "binding-completeness",
+            Self::BindingFilename => "binding-filename",
             Self::VerifiedBy => "verified-by",
             Self::CorpusIntegrity => "corpus-integrity",
             Self::AmbiguityLink => "ambiguity-link",
@@ -153,6 +157,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         if let Err(message) = binding.check_invariants() {
             push(&mut findings, CheckId::KindShape, &who, message);
         }
+        check_binding_filename(path, binding, &mut findings);
         if let (Some(decl), Some((_, register))) = (&binding.unrealized, &ctx.set.register)
             && register.get(&decl.ambiguity).is_none()
         {
@@ -1121,6 +1126,137 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 }
             }
         }
+    }
+}
+
+// ── binding filename ↔ declared identity ────────────────────────────────────
+
+/// The file name a binding's declared identity requires:
+/// `<sm_operation>[-<variant>].yaml`.
+///
+/// Selection is by the DECLARED `sm_operation` + `variant`, so a disagreeing
+/// file name misleads nobody at run time — and exactly for that reason it
+/// drifts silently: a grep for `-<variant>` misses the file that declares it,
+/// and a reader reasons about the wrong realization. The name is therefore
+/// gated, not merely conventional.
+fn expected_binding_stem(binding: &OperationBinding) -> String {
+    match &binding.variant {
+        Some(variant) => format!("{}-{variant}", binding.sm_operation),
+        None => binding.sm_operation.to_string(),
+    }
+}
+
+fn check_binding_filename(path: &Path, binding: &OperationBinding, findings: &mut Vec<Finding>) {
+    let who = path.display().to_string();
+    let expected = expected_binding_stem(binding);
+    match path.file_stem().and_then(std::ffi::OsStr::to_str) {
+        None => push(
+            findings,
+            CheckId::BindingFilename,
+            &who,
+            format!("binding file has no readable stem; expected {expected}.yaml"),
+        ),
+        Some(stem) if stem != expected => push(
+            findings,
+            CheckId::BindingFilename,
+            &who,
+            format!(
+                "file stem {stem:?} disagrees with the declared identity \
+                 (sm_operation {}{}) — rename the file to {expected}.yaml",
+                binding.sm_operation,
+                binding
+                    .variant
+                    .as_deref()
+                    .map_or(String::new(), |v| format!(", variant {v:?}")),
+            ),
+        ),
+        Some(_) => {}
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
+mod binding_filename_tests {
+    use super::*;
+
+    fn binding(variant: Option<&str>) -> OperationBinding {
+        let mut doc = serde_json::json!({
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": "/ehr" },
+            "outcomes": { "created": { "status": 201 } }
+        });
+        if let (Some(variant), Some(map)) = (variant, doc.as_object_mut()) {
+            map.insert("variant".to_owned(), serde_json::json!(variant));
+        }
+        serde_json::from_value(doc).unwrap()
+    }
+
+    fn findings_for(file: &str, variant: Option<&str>) -> Vec<Finding> {
+        let mut findings = Vec::new();
+        check_binding_filename(
+            &PathBuf::from("bindings/its-rest").join(file),
+            &binding(variant),
+            &mut findings,
+        );
+        findings
+    }
+
+    #[test]
+    fn variant_less_binding_is_named_after_its_operation() {
+        assert!(findings_for("I_EHR_SERVICE.create_ehr.yaml", None).is_empty());
+        let findings = findings_for("create_ehr.yaml", None);
+        assert_eq!(findings.len(), 1);
+        let finding = findings.first().unwrap();
+        assert_eq!(finding.check, CheckId::BindingFilename);
+        assert!(
+            finding
+                .message
+                .contains("rename the file to I_EHR_SERVICE.create_ehr.yaml"),
+            "{}",
+            finding.message
+        );
+    }
+
+    #[test]
+    fn variant_binding_carries_its_variant_in_the_stem() {
+        assert!(
+            findings_for(
+                "I_EHR_SERVICE.create_ehr-with_ehr_id.yaml",
+                Some("with_ehr_id")
+            )
+            .is_empty()
+        );
+        // The exact drift #558 caught: an abbreviated stem for a longer
+        // declared variant.
+        let findings = findings_for("I_EHR_SERVICE.create_ehr-with_id.yaml", Some("with_ehr_id"));
+        assert_eq!(findings.len(), 1);
+        let finding = findings.first().unwrap();
+        assert!(finding.message.contains("with_id"), "{}", finding.message);
+        assert!(
+            finding
+                .message
+                .contains("rename the file to I_EHR_SERVICE.create_ehr-with_ehr_id.yaml"),
+            "{}",
+            finding.message
+        );
+        // A variant-less file for a variant-declaring binding is caught too.
+        assert_eq!(
+            findings_for("I_EHR_SERVICE.create_ehr.yaml", Some("with_ehr_id")).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn expected_stem_is_the_declared_identity() {
+        assert_eq!(
+            expected_binding_stem(&binding(None)),
+            "I_EHR_SERVICE.create_ehr"
+        );
+        assert_eq!(
+            expected_binding_stem(&binding(Some("wrong_media_type"))),
+            "I_EHR_SERVICE.create_ehr-wrong_media_type"
+        );
     }
 }
 
