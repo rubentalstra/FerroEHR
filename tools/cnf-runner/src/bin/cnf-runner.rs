@@ -1526,13 +1526,16 @@ fn run_command(
             return ExitCode::from(2);
         }
     };
-    let ixit: cnf_runner::ixit::Ixit = match serde_json::from_str(&ixit_text) {
+    let mut ixit: cnf_runner::ixit::Ixit = match serde_json::from_str(&ixit_text) {
         Ok(ixit) => ixit,
         Err(e) => {
             eprintln!("ixit: {e}");
             return ExitCode::from(2);
         }
     };
+    // File references in the ixit (the SMART lane's signing key) are relative
+    // to the ixit document, not to the runner's working directory.
+    ixit.rebase_paths(ixit_path.parent().unwrap_or(std::path::Path::new(".")));
     let mut set = loaded.set;
     if let Some(needle) = filter {
         set.cases.retain(|(_, c)| c.id.as_str().contains(needle));
