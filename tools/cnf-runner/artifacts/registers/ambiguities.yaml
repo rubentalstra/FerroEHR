@@ -509,6 +509,34 @@ AMB-33:
     claim), so the ehrbase-rs statement withdraws all four claims. The cases
     and this entry stay; each becomes re-assertable the day the product serves
     its operations on declared extension routes.
+    RE-ADJUDICATED 2026-07-29 (#637) — THAT DAY CAME for three of the four, and
+    the withdrawal recorded above never took effect (the #623 convergence kept
+    every claim, because an unclaimed required capability trips the static
+    review). The released two-path Admin API is CONFIRMED unchanged first-hand
+    once more; what changed is OUR side. The product now serves the SM
+    reporting calls under /admin/report/ (the `admin-activity-report`
+    served_extensions family) and the SM archive pair under /admin/archive/
+    (the `admin-archive` family), each behind the same admin gate + RBAC Admin
+    class as the released deletes. Their six SM operations carry EXTENSION
+    bindings onto those routes, so ActivityReport, EhrArchive and
+    DemographicArchive are EXECUTED rather than excused: their matrix
+    evidence_exceptions are deleted and the rows carry
+    `realization: extension`, which may never be `required` — no openEHR
+    profile tier and no ITS-REST wire-conformance claim rests on any of it.
+    EhrDumpLoad alone stays excused, and for a reason of its own rather than
+    "no route": the SM `export_ehrs` signature carries
+    `comp_fmt: COMPRESSION_FORMAT [0..1]` whose members `zip`/`7z`
+    (compression_format.adoc) this product declares unbuilt, so a served route
+    would REFUTE the catalogue's own export_formats case; and that case's
+    `logical_fmt: canonical_json` / `enc_format: utf_8` literals are ungrounded
+    against the vendored enumerations (export_format.adoc spells the member
+    `openehr_canonical_json`; encoding_format.adoc is an EMPTY enumeration with
+    no representable value at all). Both are real defects to fix, not reasons
+    to bend anything.
+    TODO: realize I_ADMIN_DUMP_LOAD.export_ehrs on an extension route once the
+    product supports the SM compression members and the export_formats case's
+    two ungrounded literals are re-derived against export_format.adoc /
+    encoding_format.adoc.
   disposition: fixed_handling
   upstream_ref: "UPR-12"
 AMB-34:
@@ -579,6 +607,20 @@ AMB-37:
     (ISO/IEC 9646 legitimizes "not applicable" only for a capability a party
     does NOT claim), so the ehrbase-rs statement withdraws the claim. The cases
     and this entry stay; the claim becomes re-assertable when a surface exists.
+    RE-ADJUDICATED 2026-07-29 (#637) — THE SURFACE NOW EXISTS, and the
+    withdrawal recorded above never took effect (the #623 convergence kept the
+    claim). The missing released wire is CONFIRMED unchanged first-hand once
+    more; what changed is OUR side: the product serves
+    GET /definition/archetype/adl2[/count], GET /definition/artefact/adl2[/count]
+    and DELETE /definition/artefact/adl2/{artefact_id} (the `adl2-archetype`
+    served_extensions family), and the five SM operations behind them carry
+    EXTENSION bindings onto those routes. Adl2ArchetypeProvisioning is
+    therefore EXECUTED rather than excused and its evidence_exception is
+    deleted. The row carries NO `realization: extension` marker on purpose:
+    `delete_artefact-existing` verifies its postcondition through the RELEASED
+    get_artefact, so the battery is genuinely mixed and the marker is reserved
+    for extension-only batteries. No openEHR profile tier and no ITS-REST
+    wire-conformance claim rests on the extension routes either way.
   disposition: fixed_handling
   upstream_ref: "UPR-14"
 AMB-39:
@@ -643,6 +685,26 @@ AMB-41:
     strictly better than a silent excuse. The claim becomes re-assertable the
     day either the release adds the wire or the product serves the operations
     on declared extension routes.
+    RE-ADJUDICATED 2026-07-29 (#637). Two corrections. First, the withdrawal
+    recorded above never took effect — the #623 convergence kept the claim,
+    because an unclaimed required capability trips the static review, which is
+    exactly the consequence this entry predicted. Second, the product now DOES
+    serve an ADL 1.4 archetype surface: POST/GET /definition/archetype/adl1.4
+    and GET/DELETE /definition/archetype/adl1.4/{archetype_id} (the
+    `adl14-archetype` served_extensions family). The binding is nevertheless
+    NOT flipped to an extension realization, and the blocker is an
+    adjudication rather than a coverage decision: Adl14ArchetypeProvisioning is
+    a CORE row the CNF Profiles book marks REQUIRED, and an
+    extension-realization row may never be `required`
+    (`CapabilityMatrix::check_realization_scoping`, owner ruling 2026-07-28) —
+    so realizing it there means dropping `required` from a book-CORE row, which
+    is the owner's call. A second, independent blocker: the closed
+    `CorpusFormat` vocabulary carries `opt-xml` and `adl2-text` but no ADL 1.4
+    archetype member, so the served upload/get/delete branches have no corpus
+    fixture to drive and a flipped battery would be list-only.
+    TODO: flip the I_DEFINITION_ADL14 archetype bindings to extension
+    realizations once the owner has adjudicated `required` on the CORE row and
+    the corpus-format vocabulary can carry an ADL 1.4 source fixture.
   disposition: fixed_handling
   upstream_ref: "UPR-16"
 AMB-42:

@@ -29,21 +29,26 @@ sm_operations:
   - operation: I_DEFINITION_ADL14.archetypes_count
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.delete_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.get_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.has_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.has_opt
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
   - operation: I_DEFINITION_ADL14.list_matching_archetypes
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.list_matching_opts
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
@@ -53,9 +58,11 @@ sm_operations:
   - operation: I_DEFINITION_ADL14.upload_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.valid_archetype
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+    note: "This SUT nevertheless SERVES an ADL 1.4 archetype surface as a declared extension (POST/GET /definition/archetype/adl1.4, GET/DELETE /definition/archetype/adl1.4/{archetype_id}) — enumerated in the served_extensions axis of this file and adjudicated by register AMB-41. The row above is about the SPEC and stays exactly right: released ITS-REST 1.1.0 surfaces no ADL 1.4 archetype resource, and no released clause governs the URI space beyond the resource set, so serving one breaches nothing and no conformance claim rests on those routes. Of the seven SM archetype operations only list_archetypes carries an EXTENSION binding + case today; upload_archetype / get_archetype / delete_archetype are served but uncased, and has_archetype / list_matching_archetypes / archetypes_count / valid_archetype are neither served nor cased. TODO: case the served upload/get/delete branches once the corpus format vocabulary can carry an ADL 1.4 source fixture (the closed CorpusFormat enum has opt-xml and adl2-text but no ADL 1.4 archetype member, and a vocabulary value enters only by schedule release)."
   - operation: I_DEFINITION_ADL14.valid_opt
     reason: off_wire
     source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
@@ -2045,6 +2052,48 @@ served_extensions:
       - "GET /ehrbase/rest/openehr/v1/admin/config"
     config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 when off, RBAC Admin class by the /admin/ path"
     spec_silence: "The released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml); nothing released deletes a template, deletes one stored-query version, or exposes a configuration tree. The query delete deliberately does NOT claim SM I_DEFINITION_QUERY.delete_query, which is keyed by name alone and removes every version (register AMB-127 keeps that operation unrealized). No released clause governs the URI space beyond the resource set. Our own design/extension, excluded from every conformance-profile claim."
+    never_gates: true
+  # ── (3) the four families the #637 re-claim wave added ────────────────────
+  # Each realizes an SM interface the release never surfaced, over routes this
+  # product serves of its own design. The bindings that drive them carry
+  # `extension:` blocks naming these families, so the realization-scope gate
+  # fences them off from every released-wire judgement: the capability rows are
+  # `realization: extension` and can never be `required`, and NO openEHR profile
+  # tier or ITS-REST wire-conformance claim rests on any route below.
+  - family: adl14-archetype
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/definition/archetype/adl1.4"
+      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl1.4"
+      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
+      - "DELETE /ehrbase/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
+    config_gate: "always on with the DEFINITION group (no separate toggle) — the same posture as the released template routes"
+    spec_silence: "SM i_definition_adl14.adoc declares upload_archetype / get_archetype / list_archetypes / delete_archetype (plus has_archetype, list_matching_archetypes, archetypes_count, valid_archetype) and released ITS-REST 1.1.0 surfaces NO archetype resource for any of them — its ADL 1.4 group is /definition/template/adl1.4* alone (the Axis-1 rows above record that boundary; register AMB-41). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set. Our own design/extension over the ADL 1.4 archetype store, and no ITS-REST wire-conformance claim rests on it."
+    never_gates: true
+  - family: adl2-archetype
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl2"
+      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl2/count"
+      - "GET /ehrbase/rest/openehr/v1/definition/artefact/adl2"
+      - "GET /ehrbase/rest/openehr/v1/definition/artefact/adl2/count"
+      - "DELETE /ehrbase/rest/openehr/v1/definition/artefact/adl2/{artefact_id}"
+    config_gate: "always on with the DEFINITION group (no separate toggle)"
+    spec_silence: "SM i_definition_adl2.adoc declares list_archetypes / archetypes_count / list_artefacts / artefacts_count / delete_artefact and released ITS-REST 1.1.0 surfaces none of them: its ADL 2 group is /definition/template/adl2* alone — no archetype path, no generic artefact path, no count, no DELETE (register AMB-37). No released clause governs the URI space beyond the resource set. Our own design/extension over the ADL 2 artefact store; the released template routes stay the gated ones."
+    never_gates: true
+  - family: admin-activity-report
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/admin/report/contribution"
+      - "GET /ehrbase/rest/openehr/v1/admin/report/contribution/count"
+      - "GET /ehrbase/rest/openehr/v1/admin/report/versioned_composition/count"
+      - "GET /ehrbase/rest/openehr/v1/admin/report/composition_version/count"
+    config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 with an empty Allow when off, RBAC Admin class by the /admin/ path (401 unauthenticated, 403 non-admin)"
+    spec_silence: "SM i_admin_service.adoc declares list_contributions / contribution_count / versioned_composition_count / composition_version_count, each over a PLATFORM_SERVICE and an optional Interval<Iso8601_date_time>; the released Admin API is exactly two operations, both EHR deletes (specifications/admin.openapi.yaml), and no reporting resource exists anywhere in the release (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension."
+    never_gates: true
+  - family: admin-archive
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/admin/archive/ehrs"
+      - "POST /ehrbase/rest/openehr/v1/admin/archive/parties"
+    config_gate: "[admin].enabled (default off) — the same gate and RBAC class as the released admin deletes"
+    spec_silence: "SM i_admin_archive.adoc declares archive_ehrs (\"Move selected EHRs to archival storage\") and archive_parties (\"Move selected Parties and relationships to archival storage\"); the released Admin API is exactly two EHR deletes and nothing in it moves a resource to archival storage (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension; the archival tier itself is spec-silent storage mechanics."
     never_gates: true
   # The SMART discovery route was declared here while it was a
   # statement-level capability with no case. It is NOT an extension family any

@@ -70,6 +70,8 @@
                 "party_relationship_read",
                 "template_example",
                 "template_adl2_list",
+                "archetype_adl2_list",
+                "admin_contribution_report",
                 "analytics_query",
                 "terminology_query",
                 "system_options",

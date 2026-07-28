@@ -3,6 +3,25 @@
 # archetype endpoint. Declared unrealized so the case is not-applicable WITH
 # CITATION and activates when a later ITS release adds ADL 1.4 archetype
 # provisioning.
+#
+# THIS SUT NEVERTHELESS SERVES an ADL 1.4 archetype surface of its own design
+# (the `adl14-archetype` family of vocab/wire_surface.yaml served_extensions),
+# and the row above stays exactly right about the SPEC. The binding is NOT
+# flipped to an `extension:` realization, for a reason that is an adjudication
+# rather than a coverage decision: `Adl14ArchetypeProvisioning` is a CORE row
+# the CNF Profiles book marks REQUIRED, and `Realization::Extension` may never
+# be `required` (`CapabilityMatrix::check_realization_scoping`, owner ruling
+# 2026-07-28) — so realizing this operation on the extension surface would mean
+# dropping `required` from a book-CORE row, which is the owner's call, not the
+# catalogue's.
+#
+# TODO: flip this binding to an `extension:` realization over the served
+# `GET /definition/archetype/adl1.4` route once (a) the owner has adjudicated
+# `required` on the CORE Adl14ArchetypeProvisioning row against the
+# extension-may-not-be-required rule, and (b) the closed CorpusFormat vocabulary
+# can carry an ADL 1.4 source fixture (it has opt-xml and adl2-text but no ADL
+# 1.4 archetype member), so the served upload/get/delete branches get real
+# cases instead of a list-only battery.
 sm_operation: I_DEFINITION_ADL14.list_archetypes
 its: its-rest
 unrealized:
