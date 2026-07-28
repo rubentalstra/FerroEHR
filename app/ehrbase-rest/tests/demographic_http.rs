@@ -43,6 +43,9 @@ fn person_body() -> Value {
     json!({
         "_type": "PERSON",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1" },
+            "rm_version": "1.1.0" },
         "name": { "_type": "DV_TEXT", "value": "Jane Doe" },
         "identities": [{
             "_type": "PARTY_IDENTITY",
@@ -68,6 +71,9 @@ fn role_body() -> Value {
     json!({
         "_type": "ROLE",
         "archetype_node_id": "openEHR-DEMOGRAPHIC-ROLE.role.v1",
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-DEMOGRAPHIC-ROLE.role.v1" },
+            "rm_version": "1.1.0" },
         "name": { "_type": "DV_TEXT", "value": "clinician" },
         "identities": [{
             "_type": "PARTY_IDENTITY",

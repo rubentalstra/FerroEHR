@@ -94,6 +94,15 @@ const MATRIX: &str = "artifacts/vocab/capability_matrix.yaml";
 const EHR_OPS_HEAD: &str =
     "EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 23,";
 
+/// A matrix row no catalogue case names, seeded to construct the hollow claim
+/// the `claim-completeness` gate exists to reject. Every committed row now
+/// carries a battery (#610/#624), so the violation is BUILT rather than
+/// borrowed from a transient catalogue hole — the test can no longer pass or
+/// fail for reasons unrelated to the gate.
+const SEEDED_HOLLOW_ROW: &str = "SeededHollowCapability: { family: Platform, tier: OPTIONS, \
+     required: false, min_cases: 0, source: \"seeded defect — no catalogue case names this \
+     capability\" }";
+
 /// The committed world — artifact tree AND party statements — is clean under
 /// every gate, including the four new ones. Everything below seeds one
 /// violation into a copy of exactly this world, so any finding is
@@ -153,19 +162,27 @@ fn every_committed_floor_is_at_or_below_its_derived_count() {
 #[test]
 fn a_claimed_capability_with_no_cases_fails_validate() {
     let world = World::new();
-    // BulkEhrLoad is in the matrix and has zero catalogue cases; no committed
-    // statement claims it, which is exactly why the claim is hollow.
+    // Seed a matrix row no case names, then claim it: that pairing IS the
+    // hollow claim, independent of whatever the committed catalogue happens
+    // to cover today.
+    world.edit(MATRIX, |text| {
+        text.replacen(
+            EHR_OPS_HEAD,
+            &format!("{SEEDED_HOLLOW_ROW}\n{EHR_OPS_HEAD}"),
+            1,
+        )
+    });
     world.edit("party/ehrbase-rs/statement.json", |text| {
         text.replacen(
             "\"capabilities\": [\n",
-            "\"capabilities\": [\n      \"BulkEhrLoad\",\n",
+            "\"capabilities\": [\n      \"SeededHollowCapability\",\n",
             1,
         )
     });
     assert_gate(
         &world.findings(),
         "claim-completeness",
-        "claimed capability BulkEhrLoad has zero verdict-bearing catalogue cases",
+        "claimed capability SeededHollowCapability has zero verdict-bearing catalogue cases",
     );
 }
 

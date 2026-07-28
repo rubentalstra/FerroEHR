@@ -1477,6 +1477,83 @@ cnf.demographic.party_relationship.invalid:
     defect: "target is absent — PARTY_RELATIONSHIP requires both source and target"
     spec_ref: "RM demographic §PARTY_RELATIONSHIP (source, target: PARTY_REF)"
   provenance: "authored 2026-07-21 from the RM demographic class model — a PARTY_RELATIONSHIP missing the mandatory target PARTY_REF"
+# ── the demographic ARCHETYPE-VALIDATION payloads ─────────────────────────────
+# The DemographicArchetypeValidation battery's instances: one committed PARTY
+# per violated model rule, plus the fully archetyped accept payload. The CNF
+# Profiles book names the capability ("Demographic Persistence / Archetype
+# validation", master03-profiles.adoc) but assigns it no data sets and master10
+# is a TBD stub, so every payload below is authored FIRST-HAND from the RM
+# demographic + RM common class model, and each invalid one names the exact
+# invariant or attribute declaration it breaches.
+cnf.demographic.person.no_archetype_details:
+  source: fixtures/demographic/person.no_archetype_details.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "archetype_details is absent on a PARTY, which is unconditionally an archetype root"
+    spec_ref: "RM demographic party.adoc §Invariants (Is_archetype_root: is_archetype_root) + RM common locatable.adoc §Invariants (Archetyped_valid: is_archetype_root xor archetype_details = Void)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with the ARCHETYPED block removed; everything else valid, so the refusal isolates the archetype-root rule"
+cnf.demographic.person.archetype_node_id_mismatch:
+  source: fixtures/demographic/person.archetype_node_id_mismatch.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the root archetype_node_id is not the stringified archetype_details.archetype_id"
+    spec_ref: "RM common locatable.adoc §archetype_node_id (\"At an archetype root point, the value of this attribute is always the stringified form of the archetype_id found in the archetype_details object\") + RM demographic party.adoc §Invariants (Is_archetype_root)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with the root archetype_node_id changed to a different archetype id; everything else valid"
+cnf.demographic.person.contacts_empty:
+  source: fixtures/demographic/person.contacts_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "contacts is present as an empty list"
+    spec_ref: "RM demographic party.adoc §Invariants (Contacts_valid: contacts /= Void implies not contacts.is_empty)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with an explicit empty contacts list; everything else valid"
+cnf.demographic.person.roles_empty:
+  source: fixtures/demographic/person.roles_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "roles is present as an empty list"
+    spec_ref: "RM demographic actor.adoc §Invariants (Roles_valid: roles /= Void implies not roles.is_empty)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with an explicit empty roles list; everything else valid"
+cnf.demographic.role.capabilities_empty:
+  source: fixtures/demographic/role.capabilities_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "capabilities is present as an empty list"
+    spec_ref: "RM demographic role.adoc §Invariants (Capabilities_valid: capabilities /= Void implies not capabilities.empty)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.role.v1 with an explicit empty capabilities list; everything else valid. ROLE is the only concrete PARTY subtype carrying this invariant"
+cnf.demographic.person.identity_details_wrong_type:
+  source: fixtures/demographic/person.identity_details_wrong_type.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "PARTY_IDENTITY.details carries a DV_TEXT where the model declares an ITEM_STRUCTURE"
+    spec_ref: "RM demographic party_identity.adoc §Attributes (details: ITEM_STRUCTURE, 1..1)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with the identity's ITEM_TREE replaced by a DV_TEXT; the wrong-value-type probe of the demographic content validator"
+cnf.demographic.person.identity_details_missing:
+  source: fixtures/demographic/person.identity_details_missing.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "PARTY_IDENTITY carries no details, which the model declares mandatory"
+    spec_ref: "RM demographic party_identity.adoc §Attributes (details: ITEM_STRUCTURE, 1..1)"
+  provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with the identity's mandatory details attribute removed"
+cnf.demographic.person.archetyped_full:
+  source: fixtures/demographic/person.archetyped_full.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-28 from the RM class model — a PERSON populating every archetyped substructure the model offers (PARTY identities/contacts/details, ACTOR languages; CONTACT addresses; ADDRESS details), each an ITEM_TREE; the accept payload proving the demographic content validator passes valid archetyped content rather than refusing everything it does not recognize"
 # MESSAGING (master13) corpus additions — concatenated into MANIFEST.yaml by
 # the verify harness. Canonical-JSON EXTRACT / EXTRACT_SPEC and TDD (XML)
 # payloads for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. These services
