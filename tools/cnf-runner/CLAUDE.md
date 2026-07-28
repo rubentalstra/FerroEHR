@@ -175,11 +175,36 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `PerfOp` vocabulary; every stage its own planned arrival; dependent
   stages never block — an unlanded prerequisite records as an error; the
   `journey-envelope` validator gate reconciles every workload's expanded
-  write share into the population-anchored 10:1..50:1 band). Journey
-  payloads = the CKM template pack (`artifacts/corpus/templates/ckm/`,
+  write share into the population-anchored 10:1..50:1 band).
+  **The simulation exercises every CLAIMED capability** — the resting state,
+  not a target: the only claimed capabilities outside it are the ones whose
+  exercise is impossible inside a sustained hold, each carrying its own
+  per-capability `workload_exclusion` (register AMB-170) of exactly one of
+  two kinds — destructive mid-measurement (physical deletion, and the
+  released two-operation ADMIN API that IS that erase pair), or no request
+  to send at all (neither released wire nor served extension route). "Not
+  reached yet" is not a legitimate reason, and `workload-coverage` fails a
+  stale exclusion, so a landed journey cannot leave one behind.
+  **A stage's operation fixes its ixit PRINCIPAL** (`PerfOp::principal`):
+  ordinary stages ride the party's `sut` instance — under the SMART posture
+  that is a scope-limited Bearer token minted ONCE from the instance's
+  standing `default_scopes` grant and re-minted only near its declared
+  expiry, never per arrival — while the boundary/platform stages address the
+  ixit's `unauthenticated` / `readonly` / `smart.platform_instance`
+  declarations. A journey whose principals the party does not declare is NOT
+  SCHEDULED and the remaining shares renormalize (an undeclared deployment
+  fact costs coverage, never correctness). The two DENY probes measure the
+  refusal itself — 401/403 IS the arrival's success — so they load the
+  authn/authz path without mutating the measured population.
+  Journey payloads = the CKM template pack (`artifacts/corpus/templates/ckm/`,
   COMPOSITION-rooted only, provenance in its PROVENANCE.md; example
   skeletons regenerate via `scripts/generate-ckm-examples.sh` against a
-  running SUT). The scale corpora + the standing ward seed strictly
+  running SUT) plus the AUXILIARY payloads the non-COMPOSITION stages carry
+  (the Simplified-FLAT pair, the demographic fixtures) — committed corpus
+  entries the functional catalogue already adjudicates, selected by
+  `PerfOp::aux_payload`, manifest-checked by `journey-envelope` and
+  preflighted by the seeder; the load instrument invents no payload. The
+  scale corpora + the standing ward seed strictly
   through the public API per `artifacts/corpus/recipes/scale_ladder.md`;
   published SVGs/summary tables render FROM committed results.json
   (`scripts/render-perf-assets.sh`, CI regenerate-and-diff guarded). The

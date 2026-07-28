@@ -1099,7 +1099,7 @@ fn parse_http_date_ms(value: &str) -> Option<i64> {
 }
 
 /// Runner-clock milliseconds since the Unix epoch.
-fn now_ms() -> i64 {
+pub(crate) fn now_ms() -> i64 {
     i64::try_from(
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -1144,7 +1144,7 @@ fn base64_encode(input: &[u8]) -> String {
 /// `scope` claim master08 §Resource Scopes defines, and the RBAC role claim
 /// the SUT mines (the SMART gate AND-composes onto RBAC, so a role-less token
 /// would be refused a layer earlier and prove nothing about SMART).
-fn mint_access_token(
+pub(crate) fn mint_access_token(
     mint: &crate::ixit::BearerMint,
     subject: Option<&str>,
     roles: Option<&[String]>,

@@ -260,6 +260,83 @@ pub enum PerfOp {
     /// `GET /ehr/{ehr_id}/composition/{uid}/tags` → 200 (`ITEM_TAG` read;
     /// ITS-REST TAGS API).
     TagsRead,
+    /// `GET /ehr/{ehr_id}/versioned_composition/{vo_uid}/version/{version_uid}`
+    /// → 200 (`I_EHR_COMPOSITION.get_composition_at_version`, the
+    /// `ORIGINAL_VERSION` envelope — the version-signature read side).
+    CompositionVersionRead,
+    /// `POST /ehr/{ehr_id}/composition` in the Simplified FLAT form
+    /// (`application/openehr.wt.flat+json` + `openehr-template-id`) → 201
+    /// (`I_EHR_COMPOSITION.create_composition`).
+    CompositionCommitFlat,
+    /// `GET /ehr/{ehr_id}/composition/{version_uid}` with the Simplified
+    /// FLAT `Accept` → 200
+    /// (`I_EHR_COMPOSITION.get_composition_at_version`).
+    CompositionReadFlat,
+    /// `POST /demographic/person` → 201
+    /// (`I_DEMOGRAPHIC_SERVICE.create_party`).
+    PartyCreate,
+    /// `GET /demographic/person/{versioned_object_uid}` → 200
+    /// (`I_PARTY.get_party`).
+    PartyRead,
+    /// `PUT /demographic/person/{versioned_object_uid}` (If-Match) → 200/204
+    /// (`I_PARTY.update_party`).
+    PartyUpdate,
+    /// `POST /demographic/party_relationship` → 201
+    /// (`I_DEMOGRAPHIC_SERVICE.create_party_relationship`) — an EXTENSION
+    /// route: ITS-REST 1.1.0 surfaces no `PARTY_RELATIONSHIP` resource, so
+    /// no openEHR spec governs it (our own design/extension, register
+    /// AMB-32, declared in `vocab/wire_surface.yaml`).
+    PartyRelationshipCreate,
+    /// `GET /demographic/party_relationship/{versioned_object_uid}` → 200
+    /// (`I_PARTY_RELATIONSHIP.get_party_relationship`) — the same
+    /// extension route family as [`PerfOp::PartyRelationshipCreate`].
+    PartyRelationshipRead,
+    /// `GET /definition/template/adl1.4/{template_id}/example` → 200
+    /// (`I_DEFINITION_ADL14.get_opt`, example variant).
+    TemplateExample,
+    /// `GET /definition/template/adl2` → 200
+    /// (`I_DEFINITION_ADL2.list_templates`).
+    TemplateAdl2List,
+    /// `POST /query/aql` with an ORDER BY + LIMIT projection → 200
+    /// (`I_QUERY_SERVICE.execute_ad_hoc_query`, the advanced-AQL class).
+    AnalyticsQuery,
+    /// `POST /query/aql` with a `TERMINOLOGY('expand', …)` predicate → 200
+    /// (`I_QUERY_SERVICE.execute_ad_hoc_query`, the terminology-backed
+    /// class).
+    TerminologyQuery,
+    /// `OPTIONS /` → 200 + `Allow` (the System API's one operation).
+    SystemOptions,
+    /// `GET /.well-known/smart-configuration` on the PLATFORM base → 200
+    /// (the SMART on openEHR service-discovery document).
+    SmartConfigurationRead,
+    /// `GET /ehr/{ehr_id}` presented with NO credentials → 401 (the
+    /// authenticated-access boundary under sustained load).
+    UnauthenticatedProbe,
+    /// `POST /ehr/{ehr_id}/composition` presented by the read-only
+    /// principal → 403 (the authorization boundary under sustained load;
+    /// the request mutates nothing, so it is not a write arrival).
+    ReadonlyWriteDenied,
+}
+
+/// Which ixit-declared principal a measured arrival is driven by. The
+/// primary is the party's default `sut` instance; the others are named
+/// instances a party MAY declare — a party that declares none simply does
+/// not run the journeys that need them (an undeclared fact costs coverage,
+/// never correctness), so the ixit stays the single source of deployment
+/// facts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Principal {
+    /// The party's default `sut` instance.
+    Primary,
+    /// The ixit `unauthenticated` instance (no credentials at all).
+    Unauthenticated,
+    /// The ixit `readonly` instance (a principal without write grants).
+    ReadOnly,
+    /// The instance the ixit's `smart.platform_instance` names — the SMART
+    /// *Platform* base URL, a different path root from the openEHR REST
+    /// base (ITS-REST `docs/smart_app_launch/master04-service_discovery.adoc`
+    /// §Service Discovery).
+    SmartPlatform,
 }
 
 impl PerfOp {
@@ -288,6 +365,22 @@ impl PerfOp {
         PerfOp::TemplateGet,
         PerfOp::TagsPut,
         PerfOp::TagsRead,
+        PerfOp::CompositionVersionRead,
+        PerfOp::CompositionCommitFlat,
+        PerfOp::CompositionReadFlat,
+        PerfOp::PartyCreate,
+        PerfOp::PartyRead,
+        PerfOp::PartyUpdate,
+        PerfOp::PartyRelationshipCreate,
+        PerfOp::PartyRelationshipRead,
+        PerfOp::TemplateExample,
+        PerfOp::TemplateAdl2List,
+        PerfOp::AnalyticsQuery,
+        PerfOp::TerminologyQuery,
+        PerfOp::SystemOptions,
+        PerfOp::SmartConfigurationRead,
+        PerfOp::UnauthenticatedProbe,
+        PerfOp::ReadonlyWriteDenied,
     ];
 
     /// Parse a journey-stage operation name.
@@ -328,12 +421,41 @@ impl PerfOp {
             PerfOp::TemplateGet => "template_get",
             PerfOp::TagsPut => "tags_put",
             PerfOp::TagsRead => "tags_read",
+            PerfOp::CompositionVersionRead => "composition_version_read",
+            PerfOp::CompositionCommitFlat => "composition_commit_flat",
+            PerfOp::CompositionReadFlat => "composition_read_flat",
+            PerfOp::PartyCreate => "party_create",
+            PerfOp::PartyRead => "party_read",
+            PerfOp::PartyUpdate => "party_update",
+            PerfOp::PartyRelationshipCreate => "party_relationship_create",
+            PerfOp::PartyRelationshipRead => "party_relationship_read",
+            PerfOp::TemplateExample => "template_example",
+            PerfOp::TemplateAdl2List => "template_adl2_list",
+            PerfOp::AnalyticsQuery => "analytics_query",
+            PerfOp::TerminologyQuery => "terminology_query",
+            PerfOp::SystemOptions => "system_options",
+            PerfOp::SmartConfigurationRead => "smart_configuration_read",
+            PerfOp::UnauthenticatedProbe => "unauthenticated_probe",
+            PerfOp::ReadonlyWriteDenied => "readonly_write_denied",
+        }
+    }
+
+    /// The ixit principal the arrival is driven by (see [`Principal`]).
+    #[must_use]
+    pub fn principal(self) -> Principal {
+        match self {
+            PerfOp::UnauthenticatedProbe => Principal::Unauthenticated,
+            PerfOp::ReadonlyWriteDenied => Principal::ReadOnly,
+            PerfOp::SmartConfigurationRead => Principal::SmartPlatform,
+            _ => Principal::Primary,
         }
     }
 
     /// Whether the operation mutates platform state (the reconciliation
     /// class: the expanded write share must stay inside the derivation
-    /// band).
+    /// band). A DENIED write ([`PerfOp::ReadonlyWriteDenied`]) mutates
+    /// nothing, so it is not a write arrival — the band reconciles the
+    /// mutation mix, not the request method.
     #[must_use]
     pub fn is_write(self) -> bool {
         matches!(
@@ -341,12 +463,16 @@ impl PerfOp {
             PerfOp::EhrCreate
                 | PerfOp::EhrStatusUpdate
                 | PerfOp::CompositionCommit
+                | PerfOp::CompositionCommitFlat
                 | PerfOp::CompositionUpdate
                 | PerfOp::CompositionDelete
                 | PerfOp::DirectoryCreate
                 | PerfOp::DirectoryUpdate
                 | PerfOp::ContributionCommit
                 | PerfOp::TagsPut
+                | PerfOp::PartyCreate
+                | PerfOp::PartyUpdate
+                | PerfOp::PartyRelationshipCreate
         )
     }
 
@@ -356,8 +482,47 @@ impl PerfOp {
     pub fn needs_template(self) -> bool {
         matches!(
             self,
-            PerfOp::CompositionCommit | PerfOp::CompositionUpdate | PerfOp::ContributionCommit
+            PerfOp::CompositionCommit
+                | PerfOp::CompositionUpdate
+                | PerfOp::ContributionCommit
+                | PerfOp::ReadonlyWriteDenied
         )
+    }
+
+    /// Whether the operation's prerequisite lives ONLY in its journey
+    /// instance's own captured state, with no standing-ward fallback. An
+    /// instance whose earlier stages fell before the measured window could
+    /// never resolve one, so such a journey is scheduled only when the whole
+    /// instance fits inside the window — the alternative would be error
+    /// arrivals manufactured by the instrument rather than observed from the
+    /// SUT.
+    #[must_use]
+    pub fn needs_instance_prerequisite(self) -> bool {
+        matches!(
+            self,
+            // The deletion journey deletes ITS OWN commit, never a shared
+            // ward document.
+            PerfOp::CompositionDelete
+                // The demographic chain hangs off the party this instance
+                // registered; the standing ward has no seeded party.
+                | PerfOp::PartyRead
+                | PerfOp::PartyUpdate
+                | PerfOp::PartyRelationshipCreate
+                | PerfOp::PartyRelationshipRead
+        )
+    }
+
+    /// Which auxiliary committed payload (beyond the CKM template pack) the
+    /// operation's body comes from — `None` for every operation that
+    /// carries no body or builds it from a pack template.
+    #[must_use]
+    pub fn aux_payload(self) -> Option<AuxPayloadKind> {
+        match self {
+            PerfOp::CompositionCommitFlat => Some(AuxPayloadKind::Flat),
+            PerfOp::PartyCreate | PerfOp::PartyUpdate => Some(AuxPayloadKind::Person),
+            PerfOp::PartyRelationshipCreate => Some(AuxPayloadKind::PartyRelationship),
+            _ => None,
+        }
     }
 
     /// The claimed capabilities (capability-matrix keys) one measured
@@ -367,8 +532,15 @@ impl PerfOp {
     #[must_use]
     pub fn capabilities(self) -> &'static [&'static str] {
         match self {
-            PerfOp::EhrCreate | PerfOp::EhrRead => &["EhrOperations", "EhrApi"],
-            PerfOp::EhrStatusRead => &["EhrStatus", "EhrApi"],
+            // A created EHR carries the default EHR_STATUS, whose subject is
+            // a PARTY_SELF with no external ref — the anonymous form (RM ehr
+            // §EHR Status), which is exactly what the AnonymousEhrs
+            // capability names.
+            PerfOp::EhrCreate => &["EhrOperations", "AnonymousEhrs", "EhrApi"],
+            PerfOp::EhrRead => &["EhrOperations", "EhrApi"],
+            // Reading that status back is the surface on which the clinical
+            // record is shown to expose no demographic identity.
+            PerfOp::EhrStatusRead => &["EhrStatus", "EhrDemographicSeparation", "EhrApi"],
             PerfOp::EhrStatusUpdate => &["EhrStatus", "Versioning", "EhrApi"],
             // Every commit/update is validated against its template on the
             // way in (the walker over the WebTemplate + RM invariants).
@@ -388,19 +560,82 @@ impl PerfOp {
             PerfOp::DirectoryCreate | PerfOp::DirectoryRead | PerfOp::DirectoryUpdate => {
                 &["DirectoryOps", "EhrApi"]
             }
-            PerfOp::ContributionCommit => {
-                &["ChangeSets", "ArchetypeValidation", "Versioning", "EhrApi"]
-            }
-            PerfOp::ContributionRead => &["ChangeSets", "EhrApi"],
+            // Every commit rides a CONTRIBUTION carrying the server-set
+            // commit AUDIT_DETAILS (RM common §change_control), and reading
+            // it back is the accountability trail's read side.
+            PerfOp::ContributionCommit => &[
+                "ChangeSets",
+                "ArchetypeValidation",
+                "Versioning",
+                "AuditAccountability",
+                "EhrApi",
+            ],
+            PerfOp::ContributionRead => &["ChangeSets", "AuditAccountability", "EhrApi"],
             PerfOp::AdhocQuery | PerfOp::WardQuery => &["AqlBasic", "QueryApi"],
             PerfOp::StoredQueryExecute => &["QueryProvisioning", "AqlBasic", "QueryApi"],
             PerfOp::TemplateList | PerfOp::TemplateGet => {
                 &["Adl14OptProvisioning", "DefinitionApi"]
             }
-            // ITEM_TAG rides the EHR API's tag resources.
-            PerfOp::TagsPut | PerfOp::TagsRead => &["EhrApi"],
+            PerfOp::TemplateExample => {
+                &["TemplateExamples", "Adl14OptProvisioning", "DefinitionApi"]
+            }
+            PerfOp::TemplateAdl2List => &["Adl2OptProvisioning", "DefinitionApi"],
+            // ITEM_TAG rides the EHR API's tag resources, but it is its own
+            // capability: a service that answers every EHR-API operation and
+            // no tag route is still conformant (ITS-REST overview
+            // §openehr-item-tag: "If the server does not support ITEM_TAGs,
+            // these headers will also be unsupported").
+            PerfOp::TagsPut | PerfOp::TagsRead => &["ItemTags", "EhrApi"],
+            // The ORIGINAL_VERSION envelope is where the version signature
+            // is carried (RM common §change_control, Digital Signature).
+            PerfOp::CompositionVersionRead => {
+                &["Signing", "Versioning", "CompositionOps", "EhrApi"]
+            }
+            PerfOp::CompositionCommitFlat => &[
+                "SimplifiedFormats",
+                "CompositionOps",
+                "ArchetypeValidation",
+                "EhrApi",
+            ],
+            PerfOp::CompositionReadFlat => &["SimplifiedFormats", "CompositionOps", "EhrApi"],
+            // Every party commit is validated against the archetyped
+            // demographic model on the way in — the same reasoning that maps
+            // ArchetypeValidation onto CompositionCommit.
+            PerfOp::PartyCreate | PerfOp::PartyUpdate => &[
+                "PartyOperations",
+                "DemographicArchetypeValidation",
+                "DemographicApi",
+            ],
+            PerfOp::PartyRead => &["PartyOperations", "DemographicApi"],
+            // Extension routes (no released wire) — they gate the
+            // PartyRelationshipOperations CAPABILITY only, never the
+            // DEMOGRAPHIC API's wire conformance, so DemographicApi is
+            // deliberately absent here.
+            PerfOp::PartyRelationshipCreate | PerfOp::PartyRelationshipRead => {
+                &["PartyRelationshipOperations"]
+            }
+            PerfOp::AnalyticsQuery => &["AqlAdvanced", "AqlBasic", "QueryApi"],
+            PerfOp::TerminologyQuery => &["AqlTerminology", "AqlBasic", "QueryApi"],
+            PerfOp::SystemOptions => &["SystemApi"],
+            PerfOp::SmartConfigurationRead => &["SmartAppLaunch"],
+            PerfOp::UnauthenticatedProbe => &["AuthenticatedAccess"],
+            PerfOp::ReadonlyWriteDenied => &["AuthorizationSeparation"],
         }
     }
+}
+
+/// The auxiliary committed payloads the journey stages that do NOT commit a
+/// CKM COMPOSITION carry — each one a corpus fixture the functional
+/// catalogue already adjudicates, never a payload invented for the load
+/// instrument.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum AuxPayloadKind {
+    /// The Simplified FLAT composition + the OPT it is constrained by.
+    Flat,
+    /// The demographic `PERSON` (create + amended update state).
+    Person,
+    /// The `PARTY_RELATIONSHIP` the extension route commits.
+    PartyRelationship,
 }
 
 /// A journey stage's planned offset from the journey's arrival instant.
@@ -1378,10 +1613,45 @@ mod tests {
         assert!(PerfOp::ContributionCommit.needs_template());
         assert!(!PerfOp::DirectoryRead.needs_template());
         // Every operation exercises at least one claimed capability (the
-        // certificate's workload-coverage join has no unmapped labels).
+        // certificate's workload-coverage join has no unmapped labels), and
+        // every token is distinct (the measurement labels key on them).
+        let mut tokens: Vec<&str> = Vec::new();
         for op in PerfOp::ALL {
             assert!(!op.capabilities().is_empty(), "{} unmapped", op.as_str());
+            assert!(
+                !tokens.contains(&op.as_str()),
+                "duplicate token {}",
+                op.as_str()
+            );
+            tokens.push(op.as_str());
         }
+        // A DENIED write mutates nothing, so it is not a write arrival.
+        assert!(!PerfOp::ReadonlyWriteDenied.is_write());
+        assert!(PerfOp::ReadonlyWriteDenied.needs_template());
+        assert!(PerfOp::CompositionCommitFlat.is_write());
+        assert!(!PerfOp::CompositionCommitFlat.needs_template()); // the FLAT payload is auxiliary
+        // The boundary/platform operations are the ONLY non-primary ones.
+        for op in PerfOp::ALL {
+            let non_primary = matches!(
+                op,
+                PerfOp::UnauthenticatedProbe
+                    | PerfOp::ReadonlyWriteDenied
+                    | PerfOp::SmartConfigurationRead
+            );
+            assert_eq!(
+                op.principal() == Principal::Primary,
+                !non_primary,
+                "{} principal",
+                op.as_str()
+            );
+        }
+        // Auxiliary payloads are declared exactly by the operations that
+        // carry one (the pack loads them on that signal).
+        assert_eq!(
+            PerfOp::PartyCreate.aux_payload(),
+            Some(AuxPayloadKind::Person)
+        );
+        assert_eq!(PerfOp::CompositionCommit.aux_payload(), None);
     }
 
     #[test]

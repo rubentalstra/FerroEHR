@@ -22,6 +22,7 @@
 use std::time::Duration;
 
 use crate::perf::{ArrivalCurve, JourneyCatalogue, Percent, PerfOp, StageOffset};
+use crate::perf_run::client::PerfPrincipals;
 use crate::perf_run::pack::JourneyPack;
 
 /// The deterministic schedule seed (fixed so two runners produce the same
@@ -68,19 +69,63 @@ pub(crate) struct PlannedArrival {
 }
 
 /// A workload bundle: the catalogue, the case's journey shares, the
-/// template pack, and the arrival curve.
+/// template pack, the arrival curve, and the principals the party's ixit
+/// declares.
 #[derive(Debug)]
 pub struct JourneyWorkload<'a> {
     pub catalogue: &'a JourneyCatalogue,
     pub shares: &'a [(String, Percent)],
     pub pack: &'a JourneyPack,
     pub curve: ArrivalCurve,
+    /// The principals available for this run
+    /// ([`crate::perf_run::client::PerfPrincipals`]).
+    pub principals: &'a PerfPrincipals,
+}
+
+impl JourneyWorkload<'_> {
+    /// The shares actually schedulable against this party's declared
+    /// principals, RENORMALIZED to 100%.
+    ///
+    /// A journey any of whose stages addresses an ixit instance the party
+    /// does not declare is not scheduled: the same law the functional lane
+    /// applies to an undeclared deployment fact — it costs COVERAGE, never
+    /// correctness — and renormalizing keeps the remaining mix at the
+    /// offered operation rate instead of silently running below the class
+    /// floor. The dropped journeys are named to the caller so the run
+    /// record says what the party's declaration cost it.
+    fn schedulable(&self) -> (Vec<(String, Percent)>, Vec<String>) {
+        let mut kept: Vec<(String, Percent)> = Vec::new();
+        let mut dropped: Vec<String> = Vec::new();
+        for (name, share) in self.shares {
+            let runnable = self.catalogue.get(name).is_none_or(|journey| {
+                journey.stages.iter().all(|stage| {
+                    PerfOp::parse(&stage.op)
+                        .is_ok_and(|op| self.principals.declares(op.principal()))
+                })
+            });
+            if runnable {
+                kept.push((name.clone(), *share));
+            } else {
+                dropped.push(name.clone());
+            }
+        }
+        let total: f64 = kept.iter().map(|(_, p)| p.0).sum();
+        if total > 0.0 && (total - 100.0).abs() >= 0.01 {
+            for (_, share) in &mut kept {
+                share.0 = share.0 / total * 100.0;
+            }
+        }
+        (kept, dropped)
+    }
 }
 
 /// The built schedule + its planned offered-load facts.
 #[derive(Debug)]
 pub(crate) struct BuiltSchedule {
     pub arrivals: Vec<PlannedArrival>,
+    /// Journeys the party's ixit declares no principal for (not scheduled;
+    /// the remaining shares were renormalized).
+    pub dropped_journeys: Vec<String>,
     /// Measured-window arrivals planned (the dispatch-fidelity
     /// denominator).
     pub planned_measured: u64,
@@ -251,9 +296,16 @@ pub(crate) fn build_schedule(
     if !(rate.is_finite() && rate > 0.0) {
         return Err("arrival rate must be positive".to_owned());
     }
-    let expansion = workload.catalogue.expansion(workload.shares)?;
-    let mut resolved: Vec<ResolvedJourney> = Vec::with_capacity(workload.shares.len());
-    for (name, _) in workload.shares {
+    let (shares, dropped_journeys) = workload.schedulable();
+    if shares.is_empty() {
+        return Err(
+            "no journey of this workload is runnable against the principals the ixit declares"
+                .to_owned(),
+        );
+    }
+    let expansion = workload.catalogue.expansion(&shares)?;
+    let mut resolved: Vec<ResolvedJourney> = Vec::with_capacity(shares.len());
+    for (name, _) in &shares {
         let journey = workload
             .catalogue
             .get(name)
@@ -287,7 +339,7 @@ pub(crate) fn build_schedule(
             });
         }
         let needs_full_window =
-            fresh_ehr || stages.iter().any(|s| s.op == PerfOp::CompositionDelete);
+            fresh_ehr || stages.iter().any(|s| s.op.needs_instance_prerequisite());
         resolved.push(ResolvedJourney {
             stages,
             fresh_ehr,
@@ -315,7 +367,7 @@ pub(crate) fn build_schedule(
     let span_s = warmup_s.saturating_add(duration_s);
     #[allow(clippy::cast_precision_loss)] // spans << 2^52
     let virtual_span_s = span_s as f64 + max_offset_s as f64;
-    let mut sequencer = ShareSequencer::new(workload.shares);
+    let mut sequencer = ShareSequencer::new(&shares);
     let kinds = resolved.len() as u64;
     let mut kind_seq: Vec<u64> = vec![0; resolved.len()];
     let mut arrivals: Vec<PlannedArrival> = Vec::new();
@@ -433,6 +485,7 @@ pub(crate) fn build_schedule(
 
     Ok(BuiltSchedule {
         arrivals,
+        dropped_journeys,
         planned_measured: measured_count,
         planned_busy_hour,
     })
@@ -442,7 +495,28 @@ pub(crate) fn build_schedule(
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
-    use crate::perf_run::pack::{JourneyPack, PackTemplate};
+    use crate::ixit::Ixit;
+    use crate::perf_run::client::PerfClient;
+    use crate::perf_run::pack::{AuxPayloads, JourneyPack, PackTemplate};
+
+    /// A principal set with every optional instance declared (no journey is
+    /// dropped); `stub_principals(false)` declares the default one only.
+    fn stub_principals(full: bool) -> PerfPrincipals {
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://stub", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        let client = PerfClient::from_instance(ixit.default_instance().unwrap(), &ixit).unwrap();
+        let principals = PerfPrincipals::single(client.clone());
+        if full {
+            principals
+                .with_unauthenticated(client.clone())
+                .with_readonly(client.clone())
+                .with_smart_platform(client)
+        } else {
+            principals
+        }
+    }
 
     fn catalogue() -> JourneyCatalogue {
         serde_saphyr::from_str(
@@ -459,6 +533,7 @@ mod tests {
                 opt_xml: "<template/>".to_owned(),
                 skeleton: serde_json::json!({"_type": "COMPOSITION"}),
             }],
+            aux: AuxPayloads::default(),
         }
     }
 
@@ -475,11 +550,13 @@ mod tests {
         let catalogue = catalogue();
         let pack = pack();
         let shares = shares();
+        let principals = stub_principals(true);
         let workload = JourneyWorkload {
             catalogue: &catalogue,
             shares: &shares,
             pack: &pack,
             curve: ArrivalCurve::Uniform,
+            principals: &principals,
         };
         let a = build_schedule(&workload, 10.0, 5, 60, 100).unwrap();
         let b = build_schedule(&workload, 10.0, 5, 60, 100).unwrap();
@@ -513,16 +590,87 @@ mod tests {
         assert!(lasts.values().all(|n| *n == 1));
     }
 
+    /// A party that declares only its `sut` instance cannot run the
+    /// boundary/platform journeys: they are dropped, the remaining shares
+    /// renormalize, and the offered operation rate is still met — an
+    /// undeclared deployment fact costs coverage, never correctness.
+    #[test]
+    fn undeclared_principals_drop_their_journeys_and_renormalize() {
+        let catalogue: JourneyCatalogue = serde_saphyr::from_str(
+            "chart_review:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_read, at: PT0S }\n    - { op: adhoc_query, at: PT1S }\nvitals_round:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_commit, template: cnf.ckm.vital_signs, at: PT0S }\naccess_control_probe:\n  description: d\n  derivation: g\n  stages:\n    - { op: unauthenticated_probe, at: PT0S }\nplatform_probe:\n  description: d\n  derivation: g\n  stages:\n    - { op: smart_configuration_read, at: PT0S }\n",
+        )
+        .unwrap();
+        let pack = pack();
+        // Both the authored and the renormalized mix must stay inside the
+        // write-share band — the reconciliation is not suspended just
+        // because a party declares fewer principals.
+        let shares = vec![
+            ("chart_review".to_owned(), Percent(76.0)),
+            ("vitals_round".to_owned(), Percent(14.0)),
+            ("access_control_probe".to_owned(), Percent(5.0)),
+            ("platform_probe".to_owned(), Percent(5.0)),
+        ];
+
+        let full = stub_principals(true);
+        let all = JourneyWorkload {
+            catalogue: &catalogue,
+            shares: &shares,
+            pack: &pack,
+            curve: ArrivalCurve::Uniform,
+            principals: &full,
+        };
+        let complete = build_schedule(&all, 10.0, 0, 60, 100).unwrap();
+        assert!(complete.dropped_journeys.is_empty());
+        assert!(
+            complete
+                .arrivals
+                .iter()
+                .any(|a| a.op == PerfOp::SmartConfigurationRead)
+        );
+
+        let bare = stub_principals(false);
+        let partial = JourneyWorkload {
+            catalogue: &catalogue,
+            shares: &shares,
+            pack: &pack,
+            curve: ArrivalCurve::Uniform,
+            principals: &bare,
+        };
+        let reduced = build_schedule(&partial, 10.0, 0, 60, 100).unwrap();
+        assert_eq!(
+            reduced.dropped_journeys,
+            vec![
+                "access_control_probe".to_owned(),
+                "platform_probe".to_owned()
+            ]
+        );
+        assert!(
+            reduced
+                .arrivals
+                .iter()
+                .all(|a| a.op.principal() == crate::perf::Principal::Primary)
+        );
+        // The renormalized mix still offers the planned operation rate
+        // (10/s x 60 s, +2% margin, minus edge clipping).
+        assert!(
+            (600..=650).contains(&reduced.planned_measured),
+            "renormalized schedule planned {} arrivals",
+            reduced.planned_measured
+        );
+    }
+
     #[test]
     fn patient_striping_keeps_journey_kinds_disjoint() {
         let catalogue = catalogue();
         let pack = pack();
         let shares = shares();
+        let principals = stub_principals(true);
         let workload = JourneyWorkload {
             catalogue: &catalogue,
             shares: &shares,
             pack: &pack,
             curve: ArrivalCurve::Uniform,
+            principals: &principals,
         };
         let schedule = build_schedule(&workload, 20.0, 0, 30, 99).unwrap();
         // Patients used by vitals commits never collide with lab commits:
@@ -577,14 +725,24 @@ mod tests {
                 }
             }
         }
-        let pack = JourneyPack { templates };
+        let pack = JourneyPack {
+            templates,
+            aux: AuxPayloads::default(),
+        };
+        let principals = stub_principals(true);
         let workload = JourneyWorkload {
             catalogue: &catalogue,
             shares: &case.workload.journeys,
             pack: &pack,
             curve: ArrivalCurve::Uniform,
+            principals: &principals,
         };
         let schedule = build_schedule(&workload, 2.0, 300, 3600, 10_000).unwrap();
+        assert!(
+            schedule.dropped_journeys.is_empty(),
+            "a fully-declaring party drops no journey, got {:?}",
+            schedule.dropped_journeys
+        );
         // 2/s x 3600 s = 7,200; the margin + clipping noise band tops out
         // well under any doubling.
         assert!(
@@ -600,11 +758,13 @@ mod tests {
         let catalogue = catalogue();
         let pack = pack();
         let shares = shares();
+        let principals = stub_principals(true);
         let workload = JourneyWorkload {
             catalogue: &catalogue,
             shares: &shares,
             pack: &pack,
             curve: ArrivalCurve::Diurnal,
+            principals: &principals,
         };
         // 10 h hold: the busy-hour rate approaches the offered rate, the
         // whole-window mean sits well below it.

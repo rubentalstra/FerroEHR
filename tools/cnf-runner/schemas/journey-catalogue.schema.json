@@ -59,7 +59,23 @@
                 "template_list",
                 "template_get",
                 "tags_put",
-                "tags_read"
+                "tags_read",
+                "composition_version_read",
+                "composition_commit_flat",
+                "composition_read_flat",
+                "party_create",
+                "party_read",
+                "party_update",
+                "party_relationship_create",
+                "party_relationship_read",
+                "template_example",
+                "template_adl2_list",
+                "analytics_query",
+                "terminology_query",
+                "system_options",
+                "smart_configuration_read",
+                "unauthenticated_probe",
+                "readonly_write_denied"
               ]
             },
             "template": {

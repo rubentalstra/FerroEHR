@@ -22,9 +22,11 @@ use std::sync::Mutex;
 
 use crate::perf::PerfOp;
 use crate::perf_run::client::{
-    PerfClient, location_last_segment, object_uid_of, strip_weak_quotes,
+    PerfClient, PerfPrincipals, location_last_segment, object_uid_of, strip_weak_quotes,
 };
-use crate::perf_run::corpus::{ADHOC_AQL, STORED_QUERY_NAME, SeededCorpus, WARD_AQL};
+use crate::perf_run::corpus::{
+    ADHOC_AQL, ANALYTICS_AQL, STORED_QUERY_NAME, SeededCorpus, TERMINOLOGY_AQL, WARD_AQL,
+};
 use crate::perf_run::pack::{self, JourneyPack};
 use crate::perf_run::schedule::{PlannedArrival, WardDoc};
 
@@ -38,6 +40,13 @@ struct JourneyState {
     directory_ovid: Option<String>,
     contribution_uid: Option<String>,
     status_ovid: Option<String>,
+    /// The demographic PARTY this instance registered: its
+    /// `versioned_object_uid` and the latest `OBJECT_VERSION_ID` (the
+    /// If-Match the amendment chains on).
+    party_uid: Option<String>,
+    party_ovid: Option<String>,
+    /// The `PARTY_RELATIONSHIP` this instance committed (extension route).
+    relationship_uid: Option<String>,
 }
 
 /// Per-patient rolling version state (standing-ward journeys): the latest
@@ -129,7 +138,7 @@ fn stride(arrival: u64) -> u64 {
 /// observations at the call site, never run failures.
 #[allow(clippy::too_many_lines)] // one match arm per closed-vocabulary operation
 pub(crate) fn perform(
-    client: &PerfClient,
+    principals: &PerfPrincipals,
     arrival_index: u64,
     planned: &PlannedArrival,
     corpus: &SeededCorpus,
@@ -139,6 +148,17 @@ pub(crate) fn perform(
 ) -> Result<bool, String> {
     let offset_s = planned.at.as_secs();
     let journey = planned.journey;
+    // The principal the operation is driven by. The schedule never plans an
+    // arrival whose principal the party's ixit leaves undeclared, so this
+    // resolution failing is an instrument defect, recorded as an honest
+    // error arrival rather than a run failure.
+    let principal = planned.op.principal();
+    let client = principals.client(principal).ok_or_else(|| {
+        format!(
+            "the ixit declares no instance for the {principal:?} principal that {} needs",
+            planned.op.as_str()
+        )
+    })?;
 
     // The EHR the stage addresses: the instance's fresh EHR, the standing
     // ward patient, or (read-only fallbacks) a corpus stride.
@@ -575,6 +595,289 @@ pub(crate) fn perform(
             )?;
             note(observed, reply.status) == 200
         }
+        PerfOp::CompositionVersionRead => {
+            // The ORIGINAL_VERSION envelope (the signature carrier): the
+            // instance's own commit, else the ward chart's seeded version.
+            let ovid = current_version_uid(planned, captures, ward)
+                .ok_or_else(|| "no committed version to read".to_owned())?;
+            let vo_uid = object_uid_of(&ovid);
+            let reply = client.request(
+                reqwest::Method::GET,
+                &format!("/ehr/{ehr_id}/versioned_composition/{vo_uid}/version/{ovid}"),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::CompositionCommitFlat => {
+            let flat = journey_pack
+                .aux
+                .flat
+                .as_ref()
+                .ok_or_else(|| "the pack carries no Simplified-FLAT payload".to_owned())?;
+            let reply = client.request_negotiated(
+                reqwest::Method::POST,
+                &format!("/ehr/{ehr_id}/composition"),
+                Some(("application/openehr.wt.flat+json", pack::flat_body(flat)?)),
+                true,
+                None,
+                None,
+                // ITS-REST overview Requests_and_responses §openehr-template-id
+                // — a Simplified-Format commit names the template it is
+                // constrained by, the format carrying no archetype details.
+                &[("openehr-template-id", flat.template_id.clone())],
+            )?;
+            if created(note(observed, reply.status))
+                && let Some(uid) = reply.etag.as_deref().map(strip_weak_quotes)
+            {
+                captures.journey(journey, |s| s.last_commit_ovid = Some(uid));
+                true
+            } else {
+                false
+            }
+        }
+        PerfOp::CompositionReadFlat => {
+            let ovid = current_version_uid(planned, captures, ward)
+                .ok_or_else(|| "no committed version to read as FLAT".to_owned())?;
+            let reply = client.request_negotiated(
+                reqwest::Method::GET,
+                &format!("/ehr/{ehr_id}/composition/{ovid}"),
+                None,
+                false,
+                None,
+                Some("application/openehr.wt.flat+json"),
+                &[],
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::PartyCreate => {
+            let person = journey_pack
+                .aux
+                .person
+                .as_ref()
+                .ok_or_else(|| "the pack carries no PERSON payload".to_owned())?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                "/demographic/person",
+                Some((
+                    "application/json",
+                    pack::person_body(person, arrival_index)?,
+                )),
+                true,
+                None,
+            )?;
+            if created(note(observed, reply.status))
+                && let Some(ovid) = reply
+                    .etag
+                    .as_deref()
+                    .map(strip_weak_quotes)
+                    .or_else(|| reply.location.as_deref().and_then(location_last_segment))
+            {
+                let uid = object_uid_of(&ovid);
+                captures.journey(journey, |s| {
+                    s.party_uid = Some(uid);
+                    s.party_ovid = Some(ovid);
+                });
+                true
+            } else {
+                false
+            }
+        }
+        PerfOp::PartyRead => {
+            let uid = captures
+                .journey(journey, |s| s.party_uid.clone())
+                .flatten()
+                .ok_or_else(|| "prerequisite PARTY has not landed (SUT stall)".to_owned())?;
+            let reply = client.request(
+                reqwest::Method::GET,
+                &format!("/demographic/person/{uid}"),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::PartyUpdate => {
+            let amended = journey_pack
+                .aux
+                .person_amended
+                .as_ref()
+                .ok_or_else(|| "the pack carries no amended PERSON payload".to_owned())?;
+            let (uid, preceding) = captures
+                .journey(journey, |s| s.party_uid.clone().zip(s.party_ovid.clone()))
+                .flatten()
+                .ok_or_else(|| "prerequisite PARTY has not landed (SUT stall)".to_owned())?;
+            let reply = client.request(
+                reqwest::Method::PUT,
+                &format!("/demographic/person/{uid}"),
+                Some((
+                    "application/json",
+                    pack::person_body(amended, arrival_index)?,
+                )),
+                true,
+                Some(&preceding),
+            )?;
+            let ok = matches!(note(observed, reply.status), 200 | 204);
+            if ok && let Some(next) = reply.etag.as_deref().map(strip_weak_quotes) {
+                captures.journey(journey, |s| s.party_ovid = Some(next));
+            }
+            ok
+        }
+        PerfOp::PartyRelationshipCreate => {
+            let relationship = journey_pack
+                .aux
+                .party_relationship
+                .as_ref()
+                .ok_or_else(|| "the pack carries no PARTY_RELATIONSHIP payload".to_owned())?;
+            let source = captures
+                .journey(journey, |s| s.party_uid.clone())
+                .flatten()
+                .ok_or_else(|| "prerequisite PARTY has not landed (SUT stall)".to_owned())?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                "/demographic/party_relationship",
+                Some((
+                    "application/json",
+                    pack::party_relationship_body(relationship, &source)?,
+                )),
+                true,
+                None,
+            )?;
+            if created(note(observed, reply.status))
+                && let Some(ovid) = reply
+                    .etag
+                    .as_deref()
+                    .map(strip_weak_quotes)
+                    .or_else(|| reply.location.as_deref().and_then(location_last_segment))
+            {
+                captures.journey(journey, |s| s.relationship_uid = Some(object_uid_of(&ovid)));
+                true
+            } else {
+                false
+            }
+        }
+        PerfOp::PartyRelationshipRead => {
+            let uid = captures
+                .journey(journey, |s| s.relationship_uid.clone())
+                .flatten()
+                .ok_or_else(|| {
+                    "prerequisite PARTY_RELATIONSHIP has not landed (SUT stall)".to_owned()
+                })?;
+            let reply = client.request(
+                reqwest::Method::GET,
+                &format!("/demographic/party_relationship/{uid}"),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::TemplateExample => {
+            let n = journey_pack.templates.len().max(1);
+            let index = usize::try_from(stride(arrival_index)).unwrap_or(usize::MAX) % n;
+            let template = journey_pack
+                .get(index)
+                .ok_or_else(|| "pack is empty".to_owned())?;
+            let encoded = urlencoding::encode(&template.template_id);
+            let reply = client.request(
+                reqwest::Method::GET,
+                // The two query parameters the released operation declares
+                // (`type`, `detail_level`).
+                &format!(
+                    "/definition/template/adl1.4/{encoded}/example?type=input&detail_level=required"
+                ),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::TemplateAdl2List => {
+            let reply = client.request(
+                reqwest::Method::GET,
+                "/definition/template/adl2",
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::AnalyticsQuery => {
+            let body = serde_json::json!({
+                "q": ANALYTICS_AQL,
+                "query_parameters": { "ehr_id": ehr_id }
+            });
+            let bytes = serde_json::to_vec(&body).map_err(|e| e.to_string())?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                "/query/aql",
+                Some(("application/json", bytes)),
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::TerminologyQuery => {
+            let body = serde_json::json!({ "q": TERMINOLOGY_AQL });
+            let bytes = serde_json::to_vec(&body).map_err(|e| e.to_string())?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                "/query/aql",
+                Some(("application/json", bytes)),
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::SystemOptions => {
+            let reply = client.request(reqwest::Method::OPTIONS, "/", None, false, None)?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::SmartConfigurationRead => {
+            // Addressed at the PLATFORM base the ixit's `smart` lane names —
+            // a different path root from the openEHR REST base (ITS-REST
+            // docs/smart_app_launch/master04-service_discovery.adoc
+            // §Service Discovery).
+            let reply = client.request(
+                reqwest::Method::GET,
+                "/.well-known/smart-configuration",
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::UnauthenticatedProbe => {
+            // The DENY branch is the measured outcome: a credential-less
+            // read must be refused, so 401 is the arrival's success and
+            // anything else — 200 above all — is an error arrival.
+            let reply = client.request(
+                reqwest::Method::GET,
+                &format!("/ehr/{ehr_id}"),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 401
+        }
+        PerfOp::ReadonlyWriteDenied => {
+            let template = planned
+                .template
+                .and_then(|i| journey_pack.get(i))
+                .ok_or_else(|| "denied-write stage without a pack template".to_owned())?;
+            let body = pack::composition_body(template, offset_s, arrival_index)?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                &format!("/ehr/{ehr_id}/composition"),
+                Some(("application/json", body)),
+                true,
+                None,
+            )?;
+            // 403 is the arrival's success: the write is refused, so the
+            // measured population is untouched by this probe.
+            note(observed, reply.status) == 403
+        }
     };
 
     if planned.last {
@@ -604,6 +907,24 @@ fn refresh_current_ovid(client: &PerfClient, path: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+/// The `OBJECT_VERSION_ID` of the version a provenance stage addresses:
+/// the journey's own last commit, else the ward chart's seeded version.
+fn current_version_uid(
+    planned: &PlannedArrival,
+    captures: &CaptureStore,
+    ward: Option<&crate::perf_run::corpus::WardPatient>,
+) -> Option<String> {
+    captures
+        .journey(planned.journey, |s| s.last_commit_ovid.clone())
+        .flatten()
+        .or_else(|| {
+            ward.map(|w| match planned.doc {
+                WardDoc::MedList => w.medlist_ovid.clone(),
+                WardDoc::Gp => w.gp_ovid.clone(),
+            })
+        })
 }
 
 fn current_doc_object_uid(
