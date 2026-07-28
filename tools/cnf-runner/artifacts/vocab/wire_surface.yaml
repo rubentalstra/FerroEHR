@@ -346,42 +346,15 @@ branches:
     outcome: validation_failed
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding (I_EHR_SERVICE.create_ehr-invalid_status); the client-supplied id changes the addressing, not the EHR_STATUS validation this branch reports"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_modifiable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.clear_ehr_queryable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: precondition_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: precondition_missing
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_STATUS.set_ehr_modifiable
-    outcome: validation_failed
-    reason: coverage_gap
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  # RETIRED coverage_gaps: the precondition family
+  # ({precondition_failed, precondition_missing, validation_failed} x
+  # {set_ehr_modifiable, clear_ehr_modifiable, clear_ehr_queryable}) is now
+  # exercised by the -stale_if_match / -missing_if_match / -invalid_body trio
+  # authored for each of the three remaining SM setters, mirroring the
+  # set_ehr_queryable trio. Coverage only ratchets up, so the nine exceptions
+  # are gone rather than reworded. The two `no_if_match` / `invalid_body`
+  # VARIANT bindings each setter needed came with them; their own branches are
+  # each exercised by exactly the case that drives them.
   # The precondition_failed branch of I_EHR_STATUS.set_ehr_queryable is now
   # EXERCISED on the variant-less binding by
   # I_EHR_STATUS.set_ehr_queryable-stale_if_match, so its exception is retired.
