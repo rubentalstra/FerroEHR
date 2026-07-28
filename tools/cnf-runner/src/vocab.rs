@@ -76,7 +76,18 @@ outcome_kinds! {
     (AlreadyExists, "already_exists", Error),
     /// Target does not exist ("EHR with `<ehr_id>` does not exist").
     (NotFound, "not_found", Error),
-    /// `preceding_version_uid` does not exist.
+    /// `preceding_version_uid` does not exist. DECISION (#557, 2026-07-28):
+    /// stays a distinct kind from `precondition_failed` even where ITS-REST
+    /// realizes both as one indistinguishable wire answer (the If-Match PUTs:
+    /// a false-evaluating If-Match "MUST respond with HTTP status code `412
+    /// Precondition Failed`" regardless of whether the named version ever
+    /// existed — overview Requests_and_responses.md §"If-Match and accidental
+    /// overwrites"). Case cores speak SM outcomes, and the SM distinguishes
+    /// the causes (an unknown version vs a stale one); the fold is a
+    /// REALIZATION fact recorded on each binding, and the tie-break in
+    /// `exec::outcome` is the documented norm: when the wire genuinely cannot
+    /// distinguish members, the expected member's status match satisfies the
+    /// expectation — the status/header assertions still gate.
     (VersionNotFound, "version_not_found", Error),
     /// Version precondition evaluated false (stale `preceding_version_uid`).
     (PreconditionFailed, "precondition_failed", Error),
