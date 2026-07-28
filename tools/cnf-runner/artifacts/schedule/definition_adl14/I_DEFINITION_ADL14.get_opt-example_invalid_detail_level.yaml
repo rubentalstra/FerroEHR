@@ -45,5 +45,5 @@ flow:
     call: get_opt
     variant: example_invalid_detail_level
     with: { template_id: "minimal_action.en.v1" }
-    expect: validation_failed            # §HTTP status codes row 400 — syntactically invalid parameter
+    expect: bad_request            # §HTTP status codes row 400 — syntactically invalid parameter
 ambiguities: [AMB-115]

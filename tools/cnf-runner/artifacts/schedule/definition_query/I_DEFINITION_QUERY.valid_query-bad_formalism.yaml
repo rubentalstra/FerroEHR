@@ -24,4 +24,4 @@ flow:
       qualified_query_name: "org.openehr.cnf::bad_formalism"
       query: "//ehr[*]"                  # not AQL
       query_type: "XPATH"                # unsupported formalism (a_type)
-    expect: validation_failed
+    expect: bad_request

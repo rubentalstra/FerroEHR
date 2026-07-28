@@ -48,4 +48,4 @@ flow:
       ehr_id: "${ehr_id}"
       versioned_object_uid: "${versioned_object_uid}"
       a_time: "not-a-datetime"
-    expect: validation_failed
+    expect: bad_request

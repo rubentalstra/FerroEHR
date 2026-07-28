@@ -10,7 +10,24 @@ request:
   path: /ehr/{ehr_id}/contribution/{contribution_uid}
 # canonical-xml is DECLARED-BUT-UNDEFINED on this read (register AMB-167,
 # adjudicated 2026-07-28): The published XSDs declare global document elements only for composition, version, items, template, extract, extract_request, versioned_object and archetype (xs:element inventory of crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1 + its-xml-2.0.0-nsv2); CONTRIBUTION exists only as a complexType (Common.xsd), so the release assigns this response no document ROOT NAME while ITS-REST overview Resources.md addresses `Accept: application/xml` to the resource surface. The format therefore stays DECLARED — a service that answers the read in XML under a root of its own choosing is not thereby non-conformant, and the declaration is what lets the classifier recognise the exchange — and the opposite arm, §XML Format's 406 MUST ("If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code 406 Not Acceptable"), is exercised by the option-gated -xml_not_acceptable case. The COMMIT envelope is the separate, genuinely undefinable branch (AMB-165).
-formats: [canonical-json, canonical-xml]
+formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+# THE SIMPLIFIED-FORMAT READ FORMS (SPECITS-84), the mirror of the commit
+# binding's split. DOCS TEXT — docs/overview/Amendment_record.md, the
+# SPECITS-84 row verbatim: "accept the Simplified Formats MIME types on
+# CONTRIBUTION endpoints; the Simplified Formats serialization applies to
+# `versions[].data` only, the CONTRIBUTION envelope remains canonical", with
+# docs/overview/Resources.md §Simplified Formats fixing the two MIME types and
+# their `Accept` negotiation. The docs text does not spell the split per
+# operation; the RELEASED OAS does and is cited AS the OAS (owner ruling
+# 2026-07-28): operations/contribution_get.yaml §"Simplified Formats" —
+# "The `Accept` header MAY be set to one of the Simplified Formats MIME types
+# … When a Simplified Formats MIME type is requested, the **CONTRIBUTION
+# envelope itself is still returned as canonical JSON** (`uid`, `versions[]`
+# metadata, `audit`). Only the inner `versions[i].data` payload … is serialized
+# in the chosen FLAT or STRUCTURED form."
+# So the format axis names the INNER payload's representation only; the served
+# envelope stays a canonical CONTRIBUTION, which is what the gating cases
+# assert.
 # `Location` MUST BE ABSENT on this outcome — ITS-REST overview
 # `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
 # alternate representation of an existing resource (e.g. via `GET` method)" /

@@ -41,7 +41,7 @@ applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 guards:
   - "ITS-REST Admin API is DEVELOPMENT-stage — docs/admin/Description.md §Status: \"This specification is in the `DEVELOPMENT` state\", and docs/overview/Preface.md §Conformance is \"tbd.\"; guarded until the Admin API stabilises"
   - "admin_ehr_delete_all realizes NO SM operation — I_ADMIN_SERVICE.physical_ehr_delete takes a single `an_ehr_id: UUID [1]` and the I_ADMIN_ARCHIVE list operations archive rather than delete (register AMB-33); the `delete_all` variant anchor is a catalogue naming convention, never an SM claim"
-  - "the async `202 Accepted` branch the operation declares — ITS-REST specifications/operations/admin_ehr_delete_all.yaml (\"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`\") — is absorbed as an alt_status of ok_empty, so this case passes on either code and cannot require or distinguish the asynchronous branch (register AMB-139); the `accepted` kind added by the 2026-07-28 schedule release makes the branch nameable but the binding has not yet been migrated"
+  - "the async `202 Accepted` branch the operation declares — ITS-REST specifications/operations/admin_ehr_delete_all.yaml (\"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`\") — is a MAY on the SERVICE with no request form behind it, so THIS case cannot require or distinguish it: the binding declares `accepted` as its own kind (the 2026-07-28 schedule release, #544) while `ok_empty` deliberately keeps `alt_status: [202]`, because the emptiness probe below asserts the deletion HAPPENED and must not refute a conformant asynchronous server (register AMB-139)"
 requires:
   server: exclusive                      # destroys every EHR — global-state ground; mints ${ehr_id}
   ehr: { commits: none }
@@ -54,7 +54,7 @@ flow:
     call: physical_ehr_delete
     variant: delete_all                  # DELETE /admin/ehr/all with no query parameter
     on: admin                            # ADMIN-role principal (ixit)
-    expect: ok_empty                     # 204 No Content (202 Accepted absorbed — AMB-139)
+    expect: ok_empty                     # 204 No Content; alt_status 202 kept so an async server is not refused (AMB-139)
   - step: 3                              # emptiness probe (a): the provisioned EHR is gone
     call: I_EHR_SERVICE.has_ehr
     with: { ehr_id: "${ehr_id}" }
