@@ -272,6 +272,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The conformance pipeline now exercises BOTH claimed version-signing modes
+  in every run, in the one committed record** (#609). openEHR defines a
+  version signature at two depths of one mechanism — a plain digest (an
+  integrity check) and an openPGP RFC 4880 signature (which additionally
+  authenticates the author) — and a running server does one or the other. The
+  product claims both, so `scripts/conformance.sh` now brings up a **second
+  deployment of the same built image** in the openPGP posture alongside the
+  standard stack (its own compose project, host port 8081), and the party's
+  `ixit.json` declares it as an extra instance carrying its own signing block.
+  The openPGP signature cases address that instance; one run, one
+  `results.json`, and the Signing capability's evidence covers both modes.
+  Consequently the `CONF_SIGNING_MODE=pgp` environment switch and the separate
+  `ixit.pgp.json` party file are **removed** — there is nothing left to select,
+  both modes always run. A conformance target that declares no such instance
+  (upstream EHRbase) has the openPGP cases recorded not-applicable with that
+  citation instead of failed, which is also now true for any case addressing an
+  instance a party does not declare: it is excused at selection time rather
+  than surfacing as an inconclusive row.
+
 - **The conformance suite proves EHR-scoped querying against two EHRs, not
   one** (#604). The four cases that check a query is confined to the EHR named
   in the `openehr-ehr-id` request header used to run against a server holding
