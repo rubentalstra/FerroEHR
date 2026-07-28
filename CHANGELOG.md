@@ -30,6 +30,18 @@ workflow refuses a tag that has no matching section here.
   being checked against a guess. Both behaviours were previously carried as
   cited coverage gaps.
 
+- **Conformance coverage: calling a resource with the wrong HTTP method is
+  now measured** (#596). The openEHR REST specification says a method the
+  specification recognizes but the addressed resource does not serve should be
+  answered `405 Method Not Allowed`, and the HTTP standard it defers to
+  requires that answer to carry an `Allow` field listing the methods the
+  resource does support. The conformance suite now proves both on a real
+  resource — a `DELETE` to the EHR collection, which the specification serves
+  only under `POST` and `GET` — instead of recording the behaviour as an
+  untestable gap. The `Allow` check asserts that both specified methods are
+  listed while tolerating any order and any additional methods a server
+  chooses to support.
+
 - **Canonical XML: choose the openEHR schema namespace per request** (#196).
   openEHR publishes its XML schemas in two lineages that differ only by the
   namespace a document declares — `http://schemas.openehr.org/v1` (the stable
