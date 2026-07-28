@@ -744,3 +744,145 @@ fn half_open_interval_is_accepted_with_or_without_flags() {
     });
     assert!(full(&flagged).is_empty(), "got {:?}", full(&flagged));
 }
+
+// ── ELEMENT Inv_null_flavour_indicated (RM data_structures §ELEMENT) ──────────
+
+/// The XOR arms of RM data_structures §ELEMENT `Inv_null_flavour_indicated`:
+///
+/// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
+/// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
+///
+/// `is_null()` is "value is Void", so the invariant holds for exactly one of
+/// `value` / `null_flavour` being present. BOTH arms fail: an ELEMENT carrying
+/// both, and — the arm the vendored corpus actually contains — an ELEMENT
+/// carrying neither. Pinned on both dispatcher tiers, because the fast path
+/// may only skip the typed oracle when its result is identical.
+#[test]
+fn element_null_flavour_xor_fails_on_both_and_on_neither() {
+    let element = |extra: Value| {
+        let mut e = json!({
+            "_type": "ELEMENT",
+            "archetype_node_id": "at0002",
+            "name": {"_type": "DV_TEXT", "value": "an element"},
+        });
+        if let (Some(o), Some(x)) = (e.as_object_mut(), extra.as_object()) {
+            for (k, v) in x {
+                o.insert(k.clone(), v.clone());
+            }
+        }
+        e
+    };
+    let value = json!({"value": {"_type": "DV_TEXT", "value": "a datum"}});
+    let null_flavour = json!({"null_flavour": {
+        "_type": "DV_CODED_TEXT", "value": "no information",
+        "defining_code": {"_type": "CODE_PHRASE",
+            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
+            "code_string": "271"},
+    }});
+    let mut both = value.clone();
+    if let (Some(o), Some(x)) = (both.as_object_mut(), null_flavour.as_object()) {
+        for (k, v) in x {
+            o.insert(k.clone(), v.clone());
+        }
+    }
+
+    let violated = |v: &Value| {
+        two_tier(v)
+            .iter()
+            .any(|iv| iv.message == "Invariant Inv_null_flavour_indicated failed on type ELEMENT")
+    };
+
+    // The two valid shapes.
+    for ok in [element(value), element(null_flavour)] {
+        assert!(!violated(&ok), "must be accepted: {:?}", two_tier(&ok));
+    }
+    // Both present.
+    let both = element(both);
+    assert!(violated(&both), "got {:?}", two_tier(&both));
+    // Neither present — the corpus case.
+    let neither = element(json!({}));
+    assert!(violated(&neither), "got {:?}", two_tier(&neither));
+
+    // Same verdict from the authoritative typed oracle, on the tier the fast
+    // path claims to be equivalent to.
+    for case in [&both, &neither] {
+        assert!(fast_handled(case), "the fast path handles a plain ELEMENT");
+        assert_eq!(two_tier(case), typed(case));
+    }
+}
+
+/// The vendored openEHR-SDK corpus carries this violation for real: both
+/// `all_types_systematic_tests.json` and
+/// `all_types_systematic_tests_feeder_audit.json` hold one ELEMENT
+/// (`content[1]/data/items[0]`, `at0002`) with neither `value` nor
+/// `null_flavour` — RM-invalid per `Inv_null_flavour_indicated`.
+///
+/// Adjudication: the fixtures are NOT corrected. They exist to exercise the
+/// canonical-JSON codec, and the only gates that consume them (`fidelity.rs` —
+/// read, lossless re-serialize,
+/// ITS-JSON schema validation) are codec gates that do not run RM class
+/// invariants, so their verdicts are unaffected. The RM-invalid node is turned
+/// into a positive assertion instead: the dispatcher must reject it, naming
+/// the invariant. A fixture that stops carrying the violation fails here and
+/// must be re-adjudicated, never silently dropped.
+#[test]
+fn corpus_elements_without_value_or_null_flavour_are_rejected() {
+    let dir = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/vendor/openehr_sdk/composition/canonical_json"
+    );
+    for name in [
+        "all_types_systematic_tests.json",
+        "all_types_systematic_tests_feeder_audit.json",
+    ] {
+        let text = std::fs::read_to_string(format!("{dir}/{name}"))
+            .unwrap_or_else(|e| panic!("read {name}: {e}"));
+        let composition: Value =
+            serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {name}: {e}"));
+        let offenders = value_less_elements(&composition);
+        assert_eq!(
+            offenders.len(),
+            1,
+            "{name}: expected the one known RM-invalid ELEMENT, found {}",
+            offenders.len()
+        );
+        for element in offenders {
+            let violations = two_tier(element);
+            assert!(
+                violations.iter().any(|iv| iv.message
+                    == "Invariant Inv_null_flavour_indicated failed on type ELEMENT"),
+                "{name}: an ELEMENT with neither value nor null_flavour must be \
+                 rejected, got {violations:?}"
+            );
+        }
+    }
+}
+
+/// Every ELEMENT in `value` carrying neither `value` nor `null_flavour`.
+fn value_less_elements(value: &Value) -> Vec<&Value> {
+    let mut out = Vec::new();
+    fn walk<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
+        match v {
+            Value::Object(map) => {
+                let present = |k: &str| map.get(k).is_some_and(|x| !x.is_null());
+                if map.get("_type").and_then(Value::as_str) == Some("ELEMENT")
+                    && !present("value")
+                    && !present("null_flavour")
+                {
+                    out.push(v);
+                }
+                for child in map.values() {
+                    walk(child, out);
+                }
+            }
+            Value::Array(items) => {
+                for item in items {
+                    walk(item, out);
+                }
+            }
+            _ => {}
+        }
+    }
+    walk(value, &mut out);
+    out
+}
