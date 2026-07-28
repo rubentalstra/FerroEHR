@@ -301,7 +301,7 @@ fn is_persistent(composition: &Value) -> bool {
 ///   (`locatable.adoc` §`archetype_node_id`);
 /// - `Links_valid` (`links /= Void implies not links.is_empty`) — an
 ///   explicit empty list is RM-invalid (absent is the way to say none).
-fn validate_root_locatable(
+pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,
     kind: &str,
 ) -> Result<(), ServiceError> {
