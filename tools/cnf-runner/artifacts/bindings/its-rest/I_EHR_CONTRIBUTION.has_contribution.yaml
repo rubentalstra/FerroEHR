@@ -13,7 +13,9 @@ its: its-rest
 request:
   method: GET
   path: /ehr/{ehr_id}/contribution/{contribution_uid}
-formats: [canonical-json, canonical-xml]
+# canonical-json ONLY (triage 2026-07-28, one line of the AMB-165 adjudication
+# extended to the READ side): The published XSDs declare global document elements only for composition, version, items, template, extract, extract_request, versioned_object and archetype (xs:element inventory of crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1 + its-xml-2.0.0-nsv2); CONTRIBUTION exists only as a complexType (Common.xsd), so no CONTRIBUTION XML DOCUMENT is published and the §XML Format response MUST ("responses MUST conform to the published XSDs") cannot be satisfied. The release's own answer is §XML Format's 406 MUST ("If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code 406 Not Acceptable").
+formats: [canonical-json]
 # `Location` MUST BE ABSENT on this outcome — ITS-REST overview
 # `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
 # alternate representation of an existing resource (e.g. via `GET` method)" /
@@ -26,4 +28,5 @@ outcomes:
     headers:
       Content-Type: negotiated
       Location: absent                    # read — overview §Location / §Deprecated headers
+  not_acceptable: { status: 406 }        # Resources.md §XML Format — an Accept the service cannot fulfill (no CONTRIBUTION XML document is published; AMB-165)
   not_found: { status: 404 }                                   # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR (FALSE / error)

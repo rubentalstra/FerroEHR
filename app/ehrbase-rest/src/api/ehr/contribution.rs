@@ -17,10 +17,16 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 
 /// The representations a CONTRIBUTION endpoint negotiates. The envelope is
-/// always canonical JSON (`contribution_create.yaml` / `contribution_get.yaml`
+/// always canonical JSON; the Simplified types select the inner
+/// `versions[i].data` form (`contribution_create.yaml` / `contribution_get.yaml`
 /// §Simplified Formats: "the CONTRIBUTION envelope itself remains canonical
-/// JSON"); the Simplified types select the inner `versions[i].data` form. There
-/// is no canonical-XML CONTRIBUTION wire shape, so XML is not offered.
+/// JSON" — that sentence governs the wt.flat/wt.structured selection). XML is
+/// not offered because the release publishes no CONTRIBUTION XML document at
+/// all: ITS-REST overview `Resources.md` §XML Format requires responses to
+/// "conform to the published XSDs", and the published XSDs declare no global
+/// CONTRIBUTION document element (only the complexType) — so an XML `Accept`
+/// here "cannot fulfill this aspect of the request" and takes the section's
+/// 406 MUST.
 const CONTRIBUTION_FORMATS: &[WireFormat] = &[
     WireFormat::CanonicalJson,
     WireFormat::Flat,

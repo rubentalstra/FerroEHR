@@ -1,0 +1,43 @@
+# The existence read's mirror of get_contribution-xml_not_acceptable: the
+# release publishes no CONTRIBUTION XML document (register AMB-165, extended
+# to the READ side, triage 2026-07-28), so an `Accept: application/xml` on
+# the GET-realized has_contribution is refused per the §XML Format 406 MUST —
+# see the sibling case's header for the full derivation (the XSD
+# global-element inventory + the OAS inconsistency UPR-125 reports).
+id: I_EHR_CONTRIBUTION.has_contribution-xml_not_acceptable
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.has_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  A CONTRIBUTION existence read requested with `Accept: application/xml` is
+  refused with 406 rather than answered with an XML document the release
+  never defined.
+description: "has_contribution with Accept: application/xml (406)"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.has_contribution"
+  - "ITS-REST overview Resources.md §XML Format"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }               # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+ambiguities: [AMB-165]
+flow:
+  - step: 1
+    call: commit_contribution          # precondition: a CONTRIBUTION of known uid
+    format: canonical-json
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+    expect: created
+    capture: { contribution_uid: created.contribution_uid }
+  - step: 2
+    call: has_contribution
+    format: canonical-xml              # the unfulfillable Accept
+    with: { ehr_id: "${ehr_id}", contribution_uid: "${contribution_uid}" }
+    expect: not_acceptable
