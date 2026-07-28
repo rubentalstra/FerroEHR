@@ -159,6 +159,16 @@ pub enum Provisioned {
         /// The excusing register citation (e.g. an `AMB-nn` entry).
         citation: String,
     },
+    /// The SUT REFUSED a provisioning exchange (e.g. a template upload
+    /// answered outside 2xx/409), so the case's required ground does not
+    /// exist — the row is inconclusive, never a SUT failure of the
+    /// behaviour under test (`.claude` triage law: an unestablished
+    /// `requires` precondition is a step-resolution failure). The reason
+    /// names the provisioning exchange so the red row localizes to it.
+    RowErrored {
+        /// The refused provisioning exchange (operation, status, body head).
+        reason: String,
+    },
 }
 
 /// Resolve the expected kind for a step in a given row (the per-fixture
@@ -223,13 +233,21 @@ pub fn run_case<D: StepDriver>(
     for row in 0..total {
         if reset_per_row || row == 0 {
             vars = VarStore::default();
-            // Law a; an unrealizable per-row ground records the row N/A.
-            if let Provisioned::RowNotApplicable { citation } =
-                driver.provision(case, row, &mut vars)?
-            {
-                row_states.push(vars.clone());
-                rows.push(RowOutcome::NotApplicable { citation });
-                continue;
+            // Law a; an unrealizable per-row ground records the row N/A,
+            // and a REFUSED provisioning exchange records it inconclusive
+            // (step 0 = the precondition, before any flow step drove).
+            match driver.provision(case, row, &mut vars)? {
+                Provisioned::Ready => {}
+                Provisioned::RowNotApplicable { citation } => {
+                    row_states.push(vars.clone());
+                    rows.push(RowOutcome::NotApplicable { citation });
+                    continue;
+                }
+                Provisioned::RowErrored { reason } => {
+                    row_states.push(vars.clone());
+                    rows.push(RowOutcome::Errored { step: 0, reason });
+                    continue;
+                }
             }
         }
 
