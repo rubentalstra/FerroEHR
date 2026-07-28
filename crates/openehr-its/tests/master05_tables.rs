@@ -49,14 +49,6 @@
 //! Known implementation gaps this battery documents (recorded here so a
 //! `TODO` search finds them, and asserted as `Absent` so they cannot rot):
 //!
-//! TODO: emit + rebuild the master05 §ELEMENT `/_null_flavour` and
-//! `/_null_reason` rows for a *value-less* ELEMENT. The flattener reaches an
-//! ELEMENT only through its `value`, but RM data_structures §ELEMENT
-//! (`Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`) makes
-//! `value` and `null_flavour` mutually exclusive — so a real null-flavoured
-//! element loses its null flavour. The mapping itself is probed below with a
-//! deliberately invariant-relaxed fixture.
-//!
 //! TODO: consume the master05 §EVENT_CONTEXT `/start_time` and `/setting` PATH
 //! spellings on input (they are silently ignored today in favour of the
 //! `ctx/` defaults) — stated in full at the §EVENT_CONTEXT test.
@@ -200,6 +192,20 @@ fn sorted_keys(flat: &Map<String, Value>) -> Vec<&String> {
     let mut keys: Vec<&String> = flat.keys().collect();
     keys.sort();
     keys
+}
+
+/// The `(key, value)` pairs of `flat` addressing `path` — the key itself, a
+/// `|suffix` of it, or a `/child` under it — in key order. The comparison unit
+/// for a round-trip assertion scoped to one node.
+fn under(flat: &Map<String, Value>, path: &str) -> std::collections::BTreeMap<String, Value> {
+    flat.iter()
+        .filter(|(k, _)| {
+            k.as_str() == path
+                || k.starts_with(&format!("{path}|"))
+                || k.starts_with(&format!("{path}/"))
+        })
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
 }
 
 /// Assert every row of one master05 table against the FLAT document produced
@@ -587,26 +593,34 @@ fn entry_of(rm_type: &str, extra: Value) -> Value {
     entry
 }
 
+/// The template leaf node [`flat_element`] hangs its ELEMENT value under.
+fn element_leaf_node(rm_type: &str) -> WebTemplateNode {
+    leaf(
+        rm_type,
+        &format!(
+            "{}/data[at0001]/items[at0002]/value",
+            entry_aql("EVALUATION")
+        ),
+        "leaf",
+    )
+}
+
 /// Flatten an EVALUATION whose ITEM_TREE holds `element`, with the leaf value
 /// typed `rm_type` in the template. Leaf keys are based at [`LEAF`].
 fn flat_element(rm_type: &str, element: Value) -> Map<String, Value> {
-    flat_element_node(
-        leaf(
-            rm_type,
-            &format!(
-                "{}/data[at0001]/items[at0002]/value",
-                entry_aql("EVALUATION")
-            ),
-            "leaf",
-        ),
-        element,
-    )
+    flat_element_node(element_leaf_node(rm_type), element)
 }
 
 /// [`flat_element`] with a caller-supplied leaf template node (so a fixture can
 /// set `listOpen` or a generic slot type).
 fn flat_element_node(leaf_node: WebTemplateNode, element: Value) -> Map<String, Value> {
-    let entry = json!({
+    flat_entry("EVALUATION", vec![leaf_node], element_entry(element))
+}
+
+/// The EVALUATION an element fixture lives in: one ITEM_TREE (`at0001`)
+/// holding `element` at `at0002`.
+fn element_entry(element: Value) -> Value {
+    json!({
         "_type": "EVALUATION",
         "data": {
             "_type": "ITEM_TREE",
@@ -614,8 +628,7 @@ fn flat_element_node(leaf_node: WebTemplateNode, element: Value) -> Map<String, 
             "name": dv_text("Tree"),
             "items": [element],
         },
-    });
-    flat_entry("EVALUATION", vec![leaf_node], entry)
+    })
 }
 
 /// The common leaf fixture: a plain ELEMENT wrapping `value`.
@@ -1147,6 +1160,65 @@ fn master05_element() {
             ),
             row("/_uid", At(Str), "no", ""),
         ],
+    );
+}
+
+/// master05 §ELEMENT `/_null_flavour` + `/_null_reason` on the shape the RM
+/// admits: a **value-less** ELEMENT. RM data_structures §ELEMENT
+/// (`Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`) makes
+/// `value` and `null_flavour` mutually exclusive, so this — not the
+/// value-bearing probe above — is how a real null flavour reaches the wire.
+/// The section's third example block spells exactly this document.
+#[test]
+fn master05_element_null_flavoured_without_value() {
+    let el = json!({
+        "_type": "ELEMENT",
+        "archetype_node_id": "at0002",
+        "name": dv_text("Element"),
+        "null_flavour": dv_coded("unknown", "openehr", "253"),
+        "null_reason": dv_text("sample reason"),
+    });
+    let flat = flat_element("DV_TEXT", el);
+    check(
+        &flat,
+        LEAF,
+        &[
+            row("/_null_flavour", At(Sub("|code")), "no", ""),
+            row("/_null_reason", At(Str), "no", ""),
+        ],
+    );
+    // The element itself carries no datum: `value` is exactly what a null
+    // flavour replaces.
+    assert!(
+        !flat.contains_key(LEAF),
+        "a value-less ELEMENT emits no datum, got {:?}",
+        sorted_keys(&flat)
+    );
+
+    // …and the same document rebuilds the value-less ELEMENT (the master05
+    // §ELEMENT third example block, replayed as an input).
+    let wt = entry_web_template("EVALUATION", vec![element_leaf_node("DV_TEXT")]);
+    let built = composition_from_flat(&flat, &wt, NOW)
+        .expect("a null-flavoured ELEMENT must build from its master05 §ELEMENT rows");
+    let rebuilt = &built["content"][0]["data"]["items"][0];
+    assert_eq!(rebuilt["_type"], json!("ELEMENT"));
+    assert!(
+        rebuilt.get("value").is_none(),
+        "the rebuilt ELEMENT must carry no value: {rebuilt}"
+    );
+    assert_eq!(
+        rebuilt["null_flavour"]["defining_code"]["code_string"],
+        json!("253")
+    );
+    assert_eq!(rebuilt["null_reason"]["value"], json!("sample reason"));
+
+    // RM → FLAT → RM → FLAT is stable: the null flavour survives the round
+    // trip that used to drop it.
+    let reflattened = composition_to_flat(&built, &wt).expect("composition_to_flat");
+    assert_eq!(
+        under(&reflattened, LEAF),
+        under(&flat, LEAF),
+        "the null-flavoured ELEMENT must round-trip key-for-key"
     );
 }
 
