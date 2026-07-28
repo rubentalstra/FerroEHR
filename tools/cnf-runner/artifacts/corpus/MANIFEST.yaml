@@ -1695,6 +1695,14 @@ cnf.flat.vitals.composer_self:
   template_id: "minimal_action.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22 — derived from cnf.flat.vitals.minimal_ctx by replacing ctx/composer_name with ctx/composer_self:true to exercise the master06 §Composer composer_self branch (PARTY_SELF)"
 
+cnf.flat.action_instruction_details:
+  source: fixtures/sf/flat.action_instruction_details.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_action.en.v1"
+  provenance: "derived 2026-07-28 from cnf.flat.vitals.minimal_ctx (the official Robot minimal_action FLAT payload) by adding the three INSTRUCTION_DETAILS suffixes of ITS-REST simplified_formats master05-rm_mapping.adoc §INSTRUCTION_DETAILS — `|path`, `|composition_uid`, `|activity_id` — with that section's own example values, so every added key traces to a released row"
+
 cnf.flat.all_types:
   source: fixtures/sf/flat.all_types.json
   format: wt-flat
