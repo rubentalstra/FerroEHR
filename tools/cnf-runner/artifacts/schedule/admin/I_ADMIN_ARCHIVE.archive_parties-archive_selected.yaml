@@ -37,6 +37,7 @@ data_sets: [cnf.demographic.person.v1]
 flow:
   - step: 1
     call: archive_parties
+    on: admin                              # ADMIN-role principal (ixit) — the route is admin-gated
     with: { party_ids: ["${party_id}"] }
     expect: ok
 ambiguities: [AMB-33]

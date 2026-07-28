@@ -27,6 +27,7 @@ requires: { server: empty }
 flow:
   - step: 1
     call: archive_ehrs
+    on: admin                              # ADMIN-role principal (ixit) — the route is admin-gated
     with: { ehr_ids: ["00000000-0000-0000-0000-000000000000"] }
     expect: not_found
 ambiguities: [AMB-33]
