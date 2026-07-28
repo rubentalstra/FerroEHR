@@ -36,7 +36,7 @@ flow:
       qualified_query_name: "org.openehr.cnf::version_malformed_write"
       version: "v1.x"                    # not a SEMVER and not a legal prefix
       query: "SELECT c/uid/value AS v_bad FROM EHR e CONTAINS COMPOSITION c"
-    expect: validation_failed
+    expect: bad_request
   - step: 2
     call: list_queries
     with: { qualified_query_name: "org.openehr.cnf::version_malformed_write" }

@@ -43,6 +43,22 @@ outcomes:
       ETag: 'pattern:W/"<ehr_id>"'        # the section's own example source: "EHR.ehr_id.value"
       Location: absent                    # GET — overview §Location
   not_found: { status: 404 }              # 404.yaml (unknown ehr_id)
+  bad_request:
+    # An `ehr_id` PATH SEGMENT that is not a well-formed identifier at all.
+    # DOCS TEXT (overview §HTTP status codes, the 400 row verbatim): "The
+    # service cannot or will not process the request due to something that is
+    # perceived to be a client error (e.g., malformed request syntax,
+    # syntactically invalid content)", with the clause below the table —
+    # "Status code `400` indicates normally a bad request, as well as a generic
+    # client-side error, used when no other `4xx` error code is appropriate".
+    # WHICH of the 400/404 rows a malformed identifier segment takes is
+    # assigned by no released sentence; register AMB-76 carries the repo-wide
+    # fixed handling (malformed identifier segments are 400, well-formed-but-
+    # unknown ones stay 404) and its scope names `ehr_id` first. The kind is
+    # `bad_request` (the 2026-07-28 schedule release, #544) rather than
+    # `validation_failed`, which means 422 semantic content.
+    status: 400
+    body: error_loose                     # §HTTP status codes — 4xx detail is a MAY under Prefer: return=representation
   # An `Accept` the service cannot fulfil — ITS-REST overview Resources.md
   # §"XML Format": "If the service cannot fulfill this aspect of the request,
   # it MUST respond with HTTP status code `406 Not Acceptable`". Whether the

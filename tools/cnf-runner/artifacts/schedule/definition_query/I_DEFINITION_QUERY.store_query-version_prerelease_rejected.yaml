@@ -36,7 +36,7 @@ flow:
       qualified_query_name: "org.openehr.cnf::version_prerelease_write"
       version: "1.0.0-rc.1"              # outside the released major.minor.patch form
       query: "SELECT c/uid/value AS v_rc FROM EHR e CONTAINS COMPOSITION c"
-    expect: validation_failed
+    expect: bad_request
   - step: 2
     call: list_queries
     with: { qualified_query_name: "org.openehr.cnf::version_prerelease_write" }

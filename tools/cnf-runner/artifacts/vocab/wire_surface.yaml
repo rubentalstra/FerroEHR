@@ -215,6 +215,33 @@ sm_operations:
 
 # Axis 2 — realized-binding outcome/format branches no case exercises.
 branches:
+  # The ASYNCHRONOUS acceptance arm of both admin deletes. Since the 2026-07-28
+  # schedule release (#544) it is a nameable kind (`accepted`) and both
+  # bindings declare it — but it is still UNFORCEABLE, and for a reason no
+  # vocabulary can fix: the released sentence
+  # (operations/admin_ehr_delete.yaml and admin_ehr_delete_all.yaml, verbatim:
+  # "The server may execute this operation asynchronously (e.g. in batches), in
+  # which case returns status `202 Accepted`. If the deletion is processed
+  # synchronously and completes successfully, the server returns status
+  # `204 No Content`.") makes the choice the SERVICE's, with no request shape,
+  # header or parameter a case could use to select it. That is the AMB-140 /
+  # AMB-159 pattern — a declared branch whose TRIGGER the release withholds —
+  # not a coverage decision of ours. What IS gated is the deletion itself on
+  # both routes, by cases whose `ok_empty` keeps `alt_status: [202]` precisely
+  # so a conformant asynchronous server is not refuted. Closes when a release
+  # gives the arm a client-selectable trigger, or when the ixit models an
+  # asynchronous-deletion deployment fact a case can key on.
+  - binding: I_ADMIN_SERVICE.physical_ehr_delete
+    outcome: accepted
+    reason: coverage_gap
+    source: "ITS-REST specifications/operations/admin_ehr_delete.yaml, verbatim: \"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`. If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.\" + responses/202.yaml (\"`202 Accepted` is returned when the requested operation has been accepted for processing, but processing has not been completed or may not have started\") vs docs/overview/Requests_and_responses.md §\"HTTP status codes\", whose sixteen-row subset contains no 202 row and whose closing clause legalizes it (\"Additional status codes MAY be used as long as they do not conflict with the predefined codes\") — the omission is register AMB-139"
+    note: "Declared so the branch is nameable, deliberately unexercised because no client-side request form selects it (the MAY is the service's). See the section comment above this row."
+  - binding: I_ADMIN_SERVICE.physical_ehr_delete
+    variant: delete_all
+    outcome: accepted
+    reason: coverage_gap
+    source: "ITS-REST specifications/operations/admin_ehr_delete_all.yaml, verbatim: \"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`. If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.\" + responses/202.yaml, against docs/overview/Requests_and_responses.md §\"HTTP status codes\" (no 202 row; \"Additional status codes MAY be used\") — register AMB-139"
+    note: "The bulk-route half of the same unforceable service-side choice; see the section comment above."
   - binding: I_ADMIN_SERVICE.physical_ehr_delete
     variant: delete_all
     outcome: not_found
@@ -853,10 +880,23 @@ elements:
   # wire is anchored on SM + RM.
   - id: ehr-id-path-segment-malformed-rejection
     description: "An ehr_id path segment that is not a well-formed identifier at all (a non-UUID token) is refused as a client error rather than served, and never resolves to some other EHR."
-    source: "RM ehr EHR class §Attributes (`ehr_id`: 1..1 HIER_OBJECT_ID, \"The unique identifier of this EHR\", NOTE \"is is strongly recommended that a UUID always be used for this field\") + SM i_ehr_service.adoc (every ehr_id-taking operation declares `ehr_id: UUID [1]`) + ITS-REST Requests_and_responses.md §HTTP status codes, which offers two rows that both fit and picks neither: 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content)\") and 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
-    exception:
-      reason: coverage_gap
-      note: "Not authorable as a case today — one of the two former blockers is GONE, the other stands. The model blocker is LIFTED since the 2026-07-28 schedule release (#544): the outcome taxonomy now carries `bad_request`. The GROUNDING blocker remains and is decisive: the released text does not choose between its own 400 and 404 rows for a syntactically impossible identifier, so even with the kind available the catalogue cannot say which code to expect without inventing the assignment; this is deliberately NOT registered as an ambiguity, because the owner ruling of 2026-07-26 confines the register to the five genuine released-source dispositions and a code the text simply never assigns to a case nobody wrote is a gap, not a divergence we carry. What IS covered is the well-formed-but-absent identifier, which the 404 row does assign and which I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id and has_ehr-non_existing_ehr_id gate. Closes when a released sentence assigns the code."
+    source: "RM ehr EHR class §Attributes (`ehr_id`: 1..1 HIER_OBJECT_ID, \"The unique identifier of this EHR\", NOTE \"is is strongly recommended that a UUID always be used for this field\") + SM i_ehr_service.adoc (every ehr_id-taking operation declares `ehr_id: UUID [1]`) + ITS-REST Requests_and_responses.md §HTTP status codes, which offers two rows that both fit and picks neither: 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content)\") and 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\") — the choice between them is adjudicated in register AMB-76, whose repo-wide fixed handling puts a segment that parses as no identifier form at 400 and leaves the well-formed-but-unknown one at 404, and whose scope names `ehr_id`"
+    # RETIRED coverage_gap (2026-07-28). BOTH former blockers are gone, and the
+    # second one was a catalogue defect rather than a real gap. The MODEL
+    # blocker lifted with the 2026-07-28 schedule release (#544), which added
+    # `bad_request`. The GROUNDING blocker was recorded as "deliberately NOT
+    # registered as an ambiguity" — but it IS registered, and was already:
+    # AMB-76 covers exactly this silence (the 400-vs-404 choice for a lexically
+    # malformed identifier path segment) with the repo-wide fixed handling
+    # (malformed segments 400, well-formed-but-unknown 404) and names `ehr_id`
+    # first in its scope; the contribution_uid sibling case has been gating on
+    # that same entry since the scope extension of 2026-07-27. So the code IS
+    # assigned by an adjudication, the case carries the AMB-76 guard the
+    # register requires, and the well-formed-but-absent half stays gated by
+    # I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id and
+    # has_ehr-non_existing_ehr_id — which is what makes the 400/404 split
+    # exercised rather than assumed.
+    covered_by: [I_EHR_SERVICE.get_ehr-malformed_ehr_id]
   - id: ehr-subject-query-argument-required
     description: "The subject-keyed EHR read requires its subject argument: a request that omits it is not a request for all EHRs, and is refused rather than answered with an arbitrary or empty EHR."
     source: "SM i_ehr_service.adoc §get_ehrs_for_subject and §has_ehr_for_subject (both declare `a_subject_id: PARTY_REF [1]` — a mandatory argument, with no argument-less form of either operation) + ITS-REST Requests_and_responses.md §HTTP status codes row 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error\"; \"Status code `400` indicates normally a bad request, as well as a generic client-side error, used when no other `4xx` error code is appropriate\")"
@@ -1176,10 +1216,18 @@ elements:
   - id: query-ehr-id-parameter-header-conflict
     description: "A query execution carrying BOTH the ehr_id query parameter and the openehr-ehr-id header is executed when they name the same EHR and rejected 400 when they name different EHRs."
     source: "ITS-REST query Request.md §About the ehr_id parameter offers the two forms as alternatives and never defines the both-supplied case — the released text is SILENT, adjudicated in register AMB-59 (400 per Requests_and_responses.md §HTTP status codes, row 400 / generic client-side error)"
-    exception:
-      reason: coverage_gap
-      register: AMB-59
-      note: "server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/query_ehr_id_header.rs: matching forms execute, conflicting forms are 400, on GET and POST, ad-hoc and stored). A GENUINE COVERAGE GAP since the 2026-07-28 schedule release (#544), no longer an unnameable outcome: the former blocker was that the closed taxonomy had no kind for a self-contradictory REQUEST (`invalid_query` means malformed AQL, which this is not), and the release added `bad_request` for exactly this family. The binding outcome and the gating case — the two forms naming the same EHR execute, naming different EHRs is refused — are now authorable and are simply MISSING. This exception RETIRES when they land."
+    # RETIRED coverage_gap (2026-07-28): the exception's own closing condition —
+    # "the two forms naming the same EHR execute, naming different EHRs is
+    # refused … now authorable and simply MISSING" — is met, as BOTH halves.
+    # The new `ehr_id_param_and_header` variant binding is the first that can
+    # express the collision at all (the earlier variants each carry one form
+    # only), and its two outcomes are gated by one isolated case each. The
+    # conflicting case mints a SECOND real EHR for the header so the refusal
+    # cannot be the unknown-scope 404 of AMB-101; the AMB-59 adjudication rides
+    # on both cases as an explicit guard.
+    covered_by:
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_param_and_header_agree
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_param_and_header_conflict
   - id: query-unknown-ehr-scope-not-found
     description: "A query execution scoped to a well-formed but non-existent ehr_id reports the EHR does not exist rather than answering an empty result set."
     source: "SM i_query_service.adoc §execute_ad_hoc_query and §execute_stored_query (both declare the error `ehr_id_does_not_exist`; `_ehr_ids_` is \"Specific set of EHRs on which to execute the query\") vs the released ITS-REST query API, which gives that error no wire branch — docs/query/Request.md §About the ehr_id parameter says only that the scope \"MAY be used by the underlying backend to perform routing, optimizations or similar\". Adjudicated in register AMB-101 (fixed handling: 404, realizing the SM error), on Requests_and_responses.md §HTTP status codes row 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
@@ -1195,10 +1243,15 @@ elements:
   - id: query-post-paging-parameter-conflict
     description: "A query POST carrying DIFFERENT values for the same paging parameter in the URL and in the body is rejected rather than silently resolved to one of them."
     source: "ITS-REST query Request.md §Common Headers and Query Parameters offers the URL forms for all execution requests while the POSTs carry the same parameters in the body, and no released sentence assigns precedence when both are supplied — the released text is SILENT, adjudicated in register AMB-99 (a disagreement is 400, per Requests_and_responses.md §HTTP status codes row 400 / generic client-side error)"
-    exception:
-      reason: coverage_gap
-      register: AMB-99
-      note: "A GENUINE COVERAGE GAP since the 2026-07-28 schedule release (#544), no longer an unnameable outcome — the same movement as query-ehr-id-parameter-header-conflict. The former blocker was that the taxonomy had no kind for a self-contradictory REQUEST (`invalid_query` means malformed AQL, which this is not; `validation_failed` means semantically invalid CONTENT), and the release added `bad_request`. The ACCEPTED half of the same duality is gated (query-post-url-paging-forms); the refusal half is now authorable and simply MISSING. This exception RETIRES when the binding outcome and its case land."
+    # RETIRED coverage_gap (2026-07-28): the exception's own closing condition —
+    # "the binding outcome and its case" — is met. The `post_fetch_url` variant
+    # already offered the two paging slots as SEPARATE references, so the
+    # refusal needed no new variant, only the `bad_request` outcome the
+    # 2026-07-28 schedule release (#544) made nameable plus a case binding the
+    # two slots to different, individually legal window sizes. The ACCEPTED
+    # half of the same duality stays gated by query-post-url-paging-forms; the
+    # AMB-99 adjudication rides on the new case as an explicit guard.
+    covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_conflict]
   - id: query-paging-composes-over-aql-limit
     description: "REST paging composes OVER an in-query AQL LIMIT: the AQL clause shapes the logical result set, then offset/fetch window it."
     source: "ITS-REST query Request.md §Common Headers and Query Parameters states the one exclusion on `fetch` against the DEPRECATED TOP only (\"cannot be combined with AQL-top\") and says nothing about its replacement — QUERY AQL master03-syntax.adoc §LIMIT — so the relation of REST paging to LIMIT/OFFSET is unlegislated; adjudicated in register AMB-98 (fixed handling: composition)"
@@ -1338,9 +1391,21 @@ elements:
   - id: simplified-interval-event-sample-count
     description: "INTERVAL_EVENT carries |sample_count (INTEGER -> sample_count) as a datum suffix on the event node itself, alongside the /width and /math_function sub-paths."
     source: "ITS-REST simplified_formats master05-rm_mapping.adoc §INTERVAL_EVENT (the `\\|sample_count` row, Flat type INTEGER, RM Path sample_count, Required no; the second worked example spelling it `…/any_event:0|sample_count: 5`, a suffix on the event and not a sub-path) + RM data_structures §INTERVAL_EVENT (sample_count: Integer 0..1)"
-    exception:
-      reason: coverage_gap
-      note: "A corpus gap, not a spec silence: the mapping is unambiguous and is implemented and proven by the master05 semantic battery (crates/openehr-its/tests/master05_tables.rs §INTERVAL_EVENT), but no template the FUNCTIONAL corpus provisions constrains an EVENT to INTERVAL_EVENT, so no case can reach the suffix — a FLAT commit cannot conjure an interval event the template does not declare. NARROWED AND CORRECTED 2026-07-28: the earlier wording said no committed OPT constrains one at all, which is false — three CKM templates do (cnf.ckm.sars_notification, cnf.ckm.covid19_report, cnf.ckm.ccta_report each carry a C_COMPLEX_OBJECT with rm_type_name INTERVAL_EVENT). They do not close this row: the CKM pack is the MEASUREMENT template set (COMPOSITION-rooted journey payloads), its committed companions are canonical-JSON example skeletons generated once from a SUT rather than FLAT payloads, and hand-deriving a FLAT payload against a five-thousand-line OPT is the kind of invention this ledger exists to prevent. Nor does the unconstrained route work: cnf.opt.vitals types its any_event node as the ABSTRACT EVENT, which a builder must concretise to a default concrete subtype, so the |sample_count and /width suffixes — keyed on the CONSTRAINED type being INTERVAL_EVENT — are unreachable there. Closes with a SMALL functional-corpus OPT constraining one EVENT node to INTERVAL_EVENT (the cnf.tpl.ecc_event_type_narrowing.opt shape, which already narrows the same node to POINT_EVENT) plus a FLAT fixture carrying |sample_count and its canonical read-back in the SF-MAP-* group."
+    # RETIRED coverage_gap (2026-07-28): the exception's own closing condition —
+    # "a SMALL functional-corpus OPT constraining one EVENT node to
+    # INTERVAL_EVENT (the cnf.tpl.ecc_event_type_narrowing.opt shape, which
+    # already narrows the same node to POINT_EVENT) plus a FLAT fixture
+    # carrying |sample_count and its canonical read-back in the SF-MAP-* group"
+    # — is met, verbatim. cnf.tpl.sf_interval_event IS that skeleton with its
+    # one events slot narrowed to the other concrete subtype, emitted by the
+    # same generator builder, so nothing about the carrier was invented; the
+    # fixture carries all three §INTERVAL_EVENT rows with the section's own
+    # example values. The CKM route stays rejected for the reason the old note
+    # gave (measurement templates, canonical-JSON companions, and a FLAT
+    # payload hand-derived against a five-thousand-line OPT would be exactly
+    # the invention this ledger prevents), and the unconstrained cnf.opt.vitals
+    # route stays unreachable because its any_event is the ABSTRACT EVENT.
+    covered_by: [SF-MAP-interval_event]
   # openehr-uri response header (ITS-REST Requests_and_responses.md §openehr-uri).
   - id: header-openehr-uri-declined-may
     description: "The openehr-uri response header advertising a DV_EHR_URI form of the resource is a service-level MAY that this catalogue declines to require: the released text conditions it on the service supporting DV_EHR_URI generation at all, and defines neither an operation set nor an obligation, so neither presence nor absence is assertable."
@@ -1538,6 +1603,14 @@ elements:
       - I_EHR_CONTRIBUTION.commit_contribution-ehr_not_modifiable
   # The CONTRIBUTION change-set surface (SM i_ehr_contribution.adoc; RM common
   # master06 §Contributions; the ITS-REST contribution routes).
+  - id: contribution-simplified-format-envelope-split
+    description: "The Simplified Formats MIME types are accepted on both CONTRIBUTION endpoints, and the simplified serialization reaches versions[i].data ONLY: on a commit the request envelope (uid, versions[] metadata, audit) is canonical JSON with each member's inner payload in the chosen FLAT or STRUCTURED form, and on a read a simplified Accept still yields a canonical CONTRIBUTION envelope."
+    source: "ITS-REST docs/overview/Amendment_record.md, the SPECITS-84 row verbatim: \"Add support for FLAT/SDT to Contribution REST API calls - accept the Simplified Formats MIME types on CONTRIBUTION endpoints; the Simplified Formats serialization applies to `versions[].data` only, the CONTRIBUTION envelope remains canonical\" + docs/overview/Resources.md §Simplified Formats (the two MIME types and their Content-Type/Accept negotiation: \"clients and servers MUST use: `application/openehr.wt.flat+json` … `application/openehr.wt.structured+json`\"). The PER-OPERATION statement of the split is docs-text-silent and grounded on the RELEASED OAS (cited AS the OAS — owner ruling 2026-07-28): operations/contribution_create.yaml §\"Simplified Formats\" (\"When a Simplified Formats MIME type is used, the **CONTRIBUTION envelope itself remains canonical JSON** … Only the inner versioned payload - each `versions[i].data` … - is serialized in the chosen FLAT or STRUCTURED form\") and operations/contribution_get.yaml §\"Simplified Formats\" (\"the **CONTRIBUTION envelope itself is still returned as canonical JSON**\")"
+    covered_by:
+      - SF-CONTRIB-flat_commit
+      - SF-CONTRIB-structured_commit
+      - SF-CONTRIB-flat_read
+      - SF-CONTRIB-structured_read
   - id: contribution-client-supplied-envelope-uid
     description: "The CONTRIBUTION envelope's optional client-supplied uid is ACCEPTED when free — the committed resource is addressable under it — and a second commit naming a uid already in use is refused as a duplicate identifier."
     source: "ITS-REST specifications/operations/contribution_create.yaml, the relaxed-envelope list, verbatim: \"`uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned\" — the only released sentence governing the attribute. WHICH error comes from Requests_and_responses.md §HTTP status codes, the 409 row (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"), the only row that describes a colliding identifier"
@@ -1562,7 +1635,7 @@ elements:
     exception:
       reason: coverage_gap
       register: AMB-54
-      note: "Not authorable today for a closed-vocabulary reason, the same blocker recorded on ehr-id-path-segment-malformed-rejection and query-ehr-id-parameter-header-conflict: the outcome taxonomy (vocab/outcomes.yaml) carries ONE rejection kind for both codes (`validation_failed`), and the commit binding's `validation_failed` therefore declares `alt_status: [400]` so the kind spans the family. A case can say a rejection happened, not which code it wore. Splitting the two would need either a second rejection kind in the closed taxonomy or a per-case status override, both of which are extensions only a schedule release may make; a variant binding cannot do it, because the two branches differ in the BODY's change kind, not in the request shaping a variant expresses. What IS gated meanwhile is the rejection itself on every branch (contribution-change-kind-rejection-families) plus the two branches that DO have distinct kinds — 412 (contribution-preceding-version-precondition) and 409 (contribution-client-supplied-envelope-uid). Closes when the outcome taxonomy gains the second rejection kind."
+      note: "Not authorable today for a closed-vocabulary reason — and, since 2026-07-28, the LAST of that family: the two elements that once shared the blocker (ehr-id-path-segment-malformed-rejection, query-ehr-id-parameter-header-conflict) are now cased on the `bad_request` kind the schedule release added, but that kind does not help HERE. This branch needs a rejection pair spanning 422 AND 400 on ONE operation, not a malformed-request kind: the outcome taxonomy carries ONE rejection kind for both codes (`validation_failed`), and the commit binding's `validation_failed` therefore declares `alt_status: [400]` so the kind spans the family. A case can say a rejection happened, not which code it wore. Splitting the two would need either a second rejection kind in the closed taxonomy or a per-case status override, both of which are extensions only a schedule release may make; a variant binding cannot do it, because the two branches differ in the BODY's change kind, not in the request shaping a variant expresses. What IS gated meanwhile is the rejection itself on every branch (contribution-change-kind-rejection-families) plus the two branches that DO have distinct kinds — 412 (contribution-preceding-version-precondition) and 409 (contribution-client-supplied-envelope-uid). Closes when the outcome taxonomy gains the second rejection kind."
   - id: contribution-deletion-member-shape
     description: "A deletion member is data-LESS: committing 523|deleted| with the data omitted performs the logical delete, and a 523|deleted| member that carries data is refused rather than committed."
     source: "RM common master06-change_control_package.adoc §Logical Deletion, the procedure verbatim: \"create a new Version in the normal way; delete its `_data_`; set the `_lifecycle_state_` value to the code for `deleted`; commit in the normal way\" + UML/classes/org.openehr.rm.common.original_version.adoc (data 0..1, which is what lets a deletion version carry none) — CONTRADICTED by the released commit schema, which makes the member's data required with no null form; adjudicated in register AMB-85 in favour of the RM, with the refusal in the Requests_and_responses.md §HTTP status codes 422 row"
@@ -1702,10 +1775,15 @@ elements:
   - id: admin-bulk-delete-malformed-id-rejection
     description: "A bulk delete whose ehr_id selector carries a value that is not a well-formed identifier is refused as a client error, and the refusal happens BEFORE any deletion runs, so a typo in one id cannot silently destroy the well-formed ones in the same call."
     source: "ITS-REST docs/overview/Requests_and_responses.md §\"HTTP status codes\", row 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content)\") and the clause below the table (\"Status code `400` indicates normally a bad request, as well as a generic client-side error, used when no other `4xx` error code is appropriate\") + parameters/query/ehr_id_Admin.yaml (the selector is an EHR identifier) + SM UML/classes/i_admin_service.adoc §physical_ehr_delete (`an_ehr_id: UUID [1]`); the ORDERING — validate the whole list, then act — has no released sentence at all and is adjudicated in register AMB-140"
-    exception:
-      reason: coverage_gap
-      register: AMB-140
-      note: "A GENUINE COVERAGE GAP since the 2026-07-28 schedule release (#544), no longer an unnameable outcome. The former blocker was that the closed taxonomy had no malformed-request kind (`precondition_missing` means \"Required version precondition absent\" — an If-Match condition, not a syntactically invalid identifier), and the release added `bad_request` for exactly this family; the ORDERING half stays adjudicated in AMB-140. Server behaviour fixed and documented at its seam (app/ehrbase/src/service/admin/delete.rs, `admin_ehr_delete_all` → `parse_uuid_list`: the entire request is rejected on the first malformed id, before any deletion runs). The binding outcome and the gating case — one malformed id among well-formed ones refuses the whole call and deletes nothing — are now authorable and are simply MISSING. This exception RETIRES when they land."
+    # RETIRED coverage_gap (2026-07-28): the exception's own closing condition —
+    # "the binding outcome and the gating case … are now authorable and are
+    # simply MISSING" — is met. The delete_all binding declares `bad_request`
+    # (400) on the overview's own row-400 sentence, and the case names one
+    # malformed token beside a well-formed id, then reads the well-formed EHR
+    # back to prove the refusal preceded any deletion — the ORDERING half,
+    # which has no released sentence and stays adjudicated in AMB-140 and
+    # guarded as such on the case.
+    covered_by: [I_ADMIN_SERVICE.physical_ehr_delete-delete_all_malformed_id]
   - id: admin-bulk-delete-disabled-405
     description: "When a deployment disables the admin surface, the bulk-delete resource answers 405 Method Not Allowed — from a matched handler, carrying the mandatory Allow header with the empty field value — and deletes nothing."
     source: "ITS-REST specifications/operations/admin_ehr_delete_all.yaml (\"> NOTE: This functionality is intended primarily for **development** or **testing** purposes and may be disabled in **production** environments, in which case server may respond with `405 Method Not Allowed`.\") + responses/405.yaml (\"`405 Method Not Allowed` is returned when the service knows the request method, but the target resource doesn't support this method (e.g. due to security concerns)\") + docs/overview/Requests_and_responses.md §\"HTTP status codes\" (405 is a predefined row) and §\"HTTP Methods\" (\"If a method is recognized but not allowed for the target resource, the response SHOULD be `405 Method Not Allowed` status code\") over RFC 9110 §15.5.6 (the Allow header MUST) and §10.2.1 (\"An empty Allow field value indicates that the resource allows no methods, which might occur in a 405 response if the resource has been temporarily disabled by configuration\")"
@@ -1728,7 +1806,7 @@ elements:
     exception:
       reason: coverage_gap
       register: AMB-139
-      note: "A GENUINE COVERAGE GAP since the 2026-07-28 schedule release (#544), no longer an unnameable outcome: the taxonomy now carries `accepted`, so the branch can be declared as its own outcome instead of being absorbed as `alt_status: [202]` under `ok_empty` on both admin bindings. Until that migration lands the absorption stands — the honest logical reading (a bodyless success), but one under which a case passes on either code and NO case can require or distinguish the asynchronous branch. Said openly rather than counted as coverage. This SUT is synchronous and always answers 204, so a case REQUIRING `accepted` would not be gating against it; what the migration buys is that a case can name which branch it drives. This exception RETIRES when the two admin bindings declare the `accepted` outcome and the branch carries a case (or an ixit-declared asynchrony fact says the deployment never takes it)."
+      note: "MIGRATED, and the residue is honest. Both admin bindings now DECLARE the `accepted` (202) outcome the 2026-07-28 schedule release (#544) added, so the branch is nameable instead of hiding inside a success alias; each carries its own declared-but-unexercised row in the `branches:` section above. What did NOT change, and cannot: the branch has no client-side TRIGGER. The released sentence makes asynchrony the SERVICE's choice (\"The server may execute this operation asynchronously (e.g. in batches)\") with no request shape, header or parameter selecting it, so no case can drive it — the AMB-140 / AMB-159 pattern of a declared branch whose trigger the release withholds, not a coverage decision of ours. `ok_empty` therefore KEEPS `alt_status: [202]` on both bindings: every delete case asserts the deletion happened, and dropping the alias would turn the released MAY into a catalogue MUST-NOT and refute a conformant asynchronous server. This exception RETIRES when a release gives the arm a client-selectable trigger, or when the ixit models an asynchronous-deletion deployment fact a case can key on."
   # SMART on openEHR (ITS-REST docs/smart_app_launch/, `:spec_status:
   # DEVELOPMENT`). Prose-only: no OAS group, no schemas, no CNF anchor, and
   # exactly one RFC 2119 uppercase keyword in the whole specification — so
