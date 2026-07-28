@@ -226,6 +226,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Two behaviours the conformance suite used to treat as optional are now
+  required of every server** (#556). openEHR publishes its REST
+  specification as normative prose *and* as OpenAPI files, and the prose is
+  silent on more than it looks. Where the prose says nothing, those OpenAPI
+  files are now read as part of the specification rather than set aside — so
+  behaviours previously recorded as "the specification does not say" turn out
+  to be specified after all, and the suite stops excusing them. Two change
+  how a server is judged. Uploading an operational template under a
+  `template_id` that already exists must answer `409 Conflict`; it was
+  previously a declared choice between refusing and silently replacing the
+  stored template, and a server could opt out of the refusal. Updating a
+  COMPOSITION whose request body carries a `uid` naming a different version
+  container than the URL must be rejected; the mismatch was previously
+  reported without affecting the verdict. Both are now gating conformance
+  cases. The published conformance artifacts and the ambiguity register
+  record the specification sentence behind each.
+
 - **The published Conformance Statement now declares the non-openEHR surface
   this server serves** (#527). A new "Additional non-openEHR surface" section
   lists every extension route family — health, status, the OpenAPI/Swagger

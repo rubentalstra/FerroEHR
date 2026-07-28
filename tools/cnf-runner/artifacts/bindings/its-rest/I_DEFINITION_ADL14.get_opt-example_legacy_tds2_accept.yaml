@@ -18,7 +18,9 @@
 # preserves it. Whether the legacy support exists is statement-declared
 # (register AMB-61, option_select).
 #
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   specifications/docs/overview/Resources.md §Alternative data formats,
 #   §Data representation, §XML Format, §Simplified Formats.
 sm_operation: I_DEFINITION_ADL14.get_opt

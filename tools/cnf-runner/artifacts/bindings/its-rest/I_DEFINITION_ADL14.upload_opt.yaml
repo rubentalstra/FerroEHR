@@ -1,5 +1,7 @@
 # Wire realization of I_DEFINITION_ADL14.upload_opt for ITS-REST 1.1.0.
-# Sources: specifications/operations/definition_template_adl1.4_upload.yaml,
+# Sources, RELEASED OAS (tier 2 — the docs text describes no template-upload
+# exchange at all, so the OAS grounds it per the 2026-07-28 oracle order; cited
+# AS the OAS): specifications/operations/definition_template_adl1.4_upload.yaml,
 # responses/201_Template_adl1_4_upload.yaml, 409_template_already_exists.yaml.
 sm_operation: I_DEFINITION_ADL14.upload_opt
 its: its-rest
@@ -11,7 +13,7 @@ request:
     Content-Type: application/xml         # the ONLY accepted upload type (operation enum)
 outcomes:
   created: { status: 201 }                # 201_Template_adl1_4_upload.yaml
-  already_exists: { status: 409 }         # duplicate template_id — AMB-4
+  already_exists: { status: 409 }         # 409_template_already_exists.yaml: "`409 Conflict` is returned when a template with same `template_id` already exists" — AMB-4, gating for every server since 2026-07-28
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation

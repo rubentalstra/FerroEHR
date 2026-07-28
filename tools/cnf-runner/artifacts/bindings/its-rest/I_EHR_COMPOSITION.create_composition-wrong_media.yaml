@@ -15,7 +15,9 @@
 # type distinguishes this exchange — the refusal is a media-type decision, not
 # a parse or validation outcome.
 #
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS fills only what the docs text is silent on and is cited AS
+# the OAS where it does — owner ruling 2026-07-28):
 #   specifications/docs/overview/Resources.md §JSON Format + §XML Format.
 sm_operation: I_EHR_COMPOSITION.create_composition
 its: its-rest
