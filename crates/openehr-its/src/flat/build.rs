@@ -93,7 +93,7 @@ pub fn build_composition(
     collect_slot_types(&wt.tree, &mut slot_types);
 
     let mut comp = match build(&wt.tree, data_root, root_id, &slot_types)? {
-        Value::Object(m) => m,
+        Some(Value::Object(m)) => m,
         _ => Map::new(),
     };
     finish_identity(&mut comp, &wt.tree, true, &wt.template_id);
@@ -230,13 +230,22 @@ fn wrapper_types(
 /// Build the RM value for `node` from the simplified occurrence `sim`.
 /// `path` is the printed simplified path (diagnostics); `slots` is the template's
 /// hoisted-wrapper type map (see [`build_composition`]).
+///
+/// `Ok(None)` means the occurrence builds **no value**: a leaf that carries no
+/// datum part, only the `/_null_flavour` (+ `/_null_reason`) rows of master05
+/// §ELEMENT. RM data_structures §ELEMENT (`Inv_null_flavour_indicated`) makes
+/// `value` and `null_flavour` mutually exclusive, so the wrapping ELEMENT is
+/// still materialised — carrying the null flavour and no `value`.
 fn build(
     node: &WebTemplateNode,
     sim: &SimNode,
     path: &str,
     slots: &[(Vec<PathSegment>, String)],
-) -> Result<Value, FlatError> {
+) -> Result<Option<Value>, FlatError> {
     if node.has_input() {
+        if is_null_flavoured(sim) {
+            return Ok(None);
+        }
         let mut dv = map::build_leaf(sim, base_type(&node.rm_type), Some(node), path)?;
         // Value-level `_` attributes (`_normal_range`, `_mapping`,
         // `_accuracy`, `_language`, …) attach to the DV value itself;
@@ -249,7 +258,7 @@ fn build(
                 }
             }
         }
-        return Ok(dv);
+        return Ok(Some(dv));
     }
 
     let mut obj = Map::new();
@@ -260,32 +269,7 @@ fn build(
     let mut history_origin: Option<String> = None;
 
     for child in &node.children {
-        // Standard EVENT_CONTEXT fields come from ctx/ (master06); only the
-        // archetyped other_context content is tree data.
-        if node.rm_type == "EVENT_CONTEXT" && !child.aql_path.contains("other_context") {
-            continue;
-        }
-        // Composition-level in-context attributes arrive via ctx resolution
-        // (`ctx::resolve` also reads their path spellings). The `context`
-        // child IS built when path keys address it — archetyped
-        // `other_context` content and the `_`-attribute families
-        // (`_health_care_facility`, `_participation:i`, `_end_time`,
-        // `_location` — master05 §EVENT_CONTEXT) are tree data; the standard
-        // leaf fields (start_time/setting) still come from ctx/ (the
-        // EVENT_CONTEXT rule above) via `apply_composition_ctx`.
-        // `category` is real tree data (master05 §COMPOSITION) and builds.
-        if node.rm_type == "COMPOSITION"
-            && matches!(child.id.as_str(), "language" | "territory" | "composer")
-        {
-            continue;
-        }
-        // ENTRY-level `language`/`encoding` default from the composition context
-        // (master06 §"Language and Territory"); they are filled by
-        // `apply_entry_defaults`, never rebuilt from a per-entry path key (the
-        // synthesized CODE_PHRASE in-context nodes carry no leaf inputs). `subject`
-        // is NOT skipped — a non-`PARTY_SELF` subject is real data
-        // (master05 §OBSERVATION `/subject`) and builds as a leaf.
-        if is_entry_family(&node.rm_type) && matches!(child.id.as_str(), "language" | "encoding") {
+        if !child_is_walked(node, child) {
             continue;
         }
         let Some(sim_child) = sim.children.get(&child.id).or_else(|| {
@@ -319,10 +303,14 @@ fn build(
             )?;
             continue;
         }
-        let known = node
-            .children
-            .iter()
-            .any(|c| c.id == *seg || c.alt_json_id.as_deref() == Some(seg));
+        // Only a template child the walk above ACTUALLY processes counts as
+        // handled. A child the in-context routing skipped
+        // ([`child_is_walked`]) must fall through to the direct-RM-path
+        // fallback below, or its datum would be neither honoured nor
+        // rejected — the one outcome master04 §Validation forbids.
+        let known = node.children.iter().any(|c| {
+            (c.id == *seg || c.alt_json_id.as_deref() == Some(seg)) && child_is_walked(node, c)
+        });
         let ctx_covered = node.rm_type == "COMPOSITION"
             && matches!(
                 seg.as_str(),
@@ -356,7 +344,7 @@ fn build(
     // master05 per-type tables place on a container; anything else is an
     // unknown suffix.
     if let Some(raw) = sim.attrs.get("raw") {
-        return build_raw(raw, path);
+        return build_raw(raw, path).map(Some);
     }
     apply_container_datum_attrs(node, sim, path, &mut obj)?;
 
@@ -373,7 +361,61 @@ fn build(
         }
         apply_interval_flags(m, &node.rm_type);
     }
-    Ok(value)
+    Ok(Some(value))
+}
+
+/// Whether a leaf occurrence expresses a **value-less** ELEMENT: no datum part
+/// of its own, and a `/_null_flavour` family (master05 §ELEMENT). RM
+/// data_structures §ELEMENT `Inv_null_flavour_indicated` makes `value` and
+/// `null_flavour` mutually exclusive, so this is the only shape in which a
+/// null flavour can legitimately reach the builder.
+fn is_null_flavoured(sim: &SimNode) -> bool {
+    sim.attrs.is_empty()
+        && sim
+            .children
+            .get("_null_flavour")
+            .is_some_and(|c| c.occurrences.iter().any(|o| !o.is_empty()))
+}
+
+/// Whether the template-child walk builds `child` from its own sim sub-tree.
+///
+/// Three in-context families are routed elsewhere and are therefore NOT walked:
+///
+/// * **EVENT_CONTEXT** standard fields (everything but archetyped
+///   `other_context` content) — `start_time`/`setting` come from the `ctx/`
+///   vocabulary (master06 §§time, setting) via `apply_composition_ctx`, and
+///   their master05 §EVENT_CONTEXT PATH spellings are honoured by
+///   [`direct_rm_path`].
+/// * **COMPOSITION** `language`/`territory`/`composer` — resolved through
+///   `ctx::resolve`, which reads their path spellings too
+///   (`merge_root_ctx_spellings`). The `context` child itself IS walked: its
+///   archetyped `other_context` content and `_`-attribute families
+///   (`_health_care_facility`, `_participation:i`, `_end_time`, `_location` —
+///   master05 §EVENT_CONTEXT) are tree data, and `category` is real tree data
+///   (master05 §COMPOSITION).
+/// * **ENTRY** `language`/`encoding` — defaulted from the composition context
+///   (master06 §"Language and Territory") by `apply_entry_defaults`; the
+///   master05 ENTRY-table `/language` path spelling is honoured by
+///   [`direct_rm_path`]. `subject` is NOT in this set — a non-`PARTY_SELF`
+///   subject is real data (master05 §OBSERVATION `/subject`) and builds as a
+///   PARTY_PROXY leaf.
+///
+/// A skipped child's identifier must never be treated as "already handled" by
+/// the datum loop: every non-walked spelling either reaches [`direct_rm_path`]
+/// or is rejected as an unknown path (master04 §Validation).
+fn child_is_walked(node: &WebTemplateNode, child: &WebTemplateNode) -> bool {
+    if node.rm_type == "EVENT_CONTEXT" && !child.aql_path.contains("other_context") {
+        return false;
+    }
+    if node.rm_type == "COMPOSITION"
+        && matches!(child.id.as_str(), "language" | "territory" | "composer")
+    {
+        return false;
+    }
+    if is_entry_family(&node.rm_type) && matches!(child.id.as_str(), "language" | "encoding") {
+        return false;
+    }
+    true
 }
 
 /// An interval assembled from bound CHILDREN (a WT tree whose
@@ -413,6 +455,15 @@ enum DirectPath {
     /// `current_state`/`transition`/`careflow_step` + `_reason:i` sub-tree
     /// (master05 §ISM_TRANSITION).
     Ism,
+    /// A `DV_CODED_TEXT` attribute whose master05 row binds it to an openEHR
+    /// terminology group in its Note column, so a bare `|code` resolves its
+    /// rubric from the bundle instead of standing as a `local` code.
+    CodedGroup {
+        /// The RM attribute name the value is inserted under.
+        attr: &'static str,
+        /// The openEHR terminology group id the row's ValueSet names.
+        group: &'static str,
+    },
     /// `ACTIVITY.action_archetype_id` — a plain-String RM field
     /// (master05 §ACTIVITY).
     ActionArchetypeId,
@@ -424,8 +475,26 @@ enum DirectPath {
 /// The direct RM-attribute path (if any) named by `seg` on a node of base RM
 /// type `host`, per the master05 per-type mapping tables.
 fn direct_rm_path(host: &str, seg: &str) -> Option<DirectPath> {
-    use DirectPath::{ActionArchetypeId, HistoryOrigin, Ism, Leaf};
+    use DirectPath::{ActionArchetypeId, CodedGroup, HistoryOrigin, Ism, Leaf};
     Some(match (host, seg) {
+        // master05 §§ADMIN_ENTRY, INSTRUCTION, ACTION, EVALUATION, OBSERVATION
+        // `/language` (CODE_PHRASE → `language`). Output takes the master06
+        // §"Language and Territory" `ctx/language` route, so the template child
+        // is not walked ([`child_is_walked`]) — the table's PATH spelling is
+        // honoured here instead of being ignored.
+        (_, "language") if is_entry_family(host) => Leaf {
+            attr: "language",
+            rm_type: "CODE_PHRASE",
+        },
+        // `/encoding` has no row of its own in any ENTRY table (an editorial
+        // hole — RM ehr §ENTRY declares `encoding` 1..1), but the master05
+        // §COMPOSITION example block spells
+        // `…/conformance_observation/encoding|code`, so the same path form is
+        // accepted for it.
+        (_, "encoding") if is_entry_family(host) => Leaf {
+            attr: "encoding",
+            rm_type: "CODE_PHRASE",
+        },
         // master05 §§ACTION, POINT_EVENT, INTERVAL_EVENT: `/time` (DV_DATE_TIME)
         // is addressable on the ACTION and on every EVENT concrete type.
         ("ACTION" | "POINT_EVENT" | "INTERVAL_EVENT" | "EVENT", "time") => Leaf {
@@ -456,16 +525,18 @@ fn direct_rm_path(host: &str, seg: &str) -> Option<DirectPath> {
             attr: "math_function",
             rm_type: "DV_CODED_TEXT",
         },
-        // master05 §EVENT_CONTEXT: `/start_time` (DV_DATE_TIME), `/setting`
-        // (DV_CODED_TEXT). Normally supplied via the `ctx/` vocabulary
-        // (master06); accepted as path keys here for the master05 path form.
+        // master05 §EVENT_CONTEXT: `/start_time` (DV_DATE_TIME) and `/setting`
+        // (DV_CODED_TEXT, Note column "ValueSet (openEHR `setting` group)").
+        // Output takes the master06 §§time, setting `ctx/` route, so neither
+        // template child is walked ([`child_is_walked`]) — the table's PATH
+        // spellings are honoured here instead of being ignored.
         ("EVENT_CONTEXT", "start_time") => Leaf {
             attr: "start_time",
             rm_type: "DV_DATE_TIME",
         },
-        ("EVENT_CONTEXT", "setting") => Leaf {
+        ("EVENT_CONTEXT", "setting") => CodedGroup {
             attr: "setting",
-            rm_type: "DV_CODED_TEXT",
+            group: "setting",
         },
         _ => return None,
     })
@@ -545,6 +616,31 @@ fn place_direct_rm_path(
                 && !obj.contains_key(attr)
             {
                 let value = map::build_leaf(node, rm_type, None, &sub_path)?;
+                obj.insert(attr.to_owned(), value);
+            }
+        }
+        DirectPath::CodedGroup { attr, group } => {
+            if let Some(node) = occ
+                && !obj.contains_key(attr)
+            {
+                // A bare `|code` binds to the row's openEHR terminology group,
+                // resolving its rubric exactly as the equivalent `ctx/`
+                // shortcut does (master06 §setting: "either value or code is
+                // accepted"). Once the client spells out `|value` or
+                // `|terminology`, the datum parts stand as given
+                // (master05 §DV_CODED_TEXT).
+                let bound = node
+                    .attrs
+                    .get("code")
+                    .and_then(Value::as_str)
+                    .filter(|_| {
+                        !node.attrs.contains_key("value") && !node.attrs.contains_key("terminology")
+                    })
+                    .map(|code| map::coded_from_group(group, code));
+                let value = match bound {
+                    Some(v) => v,
+                    None => map::build_leaf(node, "DV_CODED_TEXT", None, &sub_path)?,
+                };
                 obj.insert(attr.to_owned(), value);
             }
         }
@@ -643,10 +739,16 @@ fn apply_rm_attr(
 /// Insert `child_value` into `parent` at the relative RM path `rel`,
 /// re-materialising the collapsed structural nodes it passes through
 /// (`master04 §Level Removal`).
+///
+/// A `None` `child_value` is a value-less null-flavoured ELEMENT (see
+/// [`build`]): the collapsed wrapper chain is still re-materialised and the
+/// ELEMENT's own `_`-attribute family applied, but no `value` is inserted
+/// (master05 §ELEMENT; RM data_structures §ELEMENT
+/// `Inv_null_flavour_indicated`).
 fn place(
     parent: &mut Map<String, Value>,
     rel: &[PathSegment],
-    child_value: Value,
+    child_value: Option<Value>,
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
@@ -681,7 +783,7 @@ fn place_rec(
     rel: &[PathSegment],
     i: usize,
     id_idx: Option<usize>,
-    child_value: Value,
+    child_value: Option<Value>,
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
@@ -701,7 +803,9 @@ fn place_rec(
         let Some(arr) = arr else { return Ok(()) };
         if last {
             // The child value is itself the array element (a container child).
-            let mut el = child_value;
+            let Some(mut el) = child_value else {
+                return Ok(());
+            };
             set_node_id(&mut el, node_id);
             arr.push(el);
         } else {
@@ -768,7 +872,9 @@ fn place_rec(
     // A single-valued (object) attribute.
     if last {
         let wraps_element = seg.attribute == "value";
-        cur.insert(seg.attribute.clone(), child_value);
+        if let Some(child_value) = child_value {
+            cur.insert(seg.attribute.clone(), child_value);
+        }
         if wraps_element {
             // The map receiving `value` is the compacted-away ELEMENT
             // wrapper; apply its `_` attribute family (master05 §ELEMENT).

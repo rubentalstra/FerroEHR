@@ -307,6 +307,30 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Three FLAT/STRUCTURED mapping gaps: an entry's subject, null-flavoured
+  elements, and the event-context paths** (#532, #533, #534). An entry's
+  `subject` now travels over the wire in both directions: a composition whose
+  OBSERVATION, EVALUATION, INSTRUCTION, ACTION or ADMIN_ENTRY names someone
+  other than the record subject emits `…/subject|name`, `…|id`,
+  `…|id_scheme`, `…|id_namespace` plus the `/_identifier:i` and
+  `/relationship` sub-paths, and the same keys are accepted on input —
+  previously the subject was dropped on the way out and rejected as an
+  unknown suffix on the way in, so the information was lost in both
+  directions. A "self" subject carrying an external reference is marked
+  `|_type: PARTY_SELF` so it comes back as itself rather than as an
+  identified party. Second, an element that records *why* a value is missing
+  (a null flavour, which the reference model makes mutually exclusive with
+  the value) now keeps `/_null_flavour` and `/_null_reason` through a full
+  round trip; the flattener reached elements only through their value, so a
+  null-flavoured element vanished entirely. Third, the event-context fields
+  the specification also spells as paths — `…/context/start_time` and
+  `…/context/setting` — are honoured on input instead of being silently
+  discarded in favour of the `ctx/` defaults, as are an entry's
+  `…/language` and `…/encoding`; a bare `…/context/setting|code` resolves
+  against the openEHR *setting* value set exactly as `ctx/setting` does.
+  Paths the specification does not define are still rejected with a clear
+  error rather than ignored.
+
 - **The SMART discovery endpoint is fully described in the published API
   reference** (#535): the `application/json` requirement, the required
   `org.openehr.rest` service with its absolute `baseUrl`, the
