@@ -1566,7 +1566,15 @@ impl HttpDriver<'_> {
     }
 
     /// Captures plus the step's own scalar `with` values (the header/query
-    /// template resolution scope).
+    /// template resolution scope). A step's `with:` value SHADOWS a
+    /// same-named earlier capture in this step's scope — the step's explicit
+    /// input is the most specific binding, and the old keep-the-capture guard
+    /// silently rendered a STALE value into header templates (the run-2
+    /// triage, 2026-07-28: a case that captured `preceding_version_uid` at
+    /// step 1 and passed a newer uid under the same name at step 4 had its
+    /// If-Match rendered from step 1 — the SUT's 412 was correct and the red
+    /// row was this drop). The var store itself is not mutated; the shadow
+    /// lives only in the step-scoped merge.
     fn merge_with_vars(vars: &VarStore, with: &BTreeMap<String, Value>) -> VarStore {
         let mut merged = vars.clone();
         for (key, value) in with {
@@ -1585,7 +1593,6 @@ impl HttpDriver<'_> {
             };
             if let Some(text) = text
                 && let Ok(name) = CaptureName::parse(key)
-                && merged.scalar(&name).is_none()
             {
                 merged.set(name, Captured::Scalar(text));
             }
@@ -2083,6 +2090,40 @@ mod tests {
             }
         }))
         .unwrap()
+    }
+
+    /// The run-2 triage regression (2026-07-28): a step's explicit `with:`
+    /// value must SHADOW a same-named earlier capture in the step's template
+    /// scope. The old keep-the-capture guard rendered a STALE
+    /// `preceding_version_uid` into an If-Match header (step 1's capture
+    /// instead of the newer uid step 4 passed), and the SUT's correct 412
+    /// showed up as a red row.
+    #[test]
+    fn with_value_shadows_same_named_capture_in_step_scope() {
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("preceding_version_uid").unwrap(),
+            Captured::Scalar("vo::sys::1".to_owned()),
+        );
+        let mut with = BTreeMap::new();
+        with.insert(
+            "preceding_version_uid".to_owned(),
+            serde_json::json!("vo::sys::2"),
+        );
+        let merged = HttpDriver::merge_with_vars(&vars, &with);
+        assert_eq!(
+            merged
+                .scalar(&CaptureName::parse("preceding_version_uid").unwrap())
+                .as_deref(),
+            Some("vo::sys::2"),
+            "the step's explicit with: value wins in its own scope"
+        );
+        // The underlying store is untouched — the shadow is step-scoped.
+        assert_eq!(
+            vars.scalar(&CaptureName::parse("preceding_version_uid").unwrap())
+                .as_deref(),
+            Some("vo::sys::1")
+        );
     }
 
     /// The group-9 triage regression: a NUMBER-typed `with:` value must
