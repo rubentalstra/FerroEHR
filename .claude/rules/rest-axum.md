@@ -45,9 +45,10 @@ sections (spec-adherence.md; `/spec-lookup`).
   openEHR error body shape the spec defines.
 - **OpenAPI:** `ehrbase-rest` serves its own `utoipa`-generated OpenAPI +
   Swagger UI; the vendored OAS is the `emit-rest` codegen input for the
-  ITS-REST contract (NOT a behavioural oracle — owner ruling 2026-07-24: the
-  OAS is stalled; the ITS-REST docs text is the oracle and wins over it), not a
-  served document (owner ruling, 2026-07-17).
+  ITS-REST contract and a subordinate wire source (owner rulings 2026-07-24 +
+  2026-07-28: the docs text wins every conflict; the OAS grounds only what
+  the docs text is silent on), never a served document (owner ruling,
+  2026-07-17).
 - **Admin** (`/rest/admin`) lives in `ehrbase-rest`, reusing the same service
   layer. (There is no EhrScape adapter — that surface was cut; the FLAT /
   STRUCTURED / Web-Template simplified formats are served through the standard

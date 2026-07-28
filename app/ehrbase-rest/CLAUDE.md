@@ -20,9 +20,11 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
   `Last-Modified`, `Prefer`, committal merge), and content negotiation
   (canonical JSON + XML via `openehr-its`) come from the ITS-REST **docs text**
-  `docs/specs/openehr/ITS-REST/` — never invented, and NOT from the vendored
-  OAS (owner ruling 2026-07-24: the OAS is stalled and is NOT an oracle; where
-  it and the docs text disagree, the text wins).
+  `docs/specs/openehr/ITS-REST/` — never invented. The vendored released OAS
+  is subordinate (owner rulings 2026-07-24 + 2026-07-28): where it and the
+  docs text disagree, the text wins; where the docs text is silent, the OAS
+  grounds the behaviour (overview `Specifications.md` presents the OAS files
+  as the release's computable artifacts).
   Cross-check the CNF schedule; the CNF pipeline is the acceptance instrument.
 - **Implement the generated traits; never fork the contract.** If the contract
   is wrong, fix `openehr-codegen -- emit-rest` and regenerate — never hand-edit
