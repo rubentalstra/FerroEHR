@@ -251,6 +251,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The conformance suite proves EHR-scoped querying against two EHRs, not
+  one** (#604). The four cases that check a query is confined to the EHR named
+  in the `openehr-ehr-id` request header used to run against a server holding
+  a single EHR, so a server that ignored the header returned the same rows and
+  passed. Each now creates a second EHR with its own content first: an
+  unscoped answer carries the extra row and fails the case. The behaviour
+  being checked is unchanged; the check can no longer be satisfied by
+  accident.
+
 - **The conformance suite now names a malformed request and invalid content
   differently everywhere** (#605). Fifteen more conformance cases used to
   report a rejected request as a content-validation failure when what the
