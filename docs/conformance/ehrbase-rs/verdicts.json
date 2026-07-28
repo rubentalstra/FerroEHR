@@ -63,7 +63,7 @@
     ],
     [
       "DemographicArchetypeValidation",
-      "no_cases"
+      "passed"
     ],
     [
       "AqlBasic",
@@ -91,7 +91,7 @@
     ],
     [
       "BulkEhrLoad",
-      "no_cases"
+      "passed"
     ],
     [
       "EhrArchive",
@@ -313,7 +313,7 @@
     [
       "DemographicArchetypeValidation",
       {
-        "passed": 0,
+        "passed": 8,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -376,7 +376,7 @@
     [
       "BulkEhrLoad",
       {
-        "passed": 0,
+        "passed": 2,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,7 +588,7 @@
     }
   ],
   "coverage": {
-    "selected": 757,
-    "driven": 694
+    "selected": 767,
+    "driven": 704
   }
 }

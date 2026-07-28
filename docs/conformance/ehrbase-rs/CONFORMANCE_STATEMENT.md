@@ -32,12 +32,14 @@ Capabilities claimed:
 - ArchetypeValidation
 - PartyOperations
 - PartyRelationshipOperations
+- DemographicArchetypeValidation
 - AqlBasic
 - AqlAdvanced
 - AqlTerminology
 - ActivityReport
 - PhysicalDeletion
 - EhrDumpLoad
+- BulkEhrLoad
 - EhrArchive
 - DemographicArchive
 - EhrExtract
