@@ -41,7 +41,7 @@ outcomes:
   updated:
     status: 200
     headers:
-      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"', applies: { its_rest: ">=1.1.0" } }
     body: prefer_conditional
   validation_failed:
     status: 422                           # Change_type_valid violation = semantic error (overview §HTTP status codes: 422 "semantic errors")

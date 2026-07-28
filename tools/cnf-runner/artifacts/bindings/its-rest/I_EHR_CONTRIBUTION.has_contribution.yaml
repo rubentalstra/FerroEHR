@@ -27,6 +27,6 @@ outcomes:
     status: 200                           # 200_CONTRIBUTION.yaml — exists (TRUE)
     headers:
       Content-Type: negotiated
-      Location: absent                    # read — overview §Location / §Deprecated headers
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location / §Deprecated headers
   not_acceptable: { status: 406 }        # Resources.md §XML Format — an Accept the service cannot fulfill (no CONTRIBUTION XML document is published; AMB-165)
   not_found: { status: 404 }                                   # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR (FALSE / error)

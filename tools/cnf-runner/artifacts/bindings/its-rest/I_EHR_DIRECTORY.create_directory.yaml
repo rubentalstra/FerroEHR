@@ -27,7 +27,7 @@ outcomes:
   created:
     status: 201                           # 201_directory.yaml
     headers:
-      ETag: 'pattern:W/"[^"]+"'          # ETag_FOLDER.yaml (weak, W/"<version_uid>")
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # ETag_FOLDER.yaml (weak, W/"<version_uid>")
       Location: present                    # Location_directory.yaml
       Content-Type: negotiated
     body: prefer_conditional

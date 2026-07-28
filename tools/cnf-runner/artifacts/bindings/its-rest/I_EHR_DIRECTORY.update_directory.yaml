@@ -30,7 +30,7 @@ formats: [canonical-json, canonical-xml]
 outcomes:
   updated:
     status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
-    headers: { ETag: 'pattern:W/"[^"]+"' }   # ETag_FOLDER.yaml
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } } }   # ETag_FOLDER.yaml
     body: prefer_conditional
   validation_failed:
     # An RM-invalid FOLDER is well-formed JSON that breaks an RM rule, so the

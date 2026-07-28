@@ -39,7 +39,7 @@ outcomes:
     status: 204                             # OAS responses/204_version_updated.yaml
     body: absent                            # 204 No Content
     headers:
-      ETag: 'pattern:W/"[^"]+"'             # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Preference-Applied: "present?"        # MAY — overview §Representation details negotiation
 captures:
   version_uid:

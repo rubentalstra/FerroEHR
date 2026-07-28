@@ -58,7 +58,7 @@ format_headers:
 outcomes:
   created:
     status: 201                           # 201_CONTRIBUTION.yaml — the whole commit is one transaction
-    headers: { ETag: 'pattern:W/"[^"]+"', Location: present }
+    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }
     body: prefer_conditional
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors (invalid version content)

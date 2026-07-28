@@ -54,6 +54,6 @@ outcomes:
     status: 200                                               # Requests_and_responses.md §HTTP status codes, row 200
     headers:
       Content-Type: negotiated                                # Resources.md §JSON Format MUST
-      Location: absent                                        # read — overview §Location
+      Location: { match: absent, applies: { its_rest: ">=1.1.0" } }  # read — overview §Location
   not_found: { status: 404 }                                  # §HTTP status codes, row 404
   not_acceptable: { status: 406 }                             # Resources.md §XML Format MUST (single JSON representation)

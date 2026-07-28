@@ -42,7 +42,7 @@ outcomes:
   created:
     status: 201                           # the commit is accepted exactly as under the new header name
     headers:
-      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Location: present                   # 201 Created — overview §Location
     body: prefer_conditional
 captures:
