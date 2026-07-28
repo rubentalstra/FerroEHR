@@ -37,7 +37,7 @@ spec_refs:
   - "RM common §change_control (master06 §Logical Deletion)"
   - "RM common §version (Lifecycle_state_valid)"
   - "SM openehr_platform §I_EHR_COMPOSITION.get_versioned_composition"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

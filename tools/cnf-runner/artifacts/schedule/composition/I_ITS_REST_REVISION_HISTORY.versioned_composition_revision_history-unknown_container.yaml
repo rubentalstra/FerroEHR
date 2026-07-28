@@ -24,7 +24,7 @@ test_purpose: >-
 description: "COMPOSITION revision history for an unknown container (404)"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 formats: [canonical-json]
 requires:
   server: any

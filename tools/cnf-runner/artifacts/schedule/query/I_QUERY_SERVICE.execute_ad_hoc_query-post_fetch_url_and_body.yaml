@@ -30,7 +30,7 @@ spec_refs:
   - "ITS-REST query Request.md §Common Headers and Query Parameters"
   - "ITS-REST query Request.md §GET vs POST"
   - "ITS-REST query Response.md §RESULT_SET response"
-applies: { rm: ">=1.0.2", aql: ">=1.1", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
 ambiguities: [AMB-99]
 requires:
   server: any

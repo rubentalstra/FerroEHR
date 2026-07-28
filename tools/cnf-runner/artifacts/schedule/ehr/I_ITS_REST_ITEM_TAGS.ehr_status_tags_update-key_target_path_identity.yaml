@@ -42,7 +42,7 @@ spec_refs:
   - "ITS-REST ehr_status_tags_update.yaml §description"
   - "ITS-REST ehr_status_tags_get.yaml §description"
   - "RM common master07-tags.adoc §Semantics"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # ITEM_TAGs are Release-1.1.0 behaviour — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-77)
 formats: [canonical-json]
 requires:
   server: any

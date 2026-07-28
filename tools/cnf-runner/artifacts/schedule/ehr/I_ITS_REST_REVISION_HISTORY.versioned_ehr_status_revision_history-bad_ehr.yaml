@@ -25,7 +25,7 @@ test_purpose: >-
 description: "EHR_STATUS revision history of a non-existing EHR (404)"
 spec_refs:
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2" }
 formats: [canonical-json]
 requires: { server: empty }              # no EHRs, so the literal below cannot resolve
 flow:

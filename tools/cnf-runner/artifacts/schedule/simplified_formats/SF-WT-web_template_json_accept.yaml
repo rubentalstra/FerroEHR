@@ -33,7 +33,7 @@ spec_refs:
   - "ITS-REST overview Resources.md §JSON Format"
   - "ITS-REST overview Resources.md §Simplified Formats"
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # Simplified-Format media types on the resource endpoints arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-61; SPECITS-84 for CONTRIBUTION)
 guards:
   - "Fulfilling Accept: application/json on the OPT GET at all is OUR OWN documented extension (AMB-58), not a spec expectation: no released ITS-REST sentence defines a canonical-JSON OPERATIONAL_TEMPLATE representation or assigns this request an outcome, so a service that answers 406 instead is equally conformant. Only the shape of a returned body is spec-derived — ITS-REST overview Resources.md §JSON Format binds the response Content-Type to the negotiated type. The wt+json representation is the spec-named one and is exercised by SF-WT-web_template_get"
 requires:

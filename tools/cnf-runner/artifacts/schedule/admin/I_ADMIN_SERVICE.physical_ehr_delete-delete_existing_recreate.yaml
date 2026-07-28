@@ -32,7 +32,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr_with_id"
   - "ITS-REST admin §admin_ehr_delete (hard delete; 404_unknown_ehr_id)"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
-applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # admin EHR deletion arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-80)
 guards:
   - "ITS-REST Admin API is DEVELOPMENT-stage — docs/admin/Description.md §Status: \"This specification is in the `DEVELOPMENT` state\", and docs/overview/Preface.md §Conformance is \"tbd.\"; guarded until the Admin API stabilises"
   - "no released sentence states the post-delete contract — SM i_admin_service.adoc §physical_ehr_delete declares `Pre_has_ehr` and NO postcondition, unlike SM i_definition_query.adoc §delete_query's `Post_query_deleted`; the position asserted here is the adjudicated one in register AMB-143"
