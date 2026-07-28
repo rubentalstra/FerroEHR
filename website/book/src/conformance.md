@@ -209,7 +209,15 @@ the statement can never claim more than the run proves.
 `CONFORMANCE_CERTIFICATE.md` follows the structure of the openEHR conformance
 certificate template: the system under test, the scope of test, and a
 per-capability profile report showing which capabilities are required in each
-profile and whether each passed. It is emitted for **every** assessed system —
+profile, what each was verified against, and whether each passed. The
+**Realization** column separates capabilities verified over released ITS-REST
+operations from any verified over routes a product serves of its own design —
+the latter never gate an openEHR profile tier. Where the certificate carries a
+measured run, its **Workload Coverage** table additionally shows which claimed
+capabilities the hospital-simulation load actually exercised; a capability the
+simulation does not reach must carry an adjudicated exclusion, printed with
+its reason, and the runner's `validate` gate refuses an artifact tree that
+leaves such a row undecided. It is emitted for **every** assessed system —
 EHRbase-rs, upstream, or your own — and always identifies itself as a
 framework assessment with the claim computed from the attached run; it is
 never an official openEHR certification. This is the document to hand to a
