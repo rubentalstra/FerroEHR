@@ -42,7 +42,21 @@ pub enum AuthMode {
     /// `scope` claim. An instance may only declare this mode when the ixit
     /// declares a `smart` block; otherwise the cases that need it are
     /// not-applicable with that citation (ISO/IEC 9646 test selection).
-    BearerMint,
+    BearerMint {
+        /// The `sub` claim for THIS principal; falls back to the lane mint's.
+        #[serde(default)]
+        subject: Option<String>,
+        /// `realm_access.roles` for THIS principal (the RBAC identity the
+        /// minted token carries — USER / ADMIN / READONLY per the SUT's role
+        /// model); falls back to the lane mint's roles.
+        #[serde(default)]
+        roles: Option<Vec<String>>,
+        /// The `scope` claim minted when the driven step declares none — the
+        /// standing grant this principal holds for the general catalogue
+        /// (master08 resource scopes; a step-level `scopes:` always wins).
+        #[serde(default)]
+        default_scopes: Vec<String>,
+    },
 }
 
 /// The party's SMART App Launch lane declaration — a deployment fact no
@@ -325,7 +339,7 @@ mod tests {
                 .instance(&InstanceName::parse("smart_app").unwrap())
                 .unwrap()
                 .auth,
-            AuthMode::BearerMint
+            AuthMode::BearerMint { .. }
         ));
 
         // A relative key file resolves against the ixit document's directory,

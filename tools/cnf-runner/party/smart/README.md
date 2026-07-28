@@ -34,16 +34,19 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
    SUT and points `auth.oidc` at it, with a static issuer + audience, and turns
    the SMART resource-server role on (`smart.enabled`,
    `smart.require_smart_scopes`).
-2. `tools/cnf-runner/party/ehrbase-rs/ixit.smart.json` declares the lane: the
-   `smart` block names this key file, the issuer, the audience and the `kid`,
-   and the `smart_app` instance's `bearer_mint` auth mode says "sign a fresh
-   token per step, carrying that step's declared `scopes`".
-3. `scripts/conformance.sh` selects all of the above with `CONF_SMART_MODE=1`.
+2. `tools/cnf-runner/party/ehrbase-rs/ixit.json` declares the posture: the
+   `smart` block names this key file, the issuer, the audience and the `kid`;
+   the `sut`/`admin`/`readonly` principals carry `bearer_mint` auth with
+   per-instance roles + standing scope grants, and the `smart_app` instance
+   mints exactly the step-declared `scopes` for the boundary cases.
+3. `scripts/conformance.sh` composes the posture on every ehrbase-rs run —
+   it IS the standard conformance posture (owner ruling 2026-07-28), so the
+   one committed record covers the whole claimed surface in one invocation.
 
 Cases that declare `scopes:` on a flow step — and every case anchored on the
-`I_ITS_REST_SMART` pseudo-interface — are **not-applicable** when the party's
-ixit declares no `smart` block (ISO/IEC 9646 test selection), so the default
-lane is completely unaffected by this directory's existence.
+`I_ITS_REST_SMART` pseudo-interface — are **not-applicable** when a party's
+ixit declares no `smart` block (ISO/IEC 9646 test selection): a SUT that
+does not claim the capability is never driven against a guess (ehrbase-java).
 
 Spec: `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` —
 `master04-service_discovery.adoc` (the discovery document),

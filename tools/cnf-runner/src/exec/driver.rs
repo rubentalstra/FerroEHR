@@ -164,13 +164,25 @@ impl<'a> HttpDriver<'a> {
                     .map_err(|_| format!("credential env {token_env} unset"))?;
                 Ok(Some(format!("Bearer {token}")))
             }
-            AuthMode::BearerMint => {
+            AuthMode::BearerMint {
+                subject,
+                roles,
+                default_scopes,
+            } => {
                 let lane = ixit.smart.as_ref().ok_or_else(|| {
                     "instance declares auth mode `bearer_mint` but the ixit declares no `smart` \
                      lane to mint against"
                         .to_owned()
                 })?;
-                let token = mint_access_token(&lane.mint, scopes.unwrap_or_default())?;
+                // A step-level `scopes:` always wins (the SMART cases probe
+                // exact grants); a plain catalogue step rides the instance's
+                // standing grant.
+                let token = mint_access_token(
+                    &lane.mint,
+                    subject.as_deref(),
+                    roles.as_deref(),
+                    scopes.unwrap_or(default_scopes),
+                )?;
                 Ok(Some(format!("Bearer {token}")))
             }
         }
@@ -1051,7 +1063,12 @@ fn base64_encode(input: &[u8]) -> String {
 /// `scope` claim master08 §Resource Scopes defines, and the RBAC role claim
 /// the SUT mines (the SMART gate AND-composes onto RBAC, so a role-less token
 /// would be refused a layer earlier and prove nothing about SMART).
-fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Result<String, String> {
+fn mint_access_token(
+    mint: &crate::ixit::BearerMint,
+    subject: Option<&str>,
+    roles: Option<&[String]>,
+    scopes: &[String],
+) -> Result<String, String> {
     let pem = std::fs::read(&mint.key_file).map_err(|e| {
         format!(
             "smart mint: cannot read key file {}: {e}",
@@ -1070,7 +1087,10 @@ fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Resul
     if let Some(audience) = &mint.audience {
         claims.insert("aud".to_owned(), Value::String(audience.clone()));
     }
-    claims.insert("sub".to_owned(), Value::String(mint.subject.clone()));
+    claims.insert(
+        "sub".to_owned(),
+        Value::String(subject.unwrap_or(&mint.subject).to_owned()),
+    );
     claims.insert("iat".to_owned(), Value::from(issued_at));
     claims.insert("exp".to_owned(), Value::from(expires_at));
     // master08 §Resource Scopes: scopes ride the OAuth 2.0 `scope` claim,
@@ -1080,7 +1100,7 @@ fn mint_access_token(mint: &crate::ixit::BearerMint, scopes: &[String]) -> Resul
     claims.insert("scope".to_owned(), Value::String(scopes.join(" ")));
     claims.insert(
         "realm_access".to_owned(),
-        serde_json::json!({ "roles": mint.roles }),
+        serde_json::json!({ "roles": roles.unwrap_or(&mint.roles) }),
     );
 
     jsonwebtoken::encode(&header, &claims, &key)
@@ -2345,6 +2365,8 @@ mod tests {
         let mint = test_mint(vec!["USER".to_owned()]);
         let token = mint_access_token(
             &mint,
+            None,
+            None,
             &["user/template-*.r".to_owned(), "openid".to_owned()],
         )
         .unwrap();
@@ -2361,7 +2383,8 @@ mod tests {
     /// (master08 §Scopes ¶2), so the claim is present and empty.
     #[test]
     fn mint_emits_an_empty_scope_claim_for_a_scopeless_token() {
-        let token = mint_access_token(&test_mint(vec!["USER".to_owned()]), &[]).unwrap();
+        let token =
+            mint_access_token(&test_mint(vec!["USER".to_owned()]), None, None, &[]).unwrap();
         let claims = decode_against_committed_jwks(&token);
         assert_eq!(claims["scope"], Value::from(""));
     }
@@ -2375,8 +2398,16 @@ mod tests {
         }))
         .unwrap();
         let no_scopes: &[String] = &[];
-        let error =
-            HttpDriver::auth_header(&ixit, &AuthMode::BearerMint, Some(no_scopes)).unwrap_err();
+        let error = HttpDriver::auth_header(
+            &ixit,
+            &AuthMode::BearerMint {
+                subject: None,
+                roles: None,
+                default_scopes: Vec::new(),
+            },
+            Some(no_scopes),
+        )
+        .unwrap_err();
         assert!(error.contains("no `smart` lane"), "{error}");
     }
 
