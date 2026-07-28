@@ -6,13 +6,19 @@
 #       assertion below pins one master04 Structured syntax rule on the observed
 #       read-back (verified live against the composed SUT). Instance indexing is
 #       realised as array position (rule: arrays throughout), so a single
-#       cardinality node still reads back as a one-element array.
+#       cardinality node still reads back as a one-element array — the
+#       resolution of master04's own Rule-2-vs-Rule-5 conflict, adjudicated in
+#       register AMB-153 (both master04's and master03's worked examples render
+#       repeating nodes as array elements with no `:i` in the property name;
+#       an explicit `:i` property is still ACCEPTED on input and folds into
+#       array position).
 id: SF-STRUCT-style_rules
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-153]
 test_purpose: >-
   The Structured output holds its syntax rules: nested-object hierarchy,
   pipe-prefixed suffix properties, ctx grouping, arrays throughout (even at

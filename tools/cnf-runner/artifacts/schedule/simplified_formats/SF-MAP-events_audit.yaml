@@ -19,6 +19,7 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-154]        # the master05 editorial docket; E-9 is this case's guard
 test_purpose: >-
   A FLAT commit carrying a _feeder_audit key set on an OBSERVATION round-trips to
   canonical JSON with a FEEDER_AUDIT whose originating/feeder system audits and
