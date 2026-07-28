@@ -542,9 +542,16 @@ branches:
     reason: variant_of
     source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes its distinctive branch"
   # RETIRED coverage_gap: the canonical-xml representation of
-  # I_DEMOGRAPHIC_SERVICE.create_party is now exercised by
-  # I_DEMOGRAPHIC_SERVICE.create_party-xml (a PERSON committed as a canonical-XML
-  # request payload, read back and compared against its canonical-JSON twin).
+  # I_DEMOGRAPHIC_SERVICE.create_party is exercised by
+  # I_DEMOGRAPHIC_SERVICE.create_party-xml. RE-GROUNDED 2026-07-29 (register
+  # AMB-167, the write side): that row used to COMMIT the canonical-XML PERSON
+  # and compare the read-back against its JSON twin, which required the service
+  # to accept a request root no published XSD declares — the nsv1 bundle has no
+  # Demographic.xsd at all and nsv2 gives PERSON no document element — against
+  # Resources.md §XML Format's "both request payloads and responses MUST conform
+  # to the [published XSDs]". It now drives the same media type and expects the
+  # same section's 415, gated on `party-xml-unsupported`; the branch stays
+  # exercised either way.
   - binding: I_EHR_COMPOSITION.create_composition
     variant: deprecated_media_type
     format: wt-structured
@@ -614,20 +621,33 @@ branches:
   # canonical-json exception on the create_ehr with_ehr_id variant had already
   # retired with I_EHR_SERVICE.create_ehr-with_ehr_id.
   # RE-GROUNDED (register AMB-167): neither EHR nor FOLDER has a published
-  # document element, so those `-xml` rows are the OFFER arm and carry their
+  # document element, so the READ `-xml` rows are the OFFER arm and carry their
   # family's `ehr-xml-supported` / `directory-xml-supported` option; the
   # REFUSAL arm is cased too (I_EHR_SERVICE.get_ehr-xml_not_acceptable,
   # I_EHR_DIRECTORY.get_directory-xml_not_acceptable). The branches stay
   # exercised either way — the option decides which arm a party is judged on,
   # not whether the surface is covered.
+  # CORRECTED 2026-07-29 for the WRITE rows (register AMB-167, the write side).
+  # A read can decline to name a root because the SERVER picks the document; a
+  # write cannot, and the payload the three write rows sent
+  # (I_EHR_SERVICE.create_ehr-xml, I_EHR_DIRECTORY.{create,update}_directory-xml)
+  # carried `<ehr_status>` / `<folder>` roots NEITHER vendored bundle declares —
+  # against Resources.md §XML Format's "both request payloads and responses MUST
+  # conform to the [published XSDs]", so a success expectation would have marked
+  # a conformant validating service non-conformant. All three now drive the same
+  # media type and expect the same section's 415 ("If the service cannot process
+  # the request payload as XML format, it MUST respond with HTTP status code
+  # `415 Unsupported Media Type`"), gated on `ehr-xml-unsupported` /
+  # `directory-xml-unsupported`. The canonical-xml branch of each write binding
+  # stays exercised.
   - binding: I_EHR_STATUS.clear_ehr_modifiable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case expects the §XML Format 415 and is option-gated on `ehr-status-xml-unsupported` (register AMB-167, re-adjudicated 2026-07-29 — the published XSDs declare no EHR_STATUS document element, so a WRITE row cannot commit to a conforming request root and only the refusal half of §XML Format is enforceable on this seam; the OFFER arm survives on the reads, I_EHR_STATUS.get_ehr_status-xml on `ehr-status-xml-supported`)"
   - binding: I_EHR_STATUS.clear_ehr_queryable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.clear_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case expects the §XML Format 415 and is option-gated on `ehr-status-xml-unsupported` (register AMB-167, re-adjudicated 2026-07-29 — the published XSDs declare no EHR_STATUS document element, so a WRITE row cannot commit to a conforming request root and only the refusal half of §XML Format is enforceable on this seam; the OFFER arm survives on the reads, I_EHR_STATUS.get_ehr_status-xml on `ehr-status-xml-supported`)"
   # RETIRED coverage_gaps (2026-07-28) — the two EHR_STATUS READS are now
   # exercised in canonical-xml: I_EHR_STATUS.get_ehr_status-xml, and
   # I_EHR_STATUS.get_versioned_ehr_status-xml, which covers BOTH realizations
@@ -650,11 +670,11 @@ branches:
   - binding: I_EHR_STATUS.set_ehr_modifiable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_modifiable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case expects the §XML Format 415 and is option-gated on `ehr-status-xml-unsupported` (register AMB-167, re-adjudicated 2026-07-29 — the published XSDs declare no EHR_STATUS document element, so a WRITE row cannot commit to a conforming request root and only the refusal half of §XML Format is enforceable on this seam; the OFFER arm survives on the reads, I_EHR_STATUS.get_ehr_status-xml on `ehr-status-xml-supported`)"
   - binding: I_EHR_STATUS.set_ehr_queryable
     format: canonical-xml
     reason: variant_of
-    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case is option-gated on `ehr-status-xml-supported` (register AMB-167 — the published XSDs declare no EHR_STATUS document element, so offering and refusing canonical XML are both conformant, and the refusal arm is cased as I_EHR_STATUS.get_ehr_status-xml_not_acceptable)"
+    source: "ITS-REST overview Resources.md §XML Format (\"A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format\") — the canonical-XML REQUEST branch is exercised on the xml_body variant binding (I_EHR_STATUS.set_ehr_queryable-xml_body, a case-supplied codec-derived XML EHR_STATUS); the variant-less realization builds its PUT body by JSON read-modify-write (from_capture + set:), so no XML request can enter that wire form; that covering xml_body case expects the §XML Format 415 and is option-gated on `ehr-status-xml-unsupported` (register AMB-167, re-adjudicated 2026-07-29 — the published XSDs declare no EHR_STATUS document element, so a WRITE row cannot commit to a conforming request root and only the refusal half of §XML Format is enforceable on this seam; the OFFER arm survives on the reads, I_EHR_STATUS.get_ehr_status-xml on `ehr-status-xml-supported`)"
   # RETIRED coverage_gaps (#288 slice 3): the canonical-xml representation of
   # every PARTY binding is now exercised by its own isolated case —
   # I_DEMOGRAPHIC_SERVICE.get_party-xml / -get_party_at_time-xml /
@@ -663,13 +683,19 @@ branches:
   # document entity as the body floor: the published ITS-XML schema declares the
   # PERSON complexType but no global element for it, so the release assigns no
   # document root name), and I_DEMOGRAPHIC_SERVICE.update_party-xml on the write
-  # side (an XML request payload read back and compared against its
-  # canonical-JSON twin).
+  # side.
   # RE-GROUNDED (register AMB-167): that missing global element is exactly why
-  # these rows are the OFFER arm and carry `party-xml-supported` — one option
+  # the READ rows are the OFFER arm and carry `party-xml-supported` — one option
   # for all five party types, which share one binding family and one document
   # question. The REFUSAL arm is
   # I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable.
+  # CORRECTED 2026-07-29 for the WRITE row (register AMB-167, the write side).
+  # `update_party-xml` used to commit the XML PERSON and compare the read-back
+  # against its JSON twin, which required the service to accept a `<person>`
+  # root no published XSD declares — against Resources.md §XML Format's "both
+  # request payloads and responses MUST conform to the [published XSDs]". It now
+  # expects that section's 415 on `party-xml-unsupported`, as does its
+  # create-side sibling.
 
   # ── ITEM_TAG (#288): the per-binding residue of the 23 released tag
   # operations. The five cross-cutting ITEM_TAG LAWS are exercised (see the

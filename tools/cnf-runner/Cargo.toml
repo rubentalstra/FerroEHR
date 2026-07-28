@@ -27,6 +27,11 @@ jsonschema = { workspace = true }
 # `applies` spec-version ranges use the Cargo/semver requirement grammar.
 semver = { workspace = true }
 regex = { workspace = true }
+# Canonical-XML response assertions (`xml_root`): the served document's root
+# element name and the namespace its prefix resolves to. A namespace-aware
+# parser is required — a regex cannot tell the root from a descendant, nor
+# relate a prefix to the URI in scope for it.
+quick-xml = { workspace = true }
 # Percent-encode path/query segments — never hand-roll a percent codec (owner rule).
 urlencoding = { workspace = true }
 thiserror = { workspace = true }

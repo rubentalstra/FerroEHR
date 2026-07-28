@@ -353,6 +353,60 @@ pub enum PlaceholderPolicy {
     RuntimeRandom,
 }
 
+/// The openEHR ITS-XML target namespace a canonical-XML document root must be
+/// qualified with (`namespace:` of the `xml_root` assertion).
+///
+/// The closed set is the closure of what ITS-XML actually publishes: the
+/// schemas of the `Release-1.0.2` bundle carry
+/// `targetNamespace="http://schemas.openehr.org/v1"` and those of
+/// `Release-2.0.0` carry `.../v2`, and both bundles set
+/// `elementFormDefault="qualified"`, so a conforming instance's root is in one
+/// of exactly these two namespaces — never in none. Which LINEAGE a service
+/// serves is implementation-defined (register AMB-169), so [`Self::Published`]
+/// is the assertion a case normally makes; the two pinned tokens exist for a
+/// row that has already fixed the lineage by other means.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum XmlNamespace {
+    /// Either published openEHR ITS-XML target namespace.
+    #[serde(rename = "openehr-published")]
+    Published,
+    /// `http://schemas.openehr.org/v1` — the Release-1.0.2 lineage.
+    #[serde(rename = "openehr-v1")]
+    V1,
+    /// `http://schemas.openehr.org/v2` — the Release-2.0.0 lineage.
+    #[serde(rename = "openehr-v2")]
+    V2,
+}
+
+impl XmlNamespace {
+    /// The published token (matches the case-core schema enum).
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Published => "openehr-published",
+            Self::V1 => "openehr-v1",
+            Self::V2 => "openehr-v2",
+        }
+    }
+
+    /// Whether a document's root-element namespace URI satisfies this
+    /// expectation.
+    #[must_use]
+    pub fn accepts(self, uri: &str) -> bool {
+        match self {
+            Self::Published => uri == Self::V1_URI || uri == Self::V2_URI,
+            Self::V1 => uri == Self::V1_URI,
+            Self::V2 => uri == Self::V2_URI,
+        }
+    }
+
+    /// The Release-1.0.2 bundle's target namespace.
+    pub const V1_URI: &'static str = "http://schemas.openehr.org/v1";
+    /// The Release-2.0.0 bundle's target namespace.
+    pub const V2_URI: &'static str = "http://schemas.openehr.org/v2";
+}
+
 /// A named ignore-set the `equivalent` assertion may resolve
 /// (normative per operation/format overlay, never runner-chosen).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
