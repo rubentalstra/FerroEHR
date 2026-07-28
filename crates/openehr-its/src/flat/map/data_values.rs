@@ -178,6 +178,15 @@ pub(super) fn emit_leaf(rm: &Value, rm_type: &str, list_open: Option<bool>, out:
         }
         // master05 §DV_IDENTIFIER — delegated to the party/identifier module.
         "DV_IDENTIFIER" => parties::emit_identifier(rm, out),
+        // master05 §PARTY_PROXY → §§PARTY_SELF, PARTY_IDENTIFIED,
+        // PARTY_RELATED: a PARTY_PROXY-typed leaf (`ENTRY.subject` —
+        // master05 §§ADMIN_ENTRY/INSTRUCTION/ACTION/EVALUATION/OBSERVATION
+        // `/subject` row) decomposes into the inlined
+        // `|name`/`|id`/`|id_scheme`/`|id_namespace` suffixes plus the
+        // `/_identifier:i` and `/relationship` sub-paths.
+        "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
+            parties::emit_party(rm, out);
+        }
         // master05 §DV_MULTIMEDIA: bare = `uri.value`, plus the attribute set;
         // `/_thumbnail`, `/_charset`, `/_language` are `_`-attribute sub-paths.
         "DV_MULTIMEDIA" => emit_multimedia(rm, out),
@@ -494,6 +503,14 @@ fn build_core(
         "DV_DATE_TIME" | "DV_DATE" | "DV_TIME" => build_amount_temporal(node, base, false),
         "DV_URI" | "DV_EHR_URI" => bare_typed(node, base),
         "DV_IDENTIFIER" => Some(parties::build_identifier(node)),
+        // master05 §PARTY_PROXY → the three subtype tables. `PERSON` is the
+        // `PARTY_REF.type` used when the datum carries an `|id` but no
+        // explicit reference type: the carriers of a PARTY_PROXY leaf
+        // (`ENTRY.subject`, `COMPOSITION.composer`) reference a person, and
+        // the master05 tables define no flat row for `external_ref.type`.
+        "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
+            Some(parties::build_party(node, "PERSON"))
+        }
         "DV_MULTIMEDIA" => build_multimedia(node),
         "DV_PARSABLE" => build_parsable(node),
         "DV_INTERVAL" => Some(build_interval(

@@ -312,6 +312,15 @@ fn is_known_suffix(base: &str, suffix: &str) -> bool {
         "DV_SCALE" => &["code", "value", "scale", "terminology"],
         "DV_DATE" | "DV_DATE_TIME" | "DV_TIME" => &["magnitude_status", "normal_status"],
         "DV_IDENTIFIER" => &["id", "issuer", "assigner", "type"],
+        // master05 §§PARTY_SELF, PARTY_IDENTIFIED, PARTY_RELATED — the three
+        // PARTY_PROXY subtype tables share `|id`/`|id_scheme`/`|id_namespace`
+        // and PARTY_IDENTIFIED/PARTY_RELATED add `|name`. `_type` is the
+        // PARTY_SELF discriminator (master05 §FEEDER_AUDIT_DETAILS `/subject`
+        // row Note: "add /subject|_type: PARTY_SELF"); the `/_identifier:i`
+        // and `/relationship` rows are sub-paths, not suffixes.
+        "PARTY_PROXY" | "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
+            &["name", "id", "id_scheme", "id_namespace", "_type"]
+        }
         "DV_PARSABLE" => &["value", "formalism"],
         "DV_MULTIMEDIA" => &[
             "mediatype",
