@@ -15,12 +15,14 @@ the complete document is composed natively in
 router; one `ehrbase-rest` spec entry; "serve only what we generate").
 
 **Why:** the vendored OAS is the `emit-rest` codegen input for the generated
-`openehr-its` contract — and NOTHING more. Owner ruling 2026-07-24: the OAS is
-**stalled** and is **NOT a behavioural/conformance oracle**. The conformance
-oracle is the ITS-REST **docs text** (`docs/specs/openehr/ITS-REST/`), verified
-by the CNF pipeline; where the OAS and the docs text disagree, the docs text
-wins. The served document legitimately differs from the OAS (ours includes the
-own-design extensions).
+`openehr-its` contract and a SUBORDINATE wire source — never a served
+document. Owner rulings 2026-07-24 + 2026-07-28: the conformance oracle is
+the ITS-REST **docs text** (`docs/specs/openehr/ITS-REST/`), which wins
+every conflict with the OAS; where the docs text is SILENT the released OAS
+grounds the behaviour (the release's own overview `Specifications.md`
+presents the OAS files as its computable artifacts). The served document
+legitimately differs from the OAS (ours includes the own-design
+extensions). See [[cnf-spec-oracle-attribution]].
 
 **How to apply:** when changing anything wire-visible (media types,
 headers, params, status codes), read the ITS-REST **docs text**

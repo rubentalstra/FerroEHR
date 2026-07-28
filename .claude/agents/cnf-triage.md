@@ -71,8 +71,10 @@ You never edit files — findings only.
    sent, what came back, how it was classified.
 2. **Read the encoding.** The case core YAML (SM operation + outcome kinds
    only) and the operation binding it realized through (wire expectations +
-   their cited ITS-REST docs-text / spec sources — NOT the stalled OAS). Note
-   exactly what the catalogue expects and WHY it claims to expect it.
+   their cited sources — docs text first; a released-OAS citation is valid
+   only for behaviour the docs text is silent on, and loses on conflict —
+   owner rulings 2026-07-24 + 2026-07-28). Note exactly what the catalogue
+   expects and WHY it claims to expect it.
 3. **Read the spec first-hand.** Open the governing sections under
    `docs/specs/openehr/` (the CNF case family text, the ITS-REST endpoint +
    overview `Requests_and_responses`, the SM interface, the RM/QUERY

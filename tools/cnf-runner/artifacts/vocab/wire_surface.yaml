@@ -5,9 +5,11 @@
 # behaviour with neither a covering case nor an entry here — silence is
 # not coverage (.claude/rules/testing.md §CNF coverage).
 #
-# ORACLE (owner ruling 2026-07-24): every `source` cites a RELEASED
-# component — the SM platform interfaces + the ITS-REST docs text — never
-# the vendored OAS. `reason` vocabulary: off_wire (ITS-REST 1.1.0 exposes
+# ORACLE (owner rulings 2026-07-24 + 2026-07-28): every `source` cites a
+# RELEASED component — the SM platform interfaces + the ITS-REST docs text;
+# the released OAS is citable (as the OAS, file + element) ONLY for
+# behaviour the docs text is silent on, and loses to the docs text on any
+# conflict. `reason` vocabulary: off_wire (ITS-REST 1.1.0 exposes
 # no wire), variant_of (realized as another binding/variant), accessor
 # (sub-interface navigation — excluded upstream, none here), coverage_gap
 # (on the wire, not yet exercised — a NEW-CASE candidate that ratchets

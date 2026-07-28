@@ -27,12 +27,20 @@ intuition.
   ITS-REST docs text); where the schedule or a Robot data set conflicts with a
   released spec, the RELEASED SPEC WINS, and an expectation with no
   released-spec ground is not enforceable.
-- **The ITS-REST docs text is the wire oracle, NOT the OAS (owner ruling
-  2026-07-24).** The vendored ITS-REST OAS is **stalled** — it is `emit-rest`
-  codegen input only, never a behavioural oracle. Read
-  `docs/specs/openehr/ITS-REST/` prose (esp. overview `Requests_and_responses`)
-  for required wire behaviour; where the OAS and the docs text disagree, the
-  docs text wins.
+- **The ITS-REST wire-oracle order: docs text first; the released OAS fills
+  docs-text SILENCE; the register only when BOTH are silent (owner rulings
+  2026-07-24 + 2026-07-28).** Read `docs/specs/openehr/ITS-REST/` prose (esp.
+  overview `Requests_and_responses`) for required wire behaviour; **where the
+  OAS and the docs text disagree, the docs text wins** (the 2026-07-24
+  conflict rule stands — real conflicts exist and were adjudicated). Where
+  the docs text is SILENT — not in conflict — the vendored released OAS
+  (`crates/openehr-its/vendor/rest-oas/`) grounds the expectation: the
+  release's own docs text presents the OAS files as its computable
+  specification artifacts (overview `Specifications.md`: "Specifications can
+  be downloaded as YAML files in OpenAPI Specification 3.0 format"; each API
+  Preface repeats it). Only a behaviour BOTH sources withhold is spec
+  silence for the ambiguity register. The OAS remains `emit-rest` codegen
+  input and is NEVER served (`served-openapi` rule unchanged).
 - **CNF red-run triage is spec-adjudicated** (`.claude/rules/cnf-triage.md`;
   the `cnf-triage` agent): when the CNF runner and the application disagree,
   the vendored spec text decides — it is always right and never a suspect.

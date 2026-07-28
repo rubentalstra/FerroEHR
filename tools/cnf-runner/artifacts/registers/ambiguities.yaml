@@ -5613,44 +5613,48 @@ AMB-159:
   upstream_ref: "UPR-121"
 AMB-160:
   ambiguity: >-
-    The System API is STABLE and its one operation has no released wire.
-    Neither the RESOURCE it is served on nor the BODY it answers with is
-    described by any released sentence. The System chapter is a stub, and the
-    only released prose about the method is one descriptive row of the overview
-    method table, which speaks of "the target resource" in general and names no
-    path. The manifest members a client would parse — solution,
-    solution_version, vendor, restapi_specs_version, conformance_profile,
-    endpoints — appear nowhere in the released text. So two services can both
-    satisfy every released sentence while answering on different resources with
-    different (or empty) bodies, and a client has nothing to code against.
+    The System API is STABLE, yet its DOCS TEXT describes no wire at all: the
+    chapter is a stub (Purpose, Related Documents, Status), and the only
+    docs-text prose about the method is one descriptive row of the overview
+    method table, which speaks of "the target resource" in general and names
+    no path. Everything a client would code against — the resource, the
+    Content-Type, the Options manifest schema (solution, solution_version,
+    vendor, restapi_specs_version, conformance_profile, endpoints) — lives
+    only in the release's OAS artifact (system.openapi.yaml). Before the
+    2026-07-28 ruling the catalogue could therefore assert only 200 + Allow.
   source: >-
     ITS-REST specifications/docs/system/Description.md — the whole System API
     chapter, a STUB carrying only Purpose, Related Documents and Status ("This
     specification is in the `STABLE` state"); it contains no path, no field
     list and no status code. Plus docs/overview/Requests_and_responses.md
-    §HTTP Methods, the only released sentence about the method's meaning
+    §HTTP Methods, the only docs-text sentence about the method's meaning
     ("| OPTIONS | Describe the communication options for the target resource.
-    |"), and §HTTP status codes, which assigns the success row every fulfilled
-    request takes ("| 200 | OK | The request succeeded, payload sent in a 200
-    response depends on the request method |" under "an appropriate HTTP status
-    code MUST be used as described above"). The path and the manifest members
-    exist ONLY in the stalled OAS bundle — recorded as provenance for where
-    they come from, NOT as an oracle (owner ruling 2026-07-24: the OAS is
-    stalled and the docs text governs). Silence CONFIRMED first-hand.
+    |"), and §HTTP status codes ("| 200 | OK | …" under "an appropriate HTTP
+    status code MUST be used as described above"). The rest of the exchange is
+    defined by the released OAS: system.openapi.yaml `paths: /` (options),
+    response `200_options` (headers Allow + ContentType_JSON; content
+    application/json, schema Options with NO required member). That the OAS is
+    citable here at all is the owner ruling 2026-07-28, grounded in the
+    release's own words — docs/overview/Specifications.md ("Specifications can
+    be downloaded as YAML files in OpenAPI Specification 3.0 format") and each
+    API Preface's "can be downloaded as OpenAPI specification file" — the OAS
+    files ARE the release's computable artifacts; they ground expectations
+    where the docs text is SILENT, and the docs text wins on conflict
+    (superseding the 2026-07-24 never-an-oracle absolutism). Confirmed
+    first-hand on both sides.
   handling: >-
-    Report only, and the catalogue claims exactly what the released text
-    assigns. The binding I_ITS_REST_SYSTEM.options asserts 200 and the presence
-    of the Allow header — the header that carries "the communication options"
-    under RFC 9110, the authority §HTTP Methods names for method semantics —
-    and asserts NOTHING about the response body: no body selector, no member,
-    no media type. The probe is sent to the API base-path root because that is
-    the one resource that IS the service, which the released text neither
-    mandates nor forbids; the choice is recorded here rather than presented as
-    a requirement, and a release that names a path supersedes it unchanged.
-    Sibling entry AMB-158 fixes the CONTENT of the one member whose name is at
-    least known (endpoints); this entry is the wider silence — that no released
-    sentence describes the exchange at all. Reported upstream (UPR-122).
-  disposition: report_only
+    Fixed handling under the 2026-07-28 ruling. The binding
+    I_ITS_REST_SYSTEM.options grounds the resource (`/`), the
+    Content-Type (application/json) and the JSON manifest body in the released
+    OAS, alongside the docs-text-grounded 200 + Allow. The Options schema
+    declares no required member, so no member presence is asserted — the body
+    obligation the release actually states is a JSON document, which the
+    case's canonical-json format check parses; requiring members would exceed
+    the release. Sibling entry AMB-158 fixes the CONTENT of the endpoints
+    member; the upstream ask UPR-122 stands editorially — a STABLE API's docs
+    text should describe its one exchange rather than delegating it entirely
+    to the OAS artifact.
+  disposition: fixed_handling
   upstream_ref: "UPR-122"
 
 AMB-161:
