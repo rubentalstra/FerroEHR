@@ -41,7 +41,7 @@ applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 guards:
   - "ITS-REST Admin API is DEVELOPMENT-stage — docs/admin/Description.md §Status: \"This specification is in the `DEVELOPMENT` state\", and docs/overview/Preface.md §Conformance is \"tbd.\"; guarded until the Admin API stabilises"
   - "admin_ehr_delete_all realizes NO SM operation — I_ADMIN_SERVICE.physical_ehr_delete takes a single `an_ehr_id: UUID [1]` and the I_ADMIN_ARCHIVE list operations archive rather than delete (register AMB-33); the `delete_all` variant anchor is a catalogue naming convention, never an SM claim"
-  - "the async `202 Accepted` branch the operation declares is absorbed as an alt_status of ok_empty, so this case passes on either code and cannot require or distinguish the asynchronous branch (register AMB-139); the `accepted` kind added by the 2026-07-28 schedule release makes the branch nameable but the binding has not yet been migrated"
+  - "the async `202 Accepted` branch the operation declares — ITS-REST specifications/operations/admin_ehr_delete_all.yaml (\"The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`\") — is absorbed as an alt_status of ok_empty, so this case passes on either code and cannot require or distinguish the asynchronous branch (register AMB-139); the `accepted` kind added by the 2026-07-28 schedule release makes the branch nameable but the binding has not yet been migrated"
 requires:
   server: exclusive                      # destroys every EHR — global-state ground; mints ${ehr_id}
   ehr: { commits: none }
