@@ -287,7 +287,14 @@ pub fn operation_binding_schema() -> Value {
                 "properties": {
                     "method": { "enum": tokens(HttpMethod::ALL) },
                     "path": { "type": "string", "pattern": "^/" },
-                    "query": { "type": "object", "additionalProperties": { "type": "string" } },
+                    "query": {
+                        "type": "object",
+                        "additionalProperties": { "oneOf": [
+                            { "type": "string" },
+                            { "type": "array", "minItems": 1, "items": { "type": "string" },
+                              "description": "The repeated (RFC 6570 exploded, {?p*}) form: one name=value pair per member, unbound optional members absent" }
+                        ] }
+                    },
                     "body": { "oneOf": [
                         { "type": "string" },
                         { "type": "object",
