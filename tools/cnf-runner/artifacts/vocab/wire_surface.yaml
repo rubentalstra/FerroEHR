@@ -2028,4 +2028,3 @@ served_extensions:
   # exactly what the axis-4 released-path check enforces. The route's
   # config-gated, off-by-default nature is recorded where it now belongs: the
   # `smart-discovery-absent-when-disabled` element above.
-    never_gates: true
