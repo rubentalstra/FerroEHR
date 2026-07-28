@@ -9,19 +9,29 @@
 # `11111111-…`, while the URL addresses the container this EHR's create
 # actually minted. The two cannot both be the target.
 #
-# SPEC SILENCE, registered as AMB-78 (report_only) — read the register entry
-# before changing anything here. No released sentence REQUIRES the rejection
-# (the match rule lives only in the API definition's operation description,
-# the stalled OAS layer; the docs text calls copying the enclosing VERSION uid
-# into the contained object "strongly recommended"/"should", and RM types
-# LOCATABLE.uid 0..1), and none assigns it a status. The catalogue expects the
-# SEMANTIC-error branch because the overview's 422 row is the only row that
-# describes this exchange — "The request was well-formed but was unable to be
-# followed due to semantic errors" — while the 400 row is scoped to "malformed
-# request syntax, syntactically invalid content" and the payload here is
-# neither. A conformant server answering 400, or accepting the commit and
-# stamping its own uid, breaches nothing released, so this case REPORTS and
-# never gates a tier.
+# GATING SINCE 2026-07-28, registered as AMB-78 (fixed_handling) — read the
+# register entry before changing anything here. The RULE is released: the
+# RELEASED OAS states it in the operation's own description (ITS-REST
+# specifications/operations/composition_update.yaml — "If the request body
+# already contains a COMPOSITION.uid.value, it must match the `uid_based_id`
+# in the URL"), and the docs text is SILENT rather than in conflict with it,
+# so under the 2026-07-28 oracle order that is a tier-2 ground and the
+# rejection is a released expectation. It is cited AS the OAS, never as docs
+# text. (The docs text reaches only as far as calling the copy of the
+# enclosing VERSION uid "strongly recommended"/"should", and RM types
+# LOCATABLE.uid 0..1 — which is why the rule had to come from tier 2. Before
+# the ruling this case carried report-only shelter on the reasoning that the
+# OAS was never an oracle; that shelter is withdrawn.)
+#
+# The STATUS is still ADJUDICATED, not declared, and stays 422: the operation
+# declares 200/204/400/404/412/422 and neither tier binds this trigger to one
+# of them, but the payload parses and is a well-formed COMPOSITION, so the
+# 400 row is out by its own scoping ("malformed request syntax, syntactically
+# invalid content") while both the docs-text 422 row ("The request was
+# well-formed but was unable to be followed due to semantic errors") and the
+# OAS responses/422.yaml ("the content type and syntax is correct, could be
+# converted to a resource, but there are semantic validation errors") describe
+# the exchange exactly. UPR-40 still asks upstream to assign the branch.
 #
 # The payload is otherwise the accepted v2 content (a valid COMPOSITION of the
 # same template), so the uid contradiction is the only rejectable defect.
@@ -31,7 +41,7 @@ component: EHR_COMPOSITION
 sm_operation: I_EHR_COMPOSITION.update_composition
 capabilities: [Versioning]
 exercises: [CompositionOps]
-profiles: [CORE]                         # Versioning is Core-tier; the case is NON-GATING via the report-only register entry AMB-78
+profiles: [CORE]                         # Versioning is Core-tier and the case GATES there: AMB-78 became fixed_handling on 2026-07-28
 ambiguities: [AMB-78]
 test_purpose: >-
   A COMPOSITION update whose body uid names a different version container than
@@ -45,7 +55,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_COMPOSITION.update_composition"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 guards:
-  - "The rejection itself rests on the AMB-78 adjudication — ITS-REST overview Resources.md §Identifier types only derives the container from the served identifier and calls copying the enclosing VERSION uid 'strongly recommended'/'should', and Requests_and_responses.md §HTTP status codes assigns neither its 400 nor its 422 row to a body-vs-URL identifier contradiction; the match rule itself appears only in the stalled API definition. A server that accepts the commit, or answers 400 instead of 422, is not in breach"
+  - "The REJECTION is released and gates: ITS-REST OAS operations/composition_update.yaml states the rule in its description ('If the request body already contains a COMPOSITION.uid.value, it must match the `uid_based_id` in the URL'), tier-2 ground where the docs text is silent (owner ruling 2026-07-28, register AMB-78). The 422 STATUS is adjudicated, not declared — neither tier binds this trigger to one of the operation's declared statuses; 422 is taken because the docs-text 422 row ('well-formed but was unable to be followed due to semantic errors') and the OAS responses/422.yaml both describe the exchange while the 400 row is scoped to malformed syntax. A server answering 400 answers outside that row's stated trigger"
 requires:
   server: any
   templates: [cnf.opt.minimal_event]
