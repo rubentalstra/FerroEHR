@@ -14,13 +14,15 @@
 # the `created` outcome takes the 201 of that pair, and the body is non-empty
 # by the same sentence.
 #
-# The THIRD member of the preference triad — `return=minimal` — deliberately
-# has NO binding here: register AMB-62 records that the released text assigns
-# that branch no status at all ("typically `201 Created`" is descriptive, and
-# the 204 sentence is conditional on a fact nothing assigns), so declaring a
-# minimal outcome would author an expectation the docs text does not carry.
-# What the minimal branch DOES assign — the `Location` SHOULD — is asserted on
-# the create outcomes generally (wire_surface `header-location-on-create`).
+# The THIRD member of the preference triad — `return=minimal` — has its OWN
+# variant binding (`I_DEMOGRAPHIC_SERVICE.create_party-return_minimal`), as one
+# variant pins one `Prefer` value. It did not exist while AMB-62 held that the
+# released text assigned that branch no status at all; the 2026-07-28
+# re-adjudication WITHDREW that position — the docs text is silent rather than
+# determinate ("typically `201 Created`" is descriptive, the 204 sentence
+# conditional on a fact nothing assigns), and the released OAS fills the
+# silence: `responses/201_PERSON.yaml` closes "If the `Prefer` header is
+# missing or set to `return=minimal`, the body is empty".
 #
 # `Preference-Applied` uses the OPTIONAL matcher: §Representation details
 # negotiation makes it a MAY ("The service MAY include a `Preference-Applied`
