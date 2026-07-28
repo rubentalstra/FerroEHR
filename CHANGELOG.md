@@ -17,6 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance runner: a certification claim can no longer be hollow** (#622).
+  `cnf-runner validate` now reads the committed party statements beside the
+  artifact root and relates every claim to the catalogue, so three new gates
+  fail before any system under test is even composed. `claim-completeness`
+  rejects a claimed capability with no verdict-bearing case at all, and
+  requires a capability whose every case is excused (because the openEHR
+  release publishes no wire for it) to name the register entry that
+  adjudicated that — an excuse that outlives the missing wire is a finding
+  too. `capability-depth` gives every capability a `min_cases` floor so one
+  token case can never certify it; floors only ever ratchet up.
+  `workload-coverage` requires every claimed capability the measured
+  hospital-simulation workload does not exercise to carry an adjudicated
+  exclusion, which the conformance certificate now prints with its reason in
+  place of the previous bare "NO — catalogue gap" cell. The certificate's
+  Profile Report also gains a **Realization** column saying whether a
+  capability was verified over released ITS-REST wire or over routes this
+  product serves of its own design (the latter can never gate an openEHR
+  profile tier).
+
 - **Conformance runner: the SMART on openEHR boundary is now executed, not
   declared** (#538). Three behaviours that were previously carried as
   statement-level claims are real conformance cases: the

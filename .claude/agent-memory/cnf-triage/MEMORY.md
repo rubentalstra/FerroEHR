@@ -11,7 +11,7 @@
 - [Two EHR_STATUS payload sites PR #431 missed](cnf-red-2026-07-27-ehr-status-payloads.md) — ehr_status recipe + contribution case core; catalogue bin; sweep command included
 - [Contained uid is a recommendation](contained-uid-is-a-recommendation.md) — data/uid presence is SHOULD in every released source; cannot gate CORE; AMB-65 fixes only the FORM
 - [AMB-54(b) contribution 412 ETag over-promise](amb54-contribution-412-etag-overpromise.md) — CATALOGUE bin: no If-Match on the contribution route ⇒ the ETag SHOULD's antecedent is false, and multi-member commits have no unique latest version_uid
-- [Non-string `with:` values dropped from URL/header templates](runner-nonstring-with-values-dropped.md) — RUNNER bin: merge_with_vars promotes only strings; `url_fetch: 4` never reaches `?fetch=`; body path is unaffected
+- [Non-string `with:` values dropped — FIXED](runner-nonstring-with-values-dropped.md) — HISTORICAL: merge_with_vars now promotes every scalar; re-read before reusing
 - [`equivalent` counts optional `_type` tags as content](equivalent-comparator-type-tags.md) — RUNNER bin: XML-commit cases fail unless their JSON twin is exhaustively `_type`-tagged; presence is a SHOULD scoped to polymorphic slots
 - [CONTRIBUTION XML read has no released document](contribution-xml-read-not-a-released-document.md) — CATALOGUE bin: no global XSD element, 406 is the §XML Format answer; AMB-165's read-side "is exercised" claim is false
 - [Prefer minimal status by operation](prefer-minimal-status-by-operation.md) — UPDATE-minimal = 204, CREATE-minimal = 201; docs text silent, released OAS fills per operation family
@@ -20,3 +20,7 @@
 - [XML offering is a service choice](xml-offering-is-a-service-choice.md) — AMB-167 "DOCUMENTED" ≠ mandatory offering; a 406 on Accept: application/xml is always conformant
 - [Runner masking mechanisms](runner-masking-mechanisms.md) — patched_body's RM-invalid EHR_STATUS fallback, `errored` contributing no capability evidence, report_only de-gating
 - [Upstream EHRbase Java non-conformance (#266)](upstream-ehrbase-java-nonconformance.md) — EHRbase 2.34.0 400s the spec-standard QUOTED If-Match (composition/ehr_status update classes) + 404s the STABLE item-tag surface; our driver/pack spec-valid, outcome (b), record stands
+- [ETag `W/` is 1.1.0-scoped](etag-weak-indicator-is-1-1-0-scoped.md) — form=MUST from 1.1.0, presence=SHOULD always; the catalogue applies the `its_rest` floor inconsistently (141 in-scope vs 108 out-of-scope rows, same matcher)
+- [Query ETag presence is a SHOULD](query-etag-presence-is-should.md) — no released source requires the header on a query 200; the `pattern:` matcher over-gates presence
+- [results.json records out-of-scope rows](results-json-records-out-of-scope-rows.md) — 542 red vs 227 in verdict scope on the java record; `binding.applies` is dead metadata
+- [Provisioning silently swallows failures](provisioning-silently-swallows-failures.md) — template upload result discarded, provisioning sends no Accept, `server: empty` is a no-op
