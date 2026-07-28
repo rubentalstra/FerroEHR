@@ -8,8 +8,10 @@
 # variant-less binding; the parameter is the only difference, so a red row
 # localizes to the at-time branch alone.
 #
-# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS; the OAS
-# path `ehr_status_get_at_time` is cited only for the route shape):
+# Sources (ITS-REST DOCS TEXT — tier 1, which wins every conflict; the
+# RELEASED OAS path `ehr_status_get_at_time` is the tier-2 ground for the
+# route shape the docs text does not state, cited AS the OAS — owner ruling
+# 2026-07-28):
 #   - the parameter's lexical form: overview Resources.md §Datetime format —
 #     "HTTP query parameters and path segments that are dates, datetimes, or
 #     times, MUST always use the _extended_ ISO 8601 format. The general form

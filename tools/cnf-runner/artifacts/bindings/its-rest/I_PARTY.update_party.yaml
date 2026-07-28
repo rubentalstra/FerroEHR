@@ -47,9 +47,17 @@ outcomes:
     # headers." 404 stays for an unresolvable PATH id, where there is no
     # resource to hold a current version at all (I_PARTY.update_party's
     # not_found, above).
-    # CORRECTED 2026-07-28: this branch read 404, sourced only from the OAS
-    # `person_update.yaml`, which is stalled and never a wire oracle (owner
-    # ruling 2026-07-24) — and CONTRADICTED by the released MUST above. The
+    # CORRECTED 2026-07-28: this branch read 404. RE-GROUNDED the same day
+    # under the OAS-fallback oracle order, and the correction stands on a
+    # firmer footing than the one first written for it. It is not that the OAS
+    # cannot ground anything (it can, where the docs text is silent) — it is
+    # that the docs text is NOT silent here and the two DISAGREE, which the
+    # docs text wins outright (owner ruling 2026-07-24, preserved by the
+    # 2026-07-28 order). The released OAS in fact declares BOTH branches on
+    # this operation (specifications/operations/person_update.yaml: '404' ->
+    # responses/404.yaml, '412' -> responses/412_PERSON.yaml), and the
+    # docs-text MUST above is what assigns an If-Match miss to the 412 of the
+    # two. The
     # sibling PUT with the identical If-Match realization,
     # I_EHR_COMPOSITION.update_composition, already carries exactly this
     # adjudication ("unknown preceding version = the If-Match condition
