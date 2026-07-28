@@ -82,9 +82,11 @@ SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, source: "
 # not a book row; and the capability is CONFIG-GATED (`[smart] enabled`,
 # off by default — a stock server serves no discovery document and runs an
 # inert gate), so a party claims it only for a SMART-enabled deployment. The
-# ehrbase-rs statement does NOT claim it: the composed conformance SUT runs the
-# default configuration. Coverage boundary + the CDR's enforceable share:
-# register AMB-151.
+# DEFAULT ehrbase-rs statement does NOT claim it — the composed conformance SUT
+# runs the default configuration — and the SMART overlay lane's own statement
+# (party/ehrbase-rs/statement.smart.json, selected by CONF_SMART_MODE=1) does,
+# because that deployment runs the role. Coverage boundary + the CDR's
+# enforceable share: register AMB-151.
 SmartAppLaunch: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST docs/smart_app_launch (SMART on openEHR). SCOPE: the specification is DEVELOPMENT-state in the pinned release — manifest_vars.adoc verbatim: \":spec_status: DEVELOPMENT\" — it is prose-only (no OpenAPI group, no schemas), it carries exactly ONE RFC 2119 uppercase keyword in all nine chapters (master06 §Deprecated Flows, \"MUST NOT be used\"), the vendored CNF corpus never mentions it, and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for it. Claims here are pinned to ITS-REST Release-1.1.0, are config-gated on the SMART resource-server role being enabled, and cover exactly the CDR's enforceable share — the /.well-known/smart-configuration document (master04 §Service Discovery + §Services + §Capabilities), the master08 §Resource Scopes grammar, and the 403-on-scope-deny discipline (overview Requests_and_responses.md §Authentication and authorization). The launch flows (master07), token issuance and grant prohibitions (master06), registration (master03) and the application typology (master05) are Authorization-Server behaviour and no claim rests on them" }
 EhrDemographicSeparation: { family: Security, tier: SEC-BASIC, required: true, source: "CNF 2.0 proposal (Security family; 2017 schedule Security BASIC lineage); RM ehr (EHR_STATUS.subject external refs / PARTY_SELF)" }
 AuthenticatedAccess: { family: Security, tier: SEC-BASIC, required: true, source: "CNF 2.0 proposal (Security family; 2017 schedule Security BASIC lineage); ITS-REST overview Requests_and_responses (HTTP status codes: 401)" }
