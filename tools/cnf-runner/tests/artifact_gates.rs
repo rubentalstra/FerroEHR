@@ -105,6 +105,14 @@ fn every_release_dated_header_rule_carries_the_same_floor() {
     let mut dated = 0_usize;
     let mut unscoped: Vec<String> = Vec::new();
     for (path, binding) in &loaded.set.bindings {
+        // EXTENSION bindings are exempt: their routes are our own design
+        // (no released text dates their headers — the W/ form there is a
+        // followed convention, not the 1.1.0 deprecation), and party-scoped
+        // selection already keeps them off any party that does not claim
+        // the capability, so no 1.0.3 party can be misjudged through them.
+        if binding.extension.is_some() {
+            continue;
+        }
         for (kind, expectation) in binding.outcomes.as_deref().unwrap_or_default() {
             for (header, declared) in expectation.headers.as_deref().unwrap_or_default() {
                 // The affected set, derived from the matcher itself: the
