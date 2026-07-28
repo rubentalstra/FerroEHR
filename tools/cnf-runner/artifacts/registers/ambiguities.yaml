@@ -5558,3 +5558,53 @@ AMB-158:
     element (no SM anchor exists for the System API operation). Revisits if a
     future release defines the member's contents.
   disposition: fixed_handling
+AMB-159:
+  ambiguity: >-
+    The released text DECLARES a query-execution timeout branch and withholds
+    every trigger for it, so the branch is real but unreachable by any
+    conformance case. The status table's 408 row states the branch and its
+    server-side cause — "Request maximum execution time is reached, therefore
+    the server aborted the request" — but nothing released says what that
+    maximum is, who sets it, or how a client can drive a request past it. The
+    whole client-settable query surface is enumerated in one place and contains
+    no execution bound: docs/query/Request.md §"Common Headers and Query
+    Parameters" opens "All query execution requests SHOULD support at least the
+    following parameters" and lists exactly `ehr_id`, `offset`, `fetch` and
+    `query_parameters`, plus the one related request header `openehr-ehr-id`.
+    So "maximum execution time" is a deployment property of the service, not a
+    protocol input — and AQL itself offers no cost knob either, since a query
+    expensive enough to time out on one deployment returns in milliseconds on
+    another. The consequence is specific and worth stating plainly: a
+    conformance case for this branch could only be written by inventing a
+    trigger the release withholds (a query chosen to be slow on THIS server, i.e.
+    an expectation derived from the SUT rather than the spec — the one thing the
+    attribution law forbids), or by fault-injecting the server, which is not a
+    wire behaviour at all.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §"HTTP
+    status codes", row `408 Request Timeout` ("Request maximum execution time is
+    reached, therefore the server aborted the request") — the sole released
+    mention of the branch. Silence CONFIRMED first-hand across the entire
+    released QUERY chapter: docs/query/Request.md, Response.md, Query_types.md
+    and Qualified_query_name.md contain no occurrence of `408`, "timeout" or any
+    execution-time concept (grep-verified), and §"Common Headers and Query
+    Parameters" is the complete client-settable surface quoted above.
+    docs/query/Qualified_query_name.md, which governs the stored route's extra
+    addressing, adds only name and version selection — so the stored and ad-hoc
+    routes are in exactly the same position.
+  handling: >-
+    Report-only, and deliberately UNEXERCISED rather than faked. Both
+    `timeout` branches — I_QUERY_SERVICE.execute_ad_hoc_query and
+    I_QUERY_SERVICE.execute_stored_query — stay DECLARED on their bindings
+    (a server that aborts a run-away query MUST have 408 available to it, and
+    the declaration is what makes the classifier recognise it) and stay
+    recorded as cited exceptions in vocab/wire_surface.yaml rather than being
+    closed by a case. This is the same disposition the register already applies
+    to I_ADMIN_SERVICE.physical_ehr_delete#delete_all's `not_found` under
+    AMB-140: a declared branch whose trigger the released text withholds is an
+    honest boundary, never a silent omission and never an invented case. It
+    closes the moment a release supplies a client-drivable execution bound —
+    then both branches become ordinary gating cases. Reported upstream
+    (UPR-121).
+  disposition: report_only
+  upstream_ref: "UPR-121"
