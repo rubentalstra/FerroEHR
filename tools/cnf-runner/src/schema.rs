@@ -802,6 +802,27 @@ pub fn results_schema() -> Value {
     })
 }
 
+/// The version-signing posture block — declared party-wide (the default) and
+/// optionally per instance (the deployment that runs a different mode). One
+/// definition, two placements, so the two can never drift apart.
+fn signing_def(description: &str) -> Value {
+    json!({
+        "description": description,
+        "type": "object",
+        "required": ["mode"],
+        "oneOf": [
+            { "additionalProperties": false, "required": ["mode", "algorithm", "encoding"],
+              "properties": { "mode": { "const": "digest" },
+                              "algorithm": { "type": "string", "minLength": 1 },
+                              "encoding": { "type": "string", "minLength": 1 },
+                              "prefix": { "type": "string" } } },
+            { "additionalProperties": false, "required": ["mode", "public_key"],
+              "properties": { "mode": { "const": "pgp" },
+                              "public_key": { "type": "string", "minLength": 1 } } }
+        ]
+    })
+}
+
 /// `ixit.json` — the SUT topology the runner drives (ISO/IEC 9646 IXIT).
 /// The schema validates exactly what [`crate::ixit::Ixit`] parses.
 #[must_use]
@@ -846,7 +867,10 @@ pub fn ixit_schema() -> Value {
                                                   "default_scopes": { "type": "array", "items": { "type": "string" } } } }
                             ]
                         },
-                        "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+                        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+                        "signing": signing_def(
+                            "THIS instance's version-signing posture, when it differs from the party default (RM common master06 §Digital Signature: the mode is a deployment fact, and a deployment runs one). A party claiming both modes declares two deployments as two instances, each with its own block; every signature check resolves instance-first, party default second. Absent => the top-level `signing` applies."
+                        )
                     }
                 }
             },
@@ -865,21 +889,9 @@ pub fn ixit_schema() -> Value {
                 "type": "string",
                 "minLength": 1
             },
-            "signing": {
-                "description": "The SUT's version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode the deployment runs (a deployment runs one). digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",
-                "type": "object",
-                "required": ["mode"],
-                "oneOf": [
-                    { "additionalProperties": false, "required": ["mode", "algorithm", "encoding"],
-                      "properties": { "mode": { "const": "digest" },
-                                      "algorithm": { "type": "string", "minLength": 1 },
-                                      "encoding": { "type": "string", "minLength": 1 },
-                                      "prefix": { "type": "string" } } },
-                    { "additionalProperties": false, "required": ["mode", "public_key"],
-                      "properties": { "mode": { "const": "pgp" },
-                                      "public_key": { "type": "string", "minLength": 1 } } }
-                ]
-            },
+            "signing": signing_def(
+                "The party's DEFAULT version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode every instance runs unless it declares its own. digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key."
+            ),
             "smart": {
                 "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",
                 "type": "object",
