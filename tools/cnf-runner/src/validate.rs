@@ -18,6 +18,7 @@ use crate::literal::{Literal, ViolationRef};
 use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
 use crate::model::binding::OperationBinding;
+use crate::model::capability::Realization;
 use crate::model::case::{CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters};
 use crate::model::wire_surface::{ServedExtension, WireSurface};
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
@@ -80,6 +81,15 @@ pub enum CheckId {
     /// certificate renders. A bare `NO — catalogue gap` row is an undecided
     /// hole, never a publishable one.
     WorkloadCoverage,
+    /// Realization scoping (issue #623): an `extension` binding drives a
+    /// route no openEHR specification governs, so it is fenced off from every
+    /// released-wire judgement — its family and path must resolve in the
+    /// `served_extensions` axis, its adjudication must resolve in the
+    /// register, and every capability its cases carry must be
+    /// `realization: extension` in the matrix (never `required`). The reverse
+    /// bites too: an `extension` matrix row whose cases drive released wire
+    /// is mislabelled, and understates the conformance the product earned.
+    RealizationScope,
     /// Total wire-surface coverage (issue #271): every spec-defined wire
     /// behaviour — SM operations (Axis 1), per-binding outcome/format branches
     /// (Axis 2), cross-cutting behaviours (Axis 3) — is exercised by ≥ 1 case
@@ -112,6 +122,7 @@ impl CheckId {
             Self::ClaimCompleteness => "claim-completeness",
             Self::CapabilityDepth => "capability-depth",
             Self::WorkloadCoverage => "workload-coverage",
+            Self::RealizationScope => "realization-scope",
             Self::SurfaceCoverage => "surface-coverage",
         }
     }
@@ -203,6 +214,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_claim_completeness(ctx.set, &mut findings);
     check_capability_depth(ctx.set, &mut findings);
     check_workload_coverage(ctx.set, &mut findings);
+    check_realization_scope(ctx.set, &mut findings);
     check_surface_coverage(ctx.set, ctx.spec_root, &mut findings);
 
     findings
@@ -380,6 +392,180 @@ fn check_capability_depth(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                     entry.min_cases.saturating_sub(count)
                 ),
             );
+        }
+    }
+}
+
+// ── realization scoping (issue #623) ────────────────────────────────────────
+
+/// A route path with every `{parameter}` segment collapsed to `{}` — the shape
+/// two artifacts can be compared on when each names its parameters locally.
+fn path_shape(path: &str) -> String {
+    path.split('/')
+        .map(|segment| {
+            if segment.starts_with('{') && segment.ends_with('}') {
+                "{}"
+            } else {
+                segment
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+/// Whether every operation the case's flow calls that resolves to a binding
+/// at all is an EXTENSION realization — the extension twin of
+/// [`crate::run::fully_unrealized`]. A case that touches even one released
+/// operation is NOT an extension-only case: it earns released-wire evidence
+/// too, so its capabilities may keep the released-wire marker.
+fn drives_only_extension_bindings(set: &ArtifactSet, case: &CaseCore) -> bool {
+    let mut saw_binding = false;
+    for step in &case.flow {
+        // A step with no resolvable binding is the binding-completeness gate's
+        // finding, not this one — skip it rather than double-report.
+        let Some(binding) = select_binding_for_step(set, case, step) else {
+            continue;
+        };
+        saw_binding = true;
+        if !binding.is_extension() {
+            return false;
+        }
+    }
+    saw_binding
+}
+
+/// An extension realization is fenced off from every released-wire judgement,
+/// and the fence is structural rather than conventional:
+///
+/// 1. the binding's `family` + request path resolve in the `served_extensions`
+///    axis, so a binding can only drive a route the SUT actually DECLARES;
+/// 2. its adjudication resolves in the ambiguity register;
+/// 3. a capability whose cases drive only extension bindings is
+///    `realization: extension` in the matrix — and, since
+///    `check_realization_scoping` forbids `required` there, no openEHR
+///    profile tier can ever rest on it (owner ruling 2026-07-28, #610);
+/// 4. the reverse: an `extension` row whose cases drive released wire is
+///    mislabelled and understates what the product earned.
+fn check_realization_scope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    check_extension_bindings(set, findings);
+    check_realization_markers(set, findings);
+}
+
+/// (1) + (2) of [`check_realization_scope`]: every extension binding names a
+/// declared family, drives one of that family's declared routes, and cites a
+/// register entry that resolves.
+fn check_extension_bindings(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    for (path, binding) in &set.bindings {
+        let Some(decl) = &binding.extension else {
+            continue;
+        };
+        let who = path.display().to_string();
+        if set
+            .register
+            .as_ref()
+            .is_some_and(|(_, r)| r.get(&decl.ambiguity).is_none())
+        {
+            push(
+                findings,
+                CheckId::RealizationScope,
+                &who,
+                format!(
+                    "extension declaration cites {} which is not in the register",
+                    decl.ambiguity
+                ),
+            );
+        }
+        let Some((_, wire_surface)) = &set.wire_surface else {
+            continue;
+        };
+        let Some(family) = wire_surface
+            .served_extensions
+            .iter()
+            .find(|e| e.family == decl.family)
+        else {
+            push(
+                findings,
+                CheckId::RealizationScope,
+                &who,
+                format!(
+                    "extension family {:?} is not declared in the served_extensions axis of \
+                     vocab/wire_surface.yaml — an extension binding may only drive a route the \
+                     SUT declares outwardly",
+                    decl.family
+                ),
+            );
+            continue;
+        };
+        let Some(request) = binding.request.as_ref() else {
+            continue; // the shape invariant already reported it
+        };
+        // Path-parameter NAMES are local to each artifact (the axis writes the
+        // served `{uid_based_id}`, a binding writes the capture it fills the
+        // segment from), so the comparison is on path SHAPE: every `{…}`
+        // segment collapses to `{}`. The axis writes absolute
+        // default-deployment paths and a binding path is base-relative, hence
+        // the suffix match.
+        let wanted = path_shape(request.path.raw());
+        let declared = family.routes.iter().any(|route| {
+            ServedExtension::route_path(route)
+                .is_some_and(|declared| path_shape(declared).ends_with(wanted.as_str()))
+        });
+        if !declared {
+            push(
+                findings,
+                CheckId::RealizationScope,
+                &who,
+                format!(
+                    "request path {} is not one of the routes the {:?} served_extensions family \
+                     declares — declare the route or bind a declared one",
+                    request.path.raw(),
+                    decl.family
+                ),
+            );
+        }
+    }
+}
+
+/// (3) + (4) of [`check_realization_scope`]: the matrix `realization` marker
+/// matches what the capability's verdict-bearing cases actually drive, in both
+/// directions.
+fn check_realization_markers(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((matrix_path, matrix)) = &set.matrix else {
+        return;
+    };
+    let matrix_who = matrix_path.display().to_string();
+    for (name, entry) in matrix.entries() {
+        let cases = verdict_bearing(set, name);
+        if cases.is_empty() {
+            continue; // claim-completeness / capability-depth own the empty row
+        }
+        let all_extension = cases
+            .iter()
+            .all(|case| drives_only_extension_bindings(set, case));
+        match (entry.realization, all_extension) {
+            (Realization::ReleasedWire, true) => push(
+                findings,
+                CheckId::RealizationScope,
+                &matrix_who,
+                format!(
+                    "{name}: every one of its {} verdict-bearing case(s) drives EXTENSION \
+                     routes only, so the row must carry `realization: extension` — a \
+                     released-wire marker would claim openEHR wire conformance the release \
+                     does not define",
+                    cases.len()
+                ),
+            ),
+            (Realization::Extension, false) => push(
+                findings,
+                CheckId::RealizationScope,
+                &matrix_who,
+                format!(
+                    "{name}: `realization: extension` is stale — at least one of its \
+                     verdict-bearing cases drives RELEASED ITS-REST operations; delete the \
+                     marker so the row claims the conformance it earns"
+                ),
+            ),
+            _ => {}
         }
     }
 }
@@ -2025,10 +2211,14 @@ fn check_served_extensions(
     wire_surface: &WireSurface,
     findings: &mut Vec<Finding>,
 ) {
+    // An `extension` binding realizes its operation over one of THESE routes
+    // (the `realization-scope` gate proves the family/path pairing), so its
+    // path is by construction not a released one — including it here would
+    // make every extension family collide with its own bindings.
     let released: Vec<&str> = set
         .bindings
         .iter()
-        .filter(|(_, b)| !b.is_unrealized())
+        .filter(|(_, b)| !b.is_unrealized() && !b.is_extension())
         .filter_map(|(_, b)| b.request.as_ref())
         .map(|r| r.path.raw())
         .collect();

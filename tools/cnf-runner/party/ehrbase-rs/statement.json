@@ -50,12 +50,12 @@
       "ItemTags",
       "Signing",
       "SimplifiedFormats",
+      "SmartAppLaunch",
       "EhrDemographicSeparation",
       "AuthenticatedAccess",
       "AuthorizationSeparation",
       "AuditAccountability",
-      "AnonymousEhrs",
-      "SmartAppLaunch"
+      "AnonymousEhrs"
     ],
     "profiles": [
       "CORE",

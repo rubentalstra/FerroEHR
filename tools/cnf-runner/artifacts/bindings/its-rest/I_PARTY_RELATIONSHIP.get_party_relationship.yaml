@@ -1,15 +1,60 @@
-# ITS-REST 1.1.0 surfaces no wire for the PARTY_RELATIONSHIP operations —
-# demographic.openapi.yaml has no /demographic/party_relationship* path;
-# PARTY_RELATIONSHIP is a schema only (RM demographic: a relationship is held
-# by-value in the source PARTY's relationships attribute). Explicit unrealized
-# declaration (AMB-17/22/24 precedent); register entry AMB-32.
-# master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the resolvable SM
+# EXTENSION realization of I_PARTY_RELATIONSHIP.get_party_relationship.
+#
+# NO RELEASED WIRE EXISTS (re-derived first-hand 2026-07-28): the released
+# specifications/demographic.openapi.yaml declares no `/demographic/
+# party_relationship*` path and the ITS-REST docs text never names the resource
+# — register AMB-32.
+#
+# WHAT THIS BINDING DRIVES: `GET /demographic/party_relationship/{uid_based_id}`,
+# a route this product serves of its own design (the `party-relationship`
+# served_extensions family). NO openEHR SPEC GOVERNS IT — our own
+# design/extension — so it gates the PartyRelationshipOperations CAPABILITY
+# verdict only, never ITS-REST wire conformance.
+#
+# The path id is the dual uid_based_id form, so passing a HIER_OBJECT_ID
+# addresses the CONTAINER and serves its latest version; the version-addressed
+# twin is I_PARTY_RELATIONSHIP.get_party_relationship_at_version.
+# master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
 # operation is I_PARTY_RELATIONSHIP.get_party_relationship.
 sm_operation: I_PARTY_RELATIONSHIP.get_party_relationship
 its: its-rest
-unrealized:
+extension:
+  family: party-relationship
   reason: >-
-    No PARTY_RELATIONSHIP resource exists in ITS-REST 1.1.0; the SM
-    get_party_relationship has no bindable wire realization.
-  source: "SM docs/UML/classes/i_party_relationship.adoc (get_party_relationship) vs ITS-REST specifications/demographic.openapi.yaml (no party_relationship path)"
+    ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so the SM
+    get_party_relationship has no released wire; this product serves the read on
+    its own /demographic/party_relationship/{uid_based_id} route.
+  source: >-
+    SM docs/UML/classes/i_party_relationship.adoc (get_party_relationship) vs
+    released ITS-REST specifications/demographic.openapi.yaml (no
+    party_relationship path) — no openEHR spec governs the extension route, our
+    own design/extension
   ambiguity: AMB-32
+request:
+  method: GET
+  path: /demographic/party_relationship/{versioned_object_uid}
+formats: [canonical-json]
+# NO `applies:` FLOOR ON THESE HEADER EXPECTATIONS, unlike the released party
+# reads. A floor dates a RELEASED rule to the release that introduced it (the
+# overview dates the weak-`ETag` MUST and the read/DELETE `Location`
+# restriction to 1.1.0). Nothing released governs this route, so there is no
+# release to date these expectations to: they assert what the route serves,
+# unconditionally. The same reasoning applies to every binding of this family.
+outcomes:
+  ok:
+    status: 200
+    headers:
+      Content-Type: negotiated
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Location: absent
+  not_found: { status: 404 }
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+# The served version carries the server-assigned OBJECT_VERSION_ID the submitted
+# PARTY_RELATIONSHIP had no way to state, so `uid` is the read's
+# `server_assigned` ignore-set membership — what an `equivalent` comparison
+# against the committed fixture must exclude (RM common master06 §Version
+# Identification: the version id is assigned at commit).
+server_assigned: [uid]

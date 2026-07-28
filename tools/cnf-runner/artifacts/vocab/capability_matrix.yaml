@@ -37,9 +37,55 @@
 # is either exercised by the hospital simulation or carries a PERMANENT,
 # capability-specific adjudication (destructive-mid-measurement and the like);
 # each row is deleted as its journey lands (#625).
-Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 1, evidence_exception: { register: AMB-41, reason: "ITS-REST 1.1.0 surfaces no ADL 1.4 archetype route, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
+#
+# ── THE 2026-07-28 REALIZATION DERIVATIONS (#623) ─────────────────────────────
+# Ten rows were `excused (unrealized)` while the ehrbase-rs statement CLAIMED
+# them. Each was re-derived FIRST-HAND against the released ITS-REST docs text,
+# then the released OAS, then the surface this product actually serves. The
+# outcomes, and why an `evidence_exception` survives on some rows:
+#
+#  (b) SERVED ON THE EXTENSION SURFACE — PartyRelationshipOperations. The
+#      product serves all six SM relationship operations, so the battery is
+#      EXECUTED there, `realization: extension`, exception deleted. See its row.
+#
+#  (c) NO TESTABLE SURFACE, CLAIM CORRECTED — the other nine. For each, the
+#      release defines no wire AND this product mounts no route: the SM
+#      operations are implemented at the SERVICE layer only, and the CNF runner
+#      is a black-box HTTP instrument, so there is nothing for it to drive. A
+#      claim with no testable surface is the dishonest row, so the ehrbase-rs
+#      statement no longer claims them (ISO/IEC 9646 test selection legitimizes
+#      "not applicable" precisely for a capability a party does NOT claim). The
+#      rows STAY in the matrix — it is the Profiles book as data, not our claim
+#      list — and keep their `evidence_exception`, which is now a plain
+#      statement of catalogue fact: every case still resolves excused because
+#      the released wire is still absent.
+#      TODO: each of these nine becomes re-claimable the day the product serves
+#      the operations on declared extension routes (the PartyRelationship
+#      pattern: routes + served_extensions family + `extension:` bindings + an
+#      executed battery). That is a PRODUCT change, not a catalogue one.
+#
+# Row-level derivations follow each row.
+# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
+# specifications/definition.openapi.yaml declares eleven paths, all
+# /definition/template/** or /definition/query/**, and none for archetypes; the
+# ITS-REST docs text never names an archetype resource. AND NO SERVED ROUTE:
+# this product mounts nothing under /definition/archetype (the SM operations
+# upload_archetype / get_archetype / list_archetypes / has_archetype /
+# delete_archetype / archetypes_count are implemented in the service layer
+# only). The claim was therefore withdrawn from the ehrbase-rs statement.
+# CONSEQUENCE, stated rather than hidden: the CNF Profiles book marks this
+# capability CORE+STANDARD, so a party claiming CORE while not claiming it is a
+# static-review finding — which is the honest reading of a release that defines
+# no wire for a capability its own conformance book requires.
+Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 1, evidence_exception: { register: AMB-41, reason: "ITS-REST 1.1.0 surfaces no ADL 1.4 archetype route and this product serves none either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
 Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 22, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
-Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 6, evidence_exception: { register: AMB-37, reason: "ITS-REST 1.1.0 surfaces no ADL 2 archetype route, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
+# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
+# definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
+# (list / upload / get / example / the deprecated version GET); there is no ADL 2
+# archetype-provisioning path and the docs text names none. AND NO SERVED ROUTE:
+# this product mounts nothing for artefact-generic ADL 2 provisioning. Claim
+# withdrawn from the ehrbase-rs statement.
+Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 6, evidence_exception: { register: AMB-37, reason: "ITS-REST 1.1.0 surfaces no ADL 2 archetype route and this product serves none either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
 Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 29, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
 # Example generation split from OPT provisioning (#545, 2026-07-28): the
 # /example sub-resource is SHOULD-level surface — the CNF profiles book has
@@ -58,19 +104,58 @@ ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 53, sourc
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 121, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
 PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 52, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
-PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 12, evidence_exception: { register: AMB-32, reason: "ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP route, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Relationship Operations)" }
+# REALIZATION DERIVED FIRST-HAND 2026-07-28 (#623), outcome (b): the RELEASED
+# wire does not exist — the ITS-REST docs text never names a PARTY_RELATIONSHIP
+# resource and specifications/demographic.openapi.yaml declares no
+# /demographic/party_relationship* path (PartyRelationship.yaml is a schema
+# only, the by-value member of PARTY.relationships) — but this product SERVES
+# all six SM relationship operations on its own declared extension routes, so
+# the battery is EXECUTED there instead of excused. The evidence_exception is
+# therefore GONE and the row is `realization: extension`, which the matrix model
+# forbids from ever being `required`: the capability is certified as product
+# function, and no openEHR profile tier or ITS-REST wire-conformance claim rests
+# on it (owner ruling 2026-07-28).
+PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 15, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Relationship Operations)" }
 DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 0, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
 AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
 AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
-ActivityReport: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Activity Report)" }
+# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
+# admin.openapi.yaml declares exactly two paths, /admin/ehr/{ehr_id} and
+# /admin/ehr/all{?ehr_id*}, so none of the SM I_ADMIN_SERVICE reporting
+# operations (list_contributions / contribution_count /
+# versioned_composition_count / composition_version_count) has a wire. AND NO
+# SERVED ROUTE: the product's admin extension family is exactly template
+# delete, stored-query-version delete and the redacted config read (declared in
+# vocab/wire_surface.yaml `admin-extension-routes`) — the statistics methods are
+# service-layer only (`ehrbase::service::admin::statistics`). Claim withdrawn.
+ActivityReport: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface and this product serves no reporting route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Activity Report)" }
 PhysicalDeletion: { family: Platform, tier: OPTIONS, required: false, min_cases: 11, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Physical Deletion)" }
-EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
+# (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
+# SM I_ADMIN_DUMP_LOAD export_ehrs/load_ehrs pair is service-layer only
+# (`ehrbase::service::admin::dump_load`). Claim withdrawn 2026-07-28 (#623).
+EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface and this product serves no dump/load route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
 BulkEhrLoad: { family: Platform, tier: OPTIONS, required: false, min_cases: 0, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Bulk EHR load)" }
-EhrArchive: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Archive)" }
-DemographicArchive: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Demographic Archive)" }
-EhrExtract: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
-Tds: { family: Platform, tier: OPTIONS, required: false, min_cases: 4, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: TDS)" }
+# (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
+# SM I_ADMIN_ARCHIVE archive_ehrs operation is service-layer only
+# (`ehrbase::service::admin::archive`). Claim withdrawn 2026-07-28 (#623).
+EhrArchive: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface and this product serves no archive route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Archive)" }
+# (c) NO RELEASED WIRE (the two-path admin API above) and NO SERVED ROUTE — the
+# SM I_ADMIN_ARCHIVE archive_parties operation is service-layer only
+# (`ehrbase::service::admin::archive`). Claim withdrawn 2026-07-28 (#623).
+DemographicArchive: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, evidence_exception: { register: AMB-33, reason: "ITS-REST 1.1.0 realizes only admin_ehr_delete/admin_ehr_delete_all of the SM Admin surface and this product serves no archive route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: Demographic Archive)" }
+# (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the release publishes
+# seven API groups (overview, system, ehr, demographic, query, definition,
+# admin) and no message/extract/tdd group exists at all, in the docs text or the
+# OAS. AND NO SERVED ROUTE: `ehrbase::service::message` implements
+# export_ehrs/export_ehr_extracts/import_ehr/import_ehr_extract, but nothing
+# under the served surface reaches them (the module's own doc comment expects an
+# extension wire that is not mounted). Claim withdrawn.
+EhrExtract: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API and this product serves no extract route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: EHR Extract)" }
+# (c) NO RELEASED WIRE (no MESSAGE group exists) and NO SERVED ROUTE — SM
+# I_TDD_SERVICE import_tdd/import_tdds are service-layer only
+# (`ehrbase::service::message::tdd`). Claim withdrawn 2026-07-28 (#623).
+Tds: { family: Platform, tier: OPTIONS, required: false, min_cases: 4, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API and this product serves no TDD route either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (Messaging: TDS)" }
 DefinitionApi: { family: Platform, tier: CORE, required: true, min_cases: 1, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEFINITION API)" }
 EhrApi: { family: Platform, tier: CORE, required: true, min_cases: 2, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: EHR API)" }
 # REPORTING QUALIFIER, release-pinned (group-12 audit, 2026-07-27) — carried on
@@ -83,7 +168,11 @@ EhrApi: { family: Platform, tier: CORE, required: true, min_cases: 2, source: "C
 DemographicApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 27, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: DEMOGRAPHIC API). SCOPE: the openEHR DEMOGRAPHIC API is DEVELOPMENT-state in the pinned release — ITS-REST docs/demographic/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and derived from the released operation/RM/SM text, not from a conformance clause" }
 QueryApi: { family: Platform, tier: STANDARD, required: true, min_cases: 20, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: QUERY API)" }
 AdminApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: ADMIN API). SCOPE: the openEHR ADMIN API is DEVELOPMENT-state in the pinned release — ITS-REST docs/admin/Description.md §Status verbatim: \"This specification is in the `DEVELOPMENT` state\" — and ITS-REST docs/overview/Preface.md §Conformance is literally \"tbd.\", so openEHR publishes no conformance criteria for this API. Claims here are pinned to ITS-REST Release-1.1.0 and cover exactly the two released operations (admin_ehr_delete, admin_ehr_delete_all), derived from the released operation/RM/SM text, not from a conformance clause; the further /admin routes this server mounts are our own extensions and no claim rests on them" }
-MessageApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API, so every case of this capability resolves excused on this ITS" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: MESSAGE API)" }
+# (c) NO RELEASED WIRE and NO SERVED ROUTE — the CNF Profiles book lists a
+# MESSAGE API row, but ITS-REST 1.1.0 publishes no such API group and this
+# product mounts no message resource, so there is no API to conform to and
+# nothing for the runner to drive. Claim withdrawn 2026-07-28 (#623).
+MessageApi: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, evidence_exception: { register: AMB-34, reason: "ITS-REST 1.1.0 has no MESSAGE/EHR-Extract/TDD API and this product serves no message resource either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "not yet exercised by the hospital simulation - pending journey-catalogue extension (#625)" }, source: "CNF profiles master03-profiles.adoc §Functional (REST APIs: MESSAGE API)" }
 # TIER BY ANALOGY, release-pinned — the CNF Profiles book has NO SYSTEM row (its
 # REST-APIs table lists six: DEFINITION, EHR, DEMOGRAPHIC, QUERY, ADMIN,
 # MESSAGE), so the tier below is ours, not a book row — the same footing as
