@@ -741,15 +741,30 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 
 - **Components:** ITS-REST (overview + parameter files), BASE (base_types)
 - **Register:** AMB-76 (fixed_handling)
-- **Facts:** `ehr_id` / `versioned_object_uid` are HIER_OBJECT_IDs per the
-  glossary; BASE's UID subtypes have "mutually exclusive string patterns"
-  but no class-level lexical invariant beyond non-empty; the per-operation
-  response maps declare no 400 for a malformed segment, while the overview
-  400 row covers "syntactically invalid … parameter".
-- **Problem:** 400-vs-404 for a garbage identifier token is unassigned and
-  implementations diverge (the stalled Robot suite itself answers both
-  ways across sibling cases).
-- **Ask:** assign the malformed-identifier branch explicitly.
+- **Facts:** the release DOES fix the lexical form of every affected segment
+  — the docs text for `version_uid` (`Resources.md` §Identifier types: "in
+  the lexical form of `object_id :: creating_system_id ::
+  version_tree_id`"), the released OAS for the rest
+  (`parameters/path/ehr_id.yaml`, `path/versioned_object_uid_COMPOSITION.yaml`
+  and `path/contribution_uid.yaml` each declare `schema: {type: string,
+  format: uuid}`). What it does NOT do is declare the response to a
+  violation: `operations/ehr_get_by_id.yaml`,
+  `operations/versioned_composition_get.yaml` and
+  `operations/contribution_get.yaml` declare `{200, 404}` and no 400, while
+  each 404 file scopes its own trigger to an id that "does not exist"
+  (`404_unknown_ehr_id.yaml`: "`404 Not Found` is returned when an EHR with
+  `ehr_id` does not exist"), i.e. to a well-formed id. The only text left is
+  the overview's generic 400 row, "malformed request syntax".
+- **Problem:** the branch is derivable from two places at once but declared
+  in neither operation, and implementations diverge accordingly — upstream
+  EHRbase answers `404` with the body "EHR not found, in fact, only
+  UUID-type IDs are supported", i.e. it detects the type violation and
+  still reports a miss.
+- **Ask:** declare the 400 in the per-operation response maps of every
+  operation whose path parameters carry a `format`/lexical form, or state in
+  the overview that a path segment violating its declared parameter schema
+  is answered 404 as an ordinary miss. Either way, say it once and
+  per-operation rather than leaving it to the generic row.
 
 ### UPR-39 — editorial defects in SM I_EHR_COMPOSITION + three ITS-REST doc typos
 
@@ -2408,3 +2423,42 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   per-resource classification and the two-armed both-conformant handling are
   register AMB-167; our suite gates each undefined family's XML rows on a
   statement-declared option instead of asserting either branch.)
+
+### UPR-128 — BASE describes the ISO 8601 offset form two ways, so a mixed extended/basic date/time has no verdict
+
+- **Components:** BASE (`foundation_types` `time_definitions`,
+  `iso8601_date_time`, `iso8601_timezone`), RM (`data_types` `DV_DATE_TIME`)
+- **Register:** AMB-171 (editorial)
+- **Facts:** `DV_DATE_TIME`'s only lexical invariant is
+  `Value_valid: valid_iso8601_date_time (value)`. That function lists exactly
+  two complete forms and pairs each base with its own offset spelling —
+  `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) and
+  `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) — under which an extended
+  date/time carrying a basic `+0000` offset matches neither alternative. But
+  the sibling `valid_iso8601_time` states the offset as a SEPARATE trailing
+  clause ("with an additional optional timezone indicator of: `Z` or
+  `±hh[:mm]` (extended) `±hh[mm]` (compact)"), and `Iso8601_timezone` — the
+  type `Iso8601_date_time.timezone()` returns — gives its own format as
+  `Z | ±hh[mm]` while declaring `is_extended()`, "True if this time-zone uses
+  ':' separators", i.e. the offset's extendedness is a property of the offset
+  alone. Real openEHR data carries the mixed form: the vendored CNF Robot
+  corpus commits `2019-04-16T21:08:11,380+0000` as a `DV_DATE_TIME` value.
+  Nothing else disambiguates — the ITS-JSON schema types the member as a bare
+  string with no pattern, and ITS-REST `Resources.md` §Datetime format scopes
+  its extended-format MUST to "HTTP query parameters and path segments" while
+  passing a body value "as is".
+- **Problem:** implementations cannot agree on whether a mixed
+  extended-base/basic-offset `DV_DATE_TIME` satisfies `Value_valid`, and the
+  invariant's own cited function and the timezone class say different things.
+- **Ask:** give the offset form one voice — either state in
+  `valid_iso8601_date_time`/`valid_iso8601_time` that the timezone
+  designator's form is independent of the base representation, or drop
+  `Iso8601_timezone.is_extended()`'s implication that it is, and say
+  explicitly which side a mixed string falls on.
+- **Not part of this report — settled by the same text:** the COMMA decimal
+  sign is unambiguously legal (`Iso8601_date_time` states the value form as
+  `YYYY-MM-DDThh:mm:ss[(,|.)sss][Z | ±hh[:mm]]` and declares
+  `is_decimal_sign_comma()`; `valid_iso8601_time` spells the fraction as "an
+  optional string consisting of a comma or decimal point followed by numeric
+  string of 1 or more digits"). A server refusing a body `DV_DATE_TIME` for
+  its comma alone is non-conformant, not exercising a latitude.

@@ -10,6 +10,14 @@
 # shape that discriminates all three claims (prefix, all versions, all
 # matches) at once.
 #
+# The BODY SHAPE the `[i]/name` assertions address is not chosen either. The
+# docs text does not describe the listing's representation, so the shape comes
+# from the RELEASED OAS, cited AS the OAS: definition_query_list.yaml's `'200'`
+# $refs responses/200_QueryList.yaml → schemas/definition/QueryList.yaml, which
+# is `type: array` of schemas/query/StoredQuery.yaml, and StoredQuery lists
+# `name` first among its `required` members. A 200 whose body is not an array
+# of objects carrying `name` is therefore outside the released shape.
+#
 # ORDER is spec-silent and adjudicated in register AMB-124: name, then version
 # SEMVER-ascending — the order the released QueryList example itself shows
 # (`1.0.1` before `1.1.7` under one name). The trailing absent-row assertion

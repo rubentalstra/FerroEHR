@@ -1,19 +1,27 @@
 # A versioned_object_uid path segment that is not an identifier at all: the
 # request is refused for its SHAPE, before any lookup.
 #
-# SPEC SILENCE, adjudicated as AMB-76 (fixed_handling): the released glossary
-# types `versioned_object_uid` as a HIER_OBJECT_ID (ITS-REST overview
-# Glossary_and_conventions.md), BASE base_types master05 gives UID "three
-# subtypes [with] mutually exclusive string patterns" but no rejecting lexical
-# invariant, and no per-operation branch is assigned to a malformed segment.
-# The register's repo-wide handling: an identifier segment that parses as none
-# of this repository's minted identifier forms is a syntactically invalid
-# parameter, which ITS-REST overview Requests_and_responses.md §HTTP status
-# codes places in the 400 row — "The service cannot or will not process the
-# request due to something that is perceived to be a client error (e.g.,
-# malformed request syntax, syntactically invalid content)" — while
-# well-formed-but-unknown identifiers keep the 404 the sibling
-# non_existent case pins.
+# The rejection is DERIVED, not chosen (register AMB-76, re-grounded
+# 2026-07-29). The docs text names `versioned_object_uid` (ITS-REST overview
+# Resources.md §Identifier types, "in a form of a HIER_OBJECT_ID") without
+# fixing its spelling, so the spelling comes from the RELEASED OAS, cited AS
+# the OAS: specifications/parameters/path/versioned_object_uid_COMPOSITION.yaml
+# declares `schema: {type: string, format: uuid}`. The token below violates
+# that declared parameter schema, so the operation's only declared error
+# branch does not reach it — responses/404_unknown_ehr_id_or_versioned_object_uid.yaml
+# scopes its trigger to a well-formed id ("`404 Not Found` is returned when an
+# EHR with `ehr_id` does not exist, or when the `versioned_object_uid` does not
+# exist"). What is left is ITS-REST overview Requests_and_responses.md §HTTP
+# status codes, whose 400 row names this case first: "The service cannot or
+# will not process the request due to something that is perceived to be a
+# client error (e.g., malformed request syntax, syntactically invalid
+# content)". Well-formed-but-unknown identifiers keep the 404 the sibling
+# non_existent case pins. BASE base_types master05 gives UID "three subtypes
+# [with] mutually exclusive string patterns" but no rejecting lexical
+# invariant, which is why the OAS typing is the operative ground. What AMB-76
+# still carries is narrower: this operation declares 200 + 404 and no 400 for
+# a path-parameter-schema violation — the editorial gap UPR-38 asks openEHR to
+# close.
 #
 # The two cases are deliberately adjacent: same route, same EHR, one garbage
 # token and one well-formed miss, so the boundary between 400 and 404 is
@@ -38,7 +46,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_COMPOSITION.get_versioned_composition"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "The 400-vs-404 split for a malformed identifier segment rests on the AMB-76 adjudication — ITS-REST overview Requests_and_responses.md §HTTP status codes (the 400 row) covers 'syntactically invalid content' generally but assigns no branch to a malformed identifier segment, and BASE base_types master05 §Identification carries no rejecting lexical invariant; a server answering 404 for a garbage token breaches no quoted rule"
+  - "The 400 is derived, not optional (register AMB-76) — the released OAS parameters/path/versioned_object_uid_COMPOSITION.yaml types the segment `format: uuid`, responses/404_unknown_ehr_id_or_versioned_object_uid.yaml scopes the only declared error branch to an id that 'does not exist', and ITS-REST overview Requests_and_responses.md §HTTP status codes puts what is left in the 400 row ('malformed request syntax')"
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}

@@ -47,7 +47,7 @@ outcomes:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }   # If-Match absent when required -> 400.yaml
-  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 404 = target resource not found; If-Match precedence per RFC 9110 §13.2.2
+  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 404 = target resource not found; If-Match precedence per RFC 9110 §13.2.1 ("A server MUST ignore all received preconditions if its response to the same request without those conditions … would have been a status code other than a 2xx … or 412")
 captures:
   version_uid:
     from: header ETag                     # the NEW 523|deleted| VERSION uid (register AMB-75)

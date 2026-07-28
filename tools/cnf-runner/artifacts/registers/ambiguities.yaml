@@ -1821,38 +1821,74 @@ AMB-75:
 
 AMB-76:
   ambiguity: >-
-    The rejection status for a lexically malformed identifier path segment
-    (ehr_id, versioned_object_uid; scope extended 2026-07-27 to
-    contribution_uid, which the glossary does not type at all — AMB-90 — and
-    which the path-parameter declaration types only as string/uuid) is
-    unassigned. The released glossary
-    types both as HIER_OBJECT_ID with no per-operation 400 branch; the
-    overview 400 row covers "syntactically invalid header, parameter or
-    content"; BASE gives UID three subtypes with "mutually exclusive
-    string patterns" but no rejecting regex on any class. A token
-    matching no UID subtype is syntactically invalid (400); a
-    lexically-valid non-UUID UID (an OID / INTERNET_ID) that names
-    nothing is arguably a plain miss (404).
+    RE-GROUNDED 2026-07-29, verdict unchanged. What is unassigned is narrower
+    than this entry used to claim, and the earlier ground was defective in
+    both directions: it mis-quoted the released 400 row, and it derived the
+    400 from a property of THIS SERVER ("every identifier this server MINTS
+    is a UUID") — a SUT-derived expectation, which the attribution law
+    forbids outright. Neither survives.
+    WHAT THE RELEASE DOES SETTLE: the lexical form of every affected path
+    segment. `version_uid` is fixed by the DOCS TEXT — Resources.md
+    §Identifier types: "The `version_uid` uniquely identifies a VERSION, in
+    the lexical form of `object_id :: creating_system_id ::
+    version_tree_id`". `ehr_id`, `versioned_object_uid` and
+    `contribution_uid` are fixed by the RELEASED OAS, where the docs text is
+    silent on their spelling: each path-parameter file declares
+    `schema: {type: string, format: uuid}`. A segment violating the declared
+    parameter schema is not the identifier the operation takes, so the
+    operation's only declared error branch does not reach it: the 404 files
+    state their trigger for a WELL-FORMED-but-absent id
+    ("`404 Not Found` is returned when an EHR with `ehr_id` does not
+    exist"), which presupposes an `ehr_id`. What is left is the overview's
+    400 row, whose first named case is exactly this: "malformed request
+    syntax".
+    WHAT REMAINS UNASSIGNED, and is why this entry survives: no operation
+    DECLARES a 400 response for a violation of its own path-parameter
+    schema. `ehr_get_by_id`, `versioned_composition_get` and
+    `contribution_get` all declare `{200, 404}` and nothing else, so the
+    branch is derivable from the overview but absent from every per-operation
+    response map — the gap UPR-38 asks openEHR to close. The release even
+    HAS the sentence, in the reusable `responses/400.yaml` ("`400 Bad
+    Request` is returned when the request could not be parsed or is invalid
+    (e.g. malformed request URL syntax, missing required header or
+    parameter, or syntactically invalid header, parameter or content)") —
+    it is simply not `$ref`ed by any of these three reads.
   source: >-
-    ITS-REST specifications/docs/overview/Glossary_and_conventions.md
-    (ehr_id / versioned_object_uid as HIER_OBJECT_ID; contribution_uid
-    absent from the table entirely) +
-    specifications/parameters/path/contribution_uid.yaml ("The CONTRIBUTION
-    uid", type string / format uuid — the only place the segment is typed);
-    Requests_and_responses.md §HTTP status codes (the 400 row); BASE
-    base_types master05-identification_package.adoc ("all three subtypes
-    have mutually exclusive string patterns") + the UID/HIER_OBJECT_ID
-    class tables (no lexical invariant beyond non-empty) — confirmed
+    ITS-REST specifications/docs/overview/Resources.md §Identifier types
+    (the `version_uid` lexical form, quoted above; `ehr_id` and
+    `versioned_object_uid` named without a spelling; `contribution_uid`
+    absent — AMB-90) + docs/overview/Requests_and_responses.md §HTTP status
+    codes, the 400 row VERBATIM: "The service cannot or will not process the
+    request due to something that is perceived to be a client error (e.g.,
+    malformed request syntax, syntactically invalid content)" — note this
+    Release-1.1.0 wording says "content", NOT the "header, parameter or
+    content" this entry previously quoted. TIER 2, THE RELEASED OAS, citable
+    because the docs text is silent on these three spellings (owner ruling
+    2026-07-28) and cited AS the OAS:
+    specifications/parameters/path/ehr_id.yaml,
+    path/versioned_object_uid_COMPOSITION.yaml and path/contribution_uid.yaml
+    (each `schema: {type: string, format: uuid}`);
+    specifications/operations/ehr_get_by_id.yaml, versioned_composition_get.yaml
+    and contribution_get.yaml (responses 200 + 404 only — no 400);
+    responses/404_unknown_ehr_id.yaml, 404_unknown_ehr_id_or_versioned_object_uid.yaml
+    and 404_CONTRIBUTION.yaml (each scoped to an id that "does not exist").
+    BASE base_types master05-identification_package.adoc ("all three subtypes
+    have mutually exclusive string patterns") + the UID/HIER_OBJECT_ID class
+    tables (no lexical invariant beyond non-empty) — all CONFIRMED
     first-hand.
   handling: >-
-    Fixed handling (repo-wide): identifier path segments that do not parse
-    as this repository's UUID identifier form are rejected 400 as
-    syntactically invalid parameters — every identifier this server MINTS
-    is a UUID, so a non-UUID token can never name a resource here and the
-    400 names the defect closest to its cause. Cases address unknown
-    resources with well-formed UUIDs, malformed-identifier cases expect
-    400. Reported upstream (UPR-38): assign the malformed-identifier
-    branch.
+    Fixed handling (repo-wide): an identifier path segment that violates the
+    lexical form the release fixes for it — the docs-text `::` composite for
+    `version_uid`, the OAS `format: uuid` for `ehr_id`,
+    `versioned_object_uid` and `contribution_uid` — is rejected 400 as
+    malformed request syntax, because the operation's 404 branch is scoped to
+    a well-formed id that names nothing. Cases address unknown resources with
+    well-formed identifiers and malformed-identifier cases expect 400, so the
+    400/404 split is exercised rather than assumed. The 400 is NOT an option
+    branch: it is derived from the released parameter typing plus the
+    overview row, not chosen. Reported upstream (UPR-38), re-scoped: declare
+    the 400 in the per-operation response maps that type their path
+    parameters.
   disposition: fixed_handling
   upstream_ref: "UPR-38"
 
@@ -6723,3 +6759,56 @@ AMB-170:
     these blocks is a `workload-coverage` finding, so the published
     certificate can never again carry an undecided row.
   disposition: statement_declared
+
+AMB-171:
+  ambiguity: >-
+    Whether the basic/extended FORM of an ISO 8601 timezone designator must
+    match the form of the date/time it is appended to is described two ways
+    in the released BASE text, so an extended date/time carrying a compact
+    offset (`2019-04-16T21:08:11,380+0000`) has no single reading. Reading
+    A, the one `DV_DATE_TIME.Value_valid` actually names: the function
+    `valid_iso8601_date_time` lists exactly two complete forms, extended
+    `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` and compact
+    `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]`, pairing each base with its own
+    offset spelling — a mixed string matches neither. Reading B: the sibling
+    `valid_iso8601_time` states the offset as a SEPARATE trailing clause
+    ("with an additional optional timezone indicator of: `Z` or `±hh[:mm]`
+    (extended) `±hh[mm]` (compact)"), and `Iso8601_timezone` — the type
+    `Iso8601_date_time.timezone()` returns — gives its own format as
+    `Z | ±hh[mm]` while declaring `is_extended()` ("True if this time-zone
+    uses ':' separators"), i.e. extendedness is a property of the offset
+    alone. NOT AT ISSUE, and explicitly settled by the same text: the COMMA
+    decimal sign is legal. `Iso8601_date_time` states the value form as
+    `YYYY-MM-DDThh:mm:ss[(,|.)sss][Z | ±hh[:mm]]` and declares
+    `is_decimal_sign_comma()` ("True if this time has a decimal part
+    indicated by `','` (comma) rather than `'.'` (period)"), and
+    `valid_iso8601_time` spells the fraction out as "an optional string
+    consisting of a comma or decimal point followed by numeric string of 1
+    or more digits". A server refusing a body DV_DATE_TIME for its comma
+    alone therefore breaches released text, and no case may treat the comma
+    as optional behaviour.
+  source: >-
+    RM data_types dv_date_time.adoc §Invariants (`Value_valid:
+    valid_iso8601_date_time (value)`) + BASE foundation_types
+    time_definitions.adoc §valid_iso8601_date_time and §valid_iso8601_time +
+    BASE foundation_types iso8601_date_time.adoc §Description and
+    §is_decimal_sign_comma + BASE foundation_types iso8601_timezone.adoc
+    §Description and §is_extended + ITS-REST
+    specifications/docs/overview/Resources.md §Datetime format (the extended
+    format is a MUST only for "HTTP query parameters and path segments";
+    a body value "will be preserved as it was sent by the client, and passed
+    to the underlying backend engine as is") — all CONFIRMED first-hand.
+    The ITS-JSON schema adds nothing: `openehr_rm_1.1.0_all.json`
+    `definitions.DV_DATE_TIME.properties.value` is a bare
+    `{"type": "string"}` with no pattern.
+  handling: >-
+    The catalogue depends on NEITHER reading: every corpus DV_DATE_TIME uses
+    a form both admit — an extended base with `Z` or an extended `±hh:mm`
+    offset — so no case gates on the mixed representation. The seven
+    Robot-derived COMPOSITION fixtures that carried `+0000` on an extended
+    base were normalized to `+00:00` on 2026-07-29 (their MANIFEST
+    provenance records it); their comma fractions were kept, being legal
+    under the settled half above. Reported upstream (UPR-128): give the
+    offset form one voice.
+  disposition: editorial
+  upstream_ref: "UPR-128"
