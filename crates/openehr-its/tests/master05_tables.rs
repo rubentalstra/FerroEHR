@@ -1031,8 +1031,23 @@ fn master05_observation() {
 /// is `party` — the fixture behind the master05 ENTRY `/subject` row (typed
 /// `PARTY_PROXY`, so each of the three subtype tables reaches it).
 fn entry_subject_case(party: Value) -> (WebTemplate, Map<String, Value>) {
-    let wt = entry_web_template("EVALUATION", entry_in_context("EVALUATION"));
-    let entry = json!({"_type": "EVALUATION", "subject": party});
+    // One leaf datum keeps the ENTRY representable on the wire: FLAT structure
+    // is rebuilt from datum paths (master04 §Building the RM composition), so
+    // an ENTRY whose only content is the OFF-WIRE PARTY_SELF default would
+    // have no keys at all and, correctly, never rebuild.
+    let mut children = entry_in_context("EVALUATION");
+    children.push(element_leaf_node("DV_TEXT"));
+    let wt = entry_web_template("EVALUATION", children);
+    let entry = json!({
+        "_type": "EVALUATION",
+        "subject": party,
+        "data": {
+            "_type": "ITEM_TREE",
+            "archetype_node_id": "at0001",
+            "name": dv_text("Tree"),
+            "items": [element(dv_text("anchor"))],
+        },
+    });
     let comp = entry_composition("EVALUATION", entry, json!({}));
     let flat = composition_to_flat(&comp, &wt).expect("composition_to_flat");
     (wt, flat)
