@@ -122,6 +122,82 @@ fn the_committed_world_including_party_claims_is_clean() {
     );
 }
 
+/// The RESTING STATE of the measured workload (issue #625): the committed
+/// hospital simulation exercises every claimed capability except a pinned,
+/// per-capability-adjudicated set — the destructive admin pair and the
+/// capabilities with no HTTP surface at all. The set is spelled out here so
+/// the coverage only ratchets: adding a name to it is a deliberate, reviewed
+/// act, never a silent regression when a journey is dropped.
+#[test]
+fn the_measured_workload_exercises_every_claimed_capability_but_the_adjudicated_set() {
+    /// Destructive mid-measurement, or no request the instrument can send.
+    const ADJUDICATED: &[&str] = &[
+        "Adl14ArchetypeProvisioning",
+        "Adl2ArchetypeProvisioning",
+        "ActivityReport",
+        "AdminApi",
+        "DemographicArchive",
+        "EhrArchive",
+        "EhrDumpLoad",
+        "EhrExtract",
+        "MessageApi",
+        "PhysicalDeletion",
+        "Tds",
+    ];
+
+    let loaded = load_root(&crate_dir().join("artifacts")).expect("schema compilation");
+    let (_, matrix) = loaded.set.matrix.as_ref().expect("capability matrix");
+    let (_, catalogue) = loaded.set.journeys.as_ref().expect("journey catalogue");
+    assert!(
+        !loaded.set.performance.is_empty(),
+        "no performance case — the workload assertions below would be vacuous"
+    );
+
+    // The union of the capability sets of every operation of every journey
+    // the committed performance cases name (the catalogue-side twin of the
+    // certificate's Workload Coverage join).
+    let mut exercised: Vec<&str> = Vec::new();
+    for (_, case) in &loaded.set.performance {
+        for (name, _) in &case.workload.journeys {
+            let journey = catalogue
+                .get(name)
+                .unwrap_or_else(|| panic!("workload names unknown journey {name}"));
+            for stage in &journey.stages {
+                let op = cnf_runner::perf::PerfOp::parse(&stage.op).expect("closed vocabulary");
+                for capability in op.capabilities() {
+                    if !exercised.contains(capability) {
+                        exercised.push(capability);
+                    }
+                }
+            }
+        }
+    }
+
+    for (_, statement) in &loaded.set.parties {
+        for claim in &statement.claims.capabilities {
+            if matrix.get(claim).is_none() || exercised.contains(&claim.as_str()) {
+                continue;
+            }
+            assert!(
+                ADJUDICATED.contains(&claim.as_str()),
+                "{claim} is claimed but the measured workload no longer exercises it and it is \
+                 not in the pinned adjudicated set — coverage may only ratchet up"
+            );
+        }
+    }
+    // The mirror direction: every pinned name still needs its adjudication on
+    // the matrix row, so the certificate renders a reason and never a gap.
+    for name in ADJUDICATED {
+        let entry = matrix
+            .get(&cnf_runner::ids::CapabilityName::parse(name).expect("capability name"))
+            .unwrap_or_else(|| panic!("{name} is not a matrix row"));
+        assert!(
+            entry.workload_exclusion.is_some(),
+            "{name} is pinned as excluded from the workload but carries no adjudication"
+        );
+    }
+}
+
 /// The floors are DERIVED, not asserted: every committed `min_cases` must be
 /// at or below the count the catalogue actually carries today. That
 /// inequality IS the ratchet — raising a floor to the current depth is always
@@ -245,12 +321,24 @@ fn a_battery_below_its_min_cases_floor_fails_validate() {
 #[test]
 fn an_unexercised_claimed_capability_without_an_exclusion_fails_validate() {
     let world = World::new();
+    // Strip the adjudication off a capability the simulation cannot exercise
+    // (physical deletion is destructive mid-measurement) — the row is then a
+    // bare gap, which is exactly what the gate exists to refuse.
     world.edit(MATRIX, |text| {
-        text.replace(
-            ", workload_exclusion: { register: AMB-170, reason: \"not yet exercised by the \
-             hospital simulation - pending journey-catalogue extension (#625)\" }",
-            "",
-        )
+        let mut out = String::new();
+        for line in text.lines() {
+            if line.starts_with("PhysicalDeletion: {") {
+                out.push_str(
+                    "PhysicalDeletion: { family: Platform, tier: OPTIONS, required: false, \
+                     min_cases: 11, source: \"CNF profiles master03-profiles.adoc §Functional \
+                     (Admin: Physical Deletion)\" }",
+                );
+            } else {
+                out.push_str(line);
+            }
+            out.push('\n');
+        }
+        out
     });
     assert_gate(
         &world.findings(),

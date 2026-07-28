@@ -21,6 +21,27 @@
 # Dependent stages are spaced >= 15 s apart so every prerequisite has
 # landed on any SUT inside the p99 <= 1 s budget; a prerequisite missing at
 # fire time (a stalled SUT) records honestly as an error arrival.
+#
+# COVERAGE: the simulation exercises every capability the party statement
+# claims except the eleven whose exercise is impossible inside a sustained
+# open-loop hold — the destructive admin pair (physical deletion / the
+# released two-operation ADMIN API) and the nine SM operations for which
+# NEITHER a released ITS-REST wire NOR a served extension route exists, so
+# there is no request for the instrument to send. Each of the eleven carries
+# its own `workload_exclusion` block on its vocab/capability_matrix.yaml row
+# (register AMB-170), and the certificate's Workload Coverage table renders
+# that reason instead of a bare gap.
+#
+# PRINCIPALS: a stage's operation fixes the ixit instance it is driven by
+# (the closed `PerfOp` vocabulary owns that mapping). Ordinary stages ride
+# the party's `sut` principal — under the SMART resource-server posture that
+# is a scope-limited Bearer token minted from the instance's standing
+# `default_scopes` grant, so the scope gate is on every arrival's hot path.
+# The boundary and platform stages address the ixit's `unauthenticated`,
+# `readonly` and `smart.platform_instance` declarations; a party that
+# declares none of them simply does not run those journeys (the remaining
+# shares renormalize) — an undeclared deployment fact costs coverage, never
+# correctness.
 
 # ── ADT flow ────────────────────────────────────────────────────────────
 
@@ -54,6 +75,23 @@ discharge:
     - { op: composition_commit, template: cnf.ckm.ips, at: PT30S }
     - { op: directory_read, at: PT45S }
     - { op: directory_update, at: PT1M }
+
+demographic_admission:
+  description: >-
+    Patient administration on the DEMOGRAPHIC side: register the person,
+    read the record back, relate it to the responsible organisation, read
+    the relationship, then amend the registered identity as a new
+    version.
+  derivation: >-
+    Master-patient-index churn accompanying admissions — registrations
+    are rarer than admissions (a person is registered once and admitted
+    repeatedly), so the share sits below the ADT flow's.
+  stages:
+    - { op: party_create, at: PT0S }
+    - { op: party_read, at: PT15S }
+    - { op: party_relationship_create, at: PT30S }
+    - { op: party_relationship_read, at: PT45S }
+    - { op: party_update, at: PT1M }
 
 # ── monitoring streams ──────────────────────────────────────────────────
 
@@ -188,6 +226,19 @@ chart_review:
     - { op: adhoc_query, at: PT80S }
     - { op: directory_read, at: PT100S }
 
+analytics_review:
+  description: >-
+    The service-level analytics read: an ordered, server-truncated trend
+    over the patient's series, then a terminology-expanded value-set
+    filter across the record.
+  derivation: >-
+    Clinical audit and service-line reporting run over the same live
+    record as care delivery (PMC10148376 audit-log evidence: the read
+    bulk includes analytic access); a small steady analytic fraction.
+  stages:
+    - { op: analytics_query, at: PT0S }
+    - { op: terminology_query, at: PT30S }
+
 ward_dashboard:
   description: >-
     The ward worklist: a cross-EHR ad-hoc query over the population plus a
@@ -226,6 +277,31 @@ audit_review:
     - { op: contribution_read, at: PT0S }
     - { op: ehr_read, at: PT20S }
 
+signature_review:
+  description: >-
+    Provenance review: read the committed ORIGINAL_VERSION envelope (the
+    carrier of the version signature) and then the document's revision
+    history.
+  derivation: >-
+    Medico-legal and integrity review of committed records — the read
+    side of the version provenance every commit produces (RM common
+    §change_control, Digital Signature).
+  stages:
+    - { op: composition_version_read, at: PT0S }
+    - { op: composition_revision_history, at: PT30S }
+
+simplified_formats_exchange:
+  description: >-
+    The Simplified-Formats integration channel: commit a FLAT composition
+    against its template, then read a committed document back in the FLAT
+    form.
+  derivation: >-
+    Form/app integrations that speak the Simplified Formats rather than
+    canonical JSON; a minority channel beside the canonical feeds.
+  stages:
+    - { op: composition_commit_flat, at: PT0S }
+    - { op: composition_read_flat, at: PT30S }
+
 deletion:
   description: >-
     The rare erroneous-record correction: commit an observation, logically
@@ -241,14 +317,20 @@ deletion:
 
 integration_poll:
   description: >-
-    The integration-engine template poll: list the template store, fetch
-    one template definition.
+    The integration-engine definition poll: list the ADL 1.4 template
+    store, fetch one template definition, fetch its generated example
+    instance, and list the ADL 2 template store.
   derivation: >-
     Steady background polling by integration engines against the
-    definition surface; rate-bounded background reads.
+    definition surface; rate-bounded background reads. The example fetch
+    is the shape an integration developer pulls before mapping a feed;
+    the ADL 2 list is the same poll against the second artefact
+    generation the platform serves.
   stages:
     - { op: template_list, at: PT0S }
     - { op: template_get, at: PT30S }
+    - { op: template_example, at: PT1M }
+    - { op: template_adl2_list, at: PT90S }
 
 tagging:
   description: >-
@@ -260,3 +342,30 @@ tagging:
   stages:
     - { op: tags_put, at: PT0S }
     - { op: tags_read, at: PT30S }
+
+platform_probe:
+  description: >-
+    The client-bootstrap probe: the API's communication options (System
+    API OPTIONS) and the SMART on openEHR service-discovery document at
+    the Platform base.
+  derivation: >-
+    Every SMART application and every integration client bootstraps
+    against these two documents before its first clinical call; a small
+    steady background rate proportional to app/session starts.
+  stages:
+    - { op: system_options, at: PT0S }
+    - { op: smart_configuration_read, at: PT30S }
+
+access_control_probe:
+  description: >-
+    The standing access-control boundary under load: a credential-less
+    read must be refused, and a read-only principal's write attempt must
+    be refused. Neither arrival mutates the measured population.
+  derivation: >-
+    Expired sessions and mis-scoped clients are a constant background
+    fraction of hospital traffic, and the authentication + authorization
+    decisions ride the hot path of every request; held at the
+    catalogue's smallest share.
+  stages:
+    - { op: unauthenticated_probe, at: PT0S }
+    - { op: readonly_write_denied, template: cnf.ckm.vital_signs, at: PT30S }

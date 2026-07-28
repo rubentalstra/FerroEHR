@@ -8,8 +8,10 @@
 # The workload is journey-structured: arrival_rate stays aggregate
 # OPERATION arrivals (the class floor's unit, 1M-population floor); the journey
 # shares decompose it through vocab/journey_catalogue.yaml into the full
-# platform surface (ADT, order->result, eMAR, monitoring, review, folders,
-# corrections, audit, tags, templates), write share reconciled to the
+# platform surface (ADT, demographic administration, order->result, eMAR,
+# monitoring, review, analytics, folders, corrections, audit, tags,
+# templates + examples + ADL 2, Simplified Formats, version provenance,
+# client bootstrap, access-control boundary), write share reconciled to the
 # 10:1..50:1 derivation band (validator-enforced).
 id: PERF-hospital_sim-class_L
 kind: performance
@@ -27,13 +29,15 @@ workload:
   warmup: PT5M
   duration: PT1H
   journeys:
-    chart_review: 56%
+    chart_review: 52.6%
     ward_dashboard: 12%
     vitals_round: 6%
-    audit_review: 5%
-    integration_poll: 5%
+    audit_review: 4%
+    integration_poll: 4%
     correction: 3%
     tagging: 2%
+    signature_review: 2%
+    analytics_review: 1.5%
     medication_round: 1.5%
     medicines_reconciliation: 1.5%
     lab_pipeline: 1.5%
@@ -42,6 +46,10 @@ workload:
     imaging_pipeline: 1%
     admission: 0.8%
     discharge: 0.8%
+    platform_probe: 0.5%
+    simplified_formats_exchange: 0.5%
+    access_control_probe: 0.5%
+    demographic_admission: 0.4%
     public_health_notification: 0.3%
     case_investigation: 0.3%
     deletion: 0.3%
