@@ -836,9 +836,7 @@ AMB-58:
   ambiguity: >-
     NOT an openEHR ambiguity — a documented extension of ours, kept in this
     register because a case rests on it and must never be mistaken for a
-    spec-derived expectation (re-framed 2026-07-27 under the owner ruling that
-    an "ambiguity" whose only conflict lives in the stalled OAS is not one).
-    The released docs text is simply SILENT on what an `Accept:
+    spec-derived expectation. The released docs text is simply SILENT on what an `Accept:
     application/json` read of an operational template returns: it defines no
     canonical-JSON representation of an OPERATIONAL_TEMPLATE anywhere, names
     only `application/openehr.wt+json` for the template-as-JSON case, and
@@ -6144,7 +6142,12 @@ AMB-167:
     `ehr-status`, `directory`, `party` (one seam for all five PARTY types —
     the demographic routes share one binding family and one document
     question), `contribution` (the READ side; the ok arm has no authored
-    case yet, the AMB-4 `adl14-duplicate-replace` pattern). The DOCUMENTED
+    case yet, the AMB-61 `legacy-alt-formats-supported` pattern — a declared
+    branch a party can select itself out of, with nothing spec-grounded to
+    assert about the positive exchange; AMB-4's `adl14-duplicate-replace`
+    used to be the reference instance of that pattern and was withdrawn on
+    2026-07-28 when the released OAS turned out to define its behaviour). The
+    DOCUMENTED
     rows stay ungated and unconditional: `-xml` cases on COMPOSITION, on the
     VERSIONED_* container reads and their `version` sub-resources, and on
     the OPT/archetype/example payloads assert behaviour the release fully
