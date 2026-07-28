@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Conformance coverage: the COMPOSITION, CONTRIBUTION and PARTY resources
+  are now exercised in canonical XML and in the Simplified Formats, not only
+  in canonical JSON** (#288). Eighteen new CNF cases drive
+  `Accept: application/xml` reads and `Content-Type: application/xml` commits
+  across composition create/update/latest/at-time/at-version, the
+  VERSIONED_COMPOSITION container, the composition and contribution existence
+  probes, and the whole PERSON create/update/read family, plus FLAT and
+  STRUCTURED reads of a composition at latest and at time and FLAT/STRUCTURED
+  composition updates. Each row asserts the negotiated response media type
+  the specification makes a MUST, and the XML commits are compared against the
+  canonical-JSON twin of the same resource, so a format-specific data loss
+  shows up as a failure rather than a silent difference. One branch stays
+  deliberately unexercised and is now recorded with its full derivation: the
+  openEHR release declares `application/xml` for the CONTRIBUTION *commit*
+  but publishes no XML form of the commit envelope, which is reported
+  upstream rather than invented locally.
+
 ### Changed
 
 - **The published Conformance Statement now declares the non-openEHR surface
