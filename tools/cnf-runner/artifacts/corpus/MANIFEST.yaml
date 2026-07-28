@@ -425,14 +425,14 @@ cnf.composition.minimal_persistent.v1:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "persistent_minimal.en.v1"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness); DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.composition.minimal_persistent.v2:
   source: fixtures/composition/minimal_persistent.v2.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "persistent_minimal.en.v1"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; leaf value updated for the v2 content state; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; leaf value updated for the v2 content state; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness); DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.composition.minimal_persistent.invalid_structure:
   source: fixtures/composition/minimal_persistent.invalid_structure.json
   format: canonical-json
@@ -467,14 +467,14 @@ cnf.composition.persistent.v1:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "persistent_minimal.en.v1"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness); DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.composition.persistent.v2:
   source: fixtures/contribution/composition.persistent.v2.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "persistent_minimal.en.v1"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; leaf value updated for the v2 content state; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; leaf value updated for the v2 content state; normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness); DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.ehr_status.minimal:
   source: fixtures/contribution/ehr_status.minimal.json
   format: canonical-json
@@ -541,21 +541,21 @@ cnf.composition.coded_text_on_text:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "obs_admin.en.v2"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.altdvcodedtext.json (versions[0].data — a DV_CODED_TEXT instance on the OPT's DV_TEXT node at0004, the master08 B.2.f row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.altdvcodedtext.json (versions[0].data — a DV_CODED_TEXT instance on the OPT's DV_TEXT node at0004, the master08 B.2.f row) and normalized to the literal RM ENTRY Is_archetype_root invariant; DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.composition.null_flavour:
   source: fixtures/contribution/composition.obs_admin.null_flavour.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "obs_admin.en.v2"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.null_flavour.json (versions[0].data — empty ELEMENT.value with null_flavour |no information|, the master08 B.2.g row; RM data_structures ELEMENT Inv_null_flavour_indicated holds) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.null_flavour.json (versions[0].data — empty ELEMENT.value with null_flavour |no information|, the master08 B.2.g row; RM data_structures ELEMENT Inv_null_flavour_indicated holds) and normalized to the literal RM ENTRY Is_archetype_root invariant; DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 cnf.composition.persistent_2.v1:
   source: fixtures/contribution/composition.persistent_2.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "persistent_minimal_2.en.v1"
-  provenance: "derived 2026-07-24 from cnf.composition.persistent.v1 by re-pointing archetype_details.template_id to persistent_minimal_2.en.v1 (the official persistent_minimal_2.opt shares the identical archetype set, so the instance stays conformant) — the second-persistent-OPT member of the master08 multi-version combination B"
+  provenance: "derived 2026-07-24 from cnf.composition.persistent.v1 by re-pointing archetype_details.template_id to persistent_minimal_2.en.v1 (the official persistent_minimal_2.opt shares the identical archetype set, so the instance stays conformant) — the second-persistent-OPT member of the master08 multi-version combination B; DV_DATE_TIME offsets normalized 2026-07-29 from the basic-format `+0000` to the extended `+00:00`: RM data_types dv_date_time.adoc's invariant `Value_valid: valid_iso8601_date_time (value)` admits only `YYYY-MM-DDThh:mm:ss[(,|.)s+][Z|±hh[:mm]]` (extended) or `YYYYMMDDThhmmss[(,|.)s+][Z|±hh[mm]]` (compact) (BASE foundation_types time_definitions.adoc §valid_iso8601_date_time), so an extended date/time carrying the compact offset matches neither alternative. The COMMA decimal sign is UNTOUCHED — BASE iso8601_date_time.adoc states the value form as `…ss[(,|.)sss]…` and declares `is_decimal_sign_comma()`, so a comma fraction is explicitly legal. Register AMB-171 carries the residual offset-form reading (upstream UPR-128)"
 # Corpus additions for the CNF master09 (DIRECTORY) schedule cases.
 # NOTE: FOLDER payloads / provisioned directory trees — real canonical FOLDER
 # structures (openEHR CNF Robot corpus, re-adjudicated to spec-text-only
