@@ -145,6 +145,10 @@ fn the_measured_workload_exercises_every_claimed_capability_but_the_adjudicated_
         "Adl2ArchetypeProvisioning",
         "ActivityReport",
         "AdminApi",
+        // The bulk load IS every measured run's own seeding phase — a
+        // sustained bulk-load ARRIVAL would be a second population grower
+        // distorting the population-anchored envelope (the one-shot family).
+        "BulkEhrLoad",
         "DemographicArchive",
         "EhrArchive",
         "EhrDumpLoad",
