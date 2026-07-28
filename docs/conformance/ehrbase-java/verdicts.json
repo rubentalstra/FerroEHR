@@ -18,8 +18,12 @@
       "not_evidenced"
     ],
     [
+      "TemplateExamples",
+      "not_evidenced"
+    ],
+    [
       "QueryProvisioning",
-      "passed"
+      "failed"
     ],
     [
       "EhrOperations",
@@ -31,7 +35,7 @@
     ],
     [
       "CompositionOps",
-      "failed"
+      "inconclusive"
     ],
     [
       "DirectoryOps",
@@ -59,7 +63,7 @@
     ],
     [
       "DemographicArchetypeValidation",
-      "no_cases"
+      "not_evidenced"
     ],
     [
       "AqlBasic",
@@ -67,7 +71,7 @@
     ],
     [
       "AqlAdvanced",
-      "not_evidenced"
+      "inconclusive"
     ],
     [
       "AqlTerminology",
@@ -79,7 +83,7 @@
     ],
     [
       "PhysicalDeletion",
-      "failed"
+      "unrealized"
     ],
     [
       "EhrDumpLoad",
@@ -87,7 +91,7 @@
     ],
     [
       "BulkEhrLoad",
-      "no_cases"
+      "not_evidenced"
     ],
     [
       "EhrArchive",
@@ -107,11 +111,11 @@
     ],
     [
       "DefinitionApi",
-      "not_evidenced"
+      "failed"
     ],
     [
       "EhrApi",
-      "passed"
+      "failed"
     ],
     [
       "DemographicApi",
@@ -119,22 +123,34 @@
     ],
     [
       "QueryApi",
-      "passed"
+      "failed"
     ],
     [
       "AdminApi",
-      "failed"
+      "not_evidenced"
     ],
     [
       "MessageApi",
       "not_evidenced"
     ],
     [
-      "Signing",
+      "SystemApi",
       "not_evidenced"
     ],
     [
+      "ItemTags",
+      "not_evidenced"
+    ],
+    [
+      "Signing",
+      "unrealized"
+    ],
+    [
       "SimplifiedFormats",
+      "not_evidenced"
+    ],
+    [
+      "SmartAppLaunch",
       "not_evidenced"
     ],
     [
@@ -156,6 +172,395 @@
     [
       "AnonymousEhrs",
       "not_evidenced"
+    ]
+  ],
+  "capability_tallies": [
+    [
+      "Adl14ArchetypeProvisioning",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 1
+      }
+    ],
+    [
+      "Adl14OptProvisioning",
+      {
+        "passed": 3,
+        "failed": 6,
+        "inconclusive": 8,
+        "unevidenced": 5
+      }
+    ],
+    [
+      "Adl2ArchetypeProvisioning",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "Adl2OptProvisioning",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "TemplateExamples",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "QueryProvisioning",
+      {
+        "passed": 15,
+        "failed": 10,
+        "inconclusive": 1,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "EhrOperations",
+      {
+        "passed": 18,
+        "failed": 2,
+        "inconclusive": 1,
+        "unevidenced": 1
+      }
+    ],
+    [
+      "EhrStatus",
+      {
+        "passed": 12,
+        "failed": 23,
+        "inconclusive": 9,
+        "unevidenced": 1
+      }
+    ],
+    [
+      "CompositionOps",
+      {
+        "passed": 5,
+        "failed": 0,
+        "inconclusive": 20,
+        "unevidenced": 1
+      }
+    ],
+    [
+      "DirectoryOps",
+      {
+        "passed": 48,
+        "failed": 12,
+        "inconclusive": 3,
+        "unevidenced": 6
+      }
+    ],
+    [
+      "ChangeSets",
+      {
+        "passed": 13,
+        "failed": 6,
+        "inconclusive": 28,
+        "unevidenced": 5
+      }
+    ],
+    [
+      "Versioning",
+      {
+        "passed": 8,
+        "failed": 3,
+        "inconclusive": 45,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "ArchetypeValidation",
+      {
+        "passed": 0,
+        "failed": 67,
+        "inconclusive": 54,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "PartyOperations",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "PartyRelationshipOperations",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "DemographicArchetypeValidation",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AqlBasic",
+      {
+        "passed": 6,
+        "failed": 2,
+        "inconclusive": 11,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AqlAdvanced",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 2,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AqlTerminology",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "ActivityReport",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "PhysicalDeletion",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 2
+      }
+    ],
+    [
+      "EhrDumpLoad",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "BulkEhrLoad",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "EhrArchive",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "DemographicArchive",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "EhrExtract",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "Tds",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "DefinitionApi",
+      {
+        "passed": 0,
+        "failed": 1,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "EhrApi",
+      {
+        "passed": 1,
+        "failed": 1,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "DemographicApi",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "QueryApi",
+      {
+        "passed": 3,
+        "failed": 2,
+        "inconclusive": 14,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AdminApi",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "MessageApi",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "SystemApi",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "ItemTags",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "Signing",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 2
+      }
+    ],
+    [
+      "SimplifiedFormats",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "SmartAppLaunch",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "EhrDemographicSeparation",
+      {
+        "passed": 1,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AuthenticatedAccess",
+      {
+        "passed": 2,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AuthorizationSeparation",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 1
+      }
+    ],
+    [
+      "AuditAccountability",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
+    ],
+    [
+      "AnonymousEhrs",
+      {
+        "passed": 0,
+        "failed": 0,
+        "inconclusive": 0,
+        "unevidenced": 0
+      }
     ]
   ],
   "profiles": [
@@ -186,7 +591,10 @@
     }
   ],
   "coverage": {
-    "selected": 255,
-    "driven": 237
+    "selected": 492,
+    "driven": 466,
+    "passed": 136,
+    "failed": 135,
+    "inconclusive": 195
   }
 }
