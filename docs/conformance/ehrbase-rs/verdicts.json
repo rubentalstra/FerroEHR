@@ -130,6 +130,14 @@
       "unrealized"
     ],
     [
+      "SystemApi",
+      "passed"
+    ],
+    [
+      "ItemTags",
+      "passed"
+    ],
+    [
       "Signing",
       "passed"
     ],
@@ -187,7 +195,7 @@
     }
   ],
   "coverage": {
-    "selected": 613,
-    "driven": 543
+    "selected": 703,
+    "driven": 633
   }
 }
