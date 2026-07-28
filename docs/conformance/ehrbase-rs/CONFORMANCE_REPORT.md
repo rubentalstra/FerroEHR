@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 633 |
+| passed | 634 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 70 |
-| total | 703 |
+| not_applicable | 74 |
+| total | 708 |
 
 ## By chapter
 
@@ -25,13 +25,13 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_DEFINITION_ADL14 | 20 | 0 | 0 | 0 | 6 |
 | I_DEFINITION_ADL2 | 21 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 28 | 0 | 0 | 0 | 3 |
-| I_DEMOGRAPHIC_SERVICE | 40 | 0 | 0 | 0 | 12 |
-| I_EHR_COMPOSITION | 82 | 0 | 0 | 0 | 0 |
+| I_DEMOGRAPHIC_SERVICE | 40 | 0 | 0 | 0 | 13 |
+| I_EHR_COMPOSITION | 83 | 0 | 0 | 0 | 0 |
 | I_EHR_CONTRIBUTION | 53 | 0 | 0 | 0 | 5 |
-| I_EHR_DIRECTORY | 60 | 0 | 0 | 0 | 3 |
+| I_EHR_DIRECTORY | 60 | 0 | 0 | 0 | 4 |
 | I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
-| I_EHR_SERVICE | 21 | 0 | 0 | 0 | 0 |
-| I_EHR_STATUS | 45 | 0 | 0 | 0 | 0 |
+| I_EHR_SERVICE | 21 | 0 | 0 | 0 | 1 |
+| I_EHR_STATUS | 45 | 0 | 0 | 0 | 1 |
 | I_ITS_REST_ITEM_TAGS | 30 | 0 | 0 | 0 | 0 |
 | I_ITS_REST_SYSTEM | 1 | 0 | 0 | 0 | 0 |
 | I_QUERY_SERVICE | 33 | 0 | 0 | 0 | 0 |
@@ -75,7 +75,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 633 of 703 selected cases driven.
+Coverage: 634 of 708 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -118,6 +118,7 @@ Not-executed verdicts (each cited):
 | I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb | I_DEMOGRAPHIC_SERVICE.create_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa | I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb | I_PARTY_RELATIONSHIP.delete_party_relationship: AMB-32 |
+| I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa | I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship-bbbb | I_PARTY_RELATIONSHIP.get_party_relationship: AMB-32 |
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa | I_PARTY_RELATIONSHIP.get_party_relationship_at_time: AMB-32 |
@@ -131,6 +132,7 @@ Not-executed verdicts (each cited):
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-post_commit | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
+| I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_versioned_directory-bad_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-empty_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
@@ -144,6 +146,8 @@ Not-executed verdicts (each cited):
 | I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
 | I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
 | I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
+| I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_TDD_SERVICE.import_tdd-invalid | I_TDD_SERVICE.import_tdd: AMB-34 |
 | I_TDD_SERVICE.import_tdd-valid | I_TDD_SERVICE.import_tdd: AMB-34 |
 | I_TDD_SERVICE.import_tdds-bulk_invalid | I_TDD_SERVICE.import_tdds: AMB-34 |
