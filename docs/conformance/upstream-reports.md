@@ -2307,3 +2307,45 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   it claims, and never out-claims the last machine-computed verdict. Our
   conformance case asserts only the `200` and the `Allow` header — everything
   else is recorded as this silence, not as an expectation.)
+
+### UPR-127 — the XSD document-element inventory does not cover the resources the REST API offers `application/xml` on
+
+- **Components:** ITS-REST (`docs/overview/Resources.md` §"Data
+  representation", §"XML Format"), ITS-XML (the published XSD bundles)
+- **Register:** AMB-167 (option_select)
+- **Facts:** `Resources.md` §"XML Format" makes conformance to the published
+  XSDs the bar for every canonical-XML exchange — "When resources are
+  serialized in **canonical XML** format, both request payloads and responses
+  MUST conform to the [published XSDs]" — and the same section states the
+  refusal rule, "If the service cannot fulfill this aspect of the request, it
+  MUST respond with HTTP status code `406 Not Acceptable`". The published XSDs
+  declare a global document element for only eight names: `composition`,
+  `version`, `items`, `template`, `extract`, `extract_request`,
+  `versioned_object` and `archetype` (the 2.0.0-lineage bundle adds
+  `result_set` and `query_request`; the STABLE 1.0.2 bundle has no QUERY
+  schema, no `Ehr.xsd` and no `Demographic.xsd` at all). The same
+  `Resources.md` addresses canonical XML to the resource surface as a whole —
+  "A client MAY use the header `Content-Type: application/xml` in the requests
+  to specify the XML payload format", "The client SHOULD use the `Accept:
+  application/xml` request header to specify the expected XML response format"
+  — and §Resources enumerates that surface as COMPOSITION, EHR_STATUS, FOLDER,
+  PARTY, the versioned entities, EHR, CONTRIBUTION, RESULT_SET and the
+  definitions. Most of those have no document element: EHR, EHR_STATUS,
+  FOLDER/directory, the five demographic PARTY types and PARTY_RELATIONSHIP,
+  CONTRIBUTION, REVISION_HISTORY, and the ITEM_TAG lists, the last of which
+  has no complexType in the published schemas at all. For those resources the
+  release therefore addresses a media type whose document it never defines: a
+  server that serves one must invent a root element name no released sentence
+  assigns, and a server that refuses is equally within the text. `Resources.md` §"Data representation" ("Services
+  MUST support at least one of the openEHR **XML** or **JSON** canonical
+  formats") makes XML optional in general but says nothing per resource, so
+  neither behaviour can be tested as required.
+- **Ask:** reconcile the two inventories. Either publish a document element
+  (or an explicit root-naming rule for a resource served under the abstract
+  `items` root) for every resource whose `Accept`/`Content-Type` enums list
+  `application/xml`, or withdraw the media type from the operations whose
+  document the schemas do not define — and say, per resource or once for all
+  of them, whether offering canonical XML is required or elective. (Ours: the
+  per-resource classification and the two-armed both-conformant handling are
+  register AMB-167; our suite gates each undefined family's XML rows on a
+  statement-declared option instead of asserting either branch.)
