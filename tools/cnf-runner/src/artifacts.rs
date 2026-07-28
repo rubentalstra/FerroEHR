@@ -12,6 +12,14 @@
 //! <root>/registers/ambiguities.yaml
 //! ```
 //!
+//! The committed PARTY statements are swept alongside, from the sibling
+//! `party/` directory of the artifact root (`<root>/../party/*/statement.json`
+//! — the repo layout is `tools/cnf-runner/{artifacts,party}`). They are not
+//! schedule artifacts, but the claim-completeness gate is a relation between
+//! a claim and the catalogue, so validate cannot judge one without the other.
+//! The sweep is best-effort by design: a bare artifact tree with no sibling
+//! `party/` directory validates exactly as before.
+//!
 //! Loading never fails fast: every file error becomes a finding, so one
 //! validation run reports the whole tree.
 
@@ -50,6 +58,10 @@ pub struct ArtifactSet {
     pub wire_surface: Option<(PathBuf, WireSurface)>,
     /// The corpus manifest's directory (source paths resolve against it).
     pub corpus_dir: Option<PathBuf>,
+    /// The committed party statements (`<root>/../party/*/statement.json`),
+    /// in path order — the ICS side of the claim-completeness gate. Empty
+    /// when no sibling `party/` directory exists.
+    pub parties: Vec<(PathBuf, crate::party::Statement)>,
 }
 
 /// A load pass over one artifact root.
@@ -77,6 +89,40 @@ fn yaml_files_under(dir: &Path) -> Vec<PathBuf> {
     }
     files.sort();
     files
+}
+
+/// Every `<dir>/*/statement.json` under the party directory, path-sorted.
+fn statement_files_under(dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut files: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path().join("statement.json"))
+        .filter(|p| p.is_file())
+        .collect();
+    files.sort();
+    files
+}
+
+/// Load one party statement (JSON, schema-validated like every artifact).
+fn load_statement(
+    path: &Path,
+    validator: &jsonschema::Validator,
+) -> Result<crate::party::Statement, LoadError> {
+    let text = std::fs::read_to_string(path).map_err(|source| LoadError::Io {
+        path: path.to_owned(),
+        source,
+    })?;
+    let value: serde_json::Value = serde_json::from_str(&text).map_err(|e| LoadError::Model {
+        path: path.to_owned(),
+        message: format!("JSON: {e}"),
+    })?;
+    crate::load::validate_against(validator, &value, path)?;
+    serde_json::from_value(value).map_err(|e| LoadError::Model {
+        path: path.to_owned(),
+        message: e.to_string(),
+    })
 }
 
 /// Load one `kind: performance` case (its own schema family; the typed
@@ -129,8 +175,22 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     )?;
     let wire_surface_schema =
         compile_schema(&schema::wire_surface_schema(), "wire-surface.schema.json")?;
+    let statement_schema = compile_schema(&schema::statement_schema(), "statement.schema.json")?;
 
     let mut loaded = Loaded::default();
+
+    // The party statements live beside the artifact root, not inside it: a
+    // claim is a submission document, while `root` is the published
+    // catalogue. Swept anyway, because "a claim without cases" is a relation
+    // between the two and no gate can see it from one side alone.
+    if let Some(party_dir) = root.parent().map(|p| p.join("party")) {
+        for path in statement_files_under(&party_dir) {
+            match load_statement(&path, &statement_schema) {
+                Ok(statement) => loaded.set.parties.push((path, statement)),
+                Err(e) => loaded.errors.push(e),
+            }
+        }
+    }
 
     let performance_dir = root.join("schedule/performance");
     for path in yaml_files_under(&root.join("schedule")) {

@@ -6417,3 +6417,47 @@ AMB-169:
     or defines a selection mechanism of its own.
   disposition: option_select
   options: [xml-namespace-negotiated, xml-namespace-fixed]
+
+AMB-170:
+  ambiguity: >-
+    NOT an openEHR ambiguity — a DECLARATION, in the AMB-157 style, so the
+    measured workload's capability coverage can never be mistaken for a
+    spec-derived obligation. No released openEHR component says anything about
+    a MEASURED workload at all: it does not define one, does not say which
+    capabilities a load simulation must touch, and does not say what follows
+    when a claimed capability is never exercised under load. The whole
+    measured-performance instrument — the hospital simulation, its journeys,
+    its arrival shapes, the volumetric classes it earns — is our own
+    design/extension, and so is the decision that a particular claimed
+    capability sits outside it. Two kinds of capability sit outside a
+    sustained open-loop measurement for reasons that are ours, not openEHR's:
+    ones whose exercise would destroy the measured population mid-run
+    (physical deletion, dump/load), and ones whose surface the simulation does
+    not yet reach. Both are DECISIONS and must read as decisions.
+  source: >-
+    CNF guide master03-overview.adoc §Product Scope — the assessment table
+    enumerates exactly what conformance covers for a Platform Component: "API
+    conformance" ("Conformance of the _implemented APIs_ to the published
+    APIs, in a concrete API technology") and "Data Validation conformance"
+    ("Conformance of platform's _validation of data against semantic models_
+    (archetypes etc)"). There is no throughput, latency, volumetric or
+    load-simulation category, and no released component supplies one: silence
+    CONFIRMED first-hand across the vendored CNF guide, profiles book and
+    platform test schedule, and across the ITS-REST docs text (which governs
+    the wire, never the offered load).
+  handling: >-
+    Statement-declared, and ENUMERATED rather than described. THE EXCLUDED
+    CAPABILITIES ARE NOT LISTED HERE: each carries its own
+    `workload_exclusion: { register: AMB-170, reason: … }` block on its
+    vocab/capability_matrix.yaml row, and the certificate's Workload Coverage
+    table renders that reason in place of the bare gap. Keeping the
+    enumeration in exactly one machine-readable place is the point — a prose
+    copy here would rot the first time a journey lands. THE ENTRY NEVER
+    EXCUSES A VERDICT: a workload exclusion says only that the LOAD instrument
+    does not touch the capability; the functional catalogue still owes it
+    verdict-bearing cases at its `min_cases` floor, and the `claim-completeness`
+    and `capability-depth` gates enforce that independently. A claimed
+    capability that is neither exercised by the simulation nor carrying one of
+    these blocks is a `workload-coverage` finding, so the published
+    certificate can never again carry an undecided row.
+  disposition: statement_declared
