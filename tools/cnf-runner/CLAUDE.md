@@ -9,7 +9,7 @@ language, ever.
 
 | Command | Purpose |
 |---|---|
-| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1`; **configuration lanes** `CONF_SIGNING_MODE=pgp` and `CONF_SMART_MODE=1` (mutually exclusive, ehrbase-rs only) |
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1`; `CONF_SIGNING_MODE=pgp` (ehrbase-rs only; stacks on the standard SMART posture) |
 | `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
@@ -54,11 +54,13 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   issues tokens, ITS-REST `docs/smart_app_launch/master06-authentication.adoc`
   §Supported Authentication Flows, so the runner takes the Authorization-Server
   role for that lane only). Undeclared => not-applicable with the citation,
-  never a driven guess. Lanes are selected by `scripts/conformance.sh`
-  (`CONF_SIGNING_MODE=pgp`, `CONF_SMART_MODE=1`); the SMART lane is FOCUSED —
-  its fail-closed posture would correctly refuse the catalogue's Basic-auth
-  principals, so it filters to the SMART group and writes to its own
-  `<sut>-smart` artefact directory rather than the baseline.
+  never a driven guess. The SMART resource-server posture IS the standard
+  ehrbase-rs conformance posture (owner ruling 2026-07-28): the pipeline
+  always overlays `docker/sut-smart.yml`, the ixit's principals mint scoped
+  Bearer tokens (per-instance standing grants; a step-level `scopes:`
+  overrides for the boundary cases), and the ONE committed record covers the
+  whole claimed surface in one run — no focused lanes, no sidecar artifact
+  directories. `CONF_SIGNING_MODE=pgp` stacks the signing overlay on top.
 - **Cases speak SM + outcome kinds only** — nothing wire-level (no HTTP
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its source under the oracle

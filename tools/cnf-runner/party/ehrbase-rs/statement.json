@@ -54,7 +54,8 @@
       "AuthenticatedAccess",
       "AuthorizationSeparation",
       "AuditAccountability",
-      "AnonymousEhrs"
+      "AnonymousEhrs",
+      "SmartAppLaunch"
     ],
     "profiles": [
       "CORE",

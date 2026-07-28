@@ -78,7 +78,7 @@ impl PerfClient {
             // principal. A measured run against a SMART-lane instance would
             // therefore be measuring token minting, not the CDR, so it is
             // refused loudly rather than served a scope-less token.
-            AuthMode::BearerMint => {
+            AuthMode::BearerMint { .. } => {
                 return Err(
                     "instance uses the SMART lane's `bearer_mint` auth mode, which mints \
                             per-case scoped tokens for functional cases only — point a measured \

@@ -840,7 +840,10 @@ pub fn ixit_schema() -> Value {
                                   "properties": { "mode": { "const": "bearer" },
                                                   "token_env": { "type": "string", "minLength": 1 } } },
                                 { "additionalProperties": false, "required": ["mode"],
-                                  "properties": { "mode": { "const": "bearer_mint" } } }
+                                  "properties": { "mode": { "const": "bearer_mint" },
+                                                  "subject": { "type": "string", "minLength": 1 },
+                                                  "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                                                  "default_scopes": { "type": "array", "items": { "type": "string" } } } }
                             ]
                         },
                         "headers": { "type": "object", "additionalProperties": { "type": "string" } }

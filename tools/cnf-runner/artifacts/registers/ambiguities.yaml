@@ -5188,7 +5188,10 @@ AMB-151:
     (`smart.enabled`, `smart.require_smart_scopes` — the fail-closed posture
     master04 §Capabilities lets a Platform advertise as `openehr-permission-v1`
     —, the advertised Authorization-Server endpoints, and `auth.oidc` trusting
-    a committed static test issuer), selected by `CONF_SMART_MODE=1`.
+    a committed static test issuer) — since the owner ruling of 2026-07-28
+    this posture IS the standard ehrbase-rs conformance posture: the pipeline
+    always composes it, the ixit principals mint scoped Bearer tokens, and
+    the one committed record covers the SMART cases alongside the rest.
     (ii) A PER-CASE TOKEN MINT: a flow step declares the `scope` claim its
     principal presents and the runner signs an RS256 access token carrying
     exactly that, against the issuer the party declares in its ixit `smart`
