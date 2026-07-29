@@ -15,19 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-### Added
-
-- **The definition and messaging extension routes now document their refusal
-  branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
-  and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
-  and — on the writes — `403` (a principal holding the configured read-only
-  role) in the served OpenAPI, so a client can see the whole answer set of an
-  endpoint before it calls it. The TDD batch additionally documents its `413`
-  boundary: the batch has no cardinality limit of its own, only the
-  server-wide request-body limit.
-
 ### Changed
 
+- **The conformance verdict model no longer has excused capability states.**
+  The published reports and certificates previously carried two
+  non-verdict evidence tokens — `unrealized` (every case excused by a
+  register citation) and `no_cases` (a claim the catalogue named no case
+  for). Both are deleted: the catalogue gates now refuse those shapes before
+  any server is assessed, and every capability a party claims is reported as
+  exactly one of passed / failed / inconclusive / not-evidenced. A required
+  capability without passing evidence now fails its tier with no excuse arm,
+  for every assessed party alike; both committed records and the published
+  comparison were re-derived under the stricter model (no tier verdict
+  changed for either party).
 - **An empty TDD batch answers `200` with `[]` instead of `201`.**
   `POST /message/tdd/{ehr_id}/batch` with an empty array creates nothing, and
   `201 Created` reported a creation that did not happen. Batches with members
@@ -47,6 +47,39 @@ workflow refuses a tag that has no matching section here.
   the EHR at all. The target is now verified for every batch, empty ones
   included, and an unknown EHR answers `404`.
 
+### Added
+
+- **The definition and messaging extension routes now document their refusal
+  branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
+  and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
+  and — on the writes — `403` (a principal holding the configured read-only
+  role) in the served OpenAPI, so a client can see the whole answer set of an
+  endpoint before it calls it. The TDD batch additionally documents its `413`
+  boundary: the batch has no cardinality limit of its own, only the
+  server-wide request-body limit.
+
+- **Conformance: the admin extension batteries now test what must be
+  REFUSED, not only what must work.** A server that accepts what the contract
+  forbids is as non-conformant as one that refuses what it must accept, and
+  the activity-report, EHR/demographic archive and dump/load batteries proved
+  only their happy paths. They now also drive the unauthenticated (`401`) and
+  non-administrative (`403`) probes on every route of each family, every
+  argument-type refusal (a service outside the enumeration, the three ways a
+  time interval can be malformed, a malformed id in an archive list, an
+  unknown export format, a non-positive segment size), the empty-selection and
+  repeat-archive boundaries, and the zip / 7z / loose container-detection round
+  trips on load — with the duplicate-report body now asserted rather than
+  assumed. The branches that cannot be driven from a client (the
+  admin-disabled `405`, which needs a differently configured deployment, and
+  the corrupt-archive `5xx`, which needs bytes placed on the server's own file
+  system) are recorded as explicit boundaries and covered by in-process tests
+  instead of being silently absent.
+- **The documentation site renders mathematics.** Formulas on the
+  performance pages (the open-loop arrival schedule, the population-anchored
+  write-rate derivation) are now typeset with KaTeX, pre-rendered to static
+  HTML at build time — pages stay self-contained with no client-side script
+  and no CDN request; the KaTeX stylesheet and fonts are served by the site
+  itself.
 - **Conformance: ADL 1.4 archetype provisioning is now tested rather than
   excused.** openEHR's released REST API defines no ADL 1.4 archetype
   resource, so the capability used to be reported as "excused — unrealized on
@@ -630,6 +663,23 @@ workflow refuses a tag that has no matching section here.
   the base path.
 
 ### Fixed
+
+- **An activity-report request whose time interval runs backwards is now
+  refused instead of answered.** `GET /admin/report/*` accepts an optional
+  `time_interval=<lower>/<upper>`; a pair bounded on both sides with the lower
+  bound *after* the upper one is not an interval at all (the openEHR BASE
+  `Interval` invariant requires `lower <= upper`), and the server used to run
+  it anyway and hand back the empty count such a range selects — a
+  truthful-looking answer for a window nobody asked for. It is now `400`.
+  Equal bounds remain a legitimate single-instant interval.
+
+- **A corrupt dump archive no longer reports as an internal server fault.**
+  `POST /admin/load` against a location whose manifest or segment is mangled
+  or truncated used to surface as an unexpected-exception `500`, while a
+  location holding no archive at all reported the openEHR service model's
+  `file_not_writable`. Both are the same fact — the location does not hold a
+  readable archive — and both now report `file_not_writable`, with nothing
+  loaded either way.
 
 - **An export requesting a format this server does not implement now answers
   `501 Not Implemented` instead of `400`.** `openehr_canonical_xml` and the

@@ -53,4 +53,16 @@ flow:
     with:
       file_sys_loc: "${ixit:dump_location}/round_trip"
     expect: ok
+    # The SM sentence is only half-proved by a 200: "import EHRs with duplicate
+    # EHR ids will fail" makes the duplicate a PER-ENTITY failure carried in the
+    # `List<DUMP_LOAD_FAIL_REPORT>` return (dump_load_fail_report.adoc:
+    # entity_type, entity_id, dump_status, error). Loading a repository's own
+    # archive back into it makes EVERY archived EHR a duplicate, so a fulfilled
+    # call with an EMPTY report would mean the duplicates were silently
+    # overwritten or dropped — the leniency this assertion refuses. The report
+    # must name the entity, its type, and the failed status.
+    assert:
+      - { assert: returns, matches: '"entity_type"\s*:\s*"EHR"' }
+      - { assert: returns, matches: '"dump_status"\s*:\s*false' }
+      - { assert: returns, matches: '"entity_id"\s*:\s*"' }
 ambiguities: [AMB-33]

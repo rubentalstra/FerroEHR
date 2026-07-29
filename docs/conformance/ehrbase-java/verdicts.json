@@ -3,7 +3,7 @@
   "capabilities": [
     [
       "Adl14ArchetypeProvisioning",
-      "unrealized"
+      "not_evidenced"
     ],
     [
       "Adl14OptProvisioning",
@@ -83,7 +83,7 @@
     ],
     [
       "PhysicalDeletion",
-      "unrealized"
+      "not_evidenced"
     ],
     [
       "EhrDumpLoad",
@@ -143,7 +143,7 @@
     ],
     [
       "Signing",
-      "unrealized"
+      "not_evidenced"
     ],
     [
       "SimplifiedFormats",
@@ -181,7 +181,7 @@
         "passed": 0,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 1
+        "unevidenced": 6
       }
     ],
     [
@@ -234,17 +234,17 @@
       {
         "passed": 18,
         "failed": 2,
-        "inconclusive": 1,
-        "unevidenced": 1
+        "inconclusive": 0,
+        "unevidenced": 2
       }
     ],
     [
       "EhrStatus",
       {
         "passed": 12,
-        "failed": 23,
-        "inconclusive": 9,
-        "unevidenced": 1
+        "failed": 21,
+        "inconclusive": 7,
+        "unevidenced": 5
       }
     ],
     [
@@ -253,16 +253,16 @@
         "passed": 5,
         "failed": 0,
         "inconclusive": 20,
-        "unevidenced": 1
+        "unevidenced": 3
       }
     ],
     [
       "DirectoryOps",
       {
         "passed": 48,
-        "failed": 12,
-        "inconclusive": 3,
-        "unevidenced": 6
+        "failed": 11,
+        "inconclusive": 2,
+        "unevidenced": 8
       }
     ],
     [
@@ -591,10 +591,10 @@
     }
   ],
   "coverage": {
-    "selected": 492,
-    "driven": 466,
+    "selected": 499,
+    "driven": 459,
     "passed": 136,
-    "failed": 135,
-    "inconclusive": 195
+    "failed": 132,
+    "inconclusive": 191
   }
 }

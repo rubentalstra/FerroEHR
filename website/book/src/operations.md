@@ -216,7 +216,11 @@ rather than failing.
   COMPOSITION versions were committed in the interval.
 
 An unknown `a_service`, or a `time_interval` that is not `<lower>/<upper>`
-with valid ISO 8601 bounds, is **400**.
+with valid ISO 8601 bounds, is **400**. So is an interval bounded on **both**
+sides whose lower bound is after its upper bound: that is not an interval, and
+answering it with the empty result it would select would hand back a
+truthful-looking count for a window nobody asked for. Equal bounds are a
+legitimate single-instant interval and are reported normally.
 
 ## The admin API: archiving
 
@@ -277,6 +281,11 @@ listed above, a non-positive `segment_split_size`, or an `encoding` field is
 **400**. `openehr_canonical_xml` is **501**: the openEHR service model names
 it, this server does not implement it yet, and it says so rather than
 silently writing a different format.
+
+A location that holds **no** archive, and one holding an archive that is
+corrupt — a mangled or truncated container, manifest, or segment — are the
+same fact and answer the same way: **500**, the service model's single
+`file_not_writable` error for these operations. Nothing is loaded either way.
 
 > [!NOTE]
 > The activity report, the archive routes, and the dump/load pair are

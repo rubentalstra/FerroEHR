@@ -612,3 +612,96 @@ async fn load_from_a_location_with_no_archive_is_file_not_writable() {
         .expect_err("no archive at the location");
     assert_eq!(err.status, CallStatusType::FileNotWritable);
 }
+
+/// Whether the target repository holds an EHR row — the no-partial-write proof
+/// the corrupt-archive loads below assert.
+async fn ehr_row_exists(pool: &PgPool, ehr_id: Uuid) -> bool {
+    sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+        .bind(ehr_id)
+        .fetch_one(pool)
+        .await
+        .expect("ehr probe")
+}
+
+/// A CORRUPT archive is the same fact as an unreadable one: a `manifest.json`
+/// that will not parse as this format leaves `file_sys_loc` holding no readable
+/// archive, so the load is the SM's own `file_not_writable`
+/// (`i_admin_dump_load.adoc` — the one error it declares) — never an
+/// `exception` blaming the server for the caller's archive, and never a
+/// partial load.
+#[tokio::test]
+async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(src_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let ehr = seed_full_ehr(&source).await;
+    let dir = archive_dir();
+    let reports = source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export");
+    assert!(reports.is_empty());
+
+    // Truncate the manifest mid-object: readable bytes, unparseable JSON.
+    let manifest = std::path::Path::new(&dir).join("manifest.json");
+    let text = std::fs::read_to_string(&manifest).expect("manifest");
+    let half = text.len() / 2;
+    std::fs::write(&manifest, text.get(..half).expect("manifest prefix"))
+        .expect("mangle the manifest");
+
+    let err = target
+        .load_ehrs(dir.clone())
+        .await
+        .expect_err("a mangled manifest is refused");
+    assert_eq!(err.status, CallStatusType::FileNotWritable);
+    assert!(
+        !ehr_row_exists(&dst_pool, ehr.into()).await,
+        "a refused load commits nothing"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The packed half of the same law: a TRUNCATED `archive.zip` cannot be opened
+/// as a container, which is `file_not_writable` with nothing loaded.
+#[tokio::test]
+async fn load_from_a_truncated_container_is_file_not_writable() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(src_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let ehr = seed_full_ehr(&source).await;
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
+        compression_format: Some(CompressionFormat::Zip),
+        segment_split_size: 1,
+    };
+    let reports = source.export_ehrs(dir.clone(), spec).await.expect("export");
+    assert!(reports.is_empty());
+
+    // Drop the ZIP central directory (the trailing bytes): the file still
+    // exists, so detection picks it, but it is no longer an archive.
+    let container = std::path::Path::new(&dir).join("archive.zip");
+    let bytes = std::fs::read(&container).expect("container");
+    let half = bytes.len() / 2;
+    std::fs::write(&container, bytes.get(..half).expect("container prefix"))
+        .expect("truncate the container");
+
+    let err = target
+        .load_ehrs(dir.clone())
+        .await
+        .expect_err("a truncated container is refused");
+    assert_eq!(err.status, CallStatusType::FileNotWritable);
+    assert!(
+        !ehr_row_exists(&dst_pool, ehr.into()).await,
+        "a refused load commits nothing"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}

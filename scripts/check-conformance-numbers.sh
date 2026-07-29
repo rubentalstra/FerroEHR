@@ -25,9 +25,13 @@ pattern_verdicts='(CORE|STANDARD|OPTIONS|Core|Standard|Options)[[:space:]]*[:·]
 # labels, so *.svg is excluded — its numbers are rendered, never hand-typed.
 pattern_perf='[0-9][0-9.,]*[[:space:]]*(<[^>]*>)*[[:space:]]*(req/s|/s|ms|MB|GiB)([^_a-zA-Z]|$)'
 
+# The count/verdict patterns exclude *.svg for the same reason the perf
+# pattern does: the committed conformance SVGs (heat grid, chapter bars) are
+# rendered from verdicts/results and regenerate-and-diff guarded in this same
+# workflow — their "N cases" labels are generated, never hand-typed.
 fail=0
 for pattern in "$pattern_counts" "$pattern_verdicts"; do
-  if hits=$(grep -rInE "$pattern" website/landing website/book/src README.md 2>/dev/null); then
+  if hits=$(grep -rInE --exclude='*.svg' "$pattern" website/landing website/book/src README.md 2>/dev/null); then
     echo "$hits"
     fail=1
   fi
