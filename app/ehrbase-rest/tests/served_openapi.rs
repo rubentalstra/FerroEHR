@@ -1419,6 +1419,25 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         operations: 9,
     },
     NonSpecFamily {
+        // SM I_ADMIN_DUMP_LOAD's export/load pair; nothing released reads or
+        // writes a file-system archive.
+        label: "the ADMIN dump/load extension",
+        prefixes: &[
+            "/ehrbase/rest/openehr/v1/admin/dump",
+            "/ehrbase/rest/openehr/v1/admin/load",
+        ],
+        flag: "no its-rest operation governs this",
+        operations: 2,
+    },
+    NonSpecFamily {
+        // The whole SM MESSAGE component (I_EHR_EXTRACT_SERVICE +
+        // I_TDD_SERVICE); the release publishes no message API at all.
+        label: "the MESSAGE extension group",
+        prefixes: &["/ehrbase/rest/openehr/v1/message/"],
+        flag: "no its-rest operation governs this",
+        operations: 6,
+    },
+    NonSpecFamily {
         label: "the operational status document",
         prefixes: &["/ehrbase/rest/status"],
         flag: "no openehr spec governs an operational status endpoint",

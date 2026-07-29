@@ -5,7 +5,12 @@ Implements the **generated** ITS-REST contract (server traits + DTOs from
 Modules (`src/`): `api` (one impl group per API area —
 ehr/definition/demographic/query/admin/system, each group carrying its own
 spec-flagged extension routes beside the released ones: `demographic::relationship`,
-`definition::archetype`, `admin::{archive, report}`), `router`, `state`, `formats`
+`definition::archetype`, `admin::{archive, report, dump_load}` — plus `api::message`,
+a group that is extension ALL THE WAY DOWN: the release publishes no
+message/extract/TDD API at all, so `message::{extract, tdd}` mount SM
+`I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE` under a `/message` resource root of
+our own, on the ordinary clinical authentication class rather than the admin
+gate), `router`, `state`, `formats`
 (content negotiation), `overview`, `overload` (shed), `config`, `system_log`
 (ATNA audit middleware), `smart` (SMART App Launch resource-server role), and
 `extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus health / fhir /

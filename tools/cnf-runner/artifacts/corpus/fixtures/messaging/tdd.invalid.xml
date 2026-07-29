@@ -1,4 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template_data xmlns="http://schemas.openehr.org/v1" template_id="cnf.minimal_event">
-  <unclosed_element>
-</template_data>
+<!-- A Template Data Document that is NOT well-formed XML: the root start
+     tag is never terminated. The templates namespace and template_id ARE
+     present, so the failure is the XML well-formedness of the `tdd: String`
+     payload itself (SM i_tdd_service.adoc SS import_tdd) and nothing
+     earlier. -->
+<Persistent_minimal xmlns="http://schemas.oceanehr.com/templates" template_id="persistent_minimal.en.v1"

@@ -85,6 +85,7 @@
     "db": "ehrbase-rs-cnf-ehrbase-postgres-1"
   },
   "system_id": "ehrbase-rs.local",
+  "dump_location": "/tmp/openehr-cnf/dump",
   "signing": {
     "mode": "digest",
     "algorithm": "sha256",
@@ -97,7 +98,7 @@
     "cores": 8,
     "memory_gb": 16,
     "storage_class": "nvme",
-    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, the SMART resource-server posture (docker/sut-smart.yml overlays the base stack); alongside it a second deployment of the same image in the openPGP version-signing posture (project ehrbase-rs-cnf-pgp, docker/sut-signing-pgp.yml + docker/sut-pgp-parallel.yml, host port 8081) declared as the sut_pgp instance — the measured-performance stage drives the primary deployment alone"
+    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, the SMART resource-server posture (docker/sut-smart.yml overlays the base stack); alongside it a second deployment of the same image in the openPGP version-signing posture (project ehrbase-rs-cnf-pgp, docker/sut-signing-pgp.yml + docker/sut-pgp-parallel.yml, host port 8081) declared as the sut_pgp instance \u2014 the measured-performance stage drives the primary deployment alone"
   },
   "smart": {
     "platform_instance": "smart_platform",

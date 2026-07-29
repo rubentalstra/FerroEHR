@@ -39,8 +39,9 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::service::EhrbaseService;
 
-use ehrbase::service::admin::types::ExportSpec;
+use ehrbase::service::admin::types::{CompressionFormat, ExportFormat, ExportSpec};
 use ehrbase::service::ehr_index::types::SubjectRef;
+use ehrbase::service::status::CallStatusType;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 /// A unique temporary directory path for one archive (best-effort cleaned up by
@@ -423,4 +424,145 @@ async fn load_reports_an_ehr_whose_subject_the_repository_already_holds() {
     assert_eq!(found[0].ehr_id, owner.to_string());
 
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// SM `compression_format.adoc` member `zip`: the archive is one `archive.zip`
+/// container carrying the identical entry set, and `load_ehrs` — which is
+/// passed no format (`i_admin_dump_load.adoc`: `load_ehrs(file_sys_loc)`) —
+/// detects and reads it, round-tripping byte-equal.
+#[tokio::test]
+async fn zip_compressed_export_round_trips_through_the_detected_container() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let src_pool = src_db.pool();
+    let source = EhrbaseService::new(src_pool.clone());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let ehr = seed_full_ehr(&source).await;
+    let src = canonical_snapshot(&source, ehr).await;
+    let src_counts = counts(&src_pool, ehr.into()).await;
+
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
+        compression_format: Some(CompressionFormat::Zip),
+        // A small split forces several segment entries into the one container.
+        segment_split_size: 1,
+    };
+    let reports = source
+        .export_ehrs(dir.clone(), spec)
+        .await
+        .expect("zip export");
+    assert!(reports.is_empty(), "a clean export reports no failures");
+
+    // The packed container is the ONLY thing written — no loose manifest.
+    let root = std::path::Path::new(&dir);
+    assert!(root.join("archive.zip").is_file(), "archive.zip written");
+    assert!(
+        !root.join("manifest.json").exists(),
+        "the packed form writes no loose manifest"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("zip load");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repo reports no failures, got {load_reports:?}"
+    );
+    assert_eq!(
+        canonical_snapshot(&target, ehr).await,
+        src,
+        "a zip round-trip must be byte-equal at the canonical JSON level"
+    );
+    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The two `EXPORT_FORMAT`/`COMPRESSION_FORMAT` members this service does not
+/// realize are refused as `not_implemented` (RFC 9110 §15.6.2 `501`) — a valid
+/// SM enumeration member is never reported as a malformed request, and never
+/// silently downgraded to a format the caller did not ask for.
+#[tokio::test]
+async fn unrealized_format_members_are_not_implemented_and_write_nothing() {
+    let db = testkit::db().await.expect("testkit database");
+    let service = EhrbaseService::new(db.pool());
+    let _ehr = seed_full_ehr(&service).await;
+
+    for (label, spec) in [
+        (
+            "openehr_canonical_xml",
+            ExportSpec {
+                logical_format: Some(ExportFormat::OpenehrCanonicalXml),
+                compression_format: None,
+                segment_split_size: 1024,
+            },
+        ),
+        (
+            "7z",
+            ExportSpec {
+                logical_format: Some(ExportFormat::OpenehrCanonicalJson),
+                compression_format: Some(CompressionFormat::SevenZip),
+                segment_split_size: 1024,
+            },
+        ),
+    ] {
+        let dir = archive_dir();
+        let err = service
+            .export_ehrs(dir.clone(), spec)
+            .await
+            .expect_err("an unrealized member is refused");
+        assert_eq!(
+            err.status,
+            CallStatusType::NotImplemented,
+            "{label} must be not_implemented, got {err:?}"
+        );
+        let path = std::path::Path::new(&dir);
+        let empty = !path.exists()
+            || std::fs::read_dir(path)
+                .expect("read the archive dir")
+                .next()
+                .is_none();
+        assert!(empty, "{label} must leave no partial archive behind");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+/// `EXPORT_SPEC.segment_split_size` is `Integer [1..1]` in kb
+/// (`export_spec.adoc`); a non-positive size names no segment size at all and
+/// is a `precondition_violation`, distinct from the unrealized-member branch.
+#[tokio::test]
+async fn non_positive_segment_split_size_is_a_precondition_violation() {
+    let db = testkit::db().await.expect("testkit database");
+    let service = EhrbaseService::new(db.pool());
+
+    let dir = archive_dir();
+    let err = service
+        .export_ehrs(
+            dir.clone(),
+            ExportSpec {
+                logical_format: None,
+                compression_format: None,
+                segment_split_size: 0,
+            },
+        )
+        .await
+        .expect_err("a non-positive split size is refused");
+    assert_eq!(err.status, CallStatusType::PreconditionViolation);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// `load_ehrs` against a location holding neither container is the SM's own
+/// `file_not_writable` (the only error `i_admin_dump_load.adoc` declares),
+/// never a panic or a silent empty load.
+#[tokio::test]
+async fn load_from_a_location_with_no_archive_is_file_not_writable() {
+    let db = testkit::db().await.expect("testkit database");
+    let service = EhrbaseService::new(db.pool());
+
+    let err = service
+        .load_ehrs(archive_dir())
+        .await
+        .expect_err("no archive at the location");
+    assert_eq!(err.status, CallStatusType::FileNotWritable);
 }
