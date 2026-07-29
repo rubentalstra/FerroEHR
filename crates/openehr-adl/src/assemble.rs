@@ -40,6 +40,7 @@ use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::am24::aom2::terminology::value_set::ValueSet;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
@@ -888,9 +889,10 @@ fn strip_uri_delims(u: &str) -> String {
 fn term_code_of(v: &OdinValue) -> TerminologyCode {
     match v {
         OdinValue::TermCode(code) => parse_term_code(code),
-        other => {
-            string_of(Some(other)).map_or_else(|| term_code("local", ""), |s| parse_term_code(&s))
-        }
+        other => string_of(Some(other)).map_or_else(
+            || term_code(LOCAL_TERMINOLOGY_ID, ""),
+            |s| parse_term_code(&s),
+        ),
     }
 }
 
@@ -900,7 +902,7 @@ fn parse_term_code(raw: &str) -> TerminologyCode {
     let inner = raw.trim().trim_start_matches('[').trim_end_matches(']');
     let (terminology_part, code_string) = match inner.split_once("::") {
         Some((t, c)) => (t.to_owned(), c.to_owned()),
-        None => ("local".to_owned(), inner.to_owned()),
+        None => (LOCAL_TERMINOLOGY_ID.to_owned(), inner.to_owned()),
     };
     // Optional `(version)` suffix on the terminology id.
     let (terminology_id, terminology_version) = match terminology_part.split_once('(') {
