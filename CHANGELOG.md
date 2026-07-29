@@ -212,6 +212,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL 1.4 archetypes with anonymous archetype slots are accepted.** The
+  ADL 1.4 specification writes archetype slots without a node id in its own
+  examples (`allow_archetype OBSERVATION occurrences matches {0..1} …`), and
+  published CKM archetypes use that form — but the parser demanded
+  `[atNNNN]` and refused such sources with a syntax error, so
+  `POST /definition/archetype/adl1.4` answered `422` for spec-valid
+  archetypes. Both the anonymous and the identified slot forms now parse;
+  ADL 2 sources still require the node id, as ADL 2 defines.
 - **An empty TDD batch aimed at a non-existent EHR is now refused.**
   `POST /message/tdd/{ehr_id}/batch` verified the target EHR once per
   document, so a batch with no documents answered success without checking
