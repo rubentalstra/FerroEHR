@@ -51,7 +51,7 @@
     ],
     [
       "ArchetypeValidation",
-      "inconclusive"
+      "passed"
     ],
     [
       "PartyOperations",
@@ -286,9 +286,9 @@
     [
       "ArchetypeValidation",
       {
-        "passed": 121,
+        "passed": 125,
         "failed": 0,
-        "inconclusive": 4,
+        "inconclusive": 0,
         "unevidenced": 0
       }
     ],
@@ -566,11 +566,11 @@
   "profiles": [
     [
       "CORE",
-      "fail"
+      "pass"
     ],
     [
       "STANDARD",
-      "fail"
+      "pass"
     ],
     [
       "OPTIONS",
@@ -590,8 +590,8 @@
   "coverage": {
     "selected": 845,
     "driven": 808,
-    "passed": 804,
+    "passed": 808,
     "failed": 0,
-    "inconclusive": 4
+    "inconclusive": 0
   }
 }

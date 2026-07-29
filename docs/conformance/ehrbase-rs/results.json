@@ -490,35 +490,27 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_non_member",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_closed",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
-      "status": "errored",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 0,
-      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-version_bare_deprecated",
@@ -2233,8 +2225,8 @@
     {
       "case": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
       "status": "passed",
-      "rows_driven": 3,
-      "rows_total": 3
+      "rows_driven": 4,
+      "rows_total": 4
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-prefer_identifier",
