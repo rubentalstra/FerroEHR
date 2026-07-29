@@ -215,27 +215,27 @@ pub(crate) const MAPPED_CLASSES: &[MappedClass] = &[
     // ── service interfaces (no data) ──
     MappedClass {
         name: "Env",
-        citation: "BASE foundation_types (Env service interface)",
+        citation: "BASE base_types.builtins (Env service interface; Base Types §Built-in types)",
         reason: "Service interface, no data.",
     },
     MappedClass {
         name: "Locale",
-        citation: "BASE foundation_types (Locale service interface)",
+        citation: "BASE base_types.builtins (Locale service interface; Base Types §Built-in types)",
         reason: "Service interface, no data.",
     },
     MappedClass {
         name: "Math",
-        citation: "BASE foundation_types (Math service interface)",
+        citation: "BASE base_types.builtins (Math service interface; Base Types §Built-in types)",
         reason: "Service interface, no data.",
     },
     MappedClass {
         name: "Quantity_converter",
-        citation: "BASE foundation_types (Quantity_converter service interface)",
+        citation: "BASE base_types.builtins (Quantity_converter service interface; Base Types §Built-in types)",
         reason: "Service interface, no data.",
     },
     MappedClass {
         name: "Statistical_evaluator",
-        citation: "BASE foundation_types (Statistical_evaluator service interface)",
+        citation: "BASE base_types.builtins (Statistical_evaluator service interface; Base Types §Built-in types)",
         reason: "Service interface, no data.",
     },
     // ── constant-holder classes (no data; become assoc consts in *_impl.rs) ──
