@@ -222,6 +222,7 @@ fn undeclared_ixit_facts(case: &CaseCore, ixit: &Ixit) -> Vec<&'static str> {
         .into_iter()
         .filter(|field| match field {
             IxitField::SystemId => ixit.system_id.is_none(),
+            IxitField::DumpLocation => ixit.dump_location.is_none(),
         })
         .map(IxitField::token)
         .collect()

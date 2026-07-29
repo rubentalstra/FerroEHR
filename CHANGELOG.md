@@ -17,6 +17,32 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Repository dump/load and the whole messaging surface are now HTTP
+  routes** — the last service capabilities that had no wire. Under the
+  existing `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role,
+  `POST /admin/dump` writes an archive of every EHR to a location on the
+  server's file system and `POST /admin/load` populates the repository from
+  one; both answer `200` with the per-entity report the openEHR service model
+  defines (empty when everything succeeded), and a load into a non-empty
+  repository reports each already-present EHR rather than failing. Under the
+  ordinary clinical authentication — these are not admin routes — the new
+  `/message` group serves EHR Extract export (`GET /message/export/{ehr_id}`,
+  `POST /message/export` by specification) and import
+  (`POST /message/import` for a whole-EHR clone,
+  `POST /message/import/{ehr_id}` to add content to an existing one), plus
+  Template Data Document import (`POST /message/tdd/{ehr_id}` and its
+  all-or-nothing `/batch` sibling). Like the admin extensions, all of these
+  are ehrbase-rs extensions: the openEHR service model defines the operations,
+  the released REST API surfaces no endpoint for them, and no openEHR
+  conformance claim rests on the URLs — see the book's Operations page and the
+  served OpenAPI document, which flags every one of them.
+
+- **The dump archive can be written as a ZIP.** `POST /admin/dump` accepts the
+  service model's `zip` compression format, packing the manifest, segments and
+  multimedia blobs into a single `archive.zip` instead of loose files. Load
+  takes no format argument and detects the container, so an archive always
+  reads back the way it was written.
+
 - **The admin API gained an activity report and archiving, and the definition
   API gained archetype provisioning** — service capabilities that had no HTTP
   route until now. Under the existing `EHRBASE__ADMIN__ENABLED` gate and
@@ -555,6 +581,12 @@ workflow refuses a tag that has no matching section here.
   the base path.
 
 ### Fixed
+
+- **An export requesting a format this server does not implement now answers
+  `501 Not Implemented` instead of `400`.** `openehr_canonical_xml` and the
+  `7z` compression format are valid values in the openEHR service model that
+  this server does not build; reporting them as malformed requests was wrong,
+  and the response now says the functionality is unsupported.
 
 - **The template list collapses to the latest version of each template when
   the `version` parameter is absent** (#614). `GET

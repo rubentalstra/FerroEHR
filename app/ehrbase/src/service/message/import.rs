@@ -75,6 +75,12 @@ impl EhrbaseService {
     /// A completed import is audited for non-repudiation (inbound →
     /// `EventActionCode::Create`).
     ///
+    /// Returns the id of the EHR the clone landed under — the caller's fixed
+    /// id, or the source id the extract carried. The SM operation itself
+    /// returns nothing, but the created EHR's identity is not otherwise
+    /// derivable by a caller that supplied none, and a creating call that
+    /// cannot name what it created is unusable over a wire.
+    ///
     /// # Errors
     /// - `precondition_violation` (`400`) — the extract carries no `EHR_STATUS`
     ///   versioned object, carries duplicate singleton containers, names no
@@ -90,7 +96,7 @@ impl EhrbaseService {
         &self,
         an_ehr_id: Option<EhrId>,
         an_extract: Extract,
-    ) -> Result<(), SmError> {
+    ) -> Result<EhrId, SmError> {
         let (containers, parties) = parse_import_containers(&an_extract)?;
         // A whole-EHR clone must carry an EHR_STATUS (EHR.ehr_status 1..1, RM
         // ehr §"EHR Creation") — the target could not otherwise be a valid EHR.
@@ -164,7 +170,7 @@ impl EhrbaseService {
             self.prewarm_ehr_access_open(ehr_id).await;
         }
         self.emit_extract_audit(ehr_id, EventActionCode::Create);
-        Ok(())
+        Ok(ehr_id)
     }
 
     /// SM `import_ehr_extract(an_ehr_id, an_extract)` — land versioned objects

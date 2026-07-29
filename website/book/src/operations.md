@@ -234,17 +234,110 @@ id that names nothing is **404**, in both cases before anything is marked;
 re-archiving an already-archived record changes nothing. An empty list
 succeeds and archives nothing.
 
+## The admin API: dump and load
+
+Two routes that move the whole repository to and from an archive on the
+**server's** file system, behind the same `EHRBASE__ADMIN__ENABLED` gate and
+`ADMIN` role. Both answer **200** with a JSON array of per-entity failure
+reports — an **empty** array means everything succeeded.
+
+- `POST {base}/admin/dump` — write an archive of every EHR. The body is
+  `{"file_sys_loc": "…"}` plus the optional export settings:
+
+  | Field | Values | Default |
+  |---|---|---|
+  | `logical_format` | `openehr_canonical_json` | canonical JSON |
+  | `compression_format` | `zip` — omit for loose files | uncompressed |
+  | `segment_split_size` | segment size in kb (a positive integer) | `1024` |
+
+- `POST {base}/admin/load` with `{"file_sys_loc": "…"}` — populate the
+  repository from an archive. It takes the location and nothing else: the
+  container (loose files or a single `archive.zip`) is detected from what the
+  location holds, so a load never has to be told how the dump was written.
+
+The archive is a directory holding a `manifest.json`, one or more
+`segment-NNNN.json` files, and a `blobs/` subdirectory for any externalized
+multimedia — or exactly those entries packed into one `archive.zip` when
+`compression_format` is `zip`.
+
+The repository being loaded into **need not be empty**; an EHR whose id is
+already present is reported and skipped rather than failing the load, so the
+response array names each one:
+
+```json
+[ { "entity_type": "EHR",
+    "entity_id": "7d44b88c-4199-4bad-97dc-d78268e01398",
+    "dump_status": false,
+    "error": "an EHR with this id already exists" } ]
+```
+
+A missing or blank `file_sys_loc`, a format value that is not one of the ones
+listed above, a non-positive `segment_split_size`, or an `encoding` field is
+**400**. `openehr_canonical_xml` and the `7z` compression format are **501**:
+the openEHR service model names them, this server does not implement them, and
+it says so rather than silently writing a different format.
+
 > [!NOTE]
-> The activity report and the archive routes are ehrbase-rs extensions too —
-> the openEHR *service model* defines these operations, but the released REST
-> API surfaces no endpoint for them, so their URLs are our own. They gate no
-> openEHR conformance claim; see
+> The activity report, the archive routes, and the dump/load pair are
+> ehrbase-rs extensions too — the openEHR *service model* defines these
+> operations, but the released REST API surfaces no endpoint for them, so their
+> URLs are our own. They gate no openEHR conformance claim; see
 > [Conformance](conformance.md).
 
 > [!WARNING]
 > `DELETE /admin/ehr/all` without a parameter empties the repository — there
 > is no confirmation step and no undo. Keep the admin API disabled unless a
 > workflow needs it, and gate the `ADMIN` role tightly.
+
+## The messaging API: EHR Extract and TDD import
+
+A group of six routes under `{base}/message` that move whole records between
+systems and accept documents in the template-data (TDD) form. Unlike the admin
+extensions above, these are **not** admin-gated: they carry the same ordinary
+authentication as the clinical API, because they read and write the same
+clinical content.
+
+### EHR Extract
+
+- `GET {base}/message/export/{ehr_id}` — export one whole EHR. **200** with a
+  JSON array holding one `EXTRACT` that carries every versioned object of the
+  EHR, latest versions only. **404** if the EHR does not exist.
+- `POST {base}/message/export` with an `EXTRACT_SPEC` body — export by
+  specification. **200** with one `EXTRACT` per manifest entity, in manifest
+  order; a manifest with no entities yields `[]`. Each entity must name the
+  record by `ehr_id` or `subject_id`, otherwise **400**; an identifier that
+  names nothing is **404**.
+- `POST {base}/message/import` with an `EXTRACT` body — clone a whole EHR.
+  Add `?ehr_id=<uuid>` to fix the identifier the clone lands under; leave it
+  off and the source identifier the extract carries is re-used. **201** with
+  `{"uid": "<ehr_id>"}`, so a caller that supplied no id still learns what was
+  created. The target must not already exist (**409**), and the extract must
+  carry an `EHR_STATUS` (**400**).
+- `POST {base}/message/import/{ehr_id}` with an `EXTRACT` body — add the
+  extract's content to an **existing** EHR as new versions. **204**. **404**
+  if the EHR does not exist; **409** if the extract carries an `EHR_STATUS` or
+  `EHR_ACCESS` other than the one the EHR already holds.
+
+### TDD import
+
+- `POST {base}/message/tdd/{ehr_id}` with an `application/xml` body — import
+  one Template Data Document. It is converted against the operational template
+  its root names and committed through the ordinary validated composition
+  path, so **201** with `{"uid": "<version_uid>"}`. The template must already
+  be uploaded through the definition API (**404** otherwise); a body that does
+  not conform to it is **400**, and a document that is not well-formed XML is
+  **422**.
+- `POST {base}/message/tdd/{ehr_id}/batch` with a JSON array of TDD documents
+  — import several at once. **201** with the created version ids in input
+  order. The batch is **all-or-nothing**: every document is converted before
+  any is committed, so one bad document rejects the whole batch and commits
+  nothing.
+
+> [!NOTE]
+> The whole `/message` group is an ehrbase-rs extension: the openEHR service
+> model defines a Message component, but the released REST API publishes no
+> message, extract, or TDD endpoints at all. These URLs are our own and gate no
+> openEHR conformance claim; see [Conformance](conformance.md).
 
 ## Health probes
 

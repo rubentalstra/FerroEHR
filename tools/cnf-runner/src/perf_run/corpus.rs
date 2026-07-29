@@ -376,6 +376,12 @@ pub fn seed_ward(
     if let Some(flat) = &journey_pack.aux.flat {
         opts.push((pack::FLAT_OPT_KEY, flat.opt_xml.as_str()));
     }
+    // The TDD stage's own OPT: a TDD is an instance of the template-derived
+    // TDS (AM OPT2 master02-overview §Purpose of the OPT), so it cannot be
+    // interpreted at all without its operational template.
+    if let Some(tdd) = &journey_pack.aux.tdd {
+        opts.push((pack::TDD_OPT_KEY, tdd.opt_xml.as_str()));
+    }
     for (key, opt_xml) in opts {
         let upload = client.request(
             reqwest::Method::POST,
@@ -442,6 +448,25 @@ pub fn seed_ward(
                 "pack preflight: the Simplified-FLAT payload returned {} — the committed payload \
                  ground is invalid for this SUT; fix the pack (or the SUT's validation) before \
                  measuring",
+                reply.status
+            ));
+        }
+    }
+    // The TDD payload rides the same preflight: its body is matched to the
+    // template node tree on the way in, so a mismatch against the OPT is an
+    // instrument-ground defect exactly like an RM-invalid example.
+    if let Some(tdd) = &journey_pack.aux.tdd {
+        let reply = client.request(
+            reqwest::Method::POST,
+            &format!("/message/tdd/{scratch_ehr}"),
+            Some(("application/xml", tdd.document.as_bytes().to_vec())),
+            false,
+            None,
+        )?;
+        if !created(reply.status) {
+            return Err(format!(
+                "pack preflight: the TDD payload returned {} — the committed payload ground is \
+                 invalid for this SUT; fix the pack (or the SUT's validation) before measuring",
                 reply.status
             ));
         }

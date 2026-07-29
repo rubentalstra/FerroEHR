@@ -830,6 +830,37 @@ pub(crate) fn perform(
             )?;
             note(observed, reply.status) == 200
         }
+        PerfOp::EhrExtractExport => {
+            // EXTENSION route (register AMB-34) — no openEHR spec governs it.
+            // A pure read: the EHR's content as a `List<EXTRACT>`.
+            let reply = client.request(
+                reqwest::Method::GET,
+                &format!("/message/export/{ehr_id}"),
+                None,
+                false,
+                None,
+            )?;
+            note(observed, reply.status) == 200
+        }
+        PerfOp::TddImport => {
+            // EXTENSION route (register AMB-34) — no openEHR spec governs it.
+            // The document converts against its operational template and
+            // commits through the ordinary validated COMPOSITION path, so this
+            // arrival is a real write.
+            let tdd = journey_pack
+                .aux
+                .tdd
+                .as_ref()
+                .ok_or_else(|| "the pack carries no TDD payload".to_owned())?;
+            let reply = client.request(
+                reqwest::Method::POST,
+                &format!("/message/tdd/{ehr_id}"),
+                Some(("application/xml", tdd.document.as_bytes().to_vec())),
+                false,
+                None,
+            )?;
+            created(note(observed, reply.status))
+        }
         PerfOp::AnalyticsQuery => {
             let body = serde_json::json!({
                 "q": ANALYTICS_AQL,

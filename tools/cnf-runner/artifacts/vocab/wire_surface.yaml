@@ -19,10 +19,6 @@
 # Axis 1 — SM operations of the pinned platform interfaces with no
 # its-rest binding.
 sm_operations:
-  - operation: I_ADMIN_DUMP_LOAD.load_ehrs
-    reason: off_wire
-    source: "SM i_admin_dump_load.adoc vs released ITS-REST 1.1.0 — no dump/load wire; only physical EHR deletion is realized (register AMB-33)"
-    note: "The schedule-guide boundary is recorded here: CNF master12-func_tc_admin.adoc has a `=== Service Model operation:` section for NINE of the ten SM admin operations and NONE for load_ehrs — so even the stalled structural guide names no behaviour to cover for it. That changes nothing (the schedule is a guide, never authority, and the released ITS surfaces no dump/load endpoint either), but it is the reason no case exists rather than a coverage decision of ours. The operation's own released defect — declaring `file_not_writable` for a READ — is register AMB-141(4)."
   - operation: I_DATA_BINDING.get_frame
     reason: off_wire
     source: "SM i_data_binding.adoc — data binding is an internal SUBJECT_PROXY concern; released ITS-REST 1.1.0 surfaces no data-binding resource"
@@ -2120,6 +2116,30 @@ served_extensions:
       - "POST /ehrbase/rest/openehr/v1/admin/archive/parties"
     config_gate: "[admin].enabled (default off) — the same gate and RBAC class as the released admin deletes"
     spec_silence: "SM i_admin_archive.adoc declares archive_ehrs (\"Move selected EHRs to archival storage\") and archive_parties (\"Move selected Parties and relationships to archival storage\"); the released Admin API is exactly two EHR deletes and nothing in it moves a resource to archival storage (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension; the archival tier itself is spec-silent storage mechanics."
+    never_gates: true
+  # ── (4) the three families the #659 re-claim wave added ───────────────────
+  - family: admin-dump-load
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/admin/dump"
+      - "POST /ehrbase/rest/openehr/v1/admin/load"
+    config_gate: "[admin].enabled (default off) — the same gate and RBAC class as the released admin deletes"
+    spec_silence: "SM i_admin_dump_load.adoc declares export_ehrs (\"Export all EHRs to a file-system location in a specified format\") and load_ehrs (\"Populate EHR repository from export archive on file system\"), with EXPORT_SPEC / EXPORT_FORMAT / COMPRESSION_FORMAT / ENCODING_FORMAT / DUMP_LOAD_FAIL_REPORT as their parameter and report types; the released Admin API is exactly two EHR deletes (specifications/admin.openapi.yaml) and nothing in it reads or writes a file-system archive (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension — and so is the on-disk archive format itself, which no openEHR spec defines. This product realizes the EXPORT_FORMAT member openehr_canonical_json and the COMPRESSION_FORMAT member zip (plus the uncompressed form); openehr_canonical_xml and 7z answer 501 Not Implemented (RFC 9110 §15.6.2), the boundary the register records rather than a bent expectation."
+    never_gates: true
+  - family: message-extract
+    routes:
+      - "GET /ehrbase/rest/openehr/v1/message/export/{ehr_id}"
+      - "POST /ehrbase/rest/openehr/v1/message/export"
+      - "POST /ehrbase/rest/openehr/v1/message/import"
+      - "POST /ehrbase/rest/openehr/v1/message/import/{ehr_id}"
+    config_gate: "always on with the API surface (no separate toggle); the ordinary clinical authentication class, NOT the /admin/ gate — SM places these operations in the MESSAGE component, not ADMIN, and the content they move is the same EHR content the released clinical routes serve. No openEHR spec governs the privilege level of an unspecified route: our own design/extension."
+    spec_silence: "SM master09-message_service.adoc + i_ehr_extract_service.adoc declare export_ehrs / export_ehr_extracts / import_ehr / import_ehr_extract, and released ITS-REST 1.1.0 publishes SEVEN API groups (overview, system, ehr, demographic, query, definition, admin) with no message / EHR-Extract group in either the docs text or the OAS (register AMB-34). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set, and `/message` is a resource root the release does not define. Our own design/extension over the RM EHR-Extract IM (RM ehr_extract master05/master09); no ITS-REST wire-conformance claim rests on it."
+    never_gates: true
+  - family: message-tdd
+    routes:
+      - "POST /ehrbase/rest/openehr/v1/message/tdd/{ehr_id}"
+      - "POST /ehrbase/rest/openehr/v1/message/tdd/{ehr_id}/batch"
+    config_gate: "always on with the API surface (no separate toggle); the ordinary clinical authentication class — a TDD import commits a COMPOSITION through the same validated path the released composition_create uses."
+    spec_silence: "SM i_tdd_service.adoc declares import_tdd (and names import_tdds without a signature — the batch form is this product's flagged extension of the interface), and released ITS-REST 1.1.0 publishes no TDD API in either the docs text or the OAS (register AMB-34). No released clause governs the URI space beyond the resource set. Our own design/extension; the TDD document format itself is the template-derived TDS the OPT implies (AM OPT2 master02-overview.adoc §Purpose of the OPT), not a released wire schema."
     never_gates: true
   # The SMART discovery route was declared here while it was a
   # statement-level capability with no case. It is NOT an extension family any

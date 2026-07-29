@@ -1563,18 +1563,43 @@ cnf.demographic.person.archetyped_full:
   provenance: "authored 2026-07-28 from the RM class model — a PERSON populating every archetyped substructure the model offers (PARTY identities/contacts/details, ACTOR languages; CONTACT addresses; ADDRESS details), each an ITEM_TREE; the accept payload proving the demographic content validator passes valid archetyped content rather than refusing everything it does not recognize"
 # MESSAGING (master13) corpus additions — concatenated into MANIFEST.yaml by
 # the verify harness. Canonical-JSON EXTRACT / EXTRACT_SPEC and TDD (XML)
-# payloads for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. These services
-# have no ITS-REST 1.1.0 wire (AMB-33), so the payloads are DOCUMENTARY — never
-# committed to a live SUT — and are shaped from the RM EHR Extract IM
-# (§EXTRACT / §EXTRACT_SPEC) and SM I_TDD_SERVICE §import_tdd. The ADMIN
-# (master12) cases need no corpus: they are runner-provisioned (requires:
-# ehr/server) or use literal identifiers.
+# payloads for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases.
+#
+# RE-AUTHORED EXECUTABLE 2026-07-29 (#659). These payloads used to be
+# DOCUMENTARY — shaped to the RM class model but never sent anywhere, because
+# no wire reached the services. This product now serves them on declared
+# extension routes (vocab/wire_surface.yaml `message-extract` / `message-tdd`,
+# register AMB-34), so every entry below is REALLY POSTED to a live SUT and had
+# to become semantically importable rather than merely well-typed: the EXTRACTs
+# carry an X_VERSIONED_* container with a complete ORIGINAL_VERSION (uid,
+# lifecycle_state, contribution, commit_audit, data), and the TDDs name an
+# operational template the owning case provisions through `requires.templates`.
+#
+# FORMAT NOTE: a TDD is XML but NOT canonical openEHR RM XML — it is an
+# instance of the template-derived TDS (AM OPT2 master02-overview.adoc
+# §Purpose of the OPT). The closed CorpusFormat vocabulary
+# (tools/cnf-runner/src/vocab.rs) has no TDS member and a vocabulary value
+# enters only by schedule release, so these entries carry `canonical-xml`,
+# which the resolver treats as "an XML text payload".
+# TODO: give the TDS its own CorpusFormat member when the schedule releases one.
 cnf.messaging.ehr_extract.v1:
   source: fixtures/messaging/ehr_extract.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a spec-shaped EXTRACT authored from the RM ehr_extract IM (§EXTRACT: mandatory time_created, system_id, sequence_nr>=1, plus LOCATABLE name/archetype_node_id)"
+  provenance: "authored 2026-07-29 (#659) from the RM ehr_extract IM — a whole-EHR EXTRACT as master09-semantics §Creation Semantics builds one: EXTRACT (mandatory time_created / system_id / sequence_nr>=1) + a `specification` EXTRACT_SPEC naming the SOURCE ehr_id (which import_ehr re-uses when the caller fixes none — RM common master06 §Copying Case 1) + one EXTRACT_CHAPTER carrying an OPENEHR_CONTENT_ITEM around an X_VERSIONED_EHR_STATUS whose single ORIGINAL_VERSION is complete (uid, lifecycle_state 532|complete|, contribution, commit_audit, EHR_STATUS data). Its EHR_STATUS.subject is PARTY_SELF with no external_ref so importing it collides with no other EHR's subject (one EHR per subject, RM ehr master04 §EHR Status)"
+cnf.messaging.ehr_extract.v2:
+  source: fixtures/messaging/ehr_extract.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-29 (#659) as the identity-disjoint sibling of cnf.messaging.ehr_extract.v1 — the same shape under a different source EHR id and a different EHR_STATUS version-container uid. Two cases import a whole EHR successfully in one run (source-id re-use and caller-fixed id), and RM common master06 §Copying keeps the received version container's own identity, so one shared fixture would land the same container twice"
+cnf.messaging.ehr_extract.folder:
+  source: fixtures/messaging/ehr_extract.folder.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-29 (#659) for the import-into-an-EXISTING-EHR case (RM common master06 §Copying Case 2): it carries an X_VERSIONED_FOLDER rather than an EHR_STATUS, because an EHR holds at most one EHR_STATUS (EHR.ehr_status 1..1, RM ehr master04) while EHR.folders is unbounded (§Folders), so a received hierarchy genuinely lands where a second status could only be refused"
 cnf.messaging.ehr_extract.invalid:
   source: fixtures/messaging/ehr_extract.invalid.json
   format: canonical-json
@@ -1583,28 +1608,43 @@ cnf.messaging.ehr_extract.invalid:
     verdict: invalid
     defect: "mandatory attributes absent — EXTRACT requires time_created, system_id and sequence_nr (none present)"
     spec_ref: "RM ehr_extract extract.adoc §Attributes (time_created 1..1, system_id 1..1, sequence_nr 1..1) + §Invariants (Sequence_nr_valid: sequence_nr >= 1)"
-  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); an invalid EXTRACT authored against the RM ehr_extract IM (§EXTRACT) — carries none of the mandatory time_created / system_id / sequence_nr"
-cnf.messaging.extract_spec.v1:
-  source: fixtures/messaging/extract_spec.v1.json
+  provenance: "an invalid EXTRACT authored against the RM ehr_extract IM (§EXTRACT) — carries none of the mandatory time_created / system_id / sequence_nr. Kept verbatim through the #659 wave; what changed is that it is now really posted, and its owning case expects the malformed-payload branch (400) the defect actually describes rather than the semantic-validation one"
+cnf.messaging.extract_spec.empty_manifest:
+  source: fixtures/messaging/extract_spec.empty_manifest.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a spec-shaped EXTRACT_SPEC authored from the RM ehr_extract IM (§EXTRACT_SPEC: mandatory manifest, extract_type openehr::803 'openEHR EHR' per TERM extract_content_type, include_multimedia, priority, link_depth)"
+  provenance: "authored 2026-07-29 (#659), replacing the documentary cnf.messaging.extract_spec.v1 whose single manifest entity named neither ehr_id nor subject_id (an entity the receiver cannot locate — RM ehr_extract extract_entity_manifest.adoc). This one carries a VALID, EMPTY entity list, which is the shape that makes an export fulfilled-with-no-content: the operation yields one EXTRACT per EXTRACT_ENTITY_MANIFEST (extract_manifest.adoc). The by-spec case builds its own populated spec inline, because a manifest entity must name the EHR the runner minted and a corpus entry carries no reference substitution"
 cnf.messaging.tdd.v1:
   source: fixtures/messaging/tdd.v1.xml
   format: canonical-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a well-formed Template Data Document (TDD) in the ITS-XML namespace authored from SM I_TDD_SERVICE §import_tdd (TDD is an opaque String conforming to the template-derived TDS; AM OPT2 master02-overview §Purpose of the OPT)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin, compositions/TDD/persistent_minimal.en.v1__full.xml); adopted 2026-07-29 (#659) with ONE change — the root `uid` is removed, because a version identifier is minted by the committing system (RM common master06 §Version Identification) and carrying the source system's would assert a foreign identity as this server's. It names persistent_minimal.en.v1, the template cnf.opt.minimal_persistent provisions"
+cnf.messaging.tdd.nested:
+  source: fixtures/messaging/tdd.nested.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin, compositions/TDD/nested.en.v1__full.xml); adopted 2026-07-29 (#659) with the same root-`uid` removal as its sibling. It names nested.en.v1, category 433|event| — paired with tdd.v1 in the bulk case precisely because persistent_minimal.en.v1 is 431|persistent| and an EHR holds exactly one such COMPOSITION (RM ehr master04 §COMPOSITION category), so a same-template batch could never succeed"
+cnf.messaging.tdd.nonconforming:
+  source: fixtures/messaging/tdd.nonconforming.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the body names a content node the operational template does not define"
+    spec_ref: "AM OPT2 master02-overview §Purpose of the OPT (a TDD is an instance of the template-derived TDS; the OPT supplies the archetype-node-ids and RM skeleton the document omits) + SM openehr_platform §I_TDD_SERVICE.import_tdd"
+  provenance: "derived 2026-07-29 (#659) from cnf.messaging.tdd.v1 (itself the vendored CNF persistent_minimal.en.v1__full.xml) by renaming its one content node `Minimal` to a name the template does not define. The vendored corpus's own ..__invalid_wrong_structure.xml is NOT used: its first character is missing, so it is refused as not-a-Template-Data-Document before any structural check runs - a different behaviour, already owned by cnf.messaging.tdd.invalid"
 cnf.messaging.tdd.invalid:
   source: fixtures/messaging/tdd.invalid.xml
   format: canonical-xml
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "not well-formed XML (unclosed element) — a TDD must be a well-formed Template Data Document"
-    spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD)"
-  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a malformed (not-well-formed, unclosed element) TDD authored against SM I_TDD_SERVICE §import_tdd"
+    defect: "not well-formed XML — the root start tag is never terminated"
+    spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD) + AM OPT2 master02-overview §Purpose of the OPT (a TDD is an instance of the template-derived TDS)"
+  provenance: "re-authored 2026-07-29 (#659). Its previous form declared the openEHR ITS-XML namespace, so it was refused for not being a Template Data Document at all and never reached the well-formedness check it claimed to exercise. This one declares the templates namespace and a template_id — the envelope is intact — so the ONE defect exercised is the XML well-formedness of the payload itself"
 # Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
 # Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
 #
