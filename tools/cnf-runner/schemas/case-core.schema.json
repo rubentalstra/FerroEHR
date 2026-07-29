@@ -336,6 +336,37 @@
             }
           ]
         },
+        "party_relationship": {
+          "anyOf": [
+            {
+              "const": "none"
+            },
+            {
+              "type": "object",
+              "description": "A PARTY_RELATIONSHIP provisioned between two REAL parties (mints `${party_relationship_id}`, its VERSIONED_OBJECT uid). The two endpoint parties are created first and their container uids written into the relationship's source/target PARTY_REFs — RM demographic master02-demographic_package.adoc §Party Relationships: the references are \"OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container of a Party\". The relationship create has no released wire (register AMB-32, the `party-relationship` served_extensions family).",
+              "additionalProperties": false,
+              "required": [
+                "source",
+                "target",
+                "relationship"
+              ],
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+                },
+                "target": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+                },
+                "relationship": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+                }
+              }
+            }
+          ]
+        },
         "commit": {
           "type": "array",
           "items": {
