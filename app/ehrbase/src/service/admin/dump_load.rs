@@ -10,25 +10,57 @@
 //! (`0001_baseline.sql` is the source schema).
 //!
 //! NOTE (the archive CONTAINER — SM `compression_format.adoc` member `zip`):
-//! the entry set (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`) is
-//! identical whichever container carries it. `compression_format` absent ⇒ the
-//! entries are loose files under `file_sys_loc`; `zip` ⇒ the identical entries
-//! are DEFLATE members of a single `archive.zip` there. `load_ehrs` takes only
-//! `file_sys_loc` (`i_admin_dump_load.adoc`), so it never receives the
-//! container choice and DETECTS it instead: a `manifest.json` in the directory
-//! is the loose form, else an `archive.zip` is the packed one. No openEHR spec
-//! defines the archive layout or the detection rule — our own design/extension.
+//! the entry set (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`,
+//! `versions/<version_uid>.xml`) is identical whichever container carries it.
+//! `compression_format` absent ⇒ the entries are loose files under
+//! `file_sys_loc`; `zip` ⇒ the identical entries are DEFLATE members of a
+//! single `archive.zip` there. `load_ehrs` takes only `file_sys_loc`
+//! (`i_admin_dump_load.adoc`), so it never receives the container choice and
+//! DETECTS it instead: a `manifest.json` in the directory is the loose form,
+//! else an `archive.zip`, else an `archive.7z`. No openEHR spec defines the
+//! archive layout or the detection rule — our own design/extension.
 //!
-//! Export walks the greenfield storage and writes a **canonical-JSON archive**
-//! to a file-system directory, split into segment entries no larger than
-//! `segment_split_size` kb. Each EHR is one record carrying its `ehr` row, its
-//! audit/contribution provenance, and one entry per stored version whose `body`
-//! is the *reassembled canonical openEHR JSON* (the storage codec's lossless
-//! inverse). Load reads the archive back and re-persists each EHR verbatim
-//! (preserved ids/times), re-decomposing each `body` through the same codec —
-//! so a read after load reassembles byte-equal canonical JSON. An EHR whose id
-//! already exists is reported in a `DUMP_LOAD_FAIL_REPORT` and skipped ("import
-//! EHRs with duplicate EHR ids will fail"), never a crash.
+//! Export walks the greenfield storage and writes an archive to a file-system
+//! directory, split into segment entries no larger than `segment_split_size`
+//! kb. Each EHR is one record carrying its `ehr` row, its audit/contribution
+//! provenance, and one entry per stored version. Load reads the archive back
+//! and re-persists each EHR verbatim (preserved ids/times), re-decomposing each
+//! version payload through the same codec — so a read after load reassembles
+//! byte-equal canonical JSON. An EHR whose id already exists is reported in a
+//! `DUMP_LOAD_FAIL_REPORT` and skipped ("import EHRs with duplicate EHR ids
+//! will fail"), never a crash.
+//!
+//! NOTE (`export_format.adoc` — what the two `EXPORT_FORMAT` members mean
+//! here, and why only the PAYLOAD changes between them). `EXPORT_SPEC`
+//! (`export_spec.adoc`) calls `logical_format` the "logical format to use, i.e.
+//! flavour of XML, JSON etc.", so it governs the serialization of the exported
+//! CONTENT, not the archive's envelope:
+//!
+//! * The **envelope** — `manifest.json`, the `segment-NNNN.json` skeleton of
+//!   storage rows, `blobs/` — stays JSON in BOTH members, because no XML form
+//!   of it exists to target: the published ITS-XML bundles declare NO global
+//!   element for `EHR`, `CONTRIBUTION` or a standalone `AUDIT_DETAILS` (both
+//!   lineages checked; `crates/openehr-its/schemas/xml/`), so an XML envelope
+//!   could only be invented. No openEHR spec defines an on-disk archive format
+//!   at all — our own design/extension.
+//! * The **payloads** DO have a published XML form, so they follow the member.
+//!   `openehr_canonical_json` (the default) keeps each version's reassembled
+//!   canonical openEHR JSON inline in the skeleton's `body`.
+//!   `openehr_canonical_xml` externalizes it exactly the way `blobs/` already
+//!   externalizes multimedia: the record carries `body_entry:
+//!   "versions/<version_uid>.xml"` and the entry is a complete
+//!   `ORIGINAL_VERSION` document under `ALL/Version.xsd`'s published
+//!   `<version>` root (RM common master06 §Version and its Subtypes), in the
+//!   nsv1 lineage the server also serves by default. A logically-deleted
+//!   version stores no content, so it gets no document and no `body_entry` —
+//!   symmetric with its `null` inline body.
+//!
+//! `segment_split_size` keeps its one meaning in both members (the skeleton
+//! segments split by cumulative byte size); an externalized payload is one
+//! document per version and is never split, like a blob. `load_ehrs` is passed
+//! no format (`i_admin_dump_load.adoc`: `load_ehrs(file_sys_loc)`), so the
+//! manifest's own `format` member tells it which payload form the archive
+//! holds.
 //!
 //! NOTE (re-verify — `export_ehrs(an_ehr_id)` is EHR-scoped; the archive
 //! carries EHR-owned content only): `ehr`, `audit`, `contribution`,
@@ -63,6 +95,10 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+use openehr_its::json_codec::runtime::{FromJson, ToJson};
+use openehr_its::xml::{FromXml, Namespace, ToXml};
+use openehr_rm::prelude::{Composition, EhrAccess, EhrStatus, Folder, OriginalVersion};
+
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::admin::types::{
@@ -72,6 +108,9 @@ use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::storage::codec::decompose;
 use crate::storage::{node_repo, version_repo};
+use crate::versioning::audit::AuditInput;
+use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::wire::build_original_version;
 
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
@@ -81,7 +120,10 @@ const DELETED_LIFECYCLE: &str = "523";
 /// The archive manifest (`manifest.json`) — enough to read the segments back.
 #[derive(Debug, Serialize, Deserialize)]
 struct Manifest {
-    /// The logical export format (always `openehr_canonical_json` this wave).
+    /// The `EXPORT_FORMAT` member the export was written in
+    /// (`export_format.adoc`, the vendored literal verbatim). `load_ehrs` is
+    /// passed no format, so this is what tells it whether the segments carry
+    /// inline JSON payloads or `versions/*.xml` entry references.
     format: String,
     /// Archive schema version (this module's on-disk contract).
     archive_version: u32,
@@ -132,6 +174,14 @@ struct EhrRow {
 #[derive(Debug, Serialize, Deserialize)]
 struct AuditRow {
     id: Uuid,
+    /// `AUDIT_DETAILS.time_committed` as an RFC 3339 instant — `jiff`'s own
+    /// rendering of the stored `timestamptz`, so the export can parse it back
+    /// losslessly when it reassembles the version's `commit_audit`
+    /// (RM common master04 §Audit Details). `PostgreSQL`'s `timestamptz` input
+    /// accepts this form and the older `::text` rendering alike
+    /// (<https://www.postgresql.org/docs/18/datatype-datetime.html>
+    /// §Date/Time Input), so archives written before this projection still
+    /// load.
     time_committed: String,
     system_id: String,
     change_type: String,
@@ -173,9 +223,20 @@ struct VersionRecord {
     #[serde(default)]
     signature_client_supplied: bool,
     creating_system_id: String,
-    /// The reassembled canonical openEHR JSON, or `Value::Null` for a deleted
-    /// version (which stores no node rows).
+    /// The reassembled canonical openEHR JSON, INLINE — the
+    /// `openehr_canonical_json` payload form. `Value::Null` (serialized as an
+    /// absent key) for a logically-deleted version, which stores no node rows,
+    /// and for every version of an `openehr_canonical_xml` archive, whose
+    /// payload lives in [`VersionRecord::body_entry`] instead.
+    #[serde(default, skip_serializing_if = "Value::is_null")]
     body: Value,
+    /// The `versions/<version_uid>.xml` entry holding this version's complete
+    /// `ORIGINAL_VERSION` document — the `openehr_canonical_xml` payload form.
+    /// `None` for an inline-JSON archive and for a logically-deleted version
+    /// (no content ⇒ no document). `#[serde(default)]` so archives written
+    /// before the XML member existed load unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    body_entry: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -260,6 +321,20 @@ const ZIP_ENTRY_FILE: &str = "archive.zip";
 const SEVENZ_ENTRY_FILE: &str = "archive.7z";
 /// The entry-name prefix of an externalized `DV_MULTIMEDIA` blob.
 const BLOB_PREFIX: &str = "blobs/";
+/// The entry-name prefix of an externalized version payload document
+/// (`EXPORT_FORMAT.openehr_canonical_xml`).
+const VERSIONS_PREFIX: &str = "versions/";
+/// The ITS-XML global element a `VERSION` document is written under
+/// (`its-xml-1.0.2-nsv1/ALL/Version.xsd`: `<xs:element name="version"
+/// type="VERSION"/>` — the only published root for the change-control
+/// package).
+const VERSION_ROOT_TAG: &str = "version";
+/// That element's declared XSD type. It is `abstract="true"`, so the
+/// `ORIGINAL_VERSION` instance names its concrete type with `xsi:type` —
+/// the reason the archive serializes through
+/// [`openehr_its::xml::to_canonical_xml_declared`] rather than the plain
+/// entry point.
+const VERSION_ROOT_TYPE: &str = "VERSION";
 
 /// Where an export's entries land. The entry NAMES are identical in both
 /// containers (see the module docs); only the packaging differs.
@@ -451,71 +526,290 @@ fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
     )
 }
 
+// ── the openehr_canonical_xml payload form ───────────────────────────────────
+
+/// The archive entry name carrying one version's `ORIGINAL_VERSION` document.
+///
+/// The name is the version's own `OBJECT_VERSION_ID` (BASE
+/// `base_types/master05-identification_package.adoc` §Syntaxes:
+/// `object_id, '::', creating_system_id, '::', version_tree_id`), so an
+/// operator reading the
+/// archive sees the openEHR identity of every payload straight off the entry
+/// list. No openEHR spec defines an archive layout — our own design/extension.
+///
+/// # Errors
+/// [`SmError`] `exception` when the composed name would escape the flat
+/// `versions/` entry space. Only a deployment whose configured
+/// `server.system_id` carries a path separator can reach this (the id is
+/// server configuration, never client input, and is already validated
+/// non-empty and `::`-free), and it would scatter the archive across
+/// directories instead of writing the declared entry set.
+fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
+    if version_uid.contains('/') || version_uid.contains('\\') {
+        return Err(SmError::exception(format!(
+            "version {version_uid} cannot be externalized: its creating system id carries a \
+             path separator, which no archive entry name may contain"
+        )));
+    }
+    Ok(format!("{VERSIONS_PREFIX}{version_uid}.xml"))
+}
+
+/// Reassemble one archived version's `ORIGINAL_VERSION` envelope as canonical
+/// openEHR JSON, through the SAME builder the served version read uses
+/// ([`build_original_version`]) — so an archived document and a served one are
+/// the same object, not two renderings of it.
+///
+/// `audit` is the record's `audit` row the version's `audit_id` names (RM
+/// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1).
+/// Attestations are deliberately absent: they are appended after committal and
+/// this EHR-scoped dump carries no `vo_attestation` rows (the module docs).
+///
+/// # Errors
+/// [`ServiceError::Internal`] when the archived audit carries a commit time
+/// that is not an RFC 3339 instant.
+fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Value, ServiceError> {
+    let time_committed: jiff::Timestamp = audit.time_committed.parse().map_err(|e| {
+        ServiceError::Internal(format!(
+            "audit {} carries an uninterpretable commit time {:?}: {e}",
+            audit.id, audit.time_committed
+        ))
+    })?;
+    let other_input_version_uids: Vec<String> = v
+        .other_input_version_uids
+        .as_ref()
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .unwrap_or_default();
+    Ok(build_original_version(
+        &v.creating_system_id,
+        v.vo_id,
+        TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version),
+        v.preceding_version_uid.as_deref(),
+        &other_input_version_uids,
+        v.contribution_id,
+        &AuditInput {
+            system_id: audit.system_id.clone(),
+            change_type: audit.change_type.clone(),
+            description: audit.description.clone(),
+            committer: audit.committer.clone(),
+        },
+        &time_committed,
+        &v.lifecycle_state,
+        &v.body,
+        v.signature.as_deref(),
+    ))
+}
+
+/// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under
+/// the published `<version>` root, typed on the versioned object's payload
+/// class `T`.
+///
+/// # Errors
+/// [`ServiceError::Internal`] when the envelope does not read back as a typed
+/// `ORIGINAL_VERSION<T>`, or the XML writer fails.
+fn version_document_of<T: FromJson + ToXml>(envelope: &Value) -> Result<String, ServiceError> {
+    let typed: OriginalVersion<T> = openehr_its::json::from_canonical_value(envelope)
+        .map_err(|e| ServiceError::Internal(format!("typing the ORIGINAL_VERSION: {e}")))?;
+    openehr_its::xml::to_canonical_xml_declared(
+        &typed,
+        VERSION_ROOT_TAG,
+        VERSION_ROOT_TYPE,
+        Namespace::V1,
+    )
+    .map_err(|e| ServiceError::Internal(format!("serializing the ORIGINAL_VERSION to XML: {e}")))
+}
+
+/// [`version_document_of`] dispatched on the stored `vo_version.kind` — the
+/// EHR-scoped versioned-object roots this archive carries (RM ehr master04
+/// §EHR Class: the EHR owns its `EHR_STATUS`, `EHR_ACCESS`, `COMPOSITION`s and
+/// directory `FOLDER`s; demographic roots have no EHR scope and are out of
+/// this dump).
+///
+/// # Errors
+/// [`ServiceError::Internal`] on an unknown kind or a codec failure.
+fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError> {
+    match kind {
+        "COMPOSITION" => version_document_of::<Composition>(envelope),
+        "EHR_STATUS" => version_document_of::<EhrStatus>(envelope),
+        "EHR_ACCESS" => version_document_of::<EhrAccess>(envelope),
+        "FOLDER" => version_document_of::<Folder>(envelope),
+        other => Err(ServiceError::Internal(format!(
+            "no canonical-XML payload type for versioned-object kind {other}"
+        ))),
+    }
+}
+
+/// Read one `versions/*.xml` entry back into the version's canonical-JSON
+/// payload — the inverse of [`version_document_of`].
+///
+/// # Errors
+/// The parse failure as a human-readable message; the caller turns it into the
+/// record's [`DumpLoadFailReport`].
+fn version_payload_of<T: FromXml + ToJson>(xml: &str) -> Result<Value, String> {
+    let typed: OriginalVersion<T> =
+        openehr_its::xml::from_canonical_xml(xml).map_err(|e| e.to_string())?;
+    let data = typed
+        .data
+        .ok_or_else(|| "the ORIGINAL_VERSION document carries no `data`".to_owned())?;
+    Ok(openehr_its::json::to_canonical_value(&data))
+}
+
+/// [`version_payload_of`] dispatched on the record's stored kind.
+///
+/// # Errors
+/// The parse failure as a human-readable message.
+fn version_payload(kind: &str, xml: &str) -> Result<Value, String> {
+    match kind {
+        "COMPOSITION" => version_payload_of::<Composition>(xml),
+        "EHR_STATUS" => version_payload_of::<EhrStatus>(xml),
+        "EHR_ACCESS" => version_payload_of::<EhrAccess>(xml),
+        "FOLDER" => version_payload_of::<Folder>(xml),
+        other => Err(format!(
+            "no canonical-XML payload type for versioned-object kind {other}"
+        )),
+    }
+}
+
+/// Externalize every version payload of `records` as a canonical-XML
+/// `ORIGINAL_VERSION` entry, replacing the record's inline `body` with the
+/// entry reference. A logically-deleted version stores no content, so it gets
+/// no document (its `body` is already `null` and its `body_entry` stays
+/// `None`).
+///
+/// # Errors
+/// [`SmError`] `exception` on a codec failure or a version whose commit audit
+/// the record does not carry (a self-inconsistent collection); the container's
+/// own `file_not_writable` when an entry cannot be written.
+fn externalize_version_documents(
+    archive: &mut ArchiveWriter,
+    records: &mut [EhrRecord],
+) -> Result<(), SmError> {
+    for record in records {
+        // Disjoint field borrows: the audit index reads `record.audits` while
+        // the loop below rewrites `record.versions`.
+        let audits: std::collections::HashMap<Uuid, &AuditRow> =
+            record.audits.iter().map(|a| (a.id, a)).collect();
+        for v in &mut record.versions {
+            if v.body.is_null() {
+                continue;
+            }
+            let audit = audits.get(&v.audit_id).ok_or_else(|| {
+                SmError::exception(format!(
+                    "version {} of {} names commit audit {}, which the exported record does not \
+                     carry",
+                    v.sys_version, v.vo_id, v.audit_id
+                ))
+            })?;
+            let envelope = original_version_envelope(v, audit)?;
+            let document = version_document(&v.kind, &envelope)?;
+            let name = version_entry_name(&object_version_id(
+                v.vo_id,
+                &v.creating_system_id,
+                TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version),
+            ))?;
+            archive.write(&name, document.as_bytes())?;
+            v.body_entry = Some(name);
+            v.body = Value::Null;
+        }
+    }
+    Ok(())
+}
+
+/// Resolve an `openehr_canonical_xml` record's externalized payloads back into
+/// inline canonical JSON, BEFORE anything is written — so a record with an
+/// unreadable document is reported and skipped whole rather than half loaded.
+///
+/// # Errors
+/// The failure as a human-readable message; the caller records it in the
+/// record's [`DumpLoadFailReport`].
+fn resolve_version_documents(
+    archive: &mut ArchiveReader,
+    record: &mut EhrRecord,
+) -> Result<(), String> {
+    for v in &mut record.versions {
+        let Some(entry) = v.body_entry.clone() else {
+            // A logically-deleted version legitimately has no document; a live
+            // one without an entry reference is a truncated skeleton.
+            if v.lifecycle_state == DELETED_LIFECYCLE {
+                continue;
+            }
+            return Err(format!(
+                "version {} of {} carries neither an inline body nor a `body_entry`",
+                v.sys_version, v.vo_id
+            ));
+        };
+        let bytes = archive.read(&entry).map_err(|e| format!("{entry}: {e}"))?;
+        let xml =
+            std::str::from_utf8(&bytes).map_err(|e| format!("{entry} is not valid UTF-8: {e}"))?;
+        v.body = version_payload(&v.kind, xml).map_err(|e| format!("{entry}: {e}"))?;
+    }
+    Ok(())
+}
+
 impl EhrbaseService {
-    /// SM `export_ehrs`: export every EHR to a canonical-JSON archive under
-    /// `file_sys_loc`. Returns a per-entity report; an empty list means every
-    /// EHR was dumped successfully (the report carries only failures).
+    /// SM `export_ehrs`: export every EHR to an archive under `file_sys_loc`.
+    /// Returns a per-entity report; an empty list means every EHR was dumped
+    /// successfully (the report carries only failures).
     ///
-    /// NOTE (`export_format.adoc` / `compression_format.adoc` — which
-    /// enumeration members this service realizes). `COMPRESSION_FORMAT` is
-    /// realized in FULL: absent (loose files), `zip`, and `7z` (owner-approved
-    /// 2026-07-29; `sevenz-rust2`). `EXPORT_FORMAT`: only
-    /// `openehr_canonical_json`, because the storage IS verbatim canonical JSON
-    /// so that export is translation-free — an `openehr_canonical_xml` ARCHIVE
-    /// has no defined envelope shape (the manifest/segment/record structure is
-    /// our own design with no XML story), so inventing one ad hoc is worse
-    /// than the honest boundary. Neither the SM interface nor the
-    /// `EXPORT_SPEC` class says a service must realize every member, and
-    /// `i_admin_dump_load.adoc` declares no unsupported-format error — that
-    /// silence is adjudicated in the CNF ambiguity register. A well-formed
-    /// request for the unrealized member is answered `not_implemented`
-    /// (RFC 9110 §15.6.2 `501`), never silently downgraded and never called
-    /// malformed. TODO: design the canonical-XML archive envelope (tracker
-    /// issue; needs its own register adjudication) and realize the member.
+    /// NOTE (`export_format.adoc` / `compression_format.adoc`): BOTH
+    /// enumerations are realized in FULL. `COMPRESSION_FORMAT` — absent (loose
+    /// files), `zip`, and `7z` (`sevenz-rust2`). `EXPORT_FORMAT` —
+    /// `openehr_canonical_json` (the default when `logical_format` is absent,
+    /// and translation-free: the storage IS verbatim canonical JSON) and
+    /// `openehr_canonical_xml`, which externalizes each version payload as an
+    /// `ORIGINAL_VERSION` document under the published ITS-XML `<version>`
+    /// root while the archive's own envelope stays JSON in both members (the
+    /// module docs derive why, from the ITS-XML bundles' published global
+    /// elements).
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a non-positive
     ///   `segment_split_size`.
-    /// - `not_implemented` (`501`) — the spec requests
-    ///   `openehr_canonical_xml`.
-    /// - `file_not_writable` — the directory, a segment entry, a blob entry, or
-    ///   the manifest cannot be created/written.
-    /// - `exception` — a database/codec fault while collecting records, or a
-    ///   blob-store fault while exporting referenced multimedia.
+    /// - `file_not_writable` — the directory, a segment entry, a version-payload
+    ///   entry, a blob entry, or the manifest cannot be created/written.
+    /// - `exception` — a database/codec fault while collecting records or
+    ///   serializing a version payload, or a blob-store fault while exporting
+    ///   referenced multimedia.
     pub async fn export_ehrs(
         &self,
         file_sys_loc: String,
         spec: ExportSpec,
     ) -> Result<Vec<DumpLoadFailReport>, SmError> {
         let dir = Path::new(&file_sys_loc);
-        match spec.logical_format {
-            None | Some(ExportFormat::OpenehrCanonicalJson) => {}
-            Some(ExportFormat::OpenehrCanonicalXml) => {
-                return Err(SmError::new(
-                    CallStatusType::NotImplemented,
-                    "logical format openehr_canonical_xml is not implemented by this service \
-                     (openehr_canonical_json is)",
-                ));
-            }
-        }
+        // `EXPORT_SPEC.logical_format` is `[0..1]`; an absent one takes the
+        // translation-free member.
+        let format = spec
+            .logical_format
+            .unwrap_or(ExportFormat::OpenehrCanonicalJson);
         if spec.segment_split_size <= 0 {
             return Err(SmError::precondition(
                 "segment_split_size must be a positive number of kb",
             ));
         }
 
-        // Opening the container FIRST is what makes an unrealized compression
-        // member cost nothing: the refusal happens before any storage read.
+        // Opening the container FIRST keeps a refusal from costing a storage
+        // read.
         let mut archive = ArchiveWriter::create(dir, spec.compression_format)?;
 
-        let records = self.collect_ehr_records().await?;
+        let mut records = self.collect_ehr_records().await?;
+
+        // Our own extension (no openEHR spec governs multimedia offload): carry
+        // every externalized DV_MULTIMEDIA blob the exported versions reference
+        // as `blobs/<hex>` entries, so a load into an empty target re-populates
+        // the object store. This runs BEFORE the XML externalization below,
+        // which moves the payloads the blob scan reads out of the records.
+        let blob_keys = self.export_referenced_blobs(&mut archive, &records).await?;
+        let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
+
+        if format == ExportFormat::OpenehrCanonicalXml {
+            externalize_version_documents(&mut archive, &mut records)?;
+        }
 
         // Serialize each record once; the byte length drives segmenting.
-        let mut blobs = Vec::with_capacity(records.len());
+        let mut serialized = Vec::with_capacity(records.len());
         for record in &records {
-            blobs.push(serde_json::to_vec(record).map_err(ServiceError::from)?);
+            serialized.push(serde_json::to_vec(record).map_err(ServiceError::from)?);
         }
-        let sizes: Vec<usize> = blobs.iter().map(Vec::len).collect();
+        let sizes: Vec<usize> = serialized.iter().map(Vec::len).collect();
         let limit = usize::try_from(spec.segment_split_size.max(0))
             .unwrap_or(0)
             .saturating_mul(1024);
@@ -531,15 +825,8 @@ impl EhrbaseService {
             segment_names.push(name);
         }
 
-        // Our own extension (no openEHR spec governs multimedia offload): carry
-        // every externalized DV_MULTIMEDIA blob the exported versions reference
-        // as `blobs/<hex>` entries, so a load into an empty target re-populates
-        // the object store.
-        let blob_keys = self.export_referenced_blobs(&mut archive, &records).await?;
-        let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
-
         let manifest = Manifest {
-            format: ExportFormat::OpenehrCanonicalJson.sm_name().to_owned(),
+            format: format.sm_name().to_owned(),
             archive_version,
             segment_split_size_kb: spec.segment_split_size,
             ehr_count: records.len(),
@@ -554,17 +841,25 @@ impl EhrbaseService {
         Ok(Vec::new())
     }
 
-    /// SM `load_ehrs`: populate the repository from a canonical-JSON archive
-    /// under `file_sys_loc`. Duplicate EHR ids — and a subject this repository
-    /// already holds under another EHR — are reported (`dump_status = false`)
-    /// and skipped; all other EHRs are re-persisted verbatim.
+    /// SM `load_ehrs`: populate the repository from an archive under
+    /// `file_sys_loc`. Duplicate EHR ids — a subject this repository already
+    /// holds under another EHR, and a record whose externalized version
+    /// payload will not read — are reported (`dump_status = false`) and
+    /// skipped; all other EHRs are re-persisted verbatim.
+    ///
+    /// The operation is passed no format (`i_admin_dump_load.adoc`:
+    /// `load_ehrs(file_sys_loc)`), so BOTH the container (loose / `zip` / `7z`)
+    /// and the payload form come from the archive itself: the container from
+    /// what the location holds, the payload form from the manifest's own
+    /// `EXPORT_FORMAT` member.
     ///
     /// # Errors
-    /// - `file_not_writable` — `file_sys_loc` holds neither archive container,
-    ///   the manifest / a segment entry / a blob entry cannot be read, or the
+    /// - `file_not_writable` — `file_sys_loc` holds no archive container,
+    ///   the manifest / a segment entry / a blob entry cannot be read, the
     ///   manifest or a segment is not parseable as part of this archive format
     ///   (a mangled or truncated archive is the same fact as an unreadable
-    ///   one — see [`unreadable_archive_entry`]).
+    ///   one — see [`unreadable_archive_entry`]), or the manifest declares a
+    ///   logical format that names no `EXPORT_FORMAT` member.
     /// - `precondition_violation` (`400`) — the archive carries externalized
     ///   multimedia blobs but this server has no multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
@@ -583,6 +878,19 @@ impl EhrbaseService {
         let manifest_bytes = archive.read(MANIFEST_ENTRY)?;
         let manifest: Manifest = serde_json::from_slice(&manifest_bytes)
             .map_err(|e| unreadable_archive_entry(dir, MANIFEST_ENTRY, &e))?;
+        // The manifest's own EXPORT_FORMAT member is what tells the format-less
+        // operation which payload form the segments carry.
+        let format: ExportFormat = manifest.format.parse().map_err(|()| {
+            SmError::new(
+                CallStatusType::FileNotWritable,
+                format!(
+                    "{}/{MANIFEST_ENTRY} declares logical format {:?}, which names no \
+                     EXPORT_FORMAT member",
+                    dir.display(),
+                    manifest.format
+                ),
+            )
+        })?;
 
         // Our own extension: re-populate the object store from the archive's
         // `blobs/` entries before loading versions that reference them.
@@ -593,7 +901,7 @@ impl EhrbaseService {
             let bytes = archive.read(segment)?;
             let records: Vec<EhrRecord> = serde_json::from_slice(&bytes)
                 .map_err(|e| unreadable_archive_entry(dir, segment, &e))?;
-            for record in records {
+            for mut record in records {
                 let ehr_id = record.ehr.id;
                 if self.ehr_row_exists(ehr_id).await? {
                     // "import EHRs with duplicate EHR ids will fail" — reported,
@@ -603,6 +911,24 @@ impl EhrbaseService {
                         entity_id: ehr_id.to_string(),
                         dump_status: false,
                         error: Some("an EHR with this id already exists".to_owned()),
+                    });
+                    continue;
+                }
+                // `openehr_canonical_xml`: pull each version's payload out of
+                // its `versions/*.xml` entry BEFORE the record's transaction
+                // opens, so an unreadable document costs that one record a
+                // report and commits nothing (the same per-entity shape the SM
+                // gives a duplicate id), instead of aborting the whole load.
+                if format == ExportFormat::OpenehrCanonicalXml
+                    && let Err(message) = resolve_version_documents(&mut archive, &mut record)
+                {
+                    reports.push(DumpLoadFailReport {
+                        entity_type: "EHR".to_owned(),
+                        entity_id: ehr_id.to_string(),
+                        dump_status: false,
+                        error: Some(format!(
+                            "the archive's canonical-XML version payload is unreadable: {message}"
+                        )),
                     });
                     continue;
                 }
@@ -731,7 +1057,7 @@ impl EhrbaseService {
 
         // Every audit referenced by this EHR's contributions or versions.
         let audit_rows = sqlx::query(
-            "SELECT id, time_committed::text AS time_committed, system_id, change_type, \
+            "SELECT id, time_committed, system_id, change_type, \
              description, committer FROM audit \
              WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id = $1 \
                           UNION SELECT audit_id FROM vo_version WHERE ehr_id = $1) \
@@ -744,7 +1070,10 @@ impl EhrbaseService {
         for r in audit_rows {
             audits.push(AuditRow {
                 id: r.try_get("id")?,
-                time_committed: r.try_get("time_committed")?,
+                time_committed: r
+                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                    .to_jiff()
+                    .to_string(),
                 system_id: r.try_get("system_id")?,
                 change_type: r.try_get("change_type")?,
                 description: r.try_get("description")?,
@@ -805,6 +1134,9 @@ impl EhrbaseService {
                 signature_client_supplied: r.try_get("signature_client_supplied")?,
                 creating_system_id: r.try_get("creating_system_id")?,
                 body,
+                // Filled in by `externalize_version_documents` when the export
+                // is `openehr_canonical_xml`.
+                body_entry: None,
             });
         }
 
