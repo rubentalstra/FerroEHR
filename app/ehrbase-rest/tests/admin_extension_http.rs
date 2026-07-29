@@ -185,6 +185,42 @@ async fn the_report_refuses_an_unknown_service_and_a_malformed_interval() {
     }
 }
 
+/// A `time_interval` bounded on both sides with `lower > upper` is no
+/// `Interval` at all — BASE
+/// `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
+/// §Invariants, `Limits_consistent`: `(not upper_unbounded and not
+/// lower_unbounded) implies lower <= upper`. The SM parameter IS an
+/// `Interval<Iso8601_date_time>` (`i_admin_service.adoc`), so the value
+/// violates its own type and the call is refused rather than answered with the
+/// empty result an inverted range would select. All four reporting routes share
+/// the one boundary parser, so all four refuse.
+#[tokio::test]
+async fn the_report_refuses_an_interval_whose_lower_bound_is_after_its_upper() {
+    let (_pg, app) = app(true).await;
+
+    let inverted = "time_interval=2026-12-31T00:00:00Z/2020-01-01T00:00:00Z";
+    for route in [
+        "/admin/report/contribution",
+        "/admin/report/contribution/count",
+        "/admin/report/versioned_composition/count",
+        "/admin/report/composition_version/count",
+    ] {
+        let path = format!("{route}?a_service=Ehr&{inverted}");
+        let (status, body) = send(&app, get(&path)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{path}: {body}");
+    }
+
+    // The equal-bounds pair satisfies `lower <= upper` and is a legitimate
+    // (closed, single-instant) interval — the refusal must not swallow it.
+    let (status, body) = send(
+        &app,
+        get("/admin/report/contribution/count\
+             ?a_service=Ehr&time_interval=2026-01-01T00:00:00Z/2026-01-01T00:00:00Z"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "equal bounds: {body}");
+}
+
 // ── the archive pair (SM I_ADMIN_ARCHIVE) ────────────────────────────────────
 
 /// `archive_ehrs` marks the named EHRs archived and answers `204`; archival is
