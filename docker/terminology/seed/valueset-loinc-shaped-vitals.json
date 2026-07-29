@@ -1,0 +1,23 @@
+{
+  "resourceType": "ValueSet",
+  "id": "cnf-loinc-shaped-vitals",
+  "url": "http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals",
+  "version": "1.0.0",
+  "name": "CnfLoincShapedVitals",
+  "title": "CNF test value set, LOINC-shaped vitals (synthetic)",
+  "status": "active",
+  "experimental": true,
+  "publisher": "ehrbase-rs CNF conformance corpus",
+  "description": "SYNTHETIC test content. The enumerated value set the LOINC-shaped conformance cases bind to: 99991-1 and 99992-9 are members, 99993-7 is deliberately NOT. This value set exists in a SECOND terminology namespace so a case can prove per-terminology provider selection with two providers configured at the same time.",
+  "compose": {
+    "include": [
+      {
+        "system": "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
+        "concept": [
+          { "code": "99991-1", "display": "Test systolic blood pressure (CNF)" },
+          { "code": "99992-9", "display": "Test diastolic blood pressure (CNF)" }
+        ]
+      }
+    ]
+  }
+}

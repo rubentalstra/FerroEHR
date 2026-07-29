@@ -1,0 +1,41 @@
+# CNF external-terminology lane (compose OVERLAY) — the fail-OPEN posture.
+#
+# Switches on the `[terminology.external]` providers that docker/ehrbase.dev.toml
+# already carries (disabled) and makes the CDR wait for the seeded FHIR R4
+# terminology server of the `terminology` profile. openEHR puts the resolver of
+# an archetype constraint binding outside the CDR — BASE
+# docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
+# Value-sets to Archetypes": the archetype "simply hold[s] an identifier for a
+# query; the query itself is defined within a 'terminology query server'" — so
+# the conformance record only covers the bound-value-set behaviour when a real
+# one is running.
+#
+# Usage (the profile starts the server, this overlay points the CDR at it):
+#   docker compose --profile terminology \
+#     -f docker-compose.yml -f docker/sut-terminology.yml up -d --wait ehrbase
+#
+# The reference conformance pipeline composes it UNCONDITIONALLY for
+# ehrbase-rs (scripts/conformance.sh), so the ONE committed record covers the
+# terminology-routed surface. The ixit declares the resulting posture as the
+# `terminology` block on the `sut` instance's party default: three servers
+# (two reachable, serving the two seeded namespaces; one declared unreachable)
+# and the fail-open branch.
+#
+# WHY FAIL-OPEN HERE. `[terminology.external] fail_on_error` decides what a
+# deployment does with a bound value set it cannot resolve, and a running
+# server realizes exactly ONE branch. This deployment realizes the shipped
+# default (accept); the fail-CLOSED branch is a second deployment
+# (docker/sut-terminology-failclosed.yml). Register AMB-172 records that no
+# released openEHR text decides between them.
+services:
+  ehrbase:
+    environment:
+      EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED: "true"
+      EHRBASE__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR: "false"
+    depends_on:
+      # The seeder polls the server's own capability statement and exits 0 only
+      # after the code systems and value sets are in place, so this is the
+      # readiness gate for both containers
+      # (docs.docker.com/compose/how-tos/startup-order).
+      terminology-seed:
+        condition: service_completed_successfully

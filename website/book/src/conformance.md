@@ -107,8 +107,11 @@ under test, into its own directory:
   not-applicable with a citation, ISO/IEC 9646-style test selection). No
   code or adapter is needed; a target is a configuration entry. The
   `ixit.json` may also declare deployment facts no openEHR operation
-  exposes — currently `system_id`, the identifier the server stamps into the
-  commit audit and into the version ids it mints. Cases that check such a
+  exposes — `system_id`, the identifier the server stamps into the
+  commit audit and into the version ids it mints; and `terminology`, the
+  terminology query servers the deployment is wired to, the terminology
+  namespaces each one answers for, and what the deployment does with a bound
+  value set it cannot resolve. Cases that check such a
   value read the declaration; a party that declares none has those cases
   recorded not-applicable rather than checked against a guess.
 
@@ -168,6 +171,20 @@ not-applicable with the citation instead. The tokens are signed by a
 **committed test issuer** under `tools/cnf-runner/party/smart/` — public
 test key material for the conformance harness, never usable for anything
 else.
+
+An **external terminology server is part of the standard posture** too. An
+archetype can constrain a coded element to a value set that only an external
+terminology query server can resolve, so the pipeline composes a real FHIR R4
+server beside the CDR (`--profile terminology` plus
+`docker/sut-terminology.yml`), seeded with synthetic test code systems and
+value sets, and the one committed record covers the terminology-routed
+surface: AQL `TERMINOLOGY()` resolved through the routed server, and
+commit-time validation of a bound value set — accepted for a member code,
+refused for a non-member. What a deployment does when the value set cannot be
+resolved at all is not decided by any openEHR text, so it is a declared
+posture: the primary deployment runs fail-open (the commit is accepted) and
+the second one runs fail-closed (it is refused), and both branches execute in
+the same record.
 
 Cases that need a lane are recorded **not-applicable with a citation** on a
 party that does not declare it, never failed: the party's `ixit.json` is

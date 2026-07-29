@@ -142,7 +142,13 @@ CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 28, s
 DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
 ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 53, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 59, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
-ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 121, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
+# Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
+# BINDING cases (member accepted / non-member refused / unresolvable under each
+# declared posture). BASE architecture_overview master12 §"Binding Terminology
+# Value-sets to Archetypes" makes the bound query's result the permitted value
+# set, so resolving it at ingestion is archetype-constraint validation like any
+# other — it just reaches an external terminology query server to do it.
+ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 125, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
 PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 52, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
 # REALIZATION DERIVED FIRST-HAND 2026-07-28 (#623), outcome (b): the RELEASED
 # wire does not exist — the ITS-REST docs text never names a PARTY_RELATIONSHIP
@@ -174,7 +180,15 @@ PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,
 DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
 AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
-AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 1, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
+# Floor raised 1 -> 5 (2026-07-29): the four EXTERNAL-terminology-server cases
+# (Boolean validate resolving true and false, the expand filter over committed
+# data, and the two-simultaneous-servers proof) join the in-process expand
+# case. QUERY AQL master03-syntax §TERMINOLOGY defines the function as the way
+# "to invoke operations of an external terminology server", so a battery that
+# only ever reached an in-process bundle evidenced the language form and not
+# the capability. (The fifth authored case, -terminology_unsupported_forms, is
+# report_only under AMB-30 and therefore not counted.)
+AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 5, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # admin.openapi.yaml declares exactly two paths, /admin/ehr/{ehr_id} and
 # /admin/ehr/all{?ehr_id*}, so none of the SM I_ADMIN_SERVICE reporting

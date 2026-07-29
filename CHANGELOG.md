@@ -909,6 +909,30 @@ workflow refuses a tag that has no matching section here.
   commit and logs a warning, `true` rejects it. With `[terminology.external]`
   disabled — the shipped default — nothing is resolved, no request is made, and
   commit behaviour is exactly as before.
+- **An opt-in `terminology` Compose profile runs a real FHIR R4 terminology
+  server beside the CDR.** `docker compose --profile terminology -f
+  docker-compose.yml -f docker/sut-terminology.yml up` starts a digest-pinned
+  HAPI FHIR JPA server (host port 8090, `EHRBASE_TERMINOLOGY_PORT`) plus a
+  one-shot container that seeds it — over the server's own FHIR API — with two
+  synthetic test code systems and their value sets, one SNOMED-CT-shaped and
+  one LOINC-shaped, and verifies `$validate-code` and `$expand` before exiting.
+  The overlay switches on the `[terminology.external]` providers now shipped
+  (disabled) in `docker/ehrbase.dev.toml`, so the plain quickstart is
+  unchanged. No licensed terminology content is distributed: the fixtures live
+  under the reserved `example.test` domain, and the SNOMED-CT-shaped and
+  LOINC-shaped codes are invented for the test corpus.
+- **The conformance record now covers the terminology-routed surface.**
+  `scripts/conformance.sh` composes the terminology profile for every
+  `ehrbase-rs` run, and the catalogue gained eight cases: AQL `TERMINOLOGY()`
+  resolved through the routed server (the Boolean `validate` form answering
+  true and false, and the `expand` filter over committed data), the
+  two-simultaneous-servers routing proof, and commit-time archetype
+  constraint-binding validation (a member code accepted, a non-member refused,
+  and the unresolvable value set under each declared posture). A party's
+  `ixit.json` gains a `terminology` block declaring its terminology servers,
+  the namespaces each answers for, and its fail-open/fail-closed posture; a
+  party that declares none has those cases recorded not-applicable with that
+  citation instead of failed.
 - **`POST /admin/dump` now serves the `openehr_canonical_xml` logical format,
   which used to answer `501`.** Both openEHR export formats are available:
   the default `openehr_canonical_json` keeps each version's content inline in

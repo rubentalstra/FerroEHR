@@ -113,6 +113,113 @@ pub struct BearerMint {
     pub ttl_seconds: u64,
 }
 
+/// How a deployment answers a terminology question it cannot resolve — the
+/// fail-open / fail-closed posture.
+///
+/// BASE `docs/architecture_overview/master12-terminology.adoc` §"Binding
+/// Terminology Value-sets to Archetypes" puts the bound value set in a
+/// "terminology query server" outside the CDR, and says nothing about what a
+/// server does when that query cannot be answered at all. Both answers —
+/// accept the data, or refuse it — are consistent with every released
+/// sentence, so which one a deployment realizes is a DEPLOYMENT fact no
+/// released operation discloses (register AMB-172), exactly like the signing
+/// mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TerminologyPosture {
+    /// An unresolvable bound value set is tolerated: the commit is accepted.
+    FailOpen,
+    /// An unresolvable bound value set refuses the commit.
+    FailClosed,
+}
+
+impl TerminologyPosture {
+    /// All variants, in vocabulary order (schema emission derives from this).
+    pub const ALL: &'static [TerminologyPosture] =
+        &[TerminologyPosture::FailOpen, TerminologyPosture::FailClosed];
+
+    /// The declaration token.
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            Self::FailOpen => "fail_open",
+            Self::FailClosed => "fail_closed",
+        }
+    }
+}
+
+/// One terminology server a deployment is wired to, and the terminology
+/// namespaces it answers for.
+///
+/// A `namespace` is whatever key a case names when it asks for a terminology:
+/// a code-system URI, a value-set URL, or a terminology id. The catalogue and
+/// the party meet on that string, so a party whose servers carry different
+/// namespaces makes the referencing cases not-applicable instead of driving a
+/// value set it never seeded.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TerminologyServer {
+    /// The deployment's own name for the server (its provider entry).
+    pub name: String,
+    /// Whether the deployment can actually reach it. A DECLARED-unreachable
+    /// server is how a party exercises the terminology-server-down branch
+    /// without any mid-run reconfiguration: the address is wired and nothing
+    /// answers on it, for the whole run.
+    #[serde(default = "reachable_default")]
+    pub reachable: bool,
+    /// The terminology namespaces this server answers for.
+    pub namespaces: Vec<String>,
+}
+
+const fn reachable_default() -> bool {
+    true
+}
+
+/// The party's terminology posture — which terminology servers the deployment
+/// is wired to, which namespaces each serves, and what it does with a value
+/// set it cannot resolve.
+///
+/// A deployment fact no released operation discloses (the IXIT law): released
+/// ITS-REST 1.1.0 surfaces no terminology resource at all (`wire_surface.yaml`
+/// records the nine `I_TERMINOLOGY_SERVICE` rows as off-wire), so a case that
+/// needs a live terminology server has no way to learn from the wire whether
+/// one exists. Absent => every terminology-dependent case is not-applicable
+/// with that citation.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TerminologyLane {
+    /// The unresolvable-value-set posture this deployment realizes.
+    pub posture: TerminologyPosture,
+    /// The terminology servers the deployment is wired to.
+    pub servers: Vec<TerminologyServer>,
+}
+
+impl TerminologyLane {
+    /// The declared server answering for `namespace`, if any.
+    #[must_use]
+    pub fn server_for(&self, namespace: &str) -> Option<&TerminologyServer> {
+        self.servers
+            .iter()
+            .find(|s| s.namespaces.iter().any(|n| n == namespace))
+    }
+
+    /// How many DISTINCT reachable servers answer for the given namespaces —
+    /// the simultaneity count a multi-server case requires.
+    #[must_use]
+    pub fn distinct_reachable_servers(&self, namespaces: &[String]) -> usize {
+        let mut names: Vec<&str> = Vec::new();
+        for namespace in namespaces {
+            if let Some(server) = self.server_for(namespace)
+                && server.reachable
+                && !names.contains(&server.name.as_str())
+            {
+                names.push(&server.name);
+            }
+        }
+        names.len()
+    }
+}
+
 /// One named SUT instance.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -137,6 +244,16 @@ pub struct Instance {
     /// default applies, so every single-posture ixit parses unchanged.
     #[serde(default)]
     pub signing: Option<crate::exec::signature::SigningMode>,
+    /// THIS instance's terminology posture, when it differs from the party
+    /// default ([`Ixit::terminology`]).
+    ///
+    /// The unresolvable-value-set posture is a property of the *deployment*
+    /// (one `fail_on_error`-style switch per running server), so a party that
+    /// exercises both branches runs two deployments and declares each one's
+    /// posture on its own instance — the same law [`Instance::signing`]
+    /// follows. Absent => the party default applies.
+    #[serde(default)]
+    pub terminology: Option<TerminologyLane>,
 }
 
 /// The environment block — mandatory for performance runs, informative
@@ -231,6 +348,13 @@ pub struct Ixit {
     /// they are not-applicable with that citation.
     #[serde(default)]
     pub smart: Option<SmartLane>,
+    /// The party's DEFAULT terminology posture (see [`TerminologyLane`]).
+    /// Present => the deployment is wired to the declared terminology
+    /// servers and realizes the declared unresolvable-value-set posture;
+    /// absent => every terminology-dependent case is not-applicable with that
+    /// citation. An instance may override it ([`Instance::terminology`]).
+    #[serde(default)]
+    pub terminology: Option<TerminologyLane>,
 }
 
 impl Ixit {
@@ -266,6 +390,15 @@ impl Ixit {
         instance: &'i Instance,
     ) -> Option<&'i crate::exec::signature::SigningMode> {
         instance.signing.as_ref().or(self.signing.as_ref())
+    }
+
+    /// The terminology posture in force for `instance`: its own declaration
+    /// wins, the party default ([`Ixit::terminology`]) fills in — the same
+    /// instance-first resolution [`Ixit::signing_of`] applies to the signing
+    /// mode, and for the same reason (the posture is a deployment fact).
+    #[must_use]
+    pub fn terminology_of<'i>(&'i self, instance: &'i Instance) -> Option<&'i TerminologyLane> {
+        instance.terminology.as_ref().or(self.terminology.as_ref())
     }
 
     /// The default instance (`sut`) — required for every run.
@@ -442,6 +575,92 @@ mod tests {
         }))
         .unwrap();
         assert!(ixit.signing_of(ixit.default_instance().unwrap()).is_none());
+    }
+
+    /// The terminology posture is optional, resolves instance-first, and
+    /// carries the per-server namespace + reachability declarations the
+    /// terminology cases select on.
+    #[test]
+    fn terminology_lane_is_optional_and_resolves_instance_first() {
+        let bare: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        assert!(bare.terminology.is_none());
+        assert!(
+            bare.terminology_of(bare.default_instance().unwrap())
+                .is_none()
+        );
+
+        let declared: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": {
+                "sut": { "base_url": "http://x", "auth": { "mode": "none" } },
+                "sut_closed": {
+                    "base_url": "http://y",
+                    "auth": { "mode": "none" },
+                    "terminology": {
+                        "posture": "fail_closed",
+                        "servers": [
+                            { "name": "sct", "reachable": false, "namespaces": ["urn:cnf:sct"] }
+                        ]
+                    }
+                }
+            },
+            "terminology": {
+                "posture": "fail_open",
+                "servers": [
+                    { "name": "sct", "namespaces": ["urn:cnf:sct", "urn:cnf:sct-vs"] },
+                    { "name": "loinc", "namespaces": ["urn:cnf:loinc"] },
+                    { "name": "down", "reachable": false, "namespaces": ["urn:cnf:down"] }
+                ]
+            }
+        }))
+        .unwrap();
+
+        let party = declared.terminology.as_ref().unwrap();
+        assert_eq!(party.posture, TerminologyPosture::FailOpen);
+        // `reachable` defaults to true; a declared-unreachable server is the
+        // terminology-server-down branch, wired for the whole run.
+        assert!(party.server_for("urn:cnf:sct").unwrap().reachable);
+        assert!(!party.server_for("urn:cnf:down").unwrap().reachable);
+        assert!(party.server_for("urn:cnf:unknown").is_none());
+        // Two namespaces on ONE server count once; two servers count twice.
+        assert_eq!(
+            party.distinct_reachable_servers(&[
+                "urn:cnf:sct".to_owned(),
+                "urn:cnf:sct-vs".to_owned()
+            ]),
+            1
+        );
+        assert_eq!(
+            party.distinct_reachable_servers(&[
+                "urn:cnf:sct".to_owned(),
+                "urn:cnf:loinc".to_owned()
+            ]),
+            2
+        );
+        // An unreachable server never counts towards simultaneity.
+        assert_eq!(
+            party.distinct_reachable_servers(&["urn:cnf:down".to_owned()]),
+            0
+        );
+
+        // The party default applies where the instance declares nothing…
+        assert_eq!(
+            declared
+                .terminology_of(declared.default_instance().unwrap())
+                .unwrap()
+                .posture,
+            TerminologyPosture::FailOpen
+        );
+        // …and the instance's own declaration wins where it does.
+        let closed = declared
+            .instance(&InstanceName::parse("sut_closed").unwrap())
+            .unwrap();
+        assert_eq!(
+            declared.terminology_of(closed).unwrap().posture,
+            TerminologyPosture::FailClosed
+        );
     }
 
     #[test]

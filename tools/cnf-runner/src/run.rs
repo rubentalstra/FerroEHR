@@ -9,7 +9,7 @@
 use crate::artifacts::ArtifactSet;
 use crate::exec::driver::HttpDriver;
 use crate::exec::{CaseRecord, RowOutcome, run_case};
-use crate::ids::SmOperationRef;
+use crate::ids::{InstanceName, SmOperationRef};
 use crate::ixit::Ixit;
 use crate::model::assertion::assertion_refs;
 use crate::model::case::CaseCore;
@@ -251,6 +251,112 @@ fn undeclared_instances(case: &CaseCore, ixit: &Ixit) -> Vec<String> {
     missing
 }
 
+/// The instances a case's flow addresses: every `on:` selector, and the
+/// default `sut` when any step carries none.
+fn addressed_instances(case: &CaseCore) -> Vec<InstanceName> {
+    let mut named: Vec<InstanceName> = Vec::new();
+    let mut any_default = false;
+    for step in &case.flow {
+        match &step.on {
+            Some(name) if !named.contains(name) => named.push(name.clone()),
+            Some(_) => {}
+            None => any_default = true,
+        }
+    }
+    if any_default && let Ok(default) = InstanceName::parse("sut") {
+        named.insert(0, default);
+    }
+    named
+}
+
+/// Why THIS party's terminology declaration does not satisfy the case's
+/// `requires.terminology` — the selection guard for every terminology-backed
+/// behaviour.
+///
+/// Released ITS-REST 1.1.0 surfaces no terminology resource (the nine
+/// `I_TERMINOLOGY_SERVICE` rows of `vocab/wire_surface.yaml` record that
+/// boundary), so which terminology servers a deployment is wired to, which
+/// namespaces they answer for, and what it does with a value set it cannot
+/// resolve are all deployment facts no released operation discloses. They are
+/// therefore IXIT declarations, and an undeclared one costs COVERAGE, never
+/// correctness: the case is not-applicable with the citation rather than
+/// driven against a server the party never seeded.
+fn unsatisfied_terminology(case: &CaseCore, ixit: &Ixit) -> Option<String> {
+    let required = case.requires.terminology.as_ref()?;
+    for name in addressed_instances(case) {
+        // An undeclared instance is already the `undeclared_instances` guard's
+        // business; skip it here so one case never reports two citations.
+        let Some(instance) = ixit.instance(&name) else {
+            continue;
+        };
+        let Some(lane) = ixit.terminology_of(instance) else {
+            return Some(format!(
+                "instance {name}: the ixit declares no `terminology` posture — the case needs a \
+                 deployment wired to a terminology query server (BASE master12 §Binding \
+                 Terminology Value-sets to Archetypes), and no released operation discloses one"
+            ));
+        };
+        if let Some(posture) = required.posture
+            && lane.posture != posture
+        {
+            return Some(format!(
+                "instance {name}: the case needs the `{}` unresolvable-value-set posture and this \
+                 deployment declares `{}` (register AMB-172 — a deployment realizes exactly one)",
+                posture.token(),
+                lane.posture.token()
+            ));
+        }
+        for namespace in &required.served {
+            match lane.server_for(namespace) {
+                Some(server) if server.reachable => {}
+                Some(server) => {
+                    return Some(format!(
+                        "instance {name}: terminology namespace {namespace} is declared on server \
+                         '{}', which the ixit declares unreachable — the case needs it answered",
+                        server.name
+                    ));
+                }
+                None => {
+                    return Some(format!(
+                        "instance {name}: no declared terminology server answers for {namespace} \
+                         — the party seeded no such namespace"
+                    ));
+                }
+            }
+        }
+        for namespace in &required.unreachable {
+            match lane.server_for(namespace) {
+                Some(server) if server.reachable => {
+                    return Some(format!(
+                        "instance {name}: terminology namespace {namespace} is declared reachable \
+                         on server '{}' — the case needs the terminology-server-down branch, \
+                         which only a declared-unreachable server provides",
+                        server.name
+                    ));
+                }
+                Some(_) => {}
+                None => {
+                    return Some(format!(
+                        "instance {name}: no declared terminology server answers for {namespace} \
+                         — the party declares no such unreachable namespace"
+                    ));
+                }
+            }
+        }
+        if let Some(minimum) = required.distinct_servers {
+            let count = lane.distinct_reachable_servers(&required.served);
+            if count < minimum {
+                return Some(format!(
+                    "instance {name}: the case needs {minimum} distinct reachable terminology \
+                     servers across its namespaces and the ixit declares {count} (BASE master12 \
+                     §Overview — several terminologies served at the same time)"
+                ));
+            }
+        }
+    }
+    None
+}
+
 /// The reserved catalogue pseudo-interface anchoring the SMART Platform
 /// operations the SM models no interface for (pinned in
 /// `validate::NON_SM_REST_OPERATIONS`; register AMB-161 adjudicates the
@@ -379,6 +485,17 @@ fn selection_exception(
              released operation discloses or provides; ISO/IEC 9646 test selection"
                 .to_owned(),
         ));
+    }
+    // The terminology deployment is a party declaration exactly like the
+    // SMART lane above: released ITS-REST surfaces no terminology resource,
+    // so nothing on the wire says which terminology servers a deployment
+    // holds open or how it treats a value set it cannot resolve. Undeclared
+    // or differently declared => not-applicable with the citation, never a
+    // red row against a deployment that legitimately runs the other posture.
+    if let Some(citation) = unsatisfied_terminology(case, ixit) {
+        return Some(Exception::Guarded(format!(
+            "{citation}; ISO/IEC 9646 test selection"
+        )));
     }
     // A flow step addressing an instance this party does not declare has no
     // ground to run on (the deployment or principal simply does not exist
@@ -802,6 +919,119 @@ mod tests {
         }))
         .unwrap();
         assert!(undeclared_instances(&case, &with).is_empty());
+    }
+
+    /// The terminology posture is a DECLARED deployment fact: an undeclared
+    /// lane, a mismatched posture, an unseeded namespace, a reachable server
+    /// where the case needs the down branch, and too few simultaneous servers
+    /// are each a selection outcome with its own citation — never a driven
+    /// guess.
+    #[test]
+    fn terminology_requirements_are_selected_against_the_declaration() {
+        let case = |requirement: serde_json::Value| -> CaseCore {
+            serde_json::from_value(serde_json::json!({
+                "id": "X-terminology", "kind": "functional", "component": "QUERY",
+                "sm_operation": "I_QUERY_SERVICE.execute_ad_hoc_query",
+                "test_purpose": "t", "description": "d", "spec_refs": [],
+                "requires": { "server": "any", "terminology": requirement },
+                "flow": [{ "step": 1, "call": "execute_ad_hoc_query", "expect": "ok" }]
+            }))
+            .unwrap()
+        };
+        let ixit: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
+            "terminology": {
+                "posture": "fail_open",
+                "servers": [
+                    { "name": "sct", "namespaces": ["urn:cnf:sct"] },
+                    { "name": "loinc", "namespaces": ["urn:cnf:loinc"] },
+                    { "name": "down", "reachable": false, "namespaces": ["urn:cnf:down"] }
+                ]
+            }
+        }))
+        .unwrap();
+
+        // A case with no terminology requirement is untouched.
+        let plain: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-plain", "kind": "functional", "component": "QUERY",
+            "sm_operation": "I_QUERY_SERVICE.execute_ad_hoc_query",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "flow": [{ "step": 1, "call": "execute_ad_hoc_query", "expect": "ok" }]
+        }))
+        .unwrap();
+        assert!(unsatisfied_terminology(&plain, &ixit).is_none());
+
+        // Satisfied: served namespaces on two distinct reachable servers.
+        assert!(
+            unsatisfied_terminology(
+                &case(serde_json::json!({
+                    "posture": "fail_open",
+                    "served": ["urn:cnf:sct", "urn:cnf:loinc"],
+                    "distinct_servers": 2
+                })),
+                &ixit
+            )
+            .is_none()
+        );
+
+        // A party declaring no lane at all.
+        let undeclared: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        let citation = unsatisfied_terminology(
+            &case(serde_json::json!({ "served": ["urn:cnf:sct"] })),
+            &undeclared,
+        )
+        .expect("undeclared lane is a selection outcome");
+        assert!(
+            citation.contains("declares no `terminology` posture"),
+            "{citation}"
+        );
+
+        // The other posture.
+        let citation = unsatisfied_terminology(
+            &case(serde_json::json!({ "posture": "fail_closed" })),
+            &ixit,
+        )
+        .expect("posture mismatch is a selection outcome");
+        assert!(citation.contains("fail_closed"), "{citation}");
+
+        // A namespace no declared server answers for.
+        assert!(
+            unsatisfied_terminology(
+                &case(serde_json::json!({ "served": ["urn:cnf:absent"] })),
+                &ixit
+            )
+            .is_some_and(|c| c.contains("urn:cnf:absent"))
+        );
+
+        // The down branch needs a DECLARED-unreachable server.
+        assert!(
+            unsatisfied_terminology(
+                &case(serde_json::json!({ "unreachable": ["urn:cnf:down"] })),
+                &ixit
+            )
+            .is_none()
+        );
+        assert!(
+            unsatisfied_terminology(
+                &case(serde_json::json!({ "unreachable": ["urn:cnf:sct"] })),
+                &ixit
+            )
+            .is_some_and(|c| c.contains("declared reachable"))
+        );
+
+        // Simultaneity is counted over DISTINCT reachable servers.
+        assert!(
+            unsatisfied_terminology(
+                &case(serde_json::json!({
+                    "served": ["urn:cnf:sct"], "distinct_servers": 2
+                })),
+                &ixit
+            )
+            .is_some_and(|c| c.contains("2 distinct reachable"))
+        );
     }
 
     #[test]
