@@ -4,7 +4,10 @@
 //! [`super`]).
 //!
 //! Enumeration is always the bundle's; lookup/validation goes to the bundle
-//! when it knows the terminology, else to the configured FHIR provider, else
+//! when it knows the terminology, else to the FHIR provider **the
+//! `terminology_id` routes to** ([`super::router::TerminologyRouter`] — several
+//! servers may be configured at once, BASE
+//! `docs/architecture_overview/master12-terminology.adoc` §Overview), else
 //! falls through to the bundle's `Pre_has_terminology` → `NotFound`.
 
 use std::collections::BTreeMap;
@@ -71,7 +74,7 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         if bundle::has_terminology(terminology_id) {
             bundle::has_term(terminology_id, code)
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.has_term(terminology_id, code, at_date).await
         } else {
             bundle::has_term(terminology_id, code)
@@ -98,7 +101,7 @@ impl EhrbaseService {
     ) -> Result<TerminologyExtract, SmError> {
         if bundle::has_terminology(terminology_id) {
             bundle::get_term(terminology_id, code)
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.get_term(terminology_id, code, attributes, at_date).await
         } else {
             bundle::get_term(terminology_id, code)
@@ -125,7 +128,7 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         if bundle::has_terminology(terminology_id) {
             bundle::subsumes(terminology_id, ref_code, candidate_child_code)
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.subsumes(terminology_id, ref_code, candidate_child_code)
                 .await
         } else {
@@ -155,7 +158,7 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         if bundle::has_terminology(terminology_id) {
             bundle::value_set_validate(terminology_id, value_set_id, candidate_code)
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.value_set_validate(terminology_id, value_set_id, candidate_code, at_date)
                 .await
         } else {
@@ -178,7 +181,7 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         if bundle::has_terminology(terminology_id) {
             Ok(bundle::has_value_set(terminology_id, value_set_code))
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.has_value_set(terminology_id, value_set_code).await
         } else {
             Ok(bundle::has_value_set(terminology_id, value_set_code))
@@ -203,7 +206,7 @@ impl EhrbaseService {
     ) -> Result<TerminologyExtract, SmError> {
         if bundle::has_terminology(terminology_id) {
             bundle::get_value_set(terminology_id, value_set_code)
-        } else if let Some(p) = &self.external_terminology {
+        } else if let Some(p) = self.terminology_provider(terminology_id) {
             p.get_value_set(terminology_id, value_set_code).await
         } else {
             bundle::get_value_set(terminology_id, value_set_code)

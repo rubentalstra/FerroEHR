@@ -73,7 +73,10 @@ pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
 /// that a commit route actually committed (the direct create/update/delete
 /// routes and the CONTRIBUTION commit).
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";
-/// Validation-failure counter (`pass` = `rm_invariant/terminology/template`).
+/// Validation-failure counter (`pass` =
+/// `rm_terminology`/`template`/`constraint_binding` — the last being an
+/// archetype ac-code value-set binding the routed terminology server refused
+/// or could not resolve under `fail_on_error`).
 pub const VALIDATION_FAILURES: &str = "validation_failures_total";
 /// Version-signature verification-failure counter (`verdict` =
 /// `digest_mismatch/pgp_invalid`), incremented under `verify_on_read`
