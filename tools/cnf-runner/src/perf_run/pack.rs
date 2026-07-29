@@ -322,10 +322,21 @@ pub(crate) fn contribution_body(
 /// subject, an `other_details` note stamped with the simulated clock (the
 /// admission/discharge status touch).
 pub(crate) fn ehr_status_body(offset_s: u64) -> Vec<u8> {
+    // An EHR_STATUS is an archetype root, so the ARCHETYPED block is
+    // mandatory and the root archetype_node_id equals its archetype_id (RM
+    // common locatable.adoc §Invariants Archetyped_valid +
+    // §archetype_node_id) — the 2026-07-29 POC window sent a root-less body
+    // and the server rightly 422'd every update arrival.
     let body = serde_json::json!({
         "_type": "EHR_STATUS",
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                               "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.1.0"
+        },
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": true,
         "is_modifiable": true,
