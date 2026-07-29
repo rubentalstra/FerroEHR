@@ -27,3 +27,4 @@
 - [Measurement environment discipline](measurement-environment-discipline.md) — idle box + envelope-matched limits for measured runs; ixit containers blocks track lane renames
 - [ITS audit fix-first cadence](its-audit-fix-first-cadence.md) — owner 2026-07-26: #373 audit runs group-by-group, ALL fix issues from a group implemented+merged before the next group's audit starts; never accumulate finding backlog
 - [Merge on local gates](merge-on-local-gates.md) — owner 2026-07-26: local gates green (fmt+clippy+nextest+cnf validate) → merge the PR immediately, no CI watchers between issues; CI is a post-merge backstop (release cuts keep normal discipline)
+- [Spec-chapter audit programs](spec-chapter-audit-programs.md) — owner method: milestone=component, issue=chapter, whole-codebase /spec-audit sweep, fix-first cadence; v3.13.0=CDS/GDL2 (#716), v3.14.0=BASE (#686), v4.0.0=admin-UI

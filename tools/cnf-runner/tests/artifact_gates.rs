@@ -77,7 +77,7 @@ fn pilot_world_is_clean_under_all_gates() {
 /// * §"Deprecated headers" — "The `ETag` response header was used without a
 ///   weakness indicator `W/`. This is now deprecated, all `ETag` headers that
 ///   hold a resource identifier MUST include a weakness indicator `W/`" —
-///   with §"ETag and Last-Modified" naming the release: "DEPRECATION: Prior to
+///   with §"`ETag` and Last-Modified" naming the release: "DEPRECATION: Prior to
 ///   Release 1.1.0, the `ETag` header was used without a weakness indicator
 ///   `W/`. This usage is now deprecated, but implementations MAY still support
 ///   it alongside the updated header format".

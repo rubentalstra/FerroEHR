@@ -106,7 +106,7 @@ pub enum StripRule {
 /// (issue #403).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum TransformRule {
-    /// The leading `object_id` — the VERSIONED_OBJECT identifier.
+    /// The leading `object_id` — the `VERSIONED_OBJECT` identifier.
     #[serde(rename = "root-uid")]
     RootUid,
     /// The MIDDLE segment — the identifier of the system that created the
@@ -241,9 +241,9 @@ impl<'de> Deserialize<'de> for HeaderMatcher {
 ///
 /// **`optional`** separates the strength of PRESENCE from the strength of
 /// FORM, because the released text assigns them differently. ITS-REST
-/// `specifications/docs/overview/Requests_and_responses.md` §"ETag and
+/// `specifications/docs/overview/Requests_and_responses.md` §"`ETag` and
 /// Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in
-/// responses for VERSION, VERSIONED_OBJECT, or other resources that have
+/// responses for VERSION, `VERSIONED_OBJECT`, or other resources that have
 /// versioning or unique state identifiers" — presence is a SHOULD; while
 /// §"Deprecated headers" makes the form a MUST: "all `ETag` headers that hold
 /// a resource identifier MUST include a weakness indicator `W/`". An optional
@@ -257,7 +257,7 @@ impl<'de> Deserialize<'de> for HeaderMatcher {
 /// two of them to Release 1.1.0: §"Deprecated headers" ("The `ETag` response
 /// header was used without a weakness indicator `W/`. This is now deprecated,
 /// all `ETag` headers that hold a resource identifier MUST include a weakness
-/// indicator `W/`") with §"ETag and Last-Modified" naming the release
+/// indicator `W/`") with §"`ETag` and Last-Modified" naming the release
 /// ("DEPRECATION: Prior to Release 1.1.0, the `ETag` header was used without a
 /// weakness indicator `W/`"), and §Location ("DEPRECATION: Prior to Release
 /// 1.1.0, the `Location` header was used to indicate the canonical location of
@@ -1031,7 +1031,7 @@ mod tests {
         );
     }
 
-    /// The closed transform grammar decomposes an OBJECT_VERSION_ID by its
+    /// The closed transform grammar decomposes an `OBJECT_VERSION_ID` by its
     /// released lexical form `object_id :: creating_system_id ::
     /// version_tree_id` (ITS-REST Resources.md §Identifier types).
     #[test]
