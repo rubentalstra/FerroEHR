@@ -43,7 +43,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
-    ///   valid ISO 8601 date-time.
+    ///   valid ISO 8601 date-time, or the bounded pair has its lower bound
+    ///   after its upper bound (BASE `Interval` invariant `Limits_consistent`).
     /// - `exception` — a database fault while querying.
     pub async fn admin_list_contributions(
         &self,
@@ -85,7 +86,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
-    ///   valid ISO 8601 date-time.
+    ///   valid ISO 8601 date-time, or the bounded pair has its lower bound
+    ///   after its upper bound (BASE `Interval` invariant `Limits_consistent`).
     /// - `exception` — a database fault while querying.
     pub async fn admin_contribution_count(
         &self,
@@ -145,7 +147,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
-    ///   valid ISO 8601 date-time.
+    ///   valid ISO 8601 date-time, or the bounded pair has its lower bound
+    ///   after its upper bound (BASE `Interval` invariant `Limits_consistent`).
     /// - `exception` — a database fault while querying.
     pub async fn versioned_composition_count(
         &self,
@@ -187,7 +190,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
-    ///   valid ISO 8601 date-time.
+    ///   valid ISO 8601 date-time, or the bounded pair has its lower bound
+    ///   after its upper bound (BASE `Interval` invariant `Limits_consistent`).
     /// - `exception` — a database fault while querying.
     pub async fn composition_version_count(
         &self,

@@ -17,6 +17,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance: the admin extension batteries now test what must be
+  REFUSED, not only what must work.** A server that accepts what the contract
+  forbids is as non-conformant as one that refuses what it must accept, and
+  the activity-report, EHR/demographic archive and dump/load batteries proved
+  only their happy paths. They now also drive the unauthenticated (`401`) and
+  non-administrative (`403`) probes on every route of each family, every
+  argument-type refusal (a service outside the enumeration, the three ways a
+  time interval can be malformed, a malformed id in an archive list, an
+  unknown export format, a non-positive segment size), the empty-selection and
+  repeat-archive boundaries, and the zip / 7z / loose container-detection round
+  trips on load — with the duplicate-report body now asserted rather than
+  assumed. The branches that cannot be driven from a client (the
+  admin-disabled `405`, which needs a differently configured deployment, and
+  the corrupt-archive `5xx`, which needs bytes placed on the server's own file
+  system) are recorded as explicit boundaries and covered by in-process tests
+  instead of being silently absent.
+
 - **Conformance: ADL 1.4 archetype provisioning is now tested rather than
   excused.** openEHR's released REST API defines no ADL 1.4 archetype
   resource, so the capability used to be reported as "excused — unrealized on
@@ -600,6 +617,23 @@ workflow refuses a tag that has no matching section here.
   the base path.
 
 ### Fixed
+
+- **An activity-report request whose time interval runs backwards is now
+  refused instead of answered.** `GET /admin/report/*` accepts an optional
+  `time_interval=<lower>/<upper>`; a pair bounded on both sides with the lower
+  bound *after* the upper one is not an interval at all (the openEHR BASE
+  `Interval` invariant requires `lower <= upper`), and the server used to run
+  it anyway and hand back the empty count such a range selects — a
+  truthful-looking answer for a window nobody asked for. It is now `400`.
+  Equal bounds remain a legitimate single-instant interval.
+
+- **A corrupt dump archive no longer reports as an internal server fault.**
+  `POST /admin/load` against a location whose manifest or segment is mangled
+  or truncated used to surface as an unexpected-exception `500`, while a
+  location holding no archive at all reported the openEHR service model's
+  `file_not_writable`. Both are the same fact — the location does not hold a
+  readable archive — and both now report `file_not_writable`, with nothing
+  loaded either way.
 
 - **An export requesting a format this server does not implement now answers
   `501 Not Implemented` instead of `400`.** `openehr_canonical_xml` and the
