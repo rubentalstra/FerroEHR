@@ -2255,20 +2255,30 @@ cnf.ckm.vital_signs.example:
 # SYNTHETIC test content seeded into the composed server (docker/terminology/),
 # under the reserved example.test domain (IETF RFC 6761 §6.2) — no licensed
 # terminology content is distributed in this repo.
+cnf.opt.invalid.undefined_constraint_code:
+  source: templates/dt_coded_text_binding_undefined_ac.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the definition references constraint code ac0001 (CONSTRAINT_REF) and constraint_bindings binds it, but no constraint_definitions entry defines it, and the ontology omits the mandatory term_definitions"
+    spec_ref: "AM ADL1.4 master08-adl.adoc §Coded Term Validity (VATDF: all ac codes used in the definition must be defined in constraint_definitions; VACDF); master05-cadl.adoc §Placeholder Constraints; ITS-XML ALL/Archetype.xsd ARCHETYPE_ONTOLOGY (term_definitions mandatory)"
+  template_id: "cnf.tpl.dv_coded_text_binding_undefined_ac"
+  provenance: "the 2026-07-29 triage's adjudicated-invalid shape, preserved verbatim under its own id per the valid+invalid-twins rule (owner 2026-07-29): the pre-correction dt_coded_text_binding_sct.opt whose upload the SUT was spec-RIGHT to refuse (422 VTCBK). Its corrected valid twin is cnf.tpl.dv_coded_text_binding_sct; this row pins the refusal so a lenient server fails it"
 cnf.tpl.dv_coded_text_binding_sct:
   source: templates/dt_coded_text_binding_sct.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.dv_coded_text_binding_sct"
-  provenance: "authored 2026-07-29 as templates/dt_coded_text_constraint_ref.opt (itself generated from the openEHR CNF Robot minimal_observation.opt skeleton) plus the ONE element that makes the ac-code enforceable at commit: an ARCHETYPE_ONTOLOGY constraint_bindings set (AM docs/ADL1.4/master08-adl.adoc §Constraint_bindings; ITS-XML ConstraintBindingSet/CONSTRAINT_BINDING_ITEM in ALL/Archetype.xsd) binding ac0001, under terminology id cnf-sct-shaped, to the terminology query http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders. The unbound twin stays cnf.tpl.dv_coded_text_constraint_ref — the two differ only in the ontology element, so a case pair isolates the binding itself"
+  provenance: "authored 2026-07-29 as templates/dt_coded_text_constraint_ref.opt (itself generated from the openEHR CNF Robot minimal_observation.opt skeleton) plus a complete component_ontologies entry for the OBSERVATION component (corrected 2026-07-29 after the first live run — the 2026-07-29 triage attributed the upload refusal to this fixture): the mandatory term_definitions (Archetype.xsd ARCHETYPE_ONTOLOGY — term_definitions carries no minOccurs; AOM1.4 master07 §Term and Constraint Definitions requires text+description), the constraint_definitions entry DEFINING ac0001 (ADL1.4 master08-adl.adoc §Coded Term Validity VATDF/VACDF: every ac-code used in the definition must be defined in constraint_definitions; master05 §Placeholder Constraints), and the constraint_bindings set (master08 §Constraint_bindings) binding ac0001, under terminology id cnf-sct-shaped, to the terminology query http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders — placed under component_ontologies because the constraint lives in a component archetype, not the root template (OPT2 master03-opt_raw.adoc §Terminology; Template.xsd FLAT_ARCHETYPE_ONTOLOGY). The unbound twin stays cnf.tpl.dv_coded_text_constraint_ref, so a case pair isolates the binding itself"
 cnf.tpl.dv_coded_text_binding_tsdown:
   source: templates/dt_coded_text_binding_tsdown.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.dv_coded_text_binding_tsdown"
-  provenance: "authored 2026-07-29 as the UNRESOLVABLE twin of cnf.tpl.dv_coded_text_binding_sct: the same definition, with ac0001 bound under terminology id cnf-ts-down to http://cnf.example.test/fhir/ValueSet/ts-down-set — a namespace a deployment routes to a terminology server that is declared unreachable for the whole run. It is the carrier of the fail-open / fail-closed branch pair (register AMB-172); the template itself is intrinsically VALID, only its bound query cannot be answered"
+  provenance: "authored 2026-07-29 as the UNRESOLVABLE twin of cnf.tpl.dv_coded_text_binding_sct (same complete component_ontologies shape — term_definitions + the ac0001 constraint_definitions entry per ADL1.4 master08 §Coded Term Validity VATDF/VACDF, corrected 2026-07-29 with its twin): ac0001 bound under terminology id cnf-ts-down to http://cnf.example.test/fhir/ValueSet/ts-down-set — a namespace a deployment routes to a terminology server that is declared unreachable for the whole run. It is the carrier of the fail-open / fail-closed branch pair (register AMB-172); the template itself is intrinsically VALID, only its bound query cannot be answered"
 cnf.composition.terminology_binding_sct_member:
   source: fixtures/composition/terminology_binding_sct_member.json
   format: canonical-json

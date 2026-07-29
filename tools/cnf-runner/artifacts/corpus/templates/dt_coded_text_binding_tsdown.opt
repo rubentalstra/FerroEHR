@@ -16,9 +16,19 @@
     <template_id><value>cnf.tpl.dv_coded_text_binding_tsdown</value></template_id>
     <term_definitions code="at0000"><items id="description">unknown</items><items id="text">Minimal</items></term_definitions>
   </definition>
-  <ontology archetype_id="openEHR-EHR-OBSERVATION.minimal.v1">
+  <component_ontologies archetype_id="openEHR-EHR-OBSERVATION.minimal.v1">
+    <term_definitions language="en">
+      <items code="at0000"><items id="text">Minimal</items><items id="description">unknown</items></items>
+      <items code="at0001"><items id="text">Event Series</items><items id="description">@ internal @</items></items>
+      <items code="at0002"><items id="text">Any event</items><items id="description">*</items></items>
+      <items code="at0003"><items id="text">Tree</items><items id="description">@ internal @</items></items>
+      <items code="at0004"><items id="text">value</items><items id="description">*</items></items>
+    </term_definitions>
+    <constraint_definitions language="en">
+      <items code="ac0001"><items id="text">Bound value set</items><items id="description">The external value set the element's defining_code must be a member of (resolved through the bound terminology query - ADL1.4 master05 SS Placeholder Constraints)</items></items>
+    </constraint_definitions>
     <constraint_bindings terminology="cnf-ts-down">
       <items code="ac0001"><value>http://cnf.example.test/fhir/ValueSet/ts-down-set</value></items>
     </constraint_bindings>
-  </ontology>
+  </component_ontologies>
 </template>

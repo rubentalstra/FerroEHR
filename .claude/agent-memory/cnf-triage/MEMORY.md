@@ -27,4 +27,5 @@
 - [Runner ignores case-level `applies`](runner-ignores-case-level-applies.md) — run.rs gates on options/binding-floors/ixit but never `case.applies`; 127 floored rows driven at a 1.0.3 party
 - [ITS-REST 1.1.0-dated surfaces](its-rest-1-1-0-dated-surfaces.md) — the Amendment_record dating table (SF/item-tags/demographic/admin-delete/W-ETag…) = the ground for every version floor
 - [SHOULD headers over-gated](should-headers-over-gated.md) — Last-Modified presence + the 412 ETag are SHOULDs; bare `present` matchers must be `present?`
+- [OPT 1.4 ac-code definedness](opt14-ac-code-definedness.md) — VATDF/VACDF: only a `constraint_definitions` entry defines an ac-code; `term_definitions` is XSD-mandatory; component ontology → `component_ontologies`
 - [AMB-167 documented-family root-name gap](amb167-documented-family-root-name-gap.md) — the handling carve-out contradicts the classification; DOCUMENTED XML root+namespace is a MUST with no case
