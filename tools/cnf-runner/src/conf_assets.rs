@@ -180,7 +180,12 @@ pub fn heat_grid_svg(
     );
     // Legend (glyph + label per evidence kind; swatch + glyph = both channels).
     let mut lx = MARGIN;
-    for evidence in [Evidence::Passed, Evidence::Failed, Evidence::NotEvidenced] {
+    for evidence in [
+        Evidence::Passed,
+        Evidence::Failed,
+        Evidence::Inconclusive,
+        Evidence::NotEvidenced,
+    ] {
         let (class, glyph, label) = evidence_encoding(evidence);
         let _ = write!(
             out,
@@ -900,6 +905,15 @@ mod tests {
         // (the former no-cases state — variant deleted, #626).
         assert!(a.contains("ev-not-evidenced"));
         assert!(a.contains('○'));
+        // The LEGEND carries every evidence state the grid can render —
+        // including inconclusive, which no cell in this sample shows (the
+        // legend enumerates the vocabulary, not the sample; its omission
+        // shipped once, 2026-07-29).
+        for label in ["passed", "FAILED", "INCONCLUSIVE", "not evidenced"] {
+            assert!(a.contains(label), "legend label {label} missing");
+        }
+        assert!(a.contains("ev-inconclusive"));
+        assert!(a.contains('?'));
         // Tier bands + border encodings.
         for band in ["CORE", "STANDARD", "OPTIONS", "SEC-BASIC"] {
             assert!(a.contains(band), "band {band} missing");
