@@ -55,6 +55,7 @@
 //! provider.
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 use serde::Deserialize;
@@ -66,6 +67,7 @@ use crate::service::terminology::types::{
 };
 
 use super::config::{FhirOperation, FhirProviderConfig};
+use super::oauth2::TokenSource;
 
 /// The `Term_relationship.relation_name` under which a FHIR `$expand`
 /// parent→child `contains` nesting is preserved (`terminology_extract.adoc`).
@@ -91,6 +93,10 @@ pub struct FhirTerminologyProvider {
     /// including the 404 "unknown resource" outcome — so a validation burst
     /// over the same codes costs one remote round trip per TTL window.
     cache: Option<moka::future::Cache<String, Option<serde_json::Value>>>,
+    /// The `OAuth2` client-credentials token source whose bearer credential
+    /// authenticates every request, when the provider configures one. `None` =
+    /// unauthenticated requests.
+    token: Option<Arc<TokenSource>>,
 }
 
 impl FhirTerminologyProvider {
@@ -128,7 +134,23 @@ impl FhirTerminologyProvider {
             operation: cfg.operation,
             name: name.to_owned(),
             cache,
+            token: None,
         })
+    }
+
+    /// Attach the `OAuth2` client-credentials token source whose bearer
+    /// credential every request to this provider carries
+    /// (`[terminology.external.providers.<name>] oauth2_client`).
+    #[must_use]
+    pub fn with_token(mut self, token: Arc<TokenSource>) -> Self {
+        self.token = Some(token);
+        self
+    }
+
+    /// The configured provider name (routing, logging, error context).
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     /// GET a FHIR operation with query params, returning the parsed body.
@@ -172,10 +194,17 @@ impl FhirTerminologyProvider {
             };
         }
         let cache_key = url.as_str().to_owned();
-        let response = self
+        let mut request = self
             .client
             .get(url)
-            .header(reqwest::header::ACCEPT, "application/fhir+json")
+            .header(reqwest::header::ACCEPT, "application/fhir+json");
+        // The bearer is resolved per request (the token source serves it from
+        // its cache and re-grants only around expiry), so a rotated credential
+        // takes effect without a restart.
+        if let Some(token) = &self.token {
+            request = request.bearer_auth(token.bearer().await?);
+        }
+        let response = request
             .send()
             .await
             .map_err(|e| self.transport_error(op_path, &e))?;

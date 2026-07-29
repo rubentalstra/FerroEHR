@@ -666,4 +666,14 @@ fn copy_values(from: &WebTemplateNode, to: &mut WebTemplateNode) {
     to.slots.extend(from.slots.iter().cloned());
     to.closed_attributes
         .extend(from.closed_attributes.iter().cloned());
+    // A collapsed wrapper may itself have carried the `CONSTRAINT_REF` proxy
+    // (an ELEMENT whose `value` IS the ac-code reference), so its constraint
+    // bindings move to the survivor rather than being dropped. Deduplicated —
+    // both nodes can name the same ac-code binding, and one check per binding
+    // is enough.
+    for binding in &from.constraint_bindings {
+        if !to.constraint_bindings.contains(binding) {
+            to.constraint_bindings.push(binding.clone());
+        }
+    }
 }

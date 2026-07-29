@@ -19,6 +19,7 @@ mod alias;
 pub mod loader;
 
 use crate::config::loader::{ConfigError, ConfigErrors};
+use crate::config::secret::Secret;
 mod strict;
 
 pub mod auth;
@@ -171,14 +172,7 @@ impl EhrbaseConfig {
                 "management.port ({port}) must differ from the server.bind port"
             )));
         }
-        // External terminology enabled ⇒ at least one provider.
-        if self.terminology.external.enabled && self.terminology.external.providers.is_empty() {
-            errors.push(ConfigError::semantic(
-                "terminology.external.enabled = true requires at least one \
-                 [terminology.external.providers.<name>]"
-                    .to_owned(),
-            ));
-        }
+        validate_terminology(&self.terminology.external, &mut errors);
 
         if errors.is_empty() {
             Ok(())
@@ -236,6 +230,65 @@ impl EhrbaseConfig {
 /// The port component of a `host:port` bind string, if parseable.
 fn server_bind_port(bind: &str) -> Option<u16> {
     bind.rsplit_once(':').and_then(|(_, p)| p.parse().ok())
+}
+
+/// Semantic checks on `[terminology.external]`: enabling it needs a provider,
+/// and every cross-reference must resolve. A dangling reference would degrade
+/// silently — a route to a missing provider quietly falls back to the default
+/// server, and an `oauth2_client` naming a missing client would send
+/// unauthenticated requests — so both are boot errors (§P-5: never make a bad
+/// value a silent default). No openEHR spec governs configuration — our own
+/// design.
+fn validate_terminology(
+    terminology: &crate::service::terminology::config::ExternalTerminologyConfig,
+    errors: &mut Vec<ConfigError>,
+) {
+    if terminology.enabled && terminology.providers.is_empty() {
+        errors.push(ConfigError::semantic(
+            "terminology.external.enabled = true requires at least one \
+             [terminology.external.providers.<name>]"
+                .to_owned(),
+        ));
+    }
+    for (key, provider) in &terminology.routes {
+        if !terminology.providers.contains_key(provider) {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.routes.\"{key}\" names provider '{provider}', which has no \
+                 [terminology.external.providers.{provider}]"
+            )));
+        }
+    }
+    for (name, provider) in &terminology.providers {
+        let Some(client) = provider.oauth2_client.as_deref() else {
+            continue;
+        };
+        if !terminology.oauth2_clients.contains_key(client) {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.providers.{name}.oauth2_client names '{client}', which has \
+                 no [terminology.external.oauth2_clients.{client}]"
+            )));
+        }
+    }
+    for (name, client) in &terminology.oauth2_clients {
+        if client.token_url.trim().is_empty() {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.oauth2_clients.{name}.token_url must not be empty"
+            )));
+        }
+        if client.client_id.trim().is_empty() {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.oauth2_clients.{name}.client_id must not be empty"
+            )));
+        }
+        if client.client_secret.as_ref().is_none_or(Secret::is_empty)
+            && client.client_secret_file.is_none()
+        {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.oauth2_clients.{name} requires client_secret or \
+                 client_secret_file (the client-credentials grant authenticates the client)"
+            )));
+        }
+    }
 }
 
 /// Assemble the configuration from explicit inputs — the pure seam every test
@@ -689,5 +742,151 @@ mod tests {
         let mut c = EhrbaseConfig::default();
         c.terminology.external.enabled = true;
         assert!(c.validate().is_err());
+    }
+
+    /// A terminology route naming a provider that is not configured is a boot
+    /// error — never a silent fall-back to the default server.
+    #[test]
+    fn validate_terminology_route_must_name_a_configured_provider() {
+        let mut c = EhrbaseConfig::default();
+        let external = &mut c.terminology.external;
+        external.enabled = true;
+        external.providers.insert(
+            "default".to_owned(),
+            crate::service::terminology::config::FhirProviderConfig {
+                kind: crate::service::terminology::config::ProviderKind::Fhir,
+                url: "https://ts.example/fhir".to_owned(),
+                operation: crate::service::terminology::config::FhirOperation::ValidateCode,
+                connect_timeout_ms: 2_000,
+                request_timeout_ms: 10_000,
+                oauth2_client: None,
+                cache_ttl_secs: 300,
+                cache_capacity: 10_000,
+            },
+        );
+        assert!(c.validate().is_ok(), "a routeless provider set is valid");
+
+        c.terminology
+            .external
+            .routes
+            .insert("SNOMED-CT".to_owned(), "snomed".to_owned());
+        let err = c.validate().expect_err("a dangling route must be rejected");
+        assert!(err.to_string().contains("snomed"), "got {err}");
+
+        // Pointing the route at the configured provider resolves it.
+        c.terminology
+            .external
+            .routes
+            .insert("SNOMED-CT".to_owned(), "default".to_owned());
+        assert!(c.validate().is_ok());
+    }
+
+    /// A provider naming an `oauth2_client` with no matching client table is a
+    /// boot error — never a silently unauthenticated terminology request. The
+    /// client itself must carry a token endpoint, a client id, and a secret.
+    #[test]
+    fn validate_terminology_oauth2_client_reference_and_shape() {
+        let mut c = EhrbaseConfig::default();
+        let external = &mut c.terminology.external;
+        external.enabled = true;
+        external.providers.insert(
+            "default".to_owned(),
+            crate::service::terminology::config::FhirProviderConfig {
+                kind: crate::service::terminology::config::ProviderKind::Fhir,
+                url: "https://ts.example/fhir".to_owned(),
+                operation: crate::service::terminology::config::FhirOperation::ValidateCode,
+                connect_timeout_ms: 2_000,
+                request_timeout_ms: 10_000,
+                oauth2_client: Some("ts-client".to_owned()),
+                cache_ttl_secs: 300,
+                cache_capacity: 10_000,
+            },
+        );
+        let err = c
+            .validate()
+            .expect_err("an unconfigured oauth2_client must be rejected");
+        assert!(err.to_string().contains("ts-client"), "got {err}");
+
+        // A client with no secret cannot run the client-credentials grant.
+        c.terminology.external.oauth2_clients.insert(
+            "ts-client".to_owned(),
+            crate::service::terminology::config::TerminologyOauth2Config {
+                token_url: "https://idp.example/token".to_owned(),
+                client_id: "cdr".to_owned(),
+                client_secret: None,
+                client_secret_file: None,
+                scopes: Vec::new(),
+                refresh_leeway_secs: 30,
+                auth_method:
+                    crate::service::terminology::config::Oauth2AuthMethod::ClientSecretBasic,
+            },
+        );
+        let err = c.validate().expect_err("a secretless client is rejected");
+        assert!(err.to_string().contains("client_secret"), "got {err}");
+
+        c.terminology
+            .external
+            .oauth2_clients
+            .get_mut("ts-client")
+            .expect("client")
+            .client_secret = Some(secret::Secret::new("s3cret"));
+        assert!(c.validate().is_ok());
+    }
+
+    /// The new terminology keys are reachable through the one env grammar
+    /// (§P-4), map keys included.
+    #[test]
+    fn env_mapping_terminology_routes_and_oauth2_clients() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED", "true"),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__URL",
+                    "https://snowstorm/fhir",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__OAUTH2_CLIENT",
+                    "ts-client",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__ROUTES__SNOMED-CT",
+                    "snomed",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__OAUTH2_CLIENTS__TS-CLIENT__TOKEN_URL",
+                    "https://idp/token",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__OAUTH2_CLIENTS__TS-CLIENT__CLIENT_ID",
+                    "cdr",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__OAUTH2_CLIENTS__TS-CLIENT__CLIENT_SECRET",
+                    "s3cret",
+                ),
+            ]),
+            &[],
+        );
+        let external = &c.terminology.external;
+        assert!(external.enabled);
+        assert_eq!(
+            external.providers.get("snomed").expect("snomed").url,
+            "https://snowstorm/fhir"
+        );
+        assert_eq!(
+            external.routes.get("snomed-ct").map(String::as_str),
+            Some("snomed"),
+            "map keys arrive lower-cased from the env grammar"
+        );
+        let client = external
+            .oauth2_clients
+            .get("ts-client")
+            .expect("oauth2 client");
+        assert_eq!(client.token_url, "https://idp/token");
+        assert_eq!(
+            client.client_secret.as_ref().map(Secret::expose),
+            Some("s3cret")
+        );
     }
 }
