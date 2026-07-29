@@ -47,11 +47,22 @@ statistics:
   Business Services Authority *Prescription Cost Analysis*, 2024/25).
 - **Average write rate.** Multiplying a class's served population by that
   per-capita rate and dividing by the number of seconds in a year gives the
-  average sustained document-write rate for the class.
+  average sustained document-write rate for the class:
+
+  $$
+  \text{writes/s}_{\text{avg}}
+    = \frac{\text{population} \times 46}{365 \times 24 \times 3600}
+  $$
+
 - **Busy-hour peak.** Real clinical traffic is not flat: it concentrates in
   ward rounds and clinic hours. Following the ITU-T E.500 busy-hour
   engineering convention, the average is scaled to a busy-hour peak by a peak
-  factor of eight.
+  factor of eight:
+
+  $$
+  \text{writes/s}_{\text{peak}} = 8 \times \text{writes/s}_{\text{avg}}
+  $$
+
 - **Read multiplier.** A CDR is a read-heavy OLTP system — charts are read far
   more often than they are written. Following the read-heavy OLTP convention
   used by standard database benchmarks (YCSB, OLTP-Bench), the offered load
@@ -94,8 +105,9 @@ time-offset operation sequences drawn from a committed journey catalogue
   submissions, and statutory public-health notifications.
 
 Every stage of every journey instance is its **own planned arrival
-instant** on the global open-loop schedule — an order at *t*, its
-administrations at *t + k·interval*, the result at *t + Δ* — so many
+instant** on the global open-loop schedule — an order at $t$, its
+administrations at $t + k \cdot \text{interval}$, the result at
+$t + \Delta$ — so many
 patients' journeys interleave exactly as wards do, and cross-operation
 state effects (status transitions during active commits, folder consistency
 under parallel writes, version chains under interleaved amendments, AQL
@@ -135,7 +147,7 @@ is listed explicitly as a catalogue gap.
 ## How a measured run works
 
 A performance run is deliberately **open-loop**: the runner plays a seeded
-arrival schedule — request *i* is *due* at a planned instant computed before
+arrival schedule — request $i$ is *due* at a planned instant computed before
 the run starts — rather than a closed loop of virtual users that would slow
 its own offered load down whenever the server stalls. This makes the run
 **coordinated-omission-free**: each request's latency is measured from its

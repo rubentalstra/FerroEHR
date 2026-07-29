@@ -76,23 +76,23 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
+| Adl14ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
 | Adl14OptProvisioning | FAIL | 3 | 6 | 8 | 5 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
-| EhrOperations | FAIL | 18 | 2 | 1 | 1 |
-| EhrStatus | FAIL | 12 | 23 | 9 | 1 |
-| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 20 | 1 |
-| DirectoryOps | FAIL | 48 | 12 | 3 | 6 |
+| EhrOperations | FAIL | 18 | 2 | 0 | 2 |
+| EhrStatus | FAIL | 12 | 21 | 7 | 5 |
+| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 20 | 3 |
+| DirectoryOps | FAIL | 48 | 11 | 2 | 8 |
 | ChangeSets | FAIL | 13 | 6 | 28 | 5 |
 | Versioning | FAIL | 8 | 3 | 45 | 0 |
 | ArchetypeValidation | FAIL | 0 | 67 | 54 | 0 |
 | AqlBasic | FAIL | 6 | 2 | 11 | 0 |
 | AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 2 | 0 |
-| PhysicalDeletion | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| PhysicalDeletion | not evidenced | 0 | 0 | 0 | 2 |
 | DefinitionApi | FAIL | 0 | 1 | 0 | 0 |
 | EhrApi | FAIL | 1 | 1 | 0 | 0 |
 | QueryApi | FAIL | 3 | 2 | 14 | 0 |
-| Signing | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| Signing | not evidenced | 0 | 0 | 0 | 2 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
 | AuthenticatedAccess | pass | 2 | 0 | 0 | 0 |
 | AuthorizationSeparation | not evidenced | 0 | 0 | 0 | 1 |
@@ -137,7 +137,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 466 of 492 selected cases driven.
+Coverage: 459 of 499 selected cases driven.
 
 Not-executed verdicts (each cited):
 
