@@ -144,6 +144,17 @@ fn requires_def() -> Value {
                   } }
             ] },
             "commit": string_array(Some(CORPUS_KEY_PATTERN)),
+            "terminology": {
+                "description": "The terminology deployment the case needs, matched against the addressed instance's ixit.terminology declaration at SELECTION time. Released ITS-REST 1.1.0 surfaces no terminology resource, so which terminology servers a deployment holds open, which namespaces they answer for, and what it does with a value set it cannot resolve are IXIT declarations; a case needing one the party does not declare is not-applicable with that citation.",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "posture": { "description": "The unresolvable-value-set posture the case's expectation rests on (register AMB-172); omitted when the behaviour is posture-independent.", "enum": tokens(crate::ixit::TerminologyPosture::ALL) },
+                    "served": string_array(None),
+                    "unreachable": string_array(None),
+                    "distinct_servers": { "description": "How many DISTINCT reachable servers the `served` namespaces must be spread across — the N>=2 simultaneous-servers requirement (BASE master12 §Overview).", "type": "integer", "minimum": 1 }
+                }
+            },
             "instances": { "type": "object",
                 "propertyNames": { "pattern": IDENT_PATTERN },
                 "additionalProperties": { "$ref": "#/$defs/requires" } }
@@ -909,6 +920,40 @@ fn signing_def(description: &str) -> Value {
     })
 }
 
+/// The terminology posture block — declared party-wide (the default) and
+/// optionally per instance (the deployment that runs the other
+/// unresolvable-value-set posture). One definition, two placements, exactly
+/// like [`signing_def`], so the two can never drift apart.
+fn terminology_def(description: &str) -> Value {
+    json!({
+        "description": description,
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["posture", "servers"],
+        "properties": {
+            "posture": {
+                "description": "What the deployment does with a bound value set it cannot resolve. BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes puts the query in an external terminology query server and never says what happens when it cannot be reached, so the branch is a deployment fact, not a spec rule (register AMB-172).",
+                "enum": tokens(crate::ixit::TerminologyPosture::ALL)
+            },
+            "servers": {
+                "description": "The terminology servers this deployment is wired to. A namespace is whatever key a case names for a terminology (code-system URI, value-set URL, terminology id); a DECLARED-unreachable server is how the terminology-server-down branch is exercised for the whole run, never by a mid-run reconfiguration.",
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "namespaces"],
+                    "properties": {
+                        "name": { "type": "string", "minLength": 1 },
+                        "reachable": { "type": "boolean" },
+                        "namespaces": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+                    }
+                }
+            }
+        }
+    })
+}
+
 /// `ixit.json` — the SUT topology the runner drives (ISO/IEC 9646 IXIT).
 /// The schema validates exactly what [`crate::ixit::Ixit`] parses.
 #[must_use]
@@ -956,6 +1001,9 @@ pub fn ixit_schema() -> Value {
                         "headers": { "type": "object", "additionalProperties": { "type": "string" } },
                         "signing": signing_def(
                             "THIS instance's version-signing posture, when it differs from the party default (RM common master06 §Digital Signature: the mode is a deployment fact, and a deployment runs one). A party claiming both modes declares two deployments as two instances, each with its own block; every signature check resolves instance-first, party default second. Absent => the top-level `signing` applies."
+                        ),
+                        "terminology": terminology_def(
+                            "THIS instance's terminology posture, when it differs from the party default. The unresolvable-value-set branch is one switch per running deployment, so a party exercising both runs two deployments and declares each one's posture on its own instance — the same law the `signing` block follows. Absent => the top-level `terminology` applies."
                         )
                     }
                 }
@@ -982,6 +1030,9 @@ pub fn ixit_schema() -> Value {
             },
             "signing": signing_def(
                 "The party's DEFAULT version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode every instance runs unless it declares its own. digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key."
+            ),
+            "terminology": terminology_def(
+                "The party's DEFAULT terminology posture: the terminology query servers this deployment is wired to (BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes — the bound value set is resolved by a server outside the CDR), which namespaces each answers for, and the unresolvable-value-set branch it realizes. Declared here because released ITS-REST 1.1.0 surfaces no terminology resource, so nothing on the wire discloses any of it; absent => every terminology-dependent case is not-applicable with that citation."
             ),
             "smart": {
                 "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",

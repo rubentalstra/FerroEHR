@@ -2243,3 +2243,67 @@ cnf.ckm.vital_signs.example:
   validity: { verdict: valid }
   template_id: "Vital signs"
   provenance: "example skeleton generated once from the SUT example endpoint (detail_level=medium) by scripts/generate-ckm-examples.sh 2026-07-22 and committed byte-identical — the deterministic payload ground every SUT receives at measurement time"
+
+# ── External-terminology corpus (the composed FHIR R4 terminology server) ─────
+# BASE docs/architecture_overview/master12-terminology.adoc §"Binding
+# Terminology Value-sets to Archetypes": an "ac" code is "bound to queries to
+# one or more external terminologies, whose result would be a (possibly
+# structured) value set from that terminology", and the query itself "is
+# defined within a 'terminology query server'". The two templates below are the
+# only corpus templates carrying that binding; the compositions are their
+# member / non-member / unresolvable instances. The value sets they name are
+# SYNTHETIC test content seeded into the composed server (docker/terminology/),
+# under the reserved example.test domain (IETF RFC 6761 §6.2) — no licensed
+# terminology content is distributed in this repo.
+cnf.tpl.dv_coded_text_binding_sct:
+  source: templates/dt_coded_text_binding_sct.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_binding_sct"
+  provenance: "authored 2026-07-29 as templates/dt_coded_text_constraint_ref.opt (itself generated from the openEHR CNF Robot minimal_observation.opt skeleton) plus the ONE element that makes the ac-code enforceable at commit: an ARCHETYPE_ONTOLOGY constraint_bindings set (AM docs/ADL1.4/master08-adl.adoc §Constraint_bindings; ITS-XML ConstraintBindingSet/CONSTRAINT_BINDING_ITEM in ALL/Archetype.xsd) binding ac0001, under terminology id cnf-sct-shaped, to the terminology query http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders. The unbound twin stays cnf.tpl.dv_coded_text_constraint_ref — the two differ only in the ontology element, so a case pair isolates the binding itself"
+cnf.tpl.dv_coded_text_binding_tsdown:
+  source: templates/dt_coded_text_binding_tsdown.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_binding_tsdown"
+  provenance: "authored 2026-07-29 as the UNRESOLVABLE twin of cnf.tpl.dv_coded_text_binding_sct: the same definition, with ac0001 bound under terminology id cnf-ts-down to http://cnf.example.test/fhir/ValueSet/ts-down-set — a namespace a deployment routes to a terminology server that is declared unreachable for the whole run. It is the carrier of the fail-open / fail-closed branch pair (register AMB-172); the template itself is intrinsically VALID, only its bound query cannot be answered"
+cnf.composition.terminology_binding_sct_member:
+  source: fixtures/composition/terminology_binding_sct_member.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_binding_sct"
+  provenance: "authored 2026-07-29 on the cnf.tpl.dv_coded_text_binding_sct carrier shape (COMPOSITION.minimal / OBSERVATION.minimal / HISTORY at0001 / POINT_EVENT at0002 / ITEM_TREE at0003 / ELEMENT at0004), whose coded leaf carries 1000002 — a MEMBER of the bound value set — under the seeded code system http://cnf.example.test/fhir/CodeSystem/sct-shaped"
+cnf.composition.terminology_binding_sct_non_member:
+  source: fixtures/composition/terminology_binding_sct_non_member.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the coded leaf's code 1000003 is not in the value set bound to the archetype constraint code ac0001"
+    spec_ref: "BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes (the ac code is bound to a query whose result IS the permitted value set); AM AOM1.4 master04 §Reference Objects (a CONSTRAINT_REF is a proxy for the constraints that binding expresses)"
+  template_id: "cnf.tpl.dv_coded_text_binding_sct"
+  provenance: "authored 2026-07-29 as the non-member twin of cnf.composition.terminology_binding_sct_member: identical but for the coded leaf's code_string, 1000003, which the seeded value set http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders deliberately excludes while the code system does define it — so the only defect is value-set MEMBERSHIP, resolvable solely against the terminology query server"
+cnf.composition.terminology_binding_tsdown:
+  source: fixtures/composition/terminology_binding_tsdown.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_binding_tsdown"
+  provenance: "authored 2026-07-29 as the UNRESOLVABLE-binding instance: the cnf.tpl.dv_coded_text_binding_tsdown carrier with a coded leaf in the http://cnf.example.test/fhir/CodeSystem/ts-down namespace, which routes to a terminology server declared unreachable. The payload is intrinsically VALID — every RM invariant and every archetype constraint the template states is satisfied — so what a server does with it is decided entirely by its unresolvable-value-set posture (register AMB-172), never by the data"
+cnf.composition.terminology_unbound_sct_member:
+  source: fixtures/composition/terminology_unbound_sct_member.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_constraint_ref"
+  provenance: "authored 2026-07-29 on the UNBOUND cnf.tpl.dv_coded_text_constraint_ref template (its ac0001 has no constraint_bindings, so no commit-time membership question arises) with a coded leaf carrying 1000002 — a member of the seeded value set. It is the positive row of the AQL TERMINOLOGY('expand', …) filter case: the query, not the commit, is what resolves the value set"
+cnf.composition.terminology_unbound_sct_non_member:
+  source: fixtures/composition/terminology_unbound_sct_non_member.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.tpl.dv_coded_text_constraint_ref"
+  provenance: "authored 2026-07-29 as the counter-example of cnf.composition.terminology_unbound_sct_member: the same UNBOUND template with code 1000003, which the seeded value set excludes. It is intrinsically valid and commits successfully — its role is to be present in the EHR and NOT selected by the AQL TERMINOLOGY('expand', …) filter, so a query that ignored the value set would return two rows instead of one"

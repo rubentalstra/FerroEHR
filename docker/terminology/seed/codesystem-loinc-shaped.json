@@ -1,0 +1,30 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "cnf-loinc-shaped",
+  "url": "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
+  "version": "1.0.0",
+  "name": "CnfLoincShapedTestCodeSystem",
+  "title": "CNF test code system, LOINC-shaped (synthetic)",
+  "status": "active",
+  "experimental": true,
+  "publisher": "ehrbase-rs CNF conformance corpus",
+  "description": "SYNTHETIC test content. A flat code system whose codes are SHAPED like LOINC observation codes (NNNNN-N) so the conformance battery can drive a SECOND terminology namespace, routed to a second configured provider, in one running deployment. It contains no LOINC content and is not derived from any licensed terminology: every code and display is invented for this test corpus and lives under the reserved example.test domain (IETF RFC 6761 §6.2).",
+  "caseSensitive": true,
+  "compositional": false,
+  "versionNeeded": false,
+  "content": "complete",
+  "concept": [
+    {
+      "code": "99991-1",
+      "display": "Test systolic blood pressure (CNF)"
+    },
+    {
+      "code": "99992-9",
+      "display": "Test diastolic blood pressure (CNF)"
+    },
+    {
+      "code": "99993-7",
+      "display": "Test body temperature (CNF)"
+    }
+  ]
+}

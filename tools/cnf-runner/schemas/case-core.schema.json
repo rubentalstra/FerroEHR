@@ -374,6 +374,37 @@
             "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
           }
         },
+        "terminology": {
+          "description": "The terminology deployment the case needs, matched against the addressed instance's ixit.terminology declaration at SELECTION time. Released ITS-REST 1.1.0 surfaces no terminology resource, so which terminology servers a deployment holds open, which namespaces they answer for, and what it does with a value set it cannot resolve are IXIT declarations; a case needing one the party does not declare is not-applicable with that citation.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "posture": {
+              "description": "The unresolvable-value-set posture the case's expectation rests on (register AMB-172); omitted when the behaviour is posture-independent.",
+              "enum": [
+                "fail_open",
+                "fail_closed"
+              ]
+            },
+            "served": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unreachable": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "distinct_servers": {
+              "description": "How many DISTINCT reachable servers the `served` namespaces must be spread across — the N>=2 simultaneous-servers requirement (BASE master12 §Overview).",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
         "instances": {
           "type": "object",
           "propertyNames": {

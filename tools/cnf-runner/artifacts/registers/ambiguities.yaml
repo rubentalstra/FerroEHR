@@ -6978,3 +6978,57 @@ AMB-171:
     offset form one voice.
   disposition: editorial
   upstream_ref: "UPR-128"
+
+AMB-172:
+  ambiguity: >-
+    What a service does with a committed value whose archetype CONSTRAINT
+    BINDING cannot be RESOLVED at all — the terminology query server is
+    unreachable, answers an error, or does not know the bound value set. Two
+    behaviours are consistent with every released sentence: accept the
+    composition (the resolution failure is an operational fault of a service
+    the CDR does not own) or refuse it (an unverifiable constrained value is
+    not demonstrably conformant). Note what is NOT ambiguous and is therefore
+    gating in this catalogue: a binding that RESOLVES and answers "not a
+    member" is a real constraint violation, because the bound query's result
+    IS the permitted value set. Only the unresolvable case is undecided.
+  source: >-
+    BASE docs/architecture_overview/master12-terminology.adoc §"Binding
+    Terminology Value-sets to Archetypes" — the ac code "is bound to queries to
+    one or more external terminologies, whose result would be a (possibly
+    structured) value set from that terminology", and "Currently there is no
+    standard for such queries. This does not affect archetypes directly, since
+    they simply hold an identifier for a query; the query itself is defined
+    within a 'terminology query server'." The text places the resolver outside
+    the archetype and outside openEHR's own specification, and never states an
+    outcome for a query that cannot be answered. Confirmed first-hand in the
+    two other places the question could have been settled: AM docs/AOM2/
+    master08-validation.adoc §Phase 2 lists the terminology-binding checks
+    (VTTBK, VTCBK, VETDF) as ARCHETYPE-validation rules over the binding's own
+    well-formedness, saying nothing about instance data or about server
+    availability; and AM docs/AOM1.4/master04-constraint_model_package.adoc
+    §Reference Objects defines CONSTRAINT_REF as "a proxy for a set of
+    constraints … expressed in the binding of the constraint reference (e.g.
+    'ac0004') to a query … into an external service", again with no failure
+    semantics. ITS-REST adds nothing: no released operation surfaces a
+    terminology resource at all (the nine I_TERMINOLOGY_SERVICE off_wire rows
+    of vocab/wire_surface.yaml), so the wire cannot even express the question.
+  handling: >-
+    A DEPLOYMENT fact, declared and then tested in both directions — never a
+    private resolution and never a runner guess. A running server realizes
+    exactly ONE branch (it is one switch), so the party declares which one on
+    the addressed instance's ixit `terminology.posture`
+    (fail_open | fail_closed), the two sibling cases state the branch they rest
+    on in `requires.terminology.posture`, and a case whose branch the addressed
+    deployment does not realize is not-applicable with that citation at
+    SELECTION time. A party that claims BOTH branches runs both deployments and
+    both cases execute in the ONE record — the identical treatment RM common
+    master06 §Digital Signature's two signing modes get. The unresolvable
+    condition itself is DECLARED, not manufactured: the ixit marks a terminology
+    server `reachable: false` and it stays wired to an address nothing answers
+    on for the whole run, so no case ever reconfigures or stops a service
+    mid-run to produce the branch it tests. WHY THIS DISPOSITION: the handling
+    IS encoded in the cases (fixed_handling) — a spec-silent branch that the
+    catalogue nevertheless drives, gates and reports on both sides, rather than
+    a verdict suspension (report_only) or a claim no case covers
+    (statement_declared).
+  disposition: fixed_handling
