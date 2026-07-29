@@ -544,7 +544,7 @@ pub fn chapter_counts(results: &Results) -> Result<Vec<ChapterRow>, TaxonomyErro
     let mut rows: Vec<ChapterRow> = TAXONOMY
         .iter()
         .map(|(chapter, bands)| ChapterRow {
-            chapter: *chapter,
+            chapter,
             total: BandCounts::default(),
             bands: bands
                 .iter()

@@ -2920,15 +2920,13 @@ mod tests {
         let merged = HttpDriver::merge_with_vars(&vars, &with);
         assert_eq!(
             merged
-                .scalar(&CaptureName::parse("preceding_version_uid").unwrap())
-                .as_deref(),
+                .scalar(&CaptureName::parse("preceding_version_uid").unwrap()),
             Some("vo::sys::2"),
             "the step's explicit with: value wins in its own scope"
         );
         // The underlying store is untouched — the shadow is step-scoped.
         assert_eq!(
-            vars.scalar(&CaptureName::parse("preceding_version_uid").unwrap())
-                .as_deref(),
+            vars.scalar(&CaptureName::parse("preceding_version_uid").unwrap()),
             Some("vo::sys::1")
         );
     }

@@ -49,7 +49,7 @@ pub enum Evidence {
     /// failure) and none failed. Inconclusive is never a SUT failure
     /// (`cnf-triage` law) but it must not be absorbed into a green
     /// capability either: an errored row blocks `Passed` until the run is
-    /// clean (the 2026-07-28 posture run published CompositionOps `passed`
+    /// clean (the 2026-07-28 posture run published `CompositionOps` `passed`
     /// while both minimal-Prefer cases sat errored on a wire-visible
     /// defect — luck, not design).
     Inconclusive,

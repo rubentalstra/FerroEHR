@@ -375,8 +375,8 @@ async fn relationship_stale_delete_conflict_echoes_latest_etag() {
 
 // ── the ITEM_TAG identity is the (key, target_path) PAIR ─────────────────────
 
-/// Two same-key tags on different target_paths coexist on one party target and
-/// the PUT round-trips both — ITS-REST overview Requests_and_responses.md
+/// Two same-key tags on different `target_paths` coexist on one party target and
+/// the PUT round-trips both — ITS-REST overview `Requests_and_responses.md`
 /// §openehr-item-tag and openehr-version-item-tag ("uniquely identified by
 /// their `key` and `target_path` pair attributes"); RM common master07-tags.
 /// The run-2 triage regression (2026-07-28): the demographic PUT deduped by
