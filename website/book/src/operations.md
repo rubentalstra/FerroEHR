@@ -302,12 +302,16 @@ clinical content.
 
 - `GET {base}/message/export/{ehr_id}` — export one whole EHR. **200** with a
   JSON array holding one `EXTRACT` that carries every versioned object of the
-  EHR, latest versions only. **404** if the EHR does not exist.
+  EHR, latest versions only. **404** if the EHR does not exist; **400** if
+  `ehr_id` is not a well-formed identifier, which is refused before any lookup.
 - `POST {base}/message/export` with an `EXTRACT_SPEC` body — export by
   specification. **200** with one `EXTRACT` per manifest entity, in manifest
   order; a manifest with no entities yields `[]`. Each entity must name the
   record by `ehr_id` or `subject_id`, otherwise **400**; an identifier that
-  names nothing is **404**.
+  names nothing is **404**. `extract_type` must be one of the codes the
+  openEHR Reference Model names — `openehr-ehr`, `openehr-demographic`,
+  `openehr-synchronisation`, `openehr-generic`, `generic-emr` — or the
+  catch-all `other`; anything else is **400**.
 - `POST {base}/message/import` with an `EXTRACT` body — clone a whole EHR.
   Add `?ehr_id=<uuid>` to fix the identifier the clone lands under; leave it
   off and the source identifier the extract carries is re-used. **201** with
@@ -332,7 +336,11 @@ clinical content.
   — import several at once. **201** with the created version ids in input
   order. The batch is **all-or-nothing**: every document is converted before
   any is committed, so one bad document rejects the whole batch and commits
-  nothing.
+  nothing. An **empty** array is a fulfilled no-op — **200** with `[]`, since
+  nothing was created — but the target EHR is still checked, so an unknown one
+  is **404** whatever the batch holds. The batch has no limit on how many
+  documents it may carry; the only bound is the server-wide request-body
+  limit, which answers **413** when exceeded.
 
 > [!NOTE]
 > The whole `/message` group is an ehrbase-rs extension: the openEHR service

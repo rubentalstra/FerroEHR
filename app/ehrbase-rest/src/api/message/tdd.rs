@@ -19,6 +19,18 @@
 //! the SM's `List<String>` as a JSON array of such documents. Each import
 //! commits through the ordinary validated COMPOSITION path, so its created
 //! `OBJECT_VERSION_ID` is what the response names.
+//!
+//! NOTE (no openEHR spec governs role semantics on an unspecified route — our
+//! own design/extension): both routes are writes behind the shared
+//! authentication + RBAC layer, so both answer `401` without a valid principal
+//! and `403` for a principal holding the configured read-only role, in both
+//! cases before the payload is read.
+//!
+//! NOTE (no openEHR spec governs a batch bound — our own design/extension):
+//! the batch carries NO cardinality bound of its own. The only bound is the
+//! server-wide request-body limit (`ehrbase-rest::router`), which the
+//! `tower-http` `RequestBodyLimitLayer` enforces as `413 Payload Too Large`
+//! before routing — so an absurd batch is refused by size, never by count.
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -73,6 +85,11 @@ pub(crate) fn tdd_routes() -> OpenApiRouter<AppState> {
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: a TDD import \
+                                      commits a COMPOSITION, so it is refused \
+                                      before the document is read.",
+         body = serde_json::Value),
         (status = 404, description = "SM `ehr_id_does_not_exist`, or \
                                       `template_does_not_exist` — the TDD names \
                                       an operational template this server does \
@@ -104,6 +121,11 @@ pub(crate) async fn message_import_tdd(
 /// of the SM interface (which declares no signature for it): the batch is
 /// all-or-nothing — every TDD is converted before any is committed, so one
 /// unconvertible document rejects the whole batch with nothing committed.
+///
+/// An EMPTY array is a fulfilled no-op answered `200` with `[]`: the target
+/// EHR is still checked (an unknown one is `404` whatever the batch holds),
+/// but nothing is created, so `201` would misreport the outcome (RFC 9110
+/// §15.3.2).
 #[utoipa::path(
     post, path = "/message/tdd/{ehr_id}/batch", tag = "message",
     params(("ehr_id" = String, Path,
@@ -113,6 +135,17 @@ pub(crate) async fn message_import_tdd(
                                 array of XML strings.",
                  example = json!(["<template_data …/>"])),
     responses(
+        (status = 200, description = "The batch was EMPTY: a fulfilled \
+                                      no-op — the target EHR was checked, \
+                                      nothing was converted, nothing was \
+                                      committed, and the body is `[]`. \
+                                      Distinguished from `201` because no \
+                                      resource was created (RFC 9110 §15.3.2: \
+                                      `201` reports that the request \
+                                      \"resulted in one or more new resources \
+                                      being created\"; §15.3.1 is the \
+                                      fulfilled-with-a-representation case).",
+         body = Vec<String>, example = json!([])),
         (status = 201, description = "Every TDD converted and committed. The \
                                       body is the created \
                                       `OBJECT_VERSION_ID`s in input order.",
@@ -123,10 +156,21 @@ pub(crate) async fn message_import_tdd(
                                       committed.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: the batch \
+                                      commits COMPOSITIONs, so it is refused \
+                                      before the array is read.",
+         body = serde_json::Value),
         (status = 404, description = "SM `ehr_id_does_not_exist`, or a TDD names \
                                       an operational template this server does \
-                                      not hold.",
+                                      not hold. The EHR precondition is checked \
+                                      for EVERY batch, the empty one included.",
          body = serde_json::Value),
+        (status = 413, description = "The request body exceeds the server-wide \
+                                      request-body limit. The batch has no \
+                                      cardinality bound of its own — see the \
+                                      module note.",
+         body = String, content_type = "text/plain"),
         (status = 415, description = "The request `Content-Type` is not \
                                       `application/json`.",
          body = serde_json::Value),
@@ -188,8 +232,18 @@ async fn run(
                 tdds.push(text.to_owned());
             }
             let uids = state.backend().import_tdds(ehr_id, tdds).await?;
+            // An empty batch created nothing, so it is fulfilled-with-a-
+            // representation, not a creation: RFC 9110 §15.3.2 reserves `201`
+            // for a request that "resulted in one or more new resources being
+            // created". No openEHR spec governs this route — our own
+            // design/extension.
+            let status = if uids.is_empty() {
+                StatusCode::OK
+            } else {
+                StatusCode::CREATED
+            };
             let body: Vec<Value> = uids.into_iter().map(Value::String).collect();
-            Ok(negotiate::respond(h, StatusCode::CREATED, &body))
+            Ok(negotiate::respond(h, status, &body))
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted message TDD operation: {other}"
