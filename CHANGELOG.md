@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **openEHR path expressions support general comparison predicates** (BASE
+  architecture overview §Paths and Locators, "Other Predicates"): path
+  predicates of the form `[at0007 and time >= '2005-06-24T09:30:00']` or
+  `[value/defining_code/code_string = 'A04']` — a relative attribute path,
+  an operator (`=`, `!=`, `<`, `<=`, `>`, `>=`), and a quoted-string or
+  numeric literal — now parse and evaluate everywhere RM paths are resolved,
+  including `ehr:` URI resolution. Strings compare lexically (ISO 8601
+  date/times order temporally), numbers numerically, with XPath existential
+  node-set semantics; predicate text outside the grammar is still rejected
+  loudly. Previously these spec-defined forms were refused as unsupported.
+
 ## [3.12.0] - 2026-07-29
 
 ### Changed
