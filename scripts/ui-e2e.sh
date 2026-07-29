@@ -20,6 +20,16 @@
 #                       building from source. CI pre-builds the app image with
 #                       a layer cache exported to GHCR and sets this, so the
 #                       cold runner does not pay the full compile.
+#   UI_E2E_PREBUILT_CONSOLE
+#                       if set, skip the host cargo-leptos build and run the
+#                       console binary + site tree already at
+#                       target/debug/ehrbase-admin-ui + target/site (CI builds
+#                       them in a parallel job and downloads the artifact).
+#   UI_E2E_NEXTEST_ARCHIVE
+#                       if set, run the journeys from this prebuilt nextest
+#                       archive (`cargo nextest archive -p ehrbase-admin-ui
+#                       --features ssr`) via --archive-file/--workspace-remap
+#                       instead of compiling the test binaries here.
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
 #   UI_E2E_SHOTS_ONLY   if set, skip the journeys entirely (capture pass only).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
@@ -241,8 +251,15 @@ if [ -n "${UI_E2E_IMAGE:-}" ]; then
       up -d --build ehrbase-admin-ui
   fi
 else
-  echo "── building the console (cargo-leptos)"
-  (cd app/ehrbase-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
+  if [ -n "${UI_E2E_PREBUILT_CONSOLE:-}" ]; then
+    echo "── using the prebuilt console (UI_E2E_PREBUILT_CONSOLE)"
+    for p in "$ROOT/target/debug/ehrbase-admin-ui" "$ROOT/target/site/pkg"; do
+      [ -e "$p" ] || { echo "FATAL: UI_E2E_PREBUILT_CONSOLE set but $p is missing" >&2; exit 1; }
+    done
+  else
+    echo "── building the console (cargo-leptos)"
+    (cd app/ehrbase-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
+  fi
   echo "── starting the console on $CONSOLE_ADDR"
   LEPTOS_SITE_ROOT="$ROOT/target/site" \
   LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
@@ -270,6 +287,17 @@ DRIVER_PID=$!
 wait_http "http://127.0.0.1:$DRIVER_PORT/status"
 
 # ── 5. The journeys ──────────────────────────────────────────────────────────
+# Prebuilt archive vs in-tree compile: one selection switch, used by both the
+# journey run and the docs-shots pass so the two can never diverge. The
+# archive path runs the binaries `cargo nextest archive` packed (permissions
+# survive inside the tarball); --workspace-remap points nextest's own
+# workspace metadata back at this checkout (compile-time env!(...) paths are
+# unaffected — CI builds the archive on the same runner image + workspace
+# path, which the workflow documents).
+NEXTEST_TARGET=(-p ehrbase-admin-ui --features ssr)
+if [ -n "${UI_E2E_NEXTEST_ARCHIVE:-}" ]; then
+  NEXTEST_TARGET=(--archive-file "$UI_E2E_NEXTEST_ARCHIVE" --workspace-remap "$ROOT")
+fi
 if [ -n "${UI_E2E_SHOTS_ONLY:-}" ]; then
   echo "── journeys skipped (UI_E2E_SHOTS_ONLY)"
 else
@@ -292,7 +320,7 @@ UI_E2E_OIDC_USER="ehrbase-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
 UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
 UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
-  cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 "${NEXTEST_FILTER[@]}"
+  cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 "${NEXTEST_FILTER[@]}"
 fi
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
@@ -310,7 +338,7 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
   UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   UI_E2E_DOCS_SHOTS=1 \
-    cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 -E 'binary(e2e_docs_shots)'
+    cargo nextest run "${NEXTEST_TARGET[@]}" -j 1 -E 'binary(e2e_docs_shots)'
 fi
 
 # ── 7. Nothing may have leaked into the checkout ─────────────────────────────
