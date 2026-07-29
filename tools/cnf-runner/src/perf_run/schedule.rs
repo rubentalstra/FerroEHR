@@ -512,6 +512,7 @@ mod tests {
             principals
                 .with_unauthenticated(client.clone())
                 .with_readonly(client.clone())
+                .with_admin(client.clone())
                 .with_smart_platform(client)
         } else {
             principals
