@@ -124,32 +124,52 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 ### PERF-hospital_sim-class_POC — class POC · EARNED
 
-Offered load sustained: 2.03/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2)
+Offered load sustained: 2.04/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2, the SMART resource-server posture (docker/sut-smart.yml overlays the base stack) with the external-terminology profile composed beside it (a seeded HAPI FHIR R4 server, docker compose --profile terminology + docker/sut-terminology.yml, fail-open); alongside it a second deployment of the same image in the openPGP version-signing posture (project ehrbase-rs-cnf-pgp, docker/sut-signing-pgp.yml + docker/sut-terminology-failclosed.yml + docker/sut-pgp-parallel.yml, host port 8081) declared as the sut_pgp instance, which carries the fail-closed terminology posture — the measured-performance stage drives the primary deployment alone)
 
 | Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| adhoc_query | 953 | 0 | 23.1 | 29.3 | 41.3 |
-| composition_commit | 315 | 0 | 38.0 | 74.6 | 101.4 |
-| composition_delete | 4 | 0 | 21.0 | 28.3 | 28.3 |
-| composition_read | 1906 | 0 | 18.7 | 24.8 | 31.8 |
-| composition_read_current | 1072 | 0 | 18.3 | 24.1 | 31.6 |
-| composition_revision_history | 1029 | 0 | 13.8 | 17.8 | 25.6 |
-| composition_update | 77 | 0 | 32.8 | 46.7 | 56.0 |
-| contribution_commit | 52 | 0 | 61.1 | 93.6 | 108.1 |
-| contribution_read | 110 | 0 | 16.3 | 20.4 | 23.3 |
-| directory_create | 13 | 0 | 14.7 | 17.7 | 20.4 |
-| directory_read | 967 | 0 | 14.0 | 18.5 | 25.7 |
-| directory_update | 13 | 0 | 21.3 | 25.2 | 26.8 |
-| ehr_create | 13 | 0 | 18.6 | 27.8 | 29.9 |
-| ehr_read | 98 | 0 | 13.7 | 19.2 | 22.0 |
-| ehr_status_read | 26 | 0 | 17.4 | 20.7 | 22.8 |
-| ehr_status_update | 26 | 0 | 25.7 | 34.1 | 39.5 |
-| stored_query_execute | 204 | 0 | 29.3 | 35.6 | 44.7 |
-| tags_put | 34 | 0 | 19.3 | 24.4 | 32.8 |
-| tags_read | 34 | 0 | 14.9 | 18.5 | 20.6 |
-| template_get | 85 | 0 | 50.3 | 76.8 | 95.9 |
-| template_list | 85 | 0 | 43.8 | 62.2 | 80.4 |
-| ward_query | 204 | 0 | 23.0 | 30.1 | 41.3 |
+| adhoc_query | 792 | 0 | 29.1 | 37.6 | 63.6 |
+| admin_contribution_report | 60 | 0 | 158.6 | 176.3 | 268.8 |
+| analytics_query | 23 | 0 | 61.6 | 75.6 | 196.6 |
+| archetype_adl2_list | 60 | 0 | 12.6 | 17.7 | 28.4 |
+| composition_commit | 280 | 0 | 50.3 | 106.2 | 213.6 |
+| composition_commit_flat | 7 | 0 | 41.7 | 52.5 | 52.5 |
+| composition_delete | 4 | 0 | 27.7 | 35.2 | 35.2 |
+| composition_read | 1583 | 0 | 24.2 | 33.2 | 65.8 |
+| composition_read_current | 896 | 0 | 26.5 | 35.9 | 57.3 |
+| composition_read_flat | 7 | 0 | 16.7 | 24.6 | 24.6 |
+| composition_revision_history | 889 | 0 | 14.0 | 20.6 | 31.2 |
+| composition_update | 68 | 0 | 46.3 | 67.3 | 239.2 |
+| composition_version_read | 30 | 0 | 28.1 | 35.1 | 48.7 |
+| contribution_commit | 48 | 0 | 53.8 | 138.0 | 187.1 |
+| contribution_read | 82 | 0 | 19.6 | 28.0 | 59.8 |
+| directory_create | 12 | 0 | 25.5 | 39.6 | 86.5 |
+| directory_read | 803 | 0 | 17.0 | 24.1 | 40.0 |
+| directory_update | 12 | 0 | 28.5 | 34.1 | 41.9 |
+| ehr_create | 12 | 0 | 28.0 | 32.3 | 33.2 |
+| ehr_extract_export | 792 | 0 | 148.6 | 181.6 | 267.5 |
+| ehr_read | 72 | 0 | 17.5 | 25.1 | 36.5 |
+| ehr_status_read | 24 | 0 | 16.0 | 23.1 | 25.1 |
+| ehr_status_update | 24 | 0 | 21.2 | 36.1 | 55.0 |
+| party_create | 6 | 0 | 21.5 | 28.0 | 28.0 |
+| party_read | 6 | 0 | 15.9 | 24.2 | 24.2 |
+| party_relationship_create | 6 | 0 | 25.5 | 30.0 | 30.0 |
+| party_relationship_read | 6 | 0 | 10.8 | 17.0 | 17.0 |
+| party_update | 6 | 0 | 15.3 | 26.8 | 26.8 |
+| readonly_write_denied | 7 | 0 | 29.9 | 45.6 | 45.6 |
+| smart_configuration_read | 7 | 0 | 14.9 | 24.0 | 24.0 |
+| stored_query_execute | 180 | 0 | 41.0 | 55.4 | 102.7 |
+| system_options | 7 | 0 | 10.4 | 17.6 | 17.6 |
+| tags_put | 30 | 0 | 23.5 | 32.7 | 40.6 |
+| tags_read | 30 | 0 | 17.4 | 26.0 | 38.1 |
+| tdd_import | 7 | 0 | 34.8 | 60.3 | 60.3 |
+| template_adl2_list | 61 | 0 | 13.1 | 18.6 | 54.1 |
+| template_example | 60 | 0 | 29.7 | 101.9 | 261.0 |
+| template_get | 60 | 0 | 64.2 | 134.4 | 239.6 |
+| template_list | 60 | 0 | 53.1 | 80.4 | 90.3 |
+| terminology_query | 23 | 0 | 19.0 | 25.9 | 72.8 |
+| unauthenticated_probe | 7 | 0 | 17.9 | 22.8 | 22.8 |
+| ward_query | 180 | 0 | 27.7 | 37.6 | 71.4 |
 
 Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
 
