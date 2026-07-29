@@ -460,9 +460,9 @@ fn party_suffixes(node: &WebTemplateNode) -> Vec<&str> {
 /// A slot an OPT narrows to `PARTY_RELATED` is a party LEAF, exactly like one
 /// left at `PARTY_PROXY`/`PARTY_IDENTIFIED`: master05 gives all three subtypes
 /// their own mapping table and they share the party suffix rows. The subtype's
-/// extra `relationship` is a DV_CODED_TEXT SUB-PATH (master05 §"PARTY_RELATED
+/// extra `relationship` is a `DV_CODED_TEXT` SUB-PATH (master05 §"`PARTY_RELATED`
 /// performer": "the `relationship` attribute is emitted as a sub-path under the
-/// participation, with the standard DV_CODED_TEXT suffixes"), so it is a CHILD
+/// participation, with the standard `DV_CODED_TEXT` suffixes"), so it is a CHILD
 /// of the party node — never a reason to demote the party to an inputless
 /// container, which is the divergence this asserts against.
 #[test]

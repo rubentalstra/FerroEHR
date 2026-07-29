@@ -20,7 +20,7 @@
 //! (a `CONSTRAINT_REF` is "a proxy for a set of constraints … expressed in the
 //! binding of the constraint reference (e.g. 'ac0004') to a query"), and the
 //! ac-code → query map is the ontology's `constraint_bindings`
-//! (`AM/docs/ADL1.4/master08-adl.adoc` §Constraint_bindings).
+//! (`AM/docs/ADL1.4/master08-adl.adoc` §`Constraint_bindings`).
 
 use std::path::PathBuf;
 

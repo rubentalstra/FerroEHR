@@ -177,7 +177,7 @@ fn set_write_headers(resp: &mut Response, base: &str, segment: &str, meta: Optio
 /// §`REVISION_HISTORY`). A `VERSIONED_OBJECT` container body exposes no
 /// commit audit — which is why the container READ does not use this seam:
 /// its `Last-Modified` rides the service metadata (the version spine's
-/// newest commit instant, overview §"ETag and Last-Modified").
+/// newest commit instant, overview §"`ETag` and Last-Modified").
 fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMeta {
     let uid = body["uid"]["value"]
         .as_str()

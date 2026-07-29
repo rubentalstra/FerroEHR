@@ -357,35 +357,7 @@ pub fn operation_binding_schema() -> Value {
                     "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN }
                 }
             },
-            "request": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["method", "path"],
-                "properties": {
-                    "method": { "enum": tokens(HttpMethod::ALL) },
-                    "path": { "type": "string", "pattern": "^/" },
-                    "query": {
-                        "type": "object",
-                        "additionalProperties": { "oneOf": [
-                            { "type": "string" },
-                            { "type": "array", "minItems": 1, "items": { "type": "string" },
-                              "description": "The repeated (RFC 6570 exploded, {?p*}) form: one name=value pair per member, unbound optional members absent" }
-                        ] }
-                    },
-                    "body": { "oneOf": [
-                        { "type": "string" },
-                        { "type": "object",
-                          "additionalProperties": false,
-                          "required": ["from_capture", "set"],
-                          "properties": {
-                              "from_capture": { "type": "string", "pattern": IDENT_PATTERN },
-                              "set": { "type": "object", "minProperties": 1 }
-                          } },
-                        { "type": "object", "not": { "required": ["from_capture"] } }
-                    ] },
-                    "headers": { "type": "object", "additionalProperties": { "type": "string" } }
-                }
-            },
+            "request": binding_request_def(),
             "formats": { "type": "array", "items": { "enum": tokens(FormatName::ALL) } },
             "format_headers": {
                 "type": "object",
@@ -395,27 +367,7 @@ pub fn operation_binding_schema() -> Value {
                     "additionalProperties": { "type": "string" }
                 }
             },
-            "outcomes": {
-                "type": "object",
-                "minProperties": 1,
-                "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
-                "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["status"],
-                    "properties": {
-                        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
-                        "alt_status": {
-                            "type": "array",
-                            "minItems": 1,
-                            "items": { "type": "integer", "minimum": 100, "maximum": 599 },
-                            "description": "Overview-permitted additional non-conflicting status codes beyond the OAS enumeration (ITS-REST Requests_and_responses §HTTP status codes)"
-                        },
-                        "headers": { "type": "object", "additionalProperties": header_expectation_def() },
-                        "body": { "enum": BODY_SELECTOR_TOKENS }
-                    }
-                }
-            },
+            "outcomes": binding_outcomes_def(),
             "captures": {
                 "type": "object",
                 "propertyNames": { "pattern": IDENT_PATTERN },
@@ -432,6 +384,68 @@ pub fn operation_binding_schema() -> Value {
                 }
             },
             "server_assigned": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+    })
+}
+
+/// The `request` member of an operation binding (§ wire layer) — request
+/// construction: method, templated path, RFC 6570 query, body source,
+/// header templates.
+fn binding_request_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["method", "path"],
+        "properties": {
+            "method": { "enum": tokens(HttpMethod::ALL) },
+            "path": { "type": "string", "pattern": "^/" },
+            "query": {
+                "type": "object",
+                "additionalProperties": { "oneOf": [
+                    { "type": "string" },
+                    { "type": "array", "minItems": 1, "items": { "type": "string" },
+                      "description": "The repeated (RFC 6570 exploded, {?p*}) form: one name=value pair per member, unbound optional members absent" }
+                ] }
+            },
+            "body": { "oneOf": [
+                { "type": "string" },
+                { "type": "object",
+                  "additionalProperties": false,
+                  "required": ["from_capture", "set"],
+                  "properties": {
+                      "from_capture": { "type": "string", "pattern": IDENT_PATTERN },
+                      "set": { "type": "object", "minProperties": 1 }
+                  } },
+                { "type": "object", "not": { "required": ["from_capture"] } }
+            ] },
+            "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+    })
+}
+
+/// The `outcomes` member of an operation binding — outcome kind → wire
+/// expectation (status, permitted alternates, header matchers, body
+/// selector).
+fn binding_outcomes_def() -> Value {
+    json!({
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status"],
+            "properties": {
+                "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                "alt_status": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": { "type": "integer", "minimum": 100, "maximum": 599 },
+                    "description": "Overview-permitted additional non-conflicting status codes beyond the OAS enumeration (ITS-REST Requests_and_responses §HTTP status codes)"
+                },
+                "headers": { "type": "object", "additionalProperties": header_expectation_def() },
+                "body": { "enum": BODY_SELECTOR_TOKENS }
+            }
         }
     })
 }
