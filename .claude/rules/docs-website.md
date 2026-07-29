@@ -42,6 +42,14 @@ The `/phase-done` checklist enforces it at phase close.
 - Callouts: mdBook 0.5 native `> [!NOTE]` / `[!WARNING]` / `[!TIP]` (no
   plugin syntax). Diagrams: ```mermaid fenced blocks. Long chapters get
   `<!-- toc -->` after the intro paragraph.
+- **Math: `$…$` inline, `$$…$$` display** (mdbook-katex, pre-rendered at
+  build time — no client JS, no CDN; the KaTeX CSS/fonts are self-hosted at
+  `website/book/src/katex/`, version-locked to the renderer — see
+  `website/book/KATEX-PROVENANCE.md`). Fenced code and inline code are never
+  processed, so shell `$VAR` and Argon2 `$argon2id$…` strings are safe; a
+  literal dollar in PROSE must be escaped `\$`. Use math for actual
+  formulas (arrival schedules, derivations, bounds), not for every symbol —
+  a ratio like 10:1 reads fine as prose.
 - Every endpoint, header, status code, and config key must be verified
   against the code or the vendored OAS before it is written down.
 
