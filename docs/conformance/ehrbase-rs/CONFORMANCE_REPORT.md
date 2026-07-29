@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 704 |
+| passed | 804 |
 | failed | 0 |
-| errored | 0 |
+| errored | 4 |
 | skipped | 0 |
-| not_applicable | 63 |
-| total | 767 |
+| not_applicable | 37 |
+| total | 845 |
 
 ## By chapter
 
@@ -20,32 +20,32 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 314 | 0 | 0 | 11 |
-| — EHR resource | 25 | 0 | 0 | 1 |
-| — EHR_STATUS | 46 | 0 | 0 | 1 |
-| — COMPOSITION | 89 | 0 | 0 | 0 |
-| — DIRECTORY | 63 | 0 | 0 | 4 |
+| **EHR** | 309 | 0 | 4 | 18 |
+| — EHR resource | 24 | 0 | 0 | 2 |
+| — EHR_STATUS | 42 | 0 | 0 | 5 |
+| — COMPOSITION | 91 | 0 | 4 | 0 |
+| — DIRECTORY | 61 | 0 | 0 | 6 |
 | — CONTRIBUTION | 55 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
-| **Definitions** | 71 | 0 | 0 | 17 |
-| — ADL 1.4 templates | 22 | 0 | 0 | 6 |
-| — ADL 2 artefacts | 21 | 0 | 0 | 8 |
+| **Definitions** | 91 | 0 | 0 | 10 |
+| — ADL 1.4 templates | 33 | 0 | 0 | 5 |
+| — ADL 2 artefacts | 30 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
-| **Query** | 36 | 0 | 0 | 0 |
-| — Ad-hoc AQL | 25 | 0 | 0 | 0 |
+| **Query** | 40 | 0 | 0 | 0 |
+| — Ad-hoc AQL | 29 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
-| **Demographic** | 68 | 0 | 0 | 2 |
-| — Parties | 47 | 0 | 0 | 1 |
-| — Party relationships | 15 | 0 | 0 | 0 |
+| **Demographic** | 68 | 0 | 0 | 4 |
+| — Parties | 45 | 0 | 0 | 3 |
+| — Party relationships | 17 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 0 | 0 | 0 | 14 |
-| — EHR Extract | 0 | 0 | 0 | 10 |
-| — TDD | 0 | 0 | 0 | 4 |
-| **Admin** | 9 | 0 | 0 | 16 |
-| — Admin service | 9 | 0 | 0 | 10 |
-| — Archive | 0 | 0 | 0 | 4 |
-| — Dump & load | 0 | 0 | 0 | 2 |
+| **Messaging** | 36 | 0 | 0 | 0 |
+| — EHR Extract | 20 | 0 | 0 | 0 |
+| — TDD | 16 | 0 | 0 | 0 |
+| **Admin** | 54 | 0 | 0 | 2 |
+| — Admin service | 24 | 0 | 0 | 2 |
+| — Archive | 15 | 0 | 0 | 0 |
+| — Dump & load | 15 | 0 | 0 | 0 |
 | **System** | 1 | 0 | 0 | 0 |
 | — Conformance manifest | 1 | 0 | 0 | 0 |
 | **Content validation** | 123 | 0 | 0 | 0 |
@@ -76,39 +76,39 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
+| Adl14ArchetypeProvisioning | pass | 11 | 0 | 0 | 0 |
 | Adl14OptProvisioning | pass | 19 | 0 | 0 | 5 |
-| Adl2ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
-| Adl2OptProvisioning | pass | 23 | 0 | 0 | 6 |
+| Adl2ArchetypeProvisioning | pass | 9 | 0 | 0 | 0 |
+| Adl2OptProvisioning | pass | 27 | 0 | 0 | 2 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 21 | 0 | 0 | 2 |
 | EhrStatus | pass | 41 | 0 | 0 | 5 |
-| CompositionOps | pass | 27 | 0 | 0 | 2 |
+| CompositionOps | pass | 29 | 0 | 0 | 0 |
 | DirectoryOps | pass | 61 | 0 | 0 | 8 |
 | ChangeSets | pass | 48 | 0 | 0 | 5 |
 | Versioning | pass | 59 | 0 | 0 | 0 |
-| ArchetypeValidation | pass | 121 | 0 | 0 | 0 |
+| ArchetypeValidation | INCONCLUSIVE (errored rows — never green by absorption) | 121 | 0 | 4 | 0 |
 | PartyOperations | pass | 48 | 0 | 0 | 4 |
-| PartyRelationshipOperations | pass | 15 | 0 | 0 | 0 |
+| PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
 | AqlBasic | pass | 19 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 2 | 0 | 0 | 0 |
-| AqlTerminology | pass | 1 | 0 | 0 | 0 |
-| ActivityReport | not evidenced | 0 | 0 | 0 | 8 |
+| AqlTerminology | pass | 5 | 0 | 0 | 0 |
+| ActivityReport | pass | 15 | 0 | 0 | 0 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
-| EhrDumpLoad | not evidenced | 0 | 0 | 0 | 7 |
+| EhrDumpLoad | pass | 15 | 0 | 0 | 0 |
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
-| EhrArchive | not evidenced | 0 | 0 | 0 | 2 |
-| DemographicArchive | not evidenced | 0 | 0 | 0 | 2 |
-| EhrExtract | not evidenced | 0 | 0 | 0 | 14 |
-| Tds | not evidenced | 0 | 0 | 0 | 9 |
+| EhrArchive | pass | 7 | 0 | 0 | 0 |
+| DemographicArchive | pass | 8 | 0 | 0 | 0 |
+| EhrExtract | pass | 20 | 0 | 0 | 0 |
+| Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
 | DemographicApi | pass | 26 | 0 | 0 | 1 |
 | QueryApi | pass | 20 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
-| MessageApi | not evidenced | 0 | 0 | 0 | 1 |
+| MessageApi | pass | 4 | 0 | 0 | 0 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 32 | 0 | 0 | 0 |
 | Signing | pass | 10 | 0 | 0 | 2 |
@@ -155,72 +155,46 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 695 of 788 selected cases driven.
+Coverage: 808 of 845 selected cases driven.
 
 Not-executed verdicts (each cited):
 
 | Case | Citation |
 | --- | --- |
-| I_ADMIN_ARCHIVE.archive_ehrs-archive_selected | I_ADMIN_ARCHIVE.archive_ehrs: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown | I_ADMIN_ARCHIVE.archive_ehrs: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_parties-archive_selected | I_ADMIN_ARCHIVE.archive_parties: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_parties-archive_unknown | I_ADMIN_ARCHIVE.archive_parties: AMB-33 |
-| I_ADMIN_DUMP_LOAD.export_ehrs-export_all | I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33 |
-| I_ADMIN_DUMP_LOAD.export_ehrs-export_formats | I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33 |
-| I_ADMIN_SERVICE.composition_version_count-all | I_ADMIN_SERVICE.composition_version_count: AMB-33 |
-| I_ADMIN_SERVICE.composition_version_count-time_range | I_ADMIN_SERVICE.composition_version_count: AMB-33 |
-| I_ADMIN_SERVICE.contribution_count-all | I_ADMIN_SERVICE.contribution_count: AMB-33 |
-| I_ADMIN_SERVICE.contribution_count-time_range | I_ADMIN_SERVICE.contribution_count: AMB-33 |
-| I_ADMIN_SERVICE.list_contributions-all | I_ADMIN_SERVICE.list_contributions: AMB-33 |
-| I_ADMIN_SERVICE.list_contributions-time_range | I_ADMIN_SERVICE.list_contributions: AMB-33 |
 | I_ADMIN_SERVICE.physical_party_delete-delete_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
 | I_ADMIN_SERVICE.physical_party_delete-delete_non_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
-| I_ADMIN_SERVICE.versioned_composition_count-all | I_ADMIN_SERVICE.versioned_composition_count: AMB-33 |
-| I_ADMIN_SERVICE.versioned_composition_count-time_range | I_ADMIN_SERVICE.versioned_composition_count: AMB-33 |
 | I_DEFINITION_ADL14.delete_opt-delete_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_latest_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_non_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_specific_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEFINITION_ADL14.list_archetypes-unrealized | I_DEFINITION_ADL14.list_archetypes: AMB-41 |
-| I_DEFINITION_ADL2.archetypes_count-unrealized | I_DEFINITION_ADL2.archetypes_count: AMB-37 |
-| I_DEFINITION_ADL2.artefacts_count-unrealized | I_DEFINITION_ADL2.artefacts_count: AMB-37 |
-| I_DEFINITION_ADL2.delete_artefact-existing | I_DEFINITION_ADL2.delete_artefact: AMB-37 |
-| I_DEFINITION_ADL2.delete_artefact-non_existing | I_DEFINITION_ADL2.delete_artefact: AMB-37 |
-| I_DEFINITION_ADL2.list_archetypes-unrealized | I_DEFINITION_ADL2.list_archetypes: AMB-37 |
-| I_DEFINITION_ADL2.list_artefacts-unrealized | I_DEFINITION_ADL2.list_artefacts: AMB-37 |
 | I_DEFINITION_ADL2.opts_count-unrealized | I_DEFINITION_ADL2.opts_count: AMB-37 |
 | I_DEFINITION_ADL2.templates_count-unrealized | I_DEFINITION_ADL2.templates_count: AMB-37 |
 | I_DEFINITION_QUERY.delete_query-delete_existing | I_DEFINITION_QUERY.delete_query: AMB-127 |
 | I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
 | I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
+| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-post_commit | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
+| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_versioned_directory-bad_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-empty_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
-| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec | I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result | I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing | I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown | I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-duplicate | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-new | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-with_id | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
+| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_TDD_SERVICE.import_tdd-invalid | I_TDD_SERVICE.import_tdd: AMB-34 |
-| I_TDD_SERVICE.import_tdd-valid | I_TDD_SERVICE.import_tdd: AMB-34 |
-| I_TDD_SERVICE.import_tdds-bulk_invalid | I_TDD_SERVICE.import_tdds: AMB-34 |
-| I_TDD_SERVICE.import_tdds-bulk_valid | I_TDD_SERVICE.import_tdds: AMB-34 |
 | SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SIG-VERSION-directory_signature_present | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | SIG-VERSION-directory_verifiable | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |

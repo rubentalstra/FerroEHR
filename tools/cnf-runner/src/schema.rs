@@ -981,47 +981,7 @@ pub fn ixit_schema() -> Value {
         "additionalProperties": false,
         "required": ["instances"],
         "properties": {
-            "instances": {
-                "type": "object",
-                "minProperties": 1,
-                "propertyNames": { "pattern": IDENT_PATTERN },
-                "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["base_url", "auth"],
-                    "properties": {
-                        "base_url": { "type": "string", "minLength": 1 },
-                        "auth": {
-                            "type": "object",
-                            "required": ["mode"],
-                            "oneOf": [
-                                { "additionalProperties": false, "required": ["mode"],
-                                  "properties": { "mode": { "const": "none" } } },
-                                { "additionalProperties": false,
-                                  "required": ["mode", "user_env", "password_env"],
-                                  "properties": { "mode": { "const": "basic" },
-                                                  "user_env": { "type": "string", "minLength": 1 },
-                                                  "password_env": { "type": "string", "minLength": 1 } } },
-                                { "additionalProperties": false, "required": ["mode", "token_env"],
-                                  "properties": { "mode": { "const": "bearer" },
-                                                  "token_env": { "type": "string", "minLength": 1 } } },
-                                { "additionalProperties": false, "required": ["mode"],
-                                  "properties": { "mode": { "const": "bearer_mint" },
-                                                  "subject": { "type": "string", "minLength": 1 },
-                                                  "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-                                                  "default_scopes": { "type": "array", "items": { "type": "string" } } } }
-                            ]
-                        },
-                        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
-                        "signing": signing_def(
-                            "THIS instance's version-signing posture, when it differs from the party default (RM common master06 §Digital Signature: the mode is a deployment fact, and a deployment runs one). A party claiming both modes declares two deployments as two instances, each with its own block; every signature check resolves instance-first, party default second. Absent => the top-level `signing` applies."
-                        ),
-                        "terminology": terminology_def(
-                            "THIS instance's terminology posture, when it differs from the party default. The unresolvable-value-set branch is one switch per running deployment, so a party exercising both runs two deployments and declares each one's posture on its own instance — the same law the `signing` block follows. Absent => the top-level `terminology` applies."
-                        )
-                    }
-                }
-            },
+            "instances": ixit_instances_def(),
             "environment": environment_def(),
             "containers": {
                 "type": "object",
@@ -1048,32 +1008,87 @@ pub fn ixit_schema() -> Value {
             "terminology": terminology_def(
                 "The party's DEFAULT terminology posture: the terminology query servers this deployment is wired to (BASE architecture_overview master12 §Binding Terminology Value-sets to Archetypes — the bound value set is resolved by a server outside the CDR), which namespaces each answers for, and the unresolvable-value-set branch it realizes. Declared here because released ITS-REST 1.1.0 surfaces no terminology resource, so nothing on the wire discloses any of it; absent => every terminology-dependent case is not-applicable with that citation."
             ),
-            "smart": {
-                "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",
+            "smart": ixit_smart_def()
+        }
+    })
+}
+
+/// The `instances` member of the ixit — the named SUT deployments/principals
+/// (base URL + auth mode with credentials by env-var reference, never
+/// inline), each optionally carrying its own `signing`/`terminology` posture
+/// (instance-first resolution, the party default as fallback).
+fn ixit_instances_def() -> Value {
+    json!({
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": IDENT_PATTERN },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["base_url", "auth"],
+            "properties": {
+                "base_url": { "type": "string", "minLength": 1 },
+                "auth": {
+                    "type": "object",
+                    "required": ["mode"],
+                    "oneOf": [
+                        { "additionalProperties": false, "required": ["mode"],
+                          "properties": { "mode": { "const": "none" } } },
+                        { "additionalProperties": false,
+                          "required": ["mode", "user_env", "password_env"],
+                          "properties": { "mode": { "const": "basic" },
+                                          "user_env": { "type": "string", "minLength": 1 },
+                                          "password_env": { "type": "string", "minLength": 1 } } },
+                        { "additionalProperties": false, "required": ["mode", "token_env"],
+                          "properties": { "mode": { "const": "bearer" },
+                                          "token_env": { "type": "string", "minLength": 1 } } },
+                        { "additionalProperties": false, "required": ["mode"],
+                          "properties": { "mode": { "const": "bearer_mint" },
+                                          "subject": { "type": "string", "minLength": 1 },
+                                          "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                                          "default_scopes": { "type": "array", "items": { "type": "string" } } } }
+                    ]
+                },
+                "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+                "signing": signing_def(
+                    "THIS instance's version-signing posture, when it differs from the party default (RM common master06 §Digital Signature: the mode is a deployment fact, and a deployment runs one). A party claiming both modes declares two deployments as two instances, each with its own block; every signature check resolves instance-first, party default second. Absent => the top-level `signing` applies."
+                ),
+                "terminology": terminology_def(
+                    "THIS instance's terminology posture, when it differs from the party default. The unresolvable-value-set branch is one switch per running deployment, so a party exercising both runs two deployments and declares each one's posture on its own instance — the same law the `signing` block follows. Absent => the top-level `terminology` applies."
+                )
+            }
+        }
+    })
+}
+
+/// The `smart` member of the ixit — the party's SMART App Launch lane
+/// (ITS-REST `docs/smart_app_launch`): the Platform instance + the static
+/// test issuer the runner mints per-step scoped tokens against.
+fn ixit_smart_def() -> Value {
+    json!({
+        "description": "The party's SMART App Launch lane (ITS-REST docs/smart_app_launch). Present => the deployment runs the CDR's SMART resource-server role and trusts the declared static test issuer, so the runner may mint per-step scoped access tokens (the CDR never issues them — master06 §Supported Authentication Flows makes that the Authorization Server's duty, and the conformance stack runs none). Absent => every SMART case is not-applicable with that citation.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["platform_instance", "mint"],
+        "properties": {
+            "platform_instance": {
+                "description": "The instance whose base_url is the SMART Platform base URL — master04 §Service Discovery serves /.well-known/smart-configuration relative to it, not to the openEHR REST base the other instances address.",
+                "type": "string",
+                "pattern": IDENT_PATTERN
+            },
+            "mint": {
+                "description": "The static test issuer the `bearer_mint` instances sign RS256 access tokens with. Committed test material, never production key material.",
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["platform_instance", "mint"],
+                "required": ["issuer", "subject", "key_file", "kid", "ttl_seconds"],
                 "properties": {
-                    "platform_instance": {
-                        "description": "The instance whose base_url is the SMART Platform base URL — master04 §Service Discovery serves /.well-known/smart-configuration relative to it, not to the openEHR REST base the other instances address.",
-                        "type": "string",
-                        "pattern": IDENT_PATTERN
-                    },
-                    "mint": {
-                        "description": "The static test issuer the `bearer_mint` instances sign RS256 access tokens with. Committed test material, never production key material.",
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": ["issuer", "subject", "key_file", "kid", "ttl_seconds"],
-                        "properties": {
-                            "issuer": { "type": "string", "minLength": 1 },
-                            "audience": { "type": "string", "minLength": 1 },
-                            "subject": { "type": "string", "minLength": 1 },
-                            "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-                            "key_file": { "type": "string", "minLength": 1 },
-                            "kid": { "type": "string", "minLength": 1 },
-                            "ttl_seconds": { "type": "integer", "minimum": 1 }
-                        }
-                    }
+                    "issuer": { "type": "string", "minLength": 1 },
+                    "audience": { "type": "string", "minLength": 1 },
+                    "subject": { "type": "string", "minLength": 1 },
+                    "roles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                    "key_file": { "type": "string", "minLength": 1 },
+                    "kid": { "type": "string", "minLength": 1 },
+                    "ttl_seconds": { "type": "integer", "minimum": 1 }
                 }
             }
         }

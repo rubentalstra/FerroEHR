@@ -3,7 +3,7 @@
   "capabilities": [
     [
       "Adl14ArchetypeProvisioning",
-      "not_evidenced"
+      "passed"
     ],
     [
       "Adl14OptProvisioning",
@@ -11,7 +11,7 @@
     ],
     [
       "Adl2ArchetypeProvisioning",
-      "not_evidenced"
+      "passed"
     ],
     [
       "Adl2OptProvisioning",
@@ -51,7 +51,7 @@
     ],
     [
       "ArchetypeValidation",
-      "passed"
+      "inconclusive"
     ],
     [
       "PartyOperations",
@@ -79,7 +79,7 @@
     ],
     [
       "ActivityReport",
-      "not_evidenced"
+      "passed"
     ],
     [
       "PhysicalDeletion",
@@ -87,7 +87,7 @@
     ],
     [
       "EhrDumpLoad",
-      "not_evidenced"
+      "passed"
     ],
     [
       "BulkEhrLoad",
@@ -95,19 +95,19 @@
     ],
     [
       "EhrArchive",
-      "not_evidenced"
+      "passed"
     ],
     [
       "DemographicArchive",
-      "not_evidenced"
+      "passed"
     ],
     [
       "EhrExtract",
-      "not_evidenced"
+      "passed"
     ],
     [
       "Tds",
-      "not_evidenced"
+      "passed"
     ],
     [
       "DefinitionApi",
@@ -131,7 +131,7 @@
     ],
     [
       "MessageApi",
-      "not_evidenced"
+      "passed"
     ],
     [
       "SystemApi",
@@ -178,10 +178,10 @@
     [
       "Adl14ArchetypeProvisioning",
       {
-        "passed": 0,
+        "passed": 11,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 6
+        "unevidenced": 0
       }
     ],
     [
@@ -196,19 +196,19 @@
     [
       "Adl2ArchetypeProvisioning",
       {
-        "passed": 0,
+        "passed": 9,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 6
+        "unevidenced": 0
       }
     ],
     [
       "Adl2OptProvisioning",
       {
-        "passed": 23,
+        "passed": 27,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 6
+        "unevidenced": 2
       }
     ],
     [
@@ -250,10 +250,10 @@
     [
       "CompositionOps",
       {
-        "passed": 27,
+        "passed": 29,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 2
+        "unevidenced": 0
       }
     ],
     [
@@ -288,7 +288,7 @@
       {
         "passed": 121,
         "failed": 0,
-        "inconclusive": 0,
+        "inconclusive": 4,
         "unevidenced": 0
       }
     ],
@@ -304,7 +304,7 @@
     [
       "PartyRelationshipOperations",
       {
-        "passed": 15,
+        "passed": 17,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -340,7 +340,7 @@
     [
       "AqlTerminology",
       {
-        "passed": 1,
+        "passed": 5,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -349,10 +349,10 @@
     [
       "ActivityReport",
       {
-        "passed": 0,
+        "passed": 15,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 8
+        "unevidenced": 0
       }
     ],
     [
@@ -367,10 +367,10 @@
     [
       "EhrDumpLoad",
       {
-        "passed": 0,
+        "passed": 15,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 7
+        "unevidenced": 0
       }
     ],
     [
@@ -385,37 +385,37 @@
     [
       "EhrArchive",
       {
-        "passed": 0,
+        "passed": 7,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 2
+        "unevidenced": 0
       }
     ],
     [
       "DemographicArchive",
       {
-        "passed": 0,
+        "passed": 8,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 2
+        "unevidenced": 0
       }
     ],
     [
       "EhrExtract",
       {
-        "passed": 0,
+        "passed": 20,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 14
+        "unevidenced": 0
       }
     ],
     [
       "Tds",
       {
-        "passed": 0,
+        "passed": 16,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 9
+        "unevidenced": 0
       }
     ],
     [
@@ -466,10 +466,10 @@
     [
       "MessageApi",
       {
-        "passed": 0,
+        "passed": 4,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 1
+        "unevidenced": 0
       }
     ],
     [
@@ -566,11 +566,11 @@
   "profiles": [
     [
       "CORE",
-      "pass"
+      "fail"
     ],
     [
       "STANDARD",
-      "pass"
+      "fail"
     ],
     [
       "OPTIONS",
@@ -588,10 +588,10 @@
     }
   ],
   "coverage": {
-    "selected": 788,
-    "driven": 695,
-    "passed": 695,
+    "selected": 845,
+    "driven": 808,
+    "passed": 804,
     "failed": 0,
-    "inconclusive": 0
+    "inconclusive": 4
   }
 }
