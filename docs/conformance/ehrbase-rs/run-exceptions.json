@@ -7,90 +7,6 @@
     }
   },
   {
-    "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_selected",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_ARCHIVE.archive_parties-archive_selected",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_ARCHIVE.archive_parties-archive_unknown",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_all",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_formats",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.composition_version_count-all",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.composition_version_count-time_range",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.contribution_count-all",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.contribution_count: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.contribution_count-time_range",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.contribution_count: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.list_contributions-all",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.list_contributions: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.list_contributions-time_range",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.list_contributions: AMB-33"
-    }
-  },
-  {
     "case": "I_ADMIN_SERVICE.physical_party_delete-delete_existing",
     "exception": {
       "kind": "unrealized",
@@ -102,20 +18,6 @@
     "exception": {
       "kind": "unrealized",
       "detail": "I_ADMIN_SERVICE.physical_party_delete: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.versioned_composition_count-all",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
-    }
-  },
-  {
-    "case": "I_ADMIN_SERVICE.versioned_composition_count-time_range",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
     }
   },
   {
@@ -189,55 +91,6 @@
     }
   },
   {
-    "case": "I_DEFINITION_ADL14.list_archetypes-unrealized",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.archetypes_count-unrealized",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.archetypes_count: AMB-37"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.artefacts_count-unrealized",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.artefacts_count: AMB-37"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.delete_artefact-existing",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.delete_artefact-non_existing",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.list_archetypes-unrealized",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.list_archetypes: AMB-37"
-    }
-  },
-  {
-    "case": "I_DEFINITION_ADL2.list_artefacts-unrealized",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.list_artefacts: AMB-37"
-    }
-  },
-  {
     "case": "I_DEFINITION_ADL2.opts_count-unrealized",
     "exception": {
       "kind": "unrealized",
@@ -273,7 +126,21 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.get_party-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
     "exception": {
       "kind": "unrealized",
       "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
@@ -284,6 +151,13 @@
     "exception": {
       "kind": "unrealized",
       "detail": "option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_DIRECTORY.create_directory-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -315,10 +189,38 @@
     }
   },
   {
+    "case": "I_EHR_DIRECTORY.update_directory-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_SERVICE.create_ehr-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_SERVICE.get_ehr-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
       "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -329,101 +231,17 @@
     }
   },
   {
-    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec",
+    "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
-    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result",
+    "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-duplicate",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-new",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-with_id",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
-    }
-  },
-  {
-    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
-    }
-  },
-  {
-    "case": "I_TDD_SERVICE.import_tdd-invalid",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdd: AMB-34"
-    }
-  },
-  {
-    "case": "I_TDD_SERVICE.import_tdd-valid",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdd: AMB-34"
-    }
-  },
-  {
-    "case": "I_TDD_SERVICE.import_tdds-bulk_invalid",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdds: AMB-34"
-    }
-  },
-  {
-    "case": "I_TDD_SERVICE.import_tdds-bulk_valid",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {

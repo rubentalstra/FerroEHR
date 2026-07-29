@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR CNF STANDARD",
-  "message": "PASS 14/14 capabilities",
-  "color": "brightgreen"
+  "message": "FAIL 12/13 capabilities",
+  "color": "red"
 }

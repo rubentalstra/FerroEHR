@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "6046ad1106580c5b",
+  "ixit_digest": "e3e980f7315ba23c",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
     {
@@ -60,87 +60,255 @@
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_selected",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_twice",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-empty_list",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-malformed_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_parties-archive_selected",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-archive_twice",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_parties-archive_unknown",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-empty_list",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-malformed_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-relationship_id_refused",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-compression_7z",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-encoding_unrepresentable",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_all",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_formats",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-format_not_a_member",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-logical_format_xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-no_location",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-segment_split_size_non_positive",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_7z",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_zip",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-load_archive",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-logical_format_xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-no_location",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.composition_version_count-all",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.composition_version_count-interval_not_a_pair",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.composition_version_count-time_range",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.contribution_count-all",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-interval_bound_not_iso",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.contribution_count-time_range",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.list_contributions-all",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.list_contributions-non_content_service",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.list_contributions-service_not_a_member",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.list_contributions-time_range",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_cascade",
@@ -206,20 +374,30 @@
     },
     {
       "case": "I_ADMIN_SERVICE.versioned_composition_count-all",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_ADMIN_SERVICE.versioned_composition_count-interval_lower_after_upper",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_ADMIN_SERVICE.versioned_composition_count-time_range",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-audit_system_id_declared",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-datetime_comma_fraction",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -309,6 +487,38 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_non_member",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_closed",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 422 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Unprocessable Entity\",\"message\":\"unprocessable entity: VTCBK: constraint binding key 'ac0001' is not a defined archetype constraint code (ac-code)\"})"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-version_bare_deprecated",
@@ -496,6 +706,13 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2",
+      "format": "canonical-xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_latest-xml_root_namespace",
       "format": "canonical-xml",
       "status": "passed",
       "rows_driven": 1,
@@ -1847,6 +2064,18 @@
       "citation": "I_EHR_CONTRIBUTION.list_contributions: AMB-22"
     },
     {
+      "case": "I_DEFINITION_ADL14.delete_archetype-existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.delete_archetype-non_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.delete_opt-delete_existing",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -1873,6 +2102,18 @@
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "I_DEFINITION_ADL14.delete_opt: AMB-17"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_archetype-malformed_archetype_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_archetype-non_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-example_detail_levels",
@@ -1936,11 +2177,10 @@
       "rows_total": 1
     },
     {
-      "case": "I_DEFINITION_ADL14.list_archetypes-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
+      "case": "I_DEFINITION_ADL14.list_archetypes-all",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.list_opts-absent_version_latest_only",
@@ -1950,6 +2190,42 @@
     },
     {
       "case": "I_DEFINITION_ADL14.list_opts-version_star_all_versions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-replaces_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-source_round_trip",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-unparseable_source",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-wrong_media",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2015,32 +2291,40 @@
       "rows_total": 3
     },
     {
-      "case": "I_DEFINITION_ADL2.archetypes_count-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.archetypes_count: AMB-37"
+      "case": "I_DEFINITION_ADL2.archetypes_count-empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
-      "case": "I_DEFINITION_ADL2.artefacts_count-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.artefacts_count: AMB-37"
+      "case": "I_DEFINITION_ADL2.artefacts_count-empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL2.delete_artefact-existing",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.delete_artefact-malformed_artefact_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL2.delete_artefact-non_existing",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.delete_artefact-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-example",
@@ -2086,18 +2370,22 @@
       "rows_total": 1
     },
     {
-      "case": "I_DEFINITION_ADL2.list_archetypes-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.list_archetypes: AMB-37"
+      "case": "I_DEFINITION_ADL2.list_archetypes-all",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
-      "case": "I_DEFINITION_ADL2.list_artefacts-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.list_artefacts: AMB-37"
+      "case": "I_DEFINITION_ADL2.list_archetypes-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.list_artefacts-all",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL2.list_matching_artefacts-filter",
@@ -2485,10 +2773,10 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
@@ -2498,6 +2786,18 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-unauthenticated",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2719,10 +3019,10 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
@@ -2968,10 +3268,10 @@
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-xml",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
@@ -3340,10 +3640,10 @@
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-xml",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
@@ -3427,10 +3727,10 @@
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-xml",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
@@ -3553,10 +3853,10 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
@@ -3590,10 +3890,10 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status-at_time_before_first_version",
@@ -3744,10 +4044,10 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-audit_change_type",
@@ -3800,10 +4100,10 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
-      "format": "canonical-xml",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.update_other_details-round_trip",
@@ -3939,101 +4239,219 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
-      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-spec_named_extract_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_extract_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unresolvable_entity",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-malformed_ehr_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-duplicate",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-malformed",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-new",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-with_id",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-second_status",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_TDD_SERVICE.import_tdd-invalid",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-nonconforming_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unknown_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unprovisioned_template",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_TDD_SERVICE.import_tdd-valid",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-atomicity_state_proof",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_TDD_SERVICE.import_tdds-bulk_invalid",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_TDD_SERVICE.import_tdds-bulk_valid",
-      "status": "not_applicable",
-      "rows_driven": 0,
-      "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-empty_batch",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-empty_batch_unknown_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-nonconforming_body",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-unknown_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions",
@@ -4151,6 +4569,30 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_non_member",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
