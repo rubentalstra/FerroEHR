@@ -31,6 +31,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The documentation site renders mathematics.** Formulas on the
+  performance pages (the open-loop arrival schedule, the population-anchored
+  write-rate derivation) are now typeset with KaTeX, pre-rendered to static
+  HTML at build time — pages stay self-contained with no client-side script
+  and no CDN request; the KaTeX stylesheet and fonts are served by the site
+  itself.
 - **Conformance: ADL 1.4 archetype provisioning is now tested rather than
   excused.** openEHR's released REST API defines no ADL 1.4 archetype
   resource, so the capability used to be reported as "excused — unrealized on
