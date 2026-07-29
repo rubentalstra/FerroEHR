@@ -221,6 +221,8 @@ pub async fn empty_db() -> Result<TestDb, TestkitError> {
 /// Create a uniquely named database (a clone of `template`, or empty) and
 /// pool it.
 async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, TestkitError> {
+    // The clone pool's establishment deadline (see the retry loop below).
+    const POOL_DEADLINE: Duration = Duration::from_secs(15);
     let name = fresh_name();
     let mut admin = connect_ready(server).await?;
     if let Some(template) = template {
@@ -250,7 +252,6 @@ async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, Testk
     // dropped before PostgreSQL answered the negotiation). That is server
     // load, not a test defect: retry the ESTABLISHMENT briefly and loudly
     // surface the last error at the deadline. Never a per-test retry.
-    const POOL_DEADLINE: Duration = Duration::from_secs(15);
     let start = SystemTime::now();
     let pool = loop {
         match db::connect(&config).await {
