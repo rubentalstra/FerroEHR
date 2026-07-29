@@ -193,6 +193,72 @@ impl<'de> Deserialize<'de> for PartyRequirement {
     }
 }
 
+/// The `requires.party_relationship` precondition.
+///
+/// A demographic `PARTY_RELATIONSHIP` is precondition STATE exactly as
+/// [`PartyRequirement`] is: the cases that operate ON an existing relationship
+/// — or, like the admin archive's party-only selection, on the boundary
+/// between a relationship and a party — must not drive its creation in the
+/// flow, or the realization they evidence stops being the one they are about.
+///
+/// The relationship is provisioned between two REAL parties. RM demographic
+/// `master02-demographic_package.adoc` §Party Relationships fixes what the
+/// endpoints are: "`PARTY_RELATIONSHIP._source_` and `_target_` are
+/// represented by references … `OBJECT_REFs` containing `HIER_OBJECT_IDs` to
+/// denote the Version container of a Party, rather than `OBJECT_VERSION_IDs`"
+/// — so provisioning creates each endpoint party first and writes its
+/// `VERSIONED_OBJECT` uid into the corresponding `PARTY_REF`, rather than
+/// committing a relationship whose endpoints name nothing on the server.
+///
+/// The relationship create itself has NO released wire (register AMB-32; the
+/// `party-relationship` `served_extensions` family) — no openEHR spec governs
+/// that route, so the requirement is only usable by a party that serves it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PartyRelationshipRequirement {
+    None,
+    /// A `PARTY_RELATIONSHIP` exists between two provisioned parties (mints
+    /// `${party_relationship_id}`, its `VERSIONED_OBJECT` uid).
+    Exists {
+        /// The corpus payload of the party at the relationship's `source` end.
+        source: CorpusKey,
+        /// The corpus payload of the party at the relationship's `target` end.
+        target: CorpusKey,
+        /// The corpus `PARTY_RELATIONSHIP` payload; its `source`/`target`
+        /// `PARTY_REF` ids are replaced by the two minted party uids.
+        relationship: CorpusKey,
+    },
+}
+
+impl<'de> Deserialize<'de> for PartyRelationshipRequirement {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Qualified {
+            source: CorpusKey,
+            target: CorpusKey,
+            relationship: CorpusKey,
+        }
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Word(String),
+            Qualified(Qualified),
+        }
+        match Raw::deserialize(deserializer)? {
+            Raw::Word(w) if w == "none" => Ok(Self::None),
+            Raw::Word(w) => Err(D::Error::custom(format!(
+                "requires.party_relationship must be `none` or \
+                 {{ source, target, relationship }} corpus keys, got {w:?}"
+            ))),
+            Raw::Qualified(q) => Ok(Self::Exists {
+                source: q.source,
+                target: q.target,
+                relationship: q.relationship,
+            }),
+        }
+    }
+}
+
 /// Typed prerequisites — the schedule's precondition vocabulary. Every
 /// provisioned object mints a named handle usable as a flow variable.
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -214,6 +280,10 @@ pub struct Requires {
     /// `${party_id}`.
     #[serde(default)]
     pub party: Option<PartyRequirement>,
+    /// A demographic `PARTY_RELATIONSHIP` provisioned between two parties
+    /// before the flow; `Exists` mints `${party_relationship_id}`.
+    #[serde(default)]
+    pub party_relationship: Option<PartyRelationshipRequirement>,
     /// Corpus set keys pre-committed into the EHR by the runner (bulk setup
     /// is precondition state, never an un-anchored flow call).
     #[serde(default)]
@@ -243,6 +313,14 @@ impl Requires {
         // a provisioned PARTY publishes its VERSIONED_OBJECT uid
         if matches!(self.party, Some(PartyRequirement::Exists(_)))
             && let Ok(handle) = CaptureName::parse("party_id")
+        {
+            handles.push(handle);
+        }
+        // a provisioned PARTY_RELATIONSHIP publishes its VERSIONED_OBJECT uid
+        if matches!(
+            self.party_relationship,
+            Some(PartyRelationshipRequirement::Exists { .. })
+        ) && let Ok(handle) = CaptureName::parse("party_relationship_id")
         {
             handles.push(handle);
         }
@@ -553,6 +631,52 @@ mod tests {
 
         assert!(serde_json::from_value::<Requires>(serde_json::json!({ "ehr": "maybe" })).is_err());
         assert!(serde_json::from_value::<Requires>(serde_json::json!({ "srv": "empty" })).is_err());
+    }
+
+    #[test]
+    fn a_provisioned_party_relationship_mints_its_container_handle() {
+        let r: Requires = serde_json::from_value(serde_json::json!({
+            "party_relationship": {
+                "source": "cnf.demographic.person.v1",
+                "target": "cnf.demographic.organisation.v1",
+                "relationship": "cnf.demographic.party_relationship.v1"
+            }
+        }))
+        .unwrap();
+        assert!(matches!(
+            r.party_relationship,
+            Some(PartyRelationshipRequirement::Exists { .. })
+        ));
+        assert_eq!(
+            r.minted_handles()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            vec!["party_relationship_id".to_owned()]
+        );
+
+        let r: Requires =
+            serde_json::from_value(serde_json::json!({ "party_relationship": "none" })).unwrap();
+        assert!(matches!(
+            r.party_relationship,
+            Some(PartyRelationshipRequirement::None)
+        ));
+        assert!(r.minted_handles().is_empty());
+
+        // Both ends and the relationship itself are mandatory: a partial block
+        // would provision a relationship with an unresolved endpoint.
+        assert!(
+            serde_json::from_value::<Requires>(serde_json::json!({
+                "party_relationship": { "relationship": "cnf.demographic.party_relationship.v1" }
+            }))
+            .is_err()
+        );
+        assert!(
+            serde_json::from_value::<Requires>(
+                serde_json::json!({ "party_relationship": "cnf.demographic.party_relationship.v1" })
+            )
+            .is_err()
+        );
     }
 
     #[test]
