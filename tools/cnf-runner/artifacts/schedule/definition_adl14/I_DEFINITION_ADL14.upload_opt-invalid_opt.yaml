@@ -23,6 +23,7 @@ test_purpose: "OPTs that parse but are not valid operational templates are rejec
 description: "upload semantically invalid OPTs"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
+  - "AM ADL1.4 master08-adl.adoc §Coded Term Validity (VATDF/VACDF)"
   - "ITS-REST overview Requests_and_responses.md §HTTP status codes"
   - "CNF platform_test_schedule master04 §upload_opt data sets"
 applies: { rm: ">=1.0.2" }
@@ -33,6 +34,13 @@ parameters:
     - { data_set: cnf.opt.invalid.empty_template_id, expected: validation_failed, defect: "empty template_id" }
     - { data_set: cnf.opt.invalid.removed_mandatory, expected: validation_failed, defect: "removed mandatory elements" }
     - { data_set: cnf.opt.invalid.multiple_elements, expected: validation_failed, defect: "multiple elements where upper bound is 1" }
+    # The valid+invalid-twins row (owner hard rule 2026-07-29): the shape the
+    # 2026-07-29 triage adjudicated spec-invalid — a constraint_bindings key
+    # whose ac-code the ontology never DEFINES (ADL1.4 master08-adl.adoc
+    # §Coded Term Validity VATDF/VACDF; master05 §Placeholder Constraints) —
+    # preserved as a refusal row beside its corrected valid twin
+    # (cnf.tpl.dv_coded_text_binding_sct), so a lenient server fails here.
+    - { data_set: cnf.opt.invalid.undefined_constraint_code, expected: validation_failed, defect: "constraint binding key ac0001 is never defined in constraint_definitions" }
 flow:
   - step: 1
     call: upload_opt

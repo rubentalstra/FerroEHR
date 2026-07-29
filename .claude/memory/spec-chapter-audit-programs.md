@@ -12,10 +12,11 @@ Owner directive 2026-07-29: systematic code compliance is driven as **one
 milestone = one spec component, one issue per spec CHAPTER**, each chapter
 issue sweeping the WHOLE codebase via `/spec-audit` — the same per-unit
 discipline as the ITS-REST per-endpoint audit (#373). First instance: v3.14.0 = the BASE 1.3.0 program (#686, 29 chapter
-children). Release sequence (owner 2026-07-29): v3.13.0 = the CDS 2.0.1 /
-GDL2 component program (#716 — a NET-NEW component, GDL2 only, retired
-GDL never implemented); v3.14.0 = BASE audit; v4.0.0 = the admin-UI
-program.
+children). Release sequence (owner 2026-07-29, revised same day): v3.13.0 = the BASE
+audit; v4.0.0 = the admin-UI program. (CDS/GDL2 was briefly v3.13.0 but
+adjudicated OUT after a first-hand spec read: CDS is a separate
+application layer consuming the CDR, not a CDR component — #716 closed
+with the citation.)
 
 **Why:** the owner considers this the best approach to reach real code
 compliance ("proper and systematically"), mirroring what worked for
