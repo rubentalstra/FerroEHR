@@ -289,6 +289,159 @@ async fn the_archive_routes_refuse_unknown_malformed_and_shapeless_requests() {
     }
 }
 
+/// Create a demographic resource on `segment` and return its
+/// `VERSIONED_OBJECT` uid (the `ETag` carries the `OBJECT_VERSION_ID`; its root
+/// is the container).
+async fn create_demographic(app: &Router, segment: &str, body: &serde_json::Value) -> String {
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/{segment}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body.to_string()))
+        .expect("request");
+    let response = app.clone().oneshot(request).await.expect("response");
+    assert_eq!(
+        response.status(),
+        StatusCode::CREATED,
+        "create {segment} must succeed"
+    );
+    let etag = response
+        .headers()
+        .get(header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned();
+    etag.split("::")
+        .next()
+        .expect("versioned object uid")
+        .to_owned()
+}
+
+/// A minimal demographic PARTY of `rm_type` (RM demographic `party.adoc`
+/// §Invariants, `Identities_valid`: at least one `PARTY_IDENTITY`).
+fn party_body(rm_type: &str, archetype: &str, name: &str) -> serde_json::Value {
+    serde_json::json!({
+        "_type": rm_type,
+        "archetype_node_id": archetype,
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": archetype },
+            "rm_version": "1.1.0" },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "label" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
+/// `archive_parties` selects PARTY version containers, so a
+/// `PARTY_RELATIONSHIP`'s container id is refused exactly like an id that names
+/// nothing: SM `i_admin_archive.adoc` §`archive_parties` takes `party_ids` and
+/// declares `party_id_does_not_exist` as its only error, and RM demographic
+/// `master02-demographic_package.adoc` puts every PARTY in "its own Version
+/// container" (§Versioning Semantics) while relationships are stored "as part
+/// of the data of the PARTY designated as the source" (§Party Relationships) —
+/// a relationship travels with the parties the call selects and is never itself
+/// a selectable party id. All-or-nothing: the party named alongside it stays
+/// unarchived, and the same party archives fine on its own.
+#[tokio::test]
+async fn archiving_a_party_relationship_id_is_refused_like_an_unknown_party() {
+    let (_pg, app) = app(true).await;
+
+    let source = create_demographic(
+        &app,
+        "person",
+        &party_body("PERSON", "openEHR-DEMOGRAPHIC-PERSON.person.v1", "Jane Doe"),
+    )
+    .await;
+    let target = create_demographic(
+        &app,
+        "organisation",
+        &party_body(
+            "ORGANISATION",
+            "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+            "General Hospital",
+        ),
+    )
+    .await;
+    // RM demographic master02 §Party Relationships: source/target are
+    // "OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container
+    // of a Party", so the refs name the two containers just created.
+    let relationship = create_demographic(
+        &app,
+        "party_relationship",
+        &serde_json::json!({
+            "_type": "PARTY_RELATIONSHIP",
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+            "name": { "_type": "DV_TEXT", "value": "patient-of" },
+            "source": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+                        "id": { "_type": "HIER_OBJECT_ID", "value": source } },
+            "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "ORGANISATION",
+                        "id": { "_type": "HIER_OBJECT_ID", "value": target } }
+        }),
+    )
+    .await;
+
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{relationship}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "a PARTY_RELATIONSHIP id names no Party: {body}"
+    );
+
+    // Alongside a real party the refusal still covers the whole request, and
+    // that same party archives on its own — so the refusal is about the id's
+    // kind, not about the call.
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{source}","{relationship}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "all-or-nothing: one relationship id refuses the whole set: {body}"
+    );
+
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{source}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "the party itself archives: {body}"
+    );
+}
+
 // ── the dump/load pair (SM I_ADMIN_DUMP_LOAD) ────────────────────────────────
 
 /// A unique archive location for one test (the SM `file_sys_loc` parameter is

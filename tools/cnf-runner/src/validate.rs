@@ -19,7 +19,9 @@ use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
 use crate::model::binding::OperationBinding;
 use crate::model::capability::Realization;
-use crate::model::case::{CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters};
+use crate::model::case::{
+    CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters, PartyRelationshipRequirement,
+};
 use crate::model::wire_surface::{ServedExtension, WireSurface};
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
 use crate::vocab::{CaseKind, CaseStatus, Disposition, FormatName, Iteration, OutcomeKind};
@@ -1171,12 +1173,24 @@ fn check_references(case: &CaseCore, who: &str, set: &ArtifactSet, findings: &mu
         }
     }
 
+    // The three payloads a `requires.party_relationship` provisions (both
+    // endpoint parties + the relationship) resolve like any other corpus
+    // reference, so a typo is a catalogue finding here, not a drive-time error.
+    let relationship_keys: Vec<&CorpusKey> = match &case.requires.party_relationship {
+        Some(PartyRelationshipRequirement::Exists {
+            source,
+            target,
+            relationship,
+        }) => vec![source, target, relationship],
+        Some(PartyRelationshipRequirement::None) | None => Vec::new(),
+    };
     for key in case
         .data_sets
         .iter()
         .chain(case.requires.templates.iter())
         .chain(case.requires.commit.iter())
         .chain(case.constraint_context.as_ref().map(|c| &c.template))
+        .chain(relationship_keys)
     {
         check_ds_ref(key, None, who, set, findings);
     }
