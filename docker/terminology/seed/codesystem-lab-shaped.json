@@ -1,9 +1,9 @@
 {
   "resourceType": "CodeSystem",
-  "id": "cnf-loinc-shaped",
-  "url": "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
+  "id": "cnf-lab-shaped",
+  "url": "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
   "version": "1.0.0",
-  "name": "CnfLoincShapedTestCodeSystem",
+  "name": "CnfLabShapedTestCodeSystem",
   "title": "CNF test code system, LOINC-shaped (synthetic)",
   "status": "active",
   "experimental": true,

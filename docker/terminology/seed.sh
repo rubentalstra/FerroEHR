@@ -5,7 +5,14 @@
 # the server answers its own capability statement. Everything it writes is
 # SYNTHETIC test content under the reserved example.test domain (IETF RFC 6761
 # §6.2): two code systems and their enumerated value sets, one SNOMED-CT-shaped
-# (hierarchical, numeric codes) and one LOINC-shaped (NNNNN-N codes). No
+# (hierarchical, numeric codes) and one LOINC-shaped (NNNNN-N codes; the
+# namespace is deliberately named "lab-shaped": HAPI FHIR special-cases any
+# ValueSet canonical URL CONTAINING the substring "loinc" and its url-based
+# $expand then answers HAPI-2788 "Unknown ValueSet" for stored, searchable,
+# by-id-expandable content — verified empirically against
+# hapiproject/hapi:v8.10.0-3, 2026-07-29: loinc-shaped-vitals/loinc-x 404,
+# identical content at lab-shaped-vitals/zz-vitals 200. No openEHR spec
+# governs any of this — our own test infrastructure). No
 # licensed terminology content is distributed here.
 #
 # IDEMPOTENT BY CONSTRUCTION: every resource is written with `PUT
@@ -56,9 +63,9 @@ put() {
 }
 
 put CodeSystem cnf-sct-shaped "${SEED_DIR}/codesystem-sct-shaped.json"
-put CodeSystem cnf-loinc-shaped "${SEED_DIR}/codesystem-loinc-shaped.json"
+put CodeSystem cnf-lab-shaped "${SEED_DIR}/codesystem-lab-shaped.json"
 put ValueSet cnf-sct-shaped-disorders "${SEED_DIR}/valueset-sct-shaped-disorders.json"
-put ValueSet cnf-loinc-shaped-vitals "${SEED_DIR}/valueset-loinc-shaped-vitals.json"
+put ValueSet cnf-lab-shaped-vitals "${SEED_DIR}/valueset-lab-shaped-vitals.json"
 
 # Prove the two operations the CDR's FHIR provider actually calls answer for
 # the seeded content BEFORE the CDR starts: a value-set membership test
@@ -77,9 +84,17 @@ verify() {
   echo "terminology-seed: $1 -> 200"
 }
 
+# BOTH operations on BOTH namespaces: the CDR's provider calls exactly these
+# two shapes, and HAPI resolves them through different internal paths — a
+# ValueSet that answers one can still 404 the other (the "loinc" quirk below),
+# so a single sample proves nothing.
 verify '$validate-code (sct-shaped member)' \
   "${FHIR_BASE}/ValueSet/\$validate-code?url=http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders&system=http://cnf.example.test/fhir/CodeSystem/sct-shaped&code=1000002"
-verify '$expand (loinc-shaped vitals)' \
-  "${FHIR_BASE}/ValueSet/\$expand?url=http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals"
+verify '$expand (sct-shaped disorders)' \
+  "${FHIR_BASE}/ValueSet/\$expand?url=http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders"
+verify '$validate-code (lab-shaped member)' \
+  "${FHIR_BASE}/ValueSet/\$validate-code?url=http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals&system=http://cnf.example.test/fhir/CodeSystem/lab-shaped&code=99991-1"
+verify '$expand (lab-shaped vitals)' \
+  "${FHIR_BASE}/ValueSet/\$expand?url=http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals"
 
 echo "terminology-seed: done"

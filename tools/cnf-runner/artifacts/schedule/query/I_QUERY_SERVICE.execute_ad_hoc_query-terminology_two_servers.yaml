@@ -47,8 +47,8 @@ requires:
     served:
       - "http://cnf.example.test/fhir/CodeSystem/sct-shaped"
       - "http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders"
-      - "http://cnf.example.test/fhir/CodeSystem/loinc-shaped"
-      - "http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals"
+      - "http://cnf.example.test/fhir/CodeSystem/lab-shaped"
+      - "http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals"
     # The four namespaces above must be spread over at least two DISTINCT
     # reachable servers — the simultaneity this case exists to evidence.
     distinct_servers: 2
@@ -78,7 +78,7 @@ flow:
         SELECT e/ehr_id/value AS ehr_id
         FROM EHR e[ehr_id/value='${ehr_id}']
         WHERE TERMINOLOGY('validate', 'hl7.org/fhir/4.0',
-        'system=http://cnf.example.test/fhir/CodeSystem/loinc-shaped&url=http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals&code=99991-1') = true
+        'system=http://cnf.example.test/fhir/CodeSystem/lab-shaped&url=http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals&code=99991-1') = true
       fetch: 100                            # fetch always explicit
     expect: ok
     assert:
