@@ -5,7 +5,7 @@
 //! The CDR's admin group is **off by default**, and while it is disabled every
 //! admin route answers `405 Method Not Allowed` with an empty `Allow` (the
 //! route exists but supports no method — ITS-REST overview
-//! Requests_and_responses.md §HTTP Methods: "If a method is recognized but not
+//! `Requests_and_responses.md` §HTTP Methods: "If a method is recognized but not
 //! allowed for the target resource, the response SHOULD be 405 Method Not
 //! Allowed"). The console therefore discovers the group before offering any of
 //! it, and renders no destructive affordance at all when it is not mounted.
@@ -59,7 +59,7 @@ pub enum AdminAvailability {
     Available,
     /// The manifest does not list `/admin` — the CDR runs with the admin group
     /// disabled and every admin route answers `405` with an empty `Allow`
-    /// (overview Requests_and_responses.md §HTTP Methods).
+    /// (overview `Requests_and_responses.md` §HTTP Methods).
     Disabled,
 }
 

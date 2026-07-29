@@ -747,7 +747,7 @@ fn half_open_interval_is_accepted_with_or_without_flags() {
 
 // ── ELEMENT Inv_null_flavour_indicated (RM data_structures §ELEMENT) ──────────
 
-/// The XOR arms of RM data_structures §ELEMENT `Inv_null_flavour_indicated`:
+/// The XOR arms of RM `data_structures` §ELEMENT `Inv_null_flavour_indicated`:
 ///
 /// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
 /// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
@@ -860,7 +860,6 @@ fn corpus_elements_without_value_or_null_flavour_are_rejected() {
 
 /// Every ELEMENT in `value` carrying neither `value` nor `null_flavour`.
 fn value_less_elements(value: &Value) -> Vec<&Value> {
-    let mut out = Vec::new();
     fn walk<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
         match v {
             Value::Object(map) => {
@@ -883,6 +882,7 @@ fn value_less_elements(value: &Value) -> Vec<&Value> {
             _ => {}
         }
     }
+    let mut out = Vec::new();
     walk(value, &mut out);
     out
 }

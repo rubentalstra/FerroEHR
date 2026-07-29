@@ -377,6 +377,169 @@ fn needs_smart_lane(case: &CaseCore) -> bool {
             .is_some_and(|op| op.interface() == SMART_PSEUDO_INTERFACE)
 }
 
+fn not_applicable_record(case: &crate::model::case::CaseCore, citation: &str) -> CaseRecord {
+    CaseRecord {
+        case: case.id.clone(),
+        format: None,
+        rows: vec![RowOutcome::NotApplicable {
+            citation: citation.to_owned(),
+        }],
+        rows_driven: 0,
+        rows_total: crate::exec::row_count(case),
+    }
+}
+
+/// The drive-time selection law (ISO/IEC 9646 ICS-driven selection + the
+/// ixit declaration law): the FIRST ground that excuses `case` on this
+/// party/deployment, or `None` when the case drives. Each arm carries its
+/// citation inside the returned [`Exception`]; the caller records the same
+/// citation as the case's single not-applicable row.
+fn selection_exception(
+    set: &ArtifactSet,
+    ixit: &Ixit,
+    statement: Option<&crate::party::Statement>,
+    case: &crate::model::case::CaseCore,
+) -> Option<Exception> {
+    if let Some(citation) = fully_unrealized(set, case) {
+        return Some(Exception::Unrealized(citation));
+    }
+    // The EXTENSION arm: a case that drives a route no openEHR specification
+    // governs is our own design/extension, so it is behaviour only a party
+    // that CLAIMS the capability answers for. Driving it at another vendor's
+    // SUT would publish failures for routes that vendor never offered to
+    // serve — the published comparison must be honest in both directions,
+    // and a spurious red row is not honesty.
+    if let Some(stmt) = statement
+        && let Some(family) = extension_family(set, case)
+        && !case
+            .capabilities
+            .iter()
+            .any(|c| stmt.claims.capabilities.contains(c))
+    {
+        return Some(Exception::Unrealized(format!(
+            "extension realization ({family}): the ICS claims none of this case's \
+             capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
+             test selection"
+        )));
+    }
+    // An option branch the party statement does not declare is not this
+    // SUT's behaviour — driving it records a spurious failure the verdict
+    // pipeline would excuse anyway (`verdict::effective_outcome`); excuse it
+    // at drive time with the same citation.
+    if let Some(stmt) = statement
+        && let Some(tag) = &case.option
+        && !stmt.options.contains(tag)
+    {
+        return Some(Exception::Unrealized(format!(
+            "option {tag}: the ICS does not declare this register branch \
+             (statement.options) — ISO/IEC 9646 test selection"
+        )));
+    }
+    // Case-level spec-version floors (`CaseCore.applies`): a behaviour the
+    // spec dates to a release the party does not declare is out of scope for
+    // it — `Applies::satisfied_by`, the one polarity every consumer of the
+    // floor uses (`verdict` selection re-applies the same predicate).
+    // Driving such a case records a spurious failure against behaviour the
+    // party never claimed (the 2026-07-28 java run drove 127 red rows and 13
+    // spuriously green ones this way).
+    if let Some(stmt) = statement
+        && !case.applies.satisfied_by(&stmt.spec_versions)
+    {
+        let declared: Vec<String> = case
+            .applies
+            .entries()
+            .into_iter()
+            .map(|(component, range)| format!("{} {}", component.token(), range.raw()))
+            .collect();
+        return Some(Exception::Unrealized(format!(
+            "case version floor unmet ({}) — the party's declared spec versions do not \
+             satisfy the case's applies ranges; ISO/IEC 9646 test selection",
+            declared.join(", ")
+        )));
+    }
+    // Operation-level spec-version floors (`OperationBinding.applies`): a
+    // wire a later release introduced is not this party's behaviour to
+    // answer for — the same selection question the option branch is, with
+    // the binding's own declared range as the citation.
+    if let Some(stmt) = statement {
+        let unmet = unmet_binding_floors(set, case, &stmt.spec_versions);
+        if !unmet.is_empty() {
+            return Some(Exception::Unrealized(format!(
+                "operation version floor unmet ({}) — the party's declared spec versions \
+                 predate the release that introduced this wire; ISO/IEC 9646 test selection",
+                unmet.join("; ")
+            )));
+        }
+    }
+    // The SMART lane is a party declaration, exactly like the ixit facts
+    // below: the CDR is a SMART resource server that never issues tokens
+    // (ITS-REST docs/smart_app_launch/master06-authentication.adoc
+    // §Supported Authentication Flows), so a chosen `scope` claim exists
+    // only where the party declares a trusted test issuer to mint against.
+    // Undeclared => not-applicable with the citation, never a spurious
+    // failure against a deployment that legitimately does not run SMART.
+    if needs_smart_lane(case) && ixit.smart.is_none() {
+        return Some(Exception::Guarded(
+            "the ixit declares no `smart` lane — the case needs a SMART-enabled \
+             deployment and a minted, scope-carrying access token, neither of which any \
+             released operation discloses or provides; ISO/IEC 9646 test selection"
+                .to_owned(),
+        ));
+    }
+    // The terminology deployment is a party declaration exactly like the
+    // SMART lane above: released ITS-REST surfaces no terminology resource,
+    // so nothing on the wire says which terminology servers a deployment
+    // holds open or how it treats a value set it cannot resolve. Undeclared
+    // or differently declared => not-applicable with the citation, never a
+    // red row against a deployment that legitimately runs the other posture.
+    if let Some(citation) = unsatisfied_terminology(case, ixit) {
+        return Some(Exception::Guarded(format!(
+            "{citation}; ISO/IEC 9646 test selection"
+        )));
+    }
+    // A flow step addressing an instance this party does not declare has no
+    // ground to run on (the deployment or principal simply does not exist
+    // here).
+    let missing_instances = undeclared_instances(case, ixit);
+    if !missing_instances.is_empty() {
+        return Some(Exception::Guarded(format!(
+            "the ixit declares no instance {} — the case's flow addresses it with `on:` and \
+             this party runs no such deployment/principal; ISO/IEC 9646 test selection",
+            missing_instances.join(", ")
+        )));
+    }
+    // A case reading a party-declared SUT fact this ixit does not carry
+    // cannot be driven: the fact is not on the wire, so the alternative to a
+    // declaration is a guess.
+    let missing = undeclared_ixit_facts(case, ixit);
+    if !missing.is_empty() {
+        return Some(Exception::Guarded(format!(
+            "the ixit declares no {} — the case reads it as ${{ixit:…}} and no released \
+             operation discloses the value; ISO/IEC 9646 test selection",
+            missing.join(", ")
+        )));
+    }
+    // Global-state grounds (an empty template list, a globally-absent
+    // artefact) hold only on an exclusively-owned SUT; on a shared instance
+    // the case is not-applicable, never a false verdict.
+    if matches!(
+        case.requires.server,
+        Some(crate::vocab::ServerState::Exclusive)
+    ) && !ixit
+        .environment
+        .as_ref()
+        .is_some_and(|env| env.exclusive_server)
+    {
+        return Some(Exception::Unrealized(
+            "requires.server: exclusive — the ixit declares a shared SUT instance \
+             (environment.exclusive_server: false); the global-state ground cannot \
+             be established"
+                .to_owned(),
+        ));
+    }
+    None
+}
+
 /// Execute every runnable case against the ixit's default topology.
 ///
 /// `statement` (the party ICS), when supplied, drives ISO/IEC 9646-style
@@ -388,6 +551,7 @@ fn needs_smart_lane(case: &CaseCore) -> bool {
 /// # Errors
 /// Interpreter defects only; per-case conformance outcomes land in the
 /// report.
+/// The one not-applicable record shape every drive-time exclusion produces.
 pub fn execute(
     set: &ArtifactSet,
     ixit: &Ixit,
@@ -414,272 +578,15 @@ pub fn execute(
             ));
             continue;
         }
-        if let Some(citation) = fully_unrealized(set, case) {
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Unrealized(citation)));
-            continue;
-        }
-        // ICS-driven selection (ISO/IEC 9646), the EXTENSION arm: a case that
-        // drives a route no openEHR specification governs is our own
-        // design/extension, so it is behaviour only a party that CLAIMS the
-        // capability answers for. Driving it at another vendor's SUT would
-        // publish failures for routes that vendor never offered to serve —
-        // the published comparison must be honest in both directions, and a
-        // spurious red row is not honesty.
-        if let Some(stmt) = statement
-            && let Some(family) = extension_family(set, case)
-            && !case
-                .capabilities
-                .iter()
-                .any(|c| stmt.claims.capabilities.contains(c))
-        {
-            let citation = format!(
-                "extension realization ({family}): the ICS claims none of this case's \
-                 capabilities, and no openEHR specification governs the route — ISO/IEC 9646 \
-                 test selection"
-            );
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Unrealized(citation)));
-            continue;
-        }
-        // ICS-driven selection (ISO/IEC 9646): an option branch the party
-        // statement does not declare is not this SUT's behaviour — driving
-        // it records a spurious failure the verdict pipeline would excuse
-        // anyway (`verdict::effective_outcome`); excuse it at drive time
-        // with the same citation.
-        if let Some(stmt) = statement
-            && let Some(tag) = &case.option
-            && !stmt.options.contains(tag)
-        {
-            let citation = format!(
-                "option {tag}: the ICS does not declare this register branch \
-                 (statement.options) — ISO/IEC 9646 test selection"
-            );
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Unrealized(citation)));
-            continue;
-        }
-        // Case-level spec-version floors (`CaseCore.applies`): a behaviour
-        // the spec dates to a release the party does not declare is out of
-        // scope for it — `Applies::satisfied_by`, the one polarity every
-        // consumer of the floor uses (`verdict` selection re-applies the
-        // same predicate). Driving such a case records a spurious failure
-        // against behaviour the party never claimed (the 2026-07-28 java
-        // run drove 127 red rows and 13 spuriously green ones this way) —
-        // excuse it at drive time with the declared ranges as the citation.
-        if let Some(stmt) = statement
-            && !case.applies.satisfied_by(&stmt.spec_versions)
-        {
-            let declared: Vec<String> = case
-                .applies
-                .entries()
-                .into_iter()
-                .map(|(component, range)| format!("{} {}", component.token(), range.raw()))
-                .collect();
-            let citation = format!(
-                "case version floor unmet ({}) — the party's declared spec versions do not \
-                 satisfy the case's applies ranges; ISO/IEC 9646 test selection",
-                declared.join(", ")
-            );
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Unrealized(citation)));
-            continue;
-        }
-        // Operation-level spec-version floors (`OperationBinding.applies`):
-        // a wire a later release introduced is not this party's behaviour to
-        // answer for — the same ISO/IEC 9646 selection question the option
-        // branch above is, with the binding's own declared range as the
-        // citation.
-        if let Some(stmt) = statement {
-            let unmet = unmet_binding_floors(set, case, &stmt.spec_versions);
-            if !unmet.is_empty() {
-                let citation = format!(
-                    "operation version floor unmet ({}) — the party's declared spec versions \
-                     predate the release that introduced this wire; ISO/IEC 9646 test selection",
-                    unmet.join("; ")
-                );
-                report.records.push(CaseRecord {
-                    case: case.id.clone(),
-                    format: None,
-                    rows: vec![RowOutcome::NotApplicable {
-                        citation: citation.clone(),
-                    }],
-                    rows_driven: 0,
-                    rows_total: crate::exec::row_count(case),
-                });
-                report
-                    .exceptions
-                    .push((case.id.clone(), Exception::Unrealized(citation)));
-                continue;
-            }
-        }
-        // The SMART lane is a party declaration, exactly like the ixit facts
-        // below: the CDR is a SMART resource server that never issues tokens
-        // (ITS-REST docs/smart_app_launch/master06-authentication.adoc
-        // §Supported Authentication Flows), so a chosen `scope` claim exists
-        // only where the party declares a trusted test issuer to mint
-        // against, and the discovery document exists only where the party
-        // runs the SMART role at all. Undeclared => not-applicable with the
-        // citation, never a spurious failure against a deployment that
-        // legitimately does not run SMART.
-        if needs_smart_lane(case) && ixit.smart.is_none() {
-            let citation = "the ixit declares no `smart` lane — the case needs a SMART-enabled \
-                 deployment and a minted, scope-carrying access token, neither of which any \
-                 released operation discloses or provides; ISO/IEC 9646 test selection"
-                .to_owned();
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Guarded(citation)));
-            continue;
-        }
-        // A flow step addressing an instance this party does not declare has
-        // no ground to run on (the deployment or principal simply does not
-        // exist here) — not-applicable with the citation, like every other
-        // undeclared topology fact.
-        let missing_instances = undeclared_instances(case, ixit);
-        if !missing_instances.is_empty() {
-            let citation = format!(
-                "the ixit declares no instance {} — the case's flow addresses it with `on:` and \
-                 this party runs no such deployment/principal; ISO/IEC 9646 test selection",
-                missing_instances.join(", ")
-            );
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Guarded(citation)));
-            continue;
-        }
-        // The terminology deployment is a party declaration exactly like the
-        // SMART lane above: released ITS-REST surfaces no terminology
-        // resource, so nothing on the wire says which terminology servers a
-        // deployment holds open or how it treats a value set it cannot
-        // resolve. Undeclared or differently declared => not-applicable with
-        // the citation, never a red row against a deployment that legitimately
-        // runs the other posture.
-        if let Some(citation) = unsatisfied_terminology(case, ixit) {
-            let citation = format!("{citation}; ISO/IEC 9646 test selection");
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Guarded(citation)));
-            continue;
-        }
-        // A case reading a party-declared SUT fact this ixit does not carry
-        // cannot be driven: the fact is not on the wire, so the alternative
-        // to a declaration is a guess.
-        let missing = undeclared_ixit_facts(case, ixit);
-        if !missing.is_empty() {
-            let citation = format!(
-                "the ixit declares no {} — the case reads it as ${{ixit:…}} and no released \
-                 operation discloses the value; ISO/IEC 9646 test selection",
-                missing.join(", ")
-            );
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Guarded(citation)));
-            continue;
-        }
-        // Global-state grounds (an empty template list, a globally-absent
-        // artefact) hold only on an exclusively-owned SUT; on a shared
-        // instance the case is not-applicable, never a false verdict.
-        if matches!(
-            case.requires.server,
-            Some(crate::vocab::ServerState::Exclusive)
-        ) && !ixit
-            .environment
-            .as_ref()
-            .is_some_and(|env| env.exclusive_server)
-        {
-            let citation = "requires.server: exclusive — the ixit declares a shared SUT instance \
-                 (environment.exclusive_server: false); the global-state ground cannot \
-                 be established"
-                .to_owned();
-            report.records.push(CaseRecord {
-                case: case.id.clone(),
-                format: None,
-                rows: vec![RowOutcome::NotApplicable {
-                    citation: citation.clone(),
-                }],
-                rows_driven: 0,
-                rows_total: crate::exec::row_count(case),
-            });
-            report
-                .exceptions
-                .push((case.id.clone(), Exception::Unrealized(citation)));
+        if let Some(exception) = selection_exception(set, ixit, statement, case) {
+            let citation = match &exception {
+                Exception::Unrealized(c)
+                | Exception::ContentGeneration(c)
+                | Exception::Guarded(c)
+                | Exception::Status(c) => c.clone(),
+            };
+            report.records.push(not_applicable_record(case, &citation));
+            report.exceptions.push((case.id.clone(), exception));
             continue;
         }
         let runnable = if matches!(case.kind, crate::vocab::CaseKind::Content) {

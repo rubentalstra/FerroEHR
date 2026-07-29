@@ -224,8 +224,10 @@ pub fn collect_constraint_binding_checks(
     composition: &Value,
     wt: &WebTemplate,
 ) -> Vec<ConstraintBindingCheck> {
-    let mut v = Validator::default();
-    v.collect_bindings = true;
+    let mut v = Validator {
+        collect_bindings: true,
+        ..Validator::default()
+    };
     v.walk(composition, &wt.tree);
     v.bindings
 }
