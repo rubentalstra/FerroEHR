@@ -235,10 +235,13 @@ fn server_bind_port(bind: &str) -> Option<u16> {
 /// Semantic checks on `[terminology.external]`: enabling it needs a provider,
 /// and every cross-reference must resolve. A dangling reference would degrade
 /// silently — a route to a missing provider quietly falls back to the default
-/// server, and an `oauth2_client` naming a missing client would send
-/// unauthenticated requests — so both are boot errors (§P-5: never make a bad
-/// value a silent default). No openEHR spec governs configuration — our own
-/// design.
+/// server, an `oauth2_client` naming a missing client would send
+/// unauthenticated requests, and half a mutual-TLS identity would connect
+/// without a client certificate — so all three are boot errors (§P-5: never
+/// make a bad value a silent default). The TLS material itself (readable PEM,
+/// a certificate where a certificate belongs, a key where a key belongs) is
+/// validated when the provider is built, which is also boot time. No openEHR
+/// spec governs configuration — our own design.
 fn validate_terminology(
     terminology: &crate::service::terminology::config::ExternalTerminologyConfig,
     errors: &mut Vec<ConfigError>,
@@ -259,6 +262,20 @@ fn validate_terminology(
         }
     }
     for (name, provider) in &terminology.providers {
+        // A mutual-TLS identity is a certificate AND its key; half of one
+        // would connect with no client certificate at all, which the server
+        // rejects at handshake time — a boot error, not a runtime surprise.
+        match (&provider.client_cert_path, &provider.client_key_path) {
+            (Some(_), None) => errors.push(ConfigError::semantic(format!(
+                "terminology.external.providers.{name}.client_cert_path is set without \
+                 client_key_path (a client certificate needs its private key)"
+            ))),
+            (None, Some(_)) => errors.push(ConfigError::semantic(format!(
+                "terminology.external.providers.{name}.client_key_path is set without \
+                 client_cert_path (a private key needs its certificate)"
+            ))),
+            _ => {}
+        }
         let Some(client) = provider.oauth2_client.as_deref() else {
             continue;
         };
@@ -760,6 +777,9 @@ mod tests {
                 connect_timeout_ms: 2_000,
                 request_timeout_ms: 10_000,
                 oauth2_client: None,
+                client_cert_path: None,
+                client_key_path: None,
+                ca_bundle_path: None,
                 cache_ttl_secs: 300,
                 cache_capacity: 10_000,
             },
@@ -798,6 +818,9 @@ mod tests {
                 connect_timeout_ms: 2_000,
                 request_timeout_ms: 10_000,
                 oauth2_client: Some("ts-client".to_owned()),
+                client_cert_path: None,
+                client_key_path: None,
+                ca_bundle_path: None,
                 cache_ttl_secs: 300,
                 cache_capacity: 10_000,
             },
@@ -887,6 +910,117 @@ mod tests {
         assert_eq!(
             client.client_secret.as_ref().map(Secret::expose),
             Some("s3cret")
+        );
+    }
+
+    /// A mutual-TLS client identity is a certificate AND its key: half of one
+    /// would connect presenting nothing, so it is a boot error. The trust
+    /// anchor (`ca_bundle_path`) stands alone — verification against a private
+    /// CA needs no client identity.
+    #[test]
+    fn validate_terminology_client_identity_needs_both_halves() {
+        let mut c = EhrbaseConfig::default();
+        let external = &mut c.terminology.external;
+        external.enabled = true;
+        external.providers.insert(
+            "default".to_owned(),
+            crate::service::terminology::config::FhirProviderConfig {
+                kind: crate::service::terminology::config::ProviderKind::Fhir,
+                url: "https://ts.example/fhir".to_owned(),
+                operation: crate::service::terminology::config::FhirOperation::ValidateCode,
+                connect_timeout_ms: 2_000,
+                request_timeout_ms: 10_000,
+                oauth2_client: None,
+                client_cert_path: Some(PathBuf::from("/run/secrets/ts-client.crt.pem")),
+                client_key_path: None,
+                ca_bundle_path: None,
+                cache_ttl_secs: 300,
+                cache_capacity: 10_000,
+            },
+        );
+        let err = c
+            .validate()
+            .expect_err("a certificate without its key must be rejected");
+        assert!(err.to_string().contains("client_key_path"), "got {err}");
+
+        let provider = c
+            .terminology
+            .external
+            .providers
+            .get_mut("default")
+            .expect("provider");
+        provider.client_cert_path = None;
+        provider.client_key_path = Some(PathBuf::from("/run/secrets/ts-client.key.pem"));
+        let err = c
+            .validate()
+            .expect_err("a key without its certificate must be rejected");
+        assert!(err.to_string().contains("client_cert_path"), "got {err}");
+
+        // Both halves together are valid; so is a bare trust anchor.
+        let provider = c
+            .terminology
+            .external
+            .providers
+            .get_mut("default")
+            .expect("provider");
+        provider.client_cert_path = Some(PathBuf::from("/run/secrets/ts-client.crt.pem"));
+        provider.ca_bundle_path = Some(PathBuf::from("/run/secrets/ts-ca.pem"));
+        assert!(c.validate().is_ok());
+
+        let provider = c
+            .terminology
+            .external
+            .providers
+            .get_mut("default")
+            .expect("provider");
+        provider.client_cert_path = None;
+        provider.client_key_path = None;
+        assert!(c.validate().is_ok(), "a CA bundle alone is valid");
+    }
+
+    /// The mutual-TLS keys are reachable through the one env grammar (§P-4).
+    #[test]
+    fn env_mapping_terminology_provider_mtls_paths() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED", "true"),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__URL",
+                    "https://snowstorm/fhir",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__CLIENT_CERT_PATH",
+                    "/run/secrets/ts-client.crt.pem",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__CLIENT_KEY_PATH",
+                    "/run/secrets/ts-client.key.pem",
+                ),
+                (
+                    "EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SNOMED__CA_BUNDLE_PATH",
+                    "/run/secrets/ts-ca.pem",
+                ),
+            ]),
+            &[],
+        );
+        let provider = c
+            .terminology
+            .external
+            .providers
+            .get("snomed")
+            .expect("snomed");
+        assert_eq!(
+            provider.client_cert_path.as_deref(),
+            Some(Path::new("/run/secrets/ts-client.crt.pem"))
+        );
+        assert_eq!(
+            provider.client_key_path.as_deref(),
+            Some(Path::new("/run/secrets/ts-client.key.pem"))
+        );
+        assert_eq!(
+            provider.ca_bundle_path.as_deref(),
+            Some(Path::new("/run/secrets/ts-ca.pem"))
         );
     }
 }

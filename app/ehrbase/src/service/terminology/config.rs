@@ -195,12 +195,27 @@ pub struct FhirProviderConfig {
     /// Name of the `OAuth2` client-credentials client
     /// ([`ExternalTerminologyConfig::oauth2_clients`]) whose bearer token is
     /// attached to every request to this provider. Unset = unauthenticated.
-    ///
-    /// TODO: mutual TLS to the terminology server is not implemented — a
-    /// provider that must present a client certificate has no way to say so;
-    /// the `[server.tls]` material is inbound-only.
     #[serde(default)]
     pub oauth2_client: Option<String>,
+    /// PEM file holding the client certificate (optionally a chain) this
+    /// provider presents to its terminology server for **mutual TLS**. Set
+    /// together with [`Self::client_key_path`]; unset = no client identity.
+    ///
+    /// The identity is per provider because a client certificate is issued by
+    /// the peer's PKI — see the [`super::tls`] module NOTE.
+    #[serde(default)]
+    pub client_cert_path: Option<PathBuf>,
+    /// PEM file holding the private key of [`Self::client_cert_path`]. Both
+    /// keys are set together; one without the other is a boot error.
+    #[serde(default)]
+    pub client_key_path: Option<PathBuf>,
+    /// PEM bundle of the trust anchors this provider's terminology-server
+    /// certificate is verified against. When set it **replaces** the default
+    /// anchors for this provider (a privately-issued server is pinned to its
+    /// own CA); unset = the platform's default trust. Server-certificate and
+    /// hostname verification are always on — there is no way to disable them.
+    #[serde(default)]
+    pub ca_bundle_path: Option<PathBuf>,
     /// Result-cache TTL in seconds for this provider's FHIR operations
     /// (`$validate-code`/`$expand`/`$subsumes`/`$lookup`). `0` disables the
     /// cache. Bounded staleness against the remote server is the trade for
@@ -283,6 +298,9 @@ pub(super) fn test_provider_config(url: &str) -> FhirProviderConfig {
         connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
         request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
         oauth2_client: None,
+        client_cert_path: None,
+        client_key_path: None,
+        ca_bundle_path: None,
         cache_ttl_secs: 300,
         cache_capacity: 1024,
     }

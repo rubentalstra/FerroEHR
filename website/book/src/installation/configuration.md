@@ -484,6 +484,9 @@ extension API.
 (enum{validate_code,expand}, `validate_code`), `connect_timeout_ms` (int,
 `2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset —
 must name an entry under `[terminology.external.oauth2_clients]`),
+`client_cert_path` / `client_key_path` (paths, unset — the mutual-TLS client
+identity, see below), `ca_bundle_path` (path, unset — the trust anchors for
+this server, see below),
 `cache_ttl_secs` (int, `300` — TTL of the per-provider response cache; a
 repeated validate/expand/subsumes/lookup within the window is served locally
 instead of one HTTPS round trip per validated code; `0` disables),
@@ -546,9 +549,54 @@ client_secret_file = "/run/secrets/ts-client"
 scopes = ["system/*.read"]
 ```
 
-> [!NOTE]
-> Mutual TLS to a terminology server is not supported yet — a provider cannot
-> present a client certificate.
+### Mutual TLS to a terminology server
+
+A terminology server that authenticates its clients with certificates instead
+of (or in addition to) a bearer token is configured **per provider**, because a
+client certificate is issued by that server's PKI: a deployment enrolled with a
+national SNOMED CT service, a commercial value-set server and an in-house HAPI
+server holds three different certificates. Repeat the same paths in each
+provider table if one identity really does serve them all.
+
+Keys on `[terminology.external.providers.<name>]`:
+
+| Key | Meaning |
+|---|---|
+| `client_cert_path` | PEM file with the client certificate (optionally a chain) presented to this server. |
+| `client_key_path` | PEM file with that certificate's private key. |
+| `ca_bundle_path` | PEM bundle of the trust anchors this server's certificate is verified against. |
+
+```toml
+[terminology.external.providers.snomed]
+type = "fhir"
+url = "https://snowstorm.example.org/fhir"
+client_cert_path = "/run/secrets/ts-snomed-client.crt.pem"
+client_key_path = "/run/secrets/ts-snomed-client.key.pem"
+ca_bundle_path = "/run/secrets/ts-snomed-ca.pem"
+```
+
+`client_cert_path` and `client_key_path` are set together — one without the
+other is a startup error, never a connection that silently presents no
+certificate. Unreadable files, a certificate file with no certificate in it and
+a key file with no key in it are startup errors too, so a broken identity never
+waits until the first validated code to surface.
+
+`ca_bundle_path` **replaces** the default trust anchors for that provider, so a
+terminology server issued by a private PKI is pinned to that PKI instead of also
+accepting the whole public web PKI. Leave it unset to use the platform's default
+trust store.
+
+> [!IMPORTANT]
+> There is no option to disable certificate verification. Server-certificate and
+> hostname verification are always on for every provider; `ca_bundle_path`
+> changes *which* anchors are trusted, never *whether* the server is verified.
+
+The client identity applies to the connection to the terminology server itself.
+An OAuth2 token endpoint (`oauth2_client`) is a different host in a different
+trust domain and keeps the default TLS stack.
+
+Kubernetes deployments mount the PEM files with the chart's `config.files` map
+(see the Helm chart values), which materialises them under `/etc/ehrbase/`.
 
 ### Archetype value-set bindings at commit
 
