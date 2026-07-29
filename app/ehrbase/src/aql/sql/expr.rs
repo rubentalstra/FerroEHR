@@ -202,12 +202,15 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 // subsumption + interface-reference semantics instead, because a query naming a
 // parent archetype MUST retrieve data created with its specialisation children
 // (master10 §Design-time Relationships) — plain string equality never would.
-// AOM2-era identifiers carry no lineage semantics in the `-` separator (AM
-// master03 §"Legacy ADL 1.4 Semantics"), so full template-derived lineage
-// matching (specialisation parents obtainable only from the operational template
-// per master07 §Supporting Archetype-based Querying) is deferred to the ADL2
-// phase; the `-`-prefix rule here is exact for the ADL 1.4-form ids this store
-// holds (major-only `.vN`, lineage encoded directly in the concept).
+// The `-`-prefix rule here is exact for the ADL 1.4-form ids this store holds
+// (major-only `.vN`, lineage encoded directly in the concept).
+//
+// TODO: template-derived lineage matching for AOM2-era identifiers — those
+// carry no lineage semantics in the `-` separator (AM master03 §"Legacy ADL 1.4
+// Semantics"), so their specialisation parents are obtainable only from the
+// operational template (AM master07 §Supporting Archetype-based Querying);
+// completing this requires resolving the queried id's lineage through the
+// stored ADL2/OPT2 template family instead of the concept-prefix rule.
 pub(super) fn archetype_predicate(node: &str, value: &str) -> Expr {
     if let Ok(id) = value.parse::<ArchetypeId>()
         && let Ok(major) = id.major_version().parse::<i32>()
