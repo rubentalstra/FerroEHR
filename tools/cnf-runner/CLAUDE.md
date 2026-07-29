@@ -69,8 +69,17 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   must not drive a released one just to reach its precondition, or the
   realization it evidences stops being the one it is about. Provisioning
   therefore belongs in `requires` (`server`/`templates`/`ehr`/`directory`/
-  `party`/`commit` — `requires.party` mints `${party_id}`, the VERSIONED_OBJECT
-  uid the SM admin operations take), never as a flow step.
+  `party`/`party_relationship`/`commit` — `requires.party` mints `${party_id}`,
+  the VERSIONED_OBJECT uid the SM admin operations take, and
+  `requires.party_relationship` mints `${party_relationship_id}` the same way,
+  creating BOTH endpoint parties first and writing their container uids into the
+  relationship's `source`/`target` PARTY_REFs, as RM demographic
+  `master02-demographic_package.adoc` §Party Relationships requires:
+  "OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container of a
+  Party"), never as a flow step. Provisioning may itself drive an EXTENSION
+  route where the release surfaces no wire for the precondition (the
+  relationship create — register AMB-32), so such a requirement is usable only
+  on a party that serves that family.
 - **Every closed vocabulary is a Rust enum/newtype** (outcome kinds,
   selectors, header matchers, capture sources, the `${…}` reference grammar,
   dispositions, sentinels): illegal states unrepresentable. New vocabulary

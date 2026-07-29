@@ -592,6 +592,65 @@ AMB-33:
     this wave rather than because of a coverage decision of ours. Its own
     released defect — declaring `file_not_writable` for a READ — stays
     register AMB-141(4).
+    RE-ADJUDICATED 2026-07-29 (#670) — NO ENUMERATION MEMBER OF THE DUMP/LOAD
+    SURFACE IS UNREALIZED ANY MORE, so the `501 Not Implemented` boundary
+    recorded in (1) above is RETIRED, and with it its "cased NOWHERE" clause:
+    `openehr_canonical_xml` now carries an export case (`-logical_format_xml`,
+    `expect: ok`) and its own payload-form-detection LOAD case, the pair shape
+    every COMPRESSION_FORMAT member already had. What the member MEANS is the
+    part that needed adjudicating, and it splits the archive in two along the
+    SM's own wording.
+    (a) THE ENVELOPE STAYS JSON IN BOTH MEMBERS, and that is a derivation, not
+    a shortcut. `export_spec.adoc` defines `logical_format` as "Logical format
+    to use, i.e. flavour of XML, JSON etc." — the flavour of the exported
+    CONTENT. The archive skeleton this product writes (manifest.json, the
+    segment records of storage rows, blobs/) is storage-shaped and has NO
+    XSD-conformant XML target to serialize into: a depth-checked enumeration of
+    the top-level `xs:element` declarations across BOTH vendored ITS-XML
+    lineages (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1` @ tag
+    Release-1.0.2v2 `f7a93777` and `its-xml-2.0.0-nsv2` @ `de8b37ba`, which is
+    upstream HEAD) finds document roots ONLY for `composition`, `extract`,
+    `extract_request`, `versioned_object` (the Extract-flavoured
+    X_VERSIONED_OBJECT), `items` and `version` — there is no global element for
+    `EHR`, for `CONTRIBUTION`, or for a standalone `AUDIT_DETAILS` in either
+    lineage. An XML envelope could therefore only be INVENTED, which is worse
+    than this entry's standing position that no openEHR spec defines an on-disk
+    archive format at all. Our own design/extension, unchanged in both members.
+    (b) THE PAYLOADS DO HAVE A PUBLISHED FORM, so they follow the member.
+    `its-xml-1.0.2-nsv1/ALL/Version.xsd` publishes
+    `<xs:element name="version" type="VERSION"/>`, so each stored version
+    externalizes to a `versions/<version_uid>.xml` entry holding a complete
+    ORIGINAL_VERSION document (RM common master06 §Version and its Subtypes),
+    reassembled by the SAME builder the served version read uses — an archived
+    document and a served one are the same object, not two renderings of it.
+    `<version>` is deliberately NOT the Extract-flavoured `versioned_object`
+    (X_VERSIONED_OBJECT), which belongs to the EHR-Extract document family and
+    would smuggle Extract structure into a dump. Because that XSD declares
+    `<xs:complexType name="VERSION" abstract="true">`, the instance must name
+    its concrete type with `xsi:type="ORIGINAL_VERSION"` (XML Schema Part 1
+    §2.6.1 + §3.4.6, https://www.w3.org/TR/xmlschema-1/#xsi_type) — the reason
+    the archive serializes through a declared-root entry point rather than the
+    plain one, which would have written a document no schema accepts. A
+    logically-deleted version stores no content, so it gets no document and no
+    entry reference, symmetric with its null inline body.
+    (c) LINEAGE. The archive always writes nsv1, the released-STABLE bundle the
+    server also serves by default. The `version` media-type parameter that
+    selects nsv2 is a WIRE negotiation with no counterpart on a file system,
+    and neither `i_admin_dump_load.adoc` nor `export_spec.adoc` offers a place
+    to express one (`ENCODING_FORMAT`, the only remaining EXPORT_SPEC axis, is
+    an empty enumeration). Recorded here as a declared boundary, not a
+    coverage gap.
+    (d) CORRUPT PAYLOAD ENTRIES stay off the wire for the same reason every
+    other corrupt-archive cause does — no operation writes arbitrary bytes to
+    the SUT file system — and are proved in-process
+    (app/ehrbase/tests/service_dump_load.rs). Their OUTCOME differs from a
+    mangled manifest or segment, and that too is derived rather than chosen: a
+    `versions/*.xml` entry belongs to exactly ONE EHR, so an unreadable one is
+    precisely the per-entity shape `dump_load_fail_report.adoc` exists for
+    ("Dump or Load fail report for a single entity, e.g. EHR, PARTY etc."),
+    reported with `dump_status: false` and the record skipped whole; a manifest
+    or a segment belongs to no single entity, so it stays the whole-operation
+    `file_not_writable`.
   disposition: fixed_handling
   upstream_ref: "UPR-12"
 AMB-34:
