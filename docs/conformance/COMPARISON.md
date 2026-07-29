@@ -68,8 +68,8 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ehrbase-rs** | 767 | 704 | 704 | 0 | 0 |
-| **upstream (Java)** | 492 | 466 | 136 | 135 | 195 |
+| **ehrbase-rs** | 788 | 695 | 695 | 0 | 0 |
+| **upstream (Java)** | 499 | 459 | 136 | 132 | 191 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
@@ -83,17 +83,19 @@ party's topology cannot establish.
 ## Capability-by-capability
 
 Evidence tokens from each party's computed verdicts: **passed** (every
-gating case green), **failed** (at least one gating case red), **unrealized**
-(every case excused by a register citation — e.g. AMB-41: ADL 1.4 archetype
-provisioning has no ITS-REST wire), **not_evidenced** (claimed, no gating
-case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
+gating case green), **failed** (at least one gating case red),
+**inconclusive** (a gating case neither passed nor failed cleanly),
+**not_evidenced** (claimed, but no gating case produced a verdict — there
+is no excused state: a required capability without passing evidence fails
+its tier, whichever party claims it), or **not claimed** (absent from that
+party's ICS).
 
 | Capability | ehrbase-rs | upstream (Java) |
 |---|---|---|
-| ActivityReport | unrealized | not_evidenced |
-| Adl14ArchetypeProvisioning | unrealized | unrealized |
+| ActivityReport | not_evidenced | not_evidenced |
+| Adl14ArchetypeProvisioning | not_evidenced | not_evidenced |
 | Adl14OptProvisioning | passed | failed |
-| Adl2ArchetypeProvisioning | unrealized | not_evidenced |
+| Adl2ArchetypeProvisioning | not_evidenced | not_evidenced |
 | Adl2OptProvisioning | passed | not_evidenced |
 | AdminApi | passed | not_evidenced |
 | AnonymousEhrs | passed | not_evidenced |
@@ -110,27 +112,27 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | DefinitionApi | passed | failed |
 | DemographicApi | passed | not_evidenced |
 | DemographicArchetypeValidation | passed | not_evidenced |
-| DemographicArchive | unrealized | not_evidenced |
+| DemographicArchive | not_evidenced | not_evidenced |
 | DirectoryOps | passed | failed |
 | EhrApi | passed | failed |
-| EhrArchive | unrealized | not_evidenced |
+| EhrArchive | not_evidenced | not_evidenced |
 | EhrDemographicSeparation | passed | passed |
-| EhrDumpLoad | unrealized | not_evidenced |
-| EhrExtract | unrealized | not_evidenced |
+| EhrDumpLoad | not_evidenced | not_evidenced |
+| EhrExtract | not_evidenced | not_evidenced |
 | EhrOperations | passed | failed |
 | EhrStatus | passed | failed |
 | ItemTags | passed | not_evidenced |
-| MessageApi | unrealized | not_evidenced |
+| MessageApi | not_evidenced | not_evidenced |
 | PartyOperations | passed | not_evidenced |
 | PartyRelationshipOperations | passed | not_evidenced |
-| PhysicalDeletion | passed | unrealized |
+| PhysicalDeletion | passed | not_evidenced |
 | QueryApi | passed | failed |
 | QueryProvisioning | passed | failed |
-| Signing | passed | unrealized |
+| Signing | passed | not_evidenced |
 | SimplifiedFormats | passed | not_evidenced |
 | SmartAppLaunch | passed | not_evidenced |
 | SystemApi | passed | not_evidenced |
-| Tds | unrealized | not_evidenced |
+| Tds | not_evidenced | not_evidenced |
 | TemplateExamples | passed | not_evidenced |
 | Versioning | passed | failed |
 

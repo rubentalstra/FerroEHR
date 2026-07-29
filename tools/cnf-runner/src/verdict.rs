@@ -54,15 +54,18 @@ pub enum Evidence {
     /// defect — luck, not design).
     Inconclusive,
     /// Cases exist in the catalogue but none produced a gating pass/fail
-    /// (all not-applicable / skipped / not driven / errored).
+    /// (all not-applicable / skipped / not driven / errored / excused) — OR
+    /// the catalogue names no case at all. This is the WHOLE not-evidenced
+    /// space: the former `Unrealized` and `NoCases` variants are DELETED
+    /// (#626, the final #610 ratchet) because the states they excused are
+    /// unrepresentable now — the claim-completeness gate refuses a claimed
+    /// capability with zero verdict-bearing cases before any SUT composes,
+    /// and every formerly-excused claim is realized or corrected. The
+    /// accepted consequence is absolute: a party claiming a tier whose
+    /// required capability it cannot evidence FAILS that tier — the upstream
+    /// Java product included; no excuse arm survives in
+    /// [`required_all_passed`].
     NotEvidenced,
-    /// Every selected case for the capability is excluded by a
-    /// schedule-registered ambiguity (an unrealized wire on this technology
-    /// profile) — an explicit scope exclusion the certificate reports; it
-    /// excuses a required capability instead of failing its tier.
-    Unrealized,
-    /// The catalogue declares no verdict-bearing case for the capability.
-    NoCases,
 }
 
 /// The selected gating cases behind one capability's [`Evidence`], counted by
@@ -675,21 +678,12 @@ fn capability_evidence(
     if relevant.iter().any(|s| s.effective == Effective::Passed) {
         return Evidence::Passed;
     }
-    if !relevant.is_empty()
-        && relevant
-            .iter()
-            .all(|s| s.effective == Effective::ExcusedByRegister)
-    {
-        return Evidence::Unrealized;
-    }
-    let catalogue_has = cases
-        .iter()
-        .any(|c| c.status == CaseStatus::Active && c.capabilities.contains(cap));
-    if catalogue_has {
-        Evidence::NotEvidenced
-    } else {
-        Evidence::NoCases
-    }
+    // All-excused, nothing-selected, and no-case-at-all are ONE state now:
+    // not evidenced (#626 — the excuse variants are deleted; the
+    // claim-completeness gate already refuses the catalogue shapes that
+    // used to need them).
+    let _ = cases;
+    Evidence::NotEvidenced
 }
 
 /// Count the capability's selected gating cases by effective outcome — the
@@ -729,13 +723,10 @@ fn required_all_passed(
         .iter()
         .filter(|(_, e)| e.required && tiers.contains(&e.tier))
         .all(|(name, _)| {
-            // `Unrealized` excuses: the wire does not exist on this
-            // technology profile (schedule-registered, certificate-visible)
-            // — a tier must not be unattainable for every server of an ITS.
-            matches!(
-                evidence_of(caps, name),
-                Some(Evidence::Passed | Evidence::Unrealized)
-            )
+            // ABSOLUTE (#626): only executed passing evidence satisfies a
+            // required capability — no excuse arm. A tier claimed without
+            // the evidence FAILS, whoever the party is.
+            matches!(evidence_of(caps, name), Some(Evidence::Passed))
         })
 }
 
@@ -1093,7 +1084,10 @@ mod tests {
 
     #[test]
     fn no_cases_coverage_prints() {
-        // No catalogue case names AqlBasic -> NoCases; selected/driven zero.
+        // No catalogue case names AqlBasic -> the whole not-evidenced space
+        // is one variant now (#626); selected/driven zero. The shape itself
+        // (a claim with zero cases) is refused upstream by the
+        // claim-completeness gate before any SUT composes.
         let cases: Vec<CaseCore> = Vec::new();
         let st = statement(&["AqlBasic"], &[], &[]);
         let rs = results(serde_json::json!([]));
@@ -1103,7 +1097,7 @@ mod tests {
                 &report.capabilities,
                 &CapabilityName::parse("AqlBasic").unwrap()
             ),
-            Some(Evidence::NoCases)
+            Some(Evidence::NotEvidenced)
         );
         assert_eq!(report.coverage.selected, 0);
         assert_eq!(report.coverage.driven, 0);
