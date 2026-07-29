@@ -65,6 +65,14 @@ impl World {
         std::fs::write(&path, after).expect("write");
     }
 
+    /// Create a NEW seeded artifact file (the constructive-violation
+    /// pattern: the committed catalogue no longer carries the defect shapes
+    /// these gates exist to catch, so seeds build their own).
+    fn write(&self, relative: &str, content: &str) {
+        let path = self.dir.path().join(relative);
+        std::fs::write(&path, content).expect("write seeded file");
+    }
+
     fn findings(&self) -> Vec<Finding> {
         let loaded = load_root(&self.dir.path().join("artifacts")).expect("schema compilation");
         validate(&Context {
@@ -271,24 +279,50 @@ fn a_claimed_capability_with_no_cases_fails_validate() {
 #[test]
 fn an_excused_only_capability_without_its_adjudication_fails_validate() {
     let world = World::new();
-    // Delete the first authored `evidence_exception` block, from its leading
-    // comma through the `" }` that closes it (the reason is the block's only
-    // quoted scalar, so the closing `" }, ` is unambiguous).
+    // CONSTRUCT the violation (the committed matrix carries no authored
+    // evidence_exception any more — the zero-excused end state — so the seed
+    // builds an excused-only capability itself, the SeededHollowCapability
+    // pattern): a seeded row + claim whose ONLY case drives an operation
+    // whose its-rest binding is `unrealized:` (delete_opt — AMB-17), so every
+    // record resolves excused-with-citation and the row names NO adjudicating
+    // register entry.
     world.edit(MATRIX, |text| {
-        let start = text
-            .find(", evidence_exception: {")
-            .expect("an evidence_exception block is authored");
-        let end = start
-            + text
-                .get(start..)
-                .expect("slice")
-                .find("\" }, ")
-                .expect("block end")
-            + 3;
-        let mut out = text;
-        out.replace_range(start..end, "");
-        out
+        text.replacen(
+            EHR_OPS_HEAD,
+            &format!(
+                "SeededExcusedCapability: {{ family: Platform, tier: OPTIONS, \
+                 required: false, min_cases: 0 }}\n{EHR_OPS_HEAD}"
+            ),
+            1,
+        )
     });
+    world.edit("party/ehrbase-rs/statement.json", |text| {
+        text.replacen(
+            "\"capabilities\": [\n",
+            "\"capabilities\": [\n      \"SeededExcusedCapability\",\n",
+            1,
+        )
+    });
+    world.write(
+        "artifacts/schedule/definition_adl14/SEEDED-excused_only.yaml",
+        r#"id: I_DEFINITION_ADL14.delete_opt-seeded_excused_only
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.delete_opt
+capabilities: [SeededExcusedCapability]
+profiles: [OPTIONS]
+test_purpose: "seeded: every record resolves excused (unrealized binding)"
+description: "seeded excused-only case"
+spec_refs: ["SM openehr_platform §I_DEFINITION_ADL14.delete_opt"]
+applies: { rm: ">=1.0.2" }
+requires: { server: any }
+flow:
+  - step: 1
+    call: delete_opt
+    with: { template_id: "seeded" }
+    expect: deleted
+"#,
+    );
     assert_gate(
         &world.findings(),
         "claim-completeness",

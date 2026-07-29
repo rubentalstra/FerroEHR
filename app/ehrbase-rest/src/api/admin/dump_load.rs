@@ -132,12 +132,15 @@ pub(crate) fn dump_load_routes() -> OpenApiRouter<AppState> {
                                       segment entry or the manifest could not \
                                       be created or written.",
          body = serde_json::Value),
-        (status = 501, description = "A well-formed request for an enumeration \
-                                      member this service does not realize \
-                                      (`openehr_canonical_xml`, `7z`). RFC 9110 \
-                                      §15.6.2; the SM neither requires every \
-                                      member nor declares an error for one, so \
-                                      the boundary is declared rather than \
+        (status = 501, description = "A well-formed request for the one \
+                                      enumeration member this service does not \
+                                      realize yet (`openehr_canonical_xml` — \
+                                      the archive's XML form is a design of \
+                                      its own; `zip` and `7z` are both \
+                                      served). RFC 9110 §15.6.2; the SM \
+                                      neither requires every member nor \
+                                      declares an error for one, so the \
+                                      boundary is declared rather than \
                                       dressed up as a client fault.",
          body = serde_json::Value)
     )

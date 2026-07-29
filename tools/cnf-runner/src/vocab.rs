@@ -289,6 +289,10 @@ pub enum CorpusFormat {
     /// ADL2 artefact source text (archetypes/templates/OPTs in ADL syntax).
     #[serde(rename = "adl2-text")]
     Adl2Text,
+    /// ADL 1.4 archetype source text (the `.adl` form the ADL 1.4
+    /// archetype-provisioning extension routes exchange as `text/plain`).
+    #[serde(rename = "adl14-text")]
+    Adl14Text,
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
@@ -595,6 +599,7 @@ impl CorpusFormat {
         CorpusFormat::OptXml,
         CorpusFormat::AqlText,
         CorpusFormat::Adl2Text,
+        CorpusFormat::Adl14Text,
     ];
 }
 
@@ -693,6 +698,6 @@ mod all_consts_tests {
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);
-        assert_eq!(CorpusFormat::ALL.len(), 7);
+        assert_eq!(CorpusFormat::ALL.len(), 8);
     }
 }

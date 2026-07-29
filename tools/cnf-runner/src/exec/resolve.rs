@@ -201,6 +201,7 @@ impl<'a> Resolver<'a> {
                 crate::vocab::CorpusFormat::CanonicalXml
                 | crate::vocab::CorpusFormat::OptXml
                 | crate::vocab::CorpusFormat::Adl2Text
+                | crate::vocab::CorpusFormat::Adl14Text
                 | crate::vocab::CorpusFormat::AqlText => Value::String(text),
             }
         } else if let Some(generated) = &entry.generated_by {

@@ -543,20 +543,28 @@ AMB-33:
     `zip`: the archive's entry set (manifest.json, segment-NNNN.json,
     blobs/<hex>) is identical in both containers and `zip` packs it into one
     `archive.zip`, which `load_ehrs` — passed no format at all, since
-    i_admin_dump_load.adoc gives it `file_sys_loc` alone — DETECTS. `7z` and
-    the EXPORT_FORMAT member `openehr_canonical_xml` stay unrealized, and the
-    refusal changed: both now answer `501 Not Implemented` (RFC 9110 §15.6.2 —
-    "the server does not support the functionality required to fulfil the
-    request") instead of `400`, because a valid SM enumeration member is not a
-    malformed request. THE SM IS SILENT on whether a service may realize a
-    SUBSET of an enumeration: neither i_admin_dump_load.adoc nor export_spec.adoc
-    requires every member, and the interface declares no unsupported-format
-    error (its only error is `file_not_writable`). That silence is adjudicated
-    HERE, and the disposition is deliberate: the boundary is DECLARED (the
-    admin-dump-load served_extensions family and this entry name exactly which
-    members are realized) and CASED NOWHERE, because inventing a case for `7z`
-    would assert this product's own refusal as spec behaviour. No expectation
-    is bent in either direction.
+    i_admin_dump_load.adoc gives it `file_sys_loc` alone — DETECTS.
+    RE-ADJUDICATED 2026-07-29 (owner approval): `7z` is now REALIZED too
+    (`sevenz-rust2`, one `archive.7z` container over the identical entry set,
+    detected by `load_ehrs` like the zip form), so COMPRESSION_FORMAT is
+    realized in FULL and the `-compression_7z` case drives the member. The
+    EXPORT_FORMAT member `openehr_canonical_xml` stays unrealized and answers
+    `501 Not Implemented` (RFC 9110 §15.6.2 — "the server does not support
+    the functionality required to fulfil the request"), never `400`: a valid
+    SM enumeration member is not a malformed request. Its boundary is now
+    DESIGN-shaped rather than dependency-shaped: the archive envelope
+    (manifest/segments/records) is this product's own design with no XML
+    story, so realizing the member means DESIGNING the canonical-XML archive
+    form — tracked as its own issue, never invented ad hoc. THE SM IS SILENT
+    on whether a service may realize a SUBSET of an enumeration: neither
+    i_admin_dump_load.adoc nor export_spec.adoc requires every member, and
+    the interface declares no unsupported-format error (its only error is
+    `file_not_writable`). That silence is adjudicated HERE: the remaining
+    boundary is DECLARED (the admin-dump-load served_extensions family and
+    this entry name exactly which members are realized) and CASED NOWHERE,
+    because a case for `openehr_canonical_xml` would assert this product's
+    own refusal as spec behaviour. No expectation is bent in either
+    direction.
     (2) THE CASE LITERALS, re-derived first-hand against the vendored
     enumerations. `canonical_json` -> `openehr_canonical_json`
     (export_format.adoc spells exactly `openehr_canonical_xml` and
@@ -784,20 +792,26 @@ AMB-41:
     exactly the consequence this entry predicted. Second, the product now DOES
     serve an ADL 1.4 archetype surface: POST/GET /definition/archetype/adl1.4
     and GET/DELETE /definition/archetype/adl1.4/{archetype_id} (the
-    `adl14-archetype` served_extensions family). The binding is nevertheless
-    NOT flipped to an extension realization, and the blocker is an
-    adjudication rather than a coverage decision: Adl14ArchetypeProvisioning is
-    a CORE row the CNF Profiles book marks REQUIRED, and an
-    extension-realization row may never be `required`
-    (`CapabilityMatrix::check_realization_scoping`, owner ruling 2026-07-28) —
-    so realizing it there means dropping `required` from a book-CORE row, which
-    is the owner's call. A second, independent blocker: the closed
-    `CorpusFormat` vocabulary carries `opt-xml` and `adl2-text` but no ADL 1.4
-    archetype member, so the served upload/get/delete branches have no corpus
-    fixture to drive and a flipped battery would be list-only.
-    TODO: flip the I_DEFINITION_ADL14 archetype bindings to extension
-    realizations once the owner has adjudicated `required` on the CORE row and
-    the corpus-format vocabulary can carry an ADL 1.4 source fixture.
+    `adl14-archetype` served_extensions family). RE-ADJUDICATED 2026-07-29 —
+    both former blockers are RESOLVED and the bindings are FLIPPED to
+    extension realizations with an executed six-case battery
+    (upload round-trip / unparseable-source refusal / list / get+delete
+    non-existing / delete round-trip):
+    (1) THE OWNER ADJUDICATED `required`. The CNF Profiles book marks the row
+    CORE/REQUIRED, but the released ITS-REST gives the capability no wire and
+    an extension-realization row may never be `required`
+    (`CapabilityMatrix::check_realization_scoping`, owner ruling 2026-07-28).
+    The owner chose FULL IMPLEMENTATION over a standing excuse (2026-07-29):
+    `required` DROPS from the row — a conscious, register-recorded departure
+    from the book's CORE table, on the derivation that a book requirement
+    with no released wire binds nothing a wire-conformance instrument can
+    demand of any party. The row stays CORE-tier so the book's placement is
+    preserved; only the gating force moves.
+    (2) THE CORPUS FORMAT EXISTS. `CorpusFormat` carries `adl14-text` (the
+    schedule-release vocabulary addition), and the battery drives the
+    provenance-stamped `cnf.archetype.adl14.*` fixtures.
+    The evidence_exception is deleted; the workload exclusion stays, tightened
+    to its own reason (definition administration, not a per-patient arrival).
   disposition: fixed_handling
   upstream_ref: "UPR-16"
 AMB-42:

@@ -164,6 +164,11 @@ CREATE TABLE contribution (
 );
 CREATE INDEX idx_contribution_ehr_id ON contribution (ehr_id);
 CREATE INDEX idx_contribution_audit_id ON contribution (audit_id);
+-- The admin statistics' time-bounded paths (service/admin/statistics.rs) filter
+-- and order on the commit instant; at measured-corpus scale (~10^6 rows) the
+-- 2026-07-29 POC window put the unindexed form's p99 at 2.9 s. No openEHR spec
+-- governs indexing - our own design.
+CREATE INDEX idx_audit_time_committed ON audit (time_committed);
 
 COMMENT ON TABLE contribution IS 'The change-set envelope (RM common master06 §CONTRIBUTION); one per change set, strictly transactional (req 1.7).';
 COMMENT ON COLUMN contribution.ehr_id IS 'Owning EHR, or NULL for a demographic (party) contribution (RM demographic content is not EHR-owned).';
