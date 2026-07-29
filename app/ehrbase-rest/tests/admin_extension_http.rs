@@ -390,28 +390,52 @@ async fn dump_refuses_every_unrepresentable_request_shape() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// A well-formed request for an enumeration member this service does not
-/// realize is `501 Not Implemented` (RFC 9110 §15.6.2) — never a `400`, which
-/// would call a valid SM value malformed.
+/// EVERY declared enumeration member is served: both `EXPORT_FORMAT` members
+/// (`export_format.adoc`: `openehr_canonical_xml`, `openehr_canonical_json`)
+/// crossed with every `COMPRESSION_FORMAT` shape (`compression_format.adoc`:
+/// absent, `zip`, `7z`). No member is refused, downgraded, or answered
+/// `501` — the two enumerations are realized in full, and the format axis is
+/// independent of the container axis.
 #[tokio::test]
-async fn dump_answers_unrealized_enumeration_members_with_not_implemented() {
+async fn dump_serves_every_declared_enumeration_member() {
     let (_pg, app) = app(true).await;
-    let dir = archive_dir();
+    let _ehr = create_ehr(&app).await;
 
-    // `7z` left this list 2026-07-29 (owner-approved realization; the
-    // service round-trip test covers it) — the XML archive form is the one
-    // remaining unrealized member (#670).
-    for member in
-        [serde_json::json!({ "file_sys_loc": dir, "logical_format": "openehr_canonical_xml" })]
-    {
-        let (status, body) = send(&app, post_json("/admin/dump", &member.to_string())).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{member}: {body}");
+    for logical in ["openehr_canonical_json", "openehr_canonical_xml"] {
+        for compression in [None, Some("zip"), Some("7z")] {
+            let dir = archive_dir();
+            let mut spec = serde_json::json!({
+                "file_sys_loc": dir,
+                "logical_format": logical,
+                "segment_split_size": 1024
+            });
+            if let Some(member) = compression {
+                spec["compression_format"] = serde_json::Value::String(member.to_owned());
+            }
+            let (status, body) = send(&app, post_json("/admin/dump", &spec.to_string())).await;
+            assert_eq!(status, StatusCode::OK, "{logical}/{compression:?}: {body}");
+            assert_eq!(body, "[]", "a clean dump reports no failures");
+
+            // The format-less `load_ehrs` reads it back whatever the export
+            // asked for: every archived EHR is the SM's documented duplicate.
+            let (status, body) = send(
+                &app,
+                post_json("/admin/load", &format!(r#"{{"file_sys_loc":{dir:?}}}"#)),
+            )
+            .await;
+            assert_eq!(
+                status,
+                StatusCode::OK,
+                "load {logical}/{compression:?}: {body}"
+            );
+            let reports: serde_json::Value = serde_json::from_str(&body).expect("report json");
+            let list = reports.as_array().expect("a JSON array");
+            assert_eq!(list.len(), 1, "the one duplicate EHR is reported: {body}");
+            assert_eq!(list[0]["dump_status"], false);
+
+            let _ = std::fs::remove_dir_all(&dir);
+        }
     }
-    // ... and the realized `7z` member succeeds on the same wire.
-    let seven = serde_json::json!({ "file_sys_loc": dir, "compression_format": "7z" });
-    let (status, body) = send(&app, post_json("/admin/dump", &seven.to_string())).await;
-    assert_eq!(status, StatusCode::OK, "7z dump: {body}");
-    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// Every route of all three extension groups inherits the ADMIN group's config

@@ -143,6 +143,20 @@ impl ExportSpec {
             segment_split_size: segment_split_size_kb,
         }
     }
+
+    /// An uncompressed `openehr_canonical_xml` export split into
+    /// `segment_split_size_kb` segments: the archive skeleton stays JSON and
+    /// each version's payload is externalized as an `ORIGINAL_VERSION`
+    /// document under the published ITS-XML `<version>` root (the derivation
+    /// is in [`crate::service::admin::dump_load`]'s module docs).
+    #[must_use]
+    pub fn canonical_xml(segment_split_size_kb: i32) -> Self {
+        Self {
+            logical_format: Some(ExportFormat::OpenehrCanonicalXml),
+            compression_format: None,
+            segment_split_size: segment_split_size_kb,
+        }
+    }
 }
 
 /// `DUMP_LOAD_FAIL_REPORT` class
