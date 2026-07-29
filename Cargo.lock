@@ -2324,6 +2324,7 @@ dependencies = [
  "metrics",
  "metrics-exporter-prometheus",
  "moka",
+ "oauth2",
  "object_store",
  "openehr-adl",
  "openehr-am",

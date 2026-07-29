@@ -264,14 +264,21 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
             service.with_audit_store(ehrbase::system_log::store::AuditStore::new(pool.clone()));
     }
 
-    // Opt-in external FHIR terminology provider.
-    match config.terminology.external.default_provider() {
-        Some(Ok(provider)) => {
-            tracing::info!("external FHIR terminology provider configured");
-            service = service.with_external_terminology(Arc::new(provider));
-        }
-        Some(Err(e)) => return Err(e).context("initialising the external terminology provider"),
-        None => {}
+    // Opt-in external FHIR terminology servers — ALL configured providers,
+    // with the terminology→provider routing (a deployment binds several
+    // terminologies at once; BASE `architecture_overview/
+    // master12-terminology.adoc` §Overview).
+    if let Some(router) = ehrbase::service::terminology::router::TerminologyRouter::build(
+        &config.terminology.external,
+    )
+    .context("initialising the external terminology providers")?
+    {
+        tracing::info!(
+            providers = %router.provider_names().collect::<Vec<_>>().join(", "),
+            fail_on_error = router.fail_on_error(),
+            "external FHIR terminology providers configured"
+        );
+        service = service.with_terminology_router(Arc::new(router));
     }
 
     // Opt-in Subject Proxy FHIR-frame executor (fail-closed).

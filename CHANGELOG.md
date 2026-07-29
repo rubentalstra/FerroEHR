@@ -866,6 +866,41 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Several terminology servers can now serve one instance at the same time.**
+  Every entry under `[terminology.external.providers]` is started up, not just
+  `default`, and a new `[terminology.external.routes]` map sends each
+  terminology to the server that serves it — the key is a terminology id
+  (`SNOMED-CT`) or a system URI (`http://snomed.info/sct`), matched
+  case-insensitively, and the value names a provider. A terminology with no
+  route goes to the provider named `default` (or to the sole configured one).
+  Routing applies to the whole terminology surface: the `/terminology/*`
+  extension API, AQL `TERMINOLOGY(…)`, and composition validation. So SNOMED CT
+  can live on one server while LOINC or ICD live on others — the deployment
+  reality openEHR's terminology chapter describes. Configuring a route to a
+  provider that does not exist is now a startup error instead of a silent
+  fallback.
+- **Terminology servers can require OAuth2.** A provider's `oauth2_client` key
+  now does something: it names an entry under
+  `[terminology.external.oauth2_clients]` (token endpoint, client id, client
+  secret or `client_secret_file`, optional scopes, `refresh_leeway_secs`, and
+  `client_secret_basic` / `client_secret_post`), and the CDR obtains a
+  client-credentials access token and sends it as a bearer credential on every
+  request to that server. The token is cached and renewed shortly before it
+  expires, so a validation burst costs one token request per token lifetime. A
+  refused grant fails the call with a clear error — a request is never sent
+  unauthenticated as a fallback. Mutual TLS to a terminology server is still
+  not supported.
+- **Composition commits can now check archetype value-set bindings against a
+  live terminology server.** When a template binds an `ac` code to an external
+  terminology query, and `[terminology.external]` is enabled, committing a
+  COMPOSITION resolves that query and requires the coded value to be a member
+  of the value set it returns. A non-member is a `422` naming the path, the
+  code and the bound query. If the value set cannot be resolved at all (server
+  down, error response, no server configured for that terminology), the
+  existing `fail_on_error` switch decides: `false` (the default) accepts the
+  commit and logs a warning, `true` rejects it. With `[terminology.external]`
+  disabled — the shipped default — nothing is resolved, no request is made, and
+  commit behaviour is exactly as before.
 - **`POST /admin/dump` now serves the `openehr_canonical_xml` logical format,
   which used to answer `501`.** Both openEHR export formats are available:
   the default `openehr_canonical_json` keeps each version's content inline in

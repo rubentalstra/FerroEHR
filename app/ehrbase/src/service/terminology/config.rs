@@ -16,25 +16,42 @@
 //! Provider selection is **openEHR-bundle-by-default, FHIR opt-in**: with
 //! [`ExternalTerminologyConfig::enabled`] `false` (the default) no remote
 //! provider is built and composition validation stays on the in-process
-//! `openehr-term` bundle ([`super::bundle`]); a FHIR provider is materialised
+//! `openehr-term` bundle ([`super::bundle`]); FHIR providers are materialised
 //! only when a deployment opts in.
+//!
+//! **Several servers at once.** `BASE/docs/architecture_overview/
+//! master12-terminology.adoc` §Overview names the target ecosystem — LOINC,
+//! `ICDx`, ICPC, SNOMED CT "and the many other terminologies and vocabularies
+//! used in healthcare" — so a deployment binds to several at the same time and
+//! the CDR must operate against several terminology servers simultaneously.
+//! Every entry of [`ExternalTerminologyConfig::providers`] is therefore
+//! materialised, and [`ExternalTerminologyConfig::routes`] maps a terminology
+//! id / system URI to the provider that serves it
+//! ([`super::router::TerminologyRouter`]).
+//!
+//! NOTE: no openEHR spec governs the routing-config mechanics (the named
+//! provider map, the route keys, the `default` fallback) — our own
+//! design/extension. Only the *requirement* to serve several terminologies
+//! simultaneously is the spec's (BASE master12 §Overview).
 
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::config::secret::Secret;
 use crate::service::status::SmError;
 
 use super::fhir::FhirTerminologyProvider;
+use super::oauth2::TokenSource;
 
 /// Default per-provider connect timeout (ms).
 const DEFAULT_CONNECT_TIMEOUT_MS: u64 = 2_000;
 /// Default per-provider request timeout (ms).
 const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
-/// The provider name selected by
-/// [`ExternalTerminologyConfig::default_provider`] when several are
-/// configured.
-const DEFAULT_PROVIDER_NAME: &str = "default";
+/// The provider name the router falls back to when no route matches
+/// (or the sole configured provider when there is exactly one).
+pub(super) const DEFAULT_PROVIDER_NAME: &str = "default";
 
 /// The `[terminology]` section: the extension-API toggle + external-server
 /// validation config.
@@ -66,9 +83,72 @@ pub struct ExternalTerminologyConfig {
     /// treats it.
     #[serde(default)]
     pub fail_on_error: bool,
-    /// The configured terminology-server providers, keyed by name.
+    /// The configured terminology-server providers, keyed by name. **All** of
+    /// them are materialised at boot (BASE master12 §Overview — a deployment
+    /// binds to several terminologies at the same time).
     #[serde(default)]
     pub providers: BTreeMap<String, FhirProviderConfig>,
+    /// Terminology → provider routing: a terminology id (`SNOMED-CT`) or
+    /// system URI (`http://snomed.info/sct`) mapped to a provider name from
+    /// [`Self::providers`]. Lookups are case-insensitive and exact; an
+    /// unmatched key falls back to the `default` provider (or the sole
+    /// configured one). No openEHR spec governs the routing map — our own
+    /// design/extension.
+    #[serde(default)]
+    pub routes: BTreeMap<String, String>,
+    /// `OAuth2` client-credentials clients a provider authenticates with,
+    /// keyed by the name its [`FhirProviderConfig::oauth2_client`] references.
+    #[serde(default)]
+    pub oauth2_clients: BTreeMap<String, TerminologyOauth2Config>,
+}
+
+/// How the `OAuth2` client authenticates at the token endpoint (RFC 6749
+/// §2.3.1: `client_secret_basic` — the HTTP Basic form servers MUST support —
+/// or the `client_secret_post` form body).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Oauth2AuthMethod {
+    /// Credentials in the `Authorization: Basic` header (the RFC 6749 default).
+    #[default]
+    ClientSecretBasic,
+    /// Credentials in the token-request form body.
+    ClientSecretPost,
+}
+
+/// An `OAuth2` client-credentials client used to authenticate to a terminology
+/// server (`[terminology.external.oauth2_clients.<name>]`).
+///
+/// No openEHR spec governs terminology-server authentication — our own
+/// design/extension; `BASE/docs/architecture_overview/master12-terminology.adoc`
+/// only models the backend as an external "terminology query server".
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TerminologyOauth2Config {
+    /// The `OAuth2` token endpoint (RFC 6749 §3.2).
+    pub token_url: String,
+    /// The registered client identifier.
+    pub client_id: String,
+    /// The client secret (redacted in every rendering); or set
+    /// [`Self::client_secret_file`].
+    #[serde(default)]
+    pub client_secret: Option<Secret>,
+    /// A file whose contents are the client secret, resolved by the config
+    /// loader into [`Self::client_secret`].
+    #[serde(default)]
+    pub client_secret_file: Option<PathBuf>,
+    /// Scopes requested with the client-credentials grant (RFC 6749 §4.4.2).
+    #[serde(default)]
+    pub scopes: Vec<String>,
+    /// How long before a token's stated expiry it is refreshed, in seconds.
+    #[serde(default = "default_refresh_leeway_secs")]
+    pub refresh_leeway_secs: u64,
+    /// Client authentication method at the token endpoint.
+    #[serde(default)]
+    pub auth_method: Oauth2AuthMethod,
+}
+
+const fn default_refresh_leeway_secs() -> u64 {
+    30
 }
 
 /// The kind of terminology server. Only FHIR R4 is supported.
@@ -112,16 +192,13 @@ pub struct FhirProviderConfig {
     /// Overall request timeout (ms).
     #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
-    /// Optional name of an `OAuth2` client-credentials client to authenticate
-    /// to the TS with.
+    /// Name of the `OAuth2` client-credentials client
+    /// ([`ExternalTerminologyConfig::oauth2_clients`]) whose bearer token is
+    /// attached to every request to this provider. Unset = unauthenticated.
     ///
-    /// NOTE: `OAuth2` client-credentials + mutual-TLS to the TS
-    /// are a follow-up on top of this
-    /// core `$validate-code`/`$expand`/`$subsumes`/`$lookup` provider; the
-    /// field is accepted so config written for the full design parses, but no
-    /// bearer token is attached yet. A configured value that would silently
-    /// send unauthenticated requests is surfaced at build time
-    /// ([`FhirTerminologyProvider::new`]).
+    /// TODO: mutual TLS to the terminology server is not implemented — a
+    /// provider that must present a client certificate has no way to say so;
+    /// the `[server.tls]` material is inbound-only.
     #[serde(default)]
     pub oauth2_client: Option<String>,
     /// Result-cache TTL in seconds for this provider's FHIR operations
@@ -153,42 +230,61 @@ const fn default_request_timeout_ms() -> u64 {
 }
 
 impl ExternalTerminologyConfig {
-    /// Build the named provider, or `None` when external terminology is
-    /// disabled or no provider carries that name. The inner `Result` is
-    /// `Err` ([`SmError`]) when the named provider's configuration is invalid
-    /// (empty URL or an un-buildable HTTP client).
+    /// Build the named provider, with its `OAuth2` token source attached when
+    /// one is configured. `None` when external terminology is disabled or no
+    /// provider carries that name.
+    ///
+    /// # Errors
+    ///
+    /// [`SmError`] when the provider's configuration is invalid (empty URL, an
+    /// un-buildable HTTP client) or its `oauth2_client` names a client that is
+    /// missing or itself invalid.
     #[must_use]
     pub fn provider(&self, name: &str) -> Option<Result<FhirTerminologyProvider, SmError>> {
         if !self.enabled {
             return None;
         }
-        self.providers
-            .get(name)
-            .map(|cfg| FhirTerminologyProvider::new(name, cfg))
+        let cfg = self.providers.get(name)?;
+        Some(self.build_provider(name, cfg))
     }
 
-    /// Build the default provider: the one named `default`, or the single
-    /// configured provider when exactly one exists. `None` when external
-    /// terminology is disabled or the selection is ambiguous/empty. The
-    /// inner `Result` is `Err` ([`SmError`]) when the selected provider's
-    /// configuration is invalid.
-    #[must_use]
-    pub fn default_provider(&self) -> Option<Result<FhirTerminologyProvider, SmError>> {
-        if !self.enabled {
-            return None;
-        }
-        let (name, cfg) = self
-            .providers
-            .get_key_value(DEFAULT_PROVIDER_NAME)
-            .or_else(|| {
-                // Exactly one configured provider → use it unambiguously.
-                let mut it = self.providers.iter();
-                match (it.next(), it.next()) {
-                    (Some(only), None) => Some(only),
-                    _ => None,
-                }
-            })?;
-        Some(FhirTerminologyProvider::new(name, cfg))
+    /// Build one provider from its config: the FHIR client plus, when
+    /// `oauth2_client` is set, the client-credentials [`TokenSource`] whose
+    /// bearer token every request carries.
+    pub(super) fn build_provider(
+        &self,
+        name: &str,
+        cfg: &FhirProviderConfig,
+    ) -> Result<FhirTerminologyProvider, SmError> {
+        let provider = FhirTerminologyProvider::new(name, cfg)?;
+        let Some(client_name) = cfg.oauth2_client.as_deref() else {
+            return Ok(provider);
+        };
+        let client_cfg = self.oauth2_clients.get(client_name).ok_or_else(|| {
+            SmError::exception(format!(
+                "terminology provider '{name}' names oauth2_client '{client_name}', which is not \
+                 configured under [terminology.external.oauth2_clients]"
+            ))
+        })?;
+        let token = TokenSource::new(client_name, client_cfg)?;
+        Ok(provider.with_token(std::sync::Arc::new(token)))
+    }
+}
+
+/// A provider config pointing at `url`, with defaults everywhere else and no
+/// authentication — the shared fixture for this module's and
+/// [`super::router`]'s tests.
+#[cfg(test)]
+pub(super) fn test_provider_config(url: &str) -> FhirProviderConfig {
+    FhirProviderConfig {
+        kind: ProviderKind::Fhir,
+        url: url.to_owned(),
+        operation: FhirOperation::ValidateCode,
+        connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
+        request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
+        oauth2_client: None,
+        cache_ttl_secs: 300,
+        cache_capacity: 1024,
     }
 }
 
@@ -208,62 +304,58 @@ mod tests {
         assert!(!c.enabled);
         assert!(!c.fail_on_error);
         assert!(c.providers.is_empty());
-        assert!(c.default_provider().is_none());
+        assert!(c.routes.is_empty());
+        assert!(c.oauth2_clients.is_empty());
+        assert!(c.provider(DEFAULT_PROVIDER_NAME).is_none());
     }
 
     #[test]
     fn a_configured_provider_materialises() {
-        let mut providers = BTreeMap::new();
-        providers.insert(
+        let providers = BTreeMap::from([(
             "default".to_owned(),
-            FhirProviderConfig {
-                kind: ProviderKind::Fhir,
-                url: "http://terminology:8090/fhir".to_owned(),
-                operation: FhirOperation::ValidateCode,
-                connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
-                request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
-                oauth2_client: None,
-                cache_ttl_secs: 300,
-                cache_capacity: 1024,
-            },
-        );
+            test_provider_config("http://terminology:8090/fhir"),
+        )]);
         let enabled = ExternalTerminologyConfig {
             enabled: true,
-            fail_on_error: false,
             providers: providers.clone(),
+            ..ExternalTerminologyConfig::default()
         };
-        assert!(enabled.default_provider().expect("selected").is_ok());
+        assert!(enabled.provider("default").expect("selected").is_ok());
         // Disabled selects nothing even with a provider present.
         let disabled = ExternalTerminologyConfig {
             enabled: false,
-            fail_on_error: false,
             providers,
+            ..ExternalTerminologyConfig::default()
         };
         assert!(disabled.provider("default").is_none());
-        assert!(disabled.default_provider().is_none());
     }
 
     #[test]
     fn empty_url_is_rejected_at_build() {
-        let mut providers = BTreeMap::new();
-        providers.insert(
-            "default".to_owned(),
-            FhirProviderConfig {
-                kind: ProviderKind::Fhir,
-                url: "   ".to_owned(),
-                operation: FhirOperation::ValidateCode,
-                connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
-                request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
-                oauth2_client: None,
-                cache_ttl_secs: 300,
-                cache_capacity: 1024,
-            },
-        );
         let c = ExternalTerminologyConfig {
             enabled: true,
-            fail_on_error: false,
-            providers,
+            providers: BTreeMap::from([("default".to_owned(), test_provider_config("   "))]),
+            ..ExternalTerminologyConfig::default()
         };
         assert!(c.provider("default").expect("present").is_err());
+    }
+
+    /// A provider naming an `oauth2_client` that is not configured is a build
+    /// error — never a silent unauthenticated request to the terminology
+    /// server.
+    #[test]
+    fn unknown_oauth2_client_is_rejected_at_build() {
+        let mut provider = test_provider_config("http://terminology:8090/fhir");
+        provider.oauth2_client = Some("ts-client".to_owned());
+        let c = ExternalTerminologyConfig {
+            enabled: true,
+            providers: BTreeMap::from([("default".to_owned(), provider)]),
+            ..ExternalTerminologyConfig::default()
+        };
+        let err = c
+            .provider("default")
+            .expect("present")
+            .expect_err("unknown oauth2_client must fail the build");
+        assert!(err.message.contains("ts-client"), "got {}", err.message);
     }
 }
