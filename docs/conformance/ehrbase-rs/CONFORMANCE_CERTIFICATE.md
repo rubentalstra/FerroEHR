@@ -38,7 +38,7 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | DirectoryOps | Y | released-wire | pass |
 | Platform | ChangeSets | Y | released-wire | pass |
 | Platform | Versioning | Y | released-wire | pass |
-| Platform | ArchetypeValidation | Y | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
+| Platform | ArchetypeValidation | Y | released-wire | pass |
 | Platform | PartyOperations | OPT | released-wire | pass |
 | Platform | PartyRelationshipOperations | OPT | extension | pass |
 | Platform | DemographicArchetypeValidation | OPT | released-wire | pass |
