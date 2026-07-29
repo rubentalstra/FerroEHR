@@ -76,6 +76,9 @@ fn provider(base: &str) -> FhirTerminologyProvider {
         connect_timeout_ms: 500,
         request_timeout_ms: 800,
         oauth2_client: None,
+        client_cert_path: None,
+        client_key_path: None,
+        ca_bundle_path: None,
         cache_ttl_secs: 0,
         cache_capacity: 0,
     };

@@ -23,6 +23,9 @@
 //!   [`ExternalTerminologyConfig`](config::ExternalTerminologyConfig)).
 //! - [`oauth2`] — [`TokenSource`](oauth2::TokenSource), the `OAuth2`
 //!   client-credentials authentication a provider may carry.
+//! - [`tls`] — the per-provider outbound TLS material: the client certificate
+//!   presented for mutual TLS and the trust anchors the server is verified
+//!   with (no openEHR spec governs transport security — our own design).
 //! - [`router`] — [`TerminologyRouter`](router::TerminologyRouter): every
 //!   configured server, materialised, with the terminology → provider routing.
 //! - [`routing`] — the 9 SM calls on `EhrbaseService`, routing between the
@@ -63,5 +66,6 @@ pub mod fhir;
 pub mod oauth2;
 pub mod router;
 mod routing;
+pub mod tls;
 
 pub mod types;
