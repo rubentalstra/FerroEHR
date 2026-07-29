@@ -10,6 +10,7 @@
 //! date/time/duration values is covered by the RM-invariant pass; precise
 //! temporal-range and precision semantics are deferred).
 
+use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use serde_json::Value;
 
 use super::{ValidationKind, Validator};
@@ -115,7 +116,9 @@ fn check_code_lists(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
 /// (`None` on the constraint side means the archetype-`local` terminology).
 fn terminology_matches(constraint: Option<&str>, instance: Option<&str>) -> bool {
     match constraint {
-        None | Some("local" | "") => matches!(instance, None | Some("local" | "")),
+        None | Some(LOCAL_TERMINOLOGY_ID | "") => {
+            matches!(instance, None | Some(LOCAL_TERMINOLOGY_ID | ""))
+        }
         Some(t) => instance == Some(t),
     }
 }

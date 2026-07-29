@@ -2,3 +2,6 @@
 
 pub mod validity_kind;
 pub mod version_status;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod definitions_impl;

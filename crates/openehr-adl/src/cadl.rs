@@ -48,6 +48,7 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{
     Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
     MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode,
@@ -2730,7 +2731,7 @@ fn cstring_regex(regex: String, assumed: Option<String>) -> CString {
 /// A local (archetype-internal) at-code terminology value.
 fn local_term_code(code: &str) -> TerminologyCode {
     TerminologyCode {
-        terminology_id: "local".to_owned(),
+        terminology_id: LOCAL_TERMINOLOGY_ID.to_owned(),
         terminology_version: None,
         code_string: code.to_owned(),
         uri: None,
