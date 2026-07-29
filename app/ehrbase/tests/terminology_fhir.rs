@@ -28,6 +28,9 @@ fn provider(base: &str, operation: FhirOperation) -> FhirTerminologyProvider {
         connect_timeout_ms: 500,
         request_timeout_ms: 800,
         oauth2_client: None,
+        client_cert_path: None,
+        client_key_path: None,
+        ca_bundle_path: None,
         // Cache off: these tests assert exact per-call server interactions.
         cache_ttl_secs: 0,
         cache_capacity: 0,
@@ -44,6 +47,9 @@ fn cached_provider(base: &str, operation: FhirOperation) -> FhirTerminologyProvi
         connect_timeout_ms: 500,
         request_timeout_ms: 800,
         oauth2_client: None,
+        client_cert_path: None,
+        client_key_path: None,
+        ca_bundle_path: None,
         cache_ttl_secs: 300,
         cache_capacity: 1024,
     };

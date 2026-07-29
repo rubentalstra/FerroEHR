@@ -896,8 +896,23 @@ workflow refuses a tag that has no matching section here.
   request to that server. The token is cached and renewed shortly before it
   expires, so a validation burst costs one token request per token lifetime. A
   refused grant fails the call with a clear error — a request is never sent
-  unauthenticated as a fallback. Mutual TLS to a terminology server is still
-  not supported.
+  unauthenticated as a fallback.
+- **Terminology servers can require a client certificate (mutual TLS).** A
+  provider takes three new keys — `client_cert_path`, `client_key_path` and
+  `ca_bundle_path` — so the CDR presents a client certificate to that
+  terminology server and verifies the server against that server's own trust
+  anchors. The identity is per provider because a client certificate is issued
+  by the peer's PKI: a deployment enrolled with a national SNOMED CT service, a
+  commercial value-set server and an in-house server holds three different
+  certificates, and repeating the same paths covers the case where one identity
+  really does serve them all. `ca_bundle_path` *replaces* the default trust
+  anchors for that provider, so a privately-issued terminology server is pinned
+  to its own CA instead of also accepting the whole public web PKI. There is no
+  option to skip verification — server-certificate and hostname verification
+  stay on for every provider; the bundle changes which anchors are trusted,
+  never whether the server is checked. Anything broken (one half of an
+  identity, an unreadable PEM, a key file holding no key, a CA bundle holding
+  no certificate) fails at startup, never at the first validated code.
 - **Composition commits can now check archetype value-set bindings against a
   live terminology server.** When a template binds an `ac` code to an external
   terminology query, and `[terminology.external]` is enabled, committing a

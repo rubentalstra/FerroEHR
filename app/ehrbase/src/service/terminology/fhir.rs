@@ -104,8 +104,10 @@ impl FhirTerminologyProvider {
     ///
     /// # Errors
     ///
-    /// [`SmError::exception`] if the URL is empty (after trimming) or the
-    /// `reqwest` client cannot be built (e.g. TLS backend init failure).
+    /// [`SmError::exception`] if the URL is empty (after trimming), the
+    /// configured TLS material is unusable ([`super::tls::TlsMaterialError`]),
+    /// or the `reqwest` client cannot be built (e.g. TLS backend init
+    /// failure).
     pub fn new(name: &str, cfg: &FhirProviderConfig) -> Result<Self, SmError> {
         let base = cfg.url.trim().trim_end_matches('/').to_owned();
         if base.is_empty() {
@@ -113,15 +115,19 @@ impl FhirTerminologyProvider {
                 "terminology provider '{name}' has an empty url"
             )));
         }
-        let client = reqwest::Client::builder()
+        let builder = reqwest::Client::builder()
             .connect_timeout(Duration::from_millis(cfg.connect_timeout_ms))
-            .timeout(Duration::from_millis(cfg.request_timeout_ms))
-            .build()
-            .map_err(|e| {
-                SmError::exception(format!(
-                    "building terminology client for provider '{name}': {e}"
-                ))
-            })?;
+            .timeout(Duration::from_millis(cfg.request_timeout_ms));
+        // Mutual TLS + the provider's trust anchors, when configured. Bad
+        // material is a boot failure here, never a first-request surprise
+        // ([`super::tls`]).
+        let builder = super::tls::apply(builder, cfg)
+            .map_err(|e| SmError::exception(format!("terminology provider '{name}': {e}")))?;
+        let client = builder.build().map_err(|e| {
+            SmError::exception(format!(
+                "building terminology client for provider '{name}': {e}"
+            ))
+        })?;
         let cache = (cfg.cache_ttl_secs > 0).then(|| {
             moka::future::Cache::builder()
                 .max_capacity(cfg.cache_capacity)
@@ -754,6 +760,9 @@ mod tests {
             connect_timeout_ms: 100,
             request_timeout_ms: 100,
             oauth2_client: None,
+            client_cert_path: None,
+            client_key_path: None,
+            ca_bundle_path: None,
             cache_ttl_secs: 0,
             cache_capacity: 1024,
         };
