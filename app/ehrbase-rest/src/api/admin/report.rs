@@ -77,7 +77,9 @@ pub(crate) fn report_routes() -> OpenApiRouter<AppState> {
                         CONTRIBUTION / version audit `time_committed`. Either \
                         bound may be empty for an open interval \
                         (`/2026-01-01T00:00:00Z`, `2020-01-01T00:00:00Z/`); an \
-                        absent parameter is the fully open interval.",
+                        absent parameter is the fully open interval. A pair \
+                        bounded on BOTH sides must satisfy `lower <= upper` \
+                        (BASE `Interval` invariant `Limits_consistent`).",
          example = "2020-01-01T00:00:00Z/2026-12-31T00:00:00Z")
     ),
     responses(
@@ -88,9 +90,12 @@ pub(crate) fn report_routes() -> OpenApiRouter<AppState> {
          body = Vec<String>,
          example = json!(["8849182c-82ad-4088-a07f-48ead4180515"])),
         (status = 400, description = "`a_service` is absent or names no \
-                                      `PLATFORM_SERVICE` member, or a \
-                                      `time_interval` bound is not a valid ISO \
-                                      8601 date-time — SM \
+                                      `PLATFORM_SERVICE` member, `time_interval` \
+                                      is not `<lower>/<upper>`, a bound is not a \
+                                      valid ISO 8601 date-time, or the bounded \
+                                      pair has its lower bound AFTER its upper \
+                                      bound (BASE `Interval` invariant \
+                                      `Limits_consistent`) — SM \
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \
@@ -144,7 +149,9 @@ pub(crate) async fn admin_report_contributions(
                         CONTRIBUTION / version audit `time_committed`. Either \
                         bound may be empty for an open interval \
                         (`/2026-01-01T00:00:00Z`, `2020-01-01T00:00:00Z/`); an \
-                        absent parameter is the fully open interval.",
+                        absent parameter is the fully open interval. A pair \
+                        bounded on BOTH sides must satisfy `lower <= upper` \
+                        (BASE `Interval` invariant `Limits_consistent`).",
          example = "2020-01-01T00:00:00Z/2026-12-31T00:00:00Z")
     ),
     responses(
@@ -153,9 +160,12 @@ pub(crate) async fn admin_report_contributions(
                                       that holds no versioned content).",
          body = i64, example = json!(0)),
         (status = 400, description = "`a_service` is absent or names no \
-                                      `PLATFORM_SERVICE` member, or a \
-                                      `time_interval` bound is not a valid ISO \
-                                      8601 date-time — SM \
+                                      `PLATFORM_SERVICE` member, `time_interval` \
+                                      is not `<lower>/<upper>`, a bound is not a \
+                                      valid ISO 8601 date-time, or the bounded \
+                                      pair has its lower bound AFTER its upper \
+                                      bound (BASE `Interval` invariant \
+                                      `Limits_consistent`) — SM \
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \
@@ -209,7 +219,9 @@ pub(crate) async fn admin_report_contribution_count(
                         CONTRIBUTION / version audit `time_committed`. Either \
                         bound may be empty for an open interval \
                         (`/2026-01-01T00:00:00Z`, `2020-01-01T00:00:00Z/`); an \
-                        absent parameter is the fully open interval.",
+                        absent parameter is the fully open interval. A pair \
+                        bounded on BOTH sides must satisfy `lower <= upper` \
+                        (BASE `Interval` invariant `Limits_consistent`).",
          example = "2020-01-01T00:00:00Z/2026-12-31T00:00:00Z")
     ),
     responses(
@@ -220,9 +232,12 @@ pub(crate) async fn admin_report_contribution_count(
                                       only `a_service=Ehr` can be non-zero.",
          body = i64, example = json!(0)),
         (status = 400, description = "`a_service` is absent or names no \
-                                      `PLATFORM_SERVICE` member, or a \
-                                      `time_interval` bound is not a valid ISO \
-                                      8601 date-time — SM \
+                                      `PLATFORM_SERVICE` member, `time_interval` \
+                                      is not `<lower>/<upper>`, a bound is not a \
+                                      valid ISO 8601 date-time, or the bounded \
+                                      pair has its lower bound AFTER its upper \
+                                      bound (BASE `Interval` invariant \
+                                      `Limits_consistent`) — SM \
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \
@@ -281,7 +296,9 @@ pub(crate) async fn admin_report_versioned_composition_count(
                         CONTRIBUTION / version audit `time_committed`. Either \
                         bound may be empty for an open interval \
                         (`/2026-01-01T00:00:00Z`, `2020-01-01T00:00:00Z/`); an \
-                        absent parameter is the fully open interval.",
+                        absent parameter is the fully open interval. A pair \
+                        bounded on BOTH sides must satisfy `lower <= upper` \
+                        (BASE `Interval` invariant `Limits_consistent`).",
          example = "2020-01-01T00:00:00Z/2026-12-31T00:00:00Z")
     ),
     responses(
@@ -292,9 +309,12 @@ pub(crate) async fn admin_report_versioned_composition_count(
                                       be non-zero.",
          body = i64, example = json!(0)),
         (status = 400, description = "`a_service` is absent or names no \
-                                      `PLATFORM_SERVICE` member, or a \
-                                      `time_interval` bound is not a valid ISO \
-                                      8601 date-time — SM \
+                                      `PLATFORM_SERVICE` member, `time_interval` \
+                                      is not `<lower>/<upper>`, a bound is not a \
+                                      valid ISO 8601 date-time, or the bounded \
+                                      pair has its lower bound AFTER its upper \
+                                      bound (BASE `Interval` invariant \
+                                      `Limits_consistent`) — SM \
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \

@@ -49,3 +49,11 @@ outcomes:
   # marker is written (all-or-nothing).
   not_found:
     status: 404
+  # SM `precondition_violation` — the request does not carry the `List<String>`
+  # the signature takes: the body is not `{ "ehr_ids": [ … ] }`, or a member is
+  # not a well-formed identifier. The list is validated in full BEFORE any
+  # marker is written, so a single malformed member refuses the whole request
+  # (the same all-or-nothing law the not-found branch states). Nothing released
+  # governs this route; the status choice is ours (RFC 9110 §15.5.1).
+  bad_request:
+    status: 400

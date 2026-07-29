@@ -50,3 +50,15 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
+  # SM `precondition_violation` — a parameter value the operation cannot take:
+  # `a_service` naming no `PLATFORM_SERVICE` member (platform_service.adoc),
+  # a `time_interval` that is not the `<lower>/<upper>` pair the SM
+  # `Interval<Iso8601_date_time>` is carried as, a bound that is not an ISO 8601
+  # date-time, or a BOTH-bounded pair whose lower bound is after its upper bound
+  # (BASE org.openehr.base.foundation_types.interval.adoc §Invariants,
+  # `Limits_consistent`: "(not upper_unbounded and not lower_unbounded) implies
+  # lower <= upper" — such a pair is no Interval, so the argument violates its
+  # own type). Nothing released governs this route; the status choice is ours
+  # (RFC 9110 §15.5.1).
+  bad_request:
+    status: 400

@@ -68,23 +68,41 @@ fn parse_uuid_list(raw: &[String], label: &str) -> Result<Vec<Uuid>, SmError> {
 /// `Interval<Iso8601_date_time>` with no inclusivity stated): the interval is
 /// treated as **closed** `[lo, hi]` — the default openEHR `Interval` bound
 /// inclusivity — an SM-silent, documented realization of our own.
+///
+/// NOTE (BASE `org.openehr.base.foundation_types.interval.adoc` §Invariants,
+/// `Limits_consistent`: `(not upper_unbounded and not lower_unbounded) implies
+/// lower <= upper`): a bounded pair whose lower bound is AFTER its upper bound
+/// is not an `Interval` at all, so the parameter value violates its own type
+/// and the call is refused (`precondition_violation`) rather than silently
+/// answered with the empty result an inverted range would select.
 fn parse_range(range: types::StatTimeRange) -> Result<(Option<String>, Option<String>), SmError> {
     let Some((lo, hi)) = range else {
         return Ok((None, None));
     };
-    Ok((parse_bound(lo)?, parse_bound(hi)?))
+    let lower = parse_bound(lo)?;
+    let upper = parse_bound(hi)?;
+    if let (Some(lower), Some(upper)) = (lower, upper)
+        && lower > upper
+    {
+        return Err(SmError::precondition(format!(
+            "time_interval lower bound {lower} is after its upper bound {upper} — an \
+             Interval requires lower <= upper (BASE Interval invariant Limits_consistent)"
+        )));
+    }
+    Ok((
+        lower.map(|ts| ts.to_string()),
+        upper.map(|ts| ts.to_string()),
+    ))
 }
 
-/// Validate one optional ISO 8601 date-time bound, returning its canonical
-/// string form for binding (or `None` for an open bound). Invalid → `400`.
-fn parse_bound(bound: Option<String>) -> Result<Option<String>, SmError> {
+/// Validate one optional ISO 8601 date-time bound (or `None` for an open
+/// bound). Invalid → `400`.
+fn parse_bound(bound: Option<String>) -> Result<Option<jiff::Timestamp>, SmError> {
     match bound {
         None => Ok(None),
-        Some(raw) => {
-            let ts: jiff::Timestamp = raw
-                .parse()
-                .map_err(|_| SmError::precondition(format!("invalid ISO 8601 date-time: {raw}")))?;
-            Ok(Some(ts.to_string()))
-        }
+        Some(raw) => raw
+            .parse::<jiff::Timestamp>()
+            .map(Some)
+            .map_err(|_| SmError::precondition(format!("invalid ISO 8601 date-time: {raw}"))),
     }
 }
