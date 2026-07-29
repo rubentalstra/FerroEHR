@@ -35,11 +35,15 @@
 //! - The typed-`enum` RM tree is *not* walked directly: a second, typed
 //!   visitor over ~130 generated structs would duplicate this logic for no
 //!   wire gain — every consumer already holds the canonical JSON form.
-//! - Predicates carrying general comparison expressions (e.g.
-//!   `[at0007 and time >= '...']`) are rejected as
-//!   [`PathError::UnsupportedPredicate`] — the accept-set here is the
-//!   archetype-id / name / uid / positional subset the spec's own
-//!   top-level-structure and uniqueness examples use.
+//! - General comparison predicates (§"Other Predicates", e.g.
+//!   `[at0007 and time >= '...']`,
+//!   `[at0002.1 and value/defining_code/code_string = 'A04']`) are supported
+//!   as [`Comparison`] conjuncts: a relative attribute path, an operator
+//!   (`=`, `!=`, `<`, `<=`, `>`, `>=`), and a quoted-string or numeric
+//!   literal, evaluated with XPath existential node-set semantics (strings
+//!   compare lexically — ISO 8601 date/times order temporally; numbers
+//!   numerically). Predicate text outside the grammar still fails loud as
+//!   [`PathError::UnsupportedPredicate`].
 //! - NOTE: the `//` pattern and the positional predicate `[n]` are part of
 //!   the master11 *path* grammar (realised here), but are **not** part of the
 //!   AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
@@ -89,7 +93,10 @@ pub enum PathError {
 /// - `uid` — `[uid='…']` / `[at0003 and uid='…']` (§"Using a Uid-based
 ///   Predicate");
 /// - `position` — the 1-based XPath positional predicate `[n]` (§"Using
-///   Positional Parameters"), applied to the *container*, not a node attribute.
+///   Positional Parameters"), applied to the *container*, not a node attribute;
+/// - `comparisons` — general attribute comparisons (§"Other Predicates"), e.g.
+///   `[at0007 and time >= '2005-06-24T09:30:00']` or
+///   `[at0002.1 and value/defining_code/code_string = 'A04']`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Predicate {
     /// `archetype_node_id` (or, at archetype roots, archetype id).
@@ -100,6 +107,139 @@ pub struct Predicate {
     pub uid: Option<String>,
     /// 1-based positional index into the container attribute.
     pub position: Option<usize>,
+    /// General attribute comparisons (§"Other Predicates"), ANDed with the
+    /// conjuncts above.
+    pub comparisons: Vec<Comparison>,
+}
+
+/// A comparison operator in a general predicate conjunct (BASE
+/// `master11-paths` §"Other Predicates").
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CmpOp {
+    /// `=`
+    Eq,
+    /// `!=`
+    Ne,
+    /// `<`
+    Lt,
+    /// `<=`
+    Le,
+    /// `>`
+    Gt,
+    /// `>=`
+    Ge,
+}
+
+impl CmpOp {
+    /// The operator's path-syntax token.
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            CmpOp::Eq => "=",
+            CmpOp::Ne => "!=",
+            CmpOp::Lt => "<",
+            CmpOp::Le => "<=",
+            CmpOp::Gt => ">",
+            CmpOp::Ge => ">=",
+        }
+    }
+
+    /// Apply the operator to a total ordering.
+    fn holds(self, ord: std::cmp::Ordering) -> bool {
+        match self {
+            CmpOp::Eq => ord.is_eq(),
+            CmpOp::Ne => ord.is_ne(),
+            CmpOp::Lt => ord.is_lt(),
+            CmpOp::Le => ord.is_le(),
+            CmpOp::Gt => ord.is_gt(),
+            CmpOp::Ge => ord.is_ge(),
+        }
+    }
+}
+
+/// The right-hand literal of a general comparison conjunct: a single-quoted
+/// string (compared lexically — ISO 8601 date/time strings order temporally)
+/// or an unquoted number (compared numerically).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CmpLiteral {
+    /// A `'…'` string literal.
+    Str(String),
+    /// An unquoted numeric literal (stored as written; compared as `f64`).
+    Num(String),
+}
+
+/// One general comparison conjunct of a predicate (BASE `master11-paths`
+/// §"Other Predicates"): a relative attribute path, an operator, and a
+/// literal — e.g. `time >= '2005-06-24T09:30:00'` or
+/// `value/defining_code/code_string = 'A04'`.
+///
+/// Evaluation follows XPath 1 existential node-set semantics: the conjunct
+/// holds if ANY node the relative path selects from the candidate satisfies
+/// the comparison. An RM scalar wrapper object (e.g. a `DV_DATE_TIME`)
+/// compares by its `value` member, matching the string-value XPath would see.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Comparison {
+    /// The relative attribute path (plain attribute names, no predicates).
+    pub path: Vec<String>,
+    /// The comparison operator.
+    pub op: CmpOp,
+    /// The right-hand literal.
+    pub value: CmpLiteral,
+}
+
+impl Comparison {
+    /// Whether any node selected by `path` from `node` satisfies the
+    /// comparison (XPath existential semantics).
+    fn matches(&self, node: &Value) -> bool {
+        let mut leaves = Vec::new();
+        collect_leaves(node, &self.path, &mut leaves);
+        leaves.iter().any(|leaf| self.satisfied_by(leaf))
+    }
+
+    /// Whether one resolved leaf satisfies the comparison. An object leaf
+    /// drops to its `value` member (the RM scalar-wrapper convention, as in
+    /// [`node_uid`]).
+    fn satisfied_by(&self, leaf: &Value) -> bool {
+        let leaf = match leaf {
+            Value::Object(o) => match o.get("value") {
+                Some(v) => v,
+                None => return false,
+            },
+            other => other,
+        };
+        match &self.value {
+            CmpLiteral::Str(want) => leaf
+                .as_str()
+                .is_some_and(|have| self.op.holds(have.cmp(want.as_str()))),
+            CmpLiteral::Num(raw) => match (leaf.as_f64(), raw.parse::<f64>()) {
+                (Some(have), Ok(want)) => have
+                    .partial_cmp(&want)
+                    .is_some_and(|ord| self.op.holds(ord)),
+                _ => false,
+            },
+        }
+    }
+}
+
+/// Collect every node the relative attribute path selects from `node`,
+/// descending into container attributes element-wise (XPath node-set
+/// traversal).
+fn collect_leaves<'a>(node: &'a Value, path: &[String], out: &mut Vec<&'a Value>) {
+    let Some((first, rest)) = path.split_first() else {
+        out.push(node);
+        return;
+    };
+    let Some(child) = node.get(first) else {
+        return;
+    };
+    match child {
+        Value::Array(items) => {
+            for item in items {
+                collect_leaves(item, rest, out);
+            }
+        }
+        other => collect_leaves(other, rest, out),
+    }
 }
 
 impl Predicate {
@@ -110,6 +250,7 @@ impl Predicate {
             && self.name_value.is_none()
             && self.uid.is_none()
             && self.position.is_none()
+            && self.comparisons.is_empty()
     }
 
     /// Whether a canonical-JSON RM node satisfies this predicate's
@@ -142,7 +283,7 @@ impl Predicate {
         {
             return false;
         }
-        true
+        self.comparisons.iter().all(|c| c.matches(node))
     }
 }
 
@@ -311,6 +452,18 @@ impl Predicate {
             } else {
                 write!(f, "uid='{uid}'")?;
             }
+            wrote = true;
+        }
+        for cmp in &self.comparisons {
+            if wrote {
+                f.write_str(" and ")?;
+            }
+            write!(f, "{}", cmp.path.join("/"))?;
+            match &cmp.value {
+                CmpLiteral::Str(s) => write!(f, " {} '{s}'", cmp.op.token())?,
+                CmpLiteral::Num(n) => write!(f, " {} {n}", cmp.op.token())?,
+            }
+            wrote = true;
         }
         f.write_str("]")
     }
@@ -418,14 +571,70 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
         predicate.archetype_node_id = Some(value.to_owned());
         return Ok(());
     }
+    // A general comparison conjunct (§"Other Predicates"), e.g.
+    // `time >= '2005-06-24T09:30:00'` or
+    // `value/defining_code/code_string = 'A04'`.
+    if c.contains(['=', '<', '>']) {
+        predicate.comparisons.push(parse_comparison(c)?);
+        return Ok(());
+    }
     // The bare shortcut: an at-code / id-code or an archetype id. Anything
-    // containing comparison syntax (a general boolean predicate) is out of the
-    // path-navigation subset.
-    if c.contains(['=', '<', '>', '\'']) {
+    // else containing literal syntax is not a valid predicate conjunct.
+    if c.contains('\'') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
     predicate.archetype_node_id = Some(c.to_owned());
     Ok(())
+}
+
+/// Parse a general comparison conjunct `<relative-path> <op> <literal>`
+/// (BASE `master11-paths` §"Other Predicates"). The left side is a relative
+/// attribute path (plain names, `/`-separated, optional XPath-style leading
+/// `@`); the literal is a single-quoted string or an unquoted number.
+fn parse_comparison(c: &str) -> Result<Comparison, PathError> {
+    // Longest operators first so `>=`/`<=`/`!=` never parse as `>`/`<`/`=`.
+    let (pos, op) = ["!=", ">=", "<=", "=", ">", "<"]
+        .iter()
+        .filter_map(|tok| {
+            c.find(tok).map(|p| {
+                (
+                    p,
+                    match *tok {
+                        "!=" => CmpOp::Ne,
+                        ">=" => CmpOp::Ge,
+                        "<=" => CmpOp::Le,
+                        "=" => CmpOp::Eq,
+                        ">" => CmpOp::Gt,
+                        _ => CmpOp::Lt,
+                    },
+                )
+            })
+        })
+        .min_by_key(|(p, op)| (*p, matches!(op, CmpOp::Eq | CmpOp::Gt | CmpOp::Lt)))
+        .ok_or_else(|| PathError::UnsupportedPredicate(c.to_owned()))?;
+    let lhs = c[..pos].trim();
+    let rhs = c[pos + op.token().len()..].trim();
+    let path: Vec<String> = lhs
+        .strip_prefix('@')
+        .unwrap_or(lhs)
+        .split('/')
+        .map(str::trim)
+        .map(str::to_owned)
+        .collect();
+    if path
+        .iter()
+        .any(|seg| seg.is_empty() || !seg.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_'))
+    {
+        return Err(PathError::UnsupportedPredicate(c.to_owned()));
+    }
+    let value = if let Some(s) = rhs.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')) {
+        CmpLiteral::Str(s.to_owned())
+    } else if rhs.parse::<f64>().is_ok() {
+        CmpLiteral::Num(rhs.to_owned())
+    } else {
+        return Err(PathError::UnsupportedPredicate(c.to_owned()));
+    };
+    Ok(Comparison { path, op, value })
 }
 
 /// For a conjunct `c` of the form `key = <value>` (optional spaces), return the
@@ -684,6 +893,7 @@ fn predicate_for(v: &Value) -> Predicate {
             .map(str::to_owned),
         uid: None,
         position: None,
+        comparisons: Vec::new(),
     }
 }
 
@@ -982,6 +1192,7 @@ mod tests {
                         "_type": "POINT_EVENT",
                         "archetype_node_id": "at0006",
                         "name": {"value": "any event"},
+                        "time": {"_type": "DV_DATE_TIME", "value": "2005-12-03T09:22:00"},
                         "data": {
                             "_type": "ITEM_TREE",
                             "archetype_node_id": "at0003",
@@ -1047,11 +1258,69 @@ mod tests {
             "/data/events[at0006".parse::<RmPath>(),
             Err(PathError::UnterminatedPredicate(1))
         ));
-        // A general comparison predicate is AQL, not PATHABLE.
+        // A comparison against an unquoted non-numeric literal is not in the
+        // grammar (a string literal must be single-quoted).
         assert!(matches!(
-            "/data/events[at0007 and time >= '2005-06-24T09:30:00']".parse::<RmPath>(),
+            "/data/events[time >= bogus]".parse::<RmPath>(),
             Err(PathError::UnsupportedPredicate(_))
         ));
+        // A comparison left side must be a plain relative attribute path.
+        assert!(matches!(
+            "/data/events[some path = 'x']".parse::<RmPath>(),
+            Err(PathError::UnsupportedPredicate(_))
+        ));
+    }
+
+    #[test]
+    fn general_comparison_predicates() {
+        // BASE master11-paths §"Other Predicates": both normative example
+        // forms parse.
+        let p = path("/data/events[at0007 AND time >= '24-06-2005T09:30:00']");
+        assert_eq!(
+            p.segments[1].predicate.archetype_node_id.as_deref(),
+            Some("at0007")
+        );
+        assert_eq!(p.segments[1].predicate.comparisons.len(), 1);
+        let icd = path(
+            "/data/items[at0002.1 AND value/defining_code/terminology_id/value = 'ICD10AM' \
+             AND value/defining_code/code_string = 'A04']",
+        );
+        assert_eq!(icd.segments[1].predicate.comparisons.len(), 2);
+
+        // Evaluation: string comparison drops to the RM scalar wrapper's
+        // `value` member (DV_DATE_TIME), ISO strings ordering temporally.
+        let obs = observation();
+        let hit = path(
+            "/data/events[at0006 and time >= '2005-01-01T00:00:00']/data/items[at0004]/value/magnitude",
+        );
+        assert_eq!(item_at_path(&obs, &hit).unwrap().as_f64(), Some(120.0));
+        let miss = path("/data/events[at0006 and time >= '2006-01-01T00:00:00']");
+        assert!(!path_exists(&obs, &miss));
+
+        // Numeric comparison on a leaf.
+        let sys = path("/data/events[at0006]/data/items[value/magnitude > 100]");
+        let nodes = items_at_path(&obs, &sys);
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(
+            nodes[0].get("archetype_node_id").and_then(Value::as_str),
+            Some("at0004")
+        );
+
+        // Existential node-set semantics: the conjunct holds if ANY selected
+        // node satisfies it (one of the two items exceeds 100).
+        let ev = path("/data/events[data/items/value/magnitude > 100]");
+        assert!(path_exists(&obs, &ev));
+        let none = path("/data/events[data/items/value/magnitude > 500]");
+        assert!(!path_exists(&obs, &none));
+
+        // Inequality.
+        let ne = path("/data/events[at0006]/data/items[name/value != 'Systolic']");
+        let nodes = items_at_path(&obs, &ne);
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(
+            nodes[0].get("archetype_node_id").and_then(Value::as_str),
+            Some("at0005")
+        );
     }
 
     #[test]
@@ -1060,6 +1329,8 @@ mod tests {
             "/data/events[at0006]/data/items[at0004,'Systolic']/value",
             "/content[openEHR-EHR-SECTION.vital_signs.v1,'Vital signs']",
             "items/value",
+            "/data/events[at0006 and time >= '2005-01-01T00:00:00']",
+            "/data/items[value/magnitude > 100]",
         ] {
             assert_eq!(path(s).to_string(), s);
         }
@@ -1293,11 +1564,22 @@ mod tests {
     }
 
     #[test]
-    fn general_comparison_predicate_still_rejected() {
-        assert!(matches!(
-            "/data/events[at0007 and time >= '2005-06-24T09:30:00']".parse::<RmPath>(),
-            Err(PathError::UnsupportedPredicate(_))
-        ));
+    fn general_comparison_predicate_parses() {
+        // BASE master11-paths §"Other Predicates" — the spec's own example
+        // form is part of the path grammar (previously rejected; #742).
+        let p = "/data/events[at0007 and time >= '2005-06-24T09:30:00']"
+            .parse::<RmPath>()
+            .unwrap();
+        let pred = &p.segments[1].predicate;
+        assert_eq!(pred.archetype_node_id.as_deref(), Some("at0007"));
+        assert_eq!(
+            pred.comparisons,
+            vec![Comparison {
+                path: vec!["time".to_owned()],
+                op: CmpOp::Ge,
+                value: CmpLiteral::Str("2005-06-24T09:30:00".to_owned()),
+            }]
+        );
     }
 
     // ── EHR URIs ─────────────────────────────────────────────────────────────
