@@ -362,13 +362,19 @@ async fn dump_answers_unrealized_enumeration_members_with_not_implemented() {
     let (_pg, app) = app(true).await;
     let dir = archive_dir();
 
-    for member in [
-        serde_json::json!({ "file_sys_loc": dir, "logical_format": "openehr_canonical_xml" }),
-        serde_json::json!({ "file_sys_loc": dir, "compression_format": "7z" }),
-    ] {
+    // `7z` left this list 2026-07-29 (owner-approved realization; the
+    // service round-trip test covers it) — the XML archive form is the one
+    // remaining unrealized member (#670).
+    for member in
+        [serde_json::json!({ "file_sys_loc": dir, "logical_format": "openehr_canonical_xml" })]
+    {
         let (status, body) = send(&app, post_json("/admin/dump", &member.to_string())).await;
         assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{member}: {body}");
     }
+    // ... and the realized `7z` member succeeds on the same wire.
+    let seven = serde_json::json!({ "file_sys_loc": dir, "compression_format": "7z" });
+    let (status, body) = send(&app, post_json("/admin/dump", &seven.to_string())).await;
+    assert_eq!(status, StatusCode::OK, "7z dump: {body}");
     let _ = std::fs::remove_dir_all(&dir);
 }
 
