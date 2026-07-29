@@ -241,7 +241,28 @@ async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, Testk
     let mut config = DbConfig::new(url.clone());
     config.max_connections = 10;
     config.min_connections = 0;
-    let pool = db::connect(&config).await?;
+    // The pool's validating first connect gets the same bounded-retry
+    // treatment `connect_ready` gives the admin connect, and for the same
+    // reason: under a full-parallel `nextest` run the shared server's accept
+    // path is briefly saturable, and a clone's first handshake can surface a
+    // transient protocol error (the #620 capture: "unexpected response from
+    // SSLRequest: 0x00" — the connection was accepted at TCP level and
+    // dropped before PostgreSQL answered the negotiation). That is server
+    // load, not a test defect: retry the ESTABLISHMENT briefly and loudly
+    // surface the last error at the deadline. Never a per-test retry.
+    const POOL_DEADLINE: Duration = Duration::from_secs(15);
+    let start = SystemTime::now();
+    let pool = loop {
+        match db::connect(&config).await {
+            Ok(pool) => break pool,
+            Err(error) => {
+                if start.elapsed().unwrap_or(POOL_DEADLINE) >= POOL_DEADLINE {
+                    return Err(TestkitError::from(error));
+                }
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    };
     Ok(TestDb {
         pool,
         url,
