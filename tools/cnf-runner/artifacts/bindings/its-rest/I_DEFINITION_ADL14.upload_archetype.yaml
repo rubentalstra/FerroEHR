@@ -1,19 +1,15 @@
-# EXTENSION realization of I_DEFINITION_ADL14.list_archetypes.
+# EXTENSION realization of I_DEFINITION_ADL14.upload_archetype.
 #
 # NO RELEASED WIRE EXISTS (register AMB-41, re-derived at the #623 wave and
 # unchanged): the ITS-REST docs text names no ADL 1.4 archetype resource and
 # the released definition OAS declares /definition/template/adl1.4* alone.
 #
 # WHAT THIS BINDING DRIVES INSTEAD: the route this product serves of its own
-# design (GET /definition/archetype/adl1.4), declared in the
-# `adl14-archetype` family of vocab/wire_surface.yaml served_extensions. NO
-# openEHR SPEC GOVERNS IT — our own design/extension. It gates the
-# Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire
-# conformance. FLIPPED from `unrealized:` 2026-07-29: both TODO preconditions
-# resolved — the owner adjudicated the required marker (full implementation;
-# the register carries the book-CORE departure) and the CorpusFormat
-# vocabulary carries the ADL 1.4 source member (`adl14-text`).
-sm_operation: I_DEFINITION_ADL14.list_archetypes
+# design (POST /definition/archetype/adl1.4), declared in the `adl14-archetype` family of
+# vocab/wire_surface.yaml served_extensions. NO openEHR SPEC GOVERNS IT — our
+# own design/extension. It gates the Adl14ArchetypeProvisioning CAPABILITY
+# verdict only, never ITS-REST wire conformance.
+sm_operation: I_DEFINITION_ADL14.upload_archetype
 its: its-rest
 extension:
   family: adl14-archetype
@@ -32,13 +28,18 @@ extension:
     design/extension
   ambiguity: AMB-41
 request:
-  method: GET
+  method: POST
   path: /definition/archetype/adl1.4
+  body: archetype_adl14
   headers:
+    Content-Type: text/plain
     Accept: application/json
-formats: [canonical-json]
 outcomes:
-  ok:
-    status: 200
+  created:
+    status: 201
     headers:
-      Content-Type: negotiated
+      Location: present
+  # The source does not parse as ADL 1.4 — the served route's own 422.
+  validation_failed: { status: 422 }
+  # A Content-Type other than text/plain (the one body form ADL 1.4 source has).
+  unsupported_media: { status: 415 }

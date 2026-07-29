@@ -45,6 +45,12 @@ request:
     file_sys_loc: "${file_sys_loc}"
     logical_format: "${logical_fmt?}"
     compression_format: "${comp_fmt?}"
+    # ENCODING_FORMAT (encoding_format.adoc) declares no members, so any
+    # supplied value is outside its declared type — the member exists on the
+    # wire exactly so the -encoding_unrepresentable case can PROVE the
+    # refusal (the 2026-07-29 run sent the case's enc_format nowhere because
+    # this mapping was missing, and the server's correct guard never fired).
+    encoding: "${enc_format?}"
     segment_split_size: "${segment_split_size?}"
   headers:
     Content-Type: application/json

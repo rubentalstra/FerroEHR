@@ -69,7 +69,8 @@
           "wt-structured",
           "opt-xml",
           "aql-text",
-          "adl2-text"
+          "adl2-text",
+          "adl14-text"
         ]
       },
       "template_id": {

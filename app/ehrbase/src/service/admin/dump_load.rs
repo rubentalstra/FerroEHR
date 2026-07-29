@@ -235,6 +235,8 @@ fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
 const MANIFEST_ENTRY: &str = "manifest.json";
 /// The packed container's file name inside `file_sys_loc`.
 const ZIP_ENTRY_FILE: &str = "archive.zip";
+/// The packed 7z container entry (SM `COMPRESSION_FORMAT.7z`).
+const SEVENZ_ENTRY_FILE: &str = "archive.7z";
 /// The entry-name prefix of an externalized `DV_MULTIMEDIA` blob.
 const BLOB_PREFIX: &str = "blobs/";
 
@@ -247,6 +249,11 @@ enum ArchiveWriter {
     Zip {
         path: PathBuf,
         zip: Box<zip::ZipWriter<std::fs::File>>,
+    },
+    /// One `archive.7z` under `file_sys_loc` (SM `COMPRESSION_FORMAT.7z`).
+    SevenZip {
+        path: PathBuf,
+        writer: Box<sevenz_rust2::ArchiveWriter<std::fs::File>>,
     },
 }
 
@@ -267,26 +274,15 @@ impl ArchiveWriter {
                     zip: Box::new(zip::ZipWriter::new(file)),
                 })
             }
-            // NOTE (`compression_format.adoc` declares `zip` and `7z`; the SM
-            // says nothing about whether a service may realize a subset, and
-            // `i_admin_dump_load.adoc` declares no unsupported-format error —
-            // the silence is adjudicated in the CNF ambiguity register). This
-            // product builds the `zip` member only: no 7z container
-            // writer exists in the pinned dependency set, and the honest
-            // answer to a well-formed request for a member the service does
-            // not implement is RFC 9110 §15.6.2 `501 Not Implemented` ("the
-            // server does not support the functionality required to fulfil the
-            // request"), never a `400` that would call a valid SM value
-            // malformed. TODO: realize the `7z` member once a vetted pure-Rust
-            // 7z writer/reader is in the workspace dependency table.
-            Some(other @ CompressionFormat::SevenZip) => Err(SmError::new(
-                CallStatusType::NotImplemented,
-                format!(
-                    "compression format {} is not implemented by this service (the `zip` \
-                     member and the uncompressed form are)",
-                    other.sm_name()
-                ),
-            )),
+            Some(CompressionFormat::SevenZip) => {
+                let path = dir.join(SEVENZ_ENTRY_FILE);
+                let writer = sevenz_rust2::ArchiveWriter::create(&path)
+                    .map_err(|e| sevenz_fault(&path, "create", &e))?;
+                Ok(Self::SevenZip {
+                    path,
+                    writer: Box::new(writer),
+                })
+            }
         }
     }
 
@@ -308,6 +304,13 @@ impl ArchiveWriter {
                 zip.write_all(bytes)
                     .map_err(|e| file_not_writable(path, &e))
             }
+            Self::SevenZip { path, writer } => {
+                let entry = sevenz_rust2::ArchiveEntry::new_file(name);
+                writer
+                    .push_archive_entry(entry, Some(bytes))
+                    .map(|_| ())
+                    .map_err(|e| sevenz_fault(path, &format!("write entry {name}"), &e))
+            }
         }
     }
 
@@ -319,6 +322,10 @@ impl ArchiveWriter {
                 .finish()
                 .map(|_| ())
                 .map_err(|e| zip_fault(&path, "finish", &e)),
+            Self::SevenZip { path, writer } => writer
+                .finish()
+                .map(|_| ())
+                .map_err(|e| file_not_writable(&path, &e)),
         }
     }
 }
@@ -332,6 +339,10 @@ enum ArchiveReader {
     Zip {
         path: PathBuf,
         zip: Box<zip::ZipArchive<std::fs::File>>,
+    },
+    SevenZip {
+        path: PathBuf,
+        reader: Box<sevenz_rust2::ArchiveReader<std::fs::File>>,
     },
 }
 
@@ -355,13 +366,23 @@ impl ArchiveReader {
                 zip: Box::new(zip),
             });
         }
+        let path = dir.join(SEVENZ_ENTRY_FILE);
+        if path.is_file() {
+            let reader = sevenz_rust2::ArchiveReader::open(&path, sevenz_rust2::Password::empty())
+                .map_err(|e| sevenz_fault(&path, "open", &e))?;
+            return Ok(Self::SevenZip {
+                path,
+                reader: Box::new(reader),
+            });
+        }
         let manifest_path = dir.join(MANIFEST_ENTRY);
         Err(file_not_writable(
             &manifest_path,
             &std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!(
-                    "no archive at {} (no {MANIFEST_ENTRY}, no {ZIP_ENTRY_FILE})",
+                    "no archive at {} (no {MANIFEST_ENTRY}, no {ZIP_ENTRY_FILE}, \
+                     no {SEVENZ_ENTRY_FILE})",
                     dir.display()
                 ),
             ),
@@ -385,6 +406,9 @@ impl ArchiveReader {
                     .map_err(|e| file_not_writable(path, &e))?;
                 Ok(bytes)
             }
+            Self::SevenZip { path, reader } => reader
+                .read_file(name)
+                .map_err(|e| sevenz_fault(path, &format!("read entry {name}"), &e)),
         }
     }
 }
@@ -392,6 +416,13 @@ impl ArchiveReader {
 /// Build a `file_not_writable` [`SmError`] for a ZIP container fault — the
 /// same SM error the loose form raises, since from the operation's point of
 /// view the archive file could not be written/read either way.
+fn sevenz_fault(path: &Path, what: &str, err: &sevenz_rust2::Error) -> SmError {
+    SmError::new(
+        CallStatusType::FileNotWritable,
+        format!("{} ({what}): {err}", path.display()),
+    )
+}
+
 fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
     SmError::new(
         CallStatusType::FileNotWritable,
@@ -405,23 +436,27 @@ impl EhrbaseService {
     /// EHR was dumped successfully (the report carries only failures).
     ///
     /// NOTE (`export_format.adoc` / `compression_format.adoc` — which
-    /// enumeration members this service realizes). `EXPORT_FORMAT`: only
+    /// enumeration members this service realizes). `COMPRESSION_FORMAT` is
+    /// realized in FULL: absent (loose files), `zip`, and `7z` (owner-approved
+    /// 2026-07-29; `sevenz-rust2`). `EXPORT_FORMAT`: only
     /// `openehr_canonical_json`, because the storage IS verbatim canonical JSON
-    /// so that export is translation-free, while `openehr_canonical_xml` would
-    /// re-serialize every version through `openehr-its`.
-    /// `COMPRESSION_FORMAT`: absent (loose files) and `zip` are realized; `7z`
-    /// is not (see [`ArchiveWriter::create`]). Neither the SM interface nor the
+    /// so that export is translation-free — an `openehr_canonical_xml` ARCHIVE
+    /// has no defined envelope shape (the manifest/segment/record structure is
+    /// our own design with no XML story), so inventing one ad hoc is worse
+    /// than the honest boundary. Neither the SM interface nor the
     /// `EXPORT_SPEC` class says a service must realize every member, and
     /// `i_admin_dump_load.adoc` declares no unsupported-format error — that
     /// silence is adjudicated in the CNF ambiguity register. A well-formed
-    /// request for an unrealized member is answered `not_implemented` (RFC 9110
-    /// §15.6.2 `501`), never silently downgraded and never called malformed.
+    /// request for the unrealized member is answered `not_implemented`
+    /// (RFC 9110 §15.6.2 `501`), never silently downgraded and never called
+    /// malformed. TODO: design the canonical-XML archive envelope (tracker
+    /// issue; needs its own register adjudication) and realize the member.
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — a non-positive
     ///   `segment_split_size`.
     /// - `not_implemented` (`501`) — the spec requests
-    ///   `openehr_canonical_xml` or the `7z` compression member.
+    ///   `openehr_canonical_xml`.
     /// - `file_not_writable` — the directory, a segment entry, a blob entry, or
     ///   the manifest cannot be created/written.
     /// - `exception` — a database/codec fault while collecting records, or a

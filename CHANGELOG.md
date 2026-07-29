@@ -17,6 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Conformance: ADL 1.4 archetype provisioning is now tested rather than
+  excused.** openEHR's released REST API defines no ADL 1.4 archetype
+  resource, so the capability used to be reported as "excused — unrealized on
+  this technology profile" even though this server serves archetype routes of
+  its own design. Six conformance cases now execute against
+  `/definition/archetype/adl1.4` — upload with source read-back, an
+  unparseable-source refusal, listing, and the get/delete branches including
+  their not-found halves. Because openEHR gives the capability no wire, the
+  published certificate marks the row `extension` and it no longer gates the
+  CORE profile — a conscious, register-recorded departure from the
+  conformance profiles book, which requires a capability the release gives no
+  wire for.
+- **The admin dump/load archive now supports 7z compression.** `POST
+  /admin/dump` accepts `compression_format: "7z"` alongside `zip` and the
+  uncompressed form, packing the same archive entries into one `archive.7z`;
+  `POST /admin/load` detects and reads all three container forms without
+  being told which one it was given. (The `openehr_canonical_xml` logical
+  format remains a declared `501` boundary — the archive's XML form is a
+  design of its own, tracked separately.)
 - **Repository dump/load and the whole messaging surface are now HTTP
   routes** — the last service capabilities that had no wire. Under the
   existing `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role,

@@ -247,18 +247,19 @@ reports — an **empty** array means everything succeeded.
   | Field | Values | Default |
   |---|---|---|
   | `logical_format` | `openehr_canonical_json` | canonical JSON |
-  | `compression_format` | `zip` — omit for loose files | uncompressed |
+  | `compression_format` | `zip` or `7z` — omit for loose files | uncompressed |
   | `segment_split_size` | segment size in kb (a positive integer) | `1024` |
 
 - `POST {base}/admin/load` with `{"file_sys_loc": "…"}` — populate the
   repository from an archive. It takes the location and nothing else: the
-  container (loose files or a single `archive.zip`) is detected from what the
-  location holds, so a load never has to be told how the dump was written.
+  container (loose files, a single `archive.zip`, or a single `archive.7z`)
+  is detected from what the location holds, so a load never has to be told
+  how the dump was written.
 
 The archive is a directory holding a `manifest.json`, one or more
 `segment-NNNN.json` files, and a `blobs/` subdirectory for any externalized
-multimedia — or exactly those entries packed into one `archive.zip` when
-`compression_format` is `zip`.
+multimedia — or exactly those entries packed into one `archive.zip` or
+`archive.7z` when `compression_format` is set.
 
 The repository being loaded into **need not be empty**; an EHR whose id is
 already present is reported and skipped rather than failing the load, so the
@@ -273,9 +274,9 @@ response array names each one:
 
 A missing or blank `file_sys_loc`, a format value that is not one of the ones
 listed above, a non-positive `segment_split_size`, or an `encoding` field is
-**400**. `openehr_canonical_xml` and the `7z` compression format are **501**:
-the openEHR service model names them, this server does not implement them, and
-it says so rather than silently writing a different format.
+**400**. `openehr_canonical_xml` is **501**: the openEHR service model names
+it, this server does not implement it yet, and it says so rather than
+silently writing a different format.
 
 > [!NOTE]
 > The activity report, the archive routes, and the dump/load pair are

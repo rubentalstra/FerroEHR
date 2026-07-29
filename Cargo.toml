@@ -144,6 +144,12 @@ base64 = "0.22"
 # the already-present pure-Rust flate2 backend (no aes/bzip2/lzma/ppmd/zstd/xz
 # C stacks); the crate is already in the resolved graph.
 zip = { version = "8", default-features = false, features = ["deflate-flate2"] }
+# `service::admin::dump_load`: the SM COMPRESSION_FORMAT member `7z`
+# (compression_format.adoc) — pure Rust, verified live on crates.io 2026-07-29
+# (0.21.3, actively maintained).
+# default features off: the bzip2/aes side-codecs drag deps we neither need
+# nor allow (bzip2-1.0.6 license); 7z's native LZMA2 rides `compress` alone.
+sevenz-rust2 = { version = "0.21", default-features = false, features = ["compress"] }
 rust_decimal = { version = "1", features = ["serde-with-str"] }   # BigDecimal replacement (DV_QUANTITY)
 rust_decimal_macros = "1"
 ordered-float = "5.3.0"
