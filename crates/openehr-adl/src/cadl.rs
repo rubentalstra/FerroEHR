@@ -1333,20 +1333,35 @@ impl Parser<'_> {
     /// `archetype_slot : SYM_ALLOW_ARCHETYPE rm_type_id '[' ID_CODE ']'
     /// (( c_occurrences? ( SYM_MATCHES '{' c_includes? c_excludes? '}' )? ) |
     /// SYM_CLOSED )`.
+    ///
+    /// In the ADL 1.4 dialect the `[node_id]` is OPTIONAL: ADL1.4
+    /// master05-cadl.adoc §Archetype Slots writes the anonymous form
+    /// (`allow_archetype OBSERVATION occurrences ∈ {0..1} ∈ {…}`) in its own
+    /// normative examples, and §cADL node types shows the identified form
+    /// (`allow_archetype ENTRY[at2002]`) — both are legal 1.4 source. The
+    /// AOM 1.4 node-id rule (anonymous where no sibling disambiguation is
+    /// needed) is enforced by VCOID in the 1.4 validation pass, not here;
+    /// `cadl2.g4` mandates the bracket in ADL 2.
     fn parse_archetype_slot(&mut self) -> PResult<CObject> {
         self.pos += 1; // SYM_ALLOW_ARCHETYPE
         let rm_type = self.parse_rm_type_id()?;
-        self.expect(
-            |t| matches!(t, Token::LBracket),
-            SyntaxErrorCode::Sccog,
-            "expecting '[' after 'allow_archetype'",
-        )?;
-        let node_id = self.parse_node_id()?;
-        self.expect(
-            |t| matches!(t, Token::RBracket),
-            SyntaxErrorCode::Sccog,
-            "expecting ']' after the node id",
-        )?;
+        let node_id =
+            if self.dialect == Dialect::Adl14 && !matches!(self.peek(), Some(Token::LBracket)) {
+                String::new()
+            } else {
+                self.expect(
+                    |t| matches!(t, Token::LBracket),
+                    SyntaxErrorCode::Sccog,
+                    "expecting '[' after 'allow_archetype'",
+                )?;
+                let n = self.parse_node_id()?;
+                self.expect(
+                    |t| matches!(t, Token::RBracket),
+                    SyntaxErrorCode::Sccog,
+                    "expecting ']' after the node id",
+                )?;
+                n
+            };
 
         let mut is_closed = false;
         let mut occurrences = None;
@@ -3712,6 +3727,57 @@ mod tests {
             }
             _ => panic!("expected DV_ORDINAL complex object"),
         }
+    }
+
+    #[test]
+    fn adl14_anonymous_archetype_slot() {
+        // ADL1.4 master05-cadl.adoc §Archetype Slots writes the slot WITHOUT
+        // a node id in its own normative examples ("allow_archetype
+        // OBSERVATION occurrences ∈ {0..1} ∈ { include ... }"); §cADL node
+        // types shows the identified form (`allow_archetype ENTRY[at2002]`).
+        // Both must parse in the 1.4 dialect; ADL 2 keeps the bracket
+        // mandatory (cadl2.g4).
+        let cco = parse_definition_body_adl14(
+            "SECTION[at0000] matches {\n\
+             items cardinality matches {0..*; unordered} matches {\n\
+             allow_archetype OBSERVATION occurrences matches {0..1} matches {\n\
+             include\n\
+             archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.bp_measurement\\.v1/}\n\
+             }\n\
+             allow_archetype ENTRY[at2002] matches {\n\
+             include\n\
+             archetype_id/value matches {/.*/}\n\
+             }\n\
+             }\n\
+             }",
+        )
+        .expect("the spec's own anonymous slot form must parse as ADL 1.4");
+        let CComplexObject::CComplexObject(d) = &cco else {
+            panic!("expected a plain complex object root");
+        };
+        let items = &d.attributes[0];
+        let CObject::ArchetypeSlot(anon) = &items.children[0] else {
+            panic!("expected the anonymous slot");
+        };
+        assert_eq!(anon.rm_type_name, "OBSERVATION");
+        assert!(anon.node_id.is_empty(), "anonymous slot has no node id");
+        assert_eq!(anon.includes.len(), 1);
+        let CObject::ArchetypeSlot(named) = &items.children[1] else {
+            panic!("expected the identified slot");
+        };
+        assert_eq!(named.node_id, "at2002");
+
+        // The bracket stays MANDATORY in ADL 2 (cadl2.g4 archetype_slot).
+        assert!(
+            parse_definition_body(
+                "SECTION[id1] matches {\n\
+                 items cardinality matches {0..*} matches {\n\
+                 allow_archetype OBSERVATION occurrences matches {0..1}\n\
+                 }\n\
+                 }",
+            )
+            .is_err()
+        );
     }
 
     #[test]
