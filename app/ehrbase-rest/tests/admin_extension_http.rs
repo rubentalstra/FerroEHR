@@ -289,6 +289,159 @@ async fn the_archive_routes_refuse_unknown_malformed_and_shapeless_requests() {
     }
 }
 
+/// Create a demographic resource on `segment` and return its
+/// `VERSIONED_OBJECT` uid (the `ETag` carries the `OBJECT_VERSION_ID`; its root
+/// is the container).
+async fn create_demographic(app: &Router, segment: &str, body: &serde_json::Value) -> String {
+    let request = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/{segment}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body.to_string()))
+        .expect("request");
+    let response = app.clone().oneshot(request).await.expect("response");
+    assert_eq!(
+        response.status(),
+        StatusCode::CREATED,
+        "create {segment} must succeed"
+    );
+    let etag = response
+        .headers()
+        .get(header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned();
+    etag.split("::")
+        .next()
+        .expect("versioned object uid")
+        .to_owned()
+}
+
+/// A minimal demographic PARTY of `rm_type` (RM demographic `party.adoc`
+/// §Invariants, `Identities_valid`: at least one `PARTY_IDENTITY`).
+fn party_body(rm_type: &str, archetype: &str, name: &str) -> serde_json::Value {
+    serde_json::json!({
+        "_type": rm_type,
+        "archetype_node_id": archetype,
+        "archetype_details": { "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": archetype },
+            "rm_version": "1.1.0" },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "label" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
+/// `archive_parties` selects PARTY version containers, so a
+/// `PARTY_RELATIONSHIP`'s container id is refused exactly like an id that names
+/// nothing: SM `i_admin_archive.adoc` §`archive_parties` takes `party_ids` and
+/// declares `party_id_does_not_exist` as its only error, and RM demographic
+/// `master02-demographic_package.adoc` puts every PARTY in "its own Version
+/// container" (§Versioning Semantics) while relationships are stored "as part
+/// of the data of the PARTY designated as the source" (§Party Relationships) —
+/// a relationship travels with the parties the call selects and is never itself
+/// a selectable party id. All-or-nothing: the party named alongside it stays
+/// unarchived, and the same party archives fine on its own.
+#[tokio::test]
+async fn archiving_a_party_relationship_id_is_refused_like_an_unknown_party() {
+    let (_pg, app) = app(true).await;
+
+    let source = create_demographic(
+        &app,
+        "person",
+        &party_body("PERSON", "openEHR-DEMOGRAPHIC-PERSON.person.v1", "Jane Doe"),
+    )
+    .await;
+    let target = create_demographic(
+        &app,
+        "organisation",
+        &party_body(
+            "ORGANISATION",
+            "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+            "General Hospital",
+        ),
+    )
+    .await;
+    // RM demographic master02 §Party Relationships: source/target are
+    // "OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container
+    // of a Party", so the refs name the two containers just created.
+    let relationship = create_demographic(
+        &app,
+        "party_relationship",
+        &serde_json::json!({
+            "_type": "PARTY_RELATIONSHIP",
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-PARTY_RELATIONSHIP.relationship.v1",
+            "name": { "_type": "DV_TEXT", "value": "patient-of" },
+            "source": { "_type": "PARTY_REF", "namespace": "demographic", "type": "PERSON",
+                        "id": { "_type": "HIER_OBJECT_ID", "value": source } },
+            "target": { "_type": "PARTY_REF", "namespace": "demographic", "type": "ORGANISATION",
+                        "id": { "_type": "HIER_OBJECT_ID", "value": target } }
+        }),
+    )
+    .await;
+
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{relationship}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "a PARTY_RELATIONSHIP id names no Party: {body}"
+    );
+
+    // Alongside a real party the refusal still covers the whole request, and
+    // that same party archives on its own — so the refusal is about the id's
+    // kind, not about the call.
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{source}","{relationship}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "all-or-nothing: one relationship id refuses the whole set: {body}"
+    );
+
+    let (status, body) = send(
+        &app,
+        post_json(
+            "/admin/archive/parties",
+            &format!(r#"{{"party_ids":["{source}"]}}"#),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "the party itself archives: {body}"
+    );
+}
+
 // ── the dump/load pair (SM I_ADMIN_DUMP_LOAD) ────────────────────────────────
 
 /// A unique archive location for one test (the SM `file_sys_loc` parameter is
@@ -390,28 +543,52 @@ async fn dump_refuses_every_unrepresentable_request_shape() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// A well-formed request for an enumeration member this service does not
-/// realize is `501 Not Implemented` (RFC 9110 §15.6.2) — never a `400`, which
-/// would call a valid SM value malformed.
+/// EVERY declared enumeration member is served: both `EXPORT_FORMAT` members
+/// (`export_format.adoc`: `openehr_canonical_xml`, `openehr_canonical_json`)
+/// crossed with every `COMPRESSION_FORMAT` shape (`compression_format.adoc`:
+/// absent, `zip`, `7z`). No member is refused, downgraded, or answered
+/// `501` — the two enumerations are realized in full, and the format axis is
+/// independent of the container axis.
 #[tokio::test]
-async fn dump_answers_unrealized_enumeration_members_with_not_implemented() {
+async fn dump_serves_every_declared_enumeration_member() {
     let (_pg, app) = app(true).await;
-    let dir = archive_dir();
+    let _ehr = create_ehr(&app).await;
 
-    // `7z` left this list 2026-07-29 (owner-approved realization; the
-    // service round-trip test covers it) — the XML archive form is the one
-    // remaining unrealized member (#670).
-    for member in
-        [serde_json::json!({ "file_sys_loc": dir, "logical_format": "openehr_canonical_xml" })]
-    {
-        let (status, body) = send(&app, post_json("/admin/dump", &member.to_string())).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{member}: {body}");
+    for logical in ["openehr_canonical_json", "openehr_canonical_xml"] {
+        for compression in [None, Some("zip"), Some("7z")] {
+            let dir = archive_dir();
+            let mut spec = serde_json::json!({
+                "file_sys_loc": dir,
+                "logical_format": logical,
+                "segment_split_size": 1024
+            });
+            if let Some(member) = compression {
+                spec["compression_format"] = serde_json::Value::String(member.to_owned());
+            }
+            let (status, body) = send(&app, post_json("/admin/dump", &spec.to_string())).await;
+            assert_eq!(status, StatusCode::OK, "{logical}/{compression:?}: {body}");
+            assert_eq!(body, "[]", "a clean dump reports no failures");
+
+            // The format-less `load_ehrs` reads it back whatever the export
+            // asked for: every archived EHR is the SM's documented duplicate.
+            let (status, body) = send(
+                &app,
+                post_json("/admin/load", &format!(r#"{{"file_sys_loc":{dir:?}}}"#)),
+            )
+            .await;
+            assert_eq!(
+                status,
+                StatusCode::OK,
+                "load {logical}/{compression:?}: {body}"
+            );
+            let reports: serde_json::Value = serde_json::from_str(&body).expect("report json");
+            let list = reports.as_array().expect("a JSON array");
+            assert_eq!(list.len(), 1, "the one duplicate EHR is reported: {body}");
+            assert_eq!(list[0]["dump_status"], false);
+
+            let _ = std::fs::remove_dir_all(&dir);
+        }
     }
-    // ... and the realized `7z` member succeeds on the same wire.
-    let seven = serde_json::json!({ "file_sys_loc": dir, "compression_format": "7z" });
-    let (status, body) = send(&app, post_json("/admin/dump", &seven.to_string())).await;
-    assert_eq!(status, StatusCode::OK, "7z dump: {body}");
-    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// Every route of all three extension groups inherits the ADMIN group's config

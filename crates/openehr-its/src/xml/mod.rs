@@ -16,7 +16,8 @@ pub mod runtime;
 mod generated;
 
 pub use runtime::{
-    FromXml, Namespace, StartTag, ToXml, XmlError, XmlEvent, XmlReader, XmlWriter, from_xml, to_xml,
+    FromXml, Namespace, StartTag, ToXml, XmlError, XmlEvent, XmlReader, XmlWriter, from_xml,
+    to_xml, to_xml_declared,
 };
 
 /// Serialize an RM value to canonical openEHR XML in the **default** wire
@@ -61,6 +62,35 @@ pub fn to_canonical_xml_ns<T: ToXml + ?Sized>(
     ns: Namespace,
 ) -> Result<String, XmlError> {
     to_xml(value, root_tag, ns)
+}
+
+/// Serialize an RM value under a root element whose **XSD-declared type is
+/// abstract**, so the instance must name its concrete type — the
+/// declared-type-aware sibling of [`to_canonical_xml_ns`].
+///
+/// [`to_canonical_xml`] passes no declared type at the root, so its root
+/// element never carries `xsi:type`. That is right for a published global
+/// element whose type is concrete (`<composition>`, `<ehr_status>`, …) and
+/// WRONG for one whose type is abstract: `ALL/Version.xsd` publishes
+/// `<xs:element name="version" type="VERSION"/>` over
+/// `<xs:complexType name="VERSION" abstract="true">`, and XML Schema Part 1
+/// forbids an element instance from using an abstract type directly — the
+/// instance must select a non-abstract derived type with `xsi:type`
+/// (<https://www.w3.org/TR/xmlschema-1/#xsi_type>, §2.6.1 + §3.4.6). Passing
+/// `declared_type = "VERSION"` here makes an `ORIGINAL_VERSION` emit
+/// `xsi:type="ORIGINAL_VERSION"` through the very same polymorphic-dispatch
+/// mechanism every nested slot uses, so the document validates against the
+/// published schema.
+///
+/// # Errors
+/// Propagates serialization errors.
+pub fn to_canonical_xml_declared<T: ToXml + ?Sized>(
+    value: &T,
+    root_tag: &str,
+    declared_type: &str,
+    ns: Namespace,
+) -> Result<String, XmlError> {
+    to_xml_declared(value, root_tag, declared_type, ns)
 }
 
 /// Deserialize an RM value from a canonical openEHR XML document.
