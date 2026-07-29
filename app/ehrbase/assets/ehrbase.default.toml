@@ -237,6 +237,13 @@ fail_on_error = false        # TS unreachable/erroring: false = accept the
 #? cache_ttl_secs = 300
 #? cache_capacity = 10000
 #? oauth2_client = "ts-client"   # must name a [terminology.external.oauth2_clients.*]
+# Mutual TLS to THIS server (each TS issues its own client certificate, so the
+# identity is per provider). Set the cert and the key together. ca_bundle_path
+# REPLACES the default trust anchors for this provider — server-certificate and
+# hostname verification are always on; there is no way to disable them:
+#? client_cert_path = "/run/secrets/ts-client.crt.pem"
+#? client_key_path = "/run/secrets/ts-client.key.pem"
+#? ca_bundle_path = "/run/secrets/ts-ca.pem"
 #? [terminology.external.providers.snomed]
 #? type = "fhir"
 #? url = "https://snowstorm.example.org/fhir"
