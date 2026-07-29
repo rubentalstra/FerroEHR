@@ -44,12 +44,12 @@ text { fill: #c3c2b7; }
 <text x="24" y="63" class="muted">The scale-seed step yields the storage cost per committed composition · measured context, never a verdict input.</text>
 <line x1="60" y1="244" x2="580" y2="244" class="grid"/>
 <text x="120.0" y="262.0" class="muted" text-anchor="middle">empty</text>
-<rect x="78.0" y="242.0" width="84" height="2.0" rx="4" class="measured"/><text x="120.0" y="234.0" text-anchor="middle">105 MB</text>
+<rect x="78.0" y="242.0" width="84" height="2.0" rx="4" class="measured"/><text x="120.0" y="234.0" text-anchor="middle">133 MB</text>
 <text x="260.0" y="262.0" class="muted" text-anchor="middle">after scale seed</text>
 <rect x="218.0" y="106.4" width="84" height="137.6" rx="4" class="measured"/><text x="260.0" y="98.4" text-anchor="middle">13 GB</text>
 <text x="400.0" y="262.0" class="muted" text-anchor="middle">after ward seed</text>
 <rect x="358.0" y="100.0" width="84" height="144.0" rx="4" class="measured"/><text x="400.0" y="92.0" text-anchor="middle">13 GB</text>
 <text x="540.0" y="262.0" class="muted" text-anchor="middle">after window</text>
 <rect x="498.0" y="100.6" width="84" height="143.4" rx="4" class="measured"/><text x="540.0" y="92.6" text-anchor="middle">13 GB</text>
-<text x="260" y="278.0" class="muted" text-anchor="middle">&#8776; 12 KB / composition (1,000,000 committed)</text>
+<text x="260" y="278.0" class="muted" text-anchor="middle">&#8776; 13 KB / composition (1,000,000 committed)</text>
 </svg>
