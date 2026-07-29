@@ -1980,24 +1980,24 @@ const PSEUDO_INTERFACE_PREFIX: &str = "I_ITS_REST_";
 /// - `I_ITS_REST_SYSTEM` — the System API (ITS-REST
 ///   `docs/system/Description.md`, STABLE) defines `OPTIONS {base_path}`
 ///   (overview `Requests_and_responses.md` §HTTP Methods).
-/// - `I_ITS_REST_ITEM_TAGS` — the 23 released ITEM_TAG routes: the two
-///   space-wide lists, the EHR-side COMPOSITION/EHR_STATUS triples, and the
+/// - `I_ITS_REST_ITEM_TAGS` — the 23 released `ITEM_TAG` routes: the two
+///   space-wide lists, the EHR-side `COMPOSITION/EHR_STATUS` triples, and the
 ///   five demographic party triples. The SM models no tag concept at all —
 ///   `docs/specs/openehr/SM/docs/` contains zero occurrences of "tag"
 ///   (grep-verified) — while the released ITS-REST calls the
 ///   `openehr-item-tag` / `openehr-version-item-tag` headers "convenient
-///   wrappers around the dedicated ITEM_TAG operations" (overview
+///   wrappers around the dedicated `ITEM_TAG` operations" (overview
 ///   `Requests_and_responses.md` §openehr-item-tag and
 ///   openehr-version-item-tag), so the operations are unambiguously part of
 ///   the released wire with no service-model anchor to name them by.
 /// - `I_ITS_REST_REVISION_HISTORY` — the three released revision-history
-///   reads (COMPOSITION, EHR_STATUS, PARTY). The SM declares no
+///   reads (COMPOSITION, `EHR_STATUS`, PARTY). The SM declares no
 ///   revision-history operation on any interface —
 ///   `docs/specs/openehr/SM/docs/` contains zero occurrences of
-///   "revision_history" (grep-verified); the abstract counterpart lives in
+///   "`revision_history`" (grep-verified); the abstract counterpart lives in
 ///   the RM (`common` `versioned_object.adoc` §Functions
 ///   `revision_history`), which is a model, not a service interface.
-/// - `I_ITS_REST_VERSIONED_PARTY` — the VERSIONED_PARTY container read. Its
+/// - `I_ITS_REST_VERSIONED_PARTY` — the `VERSIONED_PARTY` container read. Its
 ///   two EHR-side twins DO have SM anchors
 ///   (`I_EHR_COMPOSITION.get_versioned_composition`,
 ///   `I_EHR_STATUS.get_versioned_ehr_status`); `I_PARTY` declares no
@@ -3309,7 +3309,7 @@ h|*1..1*\n\
     /// The pinned table is a MULTI-interface domain, not a single-row special
     /// case: every row parses, carries the reserved prefix and a non-empty
     /// citation, no reference is pinned twice, and more than one reserved
-    /// pseudo-interface is represented (System + ITEM_TAGS today).
+    /// pseudo-interface is represented (System + `ITEM_TAGS` today).
     #[test]
     fn pinned_non_sm_table_is_wellformed_across_several_pseudo_interfaces() {
         let mut seen: BTreeSet<&str> = BTreeSet::new();

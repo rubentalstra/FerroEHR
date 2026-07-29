@@ -377,7 +377,7 @@ mod tests {
 
     /// `optional: true` splits SHOULD-strength PRESENCE from MUST-strength
     /// FORM (issue #628): the query `ETag` is a SHOULD to emit (overview
-    /// §"ETag and Last-Modified") but a MUST to weaken when emitted
+    /// §"`ETag` and Last-Modified") but a MUST to weaken when emitted
     /// (§"Deprecated headers"). An omitted header passes; a malformed one
     /// still fails.
     #[test]

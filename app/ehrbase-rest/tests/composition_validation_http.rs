@@ -98,7 +98,7 @@ async fn app_with_template() -> (testkit::TestDb, Router, String) {
 }
 
 /// Strip the `value` of the first ELEMENT that has one, leaving no
-/// `null_flavour` behind — the shape RM data_structures §ELEMENT
+/// `null_flavour` behind — the shape RM `data_structures` §ELEMENT
 /// `Inv_null_flavour_indicated` forbids.
 fn strip_first_element_value(v: &mut Value) -> bool {
     match v {
@@ -119,7 +119,7 @@ fn strip_first_element_value(v: &mut Value) -> bool {
 }
 
 /// A COMPOSITION holding an ELEMENT with neither `value` nor `null_flavour`
-/// violates RM data_structures §ELEMENT:
+/// violates RM `data_structures` §ELEMENT:
 ///
 /// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
 /// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)

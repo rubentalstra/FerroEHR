@@ -361,6 +361,16 @@ async fn malformed_xml_composition_body_is_400() {
 /// the request, it MUST respond with HTTP status code `406 Not Acceptable`").
 #[tokio::test]
 async fn xml_response_lineage_is_negotiated_by_the_version_parameter() {
+    fn read(ehr_id: &str, accept: &str) -> Request<Body> {
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}"))
+            .header(header::AUTHORIZATION, basic("alice", "pw"))
+            .header(header::ACCEPT, accept)
+            .body(Body::empty())
+            .unwrap()
+    }
+
     let (_pg, app) = app(true).await;
 
     let create = Request::builder()
@@ -372,16 +382,6 @@ async fn xml_response_lineage_is_negotiated_by_the_version_parameter() {
     let (status, headers, _b) = send(app.clone(), create).await;
     assert_eq!(status, StatusCode::CREATED);
     let ehr_id = etag_uid(&headers).expect("ETag carries the new ehr_id");
-
-    fn read(ehr_id: &str, accept: &str) -> Request<Body> {
-        Request::builder()
-            .method("GET")
-            .uri(format!("{BASE}/ehr/{ehr_id}"))
-            .header(header::AUTHORIZATION, basic("alice", "pw"))
-            .header(header::ACCEPT, accept)
-            .body(Body::empty())
-            .unwrap()
-    }
 
     // Default (bare `application/xml`): the v1 lineage, bare Content-Type.
     let (status, headers, xml) = send(app.clone(), read(&ehr_id, "application/xml")).await;
