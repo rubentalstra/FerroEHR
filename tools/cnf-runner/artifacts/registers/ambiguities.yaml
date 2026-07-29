@@ -7032,3 +7032,50 @@ AMB-172:
     a verdict suspension (report_only) or a claim no case covers
     (statement_declared).
   disposition: fixed_handling
+AMB-173:
+  ambiguity: >-
+    INTER-COMPONENT CONFLICT over what an AQL archetype predicate MATCHES.
+    QUERY docs/AQL/master03-syntax.adoc §Archetype predicate presents the
+    predicate as "a shortcut of a standard predicate" and equates
+    `[openEHR-EHR-COMPOSITION.encounter.v1]` to the WHERE-form
+    `c/archetype_node_id = 'openEHR-EHR-COMPOSITION.encounter.v1'` — read
+    literally, plain string equality on the root node id. BASE
+    docs/architecture_overview/master10-archetypes.adoc §Design-time
+    Relationships between Archetypes states the opposite behavioural
+    guarantee in normative language: "the data created with any specialised
+    archetype will always be matched by queries based on the parent
+    archetype - in other words, a query for 'laboratory' Observations will
+    correctly retrieve 'glucose' Observations as well", grounding it in
+    subsumption; AM docs/AOM1.4 master07 (§Querying / §Supporting
+    Archetype-based Querying) derives the same matching set for
+    archetype-based queries (the named archetype, its specialisation
+    lineage, bounded by the interface-reference major). Data created with
+    `openEHR-EHR-COMPOSITION.report-result.v1` carries that specialised id
+    as its root `archetype_node_id`, so the two readings give different
+    answers to a query naming `openEHR-EHR-COMPOSITION.report.v1`: equality
+    returns nothing, subsumption returns the row.
+  source: >-
+    QUERY docs/AQL/master03-syntax.adoc §Archetype predicate (the equality
+    shortcut equivalence); BASE
+    docs/architecture_overview/master10-archetypes.adoc §Design-time
+    Relationships between Archetypes (parent-archetype queries retrieve
+    specialisation-child data); AM docs/AOM1.4/master07 §Querying /
+    §Supporting Archetype-based Querying (the archetype-based matching set).
+  handling: >-
+    The subsumption reading is normative for a full archetype-HRID
+    predicate: a predicate naming archetype X matches data whose root
+    archetype_node_id is X or any specialisation descendant of X (the
+    `-`-extended domain_concept lineage of ADL 1.4-form ids), scoped to the
+    same qualified RM entity and major version; a predicate value that is
+    not a full archetype HRID (an at/id-code or arbitrary string) stays
+    plain equality, exactly as QUERY master03 §Node predicate defines.
+    WHY: the QUERY sentence is an illustration of the predicate's
+    desugaring, while BASE master10 states the retrieval guarantee as the
+    purpose of the specialisation rule itself ("will always be matched") and
+    AM master07 defines the matching set — under the released-component
+    order a literal-shortcut reading would nullify the behavioural guarantee
+    two components state, so the guarantee wins.
+    I_QUERY_SERVICE.execute_ad_hoc_query-archetype_subsumption pins all
+    three boundary points (exact child id matches; parent id matches child
+    data; an unrelated archetype id does not match).
+  disposition: fixed_handling
