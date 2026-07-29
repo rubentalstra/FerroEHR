@@ -246,13 +246,13 @@ pub(crate) const MAPPED_CLASSES: &[MappedClass] = &[
     },
     MappedClass {
         name: "BASIC_DEFINITIONS",
-        citation: "RM common (BASIC_DEFINITIONS)",
-        reason: "Constant holder; its constants become associated consts in *_impl.rs.",
+        citation: "BASE base_types.definitions (BASIC_DEFINITIONS; Base Types §Definitions Package)",
+        reason: "Constant holder; its constants live in base_types/definitions/definitions_impl.rs.",
     },
     MappedClass {
         name: "OPENEHR_DEFINITIONS",
-        citation: "RM common (OPENEHR_DEFINITIONS)",
-        reason: "Constant holder; its constants become associated consts in *_impl.rs.",
+        citation: "BASE base_types.definitions (OPENEHR_DEFINITIONS; Base Types §Definitions Package)",
+        reason: "Constant holder; its constants live in base_types/definitions/definitions_impl.rs.",
     },
 ];
 
