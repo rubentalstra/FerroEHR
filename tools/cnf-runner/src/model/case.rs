@@ -288,9 +288,44 @@ pub struct Requires {
     /// is precondition state, never an un-anchored flow call).
     #[serde(default)]
     pub commit: Vec<CorpusKey>,
+    /// The terminology deployment the case needs (`ixit.terminology`).
+    #[serde(default)]
+    pub terminology: Option<TerminologyRequirement>,
     /// Multi-instance cases state `requires` per named instance.
     #[serde(default)]
     pub instances: Option<std::collections::BTreeMap<InstanceName, Requires>>,
+}
+
+/// The terminology deployment a case needs, matched against the addressed
+/// instance's `ixit.terminology` declaration at SELECTION time.
+///
+/// Released ITS-REST 1.1.0 surfaces no terminology resource, so nothing on the
+/// wire tells a runner which terminology servers a deployment is wired to or
+/// what it does with a value set it cannot resolve. Both are IXIT
+/// declarations, and a case that needs one the party does not declare is
+/// not-applicable with that citation (ISO/IEC 9646 test selection) — never
+/// driven against a guess.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TerminologyRequirement {
+    /// The unresolvable-value-set posture the case's expectation rests on
+    /// (register AMB-172). Omitted when the behaviour is posture-independent.
+    #[serde(default)]
+    pub posture: Option<crate::ixit::TerminologyPosture>,
+    /// Terminology namespaces a declared REACHABLE server must answer for.
+    #[serde(default)]
+    pub served: Vec<String>,
+    /// Terminology namespaces a declared UNREACHABLE server must answer for —
+    /// the terminology-server-down branch, declared for the whole run rather
+    /// than produced by a mid-run reconfiguration.
+    #[serde(default)]
+    pub unreachable: Vec<String>,
+    /// How many DISTINCT reachable servers the `served` namespaces must be
+    /// spread across — the N≥2 simultaneous-servers requirement (BASE
+    /// master12 §Overview: a deployment binds to several terminologies at
+    /// once).
+    #[serde(default)]
+    pub distinct_servers: Option<usize>,
 }
 
 impl Requires {

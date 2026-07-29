@@ -87,9 +87,9 @@ from the [configuration reference](configuration.md) can be added under the
 
 ## Optional services (Compose profiles)
 
-The Compose file also defines two services the quickstart does **not** depend
-on — the server defaults to Basic auth and inline multimedia, so neither is
-required. Each sits behind a [Compose
+The Compose file also defines services the quickstart does **not** depend on —
+the server defaults to Basic auth, inline multimedia and the in-process
+openEHR terminology, so none of them is required. Each sits behind a [Compose
 profile](https://docs.docker.com/compose/how-tos/profiles/) and stays down
 until you enable it:
 
@@ -106,6 +106,22 @@ until you enable it:
   point the auth OIDC settings at `http://localhost:8081/auth/realms/ehrbase`.
   Its healthcheck probes the realm's OIDC discovery document, so services can
   gate their startup on it being fully ready.
+- **`terminology`** (`--profile terminology`) — a real FHIR R4 terminology
+  server (HAPI FHIR JPA) on port 8090, plus a one-shot container that seeds it
+  with synthetic test code systems and value sets over the server's own FHIR
+  API. The profile only starts the server; pointing the CDR at it is a small
+  overlay, so the plain quickstart is unaffected:
+
+  ```bash
+  docker compose --profile terminology \
+    -f docker-compose.yml -f docker/sut-terminology.yml up
+  ```
+
+  The overlay switches on the `[terminology.external]` providers that
+  `docker/ehrbase.dev.toml` already carries in the disabled state. See
+  [Terminology servers](../beyond-core/terminology.md) for what is seeded, how
+  several servers are routed per terminology, and the fail-open/fail-closed
+  choice.
 
 ## Build provenance
 

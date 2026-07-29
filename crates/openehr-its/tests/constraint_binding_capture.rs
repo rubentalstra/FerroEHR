@@ -159,6 +159,54 @@ fn an_absent_coded_value_raises_no_check() {
     assert!(collect_constraint_binding_checks(&composition, &wt).is_empty());
 }
 
+/// The two COMMITTED bound corpus templates carry their binding in the file,
+/// not in a test-time injection: `dt_coded_text_binding_sct.opt` binds ac0001
+/// into the terminology namespace a conformance deployment routes to a
+/// reachable terminology server, and `dt_coded_text_binding_tsdown.opt` binds
+/// it into one routed to a server declared unreachable. They are the payload
+/// ground of the commit-time binding cases, so a silent change to either file
+/// — a lost `ontology` element, a renamed terminology, a mistyped query URI —
+/// must fail here rather than as a puzzling conformance row.
+#[test]
+fn the_committed_bound_corpus_templates_carry_their_bindings() {
+    let corpus = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/cnf-runner/artifacts/corpus/templates");
+    let expected = [
+        (
+            "dt_coded_text_binding_sct.opt",
+            "cnf-sct-shaped",
+            "http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders",
+        ),
+        (
+            "dt_coded_text_binding_tsdown.opt",
+            "cnf-ts-down",
+            "http://cnf.example.test/fhir/ValueSet/ts-down-set",
+        ),
+    ];
+    for (file, terminology, query_uri) in expected {
+        let path = corpus.join(file);
+        let xml = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+        let wt = build(&xml);
+        let node = find_bound(&wt.tree)
+            .unwrap_or_else(|| panic!("{file}: no node carries a constraint binding"));
+        assert_eq!(node.constraint_bindings.len(), 1, "{file}");
+        let binding = &node.constraint_bindings[0];
+        assert_eq!(binding.ac_code, "ac0001", "{file}");
+        assert_eq!(binding.terminology, terminology, "{file}");
+        assert_eq!(binding.query_uri, query_uri, "{file}");
+        assert_eq!(binding.attr, "defining_code", "{file}");
+
+        // And the instance walk raises exactly the membership question the
+        // commit-time cases rest on.
+        let composition = composition_with_code(&node.aql_path, "1000002");
+        let checks = collect_constraint_binding_checks(&composition, &wt);
+        assert_eq!(checks.len(), 1, "{file}: got {checks:?}");
+        assert_eq!(checks[0].query_uri, query_uri, "{file}");
+        assert_eq!(checks[0].instance_code, "1000002", "{file}");
+    }
+}
+
 /// A minimal COMPOSITION whose single coded leaf sits at `aql_path` carrying
 /// `code`. The path is the template's own `aqlPath`, so the walk matches it.
 fn composition_with_code(aql_path: &str, code: &str) -> serde_json::Value {

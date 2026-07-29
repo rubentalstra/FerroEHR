@@ -90,6 +90,89 @@ services:
 > value sets are expanded on upload, so validation answers from the
 > pre-computed expansion.
 
+### Several terminology servers at once
+
+Real deployments bind to more than one terminology — SNOMED CT from one
+server, LOINC or a national code system from another. Every entry under
+`[terminology.external.providers]` is materialised at startup, and a routing
+map picks the one that answers each call:
+
+```toml
+[terminology.external]
+enabled = true
+
+[terminology.external.providers.snomed]
+type = "fhir"
+url = "https://snomed.example.org/fhir"
+
+[terminology.external.providers.loinc]
+type = "fhir"
+url = "https://loinc.example.org/fhir"
+
+# Terminology namespace -> provider name. Keys are matched whole-string and
+# case-insensitively: a terminology id as an archetype binding writes it, a
+# code-system URI, or a value-set URL.
+[terminology.external.routes]
+"SNOMED-CT" = "snomed"
+"http://snomed.info/sct" = "snomed"
+"http://loinc.org" = "loinc"
+```
+
+Selection is deliberately mechanical, so you can predict which server answers:
+the caller offers candidate keys in priority order (the value set or coded
+system first, then the AQL `service_api` flavour); the first key with a route
+entry wins; otherwise the provider named `default` answers — or, when exactly
+one provider is configured, that one. With two or more providers and no
+`default`, an unrouted terminology has no server at all, which is a useful way
+to make routing mistakes loud instead of silent. A route naming a provider
+that does not exist fails at startup, never at request time.
+
+### The `terminology` compose profile (development and CI)
+
+The repository's `docker-compose.yml` can start a real FHIR R4 terminology
+server (HAPI FHIR JPA) beside the CDR, seeded with a small set of synthetic
+test code systems and value sets:
+
+```bash
+docker compose --profile terminology \
+  -f docker-compose.yml -f docker/sut-terminology.yml up
+```
+
+The profile starts the server (host port `8090` by default,
+`EHRBASE_TERMINOLOGY_PORT`) plus a one-shot seeding container that uploads the
+fixtures over the server's own FHIR API and verifies `$validate-code` and
+`$expand` before exiting. The `docker/sut-terminology.yml` overlay is what
+points the CDR at it, by switching on the `[terminology.external]` providers
+that `docker/ehrbase.dev.toml` already carries in the disabled state. Without
+that overlay the CDR ignores the terminology server entirely, so the plain
+quickstart is unchanged.
+
+The seeded content is synthetic and lives under the reserved `example.test`
+domain: one hierarchical, SNOMED-CT-*shaped* code system and one LOINC-*shaped*
+one, each with an enumerated value set. It carries no licensed terminology
+content — point the providers at a real server (and, for SNOMED CT, hold the
+appropriate licence) for anything beyond experimentation.
+
+The stock HAPI image keeps its database in memory, so restarting the
+terminology container drops the seed; re-run the profile (or just the seeding
+container) after one.
+
+### When the terminology server cannot answer
+
+`fail_on_error` decides what happens when a bound value set cannot be resolved
+at all — the server is unreachable, returns an error, or does not know the
+value set:
+
+- `false` (the default, *fail-open*): the composition is accepted and a warning
+  is logged. Availability of an external service does not block clinical
+  writes.
+- `true` (*fail-closed*): the composition is rejected with a validation error
+  naming the unresolved binding.
+
+A code that *is* resolved and turns out not to be a member of the bound value
+set is a different matter: that is a real constraint violation and the
+composition is rejected under either setting.
+
 ## Terminology in AQL
 
 Query authors can use the AQL `TERMINOLOGY()` function to constrain a match to a
