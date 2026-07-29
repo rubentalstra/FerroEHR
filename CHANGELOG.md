@@ -17,6 +17,36 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The definition and messaging extension routes now document their refusal
+  branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
+  and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
+  and — on the writes — `403` (a principal holding the configured read-only
+  role) in the served OpenAPI, so a client can see the whole answer set of an
+  endpoint before it calls it. The TDD batch additionally documents its `413`
+  boundary: the batch has no cardinality limit of its own, only the
+  server-wide request-body limit.
+
+### Changed
+
+- **An empty TDD batch answers `200` with `[]` instead of `201`.**
+  `POST /message/tdd/{ehr_id}/batch` with an empty array creates nothing, and
+  `201 Created` reported a creation that did not happen. Batches with members
+  are unaffected.
+- **`EXTRACT_SPEC.extract_type` now accepts every code the openEHR Reference
+  Model names.** `POST /message/export` previously refused
+  `openehr-synchronisation` and `openehr-generic` — two of the five extract
+  types the RM's EHR Extract chapter lists by example — as out of group.
+  Both are accepted now, alongside `openehr-ehr`, `openehr-demographic`,
+  `generic-emr` and the catch-all `other`.
+
+### Fixed
+
+- **An empty TDD batch aimed at a non-existent EHR is now refused.**
+  `POST /message/tdd/{ehr_id}/batch` verified the target EHR once per
+  document, so a batch with no documents answered success without checking
+  the EHR at all. The target is now verified for every batch, empty ones
+  included, and an unknown EHR answers `404`.
+
 - **Conformance: ADL 1.4 archetype provisioning is now tested rather than
   excused.** openEHR's released REST API defines no ADL 1.4 archetype
   resource, so the capability used to be reported as "excused — unrealized on

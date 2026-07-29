@@ -46,6 +46,15 @@ outcomes:
     status: 200
     headers:
       Content-Type: negotiated
+  # SM `precondition_violation` — the `{ehr_id}` path segment is not a
+  # well-formed EHR identifier. Distinct from `not_found`: a malformed
+  # identifier is refused before any lookup, so the answer says nothing about
+  # what the store holds. Nothing released governs this route; the status
+  # choice is the served route's own documented contract (RFC 9110 §15.5.1:
+  # 400 for a request the server "cannot or will not process ... due to
+  # something that is perceived to be a client error").
+  bad_request:
+    status: 400
   # SM error `ehr_id_does_not_exist`.
   not_found:
     status: 404

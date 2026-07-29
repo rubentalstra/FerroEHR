@@ -168,16 +168,24 @@ impl EhrbaseService {
     /// all-or-nothing — every TDD is parsed and converted before any is
     /// committed, so a single unconvertible TDD rejects the whole batch with
     /// nothing committed. Returns the created `OBJECT_VERSION_ID`s in input
-    /// order.
+    /// order; an EMPTY batch returns an empty list.
+    ///
+    /// The target-EHR precondition is checked for EVERY batch, the empty one
+    /// included: `an_ehr_id` is a parameter of the operation, not of its
+    /// members, so an unknown EHR is `ehr_id_does_not_exist` even when there
+    /// is no member to carry the check.
     ///
     /// # Errors
-    /// As [`Self::import_tdd`], for any TDD in the batch (a conversion failure
-    /// rejects the batch before any commit).
+    /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id`, whatever the batch
+    ///   holds.
+    /// - Otherwise as [`Self::import_tdd`], for any TDD in the batch (a
+    ///   conversion failure rejects the batch before any commit).
     pub async fn import_tdds(
         &self,
         an_ehr_id: EhrId,
         tdds: Vec<String>,
     ) -> Result<Vec<String>, SmError> {
+        self.require_tdd_target_ehr(an_ehr_id).await?;
         let mut prepared = Vec::with_capacity(tdds.len());
         for tdd in &tdds {
             prepared.push(self.prepare_one_tdd(an_ehr_id, tdd).await?);
@@ -203,15 +211,7 @@ impl EhrbaseService {
     async fn prepare_one_tdd(&self, ehr_id: EhrId, tdd: &str) -> Result<Value, SmError> {
         let envelope = parse_tdd_envelope(tdd)?;
 
-        // Precondition: the target EHR exists (`has_ehr`).
-        let ehr_exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
-            .bind(ehr_id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(ServiceError::from)?;
-        if !ehr_exists {
-            return Err(SmError::ehr_not_found(format!("no EHR with id {ehr_id}")));
-        }
+        self.require_tdd_target_ehr(ehr_id).await?;
 
         // Precondition: the referenced operational template is provisioned. An
         // unknown template_id is `template_does_not_exist` — the template store
@@ -231,5 +231,21 @@ impl EhrbaseService {
                 envelope.template_id
             ))
         })
+    }
+
+    /// The shared target-EHR precondition of both import operations (`has_ehr`
+    /// — `i_tdd_service.adoc` takes `an_ehr_id` on the operation, not on the
+    /// document).
+    async fn require_tdd_target_ehr(&self, ehr_id: EhrId) -> Result<(), SmError> {
+        let ehr_exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+            .bind(ehr_id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(ServiceError::from)?;
+        if ehr_exists {
+            Ok(())
+        } else {
+            Err(SmError::ehr_not_found(format!("no EHR with id {ehr_id}")))
+        }
     }
 }

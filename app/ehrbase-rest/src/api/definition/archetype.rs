@@ -31,6 +31,18 @@
 //! ATNA-audit / ABAC middleware stack uniform across the whole HTTP surface.
 //! There is no separate config gate: the archetype surface lives and dies with
 //! the DEFINITION group, exactly like the released template routes.
+//!
+//! ## The refusal classes every route here carries
+//!
+//! NOTE (no openEHR spec governs role semantics on an unspecified route — our
+//! own design/extension): these routes sit inside the API subtree, so the
+//! shared authentication + RBAC layer answers before any handler runs. A
+//! request carrying no valid principal is `401`; an authenticated principal
+//! carrying the configured read-only role is `403` on the WRITE routes (the
+//! upload and the deletes) and unaffected on the reads. Both branches are
+//! declared per operation below so the served `OpenAPI` names every refusal a
+//! client can meet — the coarse operation class is `Clinical` (the routes are
+//! not under `/admin/`, so no ADMIN role is required).
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -115,6 +127,9 @@ const ADL_TEXT: &str = "text/plain; charset=utf-8";
          example = json!(["openEHR-EHR-COMPOSITION.prescription.v1"])),
         (status = 400, description = "`offset`/`fetch` is not a non-negative \
                                       integer.", body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal). Refused before the store is \
+                                      read.", body = serde_json::Value),
         (status = 406, description = "The `Accept` header cannot be satisfied: \
                                       an id list has no canonical-XML or \
                                       Simplified representation, so it is \
@@ -169,6 +184,14 @@ pub(crate) async fn definition_archetype_adl14_list(
                              overview's §Location rule, not inherited from it.")
          ),
          example = json!("openEHR-EHR-COMPOSITION.prescription.v1")),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal). Refused before the body is \
+                                      read.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: this route \
+                                      writes the definition store, so it is \
+                                      refused regardless of the payload.",
+         body = serde_json::Value),
         (status = 415, description = "The request declares a `Content-Type` \
                                       other than `text/plain`; the body cannot \
                                       be processed as ADL source.",
@@ -213,8 +236,16 @@ pub(crate) async fn definition_archetype_adl14_upload(
                                       as uploaded, as `text/plain`.",
          body = String,
          content_type = "text/plain"),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
         (status = 404, description = "No archetype with that id — SM \
-                                      `artefact_does_not_exist`.",
+                                      `artefact_does_not_exist`. This is also \
+                                      the answer for a syntactically malformed \
+                                      `ARCHETYPE_ID`: the store key is an \
+                                      opaque, case-insensitively matched \
+                                      string with no syntactic gate on the \
+                                      read path, so an unparseable id is \
+                                      simply an id nothing is stored under.",
          body = serde_json::Value)
     )
 )]
@@ -247,6 +278,13 @@ pub(crate) async fn definition_archetype_adl14_get(
                                       holds no version history for source \
                                       archetypes, so nothing survives to \
                                       return."),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: this route \
+                                      writes the definition store, so it is \
+                                      refused before the store is touched.",
+         body = serde_json::Value),
         (status = 404, description = "No archetype with that id — SM \
                                       `Pre_artefact_exists` /\
                                       `artefact_does_not_exist`.",
@@ -288,6 +326,8 @@ pub(crate) async fn definition_archetype_adl14_delete(
          example = json!(["openEHR-EHR-OBSERVATION.cnf_count.v1.0.0"])),
         (status = 400, description = "`offset`/`fetch` is not a non-negative \
                                       integer.", body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
         (status = 406, description = "An id list is served as \
                                       `application/json` only.",
          body = serde_json::Value)
@@ -315,6 +355,8 @@ pub(crate) async fn definition_archetype_adl2_list(
                                       `AUTHORED_ARCHETYPE`s, as a bare JSON \
                                       number.",
          body = i64, example = json!(0)),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
         (status = 406, description = "The count is served as \
                                       `application/json` only.",
          body = serde_json::Value)
@@ -352,6 +394,8 @@ pub(crate) async fn definition_archetype_adl2_count(
          example = json!(["openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0"])),
         (status = 400, description = "`offset`/`fetch` is not a non-negative \
                                       integer.", body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
         (status = 406, description = "An id list is served as \
                                       `application/json` only.",
          body = serde_json::Value)
@@ -376,6 +420,8 @@ pub(crate) async fn definition_artefact_adl2_list(
         (status = 200, description = "The total number of stored AOM2 \
                                       artefacts, as a bare JSON number.",
          body = i64, example = json!(0)),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
         (status = 406, description = "The count is served as \
                                       `application/json` only.",
          body = serde_json::Value)
@@ -409,8 +455,20 @@ pub(crate) async fn definition_artefact_adl2_count(
         (status = 204, description = "Removed. No body — the definition store \
                                       keeps no version history for AOM2 \
                                       artefacts."),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal).", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: this route \
+                                      writes the definition store, so it is \
+                                      refused before the store is touched.",
+         body = serde_json::Value),
         (status = 404, description = "No artefact with that id — SM \
-                                      `artefact_does_not_exist`.",
+                                      `artefact_does_not_exist`. This is also \
+                                      the answer for a syntactically malformed \
+                                      HRID: the store key is opaque and \
+                                      case-insensitively matched, so an \
+                                      unparseable id is simply an id nothing \
+                                      is stored under.",
          body = serde_json::Value)
     )
 )]

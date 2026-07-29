@@ -742,24 +742,47 @@ fn link_target_uuids(items: &[Value]) -> Vec<VoId> {
     out
 }
 
-/// `EXTRACT_SPEC.extract_type` must be coded from the openEHR "extract content
-/// type" group (`extract_spec.adoc`: `openehr-ehr`, `openehr-demographic`,
-/// `generic-emr`, `other`). The group is published in the EHR-Extract spec, not
-/// the terminology XML bundle, so the member set is validated literally here.
+/// The extract-content-type codes `EXTRACT_SPEC.extract_type` may carry.
+///
+/// The first five are the ones the RM names outright — RM `ehr_extract`
+/// `master04-common_package.adoc` §Content Criteria Specification:
+/// "`_extract_type_`: what kind of Extract this is, e.g. `|openehr-ehr|`,
+/// `|openehr-demographic|`, `|openehr-synchronisation|`, `|openehr-generic|`,
+/// `|generic-emr|`, etc". No terminology group binds the attribute (it appears
+/// in no `openehr_terminology` group and in no external-terminology binding),
+/// so there is nothing to validate against but that sentence.
+///
+/// NOTE (no openEHR spec closes this set — our own design/extension): the RM's
+/// "etc" makes the list illustrative, so a service could accept anything. This
+/// one validates, because an unrecognized type silently exporting an
+/// openEHR-EHR extract would misdescribe its own payload — but the accepted
+/// set is a superset of every code the RM names, plus the catch-all `other`
+/// for a caller that has no better label. Refusing a code the RM itself names
+/// would be refusing what must be accepted.
+const EXTRACT_CONTENT_TYPES: [&str; 6] = [
+    "openehr-ehr",
+    "openehr-demographic",
+    "openehr-synchronisation",
+    "openehr-generic",
+    "generic-emr",
+    "other",
+];
+
+/// `EXTRACT_SPEC.extract_type` must be coded from [`EXTRACT_CONTENT_TYPES`].
 fn validate_extract_type(spec: &ExtractSpec) -> Result<(), SmError> {
     let value = openehr_its::json::to_canonical_value(&spec.extract_type);
     let code = value
         .pointer("/defining_code/code_string")
         .and_then(Value::as_str)
         .unwrap_or_default();
-    match code {
-        "openehr-ehr" | "openehr-demographic" | "generic-emr" | "other" => Ok(()),
-        other => Err(SmError::precondition(format!(
-            "EXTRACT_SPEC.extract_type {other:?} is not in the openEHR extract \
-             content type group (openehr-ehr | openehr-demographic | generic-emr \
-             | other)"
-        ))),
+    if EXTRACT_CONTENT_TYPES.contains(&code) {
+        return Ok(());
     }
+    Err(SmError::precondition(format!(
+        "EXTRACT_SPEC.extract_type {code:?} is not an openEHR extract content \
+         type ({})",
+        EXTRACT_CONTENT_TYPES.join(" | ")
+    )))
 }
 
 /// Resolve an `EXTRACT_ENTITY_MANIFEST` to a concrete EHR id: prefer `ehr_id`,

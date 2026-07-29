@@ -493,10 +493,13 @@ fn an_extension_only_capability_marked_released_wire_fails_validate() {
             "PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,",
         )
     });
+    // The count tracks the committed battery — it rises whenever the
+    // PartyRelationshipOperations rows grow, and asserting it keeps the gate
+    // honest about WHICH cases it judged rather than merely that it fired.
     assert_gate(
         &world.findings(),
         "realization-scope",
-        "PartyRelationshipOperations: every one of its 15 verdict-bearing case(s) drives \
+        "PartyRelationshipOperations: every one of its 17 verdict-bearing case(s) drives \
          EXTENSION routes only",
     );
 }
