@@ -4,9 +4,9 @@
 
 | Field | Value |
 | --- | --- |
-| Solution | ehrbase-rs 3.11.0 |
+| Solution | ehrbase-rs 3.12.0 |
 | Vendor | Ruben Talstra |
-| Runner | cnf-runner 3.11.0 |
+| Runner | cnf-runner 3.12.0 |
 | Infrastructure | ixit.json#/environment |
 
 ## Scope of Test

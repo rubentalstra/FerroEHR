@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ehrbase-rs",
-    "version": "3.11.0"
+    "version": "3.12.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.11.0",
+    "version": "3.12.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -4441,6 +4441,12 @@
     },
     {
       "case": "I_TDD_SERVICE.import_tdds-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-archetype_subsumption",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

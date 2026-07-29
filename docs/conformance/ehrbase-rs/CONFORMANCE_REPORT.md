@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.11.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.11.0 · verification pack: passed
+SUT: ehrbase-rs 3.12.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.12.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 808 |
+| passed | 809 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 845 |
+| total | 846 |
 
 ## By chapter
 
@@ -32,8 +32,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — ADL 1.4 templates | 33 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 30 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
-| **Query** | 40 | 0 | 0 | 0 |
-| — Ad-hoc AQL | 29 | 0 | 0 | 0 |
+| **Query** | 41 | 0 | 0 | 0 |
+| — Ad-hoc AQL | 30 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
 | **Demographic** | 68 | 0 | 0 | 4 |
 | — Parties | 45 | 0 | 0 | 3 |
@@ -92,7 +92,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | PartyOperations | pass | 48 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
-| AqlBasic | pass | 19 | 0 | 0 | 0 |
+| AqlBasic | pass | 20 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 2 | 0 | 0 | 0 |
 | AqlTerminology | pass | 5 | 0 | 0 | 0 |
 | ActivityReport | pass | 15 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 808 of 845 selected cases driven.
+Coverage: 809 of 846 selected cases driven.
 
 Not-executed verdicts (each cited):
 
