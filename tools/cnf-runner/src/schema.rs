@@ -131,6 +131,18 @@ fn requires_def() -> Value {
                 { "const": "none" },
                 { "type": "string", "pattern": CORPUS_KEY_PATTERN }
             ] },
+            "party_relationship": { "anyOf": [
+                { "const": "none" },
+                { "type": "object",
+                  "description": "A PARTY_RELATIONSHIP provisioned between two REAL parties (mints `${party_relationship_id}`, its VERSIONED_OBJECT uid). The two endpoint parties are created first and their container uids written into the relationship's source/target PARTY_REFs — RM demographic master02-demographic_package.adoc §Party Relationships: the references are \"OBJECT_REFs containing HIER_OBJECT_IDs to denote the Version container of a Party\". The relationship create has no released wire (register AMB-32, the `party-relationship` served_extensions family).",
+                  "additionalProperties": false,
+                  "required": ["source", "target", "relationship"],
+                  "properties": {
+                      "source": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                      "target": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                      "relationship": { "type": "string", "pattern": CORPUS_KEY_PATTERN }
+                  } }
+            ] },
             "commit": string_array(Some(CORPUS_KEY_PATTERN)),
             "instances": { "type": "object",
                 "propertyNames": { "pattern": IDENT_PATTERN },

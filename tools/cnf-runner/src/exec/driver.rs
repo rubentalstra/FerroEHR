@@ -1870,7 +1870,38 @@ impl HttpDriver<'_> {
             return Ok(());
         };
         let payload = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
-        let binding = self.binding_for(case, "I_DEMOGRAPHIC_SERVICE.create_party")?;
+        if let Some(uid) = self.create_party(case, &payload, vars)? {
+            vars.set(
+                CaptureName::parse("party_id").map_err(|e| e.to_string())?,
+                Captured::Scalar(uid),
+            );
+        }
+        Ok(())
+    }
+
+    /// Create one demographic PARTY from a corpus payload and return its
+    /// `VERSIONED_OBJECT` uid.
+    ///
+    /// The route is the one the payload's own concrete RM type names: ITS-REST
+    /// 1.1.0 surfaces one create endpoint per concrete PARTY subtype (the
+    /// `create_party` binding realizes PERSON, its `agent`/`group`/
+    /// `organisation`/`role` variants the other four), so a payload's `_type`
+    /// selects the variant rather than the caller guessing one.
+    fn create_party(
+        &mut self,
+        case: &CaseCore,
+        payload: &Value,
+        vars: &VarStore,
+    ) -> Result<Option<String>, String> {
+        let variant = Self::party_create_variant(payload)?;
+        let binding =
+            self.binding_for_variant(case, "I_DEMOGRAPHIC_SERVICE.create_party", variant)?;
+        if binding.variant.as_deref() != variant {
+            return Err(format!(
+                "create_party declares no {} realization for the provisioned party payload",
+                variant.unwrap_or("person"),
+            ));
+        }
         let instance = self.provisioning_instance(case)?;
         let request_spec = binding
             .request
@@ -1889,7 +1920,117 @@ impl HttpDriver<'_> {
         )?;
         let base = instance.base_url.trim_end_matches('/');
         let url = format!("{base}{}", request_spec.path.raw());
-        let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
+        let exchange = self.send(request_spec.method, &url, &headers, Some(payload), true)?;
+        Ok(binding
+            .captures
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .find(|(n, _)| n.as_str() == "versioned_object_uid")
+            .and_then(|(_, spec)| Self::extract_capture(&exchange, binding, spec, vars)))
+    }
+
+    /// The `create_party` binding variant a party payload's concrete RM type
+    /// selects — `None` for PERSON, which the variant-less binding realizes.
+    fn party_create_variant(payload: &Value) -> Result<Option<&'static str>, String> {
+        match payload.get("_type").and_then(Value::as_str) {
+            Some("PERSON") => Ok(None),
+            Some("AGENT") => Ok(Some("agent")),
+            Some("GROUP") => Ok(Some("group")),
+            Some("ORGANISATION") => Ok(Some("organisation")),
+            Some("ROLE") => Ok(Some("role")),
+            other => Err(format!(
+                "a provisioned party payload must be a concrete PARTY subtype \
+                 (PERSON | AGENT | GROUP | ORGANISATION | ROLE), got {}",
+                other.unwrap_or("<no _type>")
+            )),
+        }
+    }
+
+    /// `party_relationship`: mint `${party_relationship_id}` — the relationship's
+    /// `VERSIONED_OBJECT` uid — by creating both endpoint parties over the
+    /// released demographic wire and then the relationship between them.
+    ///
+    /// The endpoint substitution is what RM demographic
+    /// `master02-demographic_package.adoc` §Party Relationships requires:
+    /// `source`/`target` are "`OBJECT_REFs` containing `HIER_OBJECT_IDs` to
+    /// denote the Version container of a Party, rather than
+    /// `OBJECT_VERSION_IDs`" — so each `PARTY_REF.id.value` becomes the
+    /// container uid the create just minted, and the corpus payload's declared
+    /// `PARTY_REF.type` must be the type of the party provisioned for that end
+    /// (a mismatch is a catalogue defect, refused here rather than sent).
+    ///
+    /// NOTE: the relationship create itself is driven over the SUT's own
+    /// `party-relationship` extension route — no openEHR spec governs it
+    /// (register AMB-32), the released ITS-REST surfaces no
+    /// `PARTY_RELATIONSHIP` resource — so this precondition is only available
+    /// on a party that serves that family.
+    fn provision_party_relationship(
+        &mut self,
+        case: &CaseCore,
+        vars: &mut VarStore,
+    ) -> Result<(), String> {
+        let Some(crate::model::case::PartyRelationshipRequirement::Exists {
+            source,
+            target,
+            relationship,
+        }) = case.requires.party_relationship.clone()
+        else {
+            return Ok(());
+        };
+        let mut body = self
+            .resolver
+            .data_set(&relationship)
+            .map_err(|e| e.to_string())?;
+        for (end, key) in [("source", &source), ("target", &target)] {
+            let payload = self.resolver.data_set(key).map_err(|e| e.to_string())?;
+            let party_type = payload
+                .get("_type")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let declared = body
+                .get(end)
+                .and_then(|r| r.get("type"))
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if declared != party_type {
+                return Err(format!(
+                    "requires.party_relationship: {relationship} declares {end} PARTY_REF.type \
+                     {declared:?}, but {key} provisions a {party_type:?}"
+                ));
+            }
+            let uid = self
+                .create_party(case, &payload, vars)?
+                .ok_or_else(|| format!("provisioning the {end} party minted no uid"))?;
+            *body
+                .get_mut(end)
+                .and_then(|r| r.get_mut("id"))
+                .and_then(|id| id.get_mut("value"))
+                .ok_or_else(|| {
+                    format!("requires.party_relationship: {relationship} has no {end}.id.value")
+                })? = Value::String(uid);
+        }
+        let binding = self.binding_for(case, "I_DEMOGRAPHIC_SERVICE.create_party_relationship")?;
+        let instance = self.provisioning_instance(case)?;
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| "create_party_relationship unrealized".to_owned())?;
+        let headers = Self::compose_headers(
+            self.set,
+            self.ixit,
+            case,
+            None,
+            binding,
+            instance,
+            vars,
+            None,
+            self.spec_versions,
+        )?;
+        let base = instance.base_url.trim_end_matches('/');
+        let url = format!("{base}{}", request_spec.path.raw());
+        let exchange = self.send(request_spec.method, &url, &headers, Some(&body), true)?;
         if let Some((_, spec)) = binding
             .captures
             .as_deref()
@@ -1899,7 +2040,7 @@ impl HttpDriver<'_> {
             && let Some(value) = Self::extract_capture(&exchange, binding, spec, vars)
         {
             vars.set(
-                CaptureName::parse("party_id").map_err(|e| e.to_string())?,
+                CaptureName::parse("party_relationship_id").map_err(|e| e.to_string())?,
                 Captured::Scalar(value),
             );
         }
@@ -2493,6 +2634,7 @@ impl StepDriver for HttpDriver<'_> {
             }
         }
         self.provision_party(case, vars)?;
+        self.provision_party_relationship(case, vars)?;
         self.provision_commit_sets(case, vars)?;
         Ok(Provisioned::Ready)
     }
