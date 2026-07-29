@@ -105,6 +105,15 @@ use-case counts; the goal is total behavioural coverage.
 - **One behaviour per case** — many small isolated cases beat one broad case,
   because a failure then names exactly one defect (which is also what makes the
   attribution law tractable, `.claude/rules/cnf-triage.md`).
+- **An adjudicated spec-correct refusal always yields BOTH twins (owner hard
+  rule, 2026-07-29).** When triage attributes a red row to a defective
+  fixture that the SUT was spec-RIGHT to refuse, fixing the fixture is only
+  half the job: the invalid shape is preserved as its own corpus entry
+  (`validity: invalid` with the defect + spec_ref) plus a refusal case, so
+  the catalogue carries the valid twin (acceptance proven) AND the invalid
+  twin (the refusal pinned — a lenient server fails it). Deleting the
+  invalid shape silently narrows coverage; the first instance is the
+  undefined-ac-code OPT pair (VATDF/VACDF, 2026-07-29).
 - Same completeness discipline the vendored corpora carry (100% exercised,
   coverage-gated — never partial coverage that silently narrows the claim).
 
