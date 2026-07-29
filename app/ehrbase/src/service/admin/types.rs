@@ -9,7 +9,10 @@
 /// NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
 /// default openEHR `Interval` bound inclusivity — matched against each
 /// CONTRIBUTION/version audit `time_committed`. An invalid ISO bound is a `400`
-/// (rejected at the service boundary before the query runs).
+/// (rejected at the service boundary before the query runs), and so is a
+/// bounded pair with `lower > upper`: BASE
+/// `org.openehr.base.foundation_types.interval.adoc` §Invariants
+/// (`Limits_consistent`) makes such a pair no `Interval` at all.
 pub type StatTimeRange = Option<(Option<String>, Option<String>)>;
 
 /// `EXPORT_FORMAT` enumeration
