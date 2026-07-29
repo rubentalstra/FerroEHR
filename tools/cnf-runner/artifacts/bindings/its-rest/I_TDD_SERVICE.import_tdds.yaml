@@ -42,6 +42,15 @@ outcomes:
   # released governs this route; the status choice is ours (RFC 9110 §15.3.2).
   created:
     status: 201
+  # An EMPTY `List<String>` is fulfilled with nothing created: the operation's
+  # `an_ehr_id` precondition is still checked, but no document is converted and
+  # no COMPOSITION is committed. Nothing released governs this route; the
+  # status choice is ours and it is NOT `created` — RFC 9110 §15.3.2 assigns
+  # 201 to a request that "has been fulfilled and has resulted in one or more
+  # new resources being created", which an empty batch has not, so §15.3.1's
+  # 200 carries the empty result list instead.
+  ok_empty:
+    status: 200
   # SM `precondition_violation` — a document does not conform to its
   # operational template; nothing is committed.
   bad_request:

@@ -1,0 +1,48 @@
+# The AUTHORIZATION boundary of the ADL 2 archetype/artefact surface — the
+# separate half of the -unauthenticated sibling: this principal IS
+# authenticated, and is refused anyway.
+#
+# One behaviour: an authenticated principal whose authorization is read-only is
+# refused on the capability's one WRITE (the artefact delete) and served on its
+# reads. The read step is the control that makes the row a statement about the
+# WRITE rather than about the principal.
+#
+# EXTENSION ROUTES (register AMB-37): the outcome mapping is UNIVERSAL
+# (vocab/selectors.yaml universal_outcomes: forbidden -> 403, route-table-wide).
+# These routes carry the coarse `Clinical` operation class — they are NOT under
+# /admin/ and require no ADMIN role — so the ONLY documented role class is the
+# read-only restriction, which is what this row drives. No openEHR spec governs
+# role semantics on a route it does not define; the refusal is the served
+# route's own documented contract (its `#[utoipa::path]` declares the 403
+# branch on the delete and not on the listings).
+id: I_DEFINITION_ADL2.delete_artefact-readonly_forbidden
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.delete_artefact
+capabilities: [Adl2ArchetypeProvisioning]
+profiles: [OPTIONS]
+test_purpose: >-
+  An authenticated read-only principal is refused on the ADL 2 artefact delete
+  and served on the artefact listing — authorization is enforced separately
+  from authentication, and only against the mutating half.
+description: "A read-only principal is forbidden from deleting an ADL 2 artefact"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.delete_artefact"
+  - "SM openehr_platform §I_DEFINITION_ADL2.list_artefacts"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the ADL 2 archetype/artefact routes (/definition/archetype/adl2*, /definition/artefact/adl2*); our own design/extension, declared in vocab/wire_surface.yaml served_extensions and adjudicated by register AMB-37. The row gates the Adl2ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
+  - "addresses the ixit `readonly` instance — a party that declares no read-only principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
+requires: { server: any }
+flow:
+  - step: 1
+    call: delete_artefact
+    on: readonly
+    with: { template_id: "openEHR-EHR-COMPOSITION.cnf_absent.v1.0.0" }
+    expect: forbidden                    # universal 403 (route-table-wide)
+  # The control: the same principal reads the surface it may not write.
+  - step: 2
+    call: list_artefacts
+    on: readonly
+    expect: ok
+ambiguities: [AMB-37]

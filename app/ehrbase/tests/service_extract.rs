@@ -308,6 +308,25 @@ async fn extract_spec_flags_are_honoured() {
         err.message
     );
 
+    // …but the accepted set may not be NARROWER than the codes the RM itself
+    // names: `master04-common_package.adoc` §Content Criteria Specification
+    // lists `openehr-ehr`, `openehr-demographic`, `openehr-synchronisation`,
+    // `openehr-generic` and `generic-emr` by example, so refusing one of them
+    // would be refusing what must be accepted.
+    for named in [
+        "openehr-ehr",
+        "openehr-demographic",
+        "openehr-synchronisation",
+        "openehr-generic",
+        "generic-emr",
+        "other",
+    ] {
+        spec["extract_type"]["defining_code"]["code_string"] = json!(named);
+        svc.export_ehr_extracts(openehr_its::json::from_canonical_value(&spec).expect("spec"))
+            .await
+            .unwrap_or_else(|e| panic!("extract_type {named:?} must be accepted: {}", e.message));
+    }
+
     // Valid type + include_multimedia = false → exported bodies carry no
     // inline DV_MULTIMEDIA data.
     spec["extract_type"]["defining_code"]["code_string"] = json!("openehr-ehr");

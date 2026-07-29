@@ -11,11 +11,17 @@
 # instead of resolving excused. It gates the CAPABILITY verdicts named below
 # only; no openEHR profile tier and no ITS-REST wire-conformance claim rests
 # on it.
+#
+# CAPABILITY SCOPE widened 2026-07-29: the row also gates MessageApi. That
+# capability certifies that the product answers on the message surface it
+# DECLARES, and answering means answering the REFUSALS too — a claim resting on
+# one success row could not tell a served resource from one that answers 200 to
+# everything.
 id: I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown
 kind: functional
 component: MESSAGING
 sm_operation: I_EHR_EXTRACT_SERVICE.export_ehrs
-capabilities: [EhrExtract]
+capabilities: [EhrExtract, MessageApi]
 profiles: [OPTIONS]
 test_purpose: "Exporting a non-existent EHR is rejected as not found."
 description: "Export a non-existent EHR"
