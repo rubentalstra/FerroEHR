@@ -496,3 +496,49 @@ async fn import_tdds_is_all_or_nothing() {
         "a rejected batch commits nothing"
     );
 }
+
+/// An EMPTY batch is a fulfilled no-op: nothing is created, so the answer is
+/// `200` with `[]` rather than the `201` a creation reports (RFC 9110 §15.3.2:
+/// `201` is for a request that "resulted in one or more new resources being
+/// created").
+#[tokio::test]
+async fn import_tdds_of_an_empty_batch_creates_nothing() {
+    let (_pg, app, ehr_id) = app_with_tdd_template().await;
+
+    let (status, body) = send(
+        &app,
+        post(
+            &format!("/message/tdd/{ehr_id}/batch"),
+            "application/json",
+            "[]".to_owned(),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "empty batch: {body}");
+    let uids: Value = serde_json::from_str(&body).expect("uid list json");
+    assert_eq!(uids, serde_json::json!([]), "empty batch: {body}");
+}
+
+/// The operation's target-EHR precondition holds for EVERY batch, the empty one
+/// included: `an_ehr_id` is a parameter of the operation, not of its members
+/// (SM `i_tdd_service.adoc`), so an unknown EHR is `404` even when no member
+/// carries the check.
+#[tokio::test]
+async fn import_tdds_of_an_empty_batch_still_checks_the_ehr() {
+    let (_pg, app, _ehr_id) = app_with_tdd_template().await;
+
+    let (status, body) = send(
+        &app,
+        post(
+            "/message/tdd/00000000-0000-0000-0000-000000000000/batch",
+            "application/json",
+            "[]".to_owned(),
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::NOT_FOUND,
+        "empty batch into an unknown EHR: {body}"
+    );
+}

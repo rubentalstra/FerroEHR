@@ -10,6 +10,16 @@
 //! reads with one fixed `party_relationship` / `versioned_party_relationship`
 //! segment; because there is no wire contract, the generated party `*Params`
 //! structs are reused by analogy.
+//!
+//! NOTE (no openEHR spec governs role semantics on an unspecified route — our
+//! own design/extension): every route here sits inside the API subtree, so the
+//! shared authentication + RBAC layer answers before any handler runs. A
+//! request carrying no valid principal is `401`; an authenticated principal
+//! holding the configured read-only role is `403` on the WRITE routes (create,
+//! update, delete) and unaffected on the reads. The coarse operation class is
+//! `Clinical` — the routes are not under `/admin/`, so no ADMIN role is
+//! required. Both branches are declared per operation below so the served
+//! `OpenAPI` names every refusal a client can meet.
 
 use axum::extract::State;
 use axum::response::Response;
@@ -202,6 +212,15 @@ pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
                                       (`Requests_and_responses.md` §\"HTTP status \
                                       codes\").",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
+        (status = 403, description = "The authenticated principal holds the \
+                                      configured read-only role: this route \
+                                      creates a version, so it is refused before \
+                                      the resource is touched.",
+         body = serde_json::Value),
         (status = 406, description = "The `Accept` header cannot be satisfied: a \
                                       PARTY_RELATIONSHIP is untemplated, so it is \
                                       served in the canonical formats only and a \
@@ -324,6 +343,10 @@ pub(crate) async fn party_relationship_create(
                                       row, \"syntactically invalid content\" \
                                       (`Requests_and_responses.md` §\"HTTP status \
                                       codes\").",
+         body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
          body = serde_json::Value),
         (status = 404, description = "No such relationship, or no version at the \
                                       requested `version_at_time` — the overview \
@@ -491,6 +514,15 @@ pub(crate) async fn party_relationship_get(
                                       Request`\" (`Requests_and_responses.md` \
                                       §\"If-Match and accidental overwrites\").",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
+        (status = 403, description = "The authenticated principal holds the \
+                                      configured read-only role: this route \
+                                      creates a version, so it is refused before \
+                                      the resource is touched.",
+         body = serde_json::Value),
         (status = 404, description = "No such relationship container — the \
                                       overview table's `404` row \
                                       (`Requests_and_responses.md` §\"HTTP status \
@@ -620,6 +652,15 @@ pub(crate) async fn party_relationship_update(
                                       (`specifications/responses/400_already_deleted.yaml`), \
                                       followed here by convention.",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
+        (status = 403, description = "The authenticated principal holds the \
+                                      configured read-only role: this route \
+                                      commits a deletion version, so it is refused before \
+                                      the resource is touched.",
+         body = serde_json::Value),
         (status = 404, description = "No such relationship — the overview table's \
                                       `404` row (`Requests_and_responses.md` \
                                       §\"HTTP status codes\").",
@@ -710,6 +751,10 @@ pub(crate) async fn party_relationship_delete(
                                       (`Requests_and_responses.md` §\"HTTP status \
                                       codes\").",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
         (status = 404, description = "No such relationship container — the \
                                       overview table's `404` row.",
          body = serde_json::Value),
@@ -784,6 +829,10 @@ pub(crate) async fn versioned_party_relationship_get(
                                       row (`Requests_and_responses.md` §\"HTTP \
                                       status codes\").",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
         (status = 404, description = "No such relationship container — the \
                                       overview table's `404` row.",
          body = serde_json::Value),
@@ -857,6 +906,10 @@ pub(crate) async fn party_relationship_revision_history(
                                       row (`Requests_and_responses.md` §\"HTTP \
                                       status codes\").",
          body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
+         body = serde_json::Value),
         (status = 404, description = "No such relationship container, or no \
                                       version at the requested `version_at_time` \
                                       — the overview table's `404` row.",
@@ -929,6 +982,10 @@ pub(crate) async fn party_relationship_version_get_at_time(
                                       is not well-formed — the overview table's \
                                       `400` row (`Requests_and_responses.md` \
                                       §\"HTTP status codes\").",
+         body = serde_json::Value),
+        (status = 401, description = "Unauthenticated (auth enabled, no valid \
+                                      principal) — refused before the request \
+                                      reaches the resource.",
          body = serde_json::Value),
         (status = 404, description = "No such relationship container, or a \
                                       `version_uid` that names no version of it — \

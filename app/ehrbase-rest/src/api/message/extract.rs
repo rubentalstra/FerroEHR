@@ -17,6 +17,19 @@
 //! resource; no spec defines an envelope, so none is invented). `import_ehr`
 //! creates an EHR and answers `201` naming it; `import_ehr_extract` adds
 //! versions to an existing one and answers `204`.
+//!
+//! NOTE (no openEHR spec governs role semantics on an unspecified route — our
+//! own design/extension): the shared authentication + RBAC layer answers
+//! before any handler here runs, so every route carries `401` (no valid
+//! principal) and the routes the coarse gate classifies as WRITES carry `403`
+//! for a principal holding the configured read-only role. That coarse gate
+//! reads the HTTP method for a route outside the generated ITS-REST tables, so
+//! `POST /message/export` — a read whose selector is a whole `EXTRACT_SPEC`
+//! structure — is classified a write and refused to a read-only principal too.
+//! TODO: classify `POST /message/export` as a read for the read-only gate, the
+//! way the released ad-hoc AQL POST read already is
+//! (`ehrbase-rest::extensions::access::authz::classify::is_write`), and drop
+//! the `403` from that one operation's declared responses.
 
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -65,10 +78,13 @@ pub(crate) fn extract_routes() -> OpenApiRouter<AppState> {
                                       included\").",
          body = Vec<serde_json::Value>),
         (status = 400, description = "`ehr_id` is not a well-formed UUID — SM \
-                                      `precondition_violation`.",
+                                      `precondition_violation`. Refused before \
+                                      any lookup: a malformed identifier is \
+                                      never resolved against the store.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated (auth enabled, no valid \
-                                      principal).",
+                                      principal). Refused before the path \
+                                      parameter is even parsed.",
          body = serde_json::Value),
         (status = 404, description = "SM `ehr_id_does_not_exist`.",
          body = serde_json::Value),
@@ -133,14 +149,27 @@ pub(crate) async fn message_export_ehrs(
         (status = 400, description = "The body is not a well-formed \
                                       `EXTRACT_SPEC`, an entity names neither \
                                       `ehr_id` nor `subject_id`, an \
-                                      `extract_type` outside the openEHR \
-                                      extract-content-type group, or a \
+                                      `extract_type` outside the \
+                                      extract-content-type codes RM ehr_extract \
+                                      `master04-common_package.adoc` names \
+                                      (`openehr-ehr`, `openehr-demographic`, \
+                                      `openehr-synchronisation`, \
+                                      `openehr-generic`, `generic-emr`, plus \
+                                      the catch-all `other`), or a \
                                       selection this service does not support \
                                       (`criteria`, an unsupported \
                                       `commit_time_interval`) — SM \
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role. This read is \
+                                      modelled as `POST` (its selector is a \
+                                      whole structure), and the coarse \
+                                      read-only gate classifies an unmapped \
+                                      `POST` as a write — see the module \
+                                      note.",
+         body = serde_json::Value),
         (status = 404, description = "An entity's `ehr_id`/`subject_id` \
                                       resolves to no EHR (SM \
                                       `ehr_id_does_not_exist`), or an \
@@ -197,6 +226,11 @@ pub(crate) async fn message_export_ehr_extracts(
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: an import \
+                                      writes, so it is refused before the body \
+                                      is read.",
+         body = serde_json::Value),
         (status = 409, description = "SM `ehr_create_fail_duplicate_id` — an \
                                       EHR with the target id already exists \
                                       (\"import EHRs with duplicate EHR ids \
@@ -247,6 +281,11 @@ pub(crate) async fn message_import_ehr(
                                       `precondition_violation`.",
          body = serde_json::Value),
         (status = 401, description = "Unauthenticated.", body = serde_json::Value),
+        (status = 403, description = "The authenticated principal carries the \
+                                      configured read-only role: an import \
+                                      writes, so it is refused before the body \
+                                      is read.",
+         body = serde_json::Value),
         (status = 404, description = "SM `ehr_id_does_not_exist`.",
          body = serde_json::Value),
         (status = 409, description = "The EHR already holds an \

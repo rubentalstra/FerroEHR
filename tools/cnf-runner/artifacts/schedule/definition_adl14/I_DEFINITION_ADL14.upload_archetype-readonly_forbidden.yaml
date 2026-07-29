@@ -1,0 +1,56 @@
+# The AUTHORIZATION boundary of the ADL 1.4 archetype-provisioning surface —
+# the separate half of the -unauthenticated sibling: this principal IS
+# authenticated, and is refused anyway.
+#
+# One behaviour: an authenticated principal whose authorization is read-only is
+# refused on every WRITE of this capability (the upload and the delete), while
+# the reads stay open to it. The reads are the control that makes the row a
+# statement about WRITES rather than a statement about the principal — a server
+# that refused everything would pass a write-only probe for the wrong reason.
+#
+# EXTENSION ROUTES (register AMB-41): the outcome mapping is UNIVERSAL
+# (vocab/selectors.yaml universal_outcomes: forbidden -> 403, route-table-wide).
+# The routes carry the coarse `Clinical` operation class — they are NOT under
+# /admin/ and require no ADMIN role — so the ONLY documented role class here is
+# the read-only restriction, which is what this row drives. No openEHR spec
+# governs role semantics on a route it does not define; the refusal is the
+# served routes' own documented contract (their `#[utoipa::path]` declares the
+# 403 branch on the write operations and not on the reads).
+id: I_DEFINITION_ADL14.upload_archetype-readonly_forbidden
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.upload_archetype
+capabilities: [Adl14ArchetypeProvisioning]
+profiles: [CORE]
+test_purpose: >-
+  An authenticated read-only principal is refused on the ADL 1.4 archetype
+  WRITES (upload, delete) and served on the reads — authorization is enforced
+  separately from authentication, and only against the mutating half.
+description: "A read-only principal is forbidden from writing ADL 1.4 archetypes"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.upload_archetype"
+  - "SM openehr_platform §I_DEFINITION_ADL14.delete_archetype"
+  - "SM openehr_platform §I_DEFINITION_ADL14.list_archetypes"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /definition/archetype/adl1.4* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family adl14-archetype) and adjudicated by register AMB-41. The row gates the Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
+  - "addresses the ixit `readonly` instance — a party that declares no read-only principal records the case not-applicable with that citation (ISO/IEC 9646 test selection)"
+requires: { server: any }
+data_sets: [cnf.archetype.adl14.medication]
+flow:
+  - step: 1
+    call: upload_archetype
+    on: readonly
+    with: { archetype_adl14: "${ds:cnf.archetype.adl14.medication}" }
+    expect: forbidden                    # universal 403 (route-table-wide)
+  - step: 2
+    call: delete_archetype
+    on: readonly
+    with: { archetype_id: "openEHR-EHR-INSTRUCTION.medication.v1" }
+    expect: forbidden
+  # The control: the same principal reads the surface it may not write.
+  - step: 3
+    call: list_archetypes
+    on: readonly
+    expect: ok
+ambiguities: [AMB-41]
