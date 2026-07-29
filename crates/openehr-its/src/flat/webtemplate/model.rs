@@ -246,6 +246,22 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub code_lists: Vec<WebTemplateCodeList>,
 
+    /// Archetype **constraint bindings** in force on this node: an `ac`-code
+    /// `CONSTRAINT_REF` under a coded attribute whose ac-code the OPT ontology
+    /// binds to an external terminology query
+    /// (`AM/docs/ADL1.4/master08-adl.adoc` §Constraint_bindings). BASE
+    /// `architecture_overview/master12-terminology.adoc` §"Binding Terminology
+    /// Value-sets to Archetypes": "an internal code is defined, in this case an
+    /// 'ac' code … and this is bound to queries to one or more external
+    /// terminologies, whose result would be a (possibly structured) value set
+    /// from that terminology"; the query itself "is defined within a
+    /// 'terminology query server'". The binding is therefore NOT resolvable
+    /// inside this crate — the checks it implies are surfaced by
+    /// [`crate::flat::validation::collect_constraint_binding_checks`] for a
+    /// caller that owns a terminology service. Validation-only; `#[serde(skip)]`.
+    #[serde(skip)]
+    pub constraint_bindings: Vec<WebTemplateConstraintBinding>,
+
     /// Closed-archetype constraints: per
     /// constrained attribute that carries archetype-node-identified alternatives
     /// and/or open `ARCHETYPE_SLOT`s, the admissible child identities. The walk
@@ -336,6 +352,7 @@ impl WebTemplateNode {
             quantity_property: None,
             coded_terminology_local: false,
             code_lists: Vec::new(),
+            constraint_bindings: Vec::new(),
             closed_attributes: Vec::new(),
             structural_stubs: Vec::new(),
             full_id: String::new(),
@@ -538,6 +555,35 @@ pub struct WebTemplateCodeList {
     pub attr: String,
     pub terminology: Option<String>,
     pub codes: Vec<String>,
+}
+
+/// An archetype **constraint binding** in force on a coded leaf
+/// (validation-only, never serialized).
+///
+/// A `CONSTRAINT_REF` under a coded attribute is "a proxy for a set of
+/// constraints … expressed in the binding of the constraint reference (e.g.
+/// 'ac0004') to a query … into an external service (e.g. a terminology
+/// service)" (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
+/// §Reference Objects); the ac-code → query mapping is the archetype ontology's
+/// `constraint_bindings` (`AM/docs/ADL1.4/master08-adl.adoc`
+/// §Constraint_bindings). Resolving the query is a terminology-server duty
+/// (BASE `architecture_overview/master12-terminology.adoc` §"Binding
+/// Terminology Value-sets to Archetypes"), so the web template only records
+/// what must be asked.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WebTemplateConstraintBinding {
+    /// The RM attribute of this leaf holding the coded value the binding
+    /// constrains (`defining_code` for a `DV_CODED_TEXT`; empty when the node
+    /// itself IS the `CODE_PHRASE` proxy).
+    pub attr: String,
+    /// The archetype constraint code (`ac0004`) the binding is keyed by.
+    pub ac_code: String,
+    /// The terminology the binding names (the `ConstraintBindingSet`
+    /// `terminology`, e.g. `SNOMED-CT`, `LOINC`).
+    pub terminology: String,
+    /// The bound terminology-query URI whose result is the admissible value
+    /// set.
+    pub query_uri: String,
 }
 
 /// A structural stub for an RM-mandatory structural attribute of an ENTRY-family

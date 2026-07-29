@@ -78,7 +78,7 @@ pin-project-lite = "0.2"
 
 # ── Authentication & authorization (do NOT hand-roll) ────────────────────────
 jsonwebtoken = { version = "10.4.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
-oauth2 = "5"                        # OAuth2 client            (verify latest 5.x)
+oauth2 = { version = "5", default-features = false } # OAuth2 client (HTTP-client agnostic: we supply the pinned reqwest)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
 argon2 = "0.5"                      # password hashing (Argon2id)
 password-hash = "0.6.1"              # PHC string traits

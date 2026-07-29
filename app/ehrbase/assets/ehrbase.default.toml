@@ -222,16 +222,41 @@ publish_max_retries = 3
 api_enabled = false
 
 [terminology.external]
-enabled = false
-fail_on_error = false
-# Named FHIR R4 terminology-server providers (map; `default` or the sole one wins):
+enabled = false              # on: SM lookups, AQL TERMINOLOGY(), and
+                             # composition ac-code binding resolution route here
+fail_on_error = false        # TS unreachable/erroring: false = accept the
+                             # composition (fail-open), true = reject it (422)
+# Named FHIR R4 terminology-server providers (map). EVERY entry is materialised
+# — a deployment binds SNOMED CT, LOINC, ICD… to different servers at once:
 #? [terminology.external.providers.default]
 #? type = "fhir"
 #? url = "https://r4.ontoserver.csiro.au/fhir"
 #? operation = "validate_code"   # validate_code | expand
 #? connect_timeout_ms = 2000
 #? request_timeout_ms = 10000
-#? oauth2_client = "ts-client"
+#? cache_ttl_secs = 300
+#? cache_capacity = 10000
+#? oauth2_client = "ts-client"   # must name a [terminology.external.oauth2_clients.*]
+#? [terminology.external.providers.snomed]
+#? type = "fhir"
+#? url = "https://snowstorm.example.org/fhir"
+
+# Terminology → provider routing. Keys are terminology ids or system URIs
+# (matched case-insensitively, whole string); values name a provider above.
+# An unmatched terminology goes to `default` (or the sole provider):
+#? [terminology.external.routes]
+#? "SNOMED-CT" = "snomed"
+#? "http://snomed.info/sct" = "snomed"
+#? "http://loinc.org" = "default"
+
+# OAuth2 client-credentials clients the providers authenticate with:
+#? [terminology.external.oauth2_clients.ts-client]
+#? token_url = "https://idp.example.org/realms/ts/protocol/openid-connect/token"
+#? client_id = "ehrbase-cdr"
+#? client_secret = "..."        # or client_secret_file = "/run/secrets/ts-client"
+#? scopes = ["system/*.read"]
+#? refresh_leeway_secs = 30
+#? auth_method = "client_secret_basic"   # client_secret_basic | client_secret_post
 
 # ── [multimedia] — DV_MULTIMEDIA externalization to S3-compatible storage ─────
 [multimedia]

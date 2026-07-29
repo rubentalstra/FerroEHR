@@ -44,16 +44,16 @@
 use std::collections::HashMap;
 
 use crate::opt14::{
-    ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality, Intervalofinteger,
-    OperationalTemplate, TermBindingItem, Termbindingset,
+    ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality,
+    Constraintbindingset, Intervalofinteger, OperationalTemplate, TermBindingItem, Termbindingset,
 };
 use indexmap::IndexMap;
 
 use super::inputs::{self, Labels};
 use super::model::{
     CodedName, WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue,
-    WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateExistence,
-    WebTemplateNode, WebTemplateStructuralStub,
+    WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodeList,
+    WebTemplateConstraintBinding, WebTemplateExistence, WebTemplateNode, WebTemplateStructuralStub,
 };
 use super::shape;
 
@@ -71,12 +71,18 @@ type Ontology = HashMap<String, HashMap<String, HashMap<String, Rubric>>>;
 /// root's `term_bindings`. A node inherits its owning archetype root's bindings.
 type TermBindings = HashMap<String, Vec<Termbindingset>>;
 
+/// External **constraint** bindings per archetype, keyed by `archetype_id`: the
+/// flat ontology's `constraint_bindings` (ac-code → terminology-query URI,
+/// `AM/docs/ADL1.4/master08-adl.adoc` §Constraint_bindings).
+type ConstraintBindings = HashMap<String, Vec<Constraintbindingset>>;
+
 /// Build context shared across the walk.
 struct Ctx {
     default_language: String,
     languages: Vec<String>,
     ontology: Ontology,
     term_bindings: TermBindings,
+    constraint_bindings: ConstraintBindings,
 }
 
 impl Ctx {
@@ -118,6 +124,67 @@ impl Ctx {
         }
         out
     }
+
+    /// The external constraint bindings of `ac_code` within `arch_id`'s
+    /// archetype: one entry per terminology whose `ConstraintBindingSet` binds
+    /// the ac-code to a query URI (`AM/docs/ADL1.4/master08-adl.adoc`
+    /// §Constraint_bindings). `attr` is the RM attribute of the leaf carrying
+    /// the constrained code. An empty query URI is dropped — an unbound
+    /// ac-code constrains nothing resolvable.
+    fn constraint_bindings_for(
+        &self,
+        arch_id: &str,
+        ac_code: &str,
+        attr: &str,
+    ) -> Vec<WebTemplateConstraintBinding> {
+        let mut out = Vec::new();
+        if ac_code.is_empty() {
+            return out;
+        }
+        let Some(sets) = self.constraint_bindings.get(arch_id) else {
+            return out;
+        };
+        for set in sets {
+            for item in set.items.iter().filter(|it| it.code == ac_code) {
+                let query_uri = item.value.trim();
+                if query_uri.is_empty() {
+                    continue;
+                }
+                out.push(WebTemplateConstraintBinding {
+                    attr: attr.to_owned(),
+                    ac_code: ac_code.to_owned(),
+                    terminology: set.terminology.clone(),
+                    query_uri: query_uri.to_owned(),
+                });
+            }
+        }
+        out
+    }
+}
+
+/// Every `CONSTRAINT_REF` (`ac`-code proxy) in force on `co`, resolved against
+/// the archetype ontology's `constraint_bindings`: the node itself when it IS a
+/// `CONSTRAINT_REF` (a bare `CODE_PHRASE` proxy), plus one per coded attribute
+/// (`defining_code`, …) whose child is a `CONSTRAINT_REF`. AOM 1.4
+/// `master04-constraint_model_package.adoc` §Reference Objects.
+fn constraint_bindings_of(
+    ctx: &Ctx,
+    co: &CObject,
+    arch_id: &str,
+) -> Vec<WebTemplateConstraintBinding> {
+    let mut out = Vec::new();
+    if let CObject::ConstraintRef(cr) = co {
+        out.extend(ctx.constraint_bindings_for(arch_id, &cr.reference, ""));
+    }
+    for attr in inputs::attributes(co) {
+        let attr_name = inputs::attribute_name(attr);
+        for child in inputs::attribute_children(attr) {
+            if let CObject::ConstraintRef(cr) = child {
+                out.extend(ctx.constraint_bindings_for(arch_id, &cr.reference, attr_name));
+            }
+        }
+    }
+    out
 }
 
 /// The bound code phrase's code string with its terminology id (falling back to
@@ -206,6 +273,7 @@ pub fn build_web_template(
         languages: collect_languages(opt, &default_language),
         ontology: collect_ontology(opt, &default_language),
         term_bindings: collect_term_bindings(opt),
+        constraint_bindings: collect_constraint_bindings(opt),
         default_language,
     };
 
@@ -322,6 +390,12 @@ fn create_node(
     // whose item code matches this node's constraint node id (master04
     // §"Web Template Metadata": the node-level `termBindings` map).
     node.term_bindings = ctx.term_bindings_for(arch_id, name_code);
+    // Archetype constraint bindings (ac-code → external terminology query) in
+    // force on this node's coded value — resolvable only by a terminology
+    // service, so recorded rather than checked here (BASE
+    // `architecture_overview/master12-terminology.adoc` §"Binding Terminology
+    // Value-sets to Archetypes").
+    node.constraint_bindings = constraint_bindings_of(ctx, co, arch_id);
     node
 }
 
@@ -1036,6 +1110,24 @@ fn collect_root_bindings(root: &CArchetypeRoot, out: &mut TermBindings) {
     for r in nested {
         collect_root_bindings(r, out);
     }
+}
+
+/// Collect the flat ontologies' `constraint_bindings`, keyed by archetype id —
+/// the ac-code → terminology-query URI map a `CONSTRAINT_REF` resolves through
+/// (`AM/docs/ADL1.4/master08-adl.adoc` §Constraint_bindings). The root
+/// `ontology` and every `component_ontologies` entry carries its own
+/// `archetype_id`.
+fn collect_constraint_bindings(opt: &OperationalTemplate) -> ConstraintBindings {
+    let mut out: ConstraintBindings = HashMap::new();
+    for onto in opt.ontology.iter().chain(opt.component_ontologies.iter()) {
+        if onto.constraint_bindings.is_empty() {
+            continue;
+        }
+        out.entry(onto.archetype_id.clone())
+            .or_default()
+            .extend(onto.constraint_bindings.iter().cloned());
+    }
+    out
 }
 
 fn rubric_of(term: &ArchetypeTerm) -> Rubric {

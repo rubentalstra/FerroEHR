@@ -473,7 +473,7 @@ events exchange for PHI isolation), `tls` (bool, `false`), `batch_size` (int,
 
 ## `[terminology]`
 
-Terminology extension API and external FHIR-terminology validation.
+Terminology extension API and external FHIR-terminology servers.
 
 `[terminology]`: `api_enabled` (bool, `false`) — mount the terminology
 extension API.
@@ -482,11 +482,99 @@ extension API.
 `[terminology.external.providers.<name>]` (conventionally `default`): `type`
 (enum{fhir}, `fhir`), `url` (string, required), `operation`
 (enum{validate_code,expand}, `validate_code`), `connect_timeout_ms` (int,
-`2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset),
+`2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset —
+must name an entry under `[terminology.external.oauth2_clients]`),
 `cache_ttl_secs` (int, `300` — TTL of the per-provider response cache; a
 repeated validate/expand/subsumes/lookup within the window is served locally
 instead of one HTTPS round trip per validated code; `0` disables),
 `cache_capacity` (int, `10000` — maximum cached responses per provider).
+
+### Several terminology servers at once
+
+**Every** entry under `[terminology.external.providers]` is materialised at
+startup, so one instance can serve SNOMED CT from one server and LOINC or ICD
+from others. `[terminology.external.routes]` maps a terminology to the provider
+that answers for it — the key is a terminology id (`SNOMED-CT`) or a system URI
+(`http://snomed.info/sct`), matched case-insensitively as a whole string, and
+the value names a provider. A terminology with no route goes to the provider
+named `default`, or to the sole configured provider when there is exactly one.
+A route naming a provider that does not exist is a startup error.
+
+```toml
+[terminology.external]
+enabled = true
+fail_on_error = false
+
+[terminology.external.providers.default]
+type = "fhir"
+url = "https://r4.ontoserver.csiro.au/fhir"
+
+[terminology.external.providers.snomed]
+type = "fhir"
+url = "https://snowstorm.example.org/fhir"
+oauth2_client = "ts-client"
+
+[terminology.external.routes]
+"SNOMED-CT" = "snomed"
+"http://snomed.info/sct" = "snomed"
+"http://loinc.org" = "default"
+```
+
+Routing applies everywhere terminology is consulted: the
+`/terminology/*` extension API, AQL `TERMINOLOGY(…)` resolution, and the
+composition-commit binding checks below.
+
+### Authenticating to a terminology server
+
+`[terminology.external.oauth2_clients.<name>]` configures an OAuth2
+client-credentials client; a provider references it by name with
+`oauth2_client`. The access token is cached and re-requested shortly before it
+expires, so a validation burst costs one token request per token lifetime.
+
+Keys: `token_url` (string, required), `client_id` (string, required),
+`client_secret` (secret — or `client_secret_file` pointing at a file holding
+it; exactly one of the two), `scopes` (list of strings, empty),
+`refresh_leeway_secs` (int, `30` — how long before expiry the token is
+renewed), `auth_method`
+(enum{client_secret_basic,client_secret_post}, `client_secret_basic`).
+
+```toml
+[terminology.external.oauth2_clients.ts-client]
+token_url = "https://idp.example.org/realms/ts/protocol/openid-connect/token"
+client_id = "ehrbase-cdr"
+client_secret_file = "/run/secrets/ts-client"
+scopes = ["system/*.read"]
+```
+
+> [!NOTE]
+> Mutual TLS to a terminology server is not supported yet — a provider cannot
+> present a client certificate.
+
+### Archetype value-set bindings at commit
+
+With `[terminology.external]` enabled, committing a COMPOSITION also resolves
+the archetype **constraint bindings** its template declares: where a template
+binds an `ac` code to an external terminology query, the coded value in the
+composition must be a member of the value set that query returns. The query is
+sent to the server the binding's terminology routes to.
+
+- The code is in the value set → the commit proceeds.
+- The code is **not** in the value set → `422` naming the path, the code, and
+  the bound query. This is a real constraint violation, so `fail_on_error` does
+  not change it.
+- The value set could **not be resolved** (server down, error response, no
+  provider routes to that terminology) → `fail_on_error` decides:
+  `false` (default) accepts the commit and logs a warning; `true` rejects it
+  with `422`.
+
+With `[terminology.external] enabled = false` (the default) no binding is
+resolved and no request is made, so commit behaviour is exactly as before.
+
+> [!NOTE]
+> The composition's `terminology_id` is sent verbatim as the FHIR `system`
+> parameter. If your archetypes use `SNOMED-CT` where your terminology server
+> expects `http://snomed.info/sct`, configure the server to accept the id your
+> archetypes carry — the CDR does not rewrite it.
 
 ## `[multimedia]`
 

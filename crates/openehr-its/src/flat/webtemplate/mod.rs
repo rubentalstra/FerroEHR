@@ -23,6 +23,7 @@ pub(crate) use inputs::PROPORTION_KINDS;
 pub use model::{
     CodedName, WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue,
     WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateCodedValue,
-    WebTemplateExistence, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
-    WebTemplateRange, WebTemplateSlot, WebTemplateStructuralStub, WebTemplateValidation,
+    WebTemplateConstraintBinding, WebTemplateExistence, WebTemplateInput, WebTemplateInputType,
+    WebTemplateNode, WebTemplateRange, WebTemplateSlot, WebTemplateStructuralStub,
+    WebTemplateValidation,
 };
