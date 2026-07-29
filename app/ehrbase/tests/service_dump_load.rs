@@ -28,6 +28,12 @@
 //!    was stale, and a PARTIAL load carrying a subject this repository already
 //!    holds is reported like a duplicate id, never silently duplicated
 //!    (one EHR per subject).
+//! 4. **Both `EXPORT_FORMAT` members** (`export_format.adoc`) — the
+//!    `openehr_canonical_xml` archive externalizes each version payload as an
+//!    `ORIGINAL_VERSION` document under the ITS-XML published `<version>` root
+//!    (`its-xml-1.0.2-nsv1/ALL/Version.xsd`), and the round trip through
+//!    storage-JSON → RM → canonical XML → RM → storage-JSON is byte-equal at
+//!    the served-version level, in all three containers.
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
@@ -37,6 +43,7 @@ use uuid::Uuid;
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
+use ehrbase::ids::EhrId;
 use ehrbase::service::EhrbaseService;
 
 use ehrbase::service::admin::types::{CompressionFormat, ExportFormat, ExportSpec};
@@ -532,46 +539,358 @@ async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// The one `EXPORT_FORMAT` member this service does not realize
-/// (`openehr_canonical_xml` — the archive envelope has no XML design yet) is
-/// refused as `not_implemented` (RFC 9110 §15.6.2 `501`) — a valid SM
-/// enumeration member is never reported as a malformed request, and never
-/// silently downgraded to a format the caller did not ask for.
-/// (`COMPRESSION_FORMAT` is realized in full since the 7z approval —
-/// the round-trip test below covers it.)
-#[tokio::test]
-async fn unrealized_format_members_are_not_implemented_and_write_nothing() {
-    let db = testkit::db().await.expect("testkit database");
-    let service = EhrbaseService::new(db.pool());
-    let _ehr = seed_full_ehr(&service).await;
+// ── EXPORT_FORMAT.openehr_canonical_xml ──────────────────────────────────────
+//
+// The battery below replaces the former
+// `unrealized_format_members_are_not_implemented_and_write_nothing` test,
+// whose premise is gone: the member is no longer unrealized, so a well-formed
+// request for it is fulfilled and the behaviour under test is the round trip,
+// not the refusal. The refusal branches that DO survive are unrelated to the
+// member set and keep their own tests — a value outside the enumeration never
+// reaches this layer (the REST edge refuses it, `admin_extension_http.rs`) and
+// a non-positive `segment_split_size` is proved below.
 
-    for (label, spec) in [(
-        "openehr_canonical_xml",
-        ExportSpec {
-            logical_format: Some(ExportFormat::OpenehrCanonicalXml),
-            compression_format: None,
-            segment_split_size: 1024,
+/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
+/// `composer` are all `1..1` (RM ehr, COMPOSITION class), so typed RM
+/// validation rejects a fixture without them. No template is referenced, so
+/// the fixture needs no `template_store` row.
+fn composition(name: &str) -> Value {
+    json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+            },
+            "rm_version": "1.2.0"
         },
-    )] {
-        let dir = archive_dir();
-        let err = service
-            .export_ehrs(dir.clone(), spec)
+        "name": { "_type": "DV_TEXT", "value": name },
+        "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+            "code_string": "en"
+        },
+        "territory": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+            "code_string": "NL"
+        },
+        "category": {
+            "_type": "DV_CODED_TEXT",
+            "value": "event",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "433"
+            }
+        },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
+    })
+}
+
+/// Every versioned-object kind an EHR-scoped dump can carry, in one EHR:
+/// `EHR_STATUS` (two versions), a directory `FOLDER`, a `COMPOSITION` with two
+/// versions, and a second `COMPOSITION` that is logically DELETED (a version
+/// with no content at all — RM common master06 §Logical Deletion), plus an
+/// item tag. Every version is server-signed by the default service config, so
+/// the round trip also proves the payload survives the XML transit unchanged:
+/// the served signature is a digest over the version's own canonical form.
+///
+/// Returns the EHR and the `OBJECT_VERSION_ID`s of every COMPOSITION version.
+async fn seed_mixed_kind_ehr(svc: &EhrbaseService) -> (EhrId, Vec<String>) {
+    let ehr = svc.create_ehr(None).await.expect("ehr");
+
+    let mut status = svc
+        .get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("status get");
+    let status_ovid = uid(&status).to_owned();
+    let status_vo = status_ovid.split("::").next().unwrap().to_owned();
+    status.as_object_mut().expect("status obj").remove("uid");
+    svc.target_tags_replace(
+        ehr,
+        status_vo,
+        "EHR_STATUS",
+        vec![json!({ "key": "priority", "value": "high" })],
+    )
+    .await
+    .expect("tag");
+
+    svc.create_directory(
+        ehr,
+        uv(
+            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            "249",
+            None,
+        ),
+    )
+    .await
+    .expect("directory");
+
+    let created = svc
+        .create_composition(ehr, uv(composition("encounter v1"), "249", None))
+        .await
+        .expect("create_composition")
+        .version_uid();
+    let vo: ehrbase::ids::VoId = created.split("::").next().unwrap().parse().expect("vo id");
+    let updated = svc
+        .update_composition(
+            ehr,
+            vo,
+            uv(composition("encounter v2"), "251", Some(&created)),
+        )
+        .await
+        .expect("update_composition")
+        .version_uid();
+
+    // A second COMPOSITION, logically deleted: the deleted version stores no
+    // node rows, so the archive must carry it with NO payload document.
+    let doomed = svc
+        .create_composition(ehr, uv(composition("to be deleted"), "249", None))
+        .await
+        .expect("create_composition")
+        .version_uid();
+    let deleted = svc
+        .delete_composition(ehr, &doomed.parse().expect("ovid"), None)
+        .await
+        .expect("delete_composition")
+        .version_uid();
+
+    // The EHR_STATUS' second version lands LAST: it deactivates the EHR
+    // (`is_modifiable = false`, RM ehr master04 §EHR Active Status), which
+    // forbids every content write above.
+    status["is_modifiable"] = json!(false);
+    svc.replace_ehr_status(ehr, uv(status, "251", Some(&status_ovid)))
+        .await
+        .expect("status update");
+
+    (ehr, vec![created, updated, doomed, deleted])
+}
+
+/// The full comparison surface of a mixed-kind EHR: the current `EHR_STATUS`
+/// and directory (the shared [`canonical_snapshot`]) plus the complete served
+/// `ORIGINAL_VERSION` of every COMPOSITION version — envelope, provenance,
+/// signature and data.
+async fn mixed_snapshot(svc: &EhrbaseService, ehr: EhrId, ovids: &[String]) -> Vec<String> {
+    let (status, directory) = canonical_snapshot(svc, ehr).await;
+    let mut out = vec![status, directory];
+    for ovid in ovids {
+        let ov = svc
+            .composition_original_version(ehr, ovid.parse().expect("ovid"))
             .await
-            .expect_err("an unrealized member is refused");
-        assert_eq!(
-            err.status,
-            CallStatusType::NotImplemented,
-            "{label} must be not_implemented, got {err:?}"
-        );
-        let path = std::path::Path::new(&dir);
-        let empty = !path.exists()
-            || std::fs::read_dir(path)
-                .expect("read the archive dir")
-                .next()
-                .is_none();
-        assert!(empty, "{label} must leave no partial archive behind");
-        let _ = std::fs::remove_dir_all(&dir);
+            .expect("composition ORIGINAL_VERSION");
+        out.push(serde_json::to_string(&ov).expect("version json"));
     }
+    out
+}
+
+/// Export/load one mixed-kind EHR as `openehr_canonical_xml` in `compression`
+/// and assert the whole served surface is byte-equal afterwards.
+async fn assert_xml_round_trip(compression: Option<CompressionFormat>, container: &str) {
+    let src_db = testkit::db().await.expect("testkit database");
+    let src_pool = src_db.pool();
+    let source = EhrbaseService::new(src_pool.clone());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let (ehr, ovids) = seed_mixed_kind_ehr(&source).await;
+    let src = mixed_snapshot(&source, ehr, &ovids).await;
+    let src_counts = counts(&src_pool, ehr.into()).await;
+
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: Some(ExportFormat::OpenehrCanonicalXml),
+        compression_format: compression,
+        // A small split forces several segment entries; the externalized
+        // version documents are per-document and never split.
+        segment_split_size: 1,
+    };
+    let reports = source
+        .export_ehrs(dir.clone(), spec)
+        .await
+        .expect("canonical-XML export");
+    assert!(
+        reports.is_empty(),
+        "a clean export reports no failures, got {reports:?}"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repo reports no failures, got {load_reports:?}"
+    );
+
+    assert_eq!(
+        mixed_snapshot(&target, ehr, &ovids).await,
+        src,
+        "a canonical-XML round trip in the {container} container must be byte-equal at the \
+         served-version level"
+    );
+    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// `EXPORT_FORMAT.openehr_canonical_xml`, loose entries: storage-JSON → RM →
+/// canonical XML → RM → storage-JSON is lossless over every versioned-object
+/// kind an EHR owns.
+#[tokio::test]
+async fn canonical_xml_export_round_trips_byte_equal_over_a_mixed_kind_ehr() {
+    assert_xml_round_trip(None, "loose").await;
+}
+
+/// The logical format and the container are independent axes: the identical
+/// entry set travels in `archive.zip`.
+#[tokio::test]
+async fn canonical_xml_export_round_trips_through_the_zip_container() {
+    assert_xml_round_trip(Some(CompressionFormat::Zip), "zip").await;
+}
+
+/// …and in `archive.7z`.
+#[tokio::test]
+async fn canonical_xml_export_round_trips_through_the_sevenz_container() {
+    assert_xml_round_trip(Some(CompressionFormat::SevenZip), "7z").await;
+}
+
+/// The archive's SHAPE, not just its round trip: the manifest records the
+/// requested `EXPORT_FORMAT` member; every live version's payload is an
+/// `ORIGINAL_VERSION` document under the ITS-XML published `<version>` root
+/// (`its-xml-1.0.2-nsv1/ALL/Version.xsd` declares `<xs:element name="version"
+/// type="VERSION"/>` over an ABSTRACT `VERSION`, so the instance must name its
+/// concrete type with `xsi:type`); the skeleton carries no inline body; and a
+/// logically-deleted version gets no document at all.
+#[tokio::test]
+async fn the_canonical_xml_archive_holds_original_version_documents_under_the_published_root() {
+    let db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(db.pool());
+    let (_ehr, ovids) = seed_mixed_kind_ehr(&source).await;
+
+    let dir = archive_dir();
+    source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_xml(1024))
+        .await
+        .expect("canonical-XML export");
+    let root = std::path::Path::new(&dir);
+
+    let manifest: Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("manifest.json")).expect("manifest"),
+    )
+    .expect("manifest json");
+    assert_eq!(
+        manifest["format"], "openehr_canonical_xml",
+        "the manifest records the EXPORT_FORMAT member the export was written in"
+    );
+
+    // Every COMPOSITION version but the deleted one has a document; the
+    // deleted one has none.
+    let deleted = ovids.last().expect("the deleted version uid");
+    for ovid in &ovids {
+        let entry = root.join("versions").join(format!("{ovid}.xml"));
+        if ovid == deleted {
+            assert!(
+                !entry.exists(),
+                "a logically-deleted version stores no content, so it gets no document"
+            );
+            continue;
+        }
+        let xml = std::fs::read_to_string(&entry)
+            .unwrap_or_else(|e| panic!("version document {}: {e}", entry.display()));
+        assert!(xml.starts_with("<version "), "published root, got:\n{xml}");
+        assert!(
+            xml.contains(r#"xsi:type="ORIGINAL_VERSION""#),
+            "the abstract VERSION root must name its concrete subtype, got:\n{xml}"
+        );
+        assert!(
+            xml.contains(r#"xmlns="http://schemas.openehr.org/v1""#),
+            "the archive always writes the released-STABLE nsv1 lineage, got:\n{xml}"
+        );
+        assert!(
+            xml.contains("<commit_audit") && xml.contains("<uid"),
+            "a complete ORIGINAL_VERSION envelope, got:\n{xml}"
+        );
+    }
+
+    // The skeleton references the documents and inlines no payload.
+    let segment = std::fs::read_to_string(root.join("segment-0000.json")).expect("segment");
+    assert!(
+        segment.contains("\"body_entry\":\"versions/"),
+        "the skeleton references the externalized payloads"
+    );
+    assert!(
+        !segment.contains("\"body\":"),
+        "an openehr_canonical_xml skeleton carries no inline body"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A corrupt version document is a PER-RECORD failure, not an operation
+/// failure: the EHR it belongs to is reported in a `DUMP_LOAD_FAIL_REPORT`
+/// (`dump_load_fail_report.adoc`) and skipped whole — nothing of it committed —
+/// while the rest of the archive still loads. That is the same per-entity shape
+/// the SM gives a duplicate EHR id ("import EHRs with duplicate EHR ids will
+/// fail", `i_admin_dump_load.adoc`), which is what a payload belonging to
+/// exactly one EHR warrants; a mangled MANIFEST or SEGMENT stays the
+/// whole-operation `file_not_writable`, because neither belongs to one entity.
+#[tokio::test]
+async fn a_corrupt_version_document_reports_that_record_and_commits_nothing() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(src_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let (spoiled, ovids) = seed_mixed_kind_ehr(&source).await;
+    let intact = seed_full_ehr(&source).await;
+
+    let dir = archive_dir();
+    source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_xml(1024))
+        .await
+        .expect("canonical-XML export");
+
+    // Truncate ONE document mid-element: readable bytes, unparseable XML. It
+    // belongs to a known EHR, so the report is checked by identity.
+    let victim = std::path::Path::new(&dir)
+        .join("versions")
+        .join(format!("{}.xml", ovids.first().expect("a version uid")));
+    let text = std::fs::read_to_string(&victim).expect("version document");
+    let half = text.len() / 2;
+    std::fs::write(&victim, text.get(..half).expect("document prefix"))
+        .expect("truncate the document");
+
+    let reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert_eq!(
+        reports.len(),
+        1,
+        "only the record owning the corrupt document fails, got {reports:?}"
+    );
+    assert_eq!(reports[0].entity_type, "EHR");
+    assert_eq!(reports[0].entity_id, spoiled.to_string());
+    assert!(!reports[0].dump_status);
+    assert!(
+        reports[0]
+            .error
+            .as_deref()
+            .expect("an explanatory error")
+            .contains("versions/"),
+        "the report must name the unreadable entry, got {:?}",
+        reports[0].error
+    );
+
+    assert!(
+        !ehr_row_exists(&dst_pool, spoiled.into()).await,
+        "a reported record must not be partially loaded"
+    );
+    assert!(
+        target.has_ehr(intact).await.expect("has_ehr"),
+        "the rest of the archive still loads"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// `EXPORT_SPEC.segment_split_size` is `Integer [1..1]` in kb

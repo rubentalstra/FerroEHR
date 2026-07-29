@@ -83,8 +83,14 @@ pub(crate) fn dump_load_routes() -> OpenApiRouter<AppState> {
                                 `file_sys_loc` (required, the archive location \
                                 on the SERVER's file system) plus the \
                                 `EXPORT_SPEC` attributes `logical_format` \
-                                (`openehr_canonical_json` \\| \
-                                `openehr_canonical_xml`), `compression_format` \
+                                (`openehr_canonical_json`, the default, keeps \
+                                each version's payload inline as canonical \
+                                JSON \\| `openehr_canonical_xml` externalizes \
+                                it as a `versions/<version_uid>.xml` \
+                                `ORIGINAL_VERSION` document under the ITS-XML \
+                                published `<version>` root; the archive's own \
+                                manifest/segment envelope is JSON in both), \
+                                `compression_format` \
                                 (`zip` \\| `7z`; absent = uncompressed) and \
                                 `segment_split_size` (kb, default 1024). \
                                 `encoding` names an `ENCODING_FORMAT` member \
@@ -129,19 +135,9 @@ pub(crate) fn dump_load_routes() -> OpenApiRouter<AppState> {
                                       `application/json`.",
          body = serde_json::Value),
         (status = 500, description = "SM `file_not_writable` — the location, a \
-                                      segment entry or the manifest could not \
-                                      be created or written.",
-         body = serde_json::Value),
-        (status = 501, description = "A well-formed request for the one \
-                                      enumeration member this service does not \
-                                      realize yet (`openehr_canonical_xml` — \
-                                      the archive's XML form is a design of \
-                                      its own; `zip` and `7z` are both \
-                                      served). RFC 9110 §15.6.2; the SM \
-                                      neither requires every member nor \
-                                      declares an error for one, so the \
-                                      boundary is declared rather than \
-                                      dressed up as a client fault.",
+                                      segment entry, a version-payload entry or \
+                                      the manifest could not be created or \
+                                      written.",
          body = serde_json::Value)
     )
 )]
@@ -164,8 +160,10 @@ pub(crate) async fn admin_dump(
                                 location on the SERVER's file system. \
                                 `load_ehrs` takes this ONE parameter \
                                 (`i_admin_dump_load.adoc`), so the container \
-                                (loose files or `archive.zip`) is detected \
-                                from what the location holds.",
+                                (loose files, `archive.zip` or `archive.7z`) \
+                                is detected from what the location holds and \
+                                the payload form comes from the archive's own \
+                                manifest `format` member.",
                  example = json!({ "file_sys_loc": "/tmp/openehr-export" })),
     responses(
         (status = 200, description = "The archive was read. The body is the \
@@ -174,8 +172,10 @@ pub(crate) async fn admin_dump(
                                       that did NOT load — notably \"import EHRs \
                                       with duplicate EHR ids will fail\", which \
                                       is reported per EHR and skipped, never \
-                                      fatal. EMPTY when the whole archive \
-                                      loaded.",
+                                      fatal, and so is a record whose \
+                                      externalized `versions/*.xml` payload \
+                                      will not read. EMPTY when the whole \
+                                      archive loaded.",
          body = Vec<serde_json::Value>,
          example = json!([{ "entity_type": "EHR",
                             "entity_id": "7d44b88c-4199-4bad-97dc-d78268e01398",
@@ -202,13 +202,17 @@ pub(crate) async fn admin_dump(
          body = serde_json::Value),
         (status = 500, description = "SM `file_not_writable` — the location \
                                       holds no archive container, an entry \
-                                      could not be read, or the manifest / a \
+                                      could not be read, the manifest / a \
                                       segment is CORRUPT (mangled or truncated, \
                                       so it does not parse as part of this \
-                                      archive format). All three are the same \
+                                      archive format), or the manifest names no \
+                                      `EXPORT_FORMAT` member. All are the same \
                                       fact — `file_sys_loc` does not hold a \
                                       readable archive — and carry the one \
-                                      error `i_admin_dump_load.adoc` declares.",
+                                      error `i_admin_dump_load.adoc` declares. \
+                                      A corrupt per-version payload entry is \
+                                      NOT here: it belongs to exactly one EHR, \
+                                      so it is a per-entity `200` report.",
          body = serde_json::Value)
     )
 )]

@@ -32,10 +32,11 @@ guards:
 #     spells the two EXPORT_FORMAT members `openehr_canonical_xml` and
 #     `openehr_canonical_json`; `canonical_json` is not one of them.
 #   * `comp_fmt: zip` STANDS — compression_format.adoc declares exactly `zip`
-#     and `7z`, so the literal was already a member. (`7z` gets no case: the
-#     SM assigns no behaviour to an unrealized member and inventing one would
-#     assert this product's own refusal as spec behaviour — the boundary is
-#     recorded on register AMB-33 instead.)
+#     and `7z`, so the literal was already a member. Each of the other declared
+#     members now drives a case of its own, so the two enumerations are
+#     exercised member by member rather than only at this row's pair:
+#     `-compression_7z` for COMPRESSION_FORMAT `7z`, `-logical_format_xml` for
+#     EXPORT_FORMAT `openehr_canonical_xml`.
 #   * `enc_format: utf_8` is DELETED, not corrected. encoding_format.adoc
 #     declares ENCODING_FORMAT with NO members at all, so no text names one and
 #     no value is representable; a case sending any would be testing a

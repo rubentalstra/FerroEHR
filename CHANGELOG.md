@@ -39,449 +39,6 @@ workflow refuses a tag that has no matching section here.
   Both are accepted now, alongside `openehr-ehr`, `openehr-demographic`,
   `generic-emr` and the catch-all `other`.
 
-### Fixed
-
-- **An empty TDD batch aimed at a non-existent EHR is now refused.**
-  `POST /message/tdd/{ehr_id}/batch` verified the target EHR once per
-  document, so a batch with no documents answered success without checking
-  the EHR at all. The target is now verified for every batch, empty ones
-  included, and an unknown EHR answers `404`.
-
-### Added
-
-- **The definition and messaging extension routes now document their refusal
-  branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
-  and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
-  and — on the writes — `403` (a principal holding the configured read-only
-  role) in the served OpenAPI, so a client can see the whole answer set of an
-  endpoint before it calls it. The TDD batch additionally documents its `413`
-  boundary: the batch has no cardinality limit of its own, only the
-  server-wide request-body limit.
-
-- **Conformance: the admin extension batteries now test what must be
-  REFUSED, not only what must work.** A server that accepts what the contract
-  forbids is as non-conformant as one that refuses what it must accept, and
-  the activity-report, EHR/demographic archive and dump/load batteries proved
-  only their happy paths. They now also drive the unauthenticated (`401`) and
-  non-administrative (`403`) probes on every route of each family, every
-  argument-type refusal (a service outside the enumeration, the three ways a
-  time interval can be malformed, a malformed id in an archive list, an
-  unknown export format, a non-positive segment size), the empty-selection and
-  repeat-archive boundaries, and the zip / 7z / loose container-detection round
-  trips on load — with the duplicate-report body now asserted rather than
-  assumed. The branches that cannot be driven from a client (the
-  admin-disabled `405`, which needs a differently configured deployment, and
-  the corrupt-archive `5xx`, which needs bytes placed on the server's own file
-  system) are recorded as explicit boundaries and covered by in-process tests
-  instead of being silently absent.
-- **The documentation site renders mathematics.** Formulas on the
-  performance pages (the open-loop arrival schedule, the population-anchored
-  write-rate derivation) are now typeset with KaTeX, pre-rendered to static
-  HTML at build time — pages stay self-contained with no client-side script
-  and no CDN request; the KaTeX stylesheet and fonts are served by the site
-  itself.
-- **Conformance: ADL 1.4 archetype provisioning is now tested rather than
-  excused.** openEHR's released REST API defines no ADL 1.4 archetype
-  resource, so the capability used to be reported as "excused — unrealized on
-  this technology profile" even though this server serves archetype routes of
-  its own design. Six conformance cases now execute against
-  `/definition/archetype/adl1.4` — upload with source read-back, an
-  unparseable-source refusal, listing, and the get/delete branches including
-  their not-found halves. Because openEHR gives the capability no wire, the
-  published certificate marks the row `extension` and it no longer gates the
-  CORE profile — a conscious, register-recorded departure from the
-  conformance profiles book, which requires a capability the release gives no
-  wire for.
-- **The admin dump/load archive now supports 7z compression.** `POST
-  /admin/dump` accepts `compression_format: "7z"` alongside `zip` and the
-  uncompressed form, packing the same archive entries into one `archive.7z`;
-  `POST /admin/load` detects and reads all three container forms without
-  being told which one it was given. (The `openehr_canonical_xml` logical
-  format remains a declared `501` boundary — the archive's XML form is a
-  design of its own, tracked separately.)
-- **Repository dump/load and the whole messaging surface are now HTTP
-  routes** — the last service capabilities that had no wire. Under the
-  existing `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role,
-  `POST /admin/dump` writes an archive of every EHR to a location on the
-  server's file system and `POST /admin/load` populates the repository from
-  one; both answer `200` with the per-entity report the openEHR service model
-  defines (empty when everything succeeded), and a load into a non-empty
-  repository reports each already-present EHR rather than failing. Under the
-  ordinary clinical authentication — these are not admin routes — the new
-  `/message` group serves EHR Extract export (`GET /message/export/{ehr_id}`,
-  `POST /message/export` by specification) and import
-  (`POST /message/import` for a whole-EHR clone,
-  `POST /message/import/{ehr_id}` to add content to an existing one), plus
-  Template Data Document import (`POST /message/tdd/{ehr_id}` and its
-  all-or-nothing `/batch` sibling). Like the admin extensions, all of these
-  are ehrbase-rs extensions: the openEHR service model defines the operations,
-  the released REST API surfaces no endpoint for them, and no openEHR
-  conformance claim rests on the URLs — see the book's Operations page and the
-  served OpenAPI document, which flags every one of them.
-
-- **The dump archive can be written as a ZIP.** `POST /admin/dump` accepts the
-  service model's `zip` compression format, packing the manifest, segments and
-  multimedia blobs into a single `archive.zip` instead of loose files. Load
-  takes no format argument and detects the container, so an archive always
-  reads back the way it was written.
-
-- **The admin API gained an activity report and archiving, and the definition
-  API gained archetype provisioning** — service capabilities that had no HTTP
-  route until now. Under the existing `EHRBASE__ADMIN__ENABLED` gate and
-  `ADMIN` role: `GET /admin/report/contribution[/count]`,
-  `GET /admin/report/versioned_composition/count` and
-  `GET /admin/report/composition_version/count` report CONTRIBUTION and
-  COMPOSITION-version activity per service over an optional ISO 8601 time
-  interval, and `POST /admin/archive/ehrs` / `POST /admin/archive/parties`
-  mark a named set of EHRs or demographic parties archived (a read-neutral,
-  idempotent, all-or-nothing marker — never a delete). Alongside the released
-  template routes, the definition API now serves the ADL 1.4 archetype store
-  (`POST`/`GET /definition/archetype/adl1.4`,
-  `GET`/`DELETE /definition/archetype/adl1.4/{archetype_id}`) and the ADL 2
-  archetype/artefact views (`GET /definition/archetype/adl2[/count]`,
-  `GET /definition/artefact/adl2[/count]`,
-  `DELETE /definition/artefact/adl2/{artefact_id}`). All of these are
-  ehrbase-rs extensions: the openEHR service model defines the operations, the
-  released REST API surfaces no endpoint for them, and no openEHR conformance
-  claim rests on the URLs — see the book's Operations page and the served
-  OpenAPI document, which flags every one of them.
-
-- **The measured hospital-simulation workload now exercises every claimed
-  capability** (#625). The performance run used to touch about a third of the
-  capabilities the conformance statement claims, and the rest were listed as
-  "not yet exercised" catalogue gaps. Sixteen new operations joined the
-  measured workload — demographic registration (person create/read/amend plus
-  relationship churn), template example and ADL 2 definition polls, advanced
-  and terminology-backed AQL reads, Simplified-FLAT commit and read-back,
-  version-provenance (signature) reads, the System API options probe, the
-  SMART service-discovery fetch, and the two access-control refusals — so the
-  published Workload Coverage table now answers "yes" for every claimed
-  capability except eleven that carry a per-capability, register-linked
-  reason: either the operation would destroy the measured population
-  mid-run (physical deletion and the released admin delete API), or openEHR
-  defines no wire and this product serves no route for it, leaving the load
-  instrument nothing to send. No row is left undecided, and a future journey
-  that lands one of those capabilities is forced to delete its exclusion.
-- Measured runs can now drive a SMART-secured deployment: the load client
-  mints the scope-limited access token its ixit principal declares (once per
-  token lifetime, never per request), so a deployment running the SMART
-  resource-server posture — the standard EHRbase-rs conformance posture — is
-  measurable at all. Boundary probes address the read-only and
-  unauthenticated principals a deployment declares; a deployment that
-  declares none simply runs the workload without those journeys.
-- **Conformance: the last two untested capabilities now carry real executed
-  batteries** (#624). "Demographic archetype validation" and "Bulk EHR load"
-  were the two capabilities the conformance report listed with *no cases* —
-  named in openEHR's conformance profiles book, but never actually exercised.
-  Both are now tested against the released REST wire. Demographic archetype
-  validation gets eight isolated cases over the party-commit endpoints: a
-  committed PERSON/ROLE is refused when it is not archetype-rooted, when its
-  root archetype identifier contradicts its own archetype details, when an
-  optional list (contacts, roles, capabilities) is present but empty, and when
-  an identity's value is missing or carries the wrong openEHR type — plus an
-  accept case proving a fully archetyped party, contacts, addresses and
-  languages included, is stored and read back intact. Bulk EHR load is
-  verified as what it actually is on released wire — a population loaded
-  through the ordinary EHR and composition endpoints — with one case covering
-  breadth (eight EHRs, one composition each, all identities distinct and every
-  document read back unchanged) and one covering depth (four commits into a
-  single EHR, each independently addressable, with an AQL query over that EHR
-  returning exactly the loaded set). Both capabilities are now claimed in the
-  published conformance statement, and their case-count floors are recorded so
-  the coverage can only grow.
-
-- **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
-  excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
-  resource, so the six relationship operations used to be reported as
-  "excused — unrealized on this technology profile" even though EHRbase-rs
-  serves them. They are now driven for real: fifteen conformance cases execute
-  against the `/demographic/party_relationship` routes this product serves of
-  its own design, covering create, read, read-at-time, read-at-version, update
-  and delete plus their refusal branches. The certificate marks the row
-  `extension`, which is a promise as much as a label — no openEHR profile
-  result may rest on a route openEHR does not specify, and the runner now
-  fails validation if that line is ever crossed (a new `realization-scope`
-  gate, with the binding's route required to appear in the published
-  extension-surface declaration). Such cases are also skipped, with a cited
-  reason, for any system under test whose conformance statement does not claim
-  the capability — a route openEHR does not specify is an offer only the party
-  making it answers for, so the published comparison against other products
-  never charges them for routes they never offered.
-
-- **Conformance runner: a certification claim can no longer be hollow** (#622).
-  `cnf-runner validate` now reads the committed party statements beside the
-  artifact root and relates every claim to the catalogue, so three new gates
-  fail before any system under test is even composed. `claim-completeness`
-  rejects a claimed capability with no verdict-bearing case at all, and
-  requires a capability whose every case is excused (because the openEHR
-  release publishes no wire for it) to name the register entry that
-  adjudicated that — an excuse that outlives the missing wire is a finding
-  too. `capability-depth` gives every capability a `min_cases` floor so one
-  token case can never certify it; floors only ever ratchet up.
-  `workload-coverage` requires every claimed capability the measured
-  hospital-simulation workload does not exercise to carry an adjudicated
-  exclusion, which the conformance certificate now prints with its reason in
-  place of the previous bare "NO — catalogue gap" cell. The certificate's
-  Profile Report also gains a **Realization** column saying whether a
-  capability was verified over released ITS-REST wire or over routes this
-  product serves of its own design (the latter can never gate an openEHR
-  profile tier).
-
-- **Conformance runner: the SMART on openEHR boundary is now executed, not
-  declared** (#538). Three behaviours that were previously carried as
-  statement-level claims are real conformance cases: the
-  `/.well-known/smart-configuration` discovery document (served from the
-  Platform base URL as `application/json`, advertising the required
-  `org.openehr.rest` service at an absolute base URL), the resource-scope
-  grammar that lets a granted scope reach exactly the operation it names, and
-  the 403 refusal of a request the granted scopes do not permit. Because SMART
-  is off by default, they run in their own **lane**:
-  `CONF_SMART_MODE=1 bash scripts/conformance.sh` boots the server with the
-  SMART resource-server posture enabled (`docker/sut-smart.yml`), drives the
-  SMART group, and writes to `docs/conformance/<sut>-smart/`; the default lane
-  is untouched and remains the published baseline. To exercise scopes at all
-  the runner now mints its own short-lived access tokens against a **committed
-  test issuer** (`tools/cnf-runner/party/smart/` — public test key material for
-  the harness, never usable for anything else), because a CDR validates tokens
-  and never issues them and the conformance stack runs no Authorization
-  Server. A conformance target that does not run the SMART role simply does not
-  declare the lane in its `ixit.json`, and these cases are recorded
-  not-applicable with that citation rather than failed.
-
-- **Conformance runner: two more wire behaviours are now measured, not
-  excused** (#539, #569). The bulk admin delete's subset selector is exercised
-  in the repeated `?ehr_id=a&ehr_id=b` form the openEHR path template asks
-  for, proving every named EHR is deleted rather than only the first; and the
-  rule that a server stamps its OWN configured system identifier into a
-  commit audit when the client supplies none is now checked against that
-  identifier, not merely against "some non-blank value". The identifier is a
-  deployment fact no openEHR operation exposes, so a conformance target
-  declares it in its `ixit.json` (`"system_id": "…"`); a target that declares
-  none has those cases recorded not-applicable with that citation instead of
-  being checked against a guess. Both behaviours were previously carried as
-  cited coverage gaps.
-
-- **Conformance coverage: calling a resource with the wrong HTTP method is
-  now measured** (#596). The openEHR REST specification says a method the
-  specification recognizes but the addressed resource does not serve should be
-  answered `405 Method Not Allowed`, and the HTTP standard it defers to
-  requires that answer to carry an `Allow` field listing the methods the
-  resource does support. The conformance suite now proves both on a real
-  resource — a `DELETE` to the EHR collection, which the specification serves
-  only under `POST` and `GET` — instead of recording the behaviour as an
-  untestable gap. The `Allow` check asserts that both specified methods are
-  listed while tolerating any order and any additional methods a server
-  chooses to support.
-
-- **Canonical XML: choose the openEHR schema namespace per request** (#196).
-  openEHR publishes its XML schemas in two lineages that differ only by the
-  namespace a document declares — `http://schemas.openehr.org/v1` (the stable
-  release) and `http://schemas.openehr.org/v2` (the newer, trial release). You
-  can now pick one with a `version` parameter on the XML media type:
-  `Accept: application/xml; version=2` returns the v2 namespace, and
-  `Content-Type: application/xml; version=2` declares a v2 request payload. A
-  v2 response is labelled `Content-Type: application/xml; version=2`. Nothing
-  changes for existing clients: omitting the parameter (or sending
-  `version=1`) serves the v1 namespace under a plain
-  `Content-Type: application/xml`, exactly as before, and request payloads in
-  either namespace have always been accepted. Asking for a namespace the
-  server does not serve is `406 Not Acceptable` on `Accept` and `415
-  Unsupported Media Type` on `Content-Type`. Operational-template XML
-  (`…/definition/template/adl1.4/{template_id}`) is always v1 and ignores the
-  parameter. The parameter is an EHRbase-rs extension — the openEHR REST
-  specification predates the two lineages and defines no way to select one.
-
-- **Conformance coverage: the ITEM_TAG routes are now measured** (#288). All
-  twenty-three released tag operations — the EHR-wide and demographic-wide
-  listings, the COMPOSITION and EHR_STATUS families, and the five demographic
-  party families — are enumerated by the conformance instrument for the first
-  time; they have no openEHR service-model interface, so they were previously
-  invisible to its coverage derivation. Thirty-two new cases turn the five tag
-  laws into executed wire assertions: tag identity is the (key, target_path)
-  pair, a container's tag collection and a version's tag collection are
-  disjoint on read, write and delete alike, `ITEM_TAG.target` is served as the
-  bare openEHR identifier, every typed tag route answers 404 for a uid of
-  another kind (within the EHR space, within the demographic space and across
-  the two), and the `openehr-item-tag` / `openehr-version-item-tag` request
-  headers on a commit land in their own separate collections. Tag support is
-  reported under a new **ItemTags** capability at the OPTIONS tier, matching
-  the specification's own statement that a server need not support ITEM_TAGs.
-
-- **Conformance coverage: the COMPOSITION, CONTRIBUTION and PARTY resources
-  are now exercised in canonical XML and in the Simplified Formats, not only
-  in canonical JSON** (#288). Eighteen new CNF cases drive
-  `Accept: application/xml` reads and `Content-Type: application/xml` commits
-  across composition create/update/latest/at-time/at-version, the
-  VERSIONED_COMPOSITION container, the composition and contribution existence
-  probes, and the whole PERSON create/update/read family, plus FLAT and
-  STRUCTURED reads of a composition at latest and at time and FLAT/STRUCTURED
-  composition updates. Each row asserts the negotiated response media type
-  the specification makes a MUST, and the XML commits are compared against the
-  canonical-JSON twin of the same resource, so a format-specific data loss
-  shows up as a failure rather than a silent difference. One branch stays
-  deliberately unexercised and is now recorded with its full derivation: the
-  openEHR release declares `application/xml` for the CONTRIBUTION *commit*
-  but publishes no XML form of the commit envelope, which is reported
-  upstream rather than invented locally.
-
-
-- **Served OpenAPI: complete documentation for the six Query operations**
-  (#482). The two ad-hoc and four stored AQL executions now document what
-  the wire actually does. Every `200` declares the weak RESULT_SET `ETag`
-  (an identifier of the result set — ours is a deterministic content digest,
-  since the released `ResultSet` schema carries no id field) and carries a
-  canonical RESULT_SET example: `columns[]` with the `#N` unaliased-column
-  convention, rows whose cells are JSON primitives *and* canonical
-  `_type`-tagged RM objects, and the optional `meta` (`_type`,
-  `_schema_version`, `_created` in extended ISO 8601, and `_executed_aql` =
-  the parameter-SUBSTITUTED text, with `q` keeping the query as submitted).
-  The parameters now carry the released semantics: the named-`$parameter`
-  binding law and its un-prefixed rule, the `ehr_id` duality (query
-  parameter or `openehr-ehr-id` header, deprecated MixedCase spelling
-  accepted, a conflict 400), `offset`'s default of 0 and `fetch`'s
-  implementation-defined default with the one released prohibition
-  (`fetch` cannot be combined with AQL `TOP`), the qualified-query-name
-  grammar including the reserved `aql`, and the version exact/prefix
-  matching law. Also declared: `415` on the three POSTs, request-body
-  examples, and the `Prefer`-scope reason no query response carries
-  `Location` or `Preference-Applied`. Where the released text is silent the
-  declarations say so explicitly — the reserved protocol keys that never
-  bind as AQL parameters, REST paging composing over AQL `LIMIT`/`OFFSET`,
-  the URL-vs-body precedence on the POSTs, and the `ehr_id`-scope 404.
-  Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
-  operations** (#475). The EHR-wide read, the two per-target reads, the two
-  collection replaces and the two key-scoped deletes now document what the
-  wire actually does. The dual-form `uid_based_id` is spelled out with the
-  released version/container sentence and the disjointness it implies (a tag
-  has exactly one `target`, so container tags and version tags are separate
-  collections and neither read sees the other). The `PUT` bodies are
-  described as what they are — a bare JSON array of UPDATE_ITEM_TAG (`key`
-  required, `value`/`target_path` optional, `target`/`owner_id`
-  server-assigned from the route and ignored if sent), with `[]` quoted as
-  the clear-all form, (`key`, `target_path`) as the identity, last-wins on a
-  duplicate pair, an empty `target_path` normalizing to absent, and the
-  200/204 `Prefer` split (204 by default, 200 carrying the full RESULTING
-  list, `return=identifier` resolving to minimal because an ITEM_TAG has no
-  uid). The deletes document their SET semantics (every tag under the key on
-  the addressed collection) and the released third 404 trigger that makes
-  them deliberately non-idempotent. Every operation now declares the target
-  guard's 404s (unknown, foreign-EHR, wrong-kind or missing-version target),
-  the JSON-only reality (406 for an XML `Accept`, 415 for an XML
-  `Content-Type` — no ITEM_TAG type exists in the canonical XML ITS), the
-  RM-invariant 422 family on the writes, the `ehr_tags_get` filter semantics
-  (AND-combined, exact, case-sensitive, scalar, unbounded), and real ITEM_TAG
-  examples including a VERSION-targeted tag. Also recorded: no tag route
-  serves `ETag`/`Last-Modified` or accepts `If-Match` — a tag has neither a
-  version nor a uid — and the released-text defects met on the way (the
-  aggregate read's COMPOSITION-typed response schema, the `_updated`
-  responses' copy-pasted "retrieved" wording, `tag_key` vs the `key` path
-  parameter, and the "(logically) deleted" wording on a non-versioned
-  resource). Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the three CONTRIBUTION
-  operations** (#464). The native change-set commit now declares the whole
-  `NewContribution` envelope — `versions[]` of UPDATE_VERSION
-  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
-  `data`, `commit_audit`) plus the change-set `audit`, the accepted `_type`
-  spellings (`UPDATE_AUDIT` / `AUDIT_DETAILS` / omitted), the server-set
-  `time_committed`, the honoured-if-unused client `uid`, and the
-  committer/`system_id` copy-down — with a canonical two-member example (a
-  COMPOSITION creation plus an EHR_STATUS modification) and the SPECITS-84
-  rule quoted: the envelope stays canonical JSON, only each
-  `versions[i].data` takes the FLAT/STRUCTURED form. Every branch is
-  documented: `201` with the weak `ETag` carrying the *contribution* uid (not
-  a version uid), `Location`, `Preference-Applied` and the `Prefer`-conditional
-  bodies (the representation lists the minted version OBJECT_REFs, the
-  identifier body the contribution uid, minimal an empty `201`); `400` with
-  the released first-version-of-a-MODIFICATION trigger; `404`; `406`; `409`
-  (client uid in use — released — plus the non-modifiable EHR, duplicate
-  singletons and an EHR_STATUS delete member, flagged as ours); `412` for a
-  stale member `preceding_version_uid`; `415`; and the full `422` family
-  (empty `versions`, out-of-group change types, data on a delete/attestation
-  member, missing data, template and RM-invariant failures). The by-uid `GET`
-  documents the plain-UUID `contribution_uid`, `Prefer: return=representation,
-  resolve_refs` (members resolved to full ORIGINAL_VERSIONs, which is also
-  what makes a simplified `Accept` meaningful), its `200` headers and
-  canonical example (members as OBJECT_REFs, full AUDIT_DETAILS with optional
-  `description`), and `400`/`404`/`406`. The contribution-list route is
-  prominently flagged as our own extension with no openEHR spec behind it,
-  and its `offset`/`fetch` clamping (0 / 20, capped at 100 — never a `400`)
-  and row shape are now described accurately. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the five DIRECTORY
-  operations** (#457). Every response now declares its headers (weak `ETag`,
-  `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
-  reads and writes carry canonical FOLDER examples (nested `folders`, `items`
-  as OBJECT_REFs); the writes document the `If-Match` precondition — carried
-  in the header because these routes have no version segment, so a stale
-  value is `412`, never `409` — plus `Prefer`, the `openehr-version` /
-  `openehr-audit-details` committal headers and the item-tag headers, and the
-  canonical-JSON/XML-only request bodies (a Simplified-Format `Content-Type`
-  is `415`, an unfulfillable simplified `Accept` `406`: a FOLDER is not
-  templated). The `version_at_time` and `path` query parameters are described
-  with the released sentence plus our register-documented resolution rules
-  (root-implicit, leading-slash tolerant, folders-only, first-match; a future
-  time serves the latest version, a time before the first commit is `404`),
-  and every branch the wire serves is documented — the deleted-directory
-  `204` on both reads, the `DELETE`'s `204` carrying the new deleted version's
-  identity, the `404`s (including an EHR with no directory), the `412`s with
-  the latest-uid `ETag`, `400`/`406`/`415`/`422`, and the `409`s that are our
-  own design (creating a directory when one already exists, and a
-  non-modifiable EHR), each flagged as such. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the eight COMPOSITION and
-  VERSIONED_COMPOSITION operations** (#450). Every response now declares its
-  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
-  item-tag echoes) and a canonical example; the commits document the
-  `openehr-version` / `openehr-audit-details` / `openehr-template-id` request
-  headers and the four negotiable media types (canonical JSON/XML plus
-  `application/openehr.wt.flat+json` and
-  `application/openehr.wt.structured+json`); and every branch the wire
-  actually serves is described — the `GET`'s deleted-version `204` for all
-  addressing forms, the `DELETE` quartet (`204` carrying the NEW deleted
-  version's identity, `400` already-deleted, `404`, `409` not-latest with the
-  latest-uid `ETag`), `412`/`415`/`406`/`422`, and the `409`s that are our own
-  design (duplicate live persistent COMPOSITION per template, and a
-  non-modifiable EHR), each flagged as such. Document only — no wire change.
-
-- **Served OpenAPI: complete documentation for the seven EHR_STATUS and
-  VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
-  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
-  item-tag echoes), canonical examples, and the 406/415 negotiation
-  branches; the EHR_STATUS update documents the `openehr-version` /
-  `openehr-audit-details` committal headers and the
-  `Prefer: return=identifier` response shape. Document only — no wire
-  change.
-
-- **`Last-Modified` on VERSIONED_OBJECT container and revision-history
-  reads** (#442). `GET …/versioned_ehr_status`,
-  `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
-  now carry `Last-Modified` derived from the newest held version's commit
-  instant, alongside the existing container-uid weak `ETag` (ITS-REST
-  overview *Requests and responses* §"ETag and Last-Modified": both headers
-  SHOULD accompany a VERSIONED_OBJECT response).
-
-
-- **`[server] system_id` — the deployment's own openEHR system identifier is
-  now configurable** (#424, `EHRBASE__SERVER__SYSTEM_ID`, default unchanged at
-  `ehrbase-rs.local`). The value is stamped into `EHR.system_id` at EHR
-  creation (RM *EHR Information Model* §EHR Identifier Allocation: the
-  identifier "that would normally be used for locally created EHRs"), into
-  `AUDIT_DETAILS.system_id` whenever the client supplies none through
-  `openehr-audit-details` (the REST API requires the server to "set it to its
-  own configured system identifier"), and into every minted
-  `OBJECT_VERSION_ID.creating_system_id`. Previously it was a hard-coded
-  constant that no configuration could change. Choose it before the first EHR
-  is created and keep it stable — the value is stored per EHR and per version,
-  so a later change affects only newly authored data and never rewrites
-  existing identifiers. It is distinct from `[server.identity]`, which is only
-  the `OPTIONS` manifest's display identity. An empty value, or one containing
-  the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
-
-### Changed
-
 - **Conformance: a product is no longer excused from 186 test cases for
   declaring an older REST release** (#635). Every conformance case may declare
   the openEHR release its behaviour needs, and systems declaring an earlier
@@ -653,16 +210,13 @@ workflow refuses a tag that has no matching section here.
   uid from the EHR body must fetch `GET /ehr/{ehr_id}/ehr_status` and use
   its own `uid` instead.
 
-### Removed
-
-- **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
-  System API defines exactly one location for the Options-and-Conformance
-  operation — the API base-path root (`OPTIONS {base_path}`, e.g.
-  `/ehrbase/rest/openehr/v1`); the extra bare-root mount was our own
-  duplication and answered identically. Clients probing `OPTIONS /` must use
-  the base path.
-
 ### Fixed
+
+- **An empty TDD batch aimed at a non-existent EHR is now refused.**
+  `POST /message/tdd/{ehr_id}/batch` verified the target EHR once per
+  document, so a batch with no documents answered success without checking
+  the EHR at all. The target is now verified for every batch, empty ones
+  included, and an unknown EHR answers `404`.
 
 - **An activity-report request whose time interval runs backwards is now
   refused instead of answered.** `GET /admin/report/*` accepts an optional
@@ -1309,6 +863,464 @@ workflow refuses a tag that has no matching section here.
     its revision history, and the version reads) now carry the weak `ETag` and,
     where the served body exposes the commit instant, `Last-Modified` — both
     SHOULD-present on `VERSION`/`VERSIONED_OBJECT` responses.
+
+### Added
+
+- **`POST /admin/dump` now serves the `openehr_canonical_xml` logical format,
+  which used to answer `501`.** Both openEHR export formats are available:
+  the default `openehr_canonical_json` keeps each version's content inline in
+  the archive's segment files, while `openehr_canonical_xml` writes each
+  version to its own `versions/<version_uid>.xml` entry — a complete
+  `ORIGINAL_VERSION` document under the openEHR-published `<version>` root,
+  readable by any tool that speaks canonical openEHR XML. The archive's own
+  bookkeeping (`manifest.json`, the segment files) stays JSON in both formats,
+  because openEHR publishes no XML document form for it. `POST /admin/load`
+  is unchanged for callers: it still takes only a location and now reads the
+  logical format out of the archive's manifest, exactly as it already detected
+  the container. Both formats round-trip in all three containers (loose,
+  `archive.zip`, `archive.7z`) and reproduce every record byte-for-byte. A
+  single unreadable `versions/*.xml` entry is reported against the one EHR it
+  belongs to and skipped, while the rest of the archive loads.
+
+- **The definition and messaging extension routes now document their refusal
+  branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
+  and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
+  and — on the writes — `403` (a principal holding the configured read-only
+  role) in the served OpenAPI, so a client can see the whole answer set of an
+  endpoint before it calls it. The TDD batch additionally documents its `413`
+  boundary: the batch has no cardinality limit of its own, only the
+  server-wide request-body limit.
+
+- **Conformance: the admin extension batteries now test what must be
+  REFUSED, not only what must work.** A server that accepts what the contract
+  forbids is as non-conformant as one that refuses what it must accept, and
+  the activity-report, EHR/demographic archive and dump/load batteries proved
+  only their happy paths. They now also drive the unauthenticated (`401`) and
+  non-administrative (`403`) probes on every route of each family, every
+  argument-type refusal (a service outside the enumeration, the three ways a
+  time interval can be malformed, a malformed id in an archive list, an
+  unknown export format, a non-positive segment size), the empty-selection and
+  repeat-archive boundaries, and the zip / 7z / loose container-detection round
+  trips on load — with the duplicate-report body now asserted rather than
+  assumed. The branches that cannot be driven from a client (the
+  admin-disabled `405`, which needs a differently configured deployment, and
+  the corrupt-archive `5xx`, which needs bytes placed on the server's own file
+  system) are recorded as explicit boundaries and covered by in-process tests
+  instead of being silently absent.
+- **The documentation site renders mathematics.** Formulas on the
+  performance pages (the open-loop arrival schedule, the population-anchored
+  write-rate derivation) are now typeset with KaTeX, pre-rendered to static
+  HTML at build time — pages stay self-contained with no client-side script
+  and no CDN request; the KaTeX stylesheet and fonts are served by the site
+  itself.
+- **Conformance: ADL 1.4 archetype provisioning is now tested rather than
+  excused.** openEHR's released REST API defines no ADL 1.4 archetype
+  resource, so the capability used to be reported as "excused — unrealized on
+  this technology profile" even though this server serves archetype routes of
+  its own design. Six conformance cases now execute against
+  `/definition/archetype/adl1.4` — upload with source read-back, an
+  unparseable-source refusal, listing, and the get/delete branches including
+  their not-found halves. Because openEHR gives the capability no wire, the
+  published certificate marks the row `extension` and it no longer gates the
+  CORE profile — a conscious, register-recorded departure from the
+  conformance profiles book, which requires a capability the release gives no
+  wire for.
+- **The admin dump/load archive now supports 7z compression.** `POST
+  /admin/dump` accepts `compression_format: "7z"` alongside `zip` and the
+  uncompressed form, packing the same archive entries into one `archive.7z`;
+  `POST /admin/load` detects and reads all three container forms without
+  being told which one it was given. (The `openehr_canonical_xml` logical
+  format remains a declared `501` boundary — the archive's XML form is a
+  design of its own, tracked separately.)
+- **Repository dump/load and the whole messaging surface are now HTTP
+  routes** — the last service capabilities that had no wire. Under the
+  existing `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role,
+  `POST /admin/dump` writes an archive of every EHR to a location on the
+  server's file system and `POST /admin/load` populates the repository from
+  one; both answer `200` with the per-entity report the openEHR service model
+  defines (empty when everything succeeded), and a load into a non-empty
+  repository reports each already-present EHR rather than failing. Under the
+  ordinary clinical authentication — these are not admin routes — the new
+  `/message` group serves EHR Extract export (`GET /message/export/{ehr_id}`,
+  `POST /message/export` by specification) and import
+  (`POST /message/import` for a whole-EHR clone,
+  `POST /message/import/{ehr_id}` to add content to an existing one), plus
+  Template Data Document import (`POST /message/tdd/{ehr_id}` and its
+  all-or-nothing `/batch` sibling). Like the admin extensions, all of these
+  are ehrbase-rs extensions: the openEHR service model defines the operations,
+  the released REST API surfaces no endpoint for them, and no openEHR
+  conformance claim rests on the URLs — see the book's Operations page and the
+  served OpenAPI document, which flags every one of them.
+
+- **The dump archive can be written as a ZIP.** `POST /admin/dump` accepts the
+  service model's `zip` compression format, packing the manifest, segments and
+  multimedia blobs into a single `archive.zip` instead of loose files. Load
+  takes no format argument and detects the container, so an archive always
+  reads back the way it was written.
+
+- **The admin API gained an activity report and archiving, and the definition
+  API gained archetype provisioning** — service capabilities that had no HTTP
+  route until now. Under the existing `EHRBASE__ADMIN__ENABLED` gate and
+  `ADMIN` role: `GET /admin/report/contribution[/count]`,
+  `GET /admin/report/versioned_composition/count` and
+  `GET /admin/report/composition_version/count` report CONTRIBUTION and
+  COMPOSITION-version activity per service over an optional ISO 8601 time
+  interval, and `POST /admin/archive/ehrs` / `POST /admin/archive/parties`
+  mark a named set of EHRs or demographic parties archived (a read-neutral,
+  idempotent, all-or-nothing marker — never a delete). Alongside the released
+  template routes, the definition API now serves the ADL 1.4 archetype store
+  (`POST`/`GET /definition/archetype/adl1.4`,
+  `GET`/`DELETE /definition/archetype/adl1.4/{archetype_id}`) and the ADL 2
+  archetype/artefact views (`GET /definition/archetype/adl2[/count]`,
+  `GET /definition/artefact/adl2[/count]`,
+  `DELETE /definition/artefact/adl2/{artefact_id}`). All of these are
+  ehrbase-rs extensions: the openEHR service model defines the operations, the
+  released REST API surfaces no endpoint for them, and no openEHR conformance
+  claim rests on the URLs — see the book's Operations page and the served
+  OpenAPI document, which flags every one of them.
+
+- **The measured hospital-simulation workload now exercises every claimed
+  capability** (#625). The performance run used to touch about a third of the
+  capabilities the conformance statement claims, and the rest were listed as
+  "not yet exercised" catalogue gaps. Sixteen new operations joined the
+  measured workload — demographic registration (person create/read/amend plus
+  relationship churn), template example and ADL 2 definition polls, advanced
+  and terminology-backed AQL reads, Simplified-FLAT commit and read-back,
+  version-provenance (signature) reads, the System API options probe, the
+  SMART service-discovery fetch, and the two access-control refusals — so the
+  published Workload Coverage table now answers "yes" for every claimed
+  capability except eleven that carry a per-capability, register-linked
+  reason: either the operation would destroy the measured population
+  mid-run (physical deletion and the released admin delete API), or openEHR
+  defines no wire and this product serves no route for it, leaving the load
+  instrument nothing to send. No row is left undecided, and a future journey
+  that lands one of those capabilities is forced to delete its exclusion.
+- Measured runs can now drive a SMART-secured deployment: the load client
+  mints the scope-limited access token its ixit principal declares (once per
+  token lifetime, never per request), so a deployment running the SMART
+  resource-server posture — the standard EHRbase-rs conformance posture — is
+  measurable at all. Boundary probes address the read-only and
+  unauthenticated principals a deployment declares; a deployment that
+  declares none simply runs the workload without those journeys.
+- **Conformance: the last two untested capabilities now carry real executed
+  batteries** (#624). "Demographic archetype validation" and "Bulk EHR load"
+  were the two capabilities the conformance report listed with *no cases* —
+  named in openEHR's conformance profiles book, but never actually exercised.
+  Both are now tested against the released REST wire. Demographic archetype
+  validation gets eight isolated cases over the party-commit endpoints: a
+  committed PERSON/ROLE is refused when it is not archetype-rooted, when its
+  root archetype identifier contradicts its own archetype details, when an
+  optional list (contacts, roles, capabilities) is present but empty, and when
+  an identity's value is missing or carries the wrong openEHR type — plus an
+  accept case proving a fully archetyped party, contacts, addresses and
+  languages included, is stored and read back intact. Bulk EHR load is
+  verified as what it actually is on released wire — a population loaded
+  through the ordinary EHR and composition endpoints — with one case covering
+  breadth (eight EHRs, one composition each, all identities distinct and every
+  document read back unchanged) and one covering depth (four commits into a
+  single EHR, each independently addressable, with an AQL query over that EHR
+  returning exactly the loaded set). Both capabilities are now claimed in the
+  published conformance statement, and their case-count floors are recorded so
+  the coverage can only grow.
+
+- **Conformance: the PARTY_RELATIONSHIP capability is now tested rather than
+  excused** (#623). openEHR's released REST API defines no PARTY_RELATIONSHIP
+  resource, so the six relationship operations used to be reported as
+  "excused — unrealized on this technology profile" even though EHRbase-rs
+  serves them. They are now driven for real: fifteen conformance cases execute
+  against the `/demographic/party_relationship` routes this product serves of
+  its own design, covering create, read, read-at-time, read-at-version, update
+  and delete plus their refusal branches. The certificate marks the row
+  `extension`, which is a promise as much as a label — no openEHR profile
+  result may rest on a route openEHR does not specify, and the runner now
+  fails validation if that line is ever crossed (a new `realization-scope`
+  gate, with the binding's route required to appear in the published
+  extension-surface declaration). Such cases are also skipped, with a cited
+  reason, for any system under test whose conformance statement does not claim
+  the capability — a route openEHR does not specify is an offer only the party
+  making it answers for, so the published comparison against other products
+  never charges them for routes they never offered.
+
+- **Conformance runner: a certification claim can no longer be hollow** (#622).
+  `cnf-runner validate` now reads the committed party statements beside the
+  artifact root and relates every claim to the catalogue, so three new gates
+  fail before any system under test is even composed. `claim-completeness`
+  rejects a claimed capability with no verdict-bearing case at all, and
+  requires a capability whose every case is excused (because the openEHR
+  release publishes no wire for it) to name the register entry that
+  adjudicated that — an excuse that outlives the missing wire is a finding
+  too. `capability-depth` gives every capability a `min_cases` floor so one
+  token case can never certify it; floors only ever ratchet up.
+  `workload-coverage` requires every claimed capability the measured
+  hospital-simulation workload does not exercise to carry an adjudicated
+  exclusion, which the conformance certificate now prints with its reason in
+  place of the previous bare "NO — catalogue gap" cell. The certificate's
+  Profile Report also gains a **Realization** column saying whether a
+  capability was verified over released ITS-REST wire or over routes this
+  product serves of its own design (the latter can never gate an openEHR
+  profile tier).
+
+- **Conformance runner: the SMART on openEHR boundary is now executed, not
+  declared** (#538). Three behaviours that were previously carried as
+  statement-level claims are real conformance cases: the
+  `/.well-known/smart-configuration` discovery document (served from the
+  Platform base URL as `application/json`, advertising the required
+  `org.openehr.rest` service at an absolute base URL), the resource-scope
+  grammar that lets a granted scope reach exactly the operation it names, and
+  the 403 refusal of a request the granted scopes do not permit. Because SMART
+  is off by default, they run in their own **lane**:
+  `CONF_SMART_MODE=1 bash scripts/conformance.sh` boots the server with the
+  SMART resource-server posture enabled (`docker/sut-smart.yml`), drives the
+  SMART group, and writes to `docs/conformance/<sut>-smart/`; the default lane
+  is untouched and remains the published baseline. To exercise scopes at all
+  the runner now mints its own short-lived access tokens against a **committed
+  test issuer** (`tools/cnf-runner/party/smart/` — public test key material for
+  the harness, never usable for anything else), because a CDR validates tokens
+  and never issues them and the conformance stack runs no Authorization
+  Server. A conformance target that does not run the SMART role simply does not
+  declare the lane in its `ixit.json`, and these cases are recorded
+  not-applicable with that citation rather than failed.
+
+- **Conformance runner: two more wire behaviours are now measured, not
+  excused** (#539, #569). The bulk admin delete's subset selector is exercised
+  in the repeated `?ehr_id=a&ehr_id=b` form the openEHR path template asks
+  for, proving every named EHR is deleted rather than only the first; and the
+  rule that a server stamps its OWN configured system identifier into a
+  commit audit when the client supplies none is now checked against that
+  identifier, not merely against "some non-blank value". The identifier is a
+  deployment fact no openEHR operation exposes, so a conformance target
+  declares it in its `ixit.json` (`"system_id": "…"`); a target that declares
+  none has those cases recorded not-applicable with that citation instead of
+  being checked against a guess. Both behaviours were previously carried as
+  cited coverage gaps.
+
+- **Conformance coverage: calling a resource with the wrong HTTP method is
+  now measured** (#596). The openEHR REST specification says a method the
+  specification recognizes but the addressed resource does not serve should be
+  answered `405 Method Not Allowed`, and the HTTP standard it defers to
+  requires that answer to carry an `Allow` field listing the methods the
+  resource does support. The conformance suite now proves both on a real
+  resource — a `DELETE` to the EHR collection, which the specification serves
+  only under `POST` and `GET` — instead of recording the behaviour as an
+  untestable gap. The `Allow` check asserts that both specified methods are
+  listed while tolerating any order and any additional methods a server
+  chooses to support.
+
+- **Canonical XML: choose the openEHR schema namespace per request** (#196).
+  openEHR publishes its XML schemas in two lineages that differ only by the
+  namespace a document declares — `http://schemas.openehr.org/v1` (the stable
+  release) and `http://schemas.openehr.org/v2` (the newer, trial release). You
+  can now pick one with a `version` parameter on the XML media type:
+  `Accept: application/xml; version=2` returns the v2 namespace, and
+  `Content-Type: application/xml; version=2` declares a v2 request payload. A
+  v2 response is labelled `Content-Type: application/xml; version=2`. Nothing
+  changes for existing clients: omitting the parameter (or sending
+  `version=1`) serves the v1 namespace under a plain
+  `Content-Type: application/xml`, exactly as before, and request payloads in
+  either namespace have always been accepted. Asking for a namespace the
+  server does not serve is `406 Not Acceptable` on `Accept` and `415
+  Unsupported Media Type` on `Content-Type`. Operational-template XML
+  (`…/definition/template/adl1.4/{template_id}`) is always v1 and ignores the
+  parameter. The parameter is an EHRbase-rs extension — the openEHR REST
+  specification predates the two lineages and defines no way to select one.
+
+- **Conformance coverage: the ITEM_TAG routes are now measured** (#288). All
+  twenty-three released tag operations — the EHR-wide and demographic-wide
+  listings, the COMPOSITION and EHR_STATUS families, and the five demographic
+  party families — are enumerated by the conformance instrument for the first
+  time; they have no openEHR service-model interface, so they were previously
+  invisible to its coverage derivation. Thirty-two new cases turn the five tag
+  laws into executed wire assertions: tag identity is the (key, target_path)
+  pair, a container's tag collection and a version's tag collection are
+  disjoint on read, write and delete alike, `ITEM_TAG.target` is served as the
+  bare openEHR identifier, every typed tag route answers 404 for a uid of
+  another kind (within the EHR space, within the demographic space and across
+  the two), and the `openehr-item-tag` / `openehr-version-item-tag` request
+  headers on a commit land in their own separate collections. Tag support is
+  reported under a new **ItemTags** capability at the OPTIONS tier, matching
+  the specification's own statement that a server need not support ITEM_TAGs.
+
+- **Conformance coverage: the COMPOSITION, CONTRIBUTION and PARTY resources
+  are now exercised in canonical XML and in the Simplified Formats, not only
+  in canonical JSON** (#288). Eighteen new CNF cases drive
+  `Accept: application/xml` reads and `Content-Type: application/xml` commits
+  across composition create/update/latest/at-time/at-version, the
+  VERSIONED_COMPOSITION container, the composition and contribution existence
+  probes, and the whole PERSON create/update/read family, plus FLAT and
+  STRUCTURED reads of a composition at latest and at time and FLAT/STRUCTURED
+  composition updates. Each row asserts the negotiated response media type
+  the specification makes a MUST, and the XML commits are compared against the
+  canonical-JSON twin of the same resource, so a format-specific data loss
+  shows up as a failure rather than a silent difference. One branch stays
+  deliberately unexercised and is now recorded with its full derivation: the
+  openEHR release declares `application/xml` for the CONTRIBUTION *commit*
+  but publishes no XML form of the commit envelope, which is reported
+  upstream rather than invented locally.
+
+
+- **Served OpenAPI: complete documentation for the six Query operations**
+  (#482). The two ad-hoc and four stored AQL executions now document what
+  the wire actually does. Every `200` declares the weak RESULT_SET `ETag`
+  (an identifier of the result set — ours is a deterministic content digest,
+  since the released `ResultSet` schema carries no id field) and carries a
+  canonical RESULT_SET example: `columns[]` with the `#N` unaliased-column
+  convention, rows whose cells are JSON primitives *and* canonical
+  `_type`-tagged RM objects, and the optional `meta` (`_type`,
+  `_schema_version`, `_created` in extended ISO 8601, and `_executed_aql` =
+  the parameter-SUBSTITUTED text, with `q` keeping the query as submitted).
+  The parameters now carry the released semantics: the named-`$parameter`
+  binding law and its un-prefixed rule, the `ehr_id` duality (query
+  parameter or `openehr-ehr-id` header, deprecated MixedCase spelling
+  accepted, a conflict 400), `offset`'s default of 0 and `fetch`'s
+  implementation-defined default with the one released prohibition
+  (`fetch` cannot be combined with AQL `TOP`), the qualified-query-name
+  grammar including the reserved `aql`, and the version exact/prefix
+  matching law. Also declared: `415` on the three POSTs, request-body
+  examples, and the `Prefer`-scope reason no query response carries
+  `Location` or `Preference-Applied`. Where the released text is silent the
+  declarations say so explicitly — the reserved protocol keys that never
+  bind as AQL parameters, REST paging composing over AQL `LIMIT`/`OFFSET`,
+  the URL-vs-body precedence on the POSTs, and the `ehr_id`-scope 404.
+  Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the seven EHR ITEM_TAG
+  operations** (#475). The EHR-wide read, the two per-target reads, the two
+  collection replaces and the two key-scoped deletes now document what the
+  wire actually does. The dual-form `uid_based_id` is spelled out with the
+  released version/container sentence and the disjointness it implies (a tag
+  has exactly one `target`, so container tags and version tags are separate
+  collections and neither read sees the other). The `PUT` bodies are
+  described as what they are — a bare JSON array of UPDATE_ITEM_TAG (`key`
+  required, `value`/`target_path` optional, `target`/`owner_id`
+  server-assigned from the route and ignored if sent), with `[]` quoted as
+  the clear-all form, (`key`, `target_path`) as the identity, last-wins on a
+  duplicate pair, an empty `target_path` normalizing to absent, and the
+  200/204 `Prefer` split (204 by default, 200 carrying the full RESULTING
+  list, `return=identifier` resolving to minimal because an ITEM_TAG has no
+  uid). The deletes document their SET semantics (every tag under the key on
+  the addressed collection) and the released third 404 trigger that makes
+  them deliberately non-idempotent. Every operation now declares the target
+  guard's 404s (unknown, foreign-EHR, wrong-kind or missing-version target),
+  the JSON-only reality (406 for an XML `Accept`, 415 for an XML
+  `Content-Type` — no ITEM_TAG type exists in the canonical XML ITS), the
+  RM-invariant 422 family on the writes, the `ehr_tags_get` filter semantics
+  (AND-combined, exact, case-sensitive, scalar, unbounded), and real ITEM_TAG
+  examples including a VERSION-targeted tag. Also recorded: no tag route
+  serves `ETag`/`Last-Modified` or accepts `If-Match` — a tag has neither a
+  version nor a uid — and the released-text defects met on the way (the
+  aggregate read's COMPOSITION-typed response schema, the `_updated`
+  responses' copy-pasted "retrieved" wording, `tag_key` vs the `key` path
+  parameter, and the "(logically) deleted" wording on a non-versioned
+  resource). Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the three CONTRIBUTION
+  operations** (#464). The native change-set commit now declares the whole
+  `NewContribution` envelope — `versions[]` of UPDATE_VERSION
+  (`preceding_version_uid`, `signature`, `lifecycle_state`, `attestations`,
+  `data`, `commit_audit`) plus the change-set `audit`, the accepted `_type`
+  spellings (`UPDATE_AUDIT` / `AUDIT_DETAILS` / omitted), the server-set
+  `time_committed`, the honoured-if-unused client `uid`, and the
+  committer/`system_id` copy-down — with a canonical two-member example (a
+  COMPOSITION creation plus an EHR_STATUS modification) and the SPECITS-84
+  rule quoted: the envelope stays canonical JSON, only each
+  `versions[i].data` takes the FLAT/STRUCTURED form. Every branch is
+  documented: `201` with the weak `ETag` carrying the *contribution* uid (not
+  a version uid), `Location`, `Preference-Applied` and the `Prefer`-conditional
+  bodies (the representation lists the minted version OBJECT_REFs, the
+  identifier body the contribution uid, minimal an empty `201`); `400` with
+  the released first-version-of-a-MODIFICATION trigger; `404`; `406`; `409`
+  (client uid in use — released — plus the non-modifiable EHR, duplicate
+  singletons and an EHR_STATUS delete member, flagged as ours); `412` for a
+  stale member `preceding_version_uid`; `415`; and the full `422` family
+  (empty `versions`, out-of-group change types, data on a delete/attestation
+  member, missing data, template and RM-invariant failures). The by-uid `GET`
+  documents the plain-UUID `contribution_uid`, `Prefer: return=representation,
+  resolve_refs` (members resolved to full ORIGINAL_VERSIONs, which is also
+  what makes a simplified `Accept` meaningful), its `200` headers and
+  canonical example (members as OBJECT_REFs, full AUDIT_DETAILS with optional
+  `description`), and `400`/`404`/`406`. The contribution-list route is
+  prominently flagged as our own extension with no openEHR spec behind it,
+  and its `offset`/`fetch` clamping (0 / 20, capped at 100 — never a `400`)
+  and row shape are now described accurately. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the five DIRECTORY
+  operations** (#457). Every response now declares its headers (weak `ETag`,
+  `Last-Modified`, `Location`, `Preference-Applied`, item-tag echoes) and the
+  reads and writes carry canonical FOLDER examples (nested `folders`, `items`
+  as OBJECT_REFs); the writes document the `If-Match` precondition — carried
+  in the header because these routes have no version segment, so a stale
+  value is `412`, never `409` — plus `Prefer`, the `openehr-version` /
+  `openehr-audit-details` committal headers and the item-tag headers, and the
+  canonical-JSON/XML-only request bodies (a Simplified-Format `Content-Type`
+  is `415`, an unfulfillable simplified `Accept` `406`: a FOLDER is not
+  templated). The `version_at_time` and `path` query parameters are described
+  with the released sentence plus our register-documented resolution rules
+  (root-implicit, leading-slash tolerant, folders-only, first-match; a future
+  time serves the latest version, a time before the first commit is `404`),
+  and every branch the wire serves is documented — the deleted-directory
+  `204` on both reads, the `DELETE`'s `204` carrying the new deleted version's
+  identity, the `404`s (including an EHR with no directory), the `412`s with
+  the latest-uid `ETag`, `400`/`406`/`415`/`422`, and the `409`s that are our
+  own design (creating a directory when one already exists, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the eight COMPOSITION and
+  VERSIONED_COMPOSITION operations** (#450). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes) and a canonical example; the commits document the
+  `openehr-version` / `openehr-audit-details` / `openehr-template-id` request
+  headers and the four negotiable media types (canonical JSON/XML plus
+  `application/openehr.wt.flat+json` and
+  `application/openehr.wt.structured+json`); and every branch the wire
+  actually serves is described — the `GET`'s deleted-version `204` for all
+  addressing forms, the `DELETE` quartet (`204` carrying the NEW deleted
+  version's identity, `400` already-deleted, `404`, `409` not-latest with the
+  latest-uid `ETag`), `412`/`415`/`406`/`422`, and the `409`s that are our own
+  design (duplicate live persistent COMPOSITION per template, and a
+  non-modifiable EHR), each flagged as such. Document only — no wire change.
+
+- **Served OpenAPI: complete documentation for the seven EHR_STATUS and
+  VERSIONED_EHR_STATUS operations** (#443). Every response now declares its
+  headers (weak `ETag`, `Last-Modified`, `Location`, `Preference-Applied`,
+  item-tag echoes), canonical examples, and the 406/415 negotiation
+  branches; the EHR_STATUS update documents the `openehr-version` /
+  `openehr-audit-details` committal headers and the
+  `Prefer: return=identifier` response shape. Document only — no wire
+  change.
+
+- **`Last-Modified` on VERSIONED_OBJECT container and revision-history
+  reads** (#442). `GET …/versioned_ehr_status`,
+  `GET …/versioned_composition/{uid}`, and both `…/revision_history` reads
+  now carry `Last-Modified` derived from the newest held version's commit
+  instant, alongside the existing container-uid weak `ETag` (ITS-REST
+  overview *Requests and responses* §"ETag and Last-Modified": both headers
+  SHOULD accompany a VERSIONED_OBJECT response).
+
+
+- **`[server] system_id` — the deployment's own openEHR system identifier is
+  now configurable** (#424, `EHRBASE__SERVER__SYSTEM_ID`, default unchanged at
+  `ehrbase-rs.local`). The value is stamped into `EHR.system_id` at EHR
+  creation (RM *EHR Information Model* §EHR Identifier Allocation: the
+  identifier "that would normally be used for locally created EHRs"), into
+  `AUDIT_DETAILS.system_id` whenever the client supplies none through
+  `openehr-audit-details` (the REST API requires the server to "set it to its
+  own configured system identifier"), and into every minted
+  `OBJECT_VERSION_ID.creating_system_id`. Previously it was a hard-coded
+  constant that no configuration could change. Choose it before the first EHR
+  is created and keep it stable — the value is stored per EHR and per version,
+  so a later change affects only newly authored data and never rewrites
+  existing identifiers. It is distinct from `[server.identity]`, which is only
+  the `OPTIONS` manifest's display identity. An empty value, or one containing
+  the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
+
+### Removed
+
+- **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
+  System API defines exactly one location for the Options-and-Conformance
+  operation — the API base-path root (`OPTIONS {base_path}`, e.g.
+  `/ehrbase/rest/openehr/v1`); the extra bare-root mount was our own
+  duplication and answered identically. Clients probing `OPTIONS /` must use
+  the base path.
 
 ## [3.11.0] - 2026-07-26
 
