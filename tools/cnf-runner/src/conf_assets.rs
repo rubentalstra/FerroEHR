@@ -1329,6 +1329,13 @@ mod tests {
 
     #[test]
     fn the_chart_keeps_its_embedded_width_and_grows_only_downwards() {
+        // Geometry invariants over constants — compile-time (const items,
+        // declared before any statement): the canvas width is pinned and
+        // nothing draws past the right margin.
+        const _: () = assert!(BARS_W.to_bits() == 908.0f64.to_bits());
+        const _: () = assert!(COUNTS_X + 4.0 * SLOT_W <= BARS_W - MARGIN);
+        const _: () = assert!(BAR_X + BAR_MAX_W < COUNTS_X);
+
         let rows = chapter_counts(&results_with(&[(
             "I_EHR_COMPOSITION.create_composition-a",
             OutcomeStatus::Passed,
@@ -1346,10 +1353,6 @@ mod tests {
             "unexpected canvas: {}",
             svg.lines().next().unwrap_or_default()
         );
-        assert!((BARS_W - 908.0).abs() < f64::EPSILON);
-        // Nothing is drawn past the right margin.
-        assert!(COUNTS_X + 4.0 * SLOT_W <= BARS_W - MARGIN);
-        assert!(BAR_X + BAR_MAX_W < COUNTS_X);
     }
 
     #[test]

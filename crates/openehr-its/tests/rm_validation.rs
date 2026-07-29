@@ -860,7 +860,6 @@ fn corpus_elements_without_value_or_null_flavour_are_rejected() {
 
 /// Every ELEMENT in `value` carrying neither `value` nor `null_flavour`.
 fn value_less_elements(value: &Value) -> Vec<&Value> {
-    let mut out = Vec::new();
     fn walk<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
         match v {
             Value::Object(map) => {
@@ -883,6 +882,7 @@ fn value_less_elements(value: &Value) -> Vec<&Value> {
             _ => {}
         }
     }
+    let mut out = Vec::new();
     walk(value, &mut out);
     out
 }

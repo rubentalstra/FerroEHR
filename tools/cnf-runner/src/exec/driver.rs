@@ -2360,6 +2360,37 @@ impl HttpDriver<'_> {
             exchange.status
         ))
     }
+
+    /// Post-send bookkeeping shared state: the committed-payload trail for
+    /// the equivalent comparison, the last response body, and the System
+    /// OPTIONS manifest's `restapi_specs_version`, when served (released OAS
+    /// `system.openapi.yaml` `Options` — every member optional): observed as
+    /// an independent confirmation of the party's declared `its_rest`
+    /// version, never as the truth (see the field NOTE).
+    fn record_exchange_bookkeeping(
+        &mut self,
+        binding: &OperationBinding,
+        request_spec: &crate::model::binding::RequestSpec,
+        body: Option<&Value>,
+        exchange: &Exchange,
+    ) {
+        if matches!(request_spec.method, HttpMethod::Post | HttpMethod::Put)
+            && let Some(b) = body
+        {
+            self.committed.push(b.clone());
+        }
+        self.last_body.clone_from(&exchange.body);
+        if binding.sm_operation.interface() == "I_ITS_REST_SYSTEM"
+            && binding.sm_operation.operation() == "options"
+            && let Some(version) = exchange
+                .body
+                .as_ref()
+                .and_then(|b| b.get("restapi_specs_version"))
+                .and_then(Value::as_str)
+        {
+            self.observed_restapi_specs_version = Some(version.to_owned());
+        }
+    }
 }
 
 impl StepDriver for HttpDriver<'_> {
@@ -2469,28 +2500,7 @@ impl StepDriver for HttpDriver<'_> {
             Err(fault) => return Ok(StepObservation::transport(fault)),
         };
 
-        // Track committed payloads for the equivalent comparison.
-        if matches!(request_spec.method, HttpMethod::Post | HttpMethod::Put)
-            && let Some(b) = &body
-        {
-            self.committed.push(b.clone());
-        }
-        self.last_body.clone_from(&exchange.body);
-
-        // The System OPTIONS manifest's `restapi_specs_version`, when served
-        // (released OAS `system.openapi.yaml` `Options` — every member
-        // optional): observed as an independent confirmation of the party's
-        // declared its_rest version, never as the truth (see the field NOTE).
-        if binding.sm_operation.interface() == "I_ITS_REST_SYSTEM"
-            && binding.sm_operation.operation() == "options"
-            && let Some(version) = exchange
-                .body
-                .as_ref()
-                .and_then(|b| b.get("restapi_specs_version"))
-                .and_then(Value::as_str)
-        {
-            self.observed_restapi_specs_version = Some(version.to_owned());
-        }
+        self.record_exchange_bookkeeping(binding, request_spec, body.as_ref(), &exchange);
 
         // Classify (law c) and bind captures.
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
@@ -2793,7 +2803,7 @@ mod tests {
 
     /// The committed CNF SMART test issuer (`tools/cnf-runner/party/smart/`) —
     /// public test material by design, never production key material.
-    fn test_mint(roles: Vec<String>) -> crate::ixit::BearerMint {
+    fn test_mint(roles: &[String]) -> crate::ixit::BearerMint {
         let key_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("party/smart/cnf-smart-test.key.pem");
         serde_json::from_value(serde_json::json!({
@@ -2837,7 +2847,7 @@ mod tests {
     /// space-delimited (RFC 6749 §3.3), and the RBAC role claim.
     #[test]
     fn mint_signs_a_scope_carrying_rs256_token() {
-        let mint = test_mint(vec!["USER".to_owned()]);
+        let mint = test_mint(&["USER".to_owned()]);
         let token = mint_access_token(
             &mint,
             None,
@@ -2858,8 +2868,7 @@ mod tests {
     /// (master08 §Scopes ¶2), so the claim is present and empty.
     #[test]
     fn mint_emits_an_empty_scope_claim_for_a_scopeless_token() {
-        let token =
-            mint_access_token(&test_mint(vec!["USER".to_owned()]), None, None, &[]).unwrap();
+        let token = mint_access_token(&test_mint(&["USER".to_owned()]), None, None, &[]).unwrap();
         let claims = decode_against_committed_jwks(&token);
         assert_eq!(claims["scope"], Value::from(""));
     }
@@ -2919,8 +2928,7 @@ mod tests {
         );
         let merged = HttpDriver::merge_with_vars(&vars, &with);
         assert_eq!(
-            merged
-                .scalar(&CaptureName::parse("preceding_version_uid").unwrap()),
+            merged.scalar(&CaptureName::parse("preceding_version_uid").unwrap()),
             Some("vo::sys::2"),
             "the step's explicit with: value wins in its own scope"
         );
