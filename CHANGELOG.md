@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The ISO 8601 date/time/duration types implement their computational
+  functions** (BASE `foundation_types/master06-time_types.adoc`
+  §Computational Functions + the four `Iso8601_*` class definitions): the
+  DEFINITE `add`/`subtract`/`diff` on dates, times and date/times — a
+  duration reduced to exact seconds with the `Time_definitions`
+  `Average_days_in_year`/`Average_days_in_month` lengths — and the NOMINAL
+  `add_nominal`/`subtract_nominal`, which advance the calendar to the same
+  day-of-month and clamp it down where the target month is shorter (29 Feb
+  `++ P1Y` → 28 Feb, 31 Jan `++ P1M` → 28/29 Feb). Durations gain
+  `add`/`subtract`/`multiply`/`divide`/`negative`. Also added across the four
+  types: `as_string` (the value in extended format), `is_extended`,
+  `is_decimal_sign_comma` and `has_fractional_second`. Arithmetic on a
+  partial value, or a result outside the representable 0000–9999 year range,
+  is reported as no result rather than an invented one.
+
 - **openEHR path expressions support general comparison predicates** (BASE
   architecture overview §Paths and Locators, "Other Predicates"): path
   predicates of the form `[at0007 and time >= '2005-06-24T09:30:00']` or
