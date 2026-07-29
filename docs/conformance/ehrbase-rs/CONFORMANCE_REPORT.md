@@ -76,39 +76,39 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
+| Adl14ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
 | Adl14OptProvisioning | pass | 19 | 0 | 0 | 5 |
-| Adl2ArchetypeProvisioning | excused (unrealized on this technology profile) | 0 | 0 | 0 | 6 |
+| Adl2ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
 | Adl2OptProvisioning | pass | 23 | 0 | 0 | 6 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
-| EhrOperations | pass | 22 | 0 | 0 | 1 |
-| EhrStatus | pass | 45 | 0 | 0 | 1 |
-| CompositionOps | pass | 27 | 0 | 0 | 0 |
-| DirectoryOps | pass | 63 | 0 | 0 | 6 |
+| EhrOperations | pass | 21 | 0 | 0 | 2 |
+| EhrStatus | pass | 41 | 0 | 0 | 5 |
+| CompositionOps | pass | 27 | 0 | 0 | 2 |
+| DirectoryOps | pass | 61 | 0 | 0 | 8 |
 | ChangeSets | pass | 48 | 0 | 0 | 5 |
 | Versioning | pass | 59 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 121 | 0 | 0 | 0 |
-| PartyOperations | pass | 50 | 0 | 0 | 2 |
+| PartyOperations | pass | 48 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 15 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
 | AqlBasic | pass | 19 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 2 | 0 | 0 | 0 |
 | AqlTerminology | pass | 1 | 0 | 0 | 0 |
-| ActivityReport | excused (unrealized on this technology profile) | 0 | 0 | 0 | 8 |
+| ActivityReport | not evidenced | 0 | 0 | 0 | 8 |
 | PhysicalDeletion | pass | 9 | 0 | 0 | 2 |
-| EhrDumpLoad | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
+| EhrDumpLoad | not evidenced | 0 | 0 | 0 | 7 |
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
-| EhrArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
-| DemographicArchive | excused (unrealized on this technology profile) | 0 | 0 | 0 | 2 |
-| EhrExtract | excused (unrealized on this technology profile) | 0 | 0 | 0 | 10 |
-| Tds | excused (unrealized on this technology profile) | 0 | 0 | 0 | 4 |
+| EhrArchive | not evidenced | 0 | 0 | 0 | 2 |
+| DemographicArchive | not evidenced | 0 | 0 | 0 | 2 |
+| EhrExtract | not evidenced | 0 | 0 | 0 | 14 |
+| Tds | not evidenced | 0 | 0 | 0 | 9 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
 | DemographicApi | pass | 26 | 0 | 0 | 1 |
 | QueryApi | pass | 20 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
-| MessageApi | excused (unrealized on this technology profile) | 0 | 0 | 0 | 1 |
+| MessageApi | not evidenced | 0 | 0 | 0 | 1 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 32 | 0 | 0 | 0 |
 | Signing | pass | 10 | 0 | 0 | 2 |
@@ -155,7 +155,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 704 of 767 selected cases driven.
+Coverage: 695 of 788 selected cases driven.
 
 Not-executed verdicts (each cited):
 

@@ -10,8 +10,6 @@ text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sa
 .ev-failed { fill: #d55e00; }
 .ev-inconclusive { fill: #e69f00; }
 .ev-not-evidenced { fill: #cbc9c2; }
-.ev-unrealized { fill: #e8e6e0; }
-.ev-no-cases { fill: #f4f2ec; }
 .cell-required { stroke: #52514e; stroke-width: 1.2; }
 .cell-optional { stroke: #cbc9c2; stroke-width: 1; stroke-dasharray: 3 2; }
 .bar-passed { fill: #0072b2; }
@@ -31,8 +29,6 @@ text { fill: #c3c2b7; }
 .ev-failed { fill: #e5484d; }
 .ev-inconclusive { fill: #f5a623; }
 .ev-not-evidenced { fill: #4a4a47; }
-.ev-unrealized { fill: #3a3a38; }
-.ev-no-cases { fill: #2e2e2c; }
 .cell-required { stroke: #c3c2b7; }
 .cell-optional { stroke: #4a4a47; }
 .bar-passed { fill: #3987e5; }

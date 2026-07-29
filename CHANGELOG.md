@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The conformance verdict model no longer has excused capability states.**
+  The published reports and certificates previously carried two
+  non-verdict evidence tokens — `unrealized` (every case excused by a
+  register citation) and `no_cases` (a claim the catalogue named no case
+  for). Both are deleted: the catalogue gates now refuse those shapes before
+  any server is assessed, and every capability a party claims is reported as
+  exactly one of passed / failed / inconclusive / not-evidenced. A required
+  capability without passing evidence now fails its tier with no excuse arm,
+  for every assessed party alike; both committed records and the published
+  comparison were re-derived under the stricter model (no tier verdict
+  changed for either party).
+
 ### Added
 
 - **Conformance: the admin extension batteries now test what must be
@@ -33,7 +47,12 @@ workflow refuses a tag that has no matching section here.
   the corrupt-archive `5xx`, which needs bytes placed on the server's own file
   system) are recorded as explicit boundaries and covered by in-process tests
   instead of being silently absent.
-
+- **The documentation site renders mathematics.** Formulas on the
+  performance pages (the open-loop arrival schedule, the population-anchored
+  write-rate derivation) are now typeset with KaTeX, pre-rendered to static
+  HTML at build time — pages stay self-contained with no client-side script
+  and no CDN request; the KaTeX stylesheet and fonts are served by the site
+  itself.
 - **Conformance: ADL 1.4 archetype provisioning is now tested rather than
   excused.** openEHR's released REST API defines no ADL 1.4 archetype
   resource, so the capability used to be reported as "excused — unrealized on

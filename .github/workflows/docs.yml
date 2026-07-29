@@ -15,6 +15,7 @@ env:
   MDBOOK_VERSION: "0.5.4"
   MDBOOK_MERMAID_VERSION: "0.17.0"
   MDBOOK_TOC_VERSION: "0.15.4"
+  MDBOOK_KATEX_VERSION: "0.10.0"
   MDBOOK_LINT_VERSION: "0.14.4"
   LYCHEE_VERSION: "0.24.2"
   SWAGGER_UI_VERSION: "5.32.8"
@@ -36,7 +37,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: taiki-e/install-action@v2
         with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
       - name: OAS drift gate (docs copy == vendored ITS-REST)
         run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
@@ -88,7 +89,7 @@ jobs:
           fetch-depth: 0
       - uses: taiki-e/install-action@v2
         with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }}
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
       - name: Build frozen vX.Y.Z + push to docs-dist
         run: bash scripts/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
 
@@ -119,7 +120,7 @@ jobs:
         run: git fetch origin docs-dist && git worktree add docs-dist origin/docs-dist || true
       - uses: taiki-e/install-action@v2
         with:
-          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }}
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
       - uses: actions/configure-pages@v6
       - name: Assemble full _site (landing + api + dev + frozen versions + latest + sitemap)
         run: bash scripts/build-site.sh --full

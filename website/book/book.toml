@@ -20,6 +20,15 @@ enable = true
 [preprocessor.mermaid]
 command = "mdbook-mermaid"
 
+# Math is pre-rendered to static HTML at build time — no client-side JS, no
+# CDN (the site's zero-external-requests rule). no-css: the KaTeX stylesheet
+# is self-hosted (src/katex/, linked from theme/head.hbs) and must stay on
+# the same KaTeX release as the renderer — see src/katex/PROVENANCE.md.
+[preprocessor.katex]
+after = ["links"]
+output = "html"
+no-css = true
+
 [preprocessor.toc]
 command = "mdbook-toc"
 renderer = ["html"]

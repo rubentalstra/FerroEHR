@@ -26,7 +26,7 @@ The Realization column says what the row's cases were verified against: `release
 
 | Family | Capability | Required in profile | Realization | Result |
 | --- | --- | --- | --- | --- |
-| Platform | Adl14ArchetypeProvisioning | Y | released-wire | excused (unrealized on this technology profile) |
+| Platform | Adl14ArchetypeProvisioning | OPT | extension | not evidenced |
 | Platform | Adl14OptProvisioning | Y | released-wire | FAIL |
 | Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not evidenced |
 | Platform | Adl2OptProvisioning | OPT | released-wire | not evidenced |
@@ -45,23 +45,23 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | AqlBasic | Y | released-wire | FAIL |
 | Platform | AqlAdvanced | OPT | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
 | Platform | AqlTerminology | OPT | released-wire | not evidenced |
-| Platform | ActivityReport | OPT | released-wire | not evidenced |
-| Platform | PhysicalDeletion | OPT | released-wire | excused (unrealized on this technology profile) |
-| Platform | EhrDumpLoad | OPT | released-wire | not evidenced |
+| Platform | ActivityReport | OPT | extension | not evidenced |
+| Platform | PhysicalDeletion | OPT | released-wire | not evidenced |
+| Platform | EhrDumpLoad | OPT | extension | not evidenced |
 | Platform | BulkEhrLoad | OPT | released-wire | not evidenced |
-| Platform | EhrArchive | OPT | released-wire | not evidenced |
-| Platform | DemographicArchive | OPT | released-wire | not evidenced |
-| Platform | EhrExtract | OPT | released-wire | not evidenced |
-| Platform | Tds | OPT | released-wire | not evidenced |
+| Platform | EhrArchive | OPT | extension | not evidenced |
+| Platform | DemographicArchive | OPT | extension | not evidenced |
+| Platform | EhrExtract | OPT | extension | not evidenced |
+| Platform | Tds | OPT | extension | not evidenced |
 | Platform | DefinitionApi | Y | released-wire | FAIL |
 | Platform | EhrApi | Y | released-wire | FAIL |
 | Platform | DemographicApi | OPT | released-wire | not evidenced |
 | Platform | QueryApi | Y | released-wire | FAIL |
 | Platform | AdminApi | OPT | released-wire | not evidenced |
-| Platform | MessageApi | OPT | released-wire | not evidenced |
+| Platform | MessageApi | OPT | extension | not evidenced |
 | Platform | SystemApi | OPT | released-wire | not evidenced |
 | Platform | ItemTags | OPT | released-wire | not evidenced |
-| Platform | Signing | OPT | released-wire | excused (unrealized on this technology profile) |
+| Platform | Signing | OPT | released-wire | not evidenced |
 | Platform | SimplifiedFormats | OPT | released-wire | not evidenced |
 | Platform | SmartAppLaunch | OPT | released-wire | not evidenced |
 | Security | EhrDemographicSeparation | Y | released-wire | pass |
@@ -76,7 +76,7 @@ The exercised-capability set of the measured hospital-simulation workload agains
 
 | Capability | Claimed | Exercised by workload |
 | --- | --- | --- |
-| Adl14ArchetypeProvisioning | yes | no — adjudicated exclusion (AMB-170): no request exists for the load instrument to send: ITS-REST 1.1.0 defines no wire for this capability and this product serves no extension route for it either, so the hospital simulation has nothing to drive - the exclusion lapses the day the routes exist |
+| Adl14ArchetypeProvisioning | yes | no — adjudicated exclusion (AMB-170): definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold) |
 | Adl14OptProvisioning | yes | yes |
 | TemplateExamples | yes | NO — catalogue gap (UNADJUDICATED) |
 | QueryProvisioning | yes | yes |
