@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-07-30
+
 ### Added
 
 - **The ISO 8601 date/time/duration types implement their computational
@@ -3500,7 +3502,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.12.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.13.0...HEAD
+[3.13.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.12.0...v3.13.0
 [3.12.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.11.0...v3.12.0
 [3.11.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.10.0...v3.11.0
 [3.10.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.9.0...v3.10.0
