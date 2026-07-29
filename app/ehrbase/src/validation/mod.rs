@@ -59,11 +59,17 @@
 //!   unlisted archetype-rooted fillers under slotless attributes — follows the
 //!   AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
 //!   (`AM/docs/AOM2/master08-validation.adoc` §Phase 2, lines 96–101).
-//! - **NOTE — terminology binding resolution.** VTTBK/VTCBK
-//!   here check binding *keys* only; resolving ac-code value sets against the
-//!   live terminology service (`TerminologyService`) at ingestion is unwired,
-//!   to land with the `CONSTRAINT_REF` policy
-//!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology).
+//! - **Terminology binding resolution (wired, elsewhere).** VTTBK/VTCBK here
+//!   are *artefact*-side rules: they check that a binding's key is a defined
+//!   at-/ac-code (`AM/docs/AOM2/master08-validation.adoc` §Terminology). The
+//!   *data*-side consequence — an instance code must belong to the value set
+//!   the ac-code's `CONSTRAINT_REF` is bound to (BASE
+//!   `architecture_overview/master12-terminology.adoc` §"Binding Terminology
+//!   Value-sets to Archetypes") — cannot be decided from the artefact alone: it
+//!   needs the external terminology query server. It is resolved at commit by
+//!   `service::terminology::binding`, off the checks
+//!   `openehr_its::flat::validation::collect_constraint_binding_checks`
+//!   collects from the same walk as surface B.
 
 mod opt;
 mod structure;

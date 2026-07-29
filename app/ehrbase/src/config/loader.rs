@@ -303,6 +303,15 @@ fn resolve_secret_files(config: &mut EhrbaseConfig, errors: &mut Vec<ConfigError
         config.multimedia.secret_access_key_file.take(),
         errors,
     );
+    for (name, client) in &mut config.terminology.external.oauth2_clients {
+        let file = client.client_secret_file.take();
+        resolve_secret(
+            &format!("terminology.external.oauth2_clients.{name}.client_secret"),
+            &mut client.client_secret,
+            file,
+            errors,
+        );
+    }
 }
 
 /// Read `path`'s contents (trailing newline trimmed) into `target` as a

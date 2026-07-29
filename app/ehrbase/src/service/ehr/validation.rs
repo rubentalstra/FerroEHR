@@ -101,6 +101,8 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         let mut messages = openehr_its::flat::validation::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
+        let mut template_failures = 0;
+        let mut binding_failures = 0;
         if let Some(template_id) = composition
             .pointer("/archetype_details/template_id/value")
             .and_then(Value::as_str)
@@ -114,8 +116,21 @@ impl EhrbaseService {
             } else {
                 openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
             });
+            template_failures = messages.len() - rm_terminology_failures;
+            // Archetype constraint bindings (ac-code → external value set)
+            // resolve against the routed terminology servers. A no-op — and
+            // free of any remote call — unless `[terminology.external]` is
+            // configured (BASE `architecture_overview/master12-terminology.adoc`
+            // §"Binding Terminology Value-sets to Archetypes"). The relaxation
+            // for a `553|incomplete|` commit does not reach it: a code that IS
+            // present may not be wrong (RM common master06 §Incomplete
+            // Content). Counted as its own pass — a bound value set the
+            // terminology server rejects is a different operational signal
+            // from an archetype-shape violation.
+            let bindings = self.constraint_binding_violations(composition, &wt).await;
+            binding_failures = bindings.len();
+            messages.extend(bindings);
         }
-        let template_failures = messages.len() - rm_terminology_failures;
         if rm_terminology_failures > 0 {
             metrics::counter!(
                 crate::telemetry::prometheus::VALIDATION_FAILURES,
@@ -129,6 +144,13 @@ impl EhrbaseService {
                 "pass" => "template",
             )
             .increment(template_failures as u64);
+        }
+        if binding_failures > 0 {
+            metrics::counter!(
+                crate::telemetry::prometheus::VALIDATION_FAILURES,
+                "pass" => "constraint_binding",
+            )
+            .increment(binding_failures as u64);
         }
         if messages.is_empty() {
             return Ok(());

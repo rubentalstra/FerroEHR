@@ -184,6 +184,52 @@ pub fn validate_archetype_conformance_incomplete(
     v.out
 }
 
+/// One terminology-server question the template's archetype **constraint
+/// bindings** raise about a coded value in this instance.
+///
+/// A `CONSTRAINT_REF` bound to an external terminology query names a value set
+/// the instance's code must belong to (BASE
+/// `architecture_overview/master12-terminology.adoc` §"Binding Terminology
+/// Value-sets to Archetypes": the ac-code "is bound to queries to one or more
+/// external terminologies, whose result would be a … value set from that
+/// terminology"). The query lives in a "terminology query server", which this
+/// crate has no access to — so the walk collects the questions and a caller
+/// that owns a terminology service answers them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConstraintBindingCheck {
+    /// The archetype `aqlPath` of the constrained node (the path a resulting
+    /// violation is keyed by).
+    pub path: String,
+    /// The archetype constraint code (`ac0004`) the binding is keyed by.
+    pub ac_code: String,
+    /// The terminology the binding names (`SNOMED-CT`, `LOINC`, …) — the
+    /// routing key for choosing a terminology server.
+    pub binding_terminology: String,
+    /// The bound terminology-query URI identifying the admissible value set.
+    pub query_uri: String,
+    /// The instance code's own terminology id (`CODE_PHRASE.terminology_id`).
+    pub instance_terminology: String,
+    /// The instance code (`CODE_PHRASE.code_string`) whose membership is in
+    /// question.
+    pub instance_code: String,
+}
+
+/// Collect every [`ConstraintBindingCheck`] the template's constraint bindings
+/// raise for this instance, by the same archetype-conformance walk
+/// [`validate_archetype_conformance`] performs (so a check is raised only for a
+/// node the template actually matched). Pure: no violation is decided here —
+/// the caller resolves each query against its terminology service.
+#[must_use]
+pub fn collect_constraint_binding_checks(
+    composition: &Value,
+    wt: &WebTemplate,
+) -> Vec<ConstraintBindingCheck> {
+    let mut v = Validator::default();
+    v.collect_bindings = true;
+    v.walk(composition, &wt.tree);
+    v.bindings
+}
+
 /// Validate the `|other` open-value-set rules on a **FLAT input** map, before
 /// conversion to RM (ITS-REST `simplified_formats/master04-basic_concepts.adoc`
 /// §"Open Value-Sets and the `|other` Suffix"):
@@ -546,6 +592,14 @@ struct Validator {
     /// `PatternError`, `CodedValue`, `WrongType`) are still enforced — only the
     /// "not enough / absent" violations are suppressed.
     relax_lower_bounds: bool,
+    /// When set, the archetype-conformance walk records the terminology
+    /// questions the matched nodes' constraint bindings raise into
+    /// [`Self::bindings`] (see [`collect_constraint_binding_checks`]). Off for
+    /// the ordinary validation passes, which decide nothing about bindings.
+    collect_bindings: bool,
+    /// The collected constraint-binding checks (empty unless
+    /// [`Self::collect_bindings`]).
+    bindings: Vec<ConstraintBindingCheck>,
 }
 
 impl Validator {
@@ -838,6 +892,42 @@ impl Validator {
     /// Visit an instance node matched to a `WebTemplate` node: check type
     /// conformance, leaf domain constraints, then descend into the `WebTemplate`
     /// children and container cardinalities.
+    /// Record the terminology questions this matched node's constraint
+    /// bindings raise about the instance's coded value. The `CODE_PHRASE` is
+    /// read from the binding's `attr` (`defining_code` for a `DV_CODED_TEXT`);
+    /// an empty `attr` means the node itself IS the `CODE_PHRASE`. A node the
+    /// instance leaves uncoded raises no question — the binding constrains a
+    /// value that is not there.
+    fn collect_node_bindings(&mut self, instance: &Value, wt: &WebTemplateNode) {
+        for binding in &wt.constraint_bindings {
+            let code_phrase = if binding.attr.is_empty() {
+                Some(instance)
+            } else {
+                instance.get(&binding.attr)
+            };
+            let Some(cp) = code_phrase else { continue };
+            let Some(code) = cp.get("code_string").and_then(Value::as_str) else {
+                continue;
+            };
+            if code.is_empty() {
+                continue;
+            }
+            let instance_terminology = cp
+                .get("terminology_id")
+                .and_then(|t| t.get("value"))
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            self.bindings.push(ConstraintBindingCheck {
+                path: wt.aql_path.clone(),
+                ac_code: binding.ac_code.clone(),
+                binding_terminology: binding.terminology.clone(),
+                query_uri: binding.query_uri.clone(),
+                instance_terminology: instance_terminology.to_owned(),
+                instance_code: code.to_owned(),
+            });
+        }
+    }
+
     fn walk(&mut self, instance: &Value, wt: &WebTemplateNode) {
         if let Some(inst_type) = instance.get("_type").and_then(Value::as_str)
             && !subtype::conforms(inst_type, &wt.rm_type)
@@ -856,6 +946,10 @@ impl Validator {
 
         if !wt.inputs.is_empty() {
             leaf::check_inputs(self, instance, wt);
+        }
+
+        if self.collect_bindings && !wt.constraint_bindings.is_empty() {
+            self.collect_node_bindings(instance, wt);
         }
 
         // The archetype-conformance walk is driven by the node's pre-parsed

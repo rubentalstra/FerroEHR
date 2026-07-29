@@ -43,6 +43,7 @@ use crate::service::query::config::QueryConfig;
 use crate::service::query::plan_cache::PlanCache;
 use crate::service::subject_proxy::config::SubjectProxyFhir;
 use crate::service::terminology::fhir::FhirTerminologyProvider;
+use crate::service::terminology::router::TerminologyRouter;
 
 mod commit_env;
 
@@ -117,11 +118,16 @@ pub struct EhrbaseService {
     /// retrieval; `crate::system_log::store`). `None` = the local store is
     /// off; the binary wires it via [`Self::with_audit_store`].
     pub(crate) audit_store: Option<crate::system_log::store::AuditStore>,
-    /// The optional external terminology provider (FHIR R4), selected when a
-    /// deployment opts in ([`ExternalTerminologyConfig`]). Used by AQL
-    /// `TERMINOLOGY(…)` resolution; `None` keeps terminology on the
-    /// in-process `openehr-term` bundle only.
-    pub(crate) external_terminology: Option<Arc<FhirTerminologyProvider>>,
+    /// The optional external terminology servers (FHIR R4) — **all** of the
+    /// configured providers plus the terminology → provider routing, built
+    /// when a deployment opts in
+    /// ([`ExternalTerminologyConfig`](crate::service::terminology::config::ExternalTerminologyConfig)).
+    /// Consulted by the SM `I_TERMINOLOGY_SERVICE` calls, composition
+    /// constraint-binding validation, and AQL `TERMINOLOGY(…)` resolution;
+    /// `None` keeps terminology on the in-process `openehr-term` bundle only.
+    /// Several servers serve different terminologies at once — BASE
+    /// `docs/architecture_overview/master12-terminology.adoc` §Overview.
+    pub(crate) terminology: Option<Arc<TerminologyRouter>>,
     /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
     /// governs media externalization — our own extension,
     /// [`crate::extensions::multimedia`]). `None` (default) = inline
@@ -181,7 +187,7 @@ impl EhrbaseService {
             signer: Arc::new(Signer::digest_default()),
             audit: None,
             audit_store: None,
-            external_terminology: None,
+            terminology: None,
             multimedia: None,
             subject_proxy_fhir: None,
             tenant_cache: tenant_cache(),
@@ -232,13 +238,48 @@ impl EhrbaseService {
         self
     }
 
-    /// Install an external FHIR R4 terminology provider (opt-in), used by AQL
-    /// `TERMINOLOGY(…)` resolution. Without it, terminology routes only to
-    /// the in-process `openehr-term` bundle.
+    /// Install the materialised terminology servers + their routing (opt-in).
+    /// Without it, terminology routes only to the in-process `openehr-term`
+    /// bundle.
     #[must_use]
-    pub fn with_external_terminology(mut self, provider: Arc<FhirTerminologyProvider>) -> Self {
-        self.external_terminology = Some(provider);
+    pub fn with_terminology_router(mut self, router: Arc<TerminologyRouter>) -> Self {
+        self.terminology = Some(router);
         self
+    }
+
+    /// Install a single external FHIR R4 terminology provider as the default
+    /// route — the one-server shorthand for
+    /// [`Self::with_terminology_router`].
+    #[must_use]
+    pub fn with_external_terminology(self, provider: Arc<FhirTerminologyProvider>) -> Self {
+        self.with_terminology_router(Arc::new(TerminologyRouter::single(provider)))
+    }
+
+    /// The terminology server `key` is explicitly routed to, or `None` (no
+    /// default fallback — [`TerminologyRouter::route`]). A caller with several
+    /// candidate keys chains this and ends with
+    /// [`Self::terminology_default_provider`].
+    pub(crate) fn terminology_route(&self, key: &str) -> Option<Arc<FhirTerminologyProvider>> {
+        self.terminology.as_deref().and_then(|r| r.route(key))
+    }
+
+    /// The terminology server answering an unrouted call, or `None` when no
+    /// external terminology is configured
+    /// ([`TerminologyRouter::default_provider`]).
+    pub(crate) fn terminology_default_provider(&self) -> Option<Arc<FhirTerminologyProvider>> {
+        self.terminology
+            .as_deref()
+            .and_then(TerminologyRouter::default_provider)
+    }
+
+    /// The terminology server serving `terminology` — its explicit route, else
+    /// the default provider.
+    pub(crate) fn terminology_provider(
+        &self,
+        terminology: &str,
+    ) -> Option<Arc<FhirTerminologyProvider>> {
+        self.terminology_route(terminology)
+            .or_else(|| self.terminology_default_provider())
     }
 
     /// Install the `DV_MULTIMEDIA` externalization engine (opt-in extension).
