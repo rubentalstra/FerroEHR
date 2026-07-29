@@ -36,6 +36,12 @@
 # on every `up`. Optional dependencies are opt-in:
 #   --profile keycloak        OAuth2/OIDC provider (the app defaults to Basic)
 #   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
+#   --profile terminology     a real FHIR R4 terminology server + its seed step
+#                             (external terminology is off by default). The
+#                             profile only STARTS the server; pointing the CDR
+#                             at it is the docker/sut-terminology.yml overlay:
+#                               docker compose --profile terminology \
+#                                 -f docker-compose.yml -f docker/sut-terminology.yml up
 # The observability stack stays a documented overlay
 # (docker-compose.observability.yml) because it must MUTATE the ehrbase service's
 # env (OTEL endpoint, internal management port) — a change profiles cannot express
@@ -231,6 +237,73 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+
+  # A real FHIR R4 terminology server (HAPI FHIR JPA), behind the
+  # `terminology` profile. openEHR models the resolver of an archetype
+  # constraint binding as an external "terminology query server" (BASE
+  # docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
+  # Value-sets to Archetypes": the archetype "simply hold[s] an identifier for
+  # a query; the query itself is defined within a 'terminology query server'"),
+  # and §Overview names the ecosystem — LOINC, ICDx, ICPC, SNOMED CT "and the
+  # many other terminologies and vocabularies used in healthcare" — so a
+  # deployment binds to SEVERAL at once. This service is that server for the
+  # conformance record and for local experimentation; the CDR reaches it
+  # through the `[terminology.external]` providers in docker/ehrbase.dev.toml,
+  # which stay DISABLED until an overlay enables them.
+  #
+  # The seeded content is SYNTHETIC (docker/terminology/seed/): two code
+  # systems shaped like SNOMED CT and LOINC, under the reserved example.test
+  # domain. No licensed terminology content is distributed with this repo.
+  terminology:
+    profiles: [terminology]
+    # Digest-pinned hapiproject/hapi:v8.10.0-3 (current release), resolved
+    # 2026-07-29; no `:latest` (docs.docker.com/build/building/best-practices).
+    image: hapiproject/hapi:v8.10.0-3@sha256:55213612779ab3eeec919226b7bad378f0061ade823393a61d7dd46dd5087a3d
+    environment:
+      hapi.fhir.fhir_version: R4
+      # The stock image ships with Hibernate Search DISABLED, and without it
+      # `ValueSet/$expand` and `CodeSystem/$subsumes` answer 500
+      # (HSEARCH800001: Hibernate Search was not initialized). Enabling it
+      # naively then crash-loops on HSEARCH000353 (Unknown analyzer) unless
+      # HAPI's own Lucene analysis configurer is named, so the whole block
+      # below travels together — it is the minimum working terminology
+      # configuration of this image.
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_ENABLED: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_TYPE: lucene
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_ANALYSIS_CONFIGURER: ca.uhn.fhir.jpa.search.HapiHSearchAnalysisConfigurers$$HapiLuceneAnalysisConfigurer
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_TYPE: local-filesystem
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
+    ports:
+      - "${EHRBASE_TERMINOLOGY_PORT:-8090}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "${EHRBASE_TERMINOLOGY_CPUS:-2}"
+          memory: ${EHRBASE_TERMINOLOGY_MEM:-2G}
+    # No healthcheck: the image carries no in-container HTTP client (no
+    # curl/wget), so readiness is polled EXTERNALLY by the seeder below, which
+    # is also the gate every dependant waits on.
+
+  # One-shot seeding of the terminology server through its OWN FHIR API — the
+  # CDR is never the writer of terminology content. Idempotent (`PUT
+  # /<type>/<id>`, the FHIR "update as create" interaction), and it verifies
+  # `$validate-code` + `$expand` before exiting so a misconfigured server fails
+  # here instead of inside a conformance run.
+  terminology-seed:
+    profiles: [terminology]
+    # Digest-pinned curlimages/curl:8.19.0, resolved 2026-07-29.
+    image: curlimages/curl:8.19.0@sha256:c03110c736db81bbe1be0296f1f1608c81b954b01626bdfb0a8f84e5bd00ff3c
+    depends_on:
+      terminology:
+        condition: service_started
+    environment:
+      FHIR_BASE: http://terminology:8080/fhir
+    entrypoint: ["/bin/sh", "/seed.sh"]
+    volumes:
+      - ./docker/terminology/seed.sh:/seed.sh:ro
+      - ./docker/terminology/seed:/seed:ro
+    restart: "no"
 
   # Keycloak for OAuth2/OIDC bearer auth (the "ehrbase" realm is imported from
   # docker/keycloak/import), behind the `keycloak` profile. The app defaults to

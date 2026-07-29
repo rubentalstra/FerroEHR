@@ -77,7 +77,18 @@ STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 # record covers the whole claimed surface (SMART cases included) in one run.
 # The ixit's principals mint scoped Bearer tokens; the scope-governed
 # families are exercised exactly as a SMART Application would reach them.
-EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-smart.yml")
+# The `terminology` profile is part of that posture too: openEHR resolves an
+# archetype constraint binding in an external "terminology query server" (BASE
+# docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
+# Value-sets to Archetypes"), so the ONE committed record only covers the
+# terminology-routed surface — AQL TERMINOLOGY() and commit-time binding
+# validation — when a real FHIR R4 server is composed and seeded beside the
+# CDR. docker/sut-terminology.yml points the CDR at it in the fail-OPEN
+# posture; the ixit declares the resulting servers/namespaces/posture.
+EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf --profile terminology \
+  -f "$REPO_ROOT/docker-compose.yml" \
+  -f "$REPO_ROOT/docker/sut-smart.yml" \
+  -f "$REPO_ROOT/docker/sut-terminology.yml")
 # BOTH claimed version-signing modes are exercised in the ONE record: a SECOND
 # deployment of the SAME image runs the openPGP posture in its own compose
 # project on remapped host ports (docker/sut-pgp-parallel.yml), and the ixit
@@ -86,10 +97,19 @@ EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compo
 # RM common master06 §Digital Signature defines digest and openPGP as
 # alternative depths of ONE mechanism and a deployment realizes exactly one —
 # so testing both claims means running both deployments, never merging two runs.
+# That second deployment ALSO carries the second terminology posture: a
+# running server realizes exactly one `fail_on_error` branch, and no released
+# openEHR text decides between accepting and refusing a composition whose bound
+# value set cannot be resolved (register AMB-172), so both claimed branches are
+# tested by running both deployments — the same law the two signing modes
+# follow. Postures are independent properties of a deployment, so this project
+# carries the pgp signing posture AND the fail-closed terminology posture, and
+# the ixit declares both on its `sut_pgp` instance.
 EHRBASE_RS_PGP_COMPOSE=(docker compose -p ehrbase-rs-cnf-pgp \
   -f "$REPO_ROOT/docker-compose.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-signing-pgp.yml" \
+  -f "$REPO_ROOT/docker/sut-terminology-failclosed.yml" \
   -f "$REPO_ROOT/docker/sut-pgp-parallel.yml")
 
 

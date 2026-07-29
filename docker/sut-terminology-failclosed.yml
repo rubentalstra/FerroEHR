@@ -1,0 +1,41 @@
+# CNF external-terminology lane (compose OVERLAY) — the fail-CLOSED posture.
+#
+# `[terminology.external] fail_on_error` decides what a deployment does with a
+# bound value set it cannot resolve: accept the composition (fail-open, the
+# shipped default) or refuse it. A running server realizes exactly ONE of the
+# two, and no released openEHR text decides between them — BASE
+# docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
+# Value-sets to Archetypes" puts the query in an external "terminology query
+# server" and never says what follows when that server cannot answer (register
+# AMB-172). Testing both claimed branches therefore means running both
+# deployments, exactly as the two version-signing modes do (RM common master06
+# §Digital Signature; docker/sut-signing-pgp.yml).
+#
+# This overlay is the fail-closed half. The pipeline stacks it on the SECOND
+# deployment the ehrbase-rs run already composes — the parallel openPGP-signing
+# project (`-p ehrbase-rs-cnf-pgp`, host port 8081) — so the two terminology
+# branches cost no third server. A deployment carries independent postures;
+# the ixit declares them independently too, as that instance's own `signing`
+# and `terminology` blocks.
+#
+# EVERY PROVIDER IS UNREACHABLE HERE, and deliberately so. This project runs
+# without the `terminology` profile, so no terminology server exists on its
+# network; pointing the two seeded providers at the same nothing-answers
+# address as the third makes the declaration honest — the ixit's `sut_pgp`
+# instance declares all three servers `reachable: false`, and the only
+# terminology behaviour this deployment can evidence is the unresolvable
+# branch it exists to prove.
+services:
+  ehrbase:
+    environment:
+      EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED: "true"
+      EHRBASE__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR: "true"
+      # RFC 2606 §2 reserves `.invalid` precisely so a name is guaranteed not
+      # to resolve — the connect fails the way a terminology-server outage
+      # does, on every attempt, for the whole run.
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__URL: "http://terminology-unreachable.invalid:8080/fhir"
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__CONNECT_TIMEOUT_MS: "500"
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__REQUEST_TIMEOUT_MS: "1000"
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__URL: "http://terminology-unreachable.invalid:8080/fhir"
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__CONNECT_TIMEOUT_MS: "500"
+      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__REQUEST_TIMEOUT_MS: "1000"

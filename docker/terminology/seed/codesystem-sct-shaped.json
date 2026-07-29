@@ -1,0 +1,33 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "cnf-sct-shaped",
+  "url": "http://cnf.example.test/fhir/CodeSystem/sct-shaped",
+  "version": "1.0.0",
+  "name": "CnfSnomedShapedTestCodeSystem",
+  "title": "CNF test code system, SNOMED-CT-shaped (synthetic)",
+  "status": "active",
+  "experimental": true,
+  "publisher": "ehrbase-rs CNF conformance corpus",
+  "description": "SYNTHETIC test content. A hierarchical, numerically-coded code system SHAPED like SNOMED CT so the conformance battery can exercise is-a subsumption and value-set membership against a real FHIR R4 terminology server. It contains no SNOMED CT content and is not derived from any licensed terminology: every code and display is invented for this test corpus and lives under the reserved example.test domain (IETF RFC 6761 §6.2).",
+  "caseSensitive": true,
+  "hierarchyMeaning": "is-a",
+  "compositional": false,
+  "versionNeeded": false,
+  "content": "complete",
+  "concept": [
+    {
+      "code": "1000001",
+      "display": "Test disorder (CNF)",
+      "concept": [
+        {
+          "code": "1000002",
+          "display": "Test hypertensive disorder (CNF)"
+        }
+      ]
+    },
+    {
+      "code": "1000003",
+      "display": "Test metabolic disorder (CNF)"
+    }
+  ]
+}

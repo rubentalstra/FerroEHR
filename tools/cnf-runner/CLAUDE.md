@@ -109,7 +109,22 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   Bearer tokens (per-instance standing grants; a step-level `scopes:`
   overrides for the boundary cases), and the ONE committed record covers the
   whole claimed surface in one run — no focused lanes, no sidecar artifact
-  directories.
+  directories. TERMINOLOGY follows the identical law: `ixit.terminology`
+  declares the terminology query servers a deployment is wired to
+  (`servers: [{name, reachable, namespaces}]`) plus the unresolvable-value-set
+  `posture` (`fail_open` | `fail_closed`), because released ITS-REST surfaces
+  NO terminology resource at all (the nine `I_TERMINOLOGY_SERVICE` off_wire
+  rows) while BASE `architecture_overview/master12-terminology.adoc`
+  §"Binding Terminology Value-sets to Archetypes" puts the bound value set in
+  a server outside the CDR. A case states what it needs in
+  `requires.terminology` (`served` / `unreachable` namespaces, `posture`,
+  `distinct_servers` for the N>=2 simultaneity proof) and `run.rs` selects on
+  it at SELECTION time; the block is per-instance-first with the top-level one
+  as the party default, exactly like `signing`, so the two claimed postures
+  ride the two composed deployments and land in the ONE record. The
+  terminology-server-DOWN branch is a DECLARED `reachable: false` server wired
+  to an address nothing answers on for the whole run — never a mid-run stop or
+  reconfiguration.
 - **A claimed capability is tested, and a posture the product claims BOTH
   branches of is tested in both — in the ONE record** (owner ruling
   2026-07-28). Version signing is the live case: RM common master06 §Digital
