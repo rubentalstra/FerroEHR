@@ -26,9 +26,9 @@ The Realization column says what the row's cases were verified against: `release
 
 | Family | Capability | Required in profile | Realization | Result |
 | --- | --- | --- | --- | --- |
-| Platform | Adl14ArchetypeProvisioning | OPT | extension | not evidenced |
+| Platform | Adl14ArchetypeProvisioning | OPT | extension | pass |
 | Platform | Adl14OptProvisioning | Y | released-wire | pass |
-| Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not evidenced |
+| Platform | Adl2ArchetypeProvisioning | OPT | released-wire | pass |
 | Platform | Adl2OptProvisioning | OPT | released-wire | pass |
 | Platform | TemplateExamples | OPT | released-wire | pass |
 | Platform | QueryProvisioning | Y | released-wire | pass |
@@ -38,27 +38,27 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | DirectoryOps | Y | released-wire | pass |
 | Platform | ChangeSets | Y | released-wire | pass |
 | Platform | Versioning | Y | released-wire | pass |
-| Platform | ArchetypeValidation | Y | released-wire | pass |
+| Platform | ArchetypeValidation | Y | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
 | Platform | PartyOperations | OPT | released-wire | pass |
 | Platform | PartyRelationshipOperations | OPT | extension | pass |
 | Platform | DemographicArchetypeValidation | OPT | released-wire | pass |
 | Platform | AqlBasic | Y | released-wire | pass |
 | Platform | AqlAdvanced | OPT | released-wire | pass |
 | Platform | AqlTerminology | OPT | released-wire | pass |
-| Platform | ActivityReport | OPT | extension | not evidenced |
+| Platform | ActivityReport | OPT | extension | pass |
 | Platform | PhysicalDeletion | OPT | released-wire | pass |
-| Platform | EhrDumpLoad | OPT | extension | not evidenced |
+| Platform | EhrDumpLoad | OPT | extension | pass |
 | Platform | BulkEhrLoad | OPT | released-wire | pass |
-| Platform | EhrArchive | OPT | extension | not evidenced |
-| Platform | DemographicArchive | OPT | extension | not evidenced |
-| Platform | EhrExtract | OPT | extension | not evidenced |
-| Platform | Tds | OPT | extension | not evidenced |
+| Platform | EhrArchive | OPT | extension | pass |
+| Platform | DemographicArchive | OPT | extension | pass |
+| Platform | EhrExtract | OPT | extension | pass |
+| Platform | Tds | OPT | extension | pass |
 | Platform | DefinitionApi | Y | released-wire | pass |
 | Platform | EhrApi | Y | released-wire | pass |
 | Platform | DemographicApi | OPT | released-wire | pass |
 | Platform | QueryApi | Y | released-wire | pass |
 | Platform | AdminApi | OPT | released-wire | pass |
-| Platform | MessageApi | OPT | extension | not evidenced |
+| Platform | MessageApi | OPT | extension | pass |
 | Platform | SystemApi | OPT | released-wire | pass |
 | Platform | ItemTags | OPT | released-wire | pass |
 | Platform | Signing | OPT | released-wire | pass |
