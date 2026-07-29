@@ -20,13 +20,13 @@
 | | ehrbase-rs | upstream (Java) |
 |---|---|---|
 | Product | ehrbase-rs 3.11.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-28 | 2026-07-28 |
+| Run date | 2026-07-29 | 2026-07-28 |
 | Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (767 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (845 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ehrbase-rs** (run of 2026-07-28) vs **upstream EHRbase
+Runs compared: **ehrbase-rs** (run of 2026-07-29) vs **upstream EHRbase
 2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -68,7 +68,7 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ehrbase-rs** | 788 | 695 | 695 | 0 | 0 |
+| **ehrbase-rs** | 845 | 808 | 808 | 0 | 0 |
 | **upstream (Java)** | 499 | 459 | 136 | 132 | 191 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
@@ -92,10 +92,10 @@ party's ICS).
 
 | Capability | ehrbase-rs | upstream (Java) |
 |---|---|---|
-| ActivityReport | not_evidenced | not_evidenced |
-| Adl14ArchetypeProvisioning | not_evidenced | not_evidenced |
+| ActivityReport | passed | not_evidenced |
+| Adl14ArchetypeProvisioning | passed | not_evidenced |
 | Adl14OptProvisioning | passed | failed |
-| Adl2ArchetypeProvisioning | not_evidenced | not_evidenced |
+| Adl2ArchetypeProvisioning | passed | not_evidenced |
 | Adl2OptProvisioning | passed | not_evidenced |
 | AdminApi | passed | not_evidenced |
 | AnonymousEhrs | passed | not_evidenced |
@@ -112,17 +112,17 @@ party's ICS).
 | DefinitionApi | passed | failed |
 | DemographicApi | passed | not_evidenced |
 | DemographicArchetypeValidation | passed | not_evidenced |
-| DemographicArchive | not_evidenced | not_evidenced |
+| DemographicArchive | passed | not_evidenced |
 | DirectoryOps | passed | failed |
 | EhrApi | passed | failed |
-| EhrArchive | not_evidenced | not_evidenced |
+| EhrArchive | passed | not_evidenced |
 | EhrDemographicSeparation | passed | passed |
-| EhrDumpLoad | not_evidenced | not_evidenced |
-| EhrExtract | not_evidenced | not_evidenced |
+| EhrDumpLoad | passed | not_evidenced |
+| EhrExtract | passed | not_evidenced |
 | EhrOperations | passed | failed |
 | EhrStatus | passed | failed |
 | ItemTags | passed | not_evidenced |
-| MessageApi | not_evidenced | not_evidenced |
+| MessageApi | passed | not_evidenced |
 | PartyOperations | passed | not_evidenced |
 | PartyRelationshipOperations | passed | not_evidenced |
 | PhysicalDeletion | passed | not_evidenced |
@@ -132,7 +132,7 @@ party's ICS).
 | SimplifiedFormats | passed | not_evidenced |
 | SmartAppLaunch | passed | not_evidenced |
 | SystemApi | passed | not_evidenced |
-| Tds | not_evidenced | not_evidenced |
+| Tds | passed | not_evidenced |
 | TemplateExamples | passed | not_evidenced |
 | Versioning | passed | failed |
 
@@ -274,7 +274,7 @@ party's ICS).
 | I_EHR_DIRECTORY.update_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
 | I_EHR_DIRECTORY.update_directory-invalid_folder | — | expected `validation_failed`, observed `precondition_missing` | passed |
 | I_EHR_DIRECTORY.update_directory-stale_if_match | — | header ETag: expected the latest version uid, got none | passed |
-| I_EHR_DIRECTORY.update_directory-xml | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_DIRECTORY.update_directory-xml | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_EHR_SERVICE.create_ehr-bulk_load_population | — | expected `created`, observed `validation_failed` | passed |
 | I_EHR_SERVICE.create_ehr-committal_headers | — | commit_audit/description/value: path resolves to nothing | passed |
 | I_EHR_SERVICE.create_ehr-invalid_status | — | expected `validation_failed`, observed `created` | passed |
@@ -298,12 +298,12 @@ party's ICS).
 | I_EHR_STATUS.set_ehr_modifiable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_STATUS.set_ehr_modifiable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_EHR_STATUS.set_ehr_queryable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_STATUS.set_ehr_queryable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions | canonical-json | expected `updated`, observed `precondition_missing` | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr | — | row count 100 != expected 1 | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope | — | expected `not_found`, observed `ok` | passed |
