@@ -81,7 +81,7 @@ outcome_kinds! {
     /// realizes both as one indistinguishable wire answer (the If-Match PUTs:
     /// a false-evaluating If-Match "MUST respond with HTTP status code `412
     /// Precondition Failed`" regardless of whether the named version ever
-    /// existed — overview Requests_and_responses.md §"If-Match and accidental
+    /// existed — overview `Requests_and_responses.md` §"If-Match and accidental
     /// overwrites"). Case cores speak SM outcomes, and the SM distinguishes
     /// the causes (an unknown version vs a stale one); the fold is a
     /// REALIZATION fact recorded on each binding, and the tie-break in
