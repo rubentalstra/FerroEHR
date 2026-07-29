@@ -228,6 +228,11 @@
       "type": "string",
       "minLength": 1
     },
+    "dump_location": {
+      "description": "A location on the SUT's OWN file system the admin dump/load operations may write an archive to and read one back from (SM i_admin_dump_load.adoc export_ehrs(file_sys_loc)/load_ehrs(file_sys_loc), whose only declared error is file_not_writable). Declared here because which paths a deployment can write is a property of its image and mounts that no operation discloses; absent => the cases reading ${ixit:dump_location} are not-applicable with that citation.",
+      "type": "string",
+      "minLength": 1
+    },
     "signing": {
       "description": "The party's DEFAULT version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode every instance runs unless it declares its own. digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",
       "type": "object",

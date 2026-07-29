@@ -391,12 +391,29 @@ impl<'a> Resolver<'a> {
                 let ms = vars.resolve_time(expr).map_err(ResolveError::Vars)?;
                 Ok(Value::String(format_instant_ms(ms)))
             }
-            ValueRef::Ixit(crate::refgrammar::IxitField::SystemId) => self
-                .ixit
-                .and_then(|ixit| ixit.system_id.clone())
-                .map(Value::String)
-                .ok_or(ResolveError::Ixit("system_id")),
+            ValueRef::Ixit(field) => self.ixit_fact(*field),
         }
+    }
+
+    /// Resolve one `${ixit:<field>}` deployment fact from the PARTY
+    /// declaration and nothing else: an undeclared fact is an error here, and
+    /// `crate::run` turns it into not-applicable-with-citation at selection
+    /// time, so it costs coverage rather than correctness.
+    ///
+    /// # Errors
+    /// [`ResolveError::Ixit`] naming the undeclared field.
+    fn ixit_fact(&self, field: crate::refgrammar::IxitField) -> Result<Value, ResolveError> {
+        let declared = match field {
+            crate::refgrammar::IxitField::SystemId => {
+                self.ixit.and_then(|ixit| ixit.system_id.clone())
+            }
+            crate::refgrammar::IxitField::DumpLocation => {
+                self.ixit.and_then(|ixit| ixit.dump_location.clone())
+            }
+        };
+        declared
+            .map(Value::String)
+            .ok_or(ResolveError::Ixit(field.token()))
     }
 
     /// Resolve a templated string: a single-reference template yields the

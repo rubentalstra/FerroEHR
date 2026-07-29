@@ -117,7 +117,10 @@ envelope is documented per construct; rejections are explicit typed errors.
 Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
 1.1.0 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
-API, the always-on public health family (`/health`, `/health/liveness`,
+API (plus the own-design activity-report, archive and dump/load routes under
+the same gate), the `/message` group realizing the SM Message component
+(EHR-Extract export/import + TDD import — the release publishes no such API),
+the always-on public health family (`/health`, `/health/liveness`,
 `/health/readiness`), `/rest/status`, the ops-introspection `/management/*`
 surface, item tags (the EhrScape surface was cut, not built). **Auth:** Basic +
 OAuth2/OIDC via `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; authorization is the

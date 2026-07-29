@@ -76,12 +76,16 @@ pub enum IxitField {
     /// The SUT's own configured system identifier
     /// (`crate::ixit::Ixit::system_id`).
     SystemId,
+    /// A writable location on the SUT's OWN file system that the admin
+    /// dump/load operations may use (`crate::ixit::Ixit::dump_location`).
+    DumpLocation,
 }
 
 impl IxitField {
     fn parse(s: &str) -> Option<Self> {
         match s {
             "system_id" => Some(Self::SystemId),
+            "dump_location" => Some(Self::DumpLocation),
             _ => None,
         }
     }
@@ -91,6 +95,7 @@ impl IxitField {
     pub fn token(self) -> &'static str {
         match self {
             Self::SystemId => "system_id",
+            Self::DumpLocation => "dump_location",
         }
     }
 }

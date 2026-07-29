@@ -72,6 +72,8 @@
                 "template_adl2_list",
                 "archetype_adl2_list",
                 "admin_contribution_report",
+                "ehr_extract_export",
+                "tdd_import",
                 "analytics_query",
                 "terminology_query",
                 "system_options",
