@@ -171,6 +171,27 @@ pub fn to_xml<T: ToXml + ?Sized>(
     w.into_string()
 }
 
+/// Serialize a value as an openEHR canonical-XML document whose ROOT element
+/// carries a statically-declared type — the `declared`-aware sibling of
+/// [`to_xml`], for a published global element whose XSD type is abstract.
+///
+/// The value emits `xsi:type` through the same polymorphic-dispatch mechanism
+/// every nested slot uses, i.e. iff its concrete type differs from `declared`.
+///
+/// # Errors
+/// Propagates serialization errors.
+pub fn to_xml_declared<T: ToXml + ?Sized>(
+    value: &T,
+    root_tag: &str,
+    declared: &str,
+    ns: Namespace,
+) -> Result<String, XmlError> {
+    let mut w = XmlWriter::new();
+    w.set_root_namespace(ns);
+    value.write_xml(&mut w, root_tag, Some(declared))?;
+    w.into_string()
+}
+
 /// A value that serializes to canonical openEHR XML.
 ///
 /// `write_xml` writes the complete `<tag …>…</tag>` element. `declared` is the

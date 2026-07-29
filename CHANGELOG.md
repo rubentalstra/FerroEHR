@@ -49,6 +49,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`POST /admin/dump` now serves the `openehr_canonical_xml` logical format,
+  which used to answer `501`.** Both openEHR export formats are available:
+  the default `openehr_canonical_json` keeps each version's content inline in
+  the archive's segment files, while `openehr_canonical_xml` writes each
+  version to its own `versions/<version_uid>.xml` entry — a complete
+  `ORIGINAL_VERSION` document under the openEHR-published `<version>` root,
+  readable by any tool that speaks canonical openEHR XML. The archive's own
+  bookkeeping (`manifest.json`, the segment files) stays JSON in both formats,
+  because openEHR publishes no XML document form for it. `POST /admin/load`
+  is unchanged for callers: it still takes only a location and now reads the
+  logical format out of the archive's manifest, exactly as it already detected
+  the container. Both formats round-trip in all three containers (loose,
+  `archive.zip`, `archive.7z`) and reproduce every record byte-for-byte. A
+  single unreadable `versions/*.xml` entry is reported against the one EHR it
+  belongs to and skipped, while the rest of the archive loads.
+
 - **The definition and messaging extension routes now document their refusal
   branches.** Every ADL 1.4 / ADL 2 archetype route, every `/message` route
   and every `PARTY_RELATIONSHIP` route declares `401` (no valid principal)
