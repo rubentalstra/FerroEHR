@@ -437,14 +437,111 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  # ── Console + e2e test binaries, prebuilt in parallel (issue #335) ─────────
+  # The second half of the compile-nothing-in-the-battery split: the host
+  # cargo-leptos build and the nextest test-binary compile were 8m32s of the
+  # measured battery step, all of it parallelizable with ui-e2e-binary. This
+  # job builds both and ships them as one artifact; the battery job then only
+  # composes, seeds, and drives the browser.
+  #
+  # Runs on the BARE runner (not a container) deliberately: the console binary
+  # executes on the battery job's host, and the e2e binaries bake
+  # env!("CARGO_MANIFEST_DIR") paths at compile time — both jobs being
+  # ubuntu-latest gives them the same glibc AND the same workspace path
+  # (/home/runner/work/<repo>/<repo>), so the baked paths resolve. Keep this
+  # job and ui-e2e on the same runner image always.
+  ui-e2e-console:
+    name: ui-e2e console + test binaries
+    needs: changes
+    if: needs.changes.outputs.admin_ui == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Cache 1 — the built outputs themselves, exact key, no restore-keys
+      # (the ui-e2e-binary pattern above): the key covers everything the
+      # console + its e2e binaries read. app/ehrbase, app/ehrbase-rest,
+      # app/ehrbase-server are deliberately absent — the console consumes the
+      # CDR strictly over ITS-REST and never links those crates, so a
+      # server-only PR reuses the console artifact.
+      - id: console-cache
+        uses: actions/cache@v6
+        with:
+          path: ui-e2e-console-stage
+          key: ui-e2e-console-1.96.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ehrbase-admin-ui/**') }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        if: steps.console-cache.outputs.cache-hit != 'true'
+        with:
+          target: wasm32-unknown-unknown
+          # Registry-only cache; sccache owns compilation caching (the same
+          # split, for the same lockfile-rotation reason, as the jobs above).
+          cache-targets: false
+      - uses: mozilla-actions/sccache-action@v0.0.10
+        if: steps.console-cache.outputs.cache-hit != 'true'
+      - uses: taiki-e/install-action@v2
+        if: steps.console-cache.outputs.cache-hit != 'true'
+        with:
+          # wasm-bindgen pinned to the workspace's wasm-bindgen version;
+          # cargo-leptos resolves its external tools from PATH before its
+          # own downloader (which failed opaque on a runner), so both it
+          # and Tailwind are preinstalled deterministically.
+          tool: cargo-nextest,cargo-leptos@0.3.7,wasm-bindgen@0.2.126
+      - name: Install the Tailwind v4 standalone binary
+        if: steps.console-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL -o /usr/local/bin/tailwindcss \
+            https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
+          chmod +x /usr/local/bin/tailwindcss
+          tailwindcss --help | head -1
+      - name: Build the console + archive the e2e test binaries
+        if: steps.console-cache.outputs.cache-hit != 'true'
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: sccache
+          # "Incrementally compiled crates cannot be cached"
+          # (github.com/mozilla/sccache#known-caveats).
+          CARGO_INCREMENTAL: "0"
+          LEPTOS_TAILWIND_VERSION: v4.3.3
+        run: |
+          set -euo pipefail
+          # ORDER IS LOAD-BEARING: the nextest archive step compiles the
+          # crate (tests + bin) under plain cargo, WITHOUT the LEPTOS_*
+          # compile-time env cargo-leptos sets — and leptos picks the served
+          # wasm FILENAME at compile time (leptos 0.8 hydration/mod.rs:
+          # `option_env!("LEPTOS_OUTPUT_NAME")` absent ⇒ it appends `_bg` to
+          # the preload path). An archive-after-leptos order clobbers the
+          # console binary with a `_bg.wasm`-referencing build while the site
+          # tree holds `<name>.wasm`, and every page 404s its wasm. Archive
+          # FIRST, cargo-leptos LAST, stage immediately.
+          cargo nextest archive -p ehrbase-admin-ui --features ssr \
+            --archive-file ui-e2e-tests.tar.zst
+          (cd app/ehrbase-admin-ui && cargo leptos build)
+          # One staging tree = one artifact = one cache path. The console
+          # binary's executable bit is restored by the battery job (GitHub
+          # artifacts do not preserve file permissions).
+          mkdir -p ui-e2e-console-stage/site
+          cp target/debug/ehrbase-admin-ui ui-e2e-console-stage/
+          cp ui-e2e-tests.tar.zst ui-e2e-console-stage/
+          cp -R target/site/. ui-e2e-console-stage/site/
+      - name: sccache statistics
+        if: always() && steps.console-cache.outputs.cache-hit != 'true'
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: ${SCCACHE_PATH} --show-stats
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ui-e2e-console
+          path: ui-e2e-console-stage
+          if-no-files-found: error
+          retention-days: 1
+
   # ── Admin-console E2E (merge gate for console-touching changes) ─────────────
   # Runs the full composed journey battery (scripts/ui-e2e.sh): postgres +
-  # ehrbase + Keycloak via compose, the console built by cargo-leptos on the
-  # host, chromedriver journeys with the browser-console gate. Screenshots
+  # ehrbase + Keycloak via compose, the console + e2e binaries prebuilt by the
+  # jobs above, chromedriver journeys with the browser-console gate. Screenshots
   # upload on success AND failure (human review — no pixel-diff assertions).
   ui-e2e:
     name: ui-e2e
-    needs: [changes, ui-e2e-binary]
+    needs: [changes, ui-e2e-binary, ui-e2e-console]
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
     # Least privilege, scoped to THIS job: the workflow declares no top-level
@@ -458,43 +555,18 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+      # NOTHING compiles in this job any more (issue #335): the server binary,
+      # the console, and the e2e test binaries all arrive as artifacts from
+      # the two parallel jobs above. The toolchain stays only because
+      # `cargo nextest run --archive-file` is a cargo subcommand; rust-cache
+      # keeps just the registry (nextest resolves no dependencies here, but
+      # setup-rust-toolchain's default cache would archive an empty target).
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: wasm32-unknown-unknown
-          # sccache (installed next) owns Rust compilation caching for this
-          # job, so rust-cache stops caching `target` and keeps only the cargo
-          # registry/bin cache (`cache-targets: false` — "If false, only the
-          # cargo registry will be cached", github.com/Swatinem/rust-cache).
-          # Why: rust-cache's key hashes every Cargo.lock/Cargo.toml, so any
-          # lockfile change rotates the whole target archive and the job pays a
-          # full cold build; sccache is keyed per compilation unit and degrades
-          # to partial hits instead. Keeping both would also have the two
-          # caches compete for the same 10 GB/repo Actions cache budget, whose
-          # least-recently-accessed eviction is the very pressure this job hit
-          # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
-          # — "the limit is 10 GB per repository" … "deleting the caches in
-          # order of last access date"). The registry cache stays: sccache does
-          # not cache crate *downloads*.
           cache-targets: false
-      # sccache with the GitHub Actions cache backend, installed BEFORE any
-      # cargo invocation so every later compile can reach it
-      # (github.com/mozilla-actions/sccache-action). RUSTC_WRAPPER +
-      # SCCACHE_GHA_ENABLED are set on the compiling step, not job-wide, so the
-      # tool-install step below cannot accidentally depend on the wrapper.
-      - uses: mozilla-actions/sccache-action@v0.0.10
       - uses: taiki-e/install-action@v2
         with:
-          # wasm-bindgen pinned to the workspace's wasm-bindgen version;
-          # cargo-leptos resolves its external tools from PATH before its
-          # own downloader (which failed opaque on a runner), so both it
-          # and Tailwind are preinstalled deterministically.
-          tool: cargo-nextest,cargo-leptos@0.3.7,wasm-bindgen@0.2.126
-      - name: Install the Tailwind v4 standalone binary
-        run: |
-          curl -sSfL -o /usr/local/bin/tailwindcss \
-            https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
-          chmod +x /usr/local/bin/tailwindcss
-          tailwindcss --help | head -1
+          tool: cargo-nextest
       # The CDR image is PACKAGED here, never compiled here (issue #335 — the
       # rationale is on the ui-e2e-binary job above). `runtime-prebuilt` is
       # COPY-only, so this is a seconds-long step with no layer-cache backend
@@ -512,6 +584,21 @@ jobs:
         with:
           name: ui-e2e-server-binary
           path: bin/amd64
+      # The prebuilt console + e2e binaries from the ui-e2e-console job. The
+      # artifact download strips the executable bit (GitHub artifacts do not
+      # preserve file permissions) — restored here for the console binary; the
+      # binaries inside the nextest archive keep theirs (tar preserves modes).
+      - uses: actions/download-artifact@v8
+        with:
+          name: ui-e2e-console
+          path: ui-e2e-console-stage
+      - name: Place the prebuilt console where the harness expects it
+        run: |
+          set -euo pipefail
+          mkdir -p target/debug target/site
+          install -m0755 ui-e2e-console-stage/ehrbase-admin-ui target/debug/ehrbase-admin-ui
+          cp -R ui-e2e-console-stage/site/. target/site/
+          test -f ui-e2e-console-stage/ui-e2e-tests.tar.zst
       - uses: docker/setup-buildx-action@v4
       - name: Package the app image (COPY-only, seconds)
         uses: docker/build-push-action@v7
@@ -524,34 +611,16 @@ jobs:
       - name: Build the postgres image (COPY-only, seconds)
         run: docker buildx build --load -t ehrbase-rs-postgres:ui-e2e docker/postgres
       - name: Run the E2E journey battery
-        # UI_E2E_NO_BUILD makes ui-e2e.sh `up --no-build` the pre-built images.
+        # UI_E2E_NO_BUILD makes ui-e2e.sh `up --no-build` the pre-built
+        # images; the two PREBUILT vars make it run the console + e2e
+        # binaries the ui-e2e-console job compiled — zero rustc here.
         env:
           UI_E2E_NO_BUILD: "1"
+          UI_E2E_PREBUILT_CONSOLE: "1"
+          UI_E2E_NEXTEST_ARCHIVE: ${{ github.workspace }}/ui-e2e-console-stage/ui-e2e-tests.tar.zst
           EHRBASE_IMAGE: ehrbase-rs:ui-e2e
           EHRBASE_POSTGRES_IMAGE: ehrbase-rs-postgres:ui-e2e
-          # The HOST Rust build lives inside this script (cargo-leptos for the
-          # console + cargo-nextest for the e2e binaries), so the sccache
-          # wrapper is set here — the two variables the action documents for
-          # Rust (github.com/mozilla-actions/sccache-action#rust).
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: sccache
-          # "Incrementally compiled crates cannot be cached. By default, in the
-          # debug profile Cargo will use incremental compilation" (the sccache
-          # README, github.com/mozilla/sccache#known-caveats) — and the debug
-          # profile is exactly what cargo-leptos and nextest build here. Set
-          # explicitly rather than relying on rust-cache also setting it.
-          CARGO_INCREMENTAL: "0"
         run: bash scripts/ui-e2e.sh
-      # Cache-hit visibility in the job log. `${SCCACHE_PATH}` is exported by
-      # the action; `--show-stats` "will print a summary of cache statistics"
-      # (github.com/mozilla/sccache). `always()` so a failed battery still
-      # reports whether the compile was warm.
-      - name: sccache statistics
-        if: always()
-        shell: bash
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-        run: ${SCCACHE_PATH} --show-stats
       - name: Upload journey screenshots
         if: always()
         uses: actions/upload-artifact@v7
