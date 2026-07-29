@@ -140,7 +140,7 @@ pub fn render_report(
                 .capabilities
                 .iter()
                 .find(|(n, _)| n == name)
-                .map_or(Evidence::NoCases, |(_, e)| *e);
+                .map_or(Evidence::NotEvidenced, |(_, e)| *e);
             let _ = writeln!(
                 out,
                 "| {} | {} | {} | {} | {} | {} |",
@@ -481,7 +481,7 @@ pub fn render_certificate(
             .capabilities
             .iter()
             .find(|(n, _)| n == name)
-            .map_or(Evidence::NoCases, |(_, e)| *e);
+            .map_or(Evidence::NotEvidenced, |(_, e)| *e);
         let _ = writeln!(
             out,
             "| {} | {} | {} | {} | {} |",
@@ -716,8 +716,6 @@ fn evidence_token(evidence: Evidence) -> &'static str {
         Evidence::Failed => "FAIL",
         Evidence::Inconclusive => "INCONCLUSIVE (errored rows — never green by absorption)",
         Evidence::NotEvidenced => "not evidenced",
-        Evidence::Unrealized => "excused (unrealized on this technology profile)",
-        Evidence::NoCases => "no cases",
     }
 }
 

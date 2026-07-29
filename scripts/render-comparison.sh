@@ -146,10 +146,12 @@ party's topology cannot establish.
 ## Capability-by-capability
 
 Evidence tokens from each party's computed verdicts: **passed** (every
-gating case green), **failed** (at least one gating case red), **unrealized**
-(every case excused by a register citation — e.g. AMB-41: ADL 1.4 archetype
-provisioning has no ITS-REST wire), **not_evidenced** (claimed, no gating
-case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
+gating case green), **failed** (at least one gating case red),
+**inconclusive** (a gating case neither passed nor failed cleanly),
+**not_evidenced** (claimed, but no gating case produced a verdict — there
+is no excused state: a required capability without passing evidence fails
+its tier, whichever party claims it), or **not claimed** (absent from that
+party's ICS).
 
 | Capability | ehrbase-rs | upstream (Java) |
 |---|---|---|

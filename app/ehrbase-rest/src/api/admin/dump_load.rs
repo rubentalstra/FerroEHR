@@ -201,8 +201,14 @@ pub(crate) async fn admin_dump(
                                       `application/json`.",
          body = serde_json::Value),
         (status = 500, description = "SM `file_not_writable` — the location \
-                                      holds no archive, or an entry could not \
-                                      be read.",
+                                      holds no archive container, an entry \
+                                      could not be read, or the manifest / a \
+                                      segment is CORRUPT (mangled or truncated, \
+                                      so it does not parse as part of this \
+                                      archive format). All three are the same \
+                                      fact — `file_sys_loc` does not hold a \
+                                      readable archive — and carry the one \
+                                      error `i_admin_dump_load.adoc` declares.",
          body = serde_json::Value)
     )
 )]

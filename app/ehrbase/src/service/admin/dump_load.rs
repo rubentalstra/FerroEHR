@@ -231,6 +231,27 @@ fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
     )
 }
 
+/// Build a `file_not_writable` [`SmError`] for an archive entry that was read
+/// but is not parseable as part of this archive format (a mangled manifest, a
+/// truncated or hand-edited segment).
+///
+/// NOTE (`i_admin_dump_load.adoc` declares `file_not_writable` as the ONE error
+/// of both operations; no openEHR spec defines the on-disk archive format —
+/// our own design/extension): a corrupt entry and an unreadable entry are the
+/// same fact from the operation's point of view — `file_sys_loc` does not hold
+/// a readable archive — so they carry the SAME SM error. Reporting a corrupt
+/// input as `exception` instead would blame the server for the caller's
+/// archive.
+fn unreadable_archive_entry(path: &Path, entry: &str, err: &serde_json::Error) -> SmError {
+    SmError::new(
+        CallStatusType::FileNotWritable,
+        format!(
+            "{}/{entry} is not readable as part of this export archive: {err}",
+            path.display()
+        ),
+    )
+}
+
 /// The archive manifest entry name (both containers).
 const MANIFEST_ENTRY: &str = "manifest.json";
 /// The packed container's file name inside `file_sys_loc`.
@@ -540,14 +561,17 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `file_not_writable` — `file_sys_loc` holds neither archive container,
-    ///   or the manifest, a segment entry, or a blob entry cannot be read.
+    ///   the manifest / a segment entry / a blob entry cannot be read, or the
+    ///   manifest or a segment is not parseable as part of this archive format
+    ///   (a mangled or truncated archive is the same fact as an unreadable
+    ///   one — see [`unreadable_archive_entry`]).
     /// - `precondition_violation` (`400`) — the archive carries externalized
     ///   multimedia blobs but this server has no multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
     ///   validity periods (a corrupted/hand-crafted archive; the record's
     ///   transaction is rolled back).
-    /// - `exception` — a malformed manifest/segment JSON, a database/codec
-    ///   fault while re-persisting, or a blob-store fault while importing.
+    /// - `exception` — a database/codec fault while re-persisting, or a
+    ///   blob-store fault while importing.
     pub async fn load_ehrs(
         &self,
         file_sys_loc: String,
@@ -557,8 +581,8 @@ impl EhrbaseService {
         // what the location holds (module docs).
         let mut archive = ArchiveReader::open(dir)?;
         let manifest_bytes = archive.read(MANIFEST_ENTRY)?;
-        let manifest: Manifest =
-            serde_json::from_slice(&manifest_bytes).map_err(ServiceError::from)?;
+        let manifest: Manifest = serde_json::from_slice(&manifest_bytes)
+            .map_err(|e| unreadable_archive_entry(dir, MANIFEST_ENTRY, &e))?;
 
         // Our own extension: re-populate the object store from the archive's
         // `blobs/` entries before loading versions that reference them.
@@ -567,8 +591,8 @@ impl EhrbaseService {
         let mut reports = Vec::new();
         for segment in &manifest.segments {
             let bytes = archive.read(segment)?;
-            let records: Vec<EhrRecord> =
-                serde_json::from_slice(&bytes).map_err(ServiceError::from)?;
+            let records: Vec<EhrRecord> = serde_json::from_slice(&bytes)
+                .map_err(|e| unreadable_archive_entry(dir, segment, &e))?;
             for record in records {
                 let ehr_id = record.ehr.id;
                 if self.ehr_row_exists(ehr_id).await? {
