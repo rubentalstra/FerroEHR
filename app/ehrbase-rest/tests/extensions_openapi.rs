@@ -59,6 +59,7 @@ const FAMILY_SLUGS: &[&str] = &[
     "management",
     "terminology",
     "relationships",
+    "messaging",
     "events",
     "tenancy",
     "fhir",

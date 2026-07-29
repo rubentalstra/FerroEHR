@@ -253,7 +253,126 @@ async fn the_archive_routes_refuse_unknown_malformed_and_shapeless_requests() {
     }
 }
 
-/// Every route of both extension groups inherits the ADMIN group's config
+// ── the dump/load pair (SM I_ADMIN_DUMP_LOAD) ────────────────────────────────
+
+/// A unique archive location for one test (the SM `file_sys_loc` parameter is
+/// a location on the SERVER's file system, which in-process is this one).
+fn archive_dir() -> String {
+    std::env::temp_dir()
+        .join(format!("ehrbase-cnf-dump-{}", uuid::Uuid::now_v7()))
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// `export_ehrs` writes the archive and answers `200` with the SM
+/// `List<DUMP_LOAD_FAIL_REPORT>` — EMPTY when every EHR was dumped. Requesting
+/// the `zip` `COMPRESSION_FORMAT` member packs the same archive into one
+/// container, and `load_ehrs` — which takes only `file_sys_loc` — reads either
+/// container back.
+#[tokio::test]
+async fn dump_and_load_round_trip_in_both_containers() {
+    for compression in [None, Some("zip")] {
+        let (_pg, app) = app(true).await;
+        let _ehr = create_ehr(&app).await;
+        let dir = archive_dir();
+
+        let mut spec = serde_json::json!({
+            "file_sys_loc": dir,
+            "logical_format": "openehr_canonical_json",
+            "segment_split_size": 1024
+        });
+        if let Some(member) = compression {
+            spec["compression_format"] = serde_json::Value::String(member.to_owned());
+        }
+        let (status, body) = send(&app, post_json("/admin/dump", &spec.to_string())).await;
+        assert_eq!(status, StatusCode::OK, "dump {compression:?}: {body}");
+        assert_eq!(body, "[]", "a clean dump reports no failures");
+
+        // Loading the archive back into the SAME repository is the SM's own
+        // documented duplicate case ("import EHRs with duplicate EHR ids will
+        // fail"): the call succeeds and reports the entity, never a fatal.
+        let (status, body) = send(
+            &app,
+            post_json("/admin/load", &format!(r#"{{"file_sys_loc":{dir:?}}}"#)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "load {compression:?}: {body}");
+        let reports: serde_json::Value = serde_json::from_str(&body).expect("report json");
+        let list = reports.as_array().expect("a JSON array");
+        assert_eq!(list.len(), 1, "the one duplicate EHR is reported: {body}");
+        assert_eq!(list[0]["entity_type"], "EHR");
+        assert_eq!(list[0]["dump_status"], false);
+        assert!(list[0]["error"].is_string(), "with an explanatory error");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+/// The request-shape refusals, each SM `precondition_violation` → `400`:
+/// an absent/blank `file_sys_loc`, a value naming no enumeration member, a
+/// non-integer `segment_split_size`, and `encoding` — whose `ENCODING_FORMAT`
+/// enumeration (`encoding_format.adoc`) declares NO members, so no value is
+/// representable.
+#[tokio::test]
+async fn dump_refuses_every_unrepresentable_request_shape() {
+    let (_pg, app) = app(true).await;
+    let dir = archive_dir();
+
+    for (label, body) in [
+        (
+            "no location",
+            serde_json::json!({ "segment_split_size": 1024 }),
+        ),
+        (
+            "blank location",
+            serde_json::json!({ "file_sys_loc": "   " }),
+        ),
+        (
+            "unknown logical format",
+            serde_json::json!({ "file_sys_loc": dir, "logical_format": "canonical_json" }),
+        ),
+        (
+            "unknown compression format",
+            serde_json::json!({ "file_sys_loc": dir, "compression_format": "gzip" }),
+        ),
+        (
+            "encoding (empty enumeration)",
+            serde_json::json!({ "file_sys_loc": dir, "encoding": "utf_8" }),
+        ),
+        (
+            "non-integer split size",
+            serde_json::json!({ "file_sys_loc": dir, "segment_split_size": "big" }),
+        ),
+        (
+            "non-positive split size",
+            serde_json::json!({ "file_sys_loc": dir, "segment_split_size": 0 }),
+        ),
+    ] {
+        let (status, response) = send(&app, post_json("/admin/dump", &body.to_string())).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{label}: {response}");
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A well-formed request for an enumeration member this service does not
+/// realize is `501 Not Implemented` (RFC 9110 §15.6.2) — never a `400`, which
+/// would call a valid SM value malformed.
+#[tokio::test]
+async fn dump_answers_unrealized_enumeration_members_with_not_implemented() {
+    let (_pg, app) = app(true).await;
+    let dir = archive_dir();
+
+    for member in [
+        serde_json::json!({ "file_sys_loc": dir, "logical_format": "openehr_canonical_xml" }),
+        serde_json::json!({ "file_sys_loc": dir, "compression_format": "7z" }),
+    ] {
+        let (status, body) = send(&app, post_json("/admin/dump", &member.to_string())).await;
+        assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{member}: {body}");
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Every route of all three extension groups inherits the ADMIN group's config
 /// gate: with `admin.enabled` off they answer `405` with an empty `Allow`,
 /// before the backend is touched.
 #[tokio::test]
@@ -264,5 +383,19 @@ async fn the_admin_gate_covers_the_extension_groups() {
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
 
     let (status, _) = send(&app, post_json("/admin/archive/ehrs", r#"{"ehr_ids":[]}"#)).await;
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+
+    let (status, _) = send(
+        &app,
+        post_json("/admin/dump", r#"{"file_sys_loc":"/tmp/never"}"#),
+    )
+    .await;
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+
+    let (status, _) = send(
+        &app,
+        post_json("/admin/load", r#"{"file_sys_loc":"/tmp/never"}"#),
+    )
+    .await;
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
 }

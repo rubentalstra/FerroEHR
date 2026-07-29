@@ -9,8 +9,18 @@
 //! on-disk archive format — the archive layout below is our own design
 //! (`0001_baseline.sql` is the source schema).
 //!
+//! NOTE (the archive CONTAINER — SM `compression_format.adoc` member `zip`):
+//! the entry set (`manifest.json`, `segment-NNNN.json`, `blobs/<hex>`) is
+//! identical whichever container carries it. `compression_format` absent ⇒ the
+//! entries are loose files under `file_sys_loc`; `zip` ⇒ the identical entries
+//! are DEFLATE members of a single `archive.zip` there. `load_ehrs` takes only
+//! `file_sys_loc` (`i_admin_dump_load.adoc`), so it never receives the
+//! container choice and DETECTS it instead: a `manifest.json` in the directory
+//! is the loose form, else an `archive.zip` is the packed one. No openEHR spec
+//! defines the archive layout or the detection rule — our own design/extension.
+//!
 //! Export walks the greenfield storage and writes a **canonical-JSON archive**
-//! to a file-system directory, split into segment files no larger than
+//! to a file-system directory, split into segment entries no larger than
 //! `segment_split_size` kb. Each EHR is one record carrying its `ehr` row, its
 //! audit/contribution provenance, and one entry per stored version whose `body`
 //! is the *reassembled canonical openEHR JSON* (the storage codec's lossless
@@ -45,7 +55,8 @@
 //! copies is the promoted `ehr` column projection (the subject + status-flag
 //! cache of the loaded `EHR_STATUS`), which is not content.
 
-use std::path::Path;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -54,7 +65,9 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
-use crate::service::admin::types::{DumpLoadFailReport, ExportFormat, ExportSpec};
+use crate::service::admin::types::{
+    CompressionFormat, DumpLoadFailReport, ExportFormat, ExportSpec,
+};
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::storage::codec::decompose;
@@ -218,26 +231,198 @@ fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
     )
 }
 
+/// The archive manifest entry name (both containers).
+const MANIFEST_ENTRY: &str = "manifest.json";
+/// The packed container's file name inside `file_sys_loc`.
+const ZIP_ENTRY_FILE: &str = "archive.zip";
+/// The entry-name prefix of an externalized `DV_MULTIMEDIA` blob.
+const BLOB_PREFIX: &str = "blobs/";
+
+/// Where an export's entries land. The entry NAMES are identical in both
+/// containers (see the module docs); only the packaging differs.
+enum ArchiveWriter {
+    /// Loose files under `file_sys_loc` (no `compression_format`).
+    Directory { dir: PathBuf },
+    /// One `archive.zip` under `file_sys_loc` (SM `COMPRESSION_FORMAT.zip`).
+    Zip {
+        path: PathBuf,
+        zip: Box<zip::ZipWriter<std::fs::File>>,
+    },
+}
+
+impl ArchiveWriter {
+    /// Create the container for `compression`, making `dir` if needed.
+    fn create(dir: &Path, compression: Option<CompressionFormat>) -> Result<Self, SmError> {
+        std::fs::create_dir_all(dir).map_err(|e| file_not_writable(dir, &e))?;
+        match compression {
+            None => Ok(Self::Directory {
+                dir: dir.to_path_buf(),
+            }),
+            Some(CompressionFormat::Zip) => {
+                let path = dir.join(ZIP_ENTRY_FILE);
+                let file =
+                    std::fs::File::create(&path).map_err(|e| file_not_writable(&path, &e))?;
+                Ok(Self::Zip {
+                    path,
+                    zip: Box::new(zip::ZipWriter::new(file)),
+                })
+            }
+            // NOTE (`compression_format.adoc` declares `zip` and `7z`; the SM
+            // says nothing about whether a service may realize a subset, and
+            // `i_admin_dump_load.adoc` declares no unsupported-format error —
+            // the silence is adjudicated in the CNF ambiguity register). This
+            // product builds the `zip` member only: no 7z container
+            // writer exists in the pinned dependency set, and the honest
+            // answer to a well-formed request for a member the service does
+            // not implement is RFC 9110 §15.6.2 `501 Not Implemented` ("the
+            // server does not support the functionality required to fulfil the
+            // request"), never a `400` that would call a valid SM value
+            // malformed. TODO: realize the `7z` member once a vetted pure-Rust
+            // 7z writer/reader is in the workspace dependency table.
+            Some(other @ CompressionFormat::SevenZip) => Err(SmError::new(
+                CallStatusType::NotImplemented,
+                format!(
+                    "compression format {} is not implemented by this service (the `zip` \
+                     member and the uncompressed form are)",
+                    other.sm_name()
+                ),
+            )),
+        }
+    }
+
+    /// Write one archive entry.
+    fn write(&mut self, name: &str, bytes: &[u8]) -> Result<(), SmError> {
+        match self {
+            Self::Directory { dir } => {
+                let path = dir.join(name);
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent).map_err(|e| file_not_writable(parent, &e))?;
+                }
+                std::fs::write(&path, bytes).map_err(|e| file_not_writable(&path, &e))
+            }
+            Self::Zip { path, zip } => {
+                let options = zip::write::SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Deflated);
+                zip.start_file(name, options)
+                    .map_err(|e| zip_fault(path, "start entry", &e))?;
+                zip.write_all(bytes)
+                    .map_err(|e| file_not_writable(path, &e))
+            }
+        }
+    }
+
+    /// Close the container (a no-op for the loose form).
+    fn finish(self) -> Result<(), SmError> {
+        match self {
+            Self::Directory { .. } => Ok(()),
+            Self::Zip { path, zip } => zip
+                .finish()
+                .map(|_| ())
+                .map_err(|e| zip_fault(&path, "finish", &e)),
+        }
+    }
+}
+
+/// The read side of [`ArchiveWriter`], with the container DETECTED from what
+/// `file_sys_loc` holds (`load_ehrs` is passed no format — see the module docs).
+enum ArchiveReader {
+    Directory {
+        dir: PathBuf,
+    },
+    Zip {
+        path: PathBuf,
+        zip: Box<zip::ZipArchive<std::fs::File>>,
+    },
+}
+
+impl ArchiveReader {
+    /// Open the archive under `dir`: the loose form when it holds a
+    /// `manifest.json`, else the packed `archive.zip`. When neither exists the
+    /// manifest read failure is reported against the loose path, so the error
+    /// names the entry a caller expects.
+    fn open(dir: &Path) -> Result<Self, SmError> {
+        if dir.join(MANIFEST_ENTRY).is_file() {
+            return Ok(Self::Directory {
+                dir: dir.to_path_buf(),
+            });
+        }
+        let path = dir.join(ZIP_ENTRY_FILE);
+        if path.is_file() {
+            let file = std::fs::File::open(&path).map_err(|e| file_not_writable(&path, &e))?;
+            let zip = zip::ZipArchive::new(file).map_err(|e| zip_fault(&path, "open", &e))?;
+            return Ok(Self::Zip {
+                path,
+                zip: Box::new(zip),
+            });
+        }
+        let manifest_path = dir.join(MANIFEST_ENTRY);
+        Err(file_not_writable(
+            &manifest_path,
+            &std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!(
+                    "no archive at {} (no {MANIFEST_ENTRY}, no {ZIP_ENTRY_FILE})",
+                    dir.display()
+                ),
+            ),
+        ))
+    }
+
+    /// Read one archive entry.
+    fn read(&mut self, name: &str) -> Result<Vec<u8>, SmError> {
+        match self {
+            Self::Directory { dir } => {
+                let path = dir.join(name);
+                std::fs::read(&path).map_err(|e| file_not_writable(&path, &e))
+            }
+            Self::Zip { path, zip } => {
+                let mut entry = zip
+                    .by_name(name)
+                    .map_err(|e| zip_fault(path, &format!("read entry {name}"), &e))?;
+                let mut bytes = Vec::new();
+                entry
+                    .read_to_end(&mut bytes)
+                    .map_err(|e| file_not_writable(path, &e))?;
+                Ok(bytes)
+            }
+        }
+    }
+}
+
+/// Build a `file_not_writable` [`SmError`] for a ZIP container fault — the
+/// same SM error the loose form raises, since from the operation's point of
+/// view the archive file could not be written/read either way.
+fn zip_fault(path: &Path, what: &str, err: &zip::result::ZipError) -> SmError {
+    SmError::new(
+        CallStatusType::FileNotWritable,
+        format!("{} ({what}): {err}", path.display()),
+    )
+}
+
 impl EhrbaseService {
     /// SM `export_ehrs`: export every EHR to a canonical-JSON archive under
     /// `file_sys_loc`. Returns a per-entity report; an empty list means every
     /// EHR was dumped successfully (the report carries only failures).
     ///
-    /// NOTE (re-verify — `export_format.adoc` /
-    /// `compression_format.adoc`): only `openehr_canonical_json` and no
-    /// compression are supported this wave. The storage IS verbatim canonical
-    /// JSON, so JSON export is translation-free, whereas
-    /// `openehr_canonical_xml` would re-serialize via `openehr-its` and
-    /// `zip`/`7z` would add a dependency for an ops-only nicety; both are cited
-    /// as deliberately-unbuilt spec enum members. A requested XML or non-`None`
-    /// compression format is a `precondition_violation` (400), never a silent
-    /// downgrade.
+    /// NOTE (`export_format.adoc` / `compression_format.adoc` — which
+    /// enumeration members this service realizes). `EXPORT_FORMAT`: only
+    /// `openehr_canonical_json`, because the storage IS verbatim canonical JSON
+    /// so that export is translation-free, while `openehr_canonical_xml` would
+    /// re-serialize every version through `openehr-its`.
+    /// `COMPRESSION_FORMAT`: absent (loose files) and `zip` are realized; `7z`
+    /// is not (see [`ArchiveWriter::create`]). Neither the SM interface nor the
+    /// `EXPORT_SPEC` class says a service must realize every member, and
+    /// `i_admin_dump_load.adoc` declares no unsupported-format error — that
+    /// silence is adjudicated in the CNF ambiguity register. A well-formed
+    /// request for an unrealized member is answered `not_implemented` (RFC 9110
+    /// §15.6.2 `501`), never silently downgraded and never called malformed.
     ///
     /// # Errors
-    /// - `precondition_violation` (`400`) — the spec requests
-    ///   `openehr_canonical_xml`, any compression format, or a non-positive
+    /// - `precondition_violation` (`400`) — a non-positive
     ///   `segment_split_size`.
-    /// - `file_not_writable` — the directory, a segment file, a blob file, or
+    /// - `not_implemented` (`501`) — the spec requests
+    ///   `openehr_canonical_xml` or the `7z` compression member.
+    /// - `file_not_writable` — the directory, a segment entry, a blob entry, or
     ///   the manifest cannot be created/written.
     /// - `exception` — a database/codec fault while collecting records, or a
     ///   blob-store fault while exporting referenced multimedia.
@@ -250,22 +435,22 @@ impl EhrbaseService {
         match spec.logical_format {
             None | Some(ExportFormat::OpenehrCanonicalJson) => {}
             Some(ExportFormat::OpenehrCanonicalXml) => {
-                return Err(SmError::precondition(
-                    "openehr_canonical_xml export is not supported (canonical JSON only)",
+                return Err(SmError::new(
+                    CallStatusType::NotImplemented,
+                    "logical format openehr_canonical_xml is not implemented by this service \
+                     (openehr_canonical_json is)",
                 ));
             }
-        }
-        if let Some(fmt) = spec.compression_format {
-            return Err(SmError::precondition(format!(
-                "compression format {} is not supported (uncompressed only)",
-                fmt.sm_name()
-            )));
         }
         if spec.segment_split_size <= 0 {
             return Err(SmError::precondition(
                 "segment_split_size must be a positive number of kb",
             ));
         }
+
+        // Opening the container FIRST is what makes an unrealized compression
+        // member cost nothing: the refusal happens before any storage read.
+        let mut archive = ArchiveWriter::create(dir, spec.compression_format)?;
 
         let records = self.collect_ehr_records().await?;
 
@@ -280,24 +465,21 @@ impl EhrbaseService {
             .saturating_mul(1024);
         let ranges = plan_segments(&sizes, limit);
 
-        std::fs::create_dir_all(dir).map_err(|e| file_not_writable(dir, &e))?;
-
         let mut segment_names = Vec::with_capacity(ranges.len());
         for (seg_no, range) in ranges.iter().enumerate() {
             let name = format!("segment-{seg_no:04}.json");
-            let path = dir.join(&name);
             // Re-serialize the segment as one JSON array of records.
             let slice = &records[range.clone()];
             let bytes = serde_json::to_vec(slice).map_err(ServiceError::from)?;
-            std::fs::write(&path, bytes).map_err(|e| file_not_writable(&path, &e))?;
+            archive.write(&name, &bytes)?;
             segment_names.push(name);
         }
 
         // Our own extension (no openEHR spec governs multimedia offload): carry
         // every externalized DV_MULTIMEDIA blob the exported versions reference
-        // into a `blobs/<hex>` subdir, so a load into an empty target
-        // re-populates the object store.
-        let blob_keys = self.export_referenced_blobs(dir, &records).await?;
+        // as `blobs/<hex>` entries, so a load into an empty target re-populates
+        // the object store.
+        let blob_keys = self.export_referenced_blobs(&mut archive, &records).await?;
         let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
 
         let manifest = Manifest {
@@ -308,10 +490,9 @@ impl EhrbaseService {
             segments: segment_names,
             blobs: blob_keys,
         };
-        let manifest_path = dir.join("manifest.json");
         let manifest_bytes = serde_json::to_vec_pretty(&manifest).map_err(ServiceError::from)?;
-        std::fs::write(&manifest_path, manifest_bytes)
-            .map_err(|e| file_not_writable(&manifest_path, &e))?;
+        archive.write(MANIFEST_ENTRY, &manifest_bytes)?;
+        archive.finish()?;
 
         // Every EHR dumped successfully → no failure entries.
         Ok(Vec::new())
@@ -323,8 +504,8 @@ impl EhrbaseService {
     /// and skipped; all other EHRs are re-persisted verbatim.
     ///
     /// # Errors
-    /// - `file_not_writable` — the manifest, a segment file, or a blob file
-    ///   cannot be read.
+    /// - `file_not_writable` — `file_sys_loc` holds neither archive container,
+    ///   or the manifest, a segment entry, or a blob entry cannot be read.
     /// - `precondition_violation` (`400`) — the archive carries externalized
     ///   multimedia blobs but this server has no multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
@@ -337,20 +518,20 @@ impl EhrbaseService {
         file_sys_loc: String,
     ) -> Result<Vec<DumpLoadFailReport>, SmError> {
         let dir = Path::new(&file_sys_loc);
-        let manifest_path = dir.join("manifest.json");
-        let manifest_bytes =
-            std::fs::read(&manifest_path).map_err(|e| file_not_writable(&manifest_path, &e))?;
+        // `load_ehrs` is passed no format, so the container is detected from
+        // what the location holds (module docs).
+        let mut archive = ArchiveReader::open(dir)?;
+        let manifest_bytes = archive.read(MANIFEST_ENTRY)?;
         let manifest: Manifest =
             serde_json::from_slice(&manifest_bytes).map_err(ServiceError::from)?;
 
         // Our own extension: re-populate the object store from the archive's
-        // `blobs/` subdir before loading versions that reference them.
-        self.import_blobs(dir, &manifest.blobs).await?;
+        // `blobs/` entries before loading versions that reference them.
+        self.import_blobs(&mut archive, &manifest.blobs).await?;
 
         let mut reports = Vec::new();
         for segment in &manifest.segments {
-            let path = dir.join(segment);
-            let bytes = std::fs::read(&path).map_err(|e| file_not_writable(&path, &e))?;
+            let bytes = archive.read(segment)?;
             let records: Vec<EhrRecord> =
                 serde_json::from_slice(&bytes).map_err(ServiceError::from)?;
             for record in records {
@@ -388,12 +569,12 @@ impl EhrbaseService {
     }
 
     /// Fetch every externalized `DV_MULTIMEDIA` blob referenced by the exported
-    /// records into a `blobs/<hex>` subdir, returning the blob keys written
-    /// (empty when externalization is off). Our own extension — no openEHR spec
-    /// governs multimedia offload.
+    /// records into `blobs/<hex>` archive entries, returning the blob keys
+    /// written (empty when externalization is off). Our own extension — no
+    /// openEHR spec governs multimedia offload.
     async fn export_referenced_blobs(
         &self,
-        dir: &Path,
+        archive: &mut ArchiveWriter,
         records: &[EhrRecord],
     ) -> Result<Vec<String>, SmError> {
         let Some(engine) = &self.multimedia else {
@@ -406,19 +587,13 @@ impl EhrbaseService {
             .collect();
         keys.sort_unstable();
         keys.dedup();
-        if keys.is_empty() {
-            return Ok(keys);
-        }
-        let blob_dir = dir.join("blobs");
-        std::fs::create_dir_all(&blob_dir).map_err(|e| file_not_writable(&blob_dir, &e))?;
         for hex in &keys {
             let bytes = engine
                 .store()
                 .get(hex)
                 .await
                 .map_err(|e| SmError::exception(format!("exporting blob {hex}: {e}")))?;
-            let path = blob_dir.join(hex);
-            std::fs::write(&path, &bytes).map_err(|e| file_not_writable(&path, &e))?;
+            archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
         }
         Ok(keys)
     }
@@ -426,7 +601,11 @@ impl EhrbaseService {
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
     /// (idempotent, content-addressed). A no-op when the archive carries no
     /// blobs. Our own extension.
-    async fn import_blobs(&self, dir: &Path, blobs: &[String]) -> Result<(), SmError> {
+    async fn import_blobs(
+        &self,
+        archive: &mut ArchiveReader,
+        blobs: &[String],
+    ) -> Result<(), SmError> {
         if blobs.is_empty() {
             return Ok(());
         }
@@ -437,10 +616,8 @@ impl EhrbaseService {
                  externalization is not enabled on this server",
             ));
         };
-        let blob_dir = dir.join("blobs");
         for hex in blobs {
-            let path = blob_dir.join(hex);
-            let bytes = std::fs::read(&path).map_err(|e| file_not_writable(&path, &e))?;
+            let bytes = archive.read(&format!("{BLOB_PREFIX}{hex}"))?;
             engine
                 .store()
                 .put_if_absent(hex, bytes)

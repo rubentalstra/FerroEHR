@@ -202,6 +202,21 @@ pub struct Ixit {
     /// rather than guessing.
     #[serde(default)]
     pub system_id: Option<String>,
+    /// A location on the SUT's OWN file system the admin dump/load operations
+    /// may write an archive to and read one back from — SM
+    /// `i_admin_dump_load.adoc` `export_ehrs(file_sys_loc: String [1])` /
+    /// `load_ehrs(file_sys_loc)`, whose only declared error is
+    /// `file_not_writable`.
+    ///
+    /// It is an IXIT fact because it is a pure DEPLOYMENT fact no released (or
+    /// served) operation discloses: which paths a containerized SUT can write
+    /// is a property of its image and mounts, and a runner that guessed one
+    /// would manufacture `file_not_writable` failures that say nothing about
+    /// conformance. Absent => the party makes no such declaration, and the
+    /// cases that reference `${ixit:dump_location}` are not-applicable with
+    /// that citation rather than guessing.
+    #[serde(default)]
+    pub dump_location: Option<String>,
     /// The party's DEFAULT version-signing posture (RM common master06
     /// §Digital Signature). Present => the SUT claims the Signing capability
     /// and this block declares the mode (digest | pgp) every instance runs

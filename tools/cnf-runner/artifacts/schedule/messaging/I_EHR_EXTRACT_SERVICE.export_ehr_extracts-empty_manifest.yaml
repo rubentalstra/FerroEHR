@@ -1,0 +1,45 @@
+# Official master13 case (chapter TBD; NATURAL family id). The chapter cites
+# I_EHR_EXTRACT.export_ehr()/export_ehr_extract(), but the vendored SM declares
+# I_EHR_EXTRACT_SERVICE with export_ehrs/export_ehr_extracts/import_ehr/
+# import_ehr_extract — the SM is the operation-resolution oracle, so cases
+# anchor to its real operations (AMB-34).
+#
+# REALIZATION, re-derived first-hand 2026-07-29 (#659): ITS-REST 1.1.0 still
+# publishes no MESSAGE / EHR-Extract / TDD API in either the docs text or the
+# OAS (register AMB-34) — but this product SERVES the operation on a declared
+# extension route under /message/, so the case is EXECUTED against that route
+# instead of resolving excused. It gates the CAPABILITY verdicts named below
+# only; no openEHR profile tier and no ITS-REST wire-conformance claim rests
+# on it.
+id: I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest
+kind: functional
+component: MESSAGING
+sm_operation: I_EHR_EXTRACT_SERVICE.export_ehr_extracts
+capabilities: [EhrExtract]
+profiles: [OPTIONS]
+test_purpose: "An EXTRACT_SPEC whose manifest names no entity is fulfilled and yields no EXTRACT."
+description: "Export an EXTRACT_SPEC with an empty manifest"
+spec_refs:
+  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehr_extracts"
+  - "RM ehr_extract master04-common_package §EXTRACT_MANIFEST"
+  - "CNF platform_test_schedule master13 §export_ehr_extracts (chapter: export_ehr_extract)"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /message/* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family message-extract) and adjudicated by register AMB-34. The row gates the CAPABILITY verdicts only, never ITS-REST wire conformance"
+# RE-GROUNDED 2026-07-29 (#659). The case was `-empty_result`, "an
+# EXTRACT_SPEC matching no EHRs on an empty system", carried by a documentary
+# fixture whose single entity named neither `ehr_id` nor `subject_id` — a
+# manifest entity the receiver cannot locate at all, which is a
+# `precondition_violation`, not an empty result (that branch is now the
+# `-unresolvable_entity` sibling). The behaviour that IS an empty result is
+# derivable from extract_manifest.adoc: the manifest is the "List of entity
+# manifests ... included in the Extract" and the operation yields one EXTRACT
+# per entity, so a manifest with no entity is fulfilled with no content.
+requires: { server: any }
+data_sets: [cnf.messaging.extract_spec.empty_manifest]
+flow:
+  - step: 1
+    call: export_ehr_extracts
+    with: { extract_spec: "${ds:cnf.messaging.extract_spec.empty_manifest}" }
+    expect: ok_empty
+ambiguities: [AMB-34]

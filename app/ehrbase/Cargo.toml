@@ -70,6 +70,10 @@ base64.workspace = true
 # gateway, any S3 endpoint in prod); `bytes` carries blob payloads to/from it.
 object_store.workspace = true
 bytes.workspace = true
+# `service::admin::dump_load`: the SM COMPRESSION_FORMAT member `zip`
+# (docs/specs/openehr/SM/docs/UML/classes/compression_format.adoc) — the dump
+# archive packed as one ZIP container instead of loose segment files.
+zip.workspace = true
 # NOTE: rPGP 0.20's `DetachedSignature::sign_binary_data` takes an
 # `rng: Rng + CryptoRng` from rand 0.8's rand_core 0.6; the workspace `rand`
 # pin (0.10) is a trait-incompatible major, so the `signing` module pins the

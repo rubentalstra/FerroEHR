@@ -225,6 +225,11 @@ chart_review:
     - { op: composition_revision_history, at: PT1M }
     - { op: adhoc_query, at: PT80S }
     - { op: directory_read, at: PT100S }
+    # The whole-record read at the end of the round: an EHR-Extract export
+    # of the same chart. EXTENSION route (register AMB-34) — no openEHR
+    # spec governs it; a pure read that mutates nothing, so it joins the
+    # read-heavy journey rather than growing a workload share of its own.
+    - { op: ehr_extract_export, at: PT2M }
 
 analytics_review:
   description: >-
@@ -298,15 +303,23 @@ signature_review:
 
 simplified_formats_exchange:
   description: >-
-    The Simplified-Formats integration channel: commit a FLAT composition
-    against its template, then read a committed document back in the FLAT
-    form.
+    The non-canonical document-input channels: commit a FLAT composition
+    against its template, read a committed document back in the FLAT form,
+    and import a Template Data Document.
   derivation: >-
     Form/app integrations that speak the Simplified Formats rather than
-    canonical JSON; a minority channel beside the canonical feeds.
+    canonical JSON, and template-tool exports that speak the TDS; a
+    minority channel beside the canonical feeds. The TDD import belongs
+    here rather than in a journey of its own because it is the same
+    activity — authoring one document — in a third input serialization.
   stages:
     - { op: composition_commit_flat, at: PT0S }
     - { op: composition_read_flat, at: PT30S }
+    # EXTENSION route (register AMB-34) — no openEHR spec governs it. The
+    # document converts against `nested.en.v1` (category 433|event|, so a
+    # sustained arrival commits a fresh COMPOSITION each time) and lands
+    # through the ordinary validated commit path.
+    - { op: tdd_import, at: PT1M }
 
 deletion:
   description: >-

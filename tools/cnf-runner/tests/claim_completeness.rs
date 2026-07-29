@@ -149,11 +149,12 @@ fn the_measured_workload_exercises_every_claimed_capability_but_the_adjudicated_
         "BulkEhrLoad",
         "DemographicArchive",
         "EhrArchive",
+        // A whole-repository dump/load is one-shot by SHAPE, not for want of a
+        // route (#659 landed POST /admin/dump + /admin/load): a repeated
+        // arrival would re-dump the entire population-anchored corpus the
+        // measured window is bound to, and the load half would grow it.
         "EhrDumpLoad",
-        "EhrExtract",
-        "MessageApi",
         "PhysicalDeletion",
-        "Tds",
     ];
 
     let loaded = load_root(&crate_dir().join("artifacts")).expect("schema compilation");

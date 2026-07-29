@@ -32,6 +32,32 @@ impl ExportFormat {
             Self::OpenehrCanonicalJson => "openehr_canonical_json",
         }
     }
+
+    /// Both vendored members, in `export_format.adoc` order.
+    pub const ALL: &'static [ExportFormat] =
+        &[Self::OpenehrCanonicalXml, Self::OpenehrCanonicalJson];
+}
+
+impl std::str::FromStr for ExportFormat {
+    type Err = ();
+
+    /// Parse an SM enumeration literal ASCII-case-insensitively (the same
+    /// case rule [`crate::service::platform_service::PlatformService`] states:
+    /// BASE `master05` §"Composite Identifiers and Case" — case alone must not
+    /// make two spellings name different things). No openEHR spec governs how
+    /// a member is spelled on a REST wire; `export_ehrs` has no released
+    /// endpoint at all, so the transport is our own design/extension.
+    ///
+    /// # Errors
+    /// `Err(())` when the text is neither vendored member; the caller decides
+    /// the wire status.
+    fn from_str(raw: &str) -> Result<Self, Self::Err> {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|member| member.sm_name().eq_ignore_ascii_case(raw))
+            .ok_or(())
+    }
 }
 
 /// `COMPRESSION_FORMAT` enumeration
@@ -53,6 +79,26 @@ impl CompressionFormat {
             Self::Zip => "zip",
             Self::SevenZip => "7z",
         }
+    }
+
+    /// Both vendored members, in `compression_format.adoc` order.
+    pub const ALL: &'static [CompressionFormat] = &[Self::Zip, Self::SevenZip];
+}
+
+impl std::str::FromStr for CompressionFormat {
+    type Err = ();
+
+    /// Parse an SM enumeration literal ASCII-case-insensitively (see
+    /// [`ExportFormat::from_str`] for the case rule and the spec-silence flag).
+    ///
+    /// # Errors
+    /// `Err(())` when the text is neither vendored member.
+    fn from_str(raw: &str) -> Result<Self, Self::Err> {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|member| member.sm_name().eq_ignore_ascii_case(raw))
+            .ok_or(())
     }
 }
 
@@ -121,6 +167,25 @@ pub struct DumpLoadFailReport {
 )] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
+
+    #[test]
+    fn format_enum_literals_round_trip_through_from_str() {
+        use std::str::FromStr;
+        for member in ExportFormat::ALL {
+            assert_eq!(ExportFormat::from_str(member.sm_name()), Ok(*member));
+        }
+        for member in CompressionFormat::ALL {
+            assert_eq!(CompressionFormat::from_str(member.sm_name()), Ok(*member));
+        }
+        // The case rule (BASE master05 §"Composite Identifiers and Case").
+        assert_eq!(
+            CompressionFormat::from_str("ZIP"),
+            Ok(CompressionFormat::Zip)
+        );
+        // A non-member is refused, never coerced to a default.
+        assert_eq!(ExportFormat::from_str("canonical_json"), Err(()));
+        assert_eq!(CompressionFormat::from_str("gzip"), Err(()));
+    }
 
     #[test]
     fn format_enum_sm_names_match_the_spec_literals() {

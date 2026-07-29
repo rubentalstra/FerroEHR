@@ -169,6 +169,8 @@ const SECURITY_SCHEME: &str = "openehr_auth";
         (name = "definition-archetype", description = "ADL 1.4 / ADL 2 archetype + artefact provisioning — SM I_DEFINITION_ADL14 / I_DEFINITION_ADL2 operations the released Definition API never surfaced (it provisions operational templates only). OUR OWN EXTENSION: no ITS-REST operation governs these routes."),
         (name = "admin-report", description = "The SM I_ADMIN_SERVICE activity-report calls (contribution/version statistics per PLATFORM_SERVICE). OUR OWN EXTENSION: the released Admin API is the two EHR deletes alone, so no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
         (name = "admin-archive", description = "The SM I_ADMIN_ARCHIVE calls (move selected EHRs / parties to archival storage). OUR OWN EXTENSION: no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
+        (name = "admin-dump-load", description = "The SM I_ADMIN_DUMP_LOAD calls (export every EHR to a file-system archive; populate the repository from one). OUR OWN EXTENSION: no ITS-REST operation governs these routes (same admin gate + RBAC Admin class)."),
+        (name = "message", description = "The SM MESSAGE component — I_EHR_EXTRACT_SERVICE (EHR-Extract export/import) and I_TDD_SERVICE (Template Data Document import). OUR OWN EXTENSION: ITS-REST 1.1.0 publishes no message/extract/TDD API at all, so no released operation governs any route here; they carry the ordinary clinical authentication class, not the admin gate."),
         (name = "event-subscription", description = "Event-subscription CRUD extension (config-gated: EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED)."),
         (name = "tenancy", description = "Multi-tenancy admin extension (config-gated: EHRBASE_REST_TENANCY__ENABLED)."),
         (name = "fhir", description = "FHIR R4 inbound connector + mapping store (config-gated: EHRBASE_REST_FHIR__ENABLED)."),
@@ -518,11 +520,11 @@ const FAMILIES: &[(&str, &str, Members)] = &[
             include: "/admin/ehr",
             exclude: &[],
             // The ADMIN group's own-design routes (template delete, stored-query
-            // version delete, the redacted config read, the activity report and
-            // the archive pair) live under sibling `/admin/*` paths, not under
-            // `/admin/ehr`; they are part of this group and belong in its
-            // document.
-            also_tagged: &["ADMIN", "admin-report", "admin-archive"],
+            // version delete, the redacted config read, the activity report, the
+            // archive pair and the dump/load pair) live under sibling `/admin/*`
+            // paths, not under `/admin/ehr`; they are part of this group and
+            // belong in its document.
+            also_tagged: &["ADMIN", "admin-report", "admin-archive", "admin-dump-load"],
         },
     ),
     // The server's own extension families, by tag.
@@ -543,6 +545,14 @@ const FAMILIES: &[(&str, &str, Members)] = &[
         "EHRbase — Party Relationships",
         "relationships",
         Members::Tags(&["demographic-relationship"]),
+    ),
+    (
+        "EHRbase — Messaging",
+        "messaging",
+        // The SM MESSAGE component realized on our own `/message/` routes
+        // (EHR-Extract export/import + TDD import); the release publishes no
+        // message API, so the whole family is an extension.
+        Members::Tags(&["message"]),
     ),
     (
         "EHRbase — Event Subscriptions",

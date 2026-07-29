@@ -81,8 +81,10 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   depth-anchored ignore path would silently under-cover a deeper tree.
 - **A deployment fact no released operation discloses is an IXIT
   declaration, never a runner guess**: the party's `ixit.json` declares it
-  (e.g. `system_id`) and a case reads it as `${ixit:<field>}` — the field set
-  is closed like every other grammar. A party that declares nothing makes the
+  (`system_id`; `dump_location` — a writable path on the SUT's OWN file system
+  for the admin dump/load pair, since which paths a containerized SUT can write
+  is a property of its image and mounts) and a case reads it as
+  `${ixit:<field>}` — the field set is closed like every other grammar. A party that declares nothing makes the
   referencing cases not-applicable with that citation, so an undeclared fact
   costs coverage, never correctness. The same law extends to whole
   **deployment postures**: `signing` declares the version-signing posture, and

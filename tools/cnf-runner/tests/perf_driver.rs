@@ -15,7 +15,7 @@ use cnf_runner::ixit::{Environment, Ixit};
 use cnf_runner::perf::{ClassVerdict, JourneyCatalogue, PerformanceCase};
 use cnf_runner::perf_run::client::{PerfClient, PerfPrincipals};
 use cnf_runner::perf_run::corpus::{SeededCorpus, seed_scale_ladder, seed_ward};
-use cnf_runner::perf_run::pack::{AuxPayloads, FlatPayload, JourneyPack, PackTemplate};
+use cnf_runner::perf_run::pack::{AuxPayloads, FlatPayload, JourneyPack, PackTemplate, TddPayload};
 use cnf_runner::perf_run::window::{drive_case, rederive_verdict};
 
 /// A minimal keep-alive HTTP stub realizing the journey wire shapes: OPT
@@ -231,6 +231,18 @@ fn route(
             format!("ETag: W/\"{}\"\r\n", fresh_uid(uid_counter)),
             String::new(),
         ),
+        // The MESSAGE extension pair (register AMB-34): a TDD import commits
+        // and names the created version; a whole-EHR export reads a list.
+        ("POST", p) if p.contains("/message/tdd/") => (
+            "201 Created",
+            String::new(),
+            format!("{{\"uid\":\"{}\"}}", fresh_uid(uid_counter)),
+        ),
+        ("GET", p) if p.contains("/message/export/") => (
+            "200 OK",
+            String::new(),
+            "[{\"_type\":\"EXTRACT\"}]".to_owned(),
+        ),
         ("PUT", p) if p.contains("/composition/") && p.ends_with("/tags") => {
             ("200 OK", String::new(), "[]".to_owned())
         }
@@ -331,6 +343,12 @@ fn journey_pack() -> JourneyPack {
                 "source": { "_type": "PARTY_REF",
                     "id": { "_type": "HIER_OBJECT_ID", "value": "placeholder" } }
             })),
+            tdd: Some(TddPayload {
+                opt_xml: "<template/>".to_owned(),
+                document: "<Nested xmlns=\"http://schemas.oceanehr.com/templates\" \
+                            template_id=\"nested.en.v1\"/>"
+                    .to_owned(),
+            }),
         },
     }
 }
