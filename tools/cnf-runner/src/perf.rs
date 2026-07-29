@@ -349,6 +349,12 @@ pub enum Principal {
     /// base (ITS-REST `docs/smart_app_launch/master04-service_discovery.adoc`
     /// §Service Discovery).
     SmartPlatform,
+    /// The ixit `admin` instance — the ADMIN-role principal every
+    /// admin-gated stage rides (the same instance the functional admin
+    /// cases address with `on: admin`). A party that declares no admin
+    /// instance drops the journeys that need it, exactly like the other
+    /// boundary principals.
+    Admin,
 }
 
 impl PerfOp {
@@ -463,6 +469,10 @@ impl PerfOp {
             PerfOp::UnauthenticatedProbe => Principal::Unauthenticated,
             PerfOp::ReadonlyWriteDenied => Principal::ReadOnly,
             PerfOp::SmartConfigurationRead => Principal::SmartPlatform,
+            // The activity report is admin-gated on the served extension
+            // route (the 2026-07-29 POC window drove it with the primary
+            // principal and 403'd on every arrival).
+            PerfOp::AdminContributionReport => Principal::Admin,
             _ => Principal::Primary,
         }
     }
@@ -1659,6 +1669,7 @@ mod tests {
                 PerfOp::UnauthenticatedProbe
                     | PerfOp::ReadonlyWriteDenied
                     | PerfOp::SmartConfigurationRead
+                    | PerfOp::AdminContributionReport
             );
             assert_eq!(
                 op.principal() == Principal::Primary,

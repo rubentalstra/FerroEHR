@@ -310,6 +310,7 @@ impl MintedGrant {
 /// address them.
 const UNAUTHENTICATED_INSTANCE: &str = "unauthenticated";
 const READONLY_INSTANCE: &str = "readonly";
+const ADMIN_INSTANCE: &str = "admin";
 
 /// Every principal a measured window drives: the party's default `sut`
 /// instance plus the optional boundary/platform principals.
@@ -318,6 +319,7 @@ pub struct PerfPrincipals {
     primary: PerfClient,
     unauthenticated: Option<PerfClient>,
     readonly: Option<PerfClient>,
+    admin: Option<PerfClient>,
     smart_platform: Option<PerfClient>,
 }
 
@@ -355,6 +357,7 @@ impl PerfPrincipals {
             primary,
             unauthenticated: named(UNAUTHENTICATED_INSTANCE)?,
             readonly: named(READONLY_INSTANCE)?,
+            admin: named(ADMIN_INSTANCE)?,
             smart_platform,
         })
     }
@@ -366,6 +369,7 @@ impl PerfPrincipals {
             primary,
             unauthenticated: None,
             readonly: None,
+            admin: None,
             smart_platform: None,
         }
     }
@@ -381,6 +385,13 @@ impl PerfPrincipals {
     #[must_use]
     pub fn with_readonly(mut self, client: PerfClient) -> Self {
         self.readonly = Some(client);
+        self
+    }
+
+    /// Add the ADMIN-role principal.
+    #[must_use]
+    pub fn with_admin(mut self, client: PerfClient) -> Self {
+        self.admin = Some(client);
         self
     }
 
@@ -407,6 +418,7 @@ impl PerfPrincipals {
             Principal::Unauthenticated => self.unauthenticated.as_ref(),
             Principal::ReadOnly => self.readonly.as_ref(),
             Principal::SmartPlatform => self.smart_platform.as_ref(),
+            Principal::Admin => self.admin.as_ref(),
         }
     }
 
