@@ -1,16 +1,32 @@
 //! Hand-written `Iso8601_time` spec behaviour: the accessor functions
-//! (`is_partial`, `minute_unknown`, `second_unknown`,
-//! `hour`/`minute`/`second`/`fractional_second`/`timezone`) and a `PartialOrd`
+//! (`is_partial`, `is_extended`, `is_decimal_sign_comma`,
+//! `has_fractional_second`, `minute_unknown`, `second_unknown`,
+//! `hour`/`minute`/`second`/`fractional_second`/`timezone`, `as_string`), the
+//! computational functions (`add`/`subtract`/`diff`) and a `PartialOrd`
 //! implementing range semantics over partial times with timezone
 //! normalisation.
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc`
-//!   (§Functions: the accessors; §Invariants).
+//!   (§Functions: the accessors, `as_string`, `add`/`subtract`/`diff`;
+//!   §Invariants).
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.time_definitions.adoc`
 //!   (§Functions `valid_second`, `valid_hour`).
 //! - `BASE/docs/foundation_types/master06-time_types.adoc` (§Primitive Time
-//!   Types: `24:00:00` disallowed anywhere).
+//!   Types: `24:00:00` disallowed anywhere; §Computational Functions: only the
+//!   definite forms exist for a time — 'year' and 'month' cannot land on a clock
+//!   face, so `Iso8601_time` declares no `add_nominal`).
+//!
+//! NOTE: arithmetic needs every component, and the openEHR spec says nothing
+//! about computing on a PARTIAL time (`hh`, `hh:mm`) — a partial (or
+//! unparseable) operand yields `None`, the same undecidable answer this
+//! module's comparison gives.
+//!
+//! NOTE: an `Iso8601_time` is a point on the clock face with no date behind it,
+//! so addition WRAPS modulo 24 h (`23:30:00 + PT1H` = `00:30:00`) and a
+//! difference is the signed distance between two clock readings, in
+//! `(-24 h, +24 h)`. No openEHR spec governs the overflow behaviour — our own
+//! design/extension, and the only one available without inventing a date.
 //!
 //! NOTE: `Time_definitions.valid_iso8601_time` prose allows a seconds field of
 //! `"00"`-`"60"` (a leap second), but the machine-checkable `valid_second`
@@ -29,7 +45,12 @@
 
 use std::cmp::Ordering;
 
-use super::iso8601_parse::{ParsedTime, parse_time, range_before, time_completion_range};
+use super::iso8601_duration::Iso8601Duration;
+use super::iso8601_parse::{
+    EXACT_SECONDS_IN_DAY, EXACT_SECONDS_IN_HOUR, EXACT_SECONDS_IN_MINUTE, ExactSeconds, ParsedTime,
+    as_extended_time, hms_from_seconds_of_day, parse_time, range_before, render_duration,
+    render_time_extended, time_completion_range,
+};
 use super::iso8601_time::Iso8601Time;
 
 impl Iso8601Time {
@@ -94,6 +115,116 @@ impl Iso8601Time {
     pub fn is_partial(&self) -> bool {
         self.parsed().is_none_or(|p| p.second.is_none())
     }
+
+    /// `Iso8601_time.is_extended`: true when the value uses `':'` separators
+    /// (and, for forms with no separator position — `hh`, and a `Z`/`±hh`
+    /// timezone — always; see the `is_extended` NOTE in `iso8601_parse.rs`). A
+    /// value that does not parse is not extended.
+    #[must_use]
+    pub fn is_extended(&self) -> bool {
+        self.parsed().is_some_and(|p| p.extended)
+    }
+
+    /// `Iso8601_time.is_decimal_sign_comma`: true when the fractional second is
+    /// written with `','` rather than `'.'`. False when the value has no
+    /// fractional part or does not parse.
+    #[must_use]
+    pub fn is_decimal_sign_comma(&self) -> bool {
+        self.parsed().is_some_and(|p| p.decimal_sign_comma)
+    }
+
+    /// `Iso8601_time.has_fractional_second`: true when the fractional-second
+    /// part is significant, i.e. the value writes one — "even if = 0.0", so
+    /// `12:00:00.0` qualifies. False when the value does not parse.
+    #[must_use]
+    pub fn has_fractional_second(&self) -> bool {
+        self.parsed().is_some_and(|p| p.fractional_second.is_some())
+    }
+
+    /// `Iso8601_time.as_string`: "Return string value in extended format" — a
+    /// compact value is re-spelled with `':'` separators (its fractional
+    /// precision, decimal sign and partial precision all preserved), an
+    /// already-extended one is returned unchanged.
+    ///
+    /// NOTE: as for `Iso8601_date.as_string`, a value that is not a valid
+    /// ISO 8601 time is returned verbatim — our own design/extension.
+    #[must_use]
+    pub fn as_string(&self) -> String {
+        as_extended_time(&self.value).unwrap_or_else(|| self.value.clone())
+    }
+
+    /// `Iso8601_time.add` (alias `'+'`): DEFINITE addition of a duration —
+    /// `a_diff` is reduced to an exact number of seconds
+    /// (`master06` §Computational Functions) and added to the clock reading,
+    /// wrapping modulo 24 h. The timezone offset is carried through unchanged.
+    ///
+    /// `None` when either value does not parse, when this time is partial, or on
+    /// arithmetic overflow.
+    #[must_use]
+    pub fn add(&self, a_diff: &Iso8601Duration) -> Option<Self> {
+        self.shifted(a_diff.parsed()?.to_definite_shift(false)?)
+    }
+
+    /// `Iso8601_time.subtract` (alias `'-'`): DEFINITE subtraction of a
+    /// duration. See [`Iso8601Time::add`].
+    ///
+    /// `None` under the same conditions as [`Iso8601Time::add`].
+    #[must_use]
+    pub fn subtract(&self, a_diff: &Iso8601Duration) -> Option<Self> {
+        self.shifted(a_diff.parsed()?.to_definite_shift(true)?)
+    }
+
+    /// `Iso8601_time.diff` (alias `'-'`): the difference `self - a_time` as an
+    /// `Iso8601_duration` — negative (the openEHR negative-duration deviation)
+    /// when `a_time` is the later clock reading. Two zoned times are compared on
+    /// the UTC axis; a zoned and an unzoned time are not comparable at all
+    /// (`None`), matching this module's ordering rule.
+    ///
+    /// `None` when either value does not parse or is partial, when exactly one
+    /// side is zoned, or on arithmetic overflow.
+    #[must_use]
+    pub fn diff(&self, a_time: &Self) -> Option<Iso8601Duration> {
+        let (a, b) = (self.parsed()?, a_time.parsed()?);
+        if a.timezone.is_some() != b.timezone.is_some() {
+            return None;
+        }
+        let total = utc_seconds_of_day(&a)?.checked_sub(utc_seconds_of_day(&b)?)?;
+        Some(Iso8601Duration {
+            value: render_duration(total)?,
+        })
+    }
+
+    /// The clock reading shifted by `shift` seconds, wrapped into a single day
+    /// and re-rendered in extended form with the original timezone.
+    fn shifted(&self, shift: ExactSeconds) -> Option<Self> {
+        let p = self.parsed()?;
+        let total = local_seconds_of_day(&p)?
+            .checked_add(shift)?
+            .rounded_to_nanos()?;
+        let (hour, minute, second) =
+            hms_from_seconds_of_day(total.whole.rem_euclid(EXACT_SECONDS_IN_DAY))?;
+        Some(Self {
+            value: render_time_extended(hour, minute, second, total.frac, p.timezone),
+        })
+    }
+}
+
+/// A complete time's seconds since local midnight, or `None` when the time is
+/// partial (arithmetic needs a complete value).
+fn local_seconds_of_day(t: &ParsedTime) -> Option<ExactSeconds> {
+    let whole = i64::from(t.hour) * EXACT_SECONDS_IN_HOUR
+        + i64::from(t.minute?) * EXACT_SECONDS_IN_MINUTE
+        + i64::from(t.second?);
+    ExactSeconds::new(whole, t.fractional_second.unwrap_or(0.0))
+}
+
+/// A complete time's seconds since midnight on the UTC axis when zoned (the same
+/// uniform shift the ordering uses), or since local midnight when unzoned. May
+/// fall outside `[0, 86400)`, which is correct for a difference.
+fn utc_seconds_of_day(t: &ParsedTime) -> Option<ExactSeconds> {
+    let local = local_seconds_of_day(t)?;
+    let offset = i64::from(t.timezone.unwrap_or(0)).checked_mul(EXACT_SECONDS_IN_MINUTE)?;
+    local.checked_sub(ExactSeconds::new(offset, 0.0)?)
 }
 
 /// Range-semantics comparison of two parsed times. `None` unless both are
@@ -133,6 +264,22 @@ mod tests {
         Iso8601Time {
             value: v.to_owned(),
         }
+    }
+
+    fn dur(v: &str) -> Iso8601Duration {
+        Iso8601Duration {
+            value: v.to_owned(),
+        }
+    }
+
+    /// The value of a computed time, or `"None"`.
+    fn value(t: Option<Iso8601Time>) -> String {
+        t.map_or_else(|| "None".to_owned(), |t| t.value)
+    }
+
+    /// The value of a computed duration, or `"None"`.
+    fn duration_value(d: Option<Iso8601Duration>) -> String {
+        d.map_or_else(|| "None".to_owned(), |d| d.value)
     }
 
     // ── full-vs-full ordering (incl. fractional seconds) ─────────────────────
@@ -277,5 +424,152 @@ mod tests {
 
         assert_eq!(time("09:30:00+02:30").timezone(), Some(150));
         assert_eq!(time("09:30:00-05:00").timezone(), Some(-300));
+    }
+
+    // ── lexical predicates / as_string ───────────────────────────────────────
+
+    #[test]
+    fn extended_and_compact_forms_are_distinguished() {
+        assert!(time("12:00:00").is_extended());
+        assert!(time("12:00").is_extended());
+        assert!(time("12").is_extended()); // no separator position at all
+        assert!(time("12:00:00Z").is_extended());
+        assert!(time("12:00:00+02").is_extended());
+        assert!(time("12:00:00+02:00").is_extended());
+        assert!(!time("120000").is_extended());
+        assert!(!time("1200").is_extended());
+        assert!(!time("12:00:00+0200").is_extended()); // compact timezone
+        assert!(!time("nonsense").is_extended());
+    }
+
+    #[test]
+    fn decimal_sign_and_fractional_second_are_reported() {
+        assert!(time("12:00:00,5").is_decimal_sign_comma());
+        assert!(!time("12:00:00.5").is_decimal_sign_comma());
+        assert!(!time("12:00:00").is_decimal_sign_comma());
+        assert!(!time("nonsense").is_decimal_sign_comma());
+
+        // "True if the fractional_second part is significant (i.e. even if = 0.0)".
+        assert!(time("12:00:00.0").has_fractional_second());
+        assert!(time("12:00:00,25").has_fractional_second());
+        assert!(!time("12:00:00").has_fractional_second());
+        assert!(!time("12:00").has_fractional_second());
+        assert!(!time("nonsense").has_fractional_second());
+    }
+
+    #[test]
+    fn as_string_returns_the_extended_form() {
+        assert_eq!(time("120000").as_string(), "12:00:00");
+        assert_eq!(time("1200").as_string(), "12:00");
+        assert_eq!(time("12").as_string(), "12");
+        assert_eq!(time("12:00:00").as_string(), "12:00:00");
+        // Precision, decimal sign and the timezone survive the re-spelling.
+        assert_eq!(time("120000,50").as_string(), "12:00:00,50");
+        assert_eq!(time("120000.500Z").as_string(), "12:00:00.500Z");
+        assert_eq!(time("120000+0200").as_string(), "12:00:00+02:00");
+        assert_eq!(time("120000+02").as_string(), "12:00:00+02");
+        // An invalid time has no extended form: verbatim.
+        assert_eq!(time("24:00:00").as_string(), "24:00:00");
+    }
+
+    // ── arithmetic (wraps on the clock face) ─────────────────────────────────
+
+    #[test]
+    fn add_wraps_past_midnight() {
+        assert_eq!(value(time("23:30:00").add(&dur("PT1H"))), "00:30:00");
+        assert_eq!(value(time("23:59:59").add(&dur("PT1S"))), "00:00:00");
+        // A whole day of duration returns the same clock reading.
+        assert_eq!(value(time("09:15:30").add(&dur("P1D"))), "09:15:30");
+        // Average_days_in_month = 30.42 ⇒ 30 days plus 10:04:48 of clock time.
+        assert_eq!(value(time("09:15:30").add(&dur("P1M"))), "19:20:18");
+    }
+
+    #[test]
+    fn subtract_wraps_before_midnight() {
+        assert_eq!(value(time("00:30:00").subtract(&dur("PT1H"))), "23:30:00");
+        assert_eq!(value(time("00:00:00").subtract(&dur("PT1S"))), "23:59:59");
+        // A negative duration added is the same as a positive one subtracted.
+        assert_eq!(value(time("00:30:00").add(&dur("-PT1H"))), "23:30:00");
+    }
+
+    #[test]
+    fn arithmetic_keeps_fractional_seconds_exact() {
+        assert_eq!(value(time("12:00:00.5").add(&dur("PT1S"))), "12:00:01.5");
+        assert_eq!(value(time("12:00:00.5").add(&dur("PT0.5S"))), "12:00:01");
+        assert_eq!(
+            value(time("12:00:01").subtract(&dur("PT0.25S"))),
+            "12:00:00.75"
+        );
+        assert_eq!(
+            value(time("00:00:00").subtract(&dur("PT0.5S"))),
+            "23:59:59.5"
+        );
+    }
+
+    #[test]
+    fn arithmetic_carries_the_timezone_through() {
+        assert_eq!(
+            value(time("12:00:00+02:00").add(&dur("PT30M"))),
+            "12:30:00+02:00"
+        );
+        assert_eq!(value(time("12:00:00Z").add(&dur("PT30M"))), "12:30:00Z");
+        // A compact timezone is canonicalised to the extended spelling.
+        assert_eq!(
+            value(time("120000+0200").add(&dur("PT30M"))),
+            "12:30:00+02:00"
+        );
+        assert_eq!(
+            value(time("12:00:00-05:30").add(&dur("PT1H"))),
+            "13:00:00-05:30"
+        );
+    }
+
+    // ── diff ─────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn diff_reports_the_signed_clock_distance() {
+        assert_eq!(
+            duration_value(time("12:00:00").diff(&time("09:30:00"))),
+            "PT2H30M"
+        );
+        assert_eq!(
+            duration_value(time("09:30:00").diff(&time("12:00:00"))),
+            "-PT2H30M"
+        );
+        assert_eq!(
+            duration_value(time("12:00:00").diff(&time("12:00:00"))),
+            "PT0S"
+        );
+        assert_eq!(
+            duration_value(time("12:00:01.25").diff(&time("12:00:00"))),
+            "PT1.25S"
+        );
+        assert_eq!(
+            duration_value(time("12:00:00").diff(&time("12:00:01.25"))),
+            "-PT1.25S"
+        );
+    }
+
+    #[test]
+    fn diff_normalises_two_zoned_times_and_refuses_a_mixed_pair() {
+        // 12:00Z vs 13:00+02:00 (= 11:00 UTC) ⇒ one hour later.
+        assert_eq!(
+            duration_value(time("12:00:00Z").diff(&time("13:00:00+02:00"))),
+            "PT1H"
+        );
+        assert!(time("12:00:00Z").diff(&time("12:00:00")).is_none());
+        assert!(time("12:00:00").diff(&time("12:00:00+02:00")).is_none());
+    }
+
+    // ── partial / malformed operands ─────────────────────────────────────────
+
+    #[test]
+    fn partial_and_malformed_values_have_no_arithmetic() {
+        assert!(time("12:00").add(&dur("PT1S")).is_none());
+        assert!(time("12").subtract(&dur("PT1S")).is_none());
+        assert!(time("12:00").diff(&time("12:00:00")).is_none());
+        assert!(time("12:00:00").diff(&time("12")).is_none());
+        assert!(time("24:00:00").add(&dur("PT1S")).is_none());
+        assert!(time("12:00:00").add(&dur("1H")).is_none());
     }
 }
