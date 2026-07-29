@@ -399,6 +399,14 @@ pub fn from_tdd(tdd_xml: &str, wt: &WebTemplate) -> Result<Value, FlatError> {
         )));
     }
 
+    // Conformance: a TDD conforms to the template-derived TDS ("a kind of
+    // XSD" — AM OPT2 master02-overview.adoc §Purpose of the OPT), so an
+    // element the template defines no node for is nonconforming content —
+    // rejected, never silently absorbed (the wrapper-skip in the matching
+    // rule is for elements ON THE PATH to a template node, not for content
+    // the template does not know).
+    check_conformance(&root_el, &wt.tree, "COMPOSITION")?;
+
     let mut comp = build_node(&root_el, &wt.tree, "COMPOSITION", "", true)?;
     if let Value::Object(m) = &mut comp {
         ensure_template_id(m, &wt.tree, &wt.template_id);
@@ -406,6 +414,93 @@ pub fn from_tdd(tdd_xml: &str, wt: &WebTemplate) -> Result<Value, FlatError> {
     }
     complete_tree(&mut comp);
     Ok(comp)
+}
+
+/// Reject TDD content the template defines no node for.
+///
+/// Mirrors [`build_node`]'s matching walk and classifies every element of
+/// `el`'s subtree: an element is CONFORMANT when it is a simple in-context RM
+/// attribute of its structural parent ([`simple_attr`] — its subtree is the
+/// typed fragment), a match of a web-template child (a leaf's subtree is the
+/// datum fragment; an interior match recurses), or a WRAPPER on the path to
+/// at least one match (the compaction rule in the module doc). Anything else
+/// is content the template-derived TDS does not define — a conversion error
+/// naming the offending element, so the refusal localizes.
+/// Compacted-wrapper instance metadata (the module doc's documented limit): a
+/// TDD may spell out RM fields of a wrapper the `WebTemplate` compacted
+/// (`HISTORY.origin`, `EVENT.time`/`name`) plus universal LOCATABLE metadata —
+/// RM attribute names, never template content, deliberately not carried by
+/// the build. Everything else is content the TDS does not define.
+const WRAPPER_METADATA: [&str; 6] = ["name", "uid", "links", "feeder_audit", "origin", "time"];
+
+fn check_conformance(el: &El, wt: &WebTemplateNode, rm_type: &str) -> Result<(), FlatError> {
+    // Direct children consumed as simple in-context attributes.
+    let simple: Vec<bool> = el
+        .children
+        .iter()
+        .map(|c| simple_attr(rm_type, &c.name).is_some())
+        .collect();
+
+    // Children matched by some web-template child (with the matched
+    // template node, to recurse), at any depth of the scoped search.
+    let mut matched: Vec<Option<&WebTemplateNode>> = vec![None; el.children.len()];
+    let mut wrapper: Vec<bool> = vec![false; el.children.len()];
+    for wc in &wt.children {
+        for (idx, is_direct) in match_indices(el, node_display(wc)) {
+            if is_direct {
+                matched[idx] = Some(wc);
+            } else {
+                // The match sits deeper: the direct child at `idx` is a
+                // wrapper on the path to it. The deeper levels are checked
+                // by the recursion below only for DIRECT matches; wrapper
+                // interiors are re-checked against the SAME context.
+                wrapper[idx] = true;
+            }
+        }
+    }
+
+    for (idx, child) in el.children.iter().enumerate() {
+        if simple[idx] {
+            continue;
+        }
+        if let Some(wc) = matched[idx] {
+            if !wc.has_input() {
+                check_conformance(child, wc, concrete_type(&wc.rm_type))?;
+            }
+            continue;
+        }
+        if wrapper[idx] {
+            // A wrapper is transparent: its children are checked against the
+            // same template node so a junk sibling BESIDE the real match is
+            // still caught.
+            check_conformance(child, wt, rm_type)?;
+            continue;
+        }
+        if WRAPPER_METADATA.contains(&child.name.as_str()) {
+            continue;
+        }
+        return Err(FlatError::Conversion(format!(
+            "TDD element <{}> (under <{}>) matches no node of the operational template — \
+             the document does not conform to the template-derived TDS",
+            child.name, el.name
+        )));
+    }
+    Ok(())
+}
+
+/// For each shallowest match of `display` in `parent`'s subtree (the same
+/// pruned search as [`find_matches`]), the index of the DIRECT child of
+/// `parent` the match sits under, and whether the match IS that direct child.
+fn match_indices(parent: &El, display: &str) -> Vec<(usize, bool)> {
+    let mut out = Vec::new();
+    for (idx, c) in parent.children.iter().enumerate() {
+        if name_matches(&c.name, display) {
+            out.push((idx, true));
+        } else if !find_matches(c, display).is_empty() {
+            out.push((idx, false));
+        }
+    }
+    out
 }
 
 /// Build a LOCATABLE RM node from its TDD element `el` and web-template node `wt`.

@@ -25,15 +25,20 @@ guards:
 # A TDD is "an instance of the template-derived TDS" (AM OPT2
 # master02-overview.adoc §Purpose of the OPT), so it cannot be interpreted
 # without its operational template: an unheld `template_id` is
-# `template_does_not_exist`. NO `requires.templates` here — the absence IS the
+# `template_does_not_exist`. NO `requires.templates` here, and the TDD names
+# the never-provisioned `cnf.absent_template.v99` identity — absence of a
+# SPECIFIC provisioned template is not a stable ground on a shared world (the
+# sibling success cases provision `persistent_minimal.en.v1`, which is exactly
+# how the 2026-07-29 run observed `created`); the never-provisioned identity is
+# the ground that holds. The absence IS the
 # precondition under test.
 requires: { ehr: { commits: none } }
-data_sets: [cnf.messaging.tdd.v1]
+data_sets: [cnf.messaging.tdd.absent_template]
 flow:
   - step: 1
     call: import_tdd
     with:
       an_ehr_id: "${ehr_id}"
-      tdd: "${ds:cnf.messaging.tdd.v1}"
+      tdd: "${ds:cnf.messaging.tdd.absent_template}"
     expect: template_not_found
 ambiguities: [AMB-34]

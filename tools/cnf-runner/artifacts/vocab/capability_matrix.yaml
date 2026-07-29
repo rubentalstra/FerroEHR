@@ -86,7 +86,17 @@
 # capability CORE+STANDARD, so a party claiming CORE while not claiming it is a
 # static-review finding — which is the honest reading of a release that defines
 # no wire for a capability its own conformance book requires.
-Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 1, evidence_exception: { register: AMB-41, reason: "ITS-REST 1.1.0 surfaces no ADL 1.4 archetype route and this product serves none either, so every case of this capability resolves excused on this ITS; the claim was withdrawn from the party statement (#623)" }, workload_exclusion: { register: AMB-170, reason: "no request exists for the load instrument to send: ITS-REST 1.1.0 defines no wire for this capability and this product serves no extension route for it either, so the hospital simulation has nothing to drive - the exclusion lapses the day the routes exist" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
+# OWNER ADJUDICATION 2026-07-29 (recorded on AMB-41): the CNF Profiles book
+# lists this row CORE/required, but released ITS-REST 1.1.0 surfaces no ADL
+# 1.4 archetype wire and an extension realization may never be `required`
+# (owner ruling 2026-07-28). The owner chose FULL IMPLEMENTATION over a
+# standing excuse: the served /definition/archetype/adl1.4** routes carry an
+# executed six-case battery, the row flips to `realization: extension`, and
+# `required` DROPS — a conscious, register-derived departure from the book's
+# CORE table (the book requires what the release gives no wire for). The
+# workload exclusion stays register-linked: provisioning archetypes is
+# definition administration, not a per-patient hospital arrival.
+Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 6, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
 Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 22, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
@@ -211,7 +221,7 @@ PhysicalDeletion: { family: Platform, tier: OPTIONS, required: false, min_cases:
 # The workload_exclusion SURVIVES on its one-shot half alone, re-derived: the
 # old reason led with "no request exists to send", which lapsed the day the
 # routes landed.
-EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 6, workload_exclusion: { register: AMB-170, reason: "one-shot by nature: export_ehrs dumps the WHOLE repository to a file system and load_ehrs reads a whole archive back, so neither is a per-patient interaction a hospital simulation could sustain - a repeated arrival would re-dump the entire population-anchored corpus the measured window is bound to, and the load half would additionally grow it. The exclusion is about the SHAPE of the operation, not about routing, so it stands now that the routes exist" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
+EhrDumpLoad: { family: Platform, tier: OPTIONS, required: false, realization: extension, min_cases: 7, workload_exclusion: { register: AMB-170, reason: "one-shot by nature: export_ehrs dumps the WHOLE repository to a file system and load_ehrs reads a whole archive back, so neither is a per-patient interaction a hospital simulation could sustain - a repeated arrival would re-dump the entire population-anchored corpus the measured window is bound to, and the load half would additionally grow it. The exclusion is about the SHAPE of the operation, not about routing, so it stands now that the routes exist" }, source: "CNF profiles master03-profiles.adoc §Functional (Admin: EHR Dump/Load)" }
 # REALIZED ON RELEASED WIRE (#624, 2026-07-28) — the row carried `min_cases: 0`
 # and no battery. Derived first-hand: the SM Admin chapter
 # (SM openehr_platform master15-admin_service.adoc — I_ADMIN_SERVICE,

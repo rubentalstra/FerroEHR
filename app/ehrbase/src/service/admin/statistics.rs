@@ -54,20 +54,29 @@ impl EhrbaseService {
         let Some(ehr_scoped) = contribution_ehr_scoped(a_service) else {
             return Ok(Vec::new());
         };
-        // Static SQL; `$3` selects EHR-scoped vs ehr-less contributions.
-        let ids: Vec<String> = sqlx::query_scalar(
+        // Two static shapes selected in Rust (the in-SQL `$3 AND … OR …`
+        // scoping resisted index planning at the measured corpus scale —
+        // see admin_contribution_count). The listing always joins `audit`:
+        // its ORDER BY is the commit time.
+        let sql = if ehr_scoped {
             "SELECT c.id::text FROM contribution c JOIN audit a ON a.id = c.audit_id \
-             WHERE (($3 AND c.ehr_id IS NOT NULL) OR (NOT $3 AND c.ehr_id IS NULL)) \
+             WHERE c.ehr_id IS NOT NULL \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
                AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz) \
-             ORDER BY a.time_committed, c.id",
-        )
-        .bind(lo)
-        .bind(hi)
-        .bind(ehr_scoped)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(ServiceError::from)?;
+             ORDER BY a.time_committed, c.id"
+        } else {
+            "SELECT c.id::text FROM contribution c JOIN audit a ON a.id = c.audit_id \
+             WHERE c.ehr_id IS NULL \
+               AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
+               AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz) \
+             ORDER BY a.time_committed, c.id"
+        };
+        let ids: Vec<String> = sqlx::query_scalar(sql)
+            .bind(lo)
+            .bind(hi)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(ServiceError::from)?;
         Ok(ids)
     }
 
@@ -87,18 +96,43 @@ impl EhrbaseService {
         let Some(ehr_scoped) = contribution_ehr_scoped(a_service) else {
             return Ok(0);
         };
-        let count: i64 = sqlx::query_scalar(
-            "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
-             WHERE (($3 AND c.ehr_id IS NOT NULL) OR (NOT $3 AND c.ehr_id IS NULL)) \
-               AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
-               AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
-        )
-        .bind(lo)
-        .bind(hi)
-        .bind(ehr_scoped)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(ServiceError::from)?;
+        // Two static shapes, selected in Rust rather than by an in-SQL OR:
+        // the measured corpus holds ~10^6 contributions and the 2026-07-29
+        // idle-box POC window put this count's p99 at 2.9 s — the unbounded
+        // form was paying a full `audit` hash join it never filters, and the
+        // `($3 AND …) OR (NOT $3 AND …)` scoping predicate resists index
+        // planning. Unbounded: an index-only count over
+        // `idx_contribution_ehr_id`. Bounded: the audit join with
+        // `idx_audit_time_committed` behind it (0001_baseline.sql).
+        let count: i64 = if lo.is_none() && hi.is_none() {
+            let sql = if ehr_scoped {
+                "SELECT count(*) FROM contribution WHERE ehr_id IS NOT NULL"
+            } else {
+                "SELECT count(*) FROM contribution WHERE ehr_id IS NULL"
+            };
+            sqlx::query_scalar(sql)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(ServiceError::from)?
+        } else {
+            let sql = if ehr_scoped {
+                "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+                 WHERE c.ehr_id IS NOT NULL \
+                   AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
+                   AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)"
+            } else {
+                "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+                 WHERE c.ehr_id IS NULL \
+                   AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
+                   AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)"
+            };
+            sqlx::query_scalar(sql)
+                .bind(lo)
+                .bind(hi)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(ServiceError::from)?
+        };
         Ok(count)
     }
 
@@ -122,17 +156,28 @@ impl EhrbaseService {
         if a_service != PlatformService::Ehr {
             return Ok(0);
         }
-        let count: i64 = sqlx::query_scalar(
-            "SELECT count(DISTINCT v.vo_id) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-             WHERE v.kind = 'COMPOSITION' \
-               AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
-               AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
-        )
-        .bind(lo)
-        .bind(hi)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(ServiceError::from)?;
+        // Unbounded: no reason to touch `audit` at all (the 2026-07-29
+        // measured-window finding on the sibling count).
+        let count: i64 = if lo.is_none() && hi.is_none() {
+            sqlx::query_scalar(
+                "SELECT count(DISTINCT vo_id) FROM vo_version WHERE kind = 'COMPOSITION'",
+            )
+            .fetch_one(&self.pool)
+            .await
+            .map_err(ServiceError::from)?
+        } else {
+            sqlx::query_scalar(
+                "SELECT count(DISTINCT v.vo_id) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                 WHERE v.kind = 'COMPOSITION' \
+                   AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
+                   AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
+            )
+            .bind(lo)
+            .bind(hi)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(ServiceError::from)?
+        };
         Ok(count)
     }
 
@@ -153,17 +198,24 @@ impl EhrbaseService {
         if a_service != PlatformService::Ehr {
             return Ok(0);
         }
-        let count: i64 = sqlx::query_scalar(
-            "SELECT count(*) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-             WHERE v.kind = 'COMPOSITION' \
-               AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
-               AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
-        )
-        .bind(lo)
-        .bind(hi)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(ServiceError::from)?;
+        let count: i64 = if lo.is_none() && hi.is_none() {
+            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE kind = 'COMPOSITION'")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(ServiceError::from)?
+        } else {
+            sqlx::query_scalar(
+                "SELECT count(*) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                 WHERE v.kind = 'COMPOSITION' \
+                   AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
+                   AND ($2::timestamptz IS NULL OR a.time_committed <= $2::timestamptz)",
+            )
+            .bind(lo)
+            .bind(hi)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(ServiceError::from)?
+        };
         Ok(count)
     }
 }

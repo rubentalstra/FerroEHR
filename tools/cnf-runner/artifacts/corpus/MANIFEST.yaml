@@ -1621,6 +1621,25 @@ cnf.messaging.tdd.v1:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin, compositions/TDD/persistent_minimal.en.v1__full.xml); adopted 2026-07-29 (#659) with ONE change — the root `uid` is removed, because a version identifier is minted by the committing system (RM common master06 §Version Identification) and carrying the source system's would assert a foreign identity as this server's. It names persistent_minimal.en.v1, the template cnf.opt.minimal_persistent provisions"
+cnf.archetype.adl14.medication:
+  source: fixtures/archetypes/adl14.medication.v1.adl
+  format: adl14-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "openEHR CKM lineage ADL 1.4 archetype openEHR-EHR-INSTRUCTION.medication.v1 (the same source vendored with the OPT test corpus at app/ehrbase/tests/resources/service/knowledge/archetypes), adopted 2026-07-29 for the ADL 1.4 archetype-provisioning battery"
+cnf.archetype.adl14.unparseable:
+  source: fixtures/archetypes/adl14.unparseable.adl
+  format: adl14-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: invalid, defect: "the definition section carries an unterminated node id - not parseable as ADL 1.4", spec_ref: "AM 1.4 ADL — cADL node identifiers are bracketed at-codes; an unterminated [at code makes the source unparseable" }
+  provenance: "derived 2026-07-29 from cnf.archetype.adl14.medication: header intact, definition truncated to an unterminated node id so exactly one defect (the parse) is exercised"
+cnf.messaging.tdd.absent_template:
+  source: fixtures/messaging/tdd.absent_template.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: invalid, defect: "names the never-provisioned template cnf.absent_template.v99 - the template-absence ground that HOLDS on a shared world (tdd.v1's template is provisioned by the sibling success cases)", spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd - the referenced operational template must be provisioned for a TDD to be convertible" }
+  template_id: "cnf.absent_template.v99"
+  provenance: "derived 2026-07-29 from cnf.messaging.tdd.v1 (the vendored CNF TDD data set): every template reference swapped to the never-provisioned cnf.absent_template.v99 identity"
 cnf.messaging.tdd.nested:
   source: fixtures/messaging/tdd.nested.xml
   format: canonical-xml

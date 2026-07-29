@@ -197,3 +197,35 @@ fn wrong_root_is_conversion_error() {
         "got: {err}"
     );
 }
+
+/// A TDD conforms to the template-derived TDS ("a kind of XSD" — AM OPT2
+/// `master02-overview.adoc` §Purpose of the OPT): an element the template
+/// defines no node for is REJECTED, never silently dropped into a thinner
+/// (still-valid) COMPOSITION — the silent absorption is exactly how a
+/// nonconforming import committed on the 2026-07-29 conformance run.
+#[test]
+fn nonconforming_content_is_rejected_not_dropped() {
+    let opt = format!("{CORPUS}/valid_templates/minimal_persistent/persistent_minimal.opt");
+    let wt = wt_from(&opt);
+    let tdd = std::fs::read_to_string(format!(
+        "{CORPUS}/compositions/TDD/persistent_minimal.en.v1__full.xml"
+    ))
+    .expect("read TDD");
+
+    // The conforming document still converts (the tolerance for compacted-
+    // wrapper RM metadata holds).
+    from_tdd(&tdd, &wt).expect("the vendored TDD conforms");
+
+    // Rename one content node to a name the template does not define — the
+    // one defect the derived cnf corpus fixture carries.
+    let renamed = tdd
+        .replace("<Minimal>", "<Unknown_content>")
+        .replace("</Minimal>", "</Unknown_content>");
+    assert_ne!(tdd, renamed, "the fixture must contain the renamed node");
+    let err = from_tdd(&renamed, &wt).expect_err("nonconforming content must be rejected");
+    assert!(
+        err.to_string()
+            .contains("matches no node of the operational template"),
+        "got: {err}"
+    );
+}

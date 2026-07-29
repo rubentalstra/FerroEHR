@@ -479,34 +479,80 @@ async fn zip_compressed_export_round_trips_through_the_detected_container() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// The two `EXPORT_FORMAT`/`COMPRESSION_FORMAT` members this service does not
-/// realize are refused as `not_implemented` (RFC 9110 §15.6.2 `501`) — a valid
-/// SM enumeration member is never reported as a malformed request, and never
+/// SM `compression_format.adoc` member `7z` (owner-approved 2026-07-29,
+/// `sevenz-rust2`): the archive is one `archive.7z` container carrying the
+/// identical entry set, and the format-less `load_ehrs` detects and reads it,
+/// round-tripping byte-equal — the exact mirror of the `zip` sibling above.
+#[tokio::test]
+async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
+    let src_db = testkit::db().await.expect("testkit database");
+    let src_pool = src_db.pool();
+    let source = EhrbaseService::new(src_pool.clone());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
+    let target = EhrbaseService::new(dst_pool.clone());
+
+    let ehr = seed_full_ehr(&source).await;
+    let src = canonical_snapshot(&source, ehr).await;
+    let src_counts = counts(&src_pool, ehr.into()).await;
+
+    let dir = archive_dir();
+    let spec = ExportSpec {
+        logical_format: Some(ExportFormat::OpenehrCanonicalJson),
+        compression_format: Some(CompressionFormat::SevenZip),
+        // A small split forces several segment entries into the one container.
+        segment_split_size: 1,
+    };
+    let reports = source
+        .export_ehrs(dir.clone(), spec)
+        .await
+        .expect("7z export");
+    assert!(reports.is_empty(), "a clean export reports no failures");
+
+    // The packed container is the ONLY thing written — no loose manifest.
+    let root = std::path::Path::new(&dir);
+    assert!(root.join("archive.7z").is_file(), "archive.7z written");
+    assert!(
+        !root.join("manifest.json").exists(),
+        "the packed form writes no loose manifest"
+    );
+
+    let load_reports = target.load_ehrs(dir.clone()).await.expect("7z load");
+    assert!(
+        load_reports.is_empty(),
+        "loading into an empty repo reports no failures, got {load_reports:?}"
+    );
+    assert_eq!(
+        canonical_snapshot(&target, ehr).await,
+        src,
+        "a 7z round-trip must be byte-equal at the canonical JSON level"
+    );
+    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// The one `EXPORT_FORMAT` member this service does not realize
+/// (`openehr_canonical_xml` — the archive envelope has no XML design yet) is
+/// refused as `not_implemented` (RFC 9110 §15.6.2 `501`) — a valid SM
+/// enumeration member is never reported as a malformed request, and never
 /// silently downgraded to a format the caller did not ask for.
+/// (`COMPRESSION_FORMAT` is realized in full since the 7z approval —
+/// the round-trip test below covers it.)
 #[tokio::test]
 async fn unrealized_format_members_are_not_implemented_and_write_nothing() {
     let db = testkit::db().await.expect("testkit database");
     let service = EhrbaseService::new(db.pool());
     let _ehr = seed_full_ehr(&service).await;
 
-    for (label, spec) in [
-        (
-            "openehr_canonical_xml",
-            ExportSpec {
-                logical_format: Some(ExportFormat::OpenehrCanonicalXml),
-                compression_format: None,
-                segment_split_size: 1024,
-            },
-        ),
-        (
-            "7z",
-            ExportSpec {
-                logical_format: Some(ExportFormat::OpenehrCanonicalJson),
-                compression_format: Some(CompressionFormat::SevenZip),
-                segment_split_size: 1024,
-            },
-        ),
-    ] {
+    for (label, spec) in [(
+        "openehr_canonical_xml",
+        ExportSpec {
+            logical_format: Some(ExportFormat::OpenehrCanonicalXml),
+            compression_format: None,
+            segment_split_size: 1024,
+        },
+    )] {
         let dir = archive_dir();
         let err = service
             .export_ehrs(dir.clone(), spec)
