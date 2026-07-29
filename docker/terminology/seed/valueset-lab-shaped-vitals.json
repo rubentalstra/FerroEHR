@@ -1,9 +1,9 @@
 {
   "resourceType": "ValueSet",
-  "id": "cnf-loinc-shaped-vitals",
-  "url": "http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals",
+  "id": "cnf-lab-shaped-vitals",
+  "url": "http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals",
   "version": "1.0.0",
-  "name": "CnfLoincShapedVitals",
+  "name": "CnfLabShapedVitals",
   "title": "CNF test value set, LOINC-shaped vitals (synthetic)",
   "status": "active",
   "experimental": true,
@@ -12,7 +12,7 @@
   "compose": {
     "include": [
       {
-        "system": "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
+        "system": "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
         "concept": [
           { "code": "99991-1", "display": "Test systolic blood pressure (CNF)" },
           { "code": "99992-9", "display": "Test diastolic blood pressure (CNF)" }

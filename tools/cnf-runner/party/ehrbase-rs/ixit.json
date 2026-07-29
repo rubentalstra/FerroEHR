@@ -90,9 +90,9 @@
             "name": "loinc",
             "reachable": false,
             "namespaces": [
-              "cnf-loinc-shaped",
-              "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
-              "http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals"
+              "cnf-lab-shaped",
+              "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
+              "http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals"
             ]
           },
           {
@@ -138,9 +138,9 @@
       {
         "name": "loinc",
         "namespaces": [
-          "cnf-loinc-shaped",
-          "http://cnf.example.test/fhir/CodeSystem/loinc-shaped",
-          "http://cnf.example.test/fhir/ValueSet/loinc-shaped-vitals"
+          "cnf-lab-shaped",
+          "http://cnf.example.test/fhir/CodeSystem/lab-shaped",
+          "http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals"
         ]
       },
       {
