@@ -44,8 +44,6 @@ const STYLE: &str = "<style>\n\
   .ev-failed { fill: #d55e00; }\n\
   .ev-inconclusive { fill: #e69f00; }\n\
   .ev-not-evidenced { fill: #cbc9c2; }\n\
-  .ev-unrealized { fill: #e8e6e0; }\n\
-  .ev-no-cases { fill: #f4f2ec; }\n\
   .cell-required { stroke: #52514e; stroke-width: 1.2; }\n\
   .cell-optional { stroke: #cbc9c2; stroke-width: 1; stroke-dasharray: 3 2; }\n\
   .bar-passed { fill: #0072b2; }\n\
@@ -65,8 +63,6 @@ const STYLE: &str = "<style>\n\
     .ev-failed { fill: #e5484d; }\n\
     .ev-inconclusive { fill: #f5a623; }\n\
     .ev-not-evidenced { fill: #4a4a47; }\n\
-    .ev-unrealized { fill: #3a3a38; }\n\
-    .ev-no-cases { fill: #2e2e2c; }\n\
     .cell-required { stroke: #c3c2b7; }\n\
     .cell-optional { stroke: #4a4a47; }\n\
     .bar-passed { fill: #3987e5; }\n\
@@ -97,8 +93,6 @@ fn evidence_encoding(evidence: Evidence) -> (&'static str, &'static str, &'stati
         Evidence::Failed => ("ev-failed", "✕", "FAILED"),
         Evidence::Inconclusive => ("ev-inconclusive", "?", "INCONCLUSIVE"),
         Evidence::NotEvidenced => ("ev-not-evidenced", "○", "not evidenced"),
-        Evidence::Unrealized => ("ev-unrealized", "◇", "excused (unrealized)"),
-        Evidence::NoCases => ("ev-no-cases", "∅", "no cases"),
     }
 }
 
@@ -152,7 +146,7 @@ pub fn heat_grid_svg(
         capabilities
             .iter()
             .find(|(n, _)| n == name)
-            .map_or(Evidence::NoCases, |(_, e)| *e)
+            .map_or(Evidence::NotEvidenced, |(_, e)| *e)
     };
 
     // Tier bands in fixed order, entries in authored matrix order.
@@ -186,13 +180,7 @@ pub fn heat_grid_svg(
     );
     // Legend (glyph + label per evidence kind; swatch + glyph = both channels).
     let mut lx = MARGIN;
-    for evidence in [
-        Evidence::Passed,
-        Evidence::Failed,
-        Evidence::NotEvidenced,
-        Evidence::Unrealized,
-        Evidence::NoCases,
-    ] {
+    for evidence in [Evidence::Passed, Evidence::Failed, Evidence::NotEvidenced] {
         let (class, glyph, label) = evidence_encoding(evidence);
         let _ = write!(
             out,
@@ -908,9 +896,10 @@ mod tests {
         assert!(a.contains('✓'));
         assert!(a.contains("ev-failed"));
         assert!(a.contains('✕'));
-        // The unmapped capability renders as no-cases with its glyph.
-        assert!(a.contains("ev-no-cases"));
-        assert!(a.contains('∅'));
+        // The unmapped capability renders as not-evidenced with its glyph
+        // (the former no-cases state — variant deleted, #626).
+        assert!(a.contains("ev-not-evidenced"));
+        assert!(a.contains('○'));
         // Tier bands + border encodings.
         for band in ["CORE", "STANDARD", "OPTIONS", "SEC-BASIC"] {
             assert!(a.contains(band), "band {band} missing");
