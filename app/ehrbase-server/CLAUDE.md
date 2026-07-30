@@ -12,16 +12,17 @@ bin-only crate is untestable by construction — Book ch11.3).
   (platform) or `ehrbase-rest` (protocol adapter). `anyhow` is allowed here
   (the lib target is the binary's own logic half, not a consumable library);
   `thiserror` everywhere else.
-- **This crate currently has no `tests/` directory, and anything added there
-  may test only the wiring seam** (`run`, CLI parsing, config subcommands).
-  Tests that exercise `ehrbase` APIs live in `app/ehrbase/tests/it/`; tests
-  that drive the assembled `ehrbase-rest` router live in
-  `app/ehrbase-rest/tests/`. Parking either here made them invisible to the
+- **`tests/it/` may test ONLY the wiring seam** — `Cli` parsing (incl. the
+  `--set key=value` override parser), the subcommand shapes, and the `run`
+  branches that need no database, listener, or network (`config default`).
+  Everything past that seam belongs to the crate that owns it: `ehrbase` API
+  behaviour in `app/ehrbase/tests/it/`, the assembled `ehrbase-rest` router in
+  `app/ehrbase-rest/tests/it/`. Parking either here made them invisible to the
   owning crate's gate — the four that had been (`persistence`, `telemetry`,
-  `fhir_inbound`, `service_query`) were relocated to their owners.
+  `fhir_inbound`, `service_query`) were relocated to their owners. The
+  dev-dependency set is scoped to that seam (`anyhow`, `clap`, `tokio`); a new
+  dev-dep here is a signal the test belongs in another crate.
 - The bin target is named `ehrbase` (`[[bin]] name = "ehrbase"`; container
   entrypoints/compose/Helm and `scripts/*` invoke that name — do not rename).
 - Gates: `cargo clippy -p ehrbase-server --all-targets` +
-  `cargo nextest run -p ehrbase-server --no-tests=pass` (the `--no-tests=pass`
-  is load-bearing while this crate carries no tests: nextest exits non-zero on
-  an empty selection, which is why CI's workspace run passes the same flag).
+  `cargo nextest run -p ehrbase-server`.

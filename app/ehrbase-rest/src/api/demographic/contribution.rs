@@ -58,8 +58,12 @@ pub(super) async fn run(
             // immutable and uniquely identified; the released 200_CONTRIBUTION
             // declares neither header).
             let mut meta = ehrbase::service::response::ResourceMeta::new(String::new(), uid);
-            if let Some(at) = resp.body["audit"]["time_committed"]["value"]
-                .as_str()
+            if let Some(at) = resp
+                .body
+                .get("audit")
+                .and_then(|a| a.get("time_committed"))
+                .and_then(|t| t.get("value"))
+                .and_then(serde_json::Value::as_str)
                 .and_then(|raw| raw.parse::<jiff::Timestamp>().ok())
             {
                 meta = meta.with_last_modified(at);

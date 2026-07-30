@@ -7,7 +7,7 @@
 //! maps directly to
 //! *designed* templates (mapping-as-data), a different, spec-silent mechanism.
 //! Gate: the `/fhir/r4/*` + `/admin/fhir_mapping` routes are config-gated in
-//! `ehrbase-rest`; the outbound emitter behind [`FhirOutboundConfig`].
+//! `ehrbase-rest`; the outbound emitter behind [`config::FhirOutboundConfig`].
 //!
 //! Concerns, all on `EhrbaseService`:
 //! * the **mapping store** — CRUD over `fhir_mapping` (the deployable

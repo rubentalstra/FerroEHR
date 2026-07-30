@@ -571,7 +571,7 @@ impl EhrbaseService {
 
     /// SM `I_EHR_SERVICE.get_ehrs_for_subject` — the `EHR_SUMMARY` list for a
     /// subject (≤1 under the one-EHR-per-subject rule; see the note on
-    /// [`Self::ehr_by_subject`]).
+    /// `Self::ehr_by_subject`).
     ///
     /// # Errors
     /// [`SmError`] if a read fails, or when a found EHR body carries no
@@ -663,7 +663,7 @@ impl EhrbaseService {
     /// instant).
     ///
     /// `committal` is the `POST /ehr` request's `openehr-version` /
-    /// `openehr-audit-details` metadata (see [`Self::commit_new_ehr`]).
+    /// `openehr-audit-details` metadata (see `Self::commit_new_ehr`).
     ///
     /// # Errors
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
@@ -686,7 +686,7 @@ impl EhrbaseService {
     /// [`ResourceMeta`].
     ///
     /// `committal` is the `PUT /ehr/{ehr_id}` request's `openehr-version` /
-    /// `openehr-audit-details` metadata (see [`Self::commit_new_ehr`]).
+    /// `openehr-audit-details` metadata (see `Self::commit_new_ehr`).
     ///
     /// # Errors
     /// [`SmError`] when the EHR already exists (409-equivalent), the status is

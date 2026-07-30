@@ -25,7 +25,7 @@
 //! §Simplified Formats) — only each `versions[i].data` COMPOSITION is
 //! simplified. Non-templated resources (EHR, `EHR_STATUS`, FOLDER, demographic
 //! parties) have no Simplified-Formats mapping and are rejected uniformly
-//! ([`guard_non_templated`]).
+//! (`guard_non_templated`).
 
 use axum::response::Response;
 use bytes::Bytes;
@@ -387,12 +387,6 @@ pub(crate) fn is_simplified_body(headers: &HeaderMap) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use axum::response::IntoResponse;
     use http::{HeaderMap, HeaderValue, StatusCode, header};

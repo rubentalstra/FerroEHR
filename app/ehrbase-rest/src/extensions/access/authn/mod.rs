@@ -9,7 +9,7 @@
 //! service MUST** use `WWW-Authenticate`/`Proxy-Authenticate` and return
 //! `401`/`403`/`407` as applicable — the normative bar this middleware meets:
 //! missing/invalid credentials → `401` with a `WWW-Authenticate` challenge
-//! ([`Authenticator::challenge`]); authenticated-but-refused → `403`, no
+//! (`Authenticator::challenge`); authenticated-but-refused → `403`, no
 //! challenge. (We serve no proxy, so `407`/`Proxy-Authenticate` do not apply.)
 //! The CNF security suites
 //! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`) are the
@@ -81,7 +81,9 @@ pub struct Principal {
 /// The mechanism that authenticated a [`Principal`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuthMethod {
+    /// HTTP Basic: a username/password pair verified against the Argon2 store.
     Basic,
+    /// OAuth2/OIDC Bearer: a JWT validated against the issuer's JWKS.
     Bearer,
 }
 
@@ -111,14 +113,22 @@ pub(crate) struct FreshAuthentication;
 /// An authentication failure.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AuthError {
+    /// The request carried no credential for any enabled mechanism.
     #[error("no credentials supplied")]
     MissingCredentials,
+    /// A malformed `Authorization` header, an unknown user, or a password that
+    /// does not match the stored Argon2 hash.
     #[error("invalid credentials")]
     InvalidCredentials,
+    /// A bearer token that failed structural, signature, or claim validation.
     #[error("invalid bearer token: {0}")]
     InvalidToken(String),
+    /// The issuer's signing keys (JWKS) could not be fetched or parsed, so no
+    /// bearer token can be validated.
     #[error("could not resolve signing keys: {0}")]
     KeyResolution(String),
+    /// The caller authenticated but is not permitted the request — the 403
+    /// branch of the ITS-REST 401-vs-403 split.
     #[error("forbidden: {0}")]
     Forbidden(String),
 }
@@ -228,6 +238,12 @@ impl Authenticator {
             .unwrap_or_else(|_| HeaderValue::from_static("Basic"))
     }
 
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "every failure on the credential path collapses to one opaque \
+                  outcome deliberately: a caller must not learn from the 401 which \
+                  part of the credential was rejected"
+    )]
     pub(crate) async fn authenticate(
         &self,
         headers: &http::HeaderMap,
@@ -315,7 +331,7 @@ tokio::task_local! {
 
 /// The authenticated principal for the current request, if any.
 ///
-/// Set by [`middleware`] for the duration of request handling; downstream layers
+/// Set by `middleware` for the duration of request handling; downstream layers
 /// (notably the service layer, when attributing a CONTRIBUTION's committer) read
 /// it without the principal having to be threaded through the generated trait
 /// signatures. Returns `None` when unauthenticated or called outside a request.
@@ -469,12 +485,6 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use argon2::password_hash::{PasswordHasher, SaltString};

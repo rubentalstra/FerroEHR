@@ -6,22 +6,22 @@
 //! `master06-design_of_the_ehr.adoc` × the SM EHR component,
 //! `docs/specs/openehr/SM/docs/openehr_platform/master05-ehr_service.adoc`):
 //!
-//! - [`service`]      — `I_EHR_SERVICE` (`i_ehr_service.adoc`): EHR create/get,
+//! - `service`      — `I_EHR_SERVICE` (`i_ehr_service.adoc`): EHR create/get,
 //!   `EHR_SUMMARY`, subject lookup, folder-hierarchy reads.
-//! - [`status`]       — `I_EHR_STATUS` (`i_ehr_status.adoc`): the `EHR_STATUS`
+//! - `status`       — `I_EHR_STATUS` (`i_ehr_status.adoc`): the `EHR_STATUS`
 //!   reads + the five discrete mutators + the `is_modifiable` write guard.
-//! - [`directory`]    — `I_EHR_DIRECTORY` (`i_ehr_directory.adoc`): the
+//! - `directory`    — `I_EHR_DIRECTORY` (`i_ehr_directory.adoc`): the
 //!   DIRECTORY FOLDER surface.
-//! - [`composition`]  — `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`).
-//! - [`contributions`] — `I_EHR_CONTRIBUTION` (`i_ehr_contribution.adoc`).
-//! - [`access`]       — the `EHR_ACCESS` top-level structure (arch-overview
+//! - `composition`  — `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`).
+//! - `contributions` — `I_EHR_CONTRIBUTION` (`i_ehr_contribution.adoc`).
+//! - `access`       — the `EHR_ACCESS` top-level structure (arch-overview
 //!   master06 §`EHR_ACCESS`) + the spec-silent scheme cache.
-//! - [`validation`]   — the commit-validation choke point for every EHR-owned
+//! - `validation`   — the commit-validation choke point for every EHR-owned
 //!   kind (`EHR_STATUS` / `EHR_ACCESS` / FOLDER / COMPOSITION) + the
 //!   `VERSIONED_COMPOSITION` cross-version invariants.
-//! - [`meta`] — the shared version-metadata helpers.
-//! - [`tags`]         — `ITEM_TAG` (ITS-REST experimental extension).
-//! - [`uri`]          — `ehr:`-URI resolution (spec-silent extension).
+//! - `meta` — the shared version-metadata helpers.
+//! - `tags`         — `ITEM_TAG` (ITS-REST experimental extension).
+//! - `uri`          — `ehr:`-URI resolution (spec-silent extension).
 //!
 //! The versioned-object mechanics are delegated to [`crate::versioning`]
 //! (change control, RM common master06) and [`crate::storage`] (row I/O — no
@@ -29,13 +29,13 @@
 //!
 //! # Integration seams
 //!
-//! [`crate::versioning::CommitEnv`] (the hooks the CONTRIBUTION commit engine
+//! `crate::versioning::CommitEnv` (the hooks the CONTRIBUTION commit engine
 //! needs) is implemented for `EhrbaseService` in `service/mod.rs`; its
 //! EHR-owned constituents are authored in this chapter: `default_committer` =
-//! [`meta::committer`], `ensure_ehr_exists` / `ensure_content_writable` /
+//! `meta::committer`, `ensure_ehr_exists` / `ensure_content_writable` /
 //! `current_vo` / `invalidate_ehr_access` are `EhrbaseService` methods here,
 //! and the two in-transaction hooks delegate to
-//! [`check_versioned_composition_invariants`] (COMPOSITION modify) and
+//! `check_versioned_composition_invariants` (COMPOSITION modify) and
 //! `EhrbaseService::sync_ehr_subject` (`EHR_STATUS` commit) — the same fns the
 //! direct create/update paths run inline. SQL row I/O is a storage seam
 //! ([`crate::storage::ehr_repo`] /

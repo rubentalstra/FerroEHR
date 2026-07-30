@@ -34,7 +34,7 @@
 //! concern (`ehrbase-rest::system_log::classify`); its audit middleware builds
 //! an [`event::AuditEvent`] per request and hands it to the platform through
 //! [`EhrbaseService::emit`]. The binary (`ehrbase-server`) boots the subsystem
-//! via [`start`] and supplies the DB-backed [`SubjectResolver`]; the sender is
+//! via [`sender::start`] and supplies the DB-backed [`sender::SubjectResolver`]; the sender is
 //! installed on the service with
 //! [`EhrbaseService::with_audit`](crate::service::EhrbaseService::with_audit).
 //!
@@ -138,7 +138,7 @@ impl EhrbaseService {
     /// supplement's ITI-81 FHIR search on `AuditEvent`).
     ///
     /// # Errors
-    /// [`SmError`] `precondition_violation` when no local store is wired, or
+    /// [`crate::service::status::SmError`] `precondition_violation` when no local store is wired, or
     /// `exception` when the store query fails.
     pub async fn audit_event_search(
         &self,

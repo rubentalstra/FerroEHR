@@ -10,8 +10,8 @@
 //! This is the `[smart]` section of the one server configuration tree; it carries **no loader of its own** — the
 //! whole tree is assembled once by `ehrbase::config` and this struct is
 //! deserialized as a field of it. The discovery router is mounted from it in
-//! [`crate::router`] and the scope gate reads it in
-//! [`crate::extensions::access::pep`].
+//! `ehrbase_rest::router` and the scope gate reads it in
+//! `ehrbase_rest::extensions::access::pep`.
 
 use serde::{Deserialize, Serialize};
 

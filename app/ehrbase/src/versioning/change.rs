@@ -1,4 +1,4 @@
-//! The change-set unit: [`Change`], the version-tree placement **decision**,
+//! The change-set unit: `Change`, the version-tree placement **decision**,
 //! and the shared commit engine `apply_change`.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Version and its

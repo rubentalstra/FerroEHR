@@ -19,7 +19,7 @@
 //!
 //! **Poison rows are parked, never allowed to block the stream:** a row whose
 //! reverse-mapping fails deterministically (a defective stored mapping or
-//! template) is retried [`PARK_AFTER_FAILED_PASSES`] times and then
+//! template) is retried `PARK_AFTER_FAILED_PASSES` times and then
 //! dead-lettered to the log — an `error`-level record naming the row — and the
 //! cursor advances past it, so one bad row cannot head-of-line-block every
 //! later commit. Broker (publish) and DB failures are transient and never

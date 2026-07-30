@@ -38,7 +38,7 @@ const PINS: &[(&str, &str)] = &[
 /// Render the full banner for the given product `version`.
 ///
 /// Kept version-parameterized (rather than reading `CARGO_PKG_VERSION`
-/// directly) so it is unit-testable; [`print`] supplies the real version.
+/// directly) so it is unit-testable; [`print()`] supplies the real version.
 #[must_use]
 pub fn render(version: &str) -> String {
     let mut out = format!(

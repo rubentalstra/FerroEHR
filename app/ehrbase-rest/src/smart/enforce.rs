@@ -172,7 +172,7 @@ pub fn evaluate(
     family: Option<ResourceFamily>,
     permission: Permission,
     resource_id: Option<&str>,
-    cfg: &GateConfig,
+    cfg: GateConfig,
 ) -> ScopeOutcome {
     let Some(family) = family else {
         // No SMART resource scope governs this operation family.
@@ -275,12 +275,6 @@ fn broaden(current: Option<Compartment>, candidate: Compartment) -> Compartment 
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
@@ -365,7 +359,7 @@ mod tests {
             None,
             Permission::Read,
             None,
-            &fail_closed(),
+            fail_closed(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         assert!(!out.bind_patient_compartment);
@@ -382,7 +376,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyTemplate.v1"),
-            &advisory(),
+            advisory(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         assert!(!out.bind_patient_compartment);
@@ -395,7 +389,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyTemplate.v1"),
-            &fail_closed(),
+            fail_closed(),
         );
         assert!(matches!(out.decision, ScopeDecision::Deny(_)));
     }
@@ -410,7 +404,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Create,
             Some("MyTemplate.v1"),
-            &advisory(),
+            advisory(),
         );
         assert!(matches!(out.decision, ScopeDecision::Deny(_)));
     }
@@ -422,7 +416,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyTemplate.v1"),
-            &advisory(),
+            advisory(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         // patient compartment → the PEP must bind the launch context.
@@ -439,7 +433,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyHospital::Vitals.v1"),
-            &advisory(),
+            advisory(),
         );
         assert_eq!(allow.decision, ScopeDecision::Allow);
 
@@ -448,7 +442,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("OtherHospital::Vitals.v1"),
-            &advisory(),
+            advisory(),
         );
         assert!(matches!(deny.decision, ScopeDecision::Deny(_)));
     }
@@ -462,7 +456,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyTemplate.v1"),
-            &advisory(),
+            advisory(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         assert!(!out.bind_patient_compartment);
@@ -477,7 +471,7 @@ mod tests {
             Some(ResourceFamily::Composition),
             Permission::Read,
             Some("MyTemplate.v1"),
-            &advisory(),
+            advisory(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         assert!(!out.bind_patient_compartment);
@@ -490,7 +484,7 @@ mod tests {
             Some(ResourceFamily::Aql),
             Permission::Search,
             Some("any::query.v1"),
-            &fail_closed(),
+            fail_closed(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
         assert!(!out.bind_patient_compartment);
@@ -506,7 +500,7 @@ mod tests {
             Some(ResourceFamily::Aql),
             Permission::Search,
             None,
-            &advisory(),
+            advisory(),
         );
         assert_eq!(out.decision, ScopeDecision::Allow);
 
@@ -516,7 +510,7 @@ mod tests {
             Some(ResourceFamily::Aql),
             Permission::Search,
             None,
-            &advisory(),
+            advisory(),
         );
         assert!(matches!(out.decision, ScopeDecision::Deny(_)));
     }

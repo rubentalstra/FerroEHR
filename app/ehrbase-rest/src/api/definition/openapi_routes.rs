@@ -71,7 +71,12 @@ use crate::state::AppState;
 // + `docs/overview/Amendment_record.md`), and utoipa reflects the Rust attribute
 // into the served OpenAPI. It is the only handler in this group so marked; the
 // `routes!` macro references it by name, so the deprecation lint is allowed here.
-#[allow(deprecated)]
+#[expect(
+    deprecated,
+    reason = "`definition_template_adl2_version_get` is `#[deprecated]` so utoipa \
+              reflects `deprecated: true` into the served document; the \
+              `routes!` macro has to reference it by name"
+)]
 pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(

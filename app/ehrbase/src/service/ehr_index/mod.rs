@@ -3,9 +3,9 @@
 //! and the UML class `i_ehr_index.adoc`): N:M subject↔EHR associations with
 //! duplicate-management metadata.
 //!
-//! Layout: [`index`] = the SM write operations (I1–I5) + the design-filled
+//! Layout: `index` = the SM write operations (I1–I5) + the design-filled
 //! reads, each public method parsing its `ehr_id` at the boundary;
-//! [`conflicts`] = the design-filled advisory duplicate-detection read;
+//! `conflicts` = the design-filled advisory duplicate-detection read;
 //! [`types`] = the SM information structures (`RESOURCE_STATUS`,
 //! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!

@@ -19,7 +19,7 @@
 //! the served `OpenAPI` (see [`openapi`]), but the live [`router`] mounts only
 //! the opted-in endpoints — a disabled endpoint (or one whose access level is
 //! `Off`) is simply absent from the router and answers `404`. The access-level
-//! layer ([`AccessGuard`]) is what yields the `401`/`403` documented on the
+//! layer (`AccessGuard`) is what yields the `401`/`403` documented on the
 //! gated operations: `401` when the level is Private/AdminOnly and auth is
 //! enabled but the caller is unauthenticated, `403` when the level is `AdminOnly`
 //! and the caller lacks the configured admin scope.
@@ -164,11 +164,11 @@ pub fn router(state: ManagementState) -> Router {
     // The per-endpoint access-level layer builder: an owned clone of the
     // authenticator (so `router.with_state(state)` below can still move `state`)
     // wrapped with the required level for one route.
-    let authenticator = state.authenticator.clone();
+    let authenticator = Arc::clone(&state.authenticator);
     let mk = |level: AccessLevel| {
         from_fn_with_state(
             AccessGuard {
-                authenticator: authenticator.clone(),
+                authenticator: Arc::clone(&authenticator),
                 level,
             },
             access_middleware,
@@ -271,7 +271,6 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
         (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
     info_routes::info(s.build_info)
 }
@@ -294,7 +293,6 @@ async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
         (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn prometheus_text(State(s): State<ManagementState>) -> Response {
     match &s.prometheus {
         Some(handle) => metrics::prometheus(handle),
@@ -320,7 +318,6 @@ async fn prometheus_text(State(s): State<ManagementState>) -> Response {
         (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn metrics_list(State(s): State<ManagementState>) -> Response {
     match &s.prometheus {
         Some(handle) => metrics::list(handle).into_response(),
@@ -348,7 +345,6 @@ async fn metrics_list(State(s): State<ManagementState>) -> Response {
         (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) -> Response {
     match &s.prometheus {
         Some(handle) => metrics::detail(handle, path),
@@ -372,7 +368,6 @@ async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) ->
         (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
     env::env(&s.env_snapshot)
 }
@@ -395,7 +390,6 @@ async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
         (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn loggers_get(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
         Some(reload) => logger_routes::get(reload).into_response(),
@@ -424,7 +418,6 @@ async fn loggers_get(State(s): State<ManagementState>) -> Response {
         (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn loggers_post(
     State(s): State<ManagementState>,
     body: Json<logger_routes::SetFilter>,
@@ -453,7 +446,6 @@ async fn loggers_post(
         (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
-#[allow(clippy::unused_async)]
 async fn loggers_reset(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
         Some(reload) => logger_routes::reset(reload),
@@ -507,6 +499,12 @@ impl AccessGuard {
                 if !self.authenticator.enabled() {
                     return Ok(());
                 }
+                #[expect(
+                    clippy::map_err_ignore,
+                    reason = "the gate answers one 401 challenge for every \
+                              authentication failure: which part of the credential \
+                              was rejected is never disclosed"
+                )]
                 let authenticated = self
                     .authenticator
                     .authenticate(headers)

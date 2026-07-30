@@ -365,7 +365,7 @@ impl EhrbaseService {
     ///   exists for the subject.
     /// - `not_implemented` — the variable's frame has no dispatchable executor
     ///   (no method, unknown `model_type`/`call_name`, or an unconfigured FHIR
-    ///   system — see [`super::frames`]).
+    ///   system — see `super::frames`).
     /// - `exception` — a database/serialization fault while reading or
     ///   recording the sample.
     pub async fn get_variable(

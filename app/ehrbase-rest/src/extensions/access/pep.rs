@@ -37,16 +37,20 @@
 //! parity), each carrying the [`Principal`] on the response extensions so the
 //! ATNA audit layer records it for free. Query execution's ABAC scope + post-check
 //! live in the query path (§6.4, step 8). ABAC is inert unless an
-//! [`AbacGate`](crate::extensions::access::authz::AbacGate) is wired
+//! `crate::extensions::access::authz::AbacGate` is wired
 //! (`abac.enabled`); the SMART gate is inert until SMART is enabled (see
-//! [`smart_config`]). End-to-end coverage through the assembled router (pre-check
+//! `smart_config`). End-to-end coverage through the assembled router (pre-check
 //! deny/allow, post-check deny, and the ATNA deny record) lives in
 //! `tests/abac_e2e.rs`.
 //!
 //! The PEP helpers return `Result<(), Response>` (the deny/error path is a ready
 //! axum `Response`, which is a large type) — `result_large_err` is allowed
 //! module-wide accordingly.
-#![allow(clippy::result_large_err)]
+#![expect(
+    clippy::result_large_err,
+    reason = "the Err variant of every decision point in this module is a \
+              ready-to-return axum `Response`, which is large by nature"
+)]
 
 use axum::response::{IntoResponse, Response};
 
@@ -81,7 +85,12 @@ enum Mode {
 }
 
 /// The §7 enforcement matrix, keyed by operation id.
-#[allow(clippy::match_same_arms)] // grouped by resource family; explicitness is the point
+#[expect(
+    clippy::match_same_arms,
+    reason = "the arms are grouped by resource family, so naming every operation \
+              explicitly is the point — merging equal arms would hide which \
+              family an operation is gated as"
+)]
 fn mode_of(op: &str) -> Mode {
     match op {
         "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id" | "ehr_get_by_subject" => Mode::Pre,
@@ -622,7 +631,7 @@ fn smart_decide(
         enforce::family_of_op(op),
         enforce::permission_of_op(op),
         resource_id,
-        &GateConfig {
+        GateConfig {
             require_smart_scopes: cfg.require_smart_scopes,
         },
     );
@@ -693,12 +702,6 @@ fn smart_skip_family_gate(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -758,7 +761,7 @@ mod tests {
     #[tokio::test]
     async fn subject_mismatch_denies_without_engine_call() {
         let calls = Arc::new(AtomicUsize::new(0));
-        let gate = gate_with_subject(Some("P2"), calls.clone());
+        let gate = gate_with_subject(Some("P2"), Arc::clone(&calls));
         let principal = principal_with_patient("P1");
         let err = subject_gate(&gate, &principal, Some("P1"), Some("ehr-1"))
             .await
@@ -826,7 +829,7 @@ mod tests {
         assert_eq!(mode_of("contribution_list"), Mode::Pre);
         assert_eq!(
             kind_of("contribution_list"),
-            Some(crate::extensions::access::authz::request::ResourceKind::Contribution)
+            Some(ResourceKind::Contribution)
         );
         assert_eq!(mode_of("ehr_status_update"), Mode::Pre);
         assert_eq!(mode_of("versioned_ehr_status_get"), Mode::Pre);

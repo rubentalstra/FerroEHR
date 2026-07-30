@@ -13,7 +13,7 @@
 //!
 //! 1. **RBAC** (coarse, always on when auth is enabled): every generated
 //!    ITS-REST operation is classified ([`classify`]) and gated by a role model
-//!    ([`roles`]) driven by [`config::AuthzConfig`].
+//!    ([`roles`]) driven by `ehrbase::config::authz::AuthzConfig`.
 //! 2. **ABAC** (fine-grained, opt-in `abac.enabled`): a policy-decision-point
 //!    seam ([`engine::PolicyEngine`]) consulted per clinical operation with
 //!    resolved attributes (organization/patient/template), behind two
@@ -22,10 +22,10 @@
 //!
 //! This module also carries the per-server authorization handle wired onto
 //! [`AppState`](crate::state::AppState) (the RBAC + ABAC gates), built by the binary
-//! from [`config::AuthzConfig`].
+//! from `ehrbase::config::authz::AuthzConfig`.
 //!
 //! ## Module map (§4.1)
-//! - [`config`] — the [`config::AuthzConfig`] serde struct (the `[authz]`
+//! - `config` — the `ehrbase::config::authz::AuthzConfig` serde struct (the `[authz]`
 //!   section of the one server config tree) + boot validation.
 //! - [`roles`] — the role model, JWT-claim role extraction, and the RBAC gate
 //!   decision.
@@ -73,7 +73,7 @@ pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>
 pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
 
 /// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
-/// [`ehrbase_sm`] in the binary). `version` is the `VERSION_TREE_ID` lexical
+/// `ehrbase::service` in the binary). `version` is the `VERSION_TREE_ID` lexical
 /// form (`N` or `N.B.V` — trunk or branch, RM common master06 §Version tree);
 /// `None` = the current version.
 pub type TemplateOfVersionFn =
@@ -321,12 +321,6 @@ impl RbacGate {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

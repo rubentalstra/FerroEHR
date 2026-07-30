@@ -3,7 +3,7 @@
 //!
 //! This module is the *planning* front half of the engine: it turns a parsed
 //! [`openehr_query::ast::SelectQuery`] into a typed [`ir::QueryIr`] through path
-//! analysis ([`analyze`]) and AST→IR lowering ([`lower`]). The back half
+//! analysis (`analyze`) and AST→IR lowering (`lower`). The back half
 //! (IR→SQL via `sea-query`, execution via `sqlx`, `RESULT_SET` assembly) is the
 //! next package and is deliberately absent here — the IR carries no SQL.
 //!

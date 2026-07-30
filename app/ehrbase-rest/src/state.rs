@@ -10,11 +10,11 @@
 //! registry) — which defaults to fully off, so a server without observability
 //! is the clean default. ATNA auditing is no longer state-held: it lives in the
 //! platform service `S` (the SM `SystemLog` component), reached through
-//! [`AppState::backend`].
+//! `AppState::backend`.
 //!
 //! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
 //! resolution is a single service-owned concern reached through
-//! [`ehrbase::service::WebTemplateService`].
+//! `ehrbase::service::WebTemplateService`.
 
 use std::sync::Arc;
 

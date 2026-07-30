@@ -50,7 +50,7 @@ pub enum StorageError {
 
 impl From<StorageError> for crate::service::status::SmError {
     /// Bridge a storage failure to the SM call-status model. Constraint/
-    /// concurrency detail is preserved via [`classify_sqlx`] for the raw
+    /// concurrency detail is preserved via `classify_sqlx` for the raw
     /// `sqlx` case; the typed conflicts keep their specific `409` meaning; codec
     /// faults are genuine server faults (`exception` → `500`). No openEHR spec
     /// governs the persistence mechanism (`docs/architecture.md` §Storage); the

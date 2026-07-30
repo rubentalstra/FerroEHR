@@ -861,7 +861,7 @@ impl EhrbaseService {
     ///   the manifest / a segment entry / a blob entry cannot be read, the
     ///   manifest or a segment is not parseable as part of this archive format
     ///   (a mangled or truncated archive is the same fact as an unreadable
-    ///   one — see [`unreadable_archive_entry`]), or the manifest declares a
+    ///   one — see `unreadable_archive_entry`), or the manifest declares a
     ///   logical format that names no `EXPORT_FORMAT` member.
     /// - `precondition_violation` (`400`) — the archive carries externalized
     ///   multimedia blobs but this server has no multimedia store configured.

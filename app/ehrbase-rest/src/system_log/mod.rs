@@ -12,7 +12,7 @@
 //! (DICOM PS3.15 §A.5).
 //!
 //! This module is the capability's request-path half, over the
-//! [`SystemLog`](ehrbase::service::SystemLog) seam (`ehrbase::service::system_log`),
+//! `ehrbase::service::SystemLog` seam (`ehrbase::service::system_log`),
 //! with the DICOM/syslog rendering in the platform crate (`ehrbase::system_log`):
 //!
 //! - [`middleware`] resolves each request into an [`AuditEvent`](ehrbase::system_log::event::AuditEvent)

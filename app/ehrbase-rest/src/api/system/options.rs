@@ -147,7 +147,7 @@ impl SystemManifest {
     /// Render the `OPTIONS /` response: a `200 OK` with the `Allow` header and
     /// the `Options` body, honouring `Accept`.
     ///
-    /// Content negotiation goes through [`crate::overview::negotiate::respond`]:
+    /// Content negotiation goes through `crate::overview::negotiate::respond`:
     /// JSON for `application/json`/`*/*`/absent `Accept` (the OAS constrains
     /// `Accept` to `application/json`, `system-codegen.openapi.yaml`
     /// `Accept_JSON` lines 71-78), and `406 Not Acceptable` for an
@@ -247,7 +247,12 @@ where
     ),
     security(())
 )]
-#[allow(dead_code)] // the documented twin — the live route is the closure above
+#[expect(
+    dead_code,
+    reason = "the documentation twin of a live route: the served route is the \
+              closure above, so only the `#[utoipa::path]` attribute on this \
+              stub is consumed"
+)]
 fn options_documented() {}
 
 /// The System API's `OpenAPI` fragment, merged into the composed served
@@ -270,12 +275,6 @@ pub(crate) fn openapi(base_path: &str) -> utoipa::openapi::OpenApi {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use http_body_util::BodyExt;

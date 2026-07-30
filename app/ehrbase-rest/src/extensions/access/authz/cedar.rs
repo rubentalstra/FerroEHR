@@ -296,7 +296,7 @@ fn parse_and_validate(src: &str, schema: &Schema) -> Result<PolicySet, AuthzErro
     } else {
         let errors: Vec<String> = result
             .validation_errors()
-            .map(std::string::ToString::to_string)
+            .map(ToString::to_string)
             .collect();
         Err(AuthzError::PolicyLoad(format!(
             "policy set failed schema validation: {}",
@@ -324,12 +324,6 @@ fn spawn_reload(dir: PathBuf, schema: Arc<Schema>, policies: Arc<ArcSwap<PolicyS
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::extensions::access::authz::request::Attr;

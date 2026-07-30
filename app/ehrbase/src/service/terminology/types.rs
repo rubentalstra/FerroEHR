@@ -72,9 +72,9 @@ pub struct DefinedTerm {
 /// A `Terminology_extract._terms_` value: either a bare `Term_code` or a
 /// fully defined `Defined_term`.
 ///
-/// The SM types `_terms_` as `Hash<String, Term_code>` where "each [term] may
+/// The SM types `_terms_` as `Hash<String, Term_code>` where "each \[term\] may
 /// be a bare code, or have displayable text included, via the `Term` subtype
-/// [`Defined_term`]" (`terminology_extract.adoc`). This closed enum is the
+/// `Defined_term`" (`terminology_extract.adoc`). This closed enum is the
 /// faithful Rust encoding of that `Term_code`/`Defined_term` subtype choice.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]

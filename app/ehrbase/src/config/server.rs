@@ -1,12 +1,12 @@
 //! REST-adapter configuration types.
 //!
 //! No openEHR spec governs configuration mechanics — our own design. There is **no loader here**: the whole
-//! server configuration is one tree ([`ehrbase::config::EhrbaseConfig`]) loaded
+//! server configuration is one tree ([`crate::config::EhrbaseConfig`]) loaded
 //! once by the binary. This module owns the REST-adapter's slice of it:
 //!
 //! - [`ServerConfig`] — the `[server]` section (the HTTP listener + REST
 //!   surface + the `OPTIONS /` System-Options identity, §3.1).
-//! - [`AppConfig`] — the adapter's runtime view, assembled by the binary (the
+//! - `AppConfig` — the adapter's runtime view, assembled by the binary (the
 //!   composition root) from the root config's `[server]`, `[auth]`, `[admin]`,
 //!   `[tenancy]`, `[smart]` sections plus the extension-group mount toggles.
 //!   `ehrbase-rest` cannot depend on the `ehrbase` binary crate that owns the
@@ -71,7 +71,7 @@ pub struct ServerConfig {
     /// The `OPTIONS /` System-Options manifest identity (`[server.identity]`,
     /// §3.1). Sourced from config so the public identity and advertised profile
     /// are not string literals in the handler; the live endpoint list is
-    /// supplied separately by [`crate::router`]. This is the *display* identity
+    /// supplied separately by `ehrbase_rest::router`. This is the *display* identity
     /// of the manifest — the data-authoring identity is [`Self::system_id`].
     pub identity: SystemOptionsConfig,
     /// `[server.tls]` — native TLS termination + client-certificate

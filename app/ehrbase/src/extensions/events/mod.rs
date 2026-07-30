@@ -5,7 +5,7 @@
 //! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not message brokers, topic routing,
 //! or outbound emission;
 //! master13 is informative deployment guidance and prescribes no eventing.
-//! Gate: [`EventsConfig::enabled`] (`events.enabled`, default off) — with it
+//! Gate: [`config::EventsConfig::enabled`] (`events.enabled`, default off) — with it
 //! off the publisher is never spawned and the commit path is byte-identical
 //! (the zero-drift gate).
 //!
@@ -23,7 +23,7 @@
 //!   is written inside the commit transaction by
 //!   `crate::storage::version_repo::commit::write_outbox`; this module drains that row.
 //! - **Broker abstraction, AMQP first.** [`EventPublisher`] is the seam;
-//!   [`AmqpPublisher`] is the `RabbitMQ` (lapin) implementation.
+//!   [`amqp::AmqpPublisher`] is the `RabbitMQ` (lapin) implementation.
 //! - **Topology declared on connect/change only.** Subscription queues are
 //!   declared + bound when the broker connection is (re)established or the
 //!   enabled-subscription set changes — never re-declared per poll cycle
@@ -32,9 +32,9 @@
 //!   (default 7 days).
 //!
 //! ## Module map
-//! - [`config`] — the [`EventsConfig`] section struct.
-//! - `amqp` — the lapin [`AmqpPublisher`].
-//! - `publisher` — the drainer task + retention pruner + [`EventsHandle`].
+//! - [`config`] — the [`config::EventsConfig`] section struct.
+//! - `amqp` — the lapin [`amqp::AmqpPublisher`].
+//! - `publisher` — the drainer task + retention pruner + [`publisher::EventsHandle`].
 //! - `subscription` — the `event_subscription` CRUD on `EhrbaseService`.
 
 pub mod config;
@@ -66,7 +66,7 @@ pub enum EventError {
 }
 
 /// The broker-publish seam. AMQP is the first implementation
-/// ([`AmqpPublisher`]); Kafka would be another impl of this same trait.
+/// ([`amqp::AmqpPublisher`]); Kafka would be another impl of this same trait.
 #[async_trait]
 pub trait EventPublisher: Send + Sync {
     /// Publish one event `payload` under `routing_key`, resolving only after the

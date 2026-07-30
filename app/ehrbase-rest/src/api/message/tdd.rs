@@ -213,7 +213,7 @@ async fn run(
             // decoder, which would try to parse it as an RM class.
             negotiate::require_content_type(
                 h,
-                &[crate::overview::negotiate::WireFormat::CanonicalXml],
+                &[negotiate::WireFormat::CanonicalXml],
                 "application/xml",
             )?;
             let tdd = negotiate::text_body(&parts.body)?;

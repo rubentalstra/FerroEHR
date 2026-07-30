@@ -5,11 +5,11 @@
 //!
 //! - [`overview`] — the cross-cutting Overview protocol (content negotiation,
 //!   committal headers, resource identification, common params, the HTTP
-//!   status/error table); [`RestError`] renders the openEHR error body.
+//!   status/error table); [`overview::error::RestError`] renders the openEHR error body.
 //! - [`api`] — the resource APIs, one module per group (`ehr`, `query`,
 //!   `definition`, `demographic`, `admin`) implementing the generated
 //!   `openehr_its::rest` contract, plus the hand-written `system` API
-//!   (`OPTIONS /` conformance manifest). [`api::api_router`] is the hub over the
+//!   (`OPTIONS /` conformance manifest). `api::api_router` is the hub over the
 //!   generated `ROUTES` tables.
 //! - [`formats`] — the Simplified Formats wire (FLAT / STRUCTURED media types).
 //! - [`smart`] — SMART App Launch (service discovery + scope enforcement),
@@ -22,7 +22,7 @@
 //!   multi-tenancy — each config-gated so a stock server exposes only the
 //!   standardised ITS-REST surface.
 //!
-//! [`router`] assembles these under the configured base path with the
+//! [`router::router`] assembles these under the configured base path with the
 //! `tower-http` middleware stack. The adapter is generic over the platform
 //! concrete `EhrbaseService` (no trait seam, no stub backend) — the
 //! `ehrbase` crate monomorphizes it over its DB-backed `EhrbaseService` via
@@ -53,6 +53,8 @@ pub mod system_log;
 // `ehrbase_rest::extensions::access::…` / `ehrbase_rest::extensions::management::…`
 // (no re-exports). The two shared protocol helpers (`negotiate`, `params`)
 // live under `overview` and are imported here for the dispatcher glue below.
+use std::sync::Arc;
+
 use ehrbase::service::EhrbaseService;
 
 use crate::config::AppConfig;
@@ -82,7 +84,7 @@ pub enum ServeError {
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
 pub fn build_with(
     config: AppConfig,
-    backend: std::sync::Arc<EhrbaseService>,
+    backend: Arc<EhrbaseService>,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
     let state = AppState::with_backend(config, backend);
@@ -99,10 +101,7 @@ pub fn build_with(
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_with(
-    config: AppConfig,
-    backend: std::sync::Arc<EhrbaseService>,
-) -> Result<(), ServeError> {
+pub async fn serve_with(config: AppConfig, backend: Arc<EhrbaseService>) -> Result<(), ServeError> {
     let bind = config.server.bind.clone();
     let tls = config.server.tls.clone();
     let app = build_with(config, backend)?;
@@ -119,8 +118,8 @@ pub async fn serve_with(
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
 pub fn build_full(
     config: AppConfig,
-    backend: std::sync::Arc<EhrbaseService>,
-    authz: Option<std::sync::Arc<AuthzHandle>>,
+    backend: Arc<EhrbaseService>,
+    authz: Option<Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = build_authenticator(&config, authz.as_deref())?;
@@ -134,7 +133,7 @@ pub fn build_full(
 fn build_authenticator(
     config: &AppConfig,
     authz: Option<&AuthzHandle>,
-) -> Result<std::sync::Arc<Authenticator>, ServeError> {
+) -> Result<Arc<Authenticator>, ServeError> {
     let role_claims = authz.map_or_else(default_role_claims, AuthzHandle::role_claims);
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
@@ -149,8 +148,8 @@ fn build_authenticator(
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
 pub async fn serve_full(
     config: AppConfig,
-    backend: std::sync::Arc<EhrbaseService>,
-    authz: Option<std::sync::Arc<AuthzHandle>>,
+    backend: Arc<EhrbaseService>,
+    authz: Option<Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<(), ServeError> {
     let authenticator = build_authenticator(&config, authz.as_deref())?;
@@ -159,7 +158,7 @@ pub async fn serve_full(
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
     let state = AppState::with_parts(config, backend, authz, observability);
-    let main_app = router(state.clone(), authenticator.clone());
+    let main_app = router(state.clone(), Arc::clone(&authenticator));
 
     // Separate-port management listener: its own axum server task. It stays
     // plain HTTP even with `[server.tls]` on — an internal ops-introspection
@@ -241,7 +240,9 @@ async fn run_server(
     // tail latency per small response on some stacks. A failed setsockopt is
     // not fatal — the connection is served regardless.
     let listener = listener.tap_io(|io: &mut tokio::net::TcpStream| {
-        io.set_nodelay(true).ok();
+        if let Err(err) = io.set_nodelay(true) {
+            tracing::debug!(%err, "TCP_NODELAY could not be set on an accepted socket");
+        }
     });
     axum::serve(listener, make)
         .with_graceful_shutdown(shutdown_signal())
@@ -260,7 +261,7 @@ async fn run_server(
 /// PEM/verifier component is invalid.
 pub fn tls_server_config(
     tls: &ehrbase::config::server::TlsConfig,
-) -> Result<std::sync::Arc<rustls::ServerConfig>, std::io::Error> {
+) -> Result<Arc<rustls::ServerConfig>, std::io::Error> {
     use rustls::pki_types::pem::PemObject;
 
     use ehrbase::config::server::ClientAuth;
@@ -287,8 +288,8 @@ pub fn tls_server_config(
     }
     let key = rustls::pki_types::PrivateKeyDer::from_pem_slice(&key_pem).map_err(invalid)?;
 
-    let provider = std::sync::Arc::new(rustls::crypto::aws_lc_rs::default_provider());
-    let builder = rustls::ServerConfig::builder_with_provider(provider.clone())
+    let provider = Arc::new(rustls::crypto::aws_lc_rs::default_provider());
+    let builder = rustls::ServerConfig::builder_with_provider(Arc::clone(&provider))
         .with_safe_default_protocol_versions()
         .map_err(invalid)?;
 
@@ -305,7 +306,7 @@ pub fn tls_server_config(
             }
             let verifier = rustls::server::WebPkiClientVerifier::builder_with_provider(
                 roots.into(),
-                provider.clone(),
+                Arc::clone(&provider),
             );
             let verifier = if tls.client_auth == ClientAuth::Optional {
                 verifier.allow_unauthenticated()
@@ -317,13 +318,15 @@ pub fn tls_server_config(
     };
 
     let config = builder.with_single_cert(certs, key).map_err(invalid)?;
-    Ok(std::sync::Arc::new(config))
+    Ok(Arc::new(config))
 }
 
 /// Resolve when the process receives `SIGINT` (Ctrl-C) or, on Unix, `SIGTERM`.
 async fn shutdown_signal() {
     let ctrl_c = async {
-        tokio::signal::ctrl_c().await.ok();
+        if let Err(err) = tokio::signal::ctrl_c().await {
+            tracing::warn!(%err, "SIGINT handler unavailable; relying on SIGTERM");
+        }
     };
     #[cfg(unix)]
     let terminate = async {

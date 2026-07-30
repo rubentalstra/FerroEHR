@@ -94,7 +94,7 @@ pub enum AqlFeatureError {
     /// A `TERMINOLOGY()` `service_api` that names no configured terminology
     /// service: an unrecognised flavour, or a FHIR flavour with no provider
     /// configured. A query-side/config problem (→ 400), distinct from an
-    /// upstream server fault ([`super::ExecError::Terminology`], → 500). QUERY
+    /// upstream server fault ([`ExecError::Terminology`], → 500). QUERY
     /// §Functions/Other functions/TERMINOLOGY.
     #[error(
         "TERMINOLOGY() service_api `{0}` is not a configured terminology service \

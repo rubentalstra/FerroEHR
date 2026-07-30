@@ -1,5 +1,5 @@
 //! HTTP dispatch for the event-subscription admin extension API group over the
-//! [`EventSubscriptionAdapter`](ehrbase::service::EventSubscriptionAdapter) seam.
+//! `ehrbase::service::EventSubscriptionAdapter` seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (eventing).**
 //! Event/subscription semantics have no SM or ITS-REST governance, so this
@@ -10,7 +10,7 @@
 //! the physical-delete ADMIN group.
 //!
 //! NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
-//! [`EventSubscriptionAdapter`] extension, not an SM interface. Like the
+//! `EventSubscriptionAdapter` extension, not an SM interface. Like the
 //! terminology extension it carries no ABAC resource kind (the generic PEP
 //! `Skip`s it) and no ATNA audit-table entry (subscriptions are configuration,
 //! not PHI access) — the fallbacks apply automatically.
@@ -231,6 +231,11 @@ async fn run(
 
 /// Parse the `{subscription_id}` path parameter as a UUID → `400` when malformed
 /// (a missing param is a routing bug → `500`).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`uuid::Error` carries only \"this is not a UUID\", which the 400 body \
+              already states"
+)]
 fn subscription_id(parts: &RequestParts) -> Result<Uuid, RestError> {
     let raw = parts.path.get("subscription_id").ok_or_else(|| {
         RestError(ApiError::Internal(

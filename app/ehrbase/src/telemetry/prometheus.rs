@@ -69,7 +69,7 @@ pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
 /// Committed-composition counter (`change_type` = the numeric openEHR
 /// `audit_change_type` group code — `249`/`251`/`523`/…), incremented by
-/// [`crate::versioning::change::meter_committed`] once per COMPOSITION version
+/// `crate::versioning::change::meter_committed` once per COMPOSITION version
 /// that a commit route actually committed (the direct create/update/delete
 /// routes and the CONTRIBUTION commit).
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";

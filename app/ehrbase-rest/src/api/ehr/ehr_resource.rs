@@ -134,7 +134,11 @@ fn create_committal(
 /// every `EHR_STATUS`/directory commit), so emitting it here would be wrong.
 fn ehr_read_response(h: &http::HeaderMap, status: StatusCode, body: &Value) -> Response {
     let mut out = negotiate::respond_rm::<Ehr>(h, status, body, "ehr");
-    if let Some(id) = body["ehr_id"]["value"].as_str() {
+    if let Some(id) = body
+        .get("ehr_id")
+        .and_then(|i| i.get("value"))
+        .and_then(Value::as_str)
+    {
         negotiate::set_etag(&mut out, id);
     }
     out

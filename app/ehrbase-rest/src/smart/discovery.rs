@@ -405,12 +405,6 @@ pub(crate) fn openapi(cfg: &AppConfig, rest_root: &str) -> utoipa::openapi::Open
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
