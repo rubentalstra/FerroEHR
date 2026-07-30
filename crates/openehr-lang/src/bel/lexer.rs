@@ -136,10 +136,16 @@ pub(crate) enum Token {
     /// `$name` (`VARIABLE_ID`).
     #[regex(r"\$[a-z][a-zA-Z0-9_]*", |lex| lex.slice().to_owned())]
     Variable(String),
-    /// An ADL path (`ADL_PATH`): absolute `(/seg)+` or relative `seg(/seg)+`,
-    /// each segment `ALPHA_LC_ID ('[' predicate ']')?`.
+    /// An ADL path (`ADL_PATH`), each segment `ALPHA_LC_ID ('[' predicate
+    /// ']')?`: a movable path pattern `//seg(/seg)*` (ADL1.4
+    /// `master07-paths.adoc` §Grammar `movable_path: SYM_MOVABLE_LEADER
+    /// relative_path`), absolute `(/seg)+`, or relative `seg(/seg)*` — a
+    /// single-segment relative path needs its `[predicate]` to be a path
+    /// token (the same yacc's `relative_path: path_segment`; a bare
+    /// identifier stays a name reference, which the parser resolves the
+    /// same way).
     #[regex(
-        r"(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+|[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+",
+        r"//?[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)*|[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+|[a-z][a-zA-Z0-9_]*\[[^\]\r\n]*\]",
         |lex| lex.slice().to_owned()
     )]
     Path(String),
