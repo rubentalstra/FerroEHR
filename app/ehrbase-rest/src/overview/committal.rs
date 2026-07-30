@@ -60,6 +60,8 @@ use http::HeaderMap;
 use indexmap::IndexMap;
 use serde_json::json;
 
+use super::params::key_value_pairs;
+
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
@@ -225,7 +227,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
         (H_DEP_SYSTEM_ID, T_SYSTEM_ID),
     ] {
         for raw in header_values(headers, name) {
-            attrs.insert(target.to_owned(), parse_attr_pairs(&raw));
+            attrs.insert(target.to_owned(), key_value_pairs(&raw));
         }
     }
 
@@ -267,7 +269,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
 /// Parse an attribute-path-in-value header (`change_type.code_string="251"`)
 /// into `target → [(subkey, value)]` entries of `map`.
 fn collect_path_pairs(raw: &str, map: &mut IndexMap<String, Vec<(String, String)>>) {
-    for (full_key, value) in parse_attr_pairs(raw) {
+    for (full_key, value) in key_value_pairs(raw) {
         let (target, subkey) = match full_key.split_once('.') {
             Some((t, k)) => (t.to_owned(), k.to_owned()),
             // No dot ⇒ the whole key is a scalar target (e.g. `system_id`).
@@ -325,52 +327,6 @@ fn scalar(pairs: &[(String, String)]) -> Option<String> {
     pair(pairs, "value").or_else(|| pair(pairs, ""))
 }
 
-/// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
-/// attribute pairs. A double-quoted value is read opaquely (may contain commas);
-/// a bare value runs to the next top-level comma. Whitespace around separators
-/// and keys is trimmed. See the module NOTE — the grammar is example-only.
-fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
-    let mut out = Vec::new();
-    let mut rest = input;
-    loop {
-        // Skip leading separators/whitespace.
-        rest = rest.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace());
-        // Read the key up to '='. A segment whose next delimiter is a comma
-        // carries no '=' — not a pair; leave the comma for the skip above.
-        let Some((key, after_key)) = rest.find(['=', ',']).and_then(|d| rest.split_at_checked(d))
-        else {
-            break;
-        };
-        let Some(after_eq) = after_key.strip_prefix('=') else {
-            rest = after_key;
-            continue;
-        };
-        // Read the value: quoted (opaque) or bare (to next comma).
-        let (value, tail) = if let Some(quoted) = after_eq.strip_prefix('"') {
-            match quoted.find('"').and_then(|q| quoted.split_at_checked(q)) {
-                // Consume the closing quote; anything before the next comma is
-                // then skipped as a keyless segment.
-                Some((v, after_v)) => (v.to_owned(), after_v.get(1..).unwrap_or_default()),
-                None => (quoted.to_owned(), ""),
-            }
-        } else {
-            match after_eq
-                .find(',')
-                .and_then(|c| after_eq.split_at_checked(c))
-            {
-                Some((v, after_v)) => (v.trim().to_owned(), after_v),
-                None => (after_eq.trim().to_owned(), ""),
-            }
-        };
-        let key = key.trim();
-        if !key.is_empty() {
-            out.push((key.to_owned(), value));
-        }
-        rest = tail;
-    }
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,19 +365,19 @@ mod tests {
 
     #[test]
     fn parses_single_code_string_pair() {
-        let pairs = parse_attr_pairs("code_string=\"532\"");
+        let pairs = key_value_pairs("code_string=\"532\"");
         assert_eq!(pairs, vec![("code_string".to_owned(), "532".to_owned())]);
     }
 
     #[test]
     fn parses_bare_value() {
-        let pairs = parse_attr_pairs("code_string=532");
+        let pairs = key_value_pairs("code_string=532");
         assert_eq!(pair(&pairs, "code_string").as_deref(), Some("532"));
     }
 
     #[test]
     fn quoted_value_may_contain_commas() {
-        let pairs = parse_attr_pairs("value=\"an updated, comma-bearing description\"");
+        let pairs = key_value_pairs("value=\"an updated, comma-bearing description\"");
         assert_eq!(
             pair(&pairs, "value").as_deref(),
             Some("an updated, comma-bearing description")

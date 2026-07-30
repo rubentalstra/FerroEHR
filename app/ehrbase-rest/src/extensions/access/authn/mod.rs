@@ -131,12 +131,19 @@ pub enum AuthError {
     /// branch of the ITS-REST 401-vs-403 split.
     #[error("forbidden: {0}")]
     Forbidden(String),
+    /// The server could not RUN credential verification at all (e.g. the
+    /// blocking Argon2 task panicked or was cancelled). A server fault, never
+    /// a statement about the credentials — maps to 500, not 401, so an
+    /// operator failure is never misreported as a client error.
+    #[error("credential verification unavailable: {0}")]
+    VerificationUnavailable(String),
 }
 
 impl AuthError {
     fn to_api_error(&self) -> ApiError {
         match self {
             AuthError::Forbidden(m) => ApiError::Forbidden(m.clone()),
+            AuthError::VerificationUnavailable(m) => ApiError::Internal(m.clone()),
             other => ApiError::Unauthorized(other.to_string()),
         }
     }
@@ -291,7 +298,11 @@ impl Authenticator {
                     let cfg = cfg.clone();
                     tokio::task::spawn_blocking(move || basic::verify(&auth, &cfg))
                         .await
-                        .map_err(|_| AuthError::InvalidCredentials)??
+                        .map_err(|join_error| {
+                            AuthError::VerificationUnavailable(format!(
+                                "password-verification task failed: {join_error}"
+                            ))
+                        })??
                 };
                 if let Some(cache) = &self.verified {
                     cache.insert(key, principal.clone()).await;
@@ -633,6 +644,29 @@ mod tests {
             .await
             .expect_err("reject");
         assert!(matches!(err, AuthError::InvalidCredentials));
+    }
+
+    #[tokio::test]
+    async fn wrong_password_is_401_not_500() {
+        let err = basic_only()
+            .authenticate(&headers("Basic YWxpY2U6d3Jvbmc=")) // "alice:wrong"
+            .await
+            .expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+        assert_eq!(err.to_api_error().status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn verification_unavailable_is_500_not_401() {
+        // A JoinError from the blocking Argon2 task is a SERVER fault: it must
+        // surface as 500 Internal, never as 401 InvalidCredentials — a server
+        // failure misreported as a client error is the silent-wrong-answer
+        // class this crate's error mapping exists to prevent.
+        let err = AuthError::VerificationUnavailable("task panicked".to_owned());
+        assert_eq!(
+            err.to_api_error().status(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]

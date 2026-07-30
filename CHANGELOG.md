@@ -33,6 +33,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A server-side failure of the password-verification task no longer
+  masquerades as `401 Invalid credentials`**: if the blocking Argon2
+  verification task itself fails (panic/cancellation), the API now returns
+  `500 Internal Server Error`. A wrong password still returns 401.
+- **Basic-authentication credentials are now decoded by the pinned RFC 4648
+  `base64` crate** instead of a hand-rolled decoder. Canonical (padded) and
+  unpadded credentials are accepted as before; malformed base64 with excess
+  or interior padding is now rejected outright (it previously decoded to
+  garbage and failed the user lookup — the response stays 401 either way).
 - **ADL 1.4 archetypes carrying a `revision_history` section now parse and
   upload.** The section is defined by the ADL 1.4 specification (master08
   §Revision History Section) but was not recognised, so an entire spec-valid

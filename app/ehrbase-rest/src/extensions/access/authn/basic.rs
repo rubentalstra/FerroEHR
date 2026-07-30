@@ -8,10 +8,24 @@
 //! comparison); only the PHC hash is ever stored.
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use base64::Engine as _;
+use base64::alphabet;
+use base64::engine::general_purpose::GeneralPurposeConfig;
+use base64::engine::{DecodePaddingMode, GeneralPurpose};
 use http::HeaderValue;
 
 use super::{AuthError, AuthMethod, Principal};
 use ehrbase::config::auth::BasicConfig;
+
+/// RFC 4648 standard-alphabet decoder for the RFC 7617 `Basic` credential,
+/// padding-indifferent: canonical padded output is the RFC form, but clients
+/// that omit padding are accepted (the previous decoder did, and RFC 7617
+/// gives no reason to reject them). Non-alphabet bytes, interior padding,
+/// and non-canonical trailing bits are rejected.
+static BASIC_B64: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::STANDARD,
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+);
 
 /// Verify a `Basic <base64>` credential against the configured user store.
 ///
@@ -30,7 +44,9 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
         .strip_prefix("Basic ")
         .or_else(|| raw.strip_prefix("basic "))
         .ok_or(AuthError::InvalidCredentials)?;
-    let decoded = base64_decode(b64.trim()).ok_or(AuthError::InvalidCredentials)?;
+    let decoded = BASIC_B64
+        .decode(b64.trim())
+        .map_err(|_| AuthError::InvalidCredentials)?;
     let decoded = String::from_utf8(decoded).map_err(|_| AuthError::InvalidCredentials)?;
     let (username, password) = decoded
         .split_once(':')
@@ -67,40 +83,6 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
     })
 }
 
-/// Standard base64 decode (RFC 4648, with padding) without pulling a dep in for
-/// one call. Returns `None` on any invalid input.
-fn base64_decode(s: &str) -> Option<Vec<u8>> {
-    const fn val(c: u8) -> Option<u8> {
-        match c {
-            b'A'..=b'Z' => Some(c - b'A'),
-            b'a'..=b'z' => Some(c - b'a' + 26),
-            b'0'..=b'9' => Some(c - b'0' + 52),
-            b'+' => Some(62),
-            b'/' => Some(63),
-            _ => None,
-        }
-    }
-    let s = s.trim_end_matches('=').as_bytes();
-    #[expect(
-        clippy::integer_division,
-        reason = "a capacity hint only: floor(3/4 of the encoded length) is exactly \
-                  the decoded byte count for a well-formed group sequence"
-    )]
-    let mut out = Vec::with_capacity(s.len() * 3 / 4);
-    let mut acc = 0u32;
-    let mut bits = 0u32;
-    for &c in s {
-        let v = u32::from(val(c)?);
-        acc = (acc << 6) | v;
-        bits += 6;
-        if bits >= 8 {
-            bits -= 8;
-            out.push(((acc >> bits) & 0xFF) as u8);
-        }
-    }
-    Some(out)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,34 +109,12 @@ mod tests {
     }
 
     fn header(user: &str, pw: &str) -> HeaderValue {
-        let token = base64_encode(format!("{user}:{pw}").as_bytes());
+        let token = base64::engine::general_purpose::STANDARD.encode(format!("{user}:{pw}"));
         HeaderValue::from_str(&format!("Basic {token}")).unwrap()
     }
 
-    fn base64_encode(bytes: &[u8]) -> String {
-        const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        let mut out = String::new();
-        for chunk in bytes.chunks(3) {
-            let b = [
-                chunk[0],
-                *chunk.get(1).unwrap_or(&0),
-                *chunk.get(2).unwrap_or(&0),
-            ];
-            let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
-            out.push(T[((n >> 18) & 63) as usize] as char);
-            out.push(T[((n >> 12) & 63) as usize] as char);
-            out.push(if chunk.len() > 1 {
-                T[((n >> 6) & 63) as usize] as char
-            } else {
-                '='
-            });
-            out.push(if chunk.len() > 2 {
-                T[(n & 63) as usize] as char
-            } else {
-                '='
-            });
-        }
-        out
+    fn raw_header(token: &str) -> HeaderValue {
+        HeaderValue::from_str(&format!("Basic {token}")).unwrap()
     }
 
     #[test]
@@ -198,9 +158,38 @@ mod tests {
         assert!(matches!(err, AuthError::InvalidCredentials));
     }
 
+    // Decode-boundary pins for the RFC 7617 credential (401 in every reject
+    // case — the opaque-outcome discipline of `verify`).
+
     #[test]
-    fn base64_roundtrip() {
-        let enc = base64_encode(b"alice:s3cret");
-        assert_eq!(base64_decode(&enc).unwrap(), b"alice:s3cret");
+    fn unpadded_credential_accepted() {
+        // "alice:s3cret" canonical is "YWxpY2U6czNjcmV0" (len % 4 == 0, no
+        // padding involved); "alice:s3cret1" pads to "…MQ==" — strip it.
+        let padded = base64::engine::general_purpose::STANDARD.encode("alice:s3cret");
+        let unpadded = padded.trim_end_matches('=').to_owned();
+        let p = verify(&raw_header(&unpadded), &store()).expect("unpadded canonical accepted");
+        assert_eq!(p.subject, "alice");
+    }
+
+    #[test]
+    fn non_alphabet_byte_rejected() {
+        let err = verify(&raw_header("YWxpY2U6*zNjcmV0"), &store()).expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+    }
+
+    #[test]
+    fn excess_padding_rejected() {
+        // Deliberate strictness increase over the retired hand-rolled decoder,
+        // which trimmed ANY number of trailing '='. Canonical encoders never
+        // emit this, and garbage credentials were a 401 anyway — the wire
+        // outcome is unchanged.
+        let err = verify(&raw_header("QQ==="), &store()).expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+    }
+
+    #[test]
+    fn interior_padding_rejected() {
+        let err = verify(&raw_header("YWx=pY2U6czNjcmV0"), &store()).expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidCredentials));
     }
 }
