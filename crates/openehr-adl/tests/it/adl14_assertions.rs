@@ -76,3 +76,34 @@ fn for_all_over_paths_stays_a_typed_reject() {
         "a production-less form must not silently parse"
     );
 }
+
+/// Every path form the paths chapter defines parses as an assertion operand
+/// (`ADL1.4/master07-paths.adoc`): absolute and relative paths (incl. the
+/// yacc's single-segment `relative_path: path_segment`), movable `//` path
+/// patterns (§Grammar `movable_path: SYM_MOVABLE_LEADER relative_path`), and
+/// the three §Relationship-with-Xpath predicate forms — position (`[1]`),
+/// meaning (`[systolic]`), node id (`[at0001]`, incl. dotted specialised
+/// codes).
+#[test]
+fn chapter7_path_forms_parse() {
+    let accepted = [
+        // absolute, at-code predicates (incl. specialised/dotted codes)
+        "exists /data[at0001.1]/items[at0001-2]",
+        // position + meaning predicates ("legal for cADL structures")
+        "/data[at0001]/items[1]/value/magnitude > 0",
+        "/data[at0001]/items[systolic]/value/magnitude > 0",
+        // relative paths: multi-segment and the single-segment yacc form
+        "items[at0001]/value/magnitude > 0",
+        "exists items[at0001]",
+        // movable path patterns (leading '//')
+        "exists //items[at0001]",
+        "//items[at0001]/value/magnitude > 0",
+    ];
+    for invariant in accepted {
+        let text = archetype_with_invariant(invariant);
+        assert!(
+            parse_artefact_adl14(&text).is_ok(),
+            "chapter path form must parse: {invariant}"
+        );
+    }
+}
