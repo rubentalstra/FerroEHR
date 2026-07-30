@@ -444,7 +444,7 @@ impl EhrbaseService {
         Ok(crate::storage::version_repo::meta::template_id_of(
             &self.pool,
             vo_id,
-            tree.map(crate::versioning::object_version_id::TreeId::columns),
+            tree.map(TreeId::columns),
         )
         .await?
         .flatten())
@@ -567,6 +567,13 @@ impl EhrbaseService {
     /// # Errors
     /// [`ServiceError::NotFound`] when the EHR does not exist;
     /// [`ServiceError::Database`] if the existence read fails.
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(in crate::service) async fn ensure_ehr_exists(
         &self,
         ehr_id: EhrId,
@@ -802,7 +809,11 @@ impl EhrbaseService {
         // addressed uid must equal it (Resources.md §Identifier types; BASE
         // master05 case rule) — a fabricated creating_system_id names no
         // VERSION here.
-        if let Some(served) = body["uid"]["value"].as_str() {
+        if let Some(served) = body
+            .get("uid")
+            .and_then(|uid| uid.get("value"))
+            .and_then(Value::as_str)
+        {
             super::ensure_addressed_version(&a_version_uid, served)?;
         }
         Ok(body)

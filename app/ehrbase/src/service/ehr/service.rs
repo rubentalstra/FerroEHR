@@ -231,13 +231,21 @@ impl EhrbaseService {
             "ehr_status": status_ref,
             "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
         });
-        if let Some(access) = committed.iter().find(|c| c.kind == Kind::EhrAccess) {
-            body["ehr_access"] = json!({
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": "VERSIONED_EHR_ACCESS",
-                "id": { "_type": "HIER_OBJECT_ID", "value": access.vo_id.to_string() }
-            });
+        // `body` is the object literal above, so the reference goes in through
+        // its own map rather than a panicking index-assign.
+        if let (Some(access), Some(obj)) = (
+            committed.iter().find(|c| c.kind == Kind::EhrAccess),
+            body.as_object_mut(),
+        ) {
+            obj.insert(
+                "ehr_access".to_owned(),
+                json!({
+                    "_type": "OBJECT_REF",
+                    "namespace": "local",
+                    "type": "VERSIONED_EHR_ACCESS",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": access.vo_id.to_string() }
+                }),
+            );
         }
         body
     }
@@ -326,13 +334,16 @@ impl EhrbaseService {
         // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS
         // container (invariant Ehr_access_valid — RM ehr, EHR class). Every EHR
         // this service creates has one; tolerate absence only for raw fixtures.
-        if let Some(access_vo) = read.access_vo {
-            body["ehr_access"] = json!({
-                "_type": "OBJECT_REF",
-                "namespace": "local",
-                "type": "VERSIONED_EHR_ACCESS",
-                "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
-            });
+        if let (Some(access_vo), Some(obj)) = (read.access_vo, body.as_object_mut()) {
+            obj.insert(
+                "ehr_access".to_owned(),
+                json!({
+                    "_type": "OBJECT_REF",
+                    "namespace": "local",
+                    "type": "VERSIONED_EHR_ACCESS",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
+                }),
+            );
         }
         // EHR.folders (0..1) + EHR.directory (0..1): the LIVE hierarchies in
         // rank order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant
@@ -350,9 +361,9 @@ impl EhrbaseService {
                 })
             })
             .collect();
-        if let Some(first) = refs.first() {
-            body["directory"] = first.clone();
-            body["folders"] = Value::Array(refs.clone());
+        if let (Some(first), Some(obj)) = (refs.first(), body.as_object_mut()) {
+            obj.insert("directory".to_owned(), first.clone());
+            obj.insert("folders".to_owned(), Value::Array(refs.clone()));
         }
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
             .with_last_modified(time_created);
@@ -700,12 +711,6 @@ impl EhrbaseService {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::default_ehr_status;
 

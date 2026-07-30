@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end tests for version signing (`VERSION.signature`, RM common
 //! §"Digital Signature")
 //! against a real `PostgreSQL` 18 (shared testkit harness).
@@ -14,7 +8,14 @@
 //! signed; client-supplied signatures are stored verbatim; `verify_on_read =
 //! strict` turns a tampered row into a 5xx; canonical XML carries the signature.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::sync::Arc;
 
@@ -136,7 +137,10 @@ fn change_type(code: &str, value: &str) -> Value {
 /// Assert a served `ORIGINAL_VERSION` carries a server digest signature that
 /// recomputes from its own `canonical_form` — the strongest test (§6.3).
 fn assert_digest_recomputes(ov: &Value) {
-    assert_eq!(ov["_type"], "ORIGINAL_VERSION");
+    assert_eq!(
+        ov["_type"], "ORIGINAL_VERSION",
+        "the served version must be an ORIGINAL_VERSION"
+    );
     let signature = ov["signature"]
         .as_str()
         .expect("ORIGINAL_VERSION.signature");
@@ -491,7 +495,7 @@ async fn canonical_xml_carries_the_signature() {
 
     // A full corpus COMPOSITION (all mandatory fields) as the version data.
     const CORPUS: &str = include_str!(
-        "../../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/minimal_persistent.json"
+        "../../../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/minimal_persistent.json"
     );
     let data: Composition =
         openehr_its::json::from_canonical_json(CORPUS).expect("typed composition");

@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end FHIR **outbound** emitter against a real broker (testcontainers
 //! `RabbitMQ`) + a real `PostgreSQL` 18
 //!
@@ -12,7 +6,15 @@
 //! **separate** PHI exchange (`ehrbase.fhir`) as a FHIR resource — with the
 //! `<resource_type>.<template>` routing key and the mapped clinical value
 //! present (unlike the PHI-free E1 envelope stream). Requires Docker.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::panic,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -188,7 +190,7 @@ async fn commit_emits_reverse_mapped_fhir_resource() {
 
     // Start the outbound emitter; it walks the outbox, reverse-maps the
     // composition, and publishes the FHIR resource.
-    let handle = start(outbound_config(url), pool.clone(), svc.clone());
+    let handle = start(outbound_config(url), pool.clone(), Arc::clone(&svc));
 
     let (routing_key, body) = next_delivery(&mut consumer).await;
     assert_eq!(

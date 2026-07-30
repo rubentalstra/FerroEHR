@@ -131,10 +131,8 @@ impl Builder<'_> {
         let mut sql_cols = Vec::with_capacity(4);
         for (suffix, ncol) in cols.iter().zip(node_cols) {
             let sql_col = format!("col{i}_{suffix}");
-            self.q.expr_as(
-                super::expr::col(&anchor, ncol),
-                Alias::new(sql_col.as_str()),
-            );
+            self.q
+                .expr_as(col(&anchor, ncol), Alias::new(sql_col.as_str()));
             sql_cols.push(sql_col);
         }
         Ok(ColumnSpec {

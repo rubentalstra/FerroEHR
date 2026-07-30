@@ -32,7 +32,7 @@ use uuid::Uuid;
 
 use ehrbase::db;
 use ehrbase::service::EhrbaseService;
-use ehrbase::telemetry::config::TelemetryConfig;
+use ehrbase::telemetry::config::{LogFormat, TelemetryConfig};
 use ehrbase::telemetry::{self, indicators};
 
 /// How long to wait for the audit queue to flush on shutdown.
@@ -68,6 +68,7 @@ pub enum Command {
     },
     /// Configuration utilities (validate / print the annotated default).
     Config {
+        /// Which configuration utility to run.
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
@@ -171,7 +172,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     };
 
     // ASCII banner before telemetry/log init (skipped under `json` logging).
-    if telemetry_config.log.format != ehrbase::telemetry::config::LogFormat::Json {
+    if telemetry_config.log.format != LogFormat::Json {
         ehrbase::banner::print();
     }
 
@@ -183,11 +184,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // silent production trap) — now that logging is up.
     if config.db.is_dev_default() {
         tracing::warn!(
-            url = ehrbase::db::DEFAULT_URL,
+            url = db::DEFAULT_URL,
             "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
              supplied. Set db.url (EHRBASE__DB__URL / DATABASE_URL) for any non-dev deployment — \
              production MUST override it.",
-            ehrbase::db::DEFAULT_URL,
+            db::DEFAULT_URL,
         );
     }
 
@@ -333,7 +334,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         Some(ehrbase::extensions::fhir::outbound::start(
             config.fhir.outbound.clone(),
             pool.clone(),
-            service.clone(),
+            Arc::clone(&service),
         ))
     } else {
         None

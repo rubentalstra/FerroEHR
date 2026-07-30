@@ -8,8 +8,11 @@
 //! object store is ever contacted. The secret access key is a shared
 //! [`crate::config::secret::Secret`] (never rendered) with a `*_file` sibling.
 
-// openEHR/product identifiers (SeaweedFS, object_store, …) read as prose below.
-#![allow(clippy::doc_markdown)]
+#![expect(
+    clippy::doc_markdown,
+    reason = "product identifiers (SeaweedFS, object_store, …) read as prose in \
+              this module's docs"
+)]
 
 use std::path::PathBuf;
 
@@ -80,12 +83,6 @@ impl MultimediaConfig {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -180,6 +180,13 @@ impl EhrbaseService {
     /// [`ServiceError::ValidationFailed`] / [`ServiceError::Unprocessable`]
     /// when the content is invalid for its kind (→ 422); [`ServiceError`]
     /// from a failing template resolution on the COMPOSITION arm.
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(in crate::service) async fn validate_for_commit(
         &self,
         kind: Kind,
@@ -629,13 +636,6 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used)]
 mod tests {
     use serde_json::{Value, json};
 

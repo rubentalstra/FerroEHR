@@ -1,14 +1,15 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! `FhirTerminologyProvider` wire-contract tests,
 //! driven by `wiremock` — a hermetic FHIR R4 terminology server: canned
 //! `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses + fault injection
 //! (timeout, `5xx`, malformed). No network.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::time::Duration;
 

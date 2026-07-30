@@ -12,10 +12,16 @@ bin-only crate is untestable by construction — Book ch11.3).
   (platform) or `ehrbase-rest` (protocol adapter). `anyhow` is allowed here
   (the lib target is the binary's own logic half, not a consumable library);
   `thiserror` everywhere else.
-- This crate's `tests/` may test only the wiring seam (`run`, CLI parsing,
-  config subcommands); tests that exercise `ehrbase` APIs live in
-  `app/ehrbase/tests/`.
+- **This crate currently has no `tests/` directory, and anything added there
+  may test only the wiring seam** (`run`, CLI parsing, config subcommands).
+  Tests that exercise `ehrbase` APIs live in `app/ehrbase/tests/it/`; tests
+  that drive the assembled `ehrbase-rest` router live in
+  `app/ehrbase-rest/tests/`. Parking either here made them invisible to the
+  owning crate's gate — the four that had been (`persistence`, `telemetry`,
+  `fhir_inbound`, `service_query`) were relocated to their owners.
 - The bin target is named `ehrbase` (`[[bin]] name = "ehrbase"`; container
   entrypoints/compose/Helm and `scripts/*` invoke that name — do not rename).
 - Gates: `cargo clippy -p ehrbase-server --all-targets` +
-  `cargo nextest run -p ehrbase-server`.
+  `cargo nextest run -p ehrbase-server --no-tests=pass` (the `--no-tests=pass`
+  is load-bearing while this crate carries no tests: nextest exits non-zero on
+  an empty selection, which is why CI's workspace run passes the same flag).

@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the ADMIN dump/load API against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
@@ -34,7 +28,17 @@
 //!    (`its-xml-1.0.2-nsv1/ALL/Version.xsd`), and the round trip through
 //!    storage-JSON → RM → canonical XML → RM → storage-JSON is byte-equal at
 //!    the served-version level, in all three containers.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    let_underscore_drop,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -97,7 +101,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
 /// directory `FOLDER` — the same fixture shape as `service_admin.rs` (avoids
 /// `COMPOSITION`, which needs a template the shared fixtures do not supply, so the
 /// dump/load path is exercised without a `template_store` dependency).
-async fn seed_full_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
+async fn seed_full_ehr(svc: &EhrbaseService) -> EhrId {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     let mut updated = svc
@@ -183,7 +187,7 @@ async fn counts(pool: &PgPool, ehr_id: Uuid) -> (i64, i64, i64, i64) {
 /// Read the current `EHR_STATUS` and directory `FOLDER` of `ehr_id` as canonical
 /// JSON, serialized in storage (jsonb-normalized) key order — the byte-equal
 /// comparison surface.
-async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId) -> (String, String) {
+async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: EhrId) -> (String, String) {
     let status = svc
         .get_ehr_status_at_time(ehr_id, None)
         .await
@@ -481,7 +485,11 @@ async fn zip_compressed_export_round_trips_through_the_detected_container() {
         src,
         "a zip round-trip must be byte-equal at the canonical JSON level"
     );
-    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+    assert_eq!(
+        counts(&dst_pool, ehr.into()).await,
+        src_counts,
+        "the loaded target must hold the same row counts as the source"
+    );
 
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -534,7 +542,11 @@ async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
         src,
         "a 7z round-trip must be byte-equal at the canonical JSON level"
     );
-    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+    assert_eq!(
+        counts(&dst_pool, ehr.into()).await,
+        src_counts,
+        "the loaded target must hold the same row counts as the source"
+    );
 
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -729,7 +741,11 @@ async fn assert_xml_round_trip(compression: Option<CompressionFormat>, container
         "a canonical-XML round trip in the {container} container must be byte-equal at the \
          served-version level"
     );
-    assert_eq!(counts(&dst_pool, ehr.into()).await, src_counts);
+    assert_eq!(
+        counts(&dst_pool, ehr.into()).await,
+        src_counts,
+        "the loaded target must hold the same row counts as the source"
+    );
 
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -858,6 +874,9 @@ async fn a_corrupt_version_document_reports_that_record_and_commits_nothing() {
         .join("versions")
         .join(format!("{}.xml", ovids.first().expect("a version uid")));
     let text = std::fs::read_to_string(&victim).expect("version document");
+    // Truncate at the midpoint; the remainder the division drops is
+    // irrelevant — any prefix shorter than the whole document is corrupt.
+    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
     let half = text.len() / 2;
     std::fs::write(&victim, text.get(..half).expect("document prefix"))
         .expect("truncate the document");
@@ -967,6 +986,9 @@ async fn load_from_an_archive_with_a_mangled_manifest_is_file_not_writable() {
     // Truncate the manifest mid-object: readable bytes, unparseable JSON.
     let manifest = std::path::Path::new(&dir).join("manifest.json");
     let text = std::fs::read_to_string(&manifest).expect("manifest");
+    // Truncate at the midpoint; the remainder the division drops is
+    // irrelevant — any prefix shorter than the whole document is corrupt.
+    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
     let half = text.len() / 2;
     std::fs::write(&manifest, text.get(..half).expect("manifest prefix"))
         .expect("mangle the manifest");
@@ -1008,6 +1030,9 @@ async fn load_from_a_truncated_container_is_file_not_writable() {
     // exists, so detection picks it, but it is no longer an archive.
     let container = std::path::Path::new(&dir).join("archive.zip");
     let bytes = std::fs::read(&container).expect("container");
+    // Truncate at the midpoint; the remainder the division drops is
+    // irrelevant — any prefix shorter than the whole document is corrupt.
+    #[expect(clippy::integer_division, reason = "a deliberate midpoint truncation")]
     let half = bytes.len() / 2;
     std::fs::write(&container, bytes.get(..half).expect("container prefix"))
         .expect("truncate the container");

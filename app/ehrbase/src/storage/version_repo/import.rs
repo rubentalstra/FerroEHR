@@ -21,19 +21,33 @@ use crate::storage::version_repo::optional_json_array;
 /// §Copying).
 #[derive(Debug)]
 pub struct ImportedVersionRow<'a> {
+    /// The versioned object's id.
     pub vo_id: VoId,
+    /// The `vo_version.kind` discriminator text.
     pub kind: &'a str,
+    /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
+    /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: &'a str,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: &'a str,
+    /// `ORIGINAL_VERSION.preceding_version_uid`; `None` for a first version.
     pub preceding_version_uid: Option<&'a str>,
+    /// The merge provenance (`other_input_version_uids`).
     pub other_input_version_uids: &'a [String],
+    /// The CONTRIBUTION this version was committed in.
     pub contribution_id: Uuid,
+    /// This version's own `AUDIT_DETAILS` row.
     pub audit_id: Uuid,
+    /// `VERSION.signature` (0..1), opaque radix-64.
     pub signature: Option<&'a str>,
     /// Lower bound of the synthetic local `sys_period`.
     pub lower: jiff::Timestamp,
@@ -93,28 +107,44 @@ pub async fn insert_imported_vo_version(
 /// the `sys_period` is explicit.
 #[derive(Debug)]
 pub struct VerbatimVersionRow<'a> {
+    /// The versioned object's id.
     pub vo_id: VoId,
+    /// The `vo_version.kind` discriminator text.
     pub kind: &'a str,
+    /// The owning EHR (an archive segment only carries EHR-scoped content).
     pub ehr_id: EhrId,
+    /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// `ORIGINAL_VERSION.preceding_version_uid`; `None` for a first version.
     pub preceding_version_uid: Option<&'a str>,
+    /// The merge provenance (`other_input_version_uids`) as stored JSON.
     pub other_input_version_uids: Option<&'a Value>,
     /// Lower/upper `sys_period` bounds as ISO-8601 strings (`upper = None` ⇒
     /// still-open); bound with a `::timestamptz` cast.
     pub sys_period_lower: Option<&'a str>,
+    /// Upper `sys_period` bound as an ISO-8601 string; `None` = still-open.
     pub sys_period_upper: Option<&'a str>,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: &'a str,
+    /// The CONTRIBUTION this version was committed in.
     pub contribution_id: Uuid,
+    /// This version's own `AUDIT_DETAILS` row.
     pub audit_id: Uuid,
+    /// The OPT `template_id` a COMPOSITION was committed against (else `None`).
     pub template_id: Option<&'a str>,
+    /// `VERSION.signature` (0..1), opaque radix-64.
     pub signature: Option<&'a str>,
     /// Whether `signature` was client-supplied (foreign — never re-verified at
     /// read; master06 §Digital Signature); preserved verbatim across the
     /// dump/load round-trip.
     pub signature_client_supplied: bool,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: &'a str,
 }
 

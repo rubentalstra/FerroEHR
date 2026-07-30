@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the SM `I_TDD_SERVICE.import_tdd` /
 //! `import_tdds` TDD (Template Data Document) import path against a real
 //! `PostgreSQL` 18 (shared testkit harness).
@@ -21,7 +15,14 @@
 //! well-formed TDD for a provisioned template is converted (`openehr_its::flat::tdd::from_tdd`)
 //! and committed through the validated `create_composition` path, then read back
 //! via the composition surface.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+#![expect(
+    clippy::panic,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::CallStatusType;

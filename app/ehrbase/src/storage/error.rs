@@ -18,7 +18,10 @@ pub enum StorageError {
     /// A canonical-JSON array mixed structure and non-structure elements, which
     /// canonical RM JSON never does.
     #[error("array {attribute:?} mixes structure and non-structure elements")]
-    MixedArray { attribute: String },
+    MixedArray {
+        /// The RM attribute name whose array held the mixed elements.
+        attribute: String,
+    },
 
     /// Reassembly received rows that do not form one tree rooted at `num = 0`.
     #[error("invalid node rows: {0}")]
@@ -152,12 +155,6 @@ pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError 
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use crate::service::status::CallStatusType;
 

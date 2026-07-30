@@ -594,6 +594,12 @@ impl EhrbaseService {
     /// - [`SmError`] mapped from `404` — unknown uid, or an EHR-scoped
     ///   contribution (the demographic surface only sees `ehr_id IS NULL`).
     /// - [`SmError`] on a storage/database fault during the read.
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already names the resource and echoes the \
+                  rejected token; the discarded `uuid::Error` adds only its own \
+                  wording, which is not part of the wire contract"
+    )]
     pub async fn demographic_contribution_get(
         &self,
         contribution_uid: String,
@@ -1080,13 +1086,6 @@ impl EhrbaseService {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

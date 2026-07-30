@@ -6,14 +6,16 @@
 //! carry), asserting the matching AOM2 rule code surfaces. The corpus guard
 //! asserts every vendored valid OPT still passes unchanged.
 
-#![allow(
-    clippy::panic,
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    clippy::panic,
+    clippy::string_slice,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+
 use std::path::{Path, PathBuf};
 
 use openehr_base::prelude::{CodePhrase, TerminologyId};
@@ -353,10 +355,11 @@ fn c_boolean_unsatisfiable() {
             assumed_value: None,
         }))),
     });
-    opt.definition.attributes.push(CAttribute::CSingleAttribute(
-        openehr_its::opt14::CSingleAttribute {
+    opt.definition
+        .attributes
+        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: openehr_its::opt14::Intervalofinteger {
+            existence: opt14::Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),
@@ -365,8 +368,7 @@ fn c_boolean_unsatisfiable() {
                 upper: Some(1),
             },
             children: vec![boolean_node],
-        },
-    ));
+        }));
     expect_code(&opt, "C_BOOLEAN_validity");
 }
 
@@ -387,10 +389,11 @@ fn assumed_value_outside_closed_list() {
             assumed_value: Some("blue".to_owned()),
         }))),
     });
-    opt.definition.attributes.push(CAttribute::CSingleAttribute(
-        openehr_its::opt14::CSingleAttribute {
+    opt.definition
+        .attributes
+        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: openehr_its::opt14::Intervalofinteger {
+            existence: opt14::Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),
@@ -399,8 +402,7 @@ fn assumed_value_outside_closed_list() {
                 upper: Some(1),
             },
             children: vec![string_node],
-        },
-    ));
+        }));
     expect_code(&opt, "Assumed_value_valid");
 }
 
@@ -422,10 +424,11 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
             assumed_value: None,
         }))),
     });
-    opt.definition.attributes.push(CAttribute::CSingleAttribute(
-        openehr_its::opt14::CSingleAttribute {
+    opt.definition
+        .attributes
+        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
-            existence: openehr_its::opt14::Intervalofinteger {
+            existence: opt14::Intervalofinteger {
                 lower_unbounded: false,
                 upper_unbounded: false,
                 lower_included: Some(true),
@@ -434,8 +437,7 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
                 upper: Some(1),
             },
             children: vec![date_node],
-        },
-    ));
+        }));
     expect_code(&opt, "Pattern_validity");
 }
 

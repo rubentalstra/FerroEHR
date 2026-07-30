@@ -98,6 +98,14 @@ impl EhrbaseService {
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn valid_artefact(&self, adl2: &str) -> Result<bool, SmError> {
         Ok(matches!(
             validate_source_phase1(adl2, None),
@@ -761,10 +769,7 @@ impl EhrbaseService {
     /// from the HRID, so no cADL parse is needed for the list). Lists the
     /// `template` and `operational_template` kinds (the "templates" under
     /// `/definition/template/adl2`), not source archetypes.
-    pub(super) async fn adl2_template_list(
-        &self,
-        page: Page,
-    ) -> Result<Vec<serde_json::Value>, ServiceError> {
+    pub(super) async fn adl2_template_list(&self, page: Page) -> Result<Vec<Value>, ServiceError> {
         let (offset, limit) = page_bounds(page);
         let rows = sqlx::query(
             "SELECT hrid, created_at FROM adl2_artefact \
@@ -842,7 +847,7 @@ fn store_kind(kind: &str) -> &str {
 /// id when the shape is unexpected (never panics on stored input).
 fn hrid_concept(hrid: &str) -> &str {
     let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    let before_version = &core[..version_marker(core).unwrap_or(core.len())];
+    let (before_version, _) = split_at_version(core);
     before_version.rsplit_once('.').map_or(core, |(_, c)| c)
 }
 
@@ -851,17 +856,17 @@ fn hrid_concept(hrid: &str) -> &str {
 /// of the same template family (`AOM2/master07.05`).
 fn family_key(hrid: &str) -> String {
     let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    core[..version_marker(core).unwrap_or(core.len())].to_ascii_lowercase()
+    split_at_version(core).0.to_ascii_lowercase()
 }
 
 /// The numeric release-version segment of an HRID (`…concept.v1.2.3-rc.4` →
 /// `1.2.3`); empty when there is no `.vN` marker.
 fn version_of(hrid: &str) -> &str {
     let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    match version_marker(core) {
-        Some(idx) => {
+    match split_at_version(core).1 {
+        Some(marker) => {
             // Skip the `.v`; take up to the pre-release status marker (`-`).
-            let tail = &core[idx + 2..];
+            let tail = marker.get(2..).unwrap_or_default();
             tail.split('-').next().unwrap_or(tail)
         }
         None => "",
@@ -872,9 +877,23 @@ fn version_of(hrid: &str) -> &str {
 /// first `.v` immediately followed by a digit, so a concept id containing `.v`
 /// is not mistaken for the version).
 fn version_marker(s: &str) -> Option<usize> {
-    let bytes = s.as_bytes();
-    (0..bytes.len().saturating_sub(2))
-        .find(|&i| bytes[i] == b'.' && bytes[i + 1] == b'v' && bytes[i + 2].is_ascii_digit())
+    s.as_bytes()
+        .windows(3)
+        .position(|w| matches!(w, [b'.', b'v', digit] if digit.is_ascii_digit()))
+}
+
+/// Split an archetype id core at its `.v<digit>` version marker: everything
+/// before the marker, and the marker onwards (`None` when the id carries no
+/// version marker, in which case the whole core is the "before" part). The
+/// marker's `.` and `v` are ASCII, so the split is always on a char boundary.
+fn split_at_version(core: &str) -> (&str, Option<&str>) {
+    let Some(idx) = version_marker(core) else {
+        return (core, None);
+    };
+    match core.split_at_checked(idx) {
+        Some((before, marker)) => (before, Some(marker)),
+        None => (core, None),
+    }
 }
 
 /// Whether `full` (a `major.minor.patch` release) matches the SEMVER `prefix`
@@ -895,12 +914,6 @@ fn cmp_version(a: &str, b: &str) -> std::cmp::Ordering {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

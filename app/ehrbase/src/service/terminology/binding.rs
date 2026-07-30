@@ -153,13 +153,6 @@ impl EhrbaseService {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use std::collections::BTreeMap;
     use std::sync::Arc;
@@ -207,7 +200,7 @@ mod tests {
         }
     }
 
-    fn coded_instance(code: &str) -> serde_json::Value {
+    fn coded_instance(code: &str) -> Value {
         json!({
             "_type": "DV_CODED_TEXT",
             "value": "A positive",

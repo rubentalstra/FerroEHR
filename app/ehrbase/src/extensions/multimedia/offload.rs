@@ -18,8 +18,11 @@
 //! (`docs/specs/openehr/TERM/.../codesets/openehr_terminology-codesets.adoc`,
 //! code set id `openehr_integrity_check_algorithms`).
 
-// openEHR identifiers (CODE_PHRASE, DV_URI, …) read as prose in docs.
-#![allow(clippy::doc_markdown)]
+#![expect(
+    clippy::doc_markdown,
+    reason = "openEHR identifiers (CODE_PHRASE, DV_URI, …) read as prose in this \
+              module's docs"
+)]
 
 use std::collections::HashMap;
 
@@ -144,6 +147,11 @@ fn offload_one(
         return Ok(None);
     }
     let (hex, integrity_b64) = sha256(&bytes);
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "TryFromIntError carries no payload beyond out-of-range, which \
+                  the mapped message already states"
+    )]
     let size = i64::try_from(bytes.len()).map_err(|_| {
         MultimediaError::Malformed("DV_MULTIMEDIA.data exceeds i64 byte range".to_owned())
     })?;
@@ -266,7 +274,11 @@ pub(super) fn verify_and_encode(hex: &str, bytes: &[u8]) -> Result<String, Multi
 }
 
 #[cfg(test)]
-#[allow(clippy::needless_pass_by_value)] // test helpers take owned Value for json! ergonomics
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "the test helpers take an owned Value so call sites can pass a \
+              json! literal directly"
+)]
 mod tests {
     use super::*;
     use std::sync::Arc;

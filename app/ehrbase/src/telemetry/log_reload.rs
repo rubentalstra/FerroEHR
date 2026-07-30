@@ -72,18 +72,12 @@ impl LogReload {
     /// # Errors
     /// Returns the apply error message.
     pub fn reset(&self) -> Result<(), String> {
-        let boot = self.boot_filter.clone();
+        let boot = Arc::clone(&self.boot_filter);
         (self.apply)(&boot)
     }
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use std::sync::Mutex;
@@ -92,8 +86,8 @@ mod tests {
     /// closure mutates, so the round-trip logic is testable without a subscriber.
     fn fake(boot: &str) -> (LogReload, Arc<Mutex<String>>) {
         let state = Arc::new(Mutex::new(boot.to_owned()));
-        let read_state = state.clone();
-        let apply_state = state.clone();
+        let read_state = Arc::clone(&state);
+        let apply_state = Arc::clone(&state);
         let reload = LogReload::new(
             boot,
             Arc::new(move || read_state.lock().expect("lock").clone()),

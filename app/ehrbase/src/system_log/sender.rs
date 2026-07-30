@@ -381,7 +381,11 @@ pub async fn start(
     Ok((sender, AuditHandle { join, workers }))
 }
 
-#[allow(clippy::too_many_lines)] // one linear fan-out: batch → store → syslog → feed
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear fan-out — batch → store → syslog → feed — whose order \
+              is the behaviour"
+)]
 async fn drain(
     mut rx: mpsc::Receiver<AuditEvent>,
     mut sinks: Sinks,
@@ -612,6 +616,13 @@ async fn feed_outbox(
 }
 
 /// The hourly retention reaper (`[audit.store] retention_days > 0`).
+#[expect(
+    clippy::infinite_loop,
+    reason = "the retention reaper is a detached background task with no \
+              shutdown channel — it ends when the runtime drops the task; \
+              declaring `-> !` is not an option because `tokio::spawn` would \
+              then need the never type as a type argument, which is unstable"
+)]
 async fn reaper(store: AuditStore, retention_days: u32) {
     loop {
         tokio::time::sleep(REAP_INTERVAL).await;
@@ -627,13 +638,9 @@ async fn reaper(store: AuditStore, retention_days: u32) {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
+    use std::sync::{LazyLock, Mutex};
+
     use super::*;
     use crate::system_log::config::{StoreConfig, SyslogConfig, Transport as ConfigTransport};
     use crate::system_log::event::{EventActionCode, EventOutcome, ObjectClass};
@@ -668,10 +675,18 @@ mod tests {
         )
     }
 
+    /// Receivers of senders built by [`bare_sender`]: parked here (never read)
+    /// so the channel stays open and the queue can fill, without leaking them.
+    static PARKED_RECEIVERS: LazyLock<Mutex<Vec<mpsc::Receiver<AuditEvent>>>> =
+        LazyLock::new(|| Mutex::new(Vec::new()));
+
     fn bare_sender(fail_mode: FailMode, capacity: usize, store_healthy: bool) -> AuditSender {
         let (tx, rx) = mpsc::channel(capacity);
         // Keep the receiver alive but unread so the queue can fill.
-        std::mem::forget(rx);
+        PARKED_RECEIVERS
+            .lock()
+            .expect("parked-receiver registry")
+            .push(rx);
         AuditSender {
             inner: Arc::new(SenderInner {
                 tx,

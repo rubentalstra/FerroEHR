@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Contribution-outbox eventing tests against a real `PostgreSQL` 18
 //! (shared testkit harness) — the transactional-outbox half of the eventing extension (tasks 2/3).
 //!
@@ -17,7 +11,13 @@
 //! seam with a toggled fake, so the retry/no-loss logic is deterministic; the
 //! real-broker end-to-end lives in `events_amqp.rs`).
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -404,7 +404,7 @@ impl EventPublisher for TogglePublisher {
 async fn wait_until<F, Fut>(mut f: F)
 where
     F: FnMut() -> Fut,
-    Fut: std::future::Future<Output = bool>,
+    Fut: Future<Output = bool>,
 {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
     loop {
@@ -445,7 +445,10 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
         prune_interval_secs: 3_600,
         ..EventsConfig::default()
     };
-    let handle = start_with_publisher(config, pool.clone(), publisher.clone());
+    // Bound separately so the Arc<TogglePublisher> → Arc<dyn EventPublisher>
+    // unsizing happens on assignment, not inside a `.clone()`.
+    let dyn_publisher: Arc<dyn EventPublisher> = Arc::<TogglePublisher>::clone(&publisher);
+    let handle = start_with_publisher(config, pool.clone(), dyn_publisher);
 
     // Broker down: rows stay pending, nothing published.
     tokio::time::sleep(Duration::from_millis(300)).await;

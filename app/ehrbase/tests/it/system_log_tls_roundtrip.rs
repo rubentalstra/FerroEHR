@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! RFC 5425 TLS framing round-trip (§8.5): send an octet-counted syslog record
 //! over a real TLS connection to an in-process rustls listener that trusts a
 //! generated test CA, and assert the exact framed bytes arrive.
@@ -12,7 +6,14 @@
 //! a CA (`CN=ehrbase-test-ca`) and a leaf (`CN=localhost`, SAN
 //! `localhost`/`127.0.0.1`, `serverAuth`) it signed. The client trusts the CA;
 //! the server presents the leaf.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::match_same_arms)]
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -140,8 +141,10 @@ async fn tls_octet_counted_frame_round_trips() {
         let mut buf = Vec::new();
         let mut chunk = [0u8; 1024];
         loop {
+            // EOF and a read error both end the read the same way: whatever
+            // arrived so far is the frame.
             match tls.read(&mut chunk).await {
-                Ok(0) => break,
+                Ok(0) | Err(_) => break,
                 Ok(n) => {
                     buf.extend_from_slice(&chunk[..n]);
                     // A single small write arrives as one TLS record.
@@ -149,7 +152,6 @@ async fn tls_octet_counted_frame_round_trips() {
                         break;
                     }
                 }
-                Err(_) => break,
             }
         }
         buf

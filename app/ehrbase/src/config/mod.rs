@@ -315,9 +315,11 @@ fn validate_terminology(
 ///
 /// # Errors
 /// [`ConfigErrors`] aggregating unknown-key, type, and file-resolution errors.
-// A boot-once seam over the process environment — a custom hasher has no
-// call site; the generic would be pure noise.
-#[allow(clippy::implicit_hasher)]
+#[expect(
+    clippy::implicit_hasher,
+    reason = "a boot-once seam over the process environment: no call site \
+              supplies a custom hasher, so the generic would be pure noise"
+)]
 pub fn assemble(
     file: Option<&Path>,
     env: &HashMap<String, String>,
@@ -358,8 +360,11 @@ pub fn load(
 ///
 /// # Errors
 /// [`ConfigErrors`] if an explicitly-pointed-at file is missing/unreadable.
-// Boot-once seam — see `assemble` on the hasher generic.
-#[allow(clippy::implicit_hasher)]
+#[expect(
+    clippy::implicit_hasher,
+    reason = "a boot-once seam over the process environment, like `assemble`: \
+              no call site supplies a custom hasher"
+)]
 pub fn discover_file(
     cli_config: Option<&Path>,
     env: &HashMap<String, String>,
@@ -368,12 +373,6 @@ pub fn discover_file(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use assert_fs::prelude::*;
 
@@ -719,7 +718,7 @@ mod tests {
         let mut c = EhrbaseConfig::default();
         c.signing.mode = crate::versioning::signature::config::Mode::Pgp;
         assert!(c.validate().is_err());
-        c.signing.key_path = Some(std::path::PathBuf::from("/k.asc"));
+        c.signing.key_path = Some(PathBuf::from("/k.asc"));
         assert!(c.validate().is_ok());
     }
 
@@ -852,7 +851,7 @@ mod tests {
             .oauth2_clients
             .get_mut("ts-client")
             .expect("client")
-            .client_secret = Some(secret::Secret::new("s3cret"));
+            .client_secret = Some(Secret::new("s3cret"));
         assert!(c.validate().is_ok());
     }
 

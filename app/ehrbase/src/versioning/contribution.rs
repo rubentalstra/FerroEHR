@@ -218,7 +218,11 @@ struct PlannedVersion {
 /// body-referenced modification target does not exist (the `400_CONTRIBUTION`
 /// scope); [`ServiceError::Conflict`] for a duplicate EHR singleton/directory;
 /// plus the commit-engine placement/storage/signing errors.
-#[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
+#[expect(
+    clippy::too_many_lines,
+    reason = "the per-version classify + change-build loop, whose order is the \
+              CONTRIBUTION commit semantics"
+)]
 pub(crate) async fn commit_version_set(
     cx: &impl CommitEnv,
     ehr_id: Option<EhrId>,
@@ -247,6 +251,12 @@ pub(crate) async fn commit_version_set(
         .and_then(Value::as_str)
     {
         None => None,
+        #[expect(
+            clippy::map_err_ignore,
+            reason = "the mapped error already echoes the rejected token; the \
+                      discarded `uuid::Error` adds only its own wording, which \
+                      is not part of the wire contract"
+        )]
         Some(raw) => Some(raw.parse::<Uuid>().map_err(|_| {
             ServiceError::Unprocessable(format!(
                 "CONTRIBUTION uid {raw:?} is not a valid HIER_OBJECT_ID UUID"
@@ -506,7 +516,15 @@ pub(crate) async fn commit_version_set(
                     signature: v.signature,
                 }
             }
-            Action::Attest => unreachable!("Action::Attest handled above"),
+            // The `666|attestation|` branch above collects every attest member
+            // and `continue`s before this match, so this arm is a typed guard
+            // against that branch ever stopping to cover the action — the same
+            // shape the lost-target arms above use.
+            Action::Attest => {
+                return Err(ServiceError::Internal(
+                    "attestation version reached the change-building match".to_owned(),
+                ));
+            }
         };
         changes.push((v.audit, change));
     }
@@ -980,12 +998,6 @@ fn body_target_not_found_is_bad_request(e: ServiceError) -> ServiceError {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

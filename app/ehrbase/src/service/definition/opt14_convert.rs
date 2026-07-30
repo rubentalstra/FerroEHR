@@ -158,7 +158,7 @@ pub(crate) type ConvertedRoots = Vec<(String, Archetype)>;
 fn minimal_description(conversion_details: BTreeMap<String, String>) -> ResourceDescription {
     ResourceDescription {
         title: None,
-        original_author: std::collections::BTreeMap::new(),
+        original_author: BTreeMap::new(),
         original_namespace: None,
         original_publisher: None,
         other_contributors: Vec::new(),
@@ -424,11 +424,6 @@ impl Decomposer<'_> {
         }
     }
 
-    // Several arms share an identical-looking body (e.g. the domain
-    // constrainers → a loose `complex(...)`), but each binds a DISTINCT `opt14`
-    // variant type under the same name, so they cannot be merged into one
-    // or-pattern arm — the bindings have incompatible types.
-    #[allow(clippy::match_same_arms)]
     fn map_object(
         &mut self,
         obj: &opt14::CObject,
@@ -738,9 +733,6 @@ fn max_at_num(attrs: &[opt14::CAttribute]) -> i64 {
     max
 }
 
-// Arms share the body shape `at_num(&x.node_id)` but each binds a distinct
-// `opt14` variant type, so they cannot be merged into one or-pattern arm.
-#[allow(clippy::match_same_arms)]
 fn max_at_num_obj(obj: &opt14::CObject) -> i64 {
     match obj {
         // Do NOT descend into an embedded root: its at-codes are its own space.
@@ -822,7 +814,10 @@ fn terminology_code(
 /// primitive constraint node. The converter passes primitive nodes through
 /// untouched; phase-1 (no RM repo) does not validate primitive-constraint
 /// internals, so a faithful-but-minimal mapping is sufficient and safe.
-#[allow(clippy::too_many_lines)] // one arm per primitive C_* struct literal
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per primitive C_* struct literal — a flat mapping table"
+)]
 fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject {
     let rm = c.rm_type_name.as_str();
     let node_id = c.node_id.as_str();
@@ -1072,7 +1067,11 @@ fn date_time_pattern(
 
 /// Build the `Interval<Iso8601_*>` constraint list from a 1.4 temporal range
 /// (string bounds), mirroring [`int_interval`]'s point/proper split.
-#[allow(clippy::type_complexity)] // one tuple threading six 1.4 interval facets
+#[expect(
+    clippy::type_complexity,
+    reason = "one tuple threading the six ADL 1.4 interval facets through a \
+              single private helper"
+)]
 fn temporal_interval<T>(
     range: Option<(
         Option<String>,
@@ -1802,12 +1801,6 @@ fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::panic,
-    clippy::print_stdout
-)] // test assertions/diagnostics
 mod tests {
     use openehr_adl::validate::{Severity, validate_phase1};
 

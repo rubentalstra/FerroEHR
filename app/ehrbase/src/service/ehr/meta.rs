@@ -38,6 +38,13 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// [`ServiceError::Database`] if the current-row read fails.
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(in crate::service) async fn current_vo(
         &self,
         ehr_id: EhrId,
@@ -82,7 +89,11 @@ impl EhrbaseService {
     /// stored per-version value — never re-derived from the live config — so a
     /// version's uid stays stable across a later system-id change (RM common
     /// master06 §Distributed Versioning).
-    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
+    #[expect(
+        clippy::unused_self,
+        reason = "call-site ergonomics: every caller already holds the service, \
+                  so an inherent method reads better than a free function"
+    )]
     pub(crate) fn version_meta(
         &self,
         ehr_id: EhrId,
@@ -101,7 +112,11 @@ impl EhrbaseService {
     /// Inject the `uid` (`OBJECT_VERSION_ID`, RM common master06 §Version
     /// Identification) into a versioned object's canonical JSON so a bare read
     /// carries its wire identity.
-    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
+    #[expect(
+        clippy::unused_self,
+        reason = "call-site ergonomics: every caller already holds the service, \
+                  so an inherent method reads better than a free function"
+    )]
     pub(in crate::service) fn with_uid(
         &self,
         mut canonical: Value,

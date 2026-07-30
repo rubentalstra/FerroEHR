@@ -86,6 +86,7 @@ pub struct BasicConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BasicUser {
+    /// The login name presented in the `Authorization: Basic` header.
     pub username: String,
     /// Argon2 PHC hash string (`$argon2id$v=19$...`). Never a plaintext password.
     pub password_hash: Secret,

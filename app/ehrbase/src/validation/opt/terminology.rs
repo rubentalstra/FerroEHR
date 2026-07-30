@@ -173,8 +173,10 @@ fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Res
     if by_lang.len() < 2 {
         return Ok(());
     }
-    let (ref_lang, ref_codes) = &by_lang[0];
-    for (lang, codes) in &by_lang[1..] {
+    let Some((ref_lang, ref_codes)) = by_lang.first() else {
+        return Ok(());
+    };
+    for (lang, codes) in by_lang.iter().skip(1) {
         if codes != ref_codes {
             let missing: Vec<&str> = ref_codes
                 .symmetric_difference(codes)

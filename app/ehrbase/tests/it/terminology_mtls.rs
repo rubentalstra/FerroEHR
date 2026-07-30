@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Mutual TLS from the CDR to a terminology server, proven against a real TLS
 //! listener that demands (and inspects) the client certificate.
 //!
@@ -33,7 +27,14 @@
 //!
 //! Both leaves are signed by the CA and expire in 2126, so the suite does not
 //! rot. Every key here is a throwaway that never left this repository's tests.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -227,7 +228,7 @@ impl TestTs {
             roots.add(cert).expect("ca root");
         }
         let provider = Arc::new(rustls::crypto::aws_lc_rs::default_provider());
-        let builder = rustls::ServerConfig::builder_with_provider(provider.clone())
+        let builder = rustls::ServerConfig::builder_with_provider(Arc::clone(&provider))
             .with_safe_default_protocol_versions()
             .expect("protocol versions");
         let builder = if require_client {

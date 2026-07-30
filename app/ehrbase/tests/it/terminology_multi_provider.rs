@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Simultaneous multi-terminology-server operation + terminology-server
 //! authentication, driven by `wiremock` — several hermetic FHIR R4 servers in
 //! one process, no network.
@@ -18,7 +12,14 @@
 //!
 //! The routing-map mechanics themselves are spec-silent — our own
 //! design/extension.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

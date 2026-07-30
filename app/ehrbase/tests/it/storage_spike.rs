@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Storage spike: measure the candidate greenfield schema on
 //! a real `PostgreSQL` 18 before committing to migrations.
 //!
@@ -21,16 +15,20 @@
 //! Run explicitly (it is a measurement harness, not a CI gate):
 //! `SPIKE_SCALE=200 cargo nextest run -p ehrbase storage_spike --run-ignored all --no-capture`
 
-#![allow(
+#![expect(
     clippy::expect_used,
     clippy::unwrap_used,
-    // measurement harness: spike-grade casts/args are fine
-    clippy::cast_sign_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::needless_pass_by_value,
-    clippy::items_after_statements,
-    clippy::too_many_lines
+    clippy::indexing_slicing,
+    let_underscore_drop,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+#![expect(
+    clippy::too_many_lines,
+    reason = "an end-to-end suite drives one long lifecycle per test on purpose: \
+              splitting a case would hide the order its assertions depend on"
 )]
 
 use std::collections::BTreeSet;
@@ -179,9 +177,8 @@ impl<'a> Decomposer<'a> {
         let mut caps: Vec<i32> = d.nodes.iter().map(|n| n.num).collect();
         for i in (0..d.nodes.len()).rev() {
             let parent = d.nodes[i].parent_num;
-            if parent >= 0 {
+            if let Ok(p) = usize::try_from(parent) {
                 let cap = caps[i];
-                let p = parent as usize;
                 if cap > caps[p] {
                     caps[p] = cap;
                 }
@@ -191,8 +188,13 @@ impl<'a> Decomposer<'a> {
         d.nodes
     }
 
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the decomposer consumes each node's JSON and its own path \
+                  buffer as it walks"
+    )]
     fn node(&mut self, mut json: Value, path: String, parent: i32, citem: Option<i32>) -> i32 {
-        let num = self.nodes.len() as i32;
+        let num = i32::try_from(self.nodes.len()).expect("spike node count fits i32");
         let rm_type = json
             .get("_type")
             .and_then(Value::as_str)
@@ -253,7 +255,7 @@ impl<'a> Decomposer<'a> {
                 }
             }
         }
-        self.nodes[num as usize].data = json;
+        self.nodes[usize::try_from(num).expect("a node num is never negative")].data = json;
         num
     }
 
@@ -328,9 +330,9 @@ async fn insert_nodes(pool: &PgPool, table: &str, nodes: &[SpikeNode], vo_id: Uu
 
 async fn timed_scalar(pool: &PgPool, label: &str, sql: &'static str, report: &mut String) {
     // warm once, then time 5 runs
+    const RUNS: u32 = 5;
     let _ = sqlx::query(sql).fetch_all(pool).await.expect(label);
     let start = Instant::now();
-    const RUNS: u32 = 5;
     let mut rows = 0usize;
     for _ in 0..RUNS {
         rows = sqlx::query(sql).fetch_all(pool).await.expect(label).len();
@@ -351,6 +353,11 @@ async fn timed_scalar(pool: &PgPool, label: &str, sql: &'static str, report: &mu
 
 #[tokio::test]
 #[ignore = "storage spike — run explicitly with --run-ignored all"]
+#[expect(
+    clippy::disallowed_methods,
+    reason = "SPIKE_SCALE is this ignored measurement test's own knob, not server \
+              configuration — it must not enter the ehrbase::config tree"
+)]
 async fn storage_spike() {
     let scale: usize = std::env::var("SPIKE_SCALE")
         .ok()

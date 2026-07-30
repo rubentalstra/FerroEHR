@@ -1,14 +1,16 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for OPT 1.4 operational-template ingestion against a
 //! real `PostgreSQL` 18 (shared testkit harness): upload a corpus `.opt` template, list it,
 //! retrieve its XML, and re-upload (idempotent replace) — driven through the
 //! generated `DefinitionApi` trait exactly as the REST layer calls it.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::panic,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use serde_json::Value;
 
@@ -51,10 +53,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // List includes the uploaded template.
     let list = svc
-        .template_adl14_list(
-            TemplateListFilter::default(),
-            ehrbase::service::list::Page::all(),
-        )
+        .template_adl14_list(TemplateListFilter::default(), Page::all())
         .await
         .expect("list");
     assert!(
@@ -102,10 +101,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // The original template is untouched and there is still exactly one row.
     let list2 = svc
-        .template_adl14_list(
-            TemplateListFilter::default(),
-            ehrbase::service::list::Page::all(),
-        )
+        .template_adl14_list(TemplateListFilter::default(), Page::all())
         .await
         .expect("list after conflicting re-upload");
     assert_eq!(

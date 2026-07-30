@@ -1,20 +1,22 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests against a real PostgreSQL 18 (shared testkit harness):
-//! the EHR / EHR_STATUS / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
+//! the EHR / `EHR_STATUS` / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
 //! including versioning, optimistic concurrency, time-travel, and logical
 //! delete — driven through the `EhrService` envelope seam exactly as the
 //! REST layer calls it, asserting both the RM payload (`.body`) and the resource
 //! metadata (`.meta`, from which the HTTP edge derives `ETag`/`Location`).
-#![allow(
+
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+#![expect(
     clippy::too_many_lines,
-    clippy::doc_markdown
+    reason = "an end-to-end suite drives one long lifecycle per test on purpose: \
+              splitting a case would hide the order its assertions depend on"
 )]
 
 use serde_json::{Value, json};
@@ -590,7 +592,7 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
 /// and committed in a Contribution" (RM ehr master04 §EHR Creation) — so the
 /// committal metadata the ITS-REST overview lets a client supply
 /// (§"openehr-version and openehr-audit-details": "whatever is provided it
-/// MUST be merged with the default VERSION and VERSION.audit_details
+/// MUST be merged with the default VERSION and `VERSION.audit_details`
 /// attributes on commit runtime") reaches BOTH the creating CONTRIBUTION's
 /// audit and the `EHR_STATUS` version's `commit_audit`. `change_type` is not
 /// supplied here, so the operation default `249|creation|` stands (a create
@@ -796,7 +798,7 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
         .expect("an anonymous PARTY_SELF EHR_STATUS is accepted");
 }
 
-/// A `DV_CODED_TEXT` audit change_type (openEHR audit change-type group).
+/// A `DV_CODED_TEXT` audit `change_type` (openEHR audit change-type group).
 fn change_type(code: &str, value: &str) -> Value {
     json!({
         "_type": "DV_CODED_TEXT", "value": value,
@@ -1336,9 +1338,9 @@ async fn item_tag_wire_shape_is_the_rm_item_tag() {
     );
 }
 
-/// The ITEM_TAG identity within one target is the (key, target_path) PAIR
-/// (ITS-REST Requests_and_responses.md §item-tag headers: "uniquely identified
-/// by their key and target_path pair"): same-key tags on different paths
+/// The `ITEM_TAG` identity within one target is the (key, `target_path`) PAIR
+/// (ITS-REST `Requests_and_responses.md` §item-tag headers: "uniquely identified
+/// by their key and `target_path` pair"): same-key tags on different paths
 /// coexist, and the key-only wire DELETE removes the whole key set.
 #[tokio::test]
 async fn item_tag_identity_is_the_key_and_target_path_pair() {
@@ -1396,9 +1398,9 @@ async fn item_tag_identity_is_the_key_and_target_path_pair() {
 }
 
 /// Container-addressed and VERSION-addressed tag collections are DISJOINT
-/// (RM `item_tag.adoc`: `target: UID_BASED_ID` "may be a VERSIONED_OBJECT<T>
+/// (RM `item_tag.adoc`: `target: UID_BASED_ID` "may be a `VERSIONED_OBJECT`<T>
 /// or a VERSION<T>"), and each target emits the RM shape — a bare
-/// HIER_OBJECT_ID for the container, an OBJECT_VERSION_ID for a version.
+/// `HIER_OBJECT_ID` for the container, an `OBJECT_VERSION_ID` for a version.
 #[tokio::test]
 async fn item_tag_version_and_container_targets_are_distinct() {
     let db = testkit::db().await.expect("testkit database");
@@ -2044,11 +2046,11 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
 }
 
 /// The discrete `I_EHR_STATUS` mutators (`i_ehr_status.adoc`
-/// §set/clear_ehr_queryable, §set/clear_ehr_modifiable, §update_other_details):
-/// each commits a new implicit-CONTRIBUTION EHR_STATUS version and its
+/// §`set/clear_ehr_queryable`, §`set/clear_ehr_modifiable`, §`update_other_details)`:
+/// each commits a new implicit-CONTRIBUTION `EHR_STATUS` version and its
 /// post-condition is observable via `get_ehr_status`. Critically,
 /// `clear_ehr_modifiable` must stay committable on the EHR it disables and
-/// `set_ehr_modifiable` must undo it (EHR_STATUS "is always modifiable",
+/// `set_ehr_modifiable` must undo it (`EHR_STATUS` "is always modifiable",
 /// ehr/master04 §"EHR Active Status").
 #[tokio::test]
 async fn ehr_status_discrete_mutators() {
@@ -2152,10 +2154,10 @@ async fn ehr_status_discrete_mutators() {
     assert_eq!(after["other_details"]["archetype_node_id"], "at0001");
 }
 
-/// `I_EHR_DIRECTORY` §has_directory_version + §get_versioned_directory: the
+/// `I_EHR_DIRECTORY` §`has_directory_version` + §`get_versioned_directory`: the
 /// existence check is true for real versions (incl. across updates) and false
-/// for an unknown version id; the VERSIONED_OBJECT view carries the mandatory
-/// `time_created` (VERSIONED_OBJECT.time_created, RM common change_control).
+/// for an unknown version id; the `VERSIONED_OBJECT` view carries the mandatory
+/// `time_created` (`VERSIONED_OBJECT.time_created`, RM common `change_control`).
 #[tokio::test]
 async fn directory_versioned_and_has_version() {
     let db = testkit::db().await.expect("testkit database");
@@ -2188,8 +2190,9 @@ async fn directory_versioned_and_has_version() {
         "an uncommitted version id must not exist"
     );
 
-    // False for an unrelated versioned-object id.
-    let alien = format!("{}::{}::1", uuid::Uuid::new_v4(), sp[1]);
+    // False for an unrelated versioned-object id. The object_id is minted the
+    // way the store mints one (uuidv7) so the probe carries a realistic shape.
+    let alien = format!("{}::{}::1", uuid::Uuid::now_v7(), sp[1]);
     assert!(
         !svc.has_directory_version(ehr_uuid, alien.parse().expect("ovid"))
             .await
@@ -2237,10 +2240,10 @@ async fn directory_versioned_and_has_version() {
 /// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
 ///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
 ///   master06 §Committal: the written version identity).
-/// - Item 34: the EHR_STATUS update response `OBJECT_VERSION_ID`
+/// - Item 34: the `EHR_STATUS` update response `OBJECT_VERSION_ID`
 ///   (`committed_response`, replacing the discarded post-commit reassembly) MUST
 ///   equal a fresh read's `uid`, and the mutation MUST persist (the folded
-///   subject/is_queryable sync rides the write's UPDATE).
+///   `subject/is_queryable` sync rides the write's UPDATE).
 #[tokio::test]
 async fn write_responses_match_a_fresh_read() {
     let db = testkit::db().await.expect("testkit database");

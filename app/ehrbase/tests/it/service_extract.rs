@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the EHR Extract **export** path (SM
 //! `I_EHR_EXTRACT_SERVICE.export_ehrs` / `export_ehr_extracts`) against a real
 //! `PostgreSQL` 18 (shared testkit harness).
@@ -21,7 +15,16 @@
 //!    (only the named version container) and the `EXTRACT_VERSION_SPEC`
 //!    (`include_all_versions` ⇒ every version; `include_revision_history` ⇒ the
 //!    full `REVISION_HISTORY`).
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use serde_json::{Value, json};
 

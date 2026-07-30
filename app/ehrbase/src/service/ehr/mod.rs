@@ -128,7 +128,7 @@ fn ensure_if_match(
 /// bound is a `400`-equivalent precondition failure. Bound decoding is the
 /// shared ITS-REST datetime-parameter decoder
 /// (`crate::service::datetime`) — an offset is optional on the wire.
-fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeRange, SmError> {
+fn parse_time_range(raw: handle::TimeRange) -> Result<TimeRange, SmError> {
     let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
         b.as_deref()
             .map(crate::service::datetime::parse_time_range_bound)

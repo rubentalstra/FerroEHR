@@ -1,13 +1,5 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! the node codec round-trips the entire canonical-JSON corpus
 //! losslessly (in memory — the DB round-trip lives in `persistence.rs`).
-
-#![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::path::Path;
 

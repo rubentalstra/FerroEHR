@@ -303,7 +303,6 @@ fn code_items(codes: Option<&Vec<String>>) -> Vec<ValueListItem> {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
     use openehr_query::parser::parse_str;

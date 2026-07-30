@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end tests for ATTESTATION support in the CONTRIBUTION path
 //! (RM common `master06-change_control_package.adoc` §Change Control /
 //! §Attestation; ITS-REST `UpdateVersion.yaml` + `UpdateAttestation.yaml`)
@@ -16,7 +10,20 @@
 //! `ORIGINAL_VERSION` and in `REVISION_HISTORY`; and `CONTRIBUTION.versions` +
 //! the aggregate change-type semantics. Plus the error surface (400/422/404).
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+#![expect(
+    clippy::too_many_lines,
+    reason = "an end-to-end suite drives one long lifecycle per test on purpose: \
+              splitting a case would hide the order its assertions depend on"
+)]
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;

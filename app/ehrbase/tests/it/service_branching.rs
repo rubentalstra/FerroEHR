@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Version-tree branching + merge provenance, end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
@@ -26,7 +20,15 @@
 //! 4. an exported version tree containing branches re-imports whole
 //!    (branch import is first-class).
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};

@@ -323,19 +323,15 @@ fn emit_static_gauges(build: &BuildInfo) {
     )
     .set(1.0);
 
-    let start = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0.0, |d| d.as_secs_f64());
+    // Wall clock comes from jiff (the pinned time library, docs/VERSIONS.md);
+    // `as_duration` is the signed span since the Unix epoch, so no fallible
+    // `duration_since` and no lossy cast
+    // (https://docs.rs/jiff/latest/jiff/struct.Timestamp.html#method.as_duration).
+    let start = jiff::Timestamp::now().as_duration().as_secs_f64();
     metrics::gauge!(PROCESS_START_TIME).set(start);
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -9,8 +9,11 @@
 //! version indelibility. The backend is any S3-compatible endpoint (SeaweedFS
 //! in dev/test via its S3 gateway; AWS/MinIO/etc. in production).
 
-// Product identifiers (SeaweedFS, object_store, …) read as prose in docs.
-#![allow(clippy::doc_markdown)]
+#![expect(
+    clippy::doc_markdown,
+    reason = "product identifiers (SeaweedFS, object_store, …) read as prose in \
+              this module's docs"
+)]
 
 use std::sync::Arc;
 
@@ -160,12 +163,6 @@ impl BlobStore {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use object_store::memory::InMemory;
@@ -197,7 +194,7 @@ mod tests {
         assert!(!s.exists("k").await.unwrap());
         s.put_if_absent("k", b"hello".to_vec()).await.unwrap();
         assert!(s.exists("k").await.unwrap());
-        assert_eq!(&s.get("k").await.unwrap()[..], b"hello");
+        assert_eq!(&*s.get("k").await.unwrap(), b"hello");
         // put_if_absent on an existing key is a no-op (no error).
         s.put_if_absent("k", b"hello".to_vec()).await.unwrap();
         s.delete("k").await.unwrap();

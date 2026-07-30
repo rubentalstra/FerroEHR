@@ -389,6 +389,13 @@ impl EhrbaseService {
     /// # Errors
     /// [`ServiceError::Conflict`] when the EHR is not modifiable;
     /// [`ServiceError::Database`] if the flag read fails.
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(in crate::service) async fn ensure_content_writable(
         &self,
         ehr_id: EhrId,
