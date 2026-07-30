@@ -1251,3 +1251,88 @@ fn streaming_shape_keeps_the_population_gate() {
         "the bare root keeps its queryable gate: {bare}"
     );
 }
+
+// ── coded-name node predicates (QUERY master03 §Node predicate) ──────────────
+
+/// The name term-code shortcut decomposes into its canonical expansion:
+/// `name/defining_code/code_string` AND `name/defining_code/terminology_id/value`
+/// compared separately (the spec's own example pair, master03 §Node predicate).
+#[test]
+fn name_term_code_predicate_decomposes() {
+    let ir = plan_ok(
+        "SELECT o/name/value FROM COMPOSITION c CONTAINS \
+         OBSERVATION o CONTAINS ELEMENT e[at0002, snomed_ct(3.1)::313267000]",
+    );
+    let dumped = format!("{ir:?}");
+    assert!(
+        dumped.contains("terminology: \"snomed_ct(3.1)\"")
+            && dumped.contains("code: \"313267000\""),
+        "parts decomposed (version suffix stays with the terminology): {dumped}"
+    );
+    // SQL shape: TWO fragment extractions ANDed on the constrained node (the
+    // jsonpath text itself binds as a parameter).
+    let sql = build_sql(
+        "SELECT o/name/value FROM COMPOSITION c CONTAINS \
+         OBSERVATION o CONTAINS ELEMENT e[at0002, snomed_ct(3.1)::313267000]",
+    );
+    let extracts = sql.matches(r#"jsonb_path_query_first("n2"."data""#).count();
+    assert!(
+        extracts >= 2,
+        "code_string AND terminology_id both extracted on the node: {sql}"
+    );
+}
+
+/// The informational `|value|` tail takes no part in matching — only the
+/// terminology and code land in the IR (master03: `icd10AM::F60.1|Schizoid
+/// personality disorder|`).
+#[test]
+fn name_term_code_informational_tail_dropped() {
+    let ir = plan_ok(
+        "SELECT e FROM COMPOSITION c CONTAINS \
+         ELEMENT e[at0003, icd10AM::F60.1|Schizoid personality disorder|]",
+    );
+    let dumped = format!("{ir:?}");
+    assert!(
+        dumped.contains("terminology: \"icd10AM\"") && dumped.contains("code: \"F60.1\""),
+        "parts decomposed: {dumped}"
+    );
+    assert!(
+        !dumped.contains("Schizoid"),
+        "informational tail dropped: {dumped}"
+    );
+}
+
+/// A bare at-code name operand is a term from the archetype's own terminology:
+/// the canonical expansion asserts `terminology_id/value = 'local'`
+/// (master03 §Node predicate: `[at0002 and name/defining_code/code_string='at0003'
+/// and name/defining_code/terminology_id/value='local']`).
+#[test]
+fn name_at_code_asserts_local_terminology() {
+    let ir = plan_ok("SELECT e FROM COMPOSITION c CONTAINS ELEMENT e[at0002, at0003]");
+    let dumped = format!("{ir:?}");
+    assert!(
+        dumped.contains("terminology: \"local\"") && dumped.contains("code: \"at0003\""),
+        "local terminology asserted: {dumped}"
+    );
+}
+
+/// `TOP n BACKWARD` is a typed reject carrying the spec's rewrite guidance
+/// (owner disposition on #966: the deprecated direction variant is refused
+/// loudly, never a silent first-n answer); plain `TOP n` and the default
+/// FORWARD direction keep working (QUERY §SELECT/TOP — deprecated but defined).
+#[test]
+fn top_backward_rejected_with_guidance() {
+    let e = plan_err("SELECT TOP 10 BACKWARD c/uid/value FROM COMPOSITION c");
+    let msg = e.to_string();
+    assert!(
+        matches!(e, AqlError::Feature(AqlFeatureError::TopBackward(10))),
+        "typed reject: {msg}"
+    );
+    assert!(
+        msg.contains("deprecated") && msg.contains("ORDER BY") && msg.contains("LIMIT 10"),
+        "the reject carries the rewrite guidance: {msg}"
+    );
+    // Plain TOP and the explicit default direction stay accepted.
+    plan_ok("SELECT TOP 10 c/uid/value FROM COMPOSITION c");
+    plan_ok("SELECT TOP 10 FORWARD c/uid/value FROM COMPOSITION c");
+}

@@ -369,8 +369,17 @@ pub enum NameConstraint {
     Value(String),
     /// `name/value = $param`.
     Param(String),
-    /// `name/defining_code/code_string = '<code>'` (coded-name shortcut).
-    TermCode(String),
+    /// The coded-name shortcut, decomposed per its canonical expansion
+    /// (QUERY master03 §Node predicate: `[at0002, terminology::code|value|]`
+    /// ≡ `name/defining_code/code_string = '<code>' AND
+    /// name/defining_code/terminology_id/value = '<terminology>'`; the
+    /// `|value|` tail is informational and takes no part in matching).
+    TermCode {
+        /// `name/defining_code/terminology_id/value`.
+        terminology: String,
+        /// `name/defining_code/code_string`.
+        code: String,
+    },
 }
 
 /// A resolved standard predicate (`[objectPath op operand]`) on a node — the

@@ -10,7 +10,7 @@
 use openehr_query::ast::{
     AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsExpr, FunctionCall,
     IdentifiedExpr, LikeOperand, MatchesOperand, OrderByExpr, SelectQuery, SortOrder, StatFunc,
-    Terminal, ValueListItem, VersionPredicate, WhereExpr,
+    Terminal, TopDirection, ValueListItem, VersionPredicate, WhereExpr,
 };
 use openehr_rm::model;
 
@@ -436,7 +436,16 @@ impl Planner {
 fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>, bool), AqlError> {
     let (limit, offset, limit_is_top) = match (&query.select.top, &query.limit) {
         (Some(_), Some(_)) => return Err(AqlFeatureError::TopWithLimit.into()),
-        (Some(top), None) => (Some(top.count), None, true),
+        (Some(top), None) => {
+            // `TOP n [FORWARD]` maps to `LIMIT n`; the deprecated BACKWARD
+            // direction is a typed reject carrying the spec's own rewrite
+            // guidance (QUERY §SELECT/TOP deprecation note) — never a silent
+            // first-n answer.
+            if top.direction == Some(TopDirection::Backward) {
+                return Err(AqlFeatureError::TopBackward(top.count).into());
+            }
+            (Some(top.count), None, true)
+        }
         (None, Some(limit)) => (Some(limit.limit), limit.offset, false),
         (None, None) => (None, None, false),
     };
