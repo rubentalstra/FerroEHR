@@ -113,11 +113,14 @@ pub(crate) enum Token {
     /// `INTEGER`.
     #[regex(r"[0-9]+", |lex| lex.slice().to_owned())]
     Integer(String),
-    /// A double-quoted `STRING` (may span lines).
-    #[regex(r#""([^"\\]|\\.)*""#, |lex| lex.slice().to_owned())]
+    /// A double-quoted `STRING` (may span lines). Escapes are validated per
+    /// `ADL2/master03-file_encoding.adoc` §Special Character Sequences (see
+    /// [`validate_string`]).
+    #[regex(r#""([^"\\]|\\.)*""#, validate_string)]
     String(String),
-    /// A single-quoted `CHARACTER`.
-    #[regex(r"'([^'\\\r\n]|\\.)'", |lex| lex.slice().to_owned())]
+    /// A single-quoted `CHARACTER`. An escaped character must be one of the
+    /// six legal quoted forms (see [`validate_char`]).
+    #[regex(r"'([^'\\\r\n]|\\.)'", validate_char)]
     Character(String),
 
     /// A delimited contained regexp `{ /re/ }` / `{ ^re^ }` — a single token so
@@ -246,6 +249,65 @@ pub(crate) enum Token {
     /// `^` (`SYM_CARAT` — exponent).
     #[token("^")]
     Caret,
+}
+
+/// Validate a `STRING` token's escape sequences: the six legal quoted forms
+/// `\r \n \t \\ \" \'` plus the `\uHHHH`/`\uHHHHHHHH` ASCII-encoded-unicode
+/// forms — "Any other character combination starting with a backslash is
+/// illegal" (`ADL2/master03-file_encoding.adoc` §Special Character Sequences +
+/// §File Encoding). The BEL lexer keeps the slice verbatim (this lexer is
+/// deliberately self-contained — the ODIN reader carries its own copy with
+/// multi-line leader stripping on top).
+fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
+    let raw = lex.slice();
+    let bytes = raw.as_bytes();
+    let mut i = 0;
+    while let Some(&byte) = bytes.get(i) {
+        if byte == b'\\' {
+            match bytes.get(i + 1) {
+                Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'') => i += 2,
+                Some(b'u') => {
+                    let hex_start = i + 2;
+                    let count = raw
+                        .get(hex_start..)
+                        .unwrap_or_default()
+                        .chars()
+                        .take_while(char::is_ascii_hexdigit)
+                        .count();
+                    if count >= 8 {
+                        i = hex_start + 8;
+                    } else if count >= 4 {
+                        i = hex_start + 4;
+                    } else {
+                        return Err(());
+                    }
+                }
+                _ => return Err(()),
+            }
+        } else {
+            i += 1;
+        }
+    }
+    Ok(raw.to_owned())
+}
+
+/// Validate a `CHARACTER` token: an escaped character must be one of the six
+/// legal quoted forms — "Any other character combination starting with a
+/// backslash is illegal" (`ADL2/master03-file_encoding.adoc` §Special
+/// Character Sequences). The `\uHHHH` forms cannot fit the single-character
+/// token.
+fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
+    let raw = lex.slice();
+    let bytes = raw.as_bytes();
+    if bytes.get(1) == Some(&b'\\')
+        && !matches!(
+            bytes.get(2),
+            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
+        )
+    {
+        return Err(());
+    }
+    Ok(raw.to_owned())
 }
 
 /// Lex `src` into a spanned token vector.
