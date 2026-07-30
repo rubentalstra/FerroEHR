@@ -1071,6 +1071,13 @@ impl Parser<'_> {
             let obj = self.parse_adl14_term_object()?;
             return Ok(vec![obj]);
         }
+        // 1.4-only: the pipe-ordinal shorthand `0|[local::at0005], 1|[…]`
+        // (`cadl14.g4` `c_ordinal`, one of the `c_non_primitive_object`
+        // alternatives — so it stands exactly where an object is expected).
+        if self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start() {
+            let obj = self.parse_adl14_ordinal()?;
+            return Ok(vec![obj]);
+        }
         if self.is_inline_primitive_start() {
             let obj = self.parse_c_inline_primitive("Primitive_node_id".to_owned())?;
             return Ok(vec![obj]);
@@ -1234,11 +1241,7 @@ impl Parser<'_> {
     ///
     /// The list form additionally carries the two catalogue rules on the code
     /// list itself — STCDC (duplicates) and STCAC (an assumed code outside the
-    /// list), both raised at position below.
-    #[expect(
-        clippy::too_many_lines,
-        reason = "one linear parse: bracket, codes, assumed, the two list rules"
-    )]
+    /// list), both raised by [`Parser::adl14_term_constraint`].
     fn parse_adl14_term_object(&mut self) -> PResult<CObject> {
         let constraint = if let Some(Token::TermCodeRef(raw)) = self.peek().cloned() {
             self.pos += 1;
@@ -1304,83 +1307,265 @@ impl Parser<'_> {
                 SyntaxErrorCode::Stccp,
                 "expecting ']' closing a terminology code",
             )?;
-            // STCDC: "duplicate code(s) found in code list"
-            // (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
-            // Rules). A repeated member adds no value to the constrained set
-            // and is a defect in the source, not a silently-collapsed set.
-            let mut seen: Vec<&str> = Vec::with_capacity(codes.len());
-            let duplicates: Vec<&str> = codes
-                .iter()
-                .filter(|c| {
-                    let dup = seen.contains(&c.as_str());
-                    seen.push(c.as_str());
-                    dup
-                })
-                .map(String::as_str)
-                .collect();
-            if !duplicates.is_empty() {
-                self.push(
-                    SyntaxErrorCode::Stcdc,
-                    format!(
-                        "duplicate code(s) found in code list: {}",
-                        duplicates.join(", ")
-                    ),
-                    list_span.clone(),
-                );
-                return Err(());
-            }
-            // STCAC: "assumed value code $1 not found in code list" (same
-            // catalogue). `ADL1.4/master05-cadl.adoc` §Assumed Values L1012
-            // requires the assumed value to be "a value of the same type as
-            // that implied by the preceding part of the constraint" — for a
-            // listed term constraint the implied type is the listed set, so an
-            // assumed code outside it can never be assumed.
-            if let Some(a) = assumed.as_deref()
-                && !codes.iter().any(|c| c == a)
-            {
-                self.push(
-                    SyntaxErrorCode::Stcac,
-                    format!("assumed value code {a} not found in code list"),
-                    list_span,
-                );
-                return Err(());
-            }
-            let mut s = format!("{terminology}::{}", codes.join(","));
-            if let Some(a) = assumed {
-                s.push(';');
-                s.push_str(&a);
-            }
-            s
+            self.adl14_term_constraint(&terminology, &codes, assumed.as_deref(), list_span)?
         };
-        Ok(CObject::CTerminologyCode(CTerminologyCode {
-            parent: None,
-            soc_parent: None,
-            rm_type_name: "Terminology_code".to_owned(),
-            occurrences: None,
-            node_id: "Primitive_node_id".to_owned(),
-            alternative_ids: Vec::new(),
-            is_deprecated: None,
-            sibling_order: None,
-            default_value: None,
-            assumed_value: None,
-            is_enumerated_type_constraint: None,
-            constraint,
-            constraint_status: None,
-        }))
+        Ok(adl14_terminology_code(constraint))
+    }
+
+    /// Build the verbatim `terminology::code[,code]*[;assumed]` constraint string
+    /// of a 1.4 term constraint, enforcing the two catalogue rules that govern
+    /// the code list itself.
+    ///
+    /// Shared by the two 1.4 spellings of one and the same constraint — the
+    /// compact custom syntax `[local:: at0039, at0040]` and the inline dADL
+    /// `C_CODE_PHRASE <…>` block — which
+    /// `ADL1.4/master09-customising_adl.adoc` §Custom Syntax says "express
+    /// exactly the same constraint", so they must also be judged by the same
+    /// rules.
+    fn adl14_term_constraint(
+        &mut self,
+        terminology: &str,
+        codes: &[String],
+        assumed: Option<&str>,
+        span: std::ops::Range<usize>,
+    ) -> PResult<String> {
+        // STCDC: "duplicate code(s) found in code list"
+        // (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
+        // Rules). A repeated member adds no value to the constrained set
+        // and is a defect in the source, not a silently-collapsed set.
+        let mut seen: Vec<&str> = Vec::with_capacity(codes.len());
+        let duplicates: Vec<&str> = codes
+            .iter()
+            .filter(|c| {
+                let dup = seen.contains(&c.as_str());
+                seen.push(c.as_str());
+                dup
+            })
+            .map(String::as_str)
+            .collect();
+        if !duplicates.is_empty() {
+            self.push(
+                SyntaxErrorCode::Stcdc,
+                format!(
+                    "duplicate code(s) found in code list: {}",
+                    duplicates.join(", ")
+                ),
+                span,
+            );
+            return Err(());
+        }
+        // STCAC: "assumed value code $1 not found in code list" (same
+        // catalogue). `ADL1.4/master05-cadl.adoc` §Assumed Values L1012
+        // requires the assumed value to be "a value of the same type as
+        // that implied by the preceding part of the constraint" — for a
+        // listed term constraint the implied type is the listed set, so an
+        // assumed code outside it can never be assumed.
+        if let Some(a) = assumed
+            && !codes.iter().any(|c| c == a)
+        {
+            self.push(
+                SyntaxErrorCode::Stcac,
+                format!("assumed value code {a} not found in code list"),
+                span,
+            );
+            return Err(());
+        }
+        let mut s = format!("{terminology}::{}", codes.join(","));
+        if let Some(a) = assumed {
+            s.push(';');
+            s.push_str(a);
+        }
+        Ok(s)
+    }
+
+    /// True if the cursor is at the ADL 1.4 pipe-ordinal shorthand — a numeric
+    /// ordinal value immediately followed by the `|` separator
+    /// (`cadl14.g4` `ordinal_term : (integer_value | real_value) '|'
+    /// c_terminology_code`).
+    ///
+    /// The `|` is what discriminates it from every other numeric constraint: a
+    /// value list continues with `,`, an interval OPENS with `|`, and a range
+    /// separator is `..` — none of them puts `|` directly after a number.
+    fn is_adl14_ordinal_start(&self) -> bool {
+        let signed = usize::from(matches!(
+            self.peek(),
+            Some(Token::SymPlus | Token::SymMinus)
+        ));
+        matches!(
+            self.peek_at(signed),
+            Some(Token::Integer(_) | Token::Real(_))
+        ) && matches!(self.peek_at(signed + 1), Some(Token::SymIvlDelim))
+    }
+
+    /// 1.4-only: the openEHR-profiled ordinal shorthand
+    /// `0|[local::at0005], 1|[local::at0006] ; 0` (`cadl14.g4` `c_ordinal :
+    /// ordinal_term (',' ordinal_term)* (';' assumed_ordinal_value)?`).
+    ///
+    /// `ADL2/master04.4-cadl_second_order.adoc` §Tuple Constraints names this
+    /// exact form deprecated and gives its replacement in the same breath — the
+    /// generic `DV_ORDINAL` tuple `[value, symbol] ∈ { [{0}, {[at1]}], … }`,
+    /// noting that the 1.4 spelling "hides the `DV_ORDINAL` type altogether".
+    /// So it lowers to precisely that replacement: a `DV_ORDINAL`
+    /// `C_COMPLEX_OBJECT` whose single `[value, symbol]` attribute tuple has one
+    /// row per ordinal term, pairing the integer/real value constraint with the
+    /// symbol's terminology-code constraint. `AOM1.4/masterAppA-domain_extension.adoc`
+    /// §ORDINAL is the member typing (`value: Integer`, `symbol: CODE_PHRASE`).
+    ///
+    /// The form is ADL 1.4-only: ADL 2 removed it, so the ADL2 dialect never
+    /// reaches this production and refuses the text.
+    fn parse_adl14_ordinal(&mut self) -> PResult<CObject> {
+        let start = self.cur_span().start;
+        let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
+        loop {
+            let is_real = matches!(
+                self.peek_at(usize::from(matches!(
+                    self.peek(),
+                    Some(Token::SymPlus | Token::SymMinus)
+                ))),
+                Some(Token::Real(_))
+            );
+            let value = if is_real {
+                CPrimitiveObject::CReal(creal_values(vec![point_real(
+                    self.parse_signed_real(SyntaxErrorCode::Scrav)?,
+                )]))
+            } else {
+                CPrimitiveObject::CInteger(cinteger_values(vec![point_int(i64::from(
+                    self.parse_signed_int(SyntaxErrorCode::Sciav)?,
+                ))]))
+            };
+            self.expect(
+                |t| matches!(t, Token::SymIvlDelim),
+                SyntaxErrorCode::Sccog,
+                "expecting '|' between an ordinal value and its symbol",
+            )?;
+            let symbol = self.parse_adl14_ordinal_symbol()?;
+            tuples.push(CPrimitiveTuple {
+                members: vec![value, symbol],
+            });
+            if !self.eat(|t| matches!(t, Token::SymComma)) {
+                break;
+            }
+        }
+        if self.eat(|t| matches!(t, Token::SymSemiColon)) {
+            self.apply_adl14_ordinal_assumed(&mut tuples, start)?;
+        }
+        Ok(complex_object(
+            "DV_ORDINAL".to_owned(),
+            String::new(),
+            Vec::new(),
+            vec![CAttributeTuple {
+                members: vec![cattr_empty("value"), cattr_empty("symbol")],
+                tuples,
+            }],
+            None,
+        ))
+    }
+
+    /// The symbol half of an ordinal term: `c_terminology_code`
+    /// (`cadl14_primitives.g4`), i.e. the qualified `[local::at0005]` /
+    /// `[SNOMED-CT::12345]` form or the bare local `[at0005]` / `[ac0001]` form.
+    fn parse_adl14_ordinal_symbol(&mut self) -> PResult<CPrimitiveObject> {
+        let obj = if self.is_adl14_qualified_code_start() {
+            self.parse_adl14_term_object()?
+        } else if matches!(self.peek(), Some(Token::LBracket))
+            && matches!(self.peek_at(1), Some(Token::AtCode(_) | Token::AcCode(_)))
+        {
+            self.parse_c_terminology_code("Primitive_node_id".to_owned(), None)?
+        } else {
+            return self.err(
+                SyntaxErrorCode::Stccp,
+                "expecting a terminology code as the ordinal symbol",
+            );
+        };
+        cobject_to_primitive(obj).map_or_else(
+            || {
+                self.err(
+                    SyntaxErrorCode::Stccp,
+                    "the ordinal symbol is not a terminology-code constraint",
+                )
+            },
+            Ok,
+        )
+    }
+
+    /// Land the `; assumed_ordinal_value` tail (`cadl14.g4`
+    /// `assumed_ordinal_value : INTEGER | REAL`) on the ordinal term it names.
+    ///
+    /// The assumed value is an ordinal VALUE, so it belongs to exactly one term
+    /// of the list — the AOM2 carrier is that row's own value
+    /// `C_PRIMITIVE_OBJECT.assumed_value` (`AOM2/master04.2` §`Assumed_value` puts
+    /// `assumed_value` on `C_PRIMITIVE_OBJECT`). A value naming no term is
+    /// refused loudly rather than bound to an arbitrary row, on the same reading
+    /// as the listed term constraint's STCAC: `ADL1.4/master05-cadl.adoc`
+    /// §Assumed Values L1012 requires the assumed value to be "a value of the
+    /// same type as that implied by the preceding part of the constraint".
+    fn apply_adl14_ordinal_assumed(
+        &mut self,
+        tuples: &mut [CPrimitiveTuple],
+        start: usize,
+    ) -> PResult<()> {
+        let is_real = matches!(
+            self.peek_at(usize::from(matches!(
+                self.peek(),
+                Some(Token::SymPlus | Token::SymMinus)
+            ))),
+            Some(Token::Real(_))
+        );
+        let code = if is_real {
+            SyntaxErrorCode::Scrav
+        } else {
+            SyntaxErrorCode::Sciav
+        };
+        let assumed = if is_real {
+            self.parse_signed_real(code)?
+        } else {
+            f64::from(self.parse_signed_int(code)?)
+        };
+        let span = start..self.span_at(self.pos.saturating_sub(1)).end;
+        let row = tuples.iter_mut().find(|row| {
+            row.members
+                .first()
+                .and_then(ordinal_point_value)
+                .is_some_and(|v| (v - assumed).abs() < f64::EPSILON)
+        });
+        let Some(row) = row else {
+            self.push(
+                code,
+                format!("assumed ordinal value {assumed} is not one of the listed ordinals"),
+                span,
+            );
+            return Err(());
+        };
+        match row.members.first_mut() {
+            Some(CPrimitiveObject::CInteger(c)) => c.assumed_value = Some(assumed),
+            Some(CPrimitiveObject::CReal(c)) => c.assumed_value = Some(assumed),
+            // Unreachable: `ordinal_point_value` answered `Some` for this member
+            // just above, and it answers `Some` only for those two kinds.
+            _ => {}
+        }
+        Ok(())
     }
 
     /// 1.4-only: an inline dADL domain constraint `(C_DV_QUANTITY) <…>` /
-    /// `C_DV_ORDINAL <…>`. The ODIN block is parsed via `openehr_lang::odin`
-    /// and lowered to a `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` (the RM
-    /// type the domain constrainer targets), carrying the `property` external
-    /// code as a `C_TERMINOLOGY_CODE`, the `list` rows as an attribute tuple
-    /// (multi-member) or plain attributes (single member), and the
-    /// `assumed_value` object as the per-leaf `C_PRIMITIVE_OBJECT.assumed_value`s
-    /// it decomposes into. No openEHR spec governs the 1.4→2 lowering — our own
-    /// design (converter front end); `AOM2/master04.3` §Tuple Constraints is the
-    /// ADL2 target ("The tuple constraint type replaces all domain-specific
-    /// constraint types defined in ADL/AOM 1.4, including `C_DV_QUANTITY` and
-    /// `C_DV_ORDINAL`").
+    /// `C_DV_ORDINAL <…>` / `C_CODE_PHRASE <…>`. The ODIN block is parsed via
+    /// `openehr_lang::odin` and lowered to the constraint the RM type the domain
+    /// constrainer targets takes:
+    ///
+    /// * `C_DV_QUANTITY`/`C_DV_ORDINAL` → a `DV_QUANTITY`/`DV_ORDINAL`
+    ///   `C_COMPLEX_OBJECT`, carrying the `property` external code as a
+    ///   `C_TERMINOLOGY_CODE`, the `list` rows as an attribute tuple
+    ///   (multi-member) or plain attributes (single member), and the
+    ///   `assumed_value` object as the per-leaf
+    ///   `C_PRIMITIVE_OBJECT.assumed_value`s it decomposes into;
+    /// * `C_CODE_PHRASE` → the same `C_TERMINOLOGY_CODE` the compact custom
+    ///   syntax `[local:: at0039, at0040]` produces, because
+    ///   `ADL1.4/master09-customising_adl.adoc` §Custom Syntax presents the two
+    ///   as alternative spellings that "express exactly the same constraint".
+    ///
+    /// No openEHR spec governs the 1.4→2 lowering — our own design (converter
+    /// front end); `AOM2/master04.3` §Tuple Constraints is the ADL2 target ("The
+    /// tuple constraint type replaces all domain-specific constraint types
+    /// defined in ADL/AOM 1.4, including `C_DV_QUANTITY` and `C_DV_ORDINAL`").
     ///
     /// A domain type this lowering does not model is refused with a typed
     /// [`SyntaxErrorCode::Sdinv`] naming the type, never lowered to some other
@@ -1388,10 +1573,19 @@ impl Parser<'_> {
     /// `C_DOMAIN_TYPE` descendant here ("This approach can be used for any custom
     /// type which represents a constraint on a reference model type"), and each
     /// one targets a DIFFERENT RM type, so guessing is a silent wrong answer.
-    // TODO: lower the remaining openEHR Archetype Profile domain constrainers
-    // (`C_CODE_PHRASE` → `CODE_PHRASE`, `C_DV_STATE` → `DV_STATE`;
-    // `ADL1.4/master09-customising_adl.adoc` §Custom Syntax) so they stop being
-    // refused — tracked as the ADL1.4 master09 chapter audit.
+    //
+    // NOTE: `C_DV_STATE` — the one further openEHR Archetype Profile domain
+    // constrainer met in the wild — stays refused: no vendored openEHR spec text
+    // defines C_DV_STATE — the oAP custom type is not vendored, and neither
+    // `ADL1.4/master09-customising_adl.adoc` nor
+    // `AOM1.4/masterAppA-domain_extension.adoc` (whose worked domain classes are
+    // `C_ORDINAL`/`C_QUANTITY`/`C_CODED_TEXT`) gives its attributes or its RM
+    // target — so the typed refusal is the honest boundary; inventing a shape
+    // would be a silent wrong answer.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear parse: the type name, the ODIN block's token span, then one dispatch per lowered domain type"
+    )]
     fn parse_adl14_domain_object(&mut self, parenthesised: bool) -> PResult<CObject> {
         let start = self.cur_span().start;
         if parenthesised {
@@ -1457,7 +1651,7 @@ impl Parser<'_> {
                 SyntaxErrorCode::Sdinv,
                 format!(
                     "inline dADL domain constrainer {rm_type:?} is not supported; only \
-                     'C_DV_QUANTITY' and 'C_DV_ORDINAL' are lowered"
+                     'C_DV_QUANTITY', 'C_DV_ORDINAL' and 'C_CODE_PHRASE' are lowered"
                 ),
                 span,
             );
@@ -1471,6 +1665,26 @@ impl Parser<'_> {
             self.push(SyntaxErrorCode::Sdinv, "invalid dADL in domain block", span);
             return Err(());
         };
+        if rm_type == "C_CODE_PHRASE" {
+            let parts = match adl14_code_phrase_parts(&odin) {
+                Ok(parts) => parts,
+                Err(why) => {
+                    self.push(
+                        SyntaxErrorCode::Sdinv,
+                        format!("inline dADL 'C_CODE_PHRASE' block: {why}"),
+                        span,
+                    );
+                    return Err(());
+                }
+            };
+            let constraint = self.adl14_term_constraint(
+                &parts.terminology,
+                &parts.codes,
+                parts.assumed.as_deref(),
+                span,
+            )?;
+            return Ok(adl14_terminology_code(constraint));
+        }
         match lower_adl14_domain(&rm_type, &odin) {
             Ok(obj) => Ok(obj),
             Err(DomainLoweringError::Empty) => {
@@ -3276,19 +3490,203 @@ fn local_term_code(code: &str) -> TerminologyCode {
     }
 }
 
+/// The single ordinal value a lowered `[value, symbol]` tuple row constrains,
+/// as `f64` for the assumed-value lookup. `None` for any other constraint kind.
+fn ordinal_point_value(member: &CPrimitiveObject) -> Option<f64> {
+    match member {
+        CPrimitiveObject::CInteger(c) => c
+            .constraint
+            .first()
+            .and_then(interval_point_i32)
+            .map(f64::from),
+        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(interval_point_f64),
+        _ => None,
+    }
+}
+
+/// A 1.4 term constraint as a `C_TERMINOLOGY_CODE` carrying the verbatim
+/// `terminology::code[,code]*[;assumed]` spelling for `crate::adl14::convert`.
+fn adl14_terminology_code(constraint: String) -> CObject {
+    CObject::CTerminologyCode(CTerminologyCode {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "Terminology_code".to_owned(),
+        occurrences: None,
+        node_id: "Primitive_node_id".to_owned(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint,
+        constraint_status: None,
+    })
+}
+
 // ── ADL 1.4 inline dADL domain lowering (converter front end) ──────────────
 //
 // NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` pipeline
 // (including this lowering) is our own design (archie's converter is prior
-// art). `C_DV_QUANTITY`/`C_DV_ORDINAL` are ADL 1.4-only inline dADL
-// constrainers with no ADL2/AOM2 class; ADL2 expresses the same constraint as
-// a `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` with an attribute tuple
-// (`AOM2/master04.4` §Second-Order Constraints). We lower to that shape and
-// leave code renumbering + `property` binding synthesis to
-// `crate::adl14::convert`.
+// art). `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE` are ADL 1.4-only inline
+// dADL constrainers with no ADL2/AOM2 class; ADL2 expresses the first two as a
+// `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` with an attribute tuple
+// (`AOM2/master04.4` §Second-Order Constraints) and the third as a plain
+// terminology-code constraint. We lower to those shapes and leave code
+// renumbering + `property` binding synthesis to `crate::adl14::convert`.
 
 fn is_adl14_domain_type(id: &str) -> bool {
-    matches!(id, "C_DV_QUANTITY" | "C_DV_ORDINAL")
+    matches!(id, "C_DV_QUANTITY" | "C_DV_ORDINAL" | "C_CODE_PHRASE")
+}
+
+/// The parts an inline dADL `C_CODE_PHRASE` block constrains, as the 1.4
+/// custom-syntax spelling `[terminology:: code, … ; assumed]` carries them.
+struct CodePhraseParts {
+    /// The `terminology_id`'s value (`"local"`, `"SNOMED-CT"`, …).
+    terminology: String,
+    /// The `code_list` members, in source order.
+    codes: Vec<String>,
+    /// The `assumed_value` `CODE_PHRASE`'s `code_string`, if the block has one.
+    assumed: Option<String>,
+}
+
+/// Read an inline dADL `C_CODE_PHRASE` block into the parts a
+/// `C_TERMINOLOGY_CODE` constraint string is built from.
+///
+/// `ADL1.4/master09-customising_adl.adoc` §Custom Syntax gives the block's shape
+/// verbatim (`terminology_id = <value = <"local">>` plus a keyed `code_list`)
+/// and states that the compact `[local:: at0039, at0040]` custom syntax and this
+/// dADL section "express exactly the same constraint" — so both spellings lower
+/// to the SAME constraint object. `AOM1.4/masterAppA-domain_extension.adoc`
+/// §`C_CODED_TEXT` is the class shape behind it (`terminology: String`,
+/// `code_list: List<String>`), which is why a bare `terminology_id = <"local">`
+/// is read as well as the chapter's nested `TERMINOLOGY_ID` form.
+///
+/// # Errors
+/// The human-readable defect when the block is not a `C_CODE_PHRASE` instance —
+/// a missing/unreadable `terminology_id`, an absent or empty `code_list`, an
+/// `assumed_value` that is not a `CODE_PHRASE` of the same terminology, or an
+/// attribute the class does not define. The caller raises it as `SDINV`.
+fn adl14_code_phrase_parts(odin: &OdinValue) -> Result<CodePhraseParts, String> {
+    let OdinValue::Object(map) = untyped(odin) else {
+        return Err("expecting an object with 'terminology_id' and 'code_list'".to_owned());
+    };
+    if let Some(unknown) = map
+        .keys()
+        .find(|k| !matches!(k.as_str(), "terminology_id" | "code_list" | "assumed_value"))
+    {
+        return Err(format!(
+            "unknown attribute {unknown:?} (expecting 'terminology_id', 'code_list' or \
+             'assumed_value')"
+        ));
+    }
+    let Some(terminology) = map.get("terminology_id").map(untyped) else {
+        return Err("missing 'terminology_id'".to_owned());
+    };
+    let terminology = terminology_id_value(terminology)
+        .ok_or_else(|| "'terminology_id' is not a terminology identifier".to_owned())?;
+    let Some(code_list) = map.get("code_list") else {
+        // NOTE: `AOM1.4/masterAppA-domain_extension.adoc` §C_CODED_TEXT makes
+        // `code_list` optional ("No list means any code from the terminology is
+        // allowed"), but the 1.4 custom syntax this lowering targets carries a
+        // code set and nothing else, so an open constraint has no faithful
+        // carrier here. A loud refusal is the honest boundary: silently emitting
+        // an empty code set would NARROW the constraint to nothing.
+        return Err("missing 'code_list'".to_owned());
+    };
+    let codes = code_list_codes(code_list)?;
+    if codes.is_empty() {
+        return Err("'code_list' constrains no code".to_owned());
+    }
+    let assumed = match map.get("assumed_value").map(untyped) {
+        None => None,
+        Some(value) => {
+            let (assumed_terminology, code) = code_phrase_instance(value)?;
+            if assumed_terminology != terminology {
+                return Err(format!(
+                    "'assumed_value' names terminology {assumed_terminology:?}, but the \
+                     constraint is on {terminology:?}"
+                ));
+            }
+            Some(code)
+        }
+    };
+    Ok(CodePhraseParts {
+        terminology,
+        codes,
+        assumed,
+    })
+}
+
+/// A `TERMINOLOGY_ID` dADL value → its `value` string, in either the nested
+/// object spelling of `ADL1.4/master09-customising_adl.adoc` §Custom Syntax or
+/// the plain-string spelling of `AOM1.4/masterAppA-domain_extension.adoc`
+/// §`C_CODED_TEXT` (`terminology: String`).
+fn terminology_id_value(v: &OdinValue) -> Option<String> {
+    match v {
+        OdinValue::String(s) => Some(s.clone()),
+        OdinValue::Object(map) => match map.get("value").map(untyped) {
+            Some(OdinValue::String(s)) => Some(s.clone()),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// A `code_list` dADL value → its code strings, accepting the keyed-container
+/// spelling of the chapter's example, an ODIN primitive list, and a lone string
+/// (`LANG/docs/odin/master05-content.adoc` §Container Objects gives both the
+/// keyed-member and the list-literal spellings of a container attribute).
+///
+/// # Errors
+/// The defect when a member is not a code string.
+fn code_list_codes(v: &OdinValue) -> Result<Vec<String>, String> {
+    let member = |m: &OdinValue| match untyped(m) {
+        OdinValue::String(s) => Ok(s.clone()),
+        other => Err(format!(
+            "'code_list' member is not a code string ({})",
+            odin_kind(other)
+        )),
+    };
+    match untyped(v) {
+        OdinValue::KeyedList(entries) => entries.iter().map(|(_, m)| member(m)).collect(),
+        OdinValue::List(items) => items.iter().map(member).collect(),
+        OdinValue::String(s) => Ok(vec![s.clone()]),
+        OdinValue::Empty => Ok(Vec::new()),
+        other => Err(format!("'code_list' is not a list ({})", odin_kind(other))),
+    }
+}
+
+/// A `CODE_PHRASE` dADL instance → its `(terminology, code_string)`.
+///
+/// # Errors
+/// The defect when the value is not a `CODE_PHRASE` instance.
+fn code_phrase_instance(v: &OdinValue) -> Result<(String, String), String> {
+    let OdinValue::Object(map) = untyped(v) else {
+        return Err("'assumed_value' is not a CODE_PHRASE object".to_owned());
+    };
+    let terminology = map
+        .get("terminology_id")
+        .map(untyped)
+        .and_then(terminology_id_value)
+        .ok_or_else(|| "'assumed_value' has no readable 'terminology_id'".to_owned())?;
+    let Some(OdinValue::String(code)) = map.get("code_string").map(untyped) else {
+        return Err("'assumed_value' has no 'code_string'".to_owned());
+    };
+    Ok((terminology, code.clone()))
+}
+
+/// A one-word name for an ODIN value's kind, for defect messages.
+fn odin_kind(v: &OdinValue) -> &'static str {
+    match v {
+        OdinValue::Object(_) => "an object",
+        OdinValue::KeyedList(_) => "a keyed list",
+        OdinValue::List(_) => "a list",
+        OdinValue::Typed { .. } => "a typed block",
+        OdinValue::PathList(_) => "a path list",
+        OdinValue::Empty => "an empty block",
+        _ => "a leaf value",
+    }
 }
 
 /// Peel any `(TYPE)` casts off an ODIN value: the cast of
@@ -5022,19 +5420,16 @@ mod tests {
     /// refused by NAME, never lowered to a different RM type
     /// (`ADL1.4/master09-customising_adl.adoc` §Introduction admits any
     /// `C_DOMAIN_TYPE` descendant, each targeting a different RM type).
+    /// `C_DV_STATE` is the standing case: no vendored openEHR spec text defines
+    /// it, so it has no citable shape.
     #[test]
     fn adl14_unsupported_domain_type_is_refused_by_name() {
         let errs = parse_definition_body_adl14(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
-             DV_CODED_TEXT matches {\n\
-             defining_code matches {\n\
-             (C_CODE_PHRASE) <\n\
-             terminology_id = <value = <\"local\">>\n\
-             code_list = <[\"1\"] = <\"at0001\">>\n\
+             (C_DV_STATE) <\n\
+             value = <\"at0001\">\n\
              >\n\
-             }\n\
-             }\n\
              }\n\
              }",
         )
@@ -5044,10 +5439,45 @@ mod tests {
             .find(|e| e.code == SyntaxErrorCode::Sdinv)
             .expect("SDINV");
         assert!(
-            sdinv.message.contains("C_CODE_PHRASE"),
+            sdinv.message.contains("C_DV_STATE"),
             "the message must name the type, got {:?}",
             sdinv.message
         );
+    }
+
+    /// The `C_CODE_PHRASE` block of `master09` §Custom Syntax lowers to the very
+    /// constraint the compact custom syntax produces — the section presents them
+    /// as two spellings that "express exactly the same constraint".
+    #[test]
+    fn adl14_code_phrase_block_lowers_like_the_custom_syntax() {
+        let block = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             DV_CODED_TEXT matches {\n\
+             defining_code matches {\n\
+             C_CODE_PHRASE <\n\
+             terminology_id = <value = <\"local\">>\n\
+             code_list = <[\"1\"] = <\"at0039\"> [\"2\"] = <\"at0040\">>\n\
+             >\n\
+             }\n\
+             }\n\
+             }\n\
+             }",
+        )
+        .expect("the dADL block lowers");
+        let custom = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             DV_CODED_TEXT matches {\n\
+             defining_code matches {\n\
+             [local:: at0039, at0040]\n\
+             }\n\
+             }\n\
+             }\n\
+             }",
+        )
+        .expect("the custom syntax parses");
+        assert_eq!(block, custom);
     }
 
     #[test]

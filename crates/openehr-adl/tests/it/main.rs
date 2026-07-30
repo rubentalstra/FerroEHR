@@ -10,6 +10,7 @@ mod adl14_assertions;
 mod adl14_cadl_gates;
 mod adl14_cnf_fixture_slot;
 mod adl14_conversion;
+mod adl14_custom_constraints;
 mod adl14_dadl_breadth;
 mod adl14_header_sections;
 mod assembly;
