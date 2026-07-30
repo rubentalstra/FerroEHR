@@ -230,16 +230,30 @@ pub enum VersionField {
     TimeCommitted,
     /// `commit_audit/system_id`.
     SystemId,
-    /// `commit_audit/change_type[/value]`.
+    /// `commit_audit/change_type/defining_code/code_string` — the stored
+    /// numeric group code (e.g. `"249"`).
     ChangeType,
+    /// `commit_audit/change_type/value` — the rubric (e.g. `"creation"`),
+    /// rendered from the openEHR `audit_change_type` group.
+    ChangeTypeRubric,
+    /// `commit_audit/change_type/defining_code/terminology_id/value` — the
+    /// constant `openehr` terminology.
+    ChangeTypeTerminology,
     /// `commit_audit/committer[/...]`.
     Committer,
     /// `commit_audit/description[/value]`.
     Description,
     /// `contribution/id[/value]`.
     ContributionId,
-    /// `lifecycle_state[/value]`.
+    /// `lifecycle_state/defining_code/code_string` — the stored numeric
+    /// group code (e.g. `"532"`).
     LifecycleState,
+    /// `lifecycle_state/value` — the rubric (e.g. `"complete"`), rendered
+    /// from the openEHR `version_lifecycle_state` group.
+    LifecycleStateRubric,
+    /// `lifecycle_state/defining_code/terminology_id/value` — the constant
+    /// `openehr` terminology.
+    LifecycleStateTerminology,
 }
 
 /// The FROM containment tree: a boolean tree whose leaves are source operands,
