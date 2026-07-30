@@ -31,6 +31,16 @@ workflow refuses a tag that has no matching section here.
   `reason`, and doc links are verified by a new rustdoc CI gate. No wire or
   storage behaviour changes.
 
+- **An ADL 1.4 upload is now validated as ADL 1.4, not as a permissive
+  superset of ADL 2.** ADL 1.4's cADL keyword set is closed (master05
+  §Keywords), so constructs that only ADL 2 defines are refused in a 1.4 text
+  with a syntax error naming the construct: `use_archetype`, the archetype-slot
+  `closed` marker, the `_default` pseudo-attribute, second-order attribute
+  tuples, term-constraint strengths (`required`/`extensible`/`preferred`/
+  `example`), and `@terminology` operational bindings. `before`/`after` sibling
+  order stays accepted — master05 lists both as ADL 1.4 cADL keywords. ADL 2
+  uploads are unaffected.
+
 ### Fixed
 
 - **A server-side failure of the password-verification task no longer
@@ -135,18 +145,6 @@ workflow refuses a tag that has no matching section here.
   with a message that says so** — the negated `~matches` / `~is_in` / `∉`
   family and the `=~` / `!~` regex-match operators — instead of being read as
   their affirmative counterparts, which would invert the constraint.
-
-### Changed
-
-- **An ADL 1.4 upload is now validated as ADL 1.4, not as a permissive
-  superset of ADL 2.** ADL 1.4's cADL keyword set is closed (master05
-  §Keywords), so constructs that only ADL 2 defines are refused in a 1.4 text
-  with a syntax error naming the construct: `use_archetype`, the archetype-slot
-  `closed` marker, the `_default` pseudo-attribute, second-order attribute
-  tuples, term-constraint strengths (`required`/`extensible`/`preferred`/
-  `example`), and `@terminology` operational bindings. `before`/`after` sibling
-  order stays accepted — master05 lists both as ADL 1.4 cADL keywords. ADL 2
-  uploads are unaffected.
 
 ## [3.14.0] - 2026-07-30
 
