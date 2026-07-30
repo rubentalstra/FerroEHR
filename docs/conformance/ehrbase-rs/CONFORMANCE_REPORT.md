@@ -7,12 +7,12 @@ Runner: cnf-runner 3.13.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 822 |
+| passed | 824 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 859 |
+| total | 861 |
 
 ## By chapter
 
@@ -32,8 +32,8 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — ADL 1.4 templates | 33 | 0 | 0 | 5 |
 | — ADL 2 artefacts | 30 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
-| **Query** | 54 | 0 | 0 | 0 |
-| — Ad-hoc AQL | 43 | 0 | 0 | 0 |
+| **Query** | 56 | 0 | 0 | 0 |
+| — Ad-hoc AQL | 45 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
 | **Demographic** | 68 | 0 | 0 | 4 |
 | — Parties | 45 | 0 | 0 | 3 |
@@ -92,7 +92,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | PartyOperations | pass | 48 | 0 | 0 | 4 |
 | PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
 | DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
-| AqlBasic | pass | 30 | 0 | 0 | 0 |
+| AqlBasic | pass | 32 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 3 | 0 | 0 | 0 |
 | AqlTerminology | pass | 6 | 0 | 0 | 0 |
 | ActivityReport | pass | 15 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 822 of 859 selected cases driven.
+Coverage: 824 of 861 selected cases driven.
 
 Not-executed verdicts (each cited):
 
