@@ -28,10 +28,12 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::MultiplicityInterval;
 use openehr_lang::odin::{OdinKey, OdinValue};
 
+use super::conformance::effective_occurrences_adl14;
 use super::{ArchetypeRepository, ArchetypeView, ValidationCode, ValidationIssue, view};
 use crate::cadl::Dialect;
 use crate::codes::{
@@ -547,6 +549,16 @@ impl Scan<'_> {
             self.check_container_cardinality(&attr_path, attr);
         }
 
+        // VCOC is the ADL 1.4 formalism's own cardinality/occurrences rule,
+        // distinct from the AOM2 VACMCU/WACMCL pair above, so it runs on the 1.4
+        // dialect only. Gated to the non-specialised (own-flat-form) case for the
+        // same reason as VACMCU: a specialised archetype need not restate the
+        // inherited cardinality, so the sums here would be computed against a
+        // cardinality that is not the effective one.
+        if self.dialect == Dialect::Adl14 && !self.v.is_specialised() {
+            self.check_vcoc(&attr_path, attr);
+        }
+
         // Whether a child object is required to carry a node id. AOM2 requires
         // one on every non-primitive object (master04.5 §`C_OBJECT`); AOM 1.4
         // requires one only for children of a container (multiple) attribute —
@@ -597,6 +609,83 @@ impl Scan<'_> {
             self.push(
                 ValidationCode::Wacmcl,
                 format!("sum of child occurrences lowers {sum_lower} exceeds the cardinality upper {card_upper}"),
+                attr_path,
+            );
+        }
+    }
+
+    /// VCOC (ADL 1.4): cardinality/occurrences validity —
+    /// `ADL1.4/master05-cadl.adoc` §Occurrences L321-324: "the interval
+    /// represented by: (the sum of all occurrences minimum values) .. (the sum of
+    /// all occurrences maximum values) must be inside the interval of the
+    /// cardinality."
+    ///
+    /// The children's occurrences are the EFFECTIVE ones
+    /// ([`effective_occurrences_adl14`]): a child with no stated `occurrences` is
+    /// `{1..1}` (master05 L316), and a `use_node` with none takes the referenced
+    /// node's (master05 L515) — without those defaults the sums would be computed
+    /// from zero-width intervals and the rule would never see a real archetype's
+    /// child set.
+    ///
+    /// NOTE (adjudication): the sum-LOWER half of the literal containment — that
+    /// `cardinality.lower <= Σ occurrences.lower` — is NOT raised, because
+    /// openEHR's own regression corpus contradicts it: `aa.v1.adl`,
+    /// `dimensions.v1.adl` and their siblings are tagged `regression = "PASS"`
+    /// while pairing `items cardinality {1..*}` with a single child of
+    /// `occurrences {0..1}` (Σ lower = 0 < 1). AOM 2, where this rule's successor
+    /// lives, splits VCOC the same way: the upper-bound half is the ERROR VACMCU
+    /// and the lower-bound half is the WARNING WACMCL
+    /// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Validity Rules:
+    /// `C_ATTRIBUTE`). What IS raised is every part of the containment failure that
+    /// is a genuine defect and corpus-consistent: a sum whose maximum exceeds the
+    /// cardinality upper (the child set can overfill the container) and a sum whose
+    /// maximum cannot reach the cardinality lower (the container's minimum is
+    /// unsatisfiable). Both are strict cases of "not inside the interval of the
+    /// cardinality".
+    fn check_vcoc(&mut self, attr_path: &str, attr: &CAttribute) {
+        let Some(card) = attr.cardinality.as_ref() else {
+            return; // no cardinality ⇒ not a container ⇒ VCOC does not apply.
+        };
+        if attr.children.is_empty() {
+            return;
+        }
+        let card_lower = occurrences_lower(&card.interval);
+        let card_upper = occurrences_upper_finite(Some(&card.interval));
+
+        // Σ of the children's effective occurrences maxima; `None` = unbounded
+        // (any child with an open upper makes the sum open).
+        let mut sum_upper: Option<i64> = Some(0);
+        for child in &attr.children {
+            let occ = effective_occurrences_adl14(self.v.definition, child);
+            match (sum_upper, occ.upper) {
+                (Some(sum), Some(u)) => sum_upper = Some(sum + i64::from(u)),
+                (_, None) => sum_upper = None,
+                (None, _) => {}
+            }
+        }
+        let Some(sum_upper) = sum_upper else {
+            return; // an unbounded sum is inside any cardinality with an open upper
+        };
+
+        if let Some(cu) = card_upper
+            && sum_upper > i64::from(cu)
+        {
+            self.push(
+                ValidationCode::Vcoc,
+                format!(
+                    "the sum of the children's occurrences maxima ({sum_upper}) is outside the \
+                     cardinality {card_lower}..{cu}"
+                ),
+                attr_path,
+            );
+        }
+        if sum_upper < i64::from(card_lower) {
+            self.push(
+                ValidationCode::Vcoc,
+                format!(
+                    "the sum of the children's occurrences maxima ({sum_upper}) cannot reach the \
+                     cardinality lower bound ({card_lower})"
+                ),
                 attr_path,
             );
         }
@@ -1601,40 +1690,72 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
                 for prim_tuple in &tuple.tuples {
                     for member in &prim_tuple.members {
                         if let CPrimitiveObject::CTerminologyCode(tc) = member {
-                            let code = tc
-                                .constraint
-                                .split('@')
-                                .next()
-                                .unwrap_or(&tc.constraint)
-                                .trim();
-                            if !code.is_empty() {
-                                usage.value_codes.insert(code.to_owned());
-                            }
+                            usage.value_codes.extend(constraint_codes(&tc.constraint));
                         }
                     }
                 }
             }
         }
         CObject::CTerminologyCode(tc) => {
-            let code = tc
-                .constraint
-                .split('@')
-                .next()
-                .unwrap_or(&tc.constraint)
-                .trim();
-            if !code.is_empty() {
-                usage.value_codes.insert(code.to_owned());
-            }
+            let codes = constraint_codes(&tc.constraint);
             if let Some(a) = tc.assumed_value.as_ref()
-                && is_ac_code(code)
+                && let Some(ac) = codes.iter().find(|c| is_ac_code(c))
             {
                 usage
                     .assumed_refs
-                    .push((path.to_owned(), code.to_owned(), a.code_string.clone()));
+                    .push((path.to_owned(), ac.clone(), a.code_string.clone()));
             }
+            usage.value_codes.extend(codes);
         }
         _ => {}
     }
+}
+
+/// The ARCHETYPE-LOCAL codes a `C_TERMINOLOGY_CODE.constraint` string names.
+///
+/// Two spellings reach this function, because the constraint string is the
+/// verbatim carrier for both dialects:
+///
+/// - **ADL 2** — a single `at`/`ac` code, optionally suffixed with an operational
+///   binding `@terminology` (`ADL2/master08-terminology_integration.adoc`).
+/// - **ADL 1.4** — the qualified/listed custom-syntax form
+///   `terminology::code[,code]*[;assumed]` of
+///   `ADL1.4/master09-customising_adl.adoc` §Custom Syntax, which the 1.4 dialect
+///   preserves verbatim. This is the DOMINANT 1.4 spelling of a coded value set,
+///   so without decomposing it here the definedness rules never see its codes.
+///
+/// Only `local::` codes are archetype terms: VATDF/VACDF
+/// (`ADL1.4/master08-adl.adoc` §Validity Rules) judge definedness against the
+/// archetype's OWN `term_definitions`/`constraint_definitions`, and a code of an
+/// external terminology (`[openehr::127]`, `[ISO_639-1::en]`) is not an archetype
+/// term — its resolution is a terminology-service question (VETDF), not this one.
+/// The ADL 1.4 assumed code (after `;`) IS an archetype term and is included.
+fn constraint_codes(constraint: &str) -> Vec<String> {
+    // Drop any ADL2 operational-binding suffix first.
+    let body = constraint.split('@').next().unwrap_or(constraint).trim();
+    let Some((terminology, rest)) = body.split_once("::") else {
+        // ADL2 form: the constraint IS the code.
+        return if body.is_empty() {
+            Vec::new()
+        } else {
+            vec![body.to_owned()]
+        };
+    };
+    if terminology.trim() != LOCAL_TERMINOLOGY_ID {
+        return Vec::new();
+    }
+    // `code[,code]*[;assumed]`
+    let (codes, assumed) = match rest.split_once(';') {
+        Some((codes, assumed)) => (codes, Some(assumed)),
+        None => (rest, None),
+    };
+    codes
+        .split(',')
+        .chain(assumed)
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 #[cfg(test)]
@@ -1688,5 +1809,49 @@ mod temporal_vobav_tests {
             &[],
             &date("2019-06-15")
         ));
+    }
+}
+
+#[cfg(test)]
+mod constraint_code_tests {
+    use super::constraint_codes;
+
+    /// The ADL2 spelling: the constraint IS the code, with any operational
+    /// binding suffix (`ADL2/master08-terminology_integration.adoc`) stripped.
+    #[test]
+    fn adl2_single_code_and_binding_suffix() {
+        assert_eq!(constraint_codes("at1"), vec!["at1".to_owned()]);
+        assert_eq!(constraint_codes("ac1@snomed"), vec!["ac1".to_owned()]);
+        assert!(constraint_codes("").is_empty());
+    }
+
+    /// The ADL 1.4 spelling (`ADL1.4/master09-customising_adl.adoc` §Custom
+    /// Syntax) decomposes into its listed codes plus the assumed code — all of
+    /// them archetype terms VATDF must see.
+    #[test]
+    fn adl14_listed_codes_and_assumed_code() {
+        assert_eq!(
+            constraint_codes("local::at0136,at0137"),
+            vec!["at0136".to_owned(), "at0137".to_owned()]
+        );
+        assert_eq!(
+            constraint_codes("local::at0136,at0137;at0136"),
+            vec![
+                "at0136".to_owned(),
+                "at0137".to_owned(),
+                "at0136".to_owned()
+            ]
+        );
+        assert_eq!(constraint_codes("local::ac0001"), vec!["ac0001".to_owned()]);
+    }
+
+    /// Codes of an EXTERNAL terminology are not archetype terms, so VATDF/VACDF
+    /// definedness (`ADL1.4/master08-adl.adoc` §Validity Rules, judged against the
+    /// archetype's own terminology) does not apply to them.
+    #[test]
+    fn external_terminology_codes_are_not_archetype_terms() {
+        assert!(constraint_codes("openehr::127").is_empty());
+        assert!(constraint_codes("openehr::253,271,273").is_empty());
+        assert!(constraint_codes("ISO_639-1::en").is_empty());
     }
 }

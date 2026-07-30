@@ -252,6 +252,12 @@ pub enum ValidationCode {
     /// VACMCU — cardinality/occurrences upper bound validity (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vacmcu,
+    /// VCOC — ADL 1.4 cardinality/occurrences validity: the interval formed by the
+    /// sums of the children's occurrences minima..maxima must be inside the
+    /// container's cardinality interval (`ADL1.4/master05-cadl.adoc` §Occurrences
+    /// L321-324). The ADL 1.4 formalism's own rule, raised only on the 1.4
+    /// dialect; the AOM2 successor is the VACMCU/WACMCL pair.
+    Vcoc,
     /// VACMCO — cardinality/occurrences orphans: every mandatory child and one
     /// optional child must fit within the container cardinality (`master04.5`
     /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, [`phase3`]).
@@ -417,6 +423,7 @@ impl ValidationCode {
             Self::Vrmvav => "VRMVAV",
             Self::Vacso => "VACSO",
             Self::Vacmcu => "VACMCU",
+            Self::Vcoc => "VCOC",
             Self::Vacmco => "VACMCO",
             Self::Vsonif => "VSONIF",
             Self::Vrdla => "VRDLA",
@@ -696,6 +703,17 @@ pub fn validate_source_phase1(
 /// completeness), VDSEV/VDSIV (slot include/exclude consistency), VDFAI (slot
 /// archetype-id validity), VACSD/VASID/VALC (specialisation depth/parent/language
 /// where a parent is resolvable), VRANP/VOKU/VRRLP.
+///
+/// Two checks are 1.4-ONLY (the ADL 1.4 formalism's own rules, absent from AOM2):
+/// - **VCOC** — cardinality/occurrences validity over the children's EFFECTIVE
+///   occurrences (`ADL1.4/master05-cadl.adoc` §Occurrences L321-324; the AOM2
+///   successor is the VACMCU/WACMCL pair). See [`phase1`] for the adjudication of
+///   which half of the literal formula is enforceable.
+/// - **VATDF/VACDF over the 1.4 term-constraint spelling** — the qualified/listed
+///   form `[local:: a, b ; assumed]` of
+///   `ADL1.4/master09-customising_adl.adoc` §Custom Syntax is decomposed into its
+///   codes (assumed code included) so definedness is judged per code; external
+///   terminology codes are not archetype terms and are excluded.
 ///
 /// # Errors
 /// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
@@ -1020,6 +1038,7 @@ mod tests {
             ValidationCode::Vrmvav,
             ValidationCode::Vacso,
             ValidationCode::Vacmcu,
+            ValidationCode::Vcoc,
             ValidationCode::Vacmco,
             ValidationCode::Vsonif,
             ValidationCode::Vrdla,
@@ -1062,6 +1081,6 @@ mod tests {
             };
             assert_eq!(c.severity(), expected, "{c} severity");
         }
-        assert_eq!(seen.len(), 90);
+        assert_eq!(seen.len(), 91);
     }
 }

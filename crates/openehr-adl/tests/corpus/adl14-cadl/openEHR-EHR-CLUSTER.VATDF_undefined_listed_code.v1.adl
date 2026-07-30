@@ -1,0 +1,59 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.VATDF_undefined_listed_code.v1
+
+concept
+	[at0000]	-- Undefined code in a listed term constraint
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"VATDF">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Undefined code in a listed term constraint
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- The dominant 1.4 spelling of a coded value set
+							-- (ADL1.4/master09-customising_adl.adoc §Custom Syntax).
+							-- Every archetype term used here must be defined in the
+							-- ontology (ADL1.4/master08-adl.adoc §Validity Rules
+							-- VATDF); at0999 is not.
+							[local::
+							at0002,
+							at0999]
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Undefined code in a listed term constraint">
+					description = <"Refusal fixture: VATDF on a 1.4 listed term constraint.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"The recorded position.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+			>
+		>
+	>

@@ -1,0 +1,78 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.SCOAT_adl2_attribute_tuple.v1
+
+concept
+	[at0000]	-- ADL2 attribute tuple in a 1.4 text
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[at0000] matches {	-- ADL2 attribute tuple in a 1.4 text
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Pressure
+										value matches {
+											DV_QUANTITY matches {
+												-- Second-order attribute tuples are
+												-- ADL2 only (ADL2/master04.4 §Second
+												-- Order Constraints); AOM2/master04.3
+												-- §Tuple Constraints states the tuple
+												-- type "replaces all domain-specific
+												-- constraint types defined in ADL/AOM
+												-- 1.4", so a 1.4 text expresses this
+												-- with an inline dADL `C_DV_QUANTITY`
+												-- block instead.
+												[magnitude, units] matches {
+													[{|>=0.0|}, {"mm[Hg]"}]
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ADL2 attribute tuple in a 1.4 text">
+					description = <"Refusal fixture: an ADL2 second-order tuple in an ADL 1.4 definition.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any event.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Pressure">
+					description = <"A pressure measurement.">
+				>
+			>
+		>
+	>

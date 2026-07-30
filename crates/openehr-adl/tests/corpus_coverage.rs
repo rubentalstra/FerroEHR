@@ -28,10 +28,12 @@
 //! | `FeaturesAdls` | `features/**/*.adls` | `corpus_{outer_parse,definition_parse,roundtrip}.rs` |
 //! | `FeaturesAdl` | `features/**/*.adl` | `legacy14_corpus.rs` (1.4-tolerant parse) |
 //! | `Adl14Dadl` | `adl14-dadl/*.adl` | `adl14_dadl_breadth.rs` (accept/refuse per fixture) |
+//! | `Adl14Cadl` | `adl14-cadl/*.adl` | `adl14_cadl_gates.rs` (accept/refuse/invalid per fixture) |
 //!
-//! `adl14-dadl/` is the one HAND-WRITTEN tree here (`tests/corpus/PROVENANCE.md`
-//! §`adl14-dadl/`); it is counted separately so the vendored-corpus size ratchet
-//! below stays a statement about the vendored trees alone.
+//! `adl14-dadl/` and `adl14-cadl/` are the HAND-WRITTEN trees here
+//! (`tests/corpus/PROVENANCE.md`); they are counted separately so the
+//! vendored-corpus size ratchet below stays a statement about the vendored trees
+//! alone.
 
 use std::path::{Path, PathBuf};
 
@@ -53,6 +55,7 @@ enum Category {
     FeaturesAdls,
     FeaturesAdl,
     Adl14Dadl,
+    Adl14Cadl,
 }
 
 /// Classify a corpus source file (relative to `tests/corpus/`) into exactly one
@@ -69,9 +72,12 @@ fn classify(rel: &str, is_adl: bool) -> Option<Category> {
         }
         return None;
     }
-    // The hand-written ADL 1.4 dADL breadth tree.
+    // The hand-written ADL 1.4 trees.
     if rel.starts_with("adl14-dadl/") {
         return Some(Category::Adl14Dadl);
+    }
+    if rel.starts_with("adl14-cadl/") {
+        return Some(Category::Adl14Cadl);
     }
     // adl2-reference fixtures.
     let r = rel.strip_prefix("adl2-reference/")?;
@@ -142,7 +148,10 @@ fn every_corpus_source_is_claimed_by_exactly_one_harness() {
         PathBuf::from(format!("{CORPUS}/adl2-reference")),
         PathBuf::from(format!("{CORPUS}/flattener")),
     ];
-    let hand_written_roots = [PathBuf::from(format!("{CORPUS}/adl14-dadl"))];
+    let hand_written_roots = [
+        PathBuf::from(format!("{CORPUS}/adl14-dadl")),
+        PathBuf::from(format!("{CORPUS}/adl14-cadl")),
+    ];
 
     let mut counts: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
     let mut unclaimed: Vec<String> = Vec::new();
@@ -199,7 +208,7 @@ fn every_corpus_source_is_claimed_by_exactly_one_harness() {
     // The hand-written tree only ratchets up: a fixture is added, never
     // removed to go green (`.claude/rules/testing.md`).
     assert!(
-        hand_written >= 4,
-        "expected at least the 4 hand-written adl14-dadl fixtures; found {hand_written}"
+        hand_written >= 20,
+        "expected at least the 20 hand-written adl14-dadl + adl14-cadl fixtures; found {hand_written}"
     );
 }

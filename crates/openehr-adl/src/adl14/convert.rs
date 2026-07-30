@@ -203,7 +203,11 @@ impl<'a> Converter<'a> {
         self.renumber_nodes(&mut data.definition);
         // 3. Convert every terminology-code constraint (local/external/list).
         self.convert_constraints(&mut data.definition);
-        // 4. Elide RM-default cardinality/occurrences.
+        // 4. Write out the ADL 1.4 default occurrences where ADL 2 would infer a
+        //    different one, then elide the RM-default cardinality/occurrences.
+        //    Order matters: the materialisation reads the 1.4 cardinality, which
+        //    the elision may drop.
+        materialise_adl14_occurrences(&mut data.definition);
         elide_multiplicity(&mut data.definition);
         // 5. Rebuild the terminology (renumber keys, drop @internal, add synth).
         data.terminology = Box::new(self.rebuild_terminology(&data.terminology));
@@ -967,6 +971,84 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
 
 fn elide_multiplicity(def: &mut CComplexObject) {
     elide_cco(def);
+}
+
+/// Materialise the ADL 1.4 default `occurrences` on container children before the
+/// definition is emitted as ADL 2.
+///
+/// The two formalisms give an ABSENT `occurrences` different meanings, so the
+/// default cannot be carried across implicitly:
+///
+/// - ADL 1.4 — `ADL1.4/master05-cadl.adoc` §Occurrences L316: "The default
+///   occurrences, if none is mentioned, is `{1..1}`".
+/// - ADL 2 — `AOM2/master04.5-constraint_model-class_definitions.adoc`
+///   §Occurrences inferencing rules: an absent `occurrences` is inferred from the
+///   owning attribute's cardinality upper (lower forced to 0), i.e.
+///   `0..cardinality.upper`.
+///
+/// So an unstated 1.4 occurrences on a container child means "exactly once", and
+/// leaving it unstated in the ADL 2 output would silently widen it to "none to
+/// many". It is written out explicitly here.
+///
+/// Restricted to CONTAINER attributes because master05 L308 restricts the rule's
+/// significance to them ("It only has significance for objects which are children
+/// of a container attribute, since by definition, the occurrences of an object
+/// which is the value of a single valued attribute can only be `0..1` or `1..1`,
+/// and this is already defined by the attribute `existence`"). A `use_node`
+/// internal reference is exempt: master05 L515 gives it the REFERENCED node's
+/// occurrences, which is exactly what leaving it unstated means in ADL 2 once the
+/// proxy is expanded.
+///
+/// NOTE: no openEHR spec governs 1.4→2 conversion — our own design (see the
+/// module flag on [`crate::adl14`]); the two default rules it reconciles are the
+/// spec-cited ones above.
+fn materialise_adl14_occurrences(def: &mut CComplexObject) {
+    let Some(d) = cco_data_mut(def) else { return };
+    for attr in &mut d.attributes {
+        let is_container = attr.cardinality.is_some();
+        for child in &mut attr.children {
+            if is_container
+                && child_occurrences(child).is_none()
+                && !matches!(child, CObject::CComplexObjectProxy(_))
+            {
+                set_occurrences(child, one_to_one());
+            }
+            if let CObject::CComplexObject(c) = child {
+                materialise_adl14_occurrences(c);
+            }
+        }
+    }
+}
+
+/// The ADL 1.4 default multiplicity `{1..1}` (`ADL1.4/master05-cadl.adoc`
+/// §Occurrences L316).
+fn one_to_one() -> openehr_base::prelude::MultiplicityInterval {
+    openehr_base::prelude::MultiplicityInterval {
+        lower: Some(1),
+        upper: Some(1),
+        lower_unbounded: false,
+        upper_unbounded: false,
+        lower_included: true,
+        upper_included: true,
+    }
+}
+
+fn set_occurrences(obj: &mut CObject, occ: openehr_base::prelude::MultiplicityInterval) {
+    match obj {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences = Some(occ),
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences = Some(occ),
+        CObject::CComplexObjectProxy(p) => p.occurrences = Some(occ),
+        CObject::ArchetypeSlot(s) => s.occurrences = Some(occ),
+        CObject::CBoolean(o) => o.occurrences = Some(occ),
+        CObject::CInteger(o) => o.occurrences = Some(occ),
+        CObject::CReal(o) => o.occurrences = Some(occ),
+        CObject::CString(o) => o.occurrences = Some(occ),
+        CObject::CTerminologyCode(o) => o.occurrences = Some(occ),
+        CObject::CDate(o) => o.occurrences = Some(occ),
+        CObject::CTime(o) => o.occurrences = Some(occ),
+        CObject::CDateTime(o) => o.occurrences = Some(occ),
+        CObject::CDuration(o) => o.occurrences = Some(occ),
+    }
 }
 
 fn elide_cco(cco: &mut CComplexObject) {

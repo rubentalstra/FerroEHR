@@ -20,6 +20,8 @@
 //! - `adl14-dadl/*.adl` — the hand-written dADL breadth tree, claimed by
 //!   `adl14_dadl_breadth.rs` (accept/refuse per fixture, leaf values
 //!   asserted).
+//! - `adl14-cadl/*.adl` — the hand-written cADL tree (dialect gates, domain
+//!   lowering, VATDF/VACDF, VCOC), claimed by `adl14_cadl_gates.rs`.
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::path::{Path, PathBuf};
@@ -67,8 +69,8 @@ fn rel(p: &Path) -> String {
 fn every_adl_file_is_claimed_with_an_outcome() {
     let files = all_adl_files();
     assert!(
-        files.len() >= 21,
-        "expected the full 1.4 `.adl` census (>= 21), found {}",
+        files.len() >= 37,
+        "expected the full 1.4 `.adl` census (>= 37), found {}",
         files.len()
     );
 
@@ -120,6 +122,10 @@ fn every_adl_file_is_claimed_with_an_outcome() {
             // The hand-written dADL breadth tree, owned by
             // `adl14_dadl_breadth.rs` (which asserts each fixture's declared
             // accept/refuse outcome and its leaf values).
+            claimed += 1;
+        } else if r.starts_with("adl14-cadl/") {
+            // The hand-written cADL tree, owned by `adl14_cadl_gates.rs` (which
+            // asserts each fixture's declared accept/refuse/invalid outcome).
             claimed += 1;
         } else {
             panic!("unclaimed .adl file (no coverage category): {r}");

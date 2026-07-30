@@ -21,7 +21,7 @@ use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
 use super::rm::{Bounds, RmModel};
 use crate::codes::codes_conformant;
-use crate::paths::object_node_id;
+use crate::paths::{locate, object_node_id};
 
 /// The AOM meta-type (node class) of a [`CObject`], for the VSONT meta-type
 /// conformance rule (`master04.5` §Validity Rules: `C_OBJECT`, VSONT L342).
@@ -258,6 +258,56 @@ pub fn collective_occurrences_of(
         upper.map(|u| i32::try_from(u).unwrap_or(i32::MAX)),
     )
 }
+
+/// The EFFECTIVE `existence` of an attribute in an **ADL 1.4** text: the stated
+/// `existence` if there is one, else the 1.4 default `{1..1}`.
+///
+/// `ADL1.4/master05-cadl.adoc` §Existence L210: "The default existence
+/// constraint, if none is shown, is {1..1}." ADL 1.4 states the default in the
+/// formalism itself, so it is supplied as an ACCESSOR over the parsed model — the
+/// parsed structure is never rewritten, and an absent `existence` stays absent in
+/// the AOM (which is what the 1.4→2 converter and the printer must see).
+#[must_use]
+pub fn effective_existence_adl14(attr: &CAttribute) -> Bounds {
+    attr.existence.as_ref().map_or(BOUNDS_ONE, bounds)
+}
+
+/// The EFFECTIVE `occurrences` of an object node in an **ADL 1.4** text.
+///
+/// - A stated `occurrences` wins.
+/// - A `use_node` internal reference with none takes the referenced node's:
+///   `ADL1.4/master05-cadl.adoc` §Internal References L515 — "Unlike other node
+///   types, if no `occurrences` is mentioned, the value of the `occurrences` is
+///   set to that of the referenced node (which if not explicitly mentioned will be
+///   the default occurrences)". `root` is the archetype's definition root, against
+///   which the proxy's target path resolves; a non-specialised 1.4 archetype is
+///   its own flat form, so the path resolves locally.
+/// - Otherwise the 1.4 default `{1..1}`: `ADL1.4/master05-cadl.adoc`
+///   §Occurrences L316 — "The default occurrences, if none is mentioned, is
+///   `{1..1}`".
+///
+/// As with [`effective_existence_adl14`], this is an accessor: nothing is written
+/// back into the parsed model.
+#[must_use]
+pub fn effective_occurrences_adl14(root: &CComplexObject, obj: &CObject) -> Bounds {
+    if let Some(occ) = child_occurrences(obj) {
+        return bounds(occ);
+    }
+    if let CObject::CComplexObjectProxy(proxy) = obj
+        && let Some(target) = locate(root, &proxy.target_path)
+        && let Some(occ) = child_occurrences(target)
+    {
+        return bounds(occ);
+    }
+    BOUNDS_ONE
+}
+
+/// The ADL 1.4 default multiplicity `{1..1}`, shared by the existence
+/// (`master05` L210) and occurrences (`master05` L316) defaults.
+const BOUNDS_ONE: Bounds = Bounds {
+    lower: 1,
+    upper: Some(1),
+};
 
 /// The `occurrences` interval of any [`CObject`], if it carries one.
 #[must_use]
@@ -617,6 +667,102 @@ mod tests {
             Some(&mi(0, Some(3)))
         ));
     }
+
+    /// Build the definition root of a tiny 1.4 archetype, for the ADL 1.4
+    /// effective-value tests.
+    fn definition_of_adl14(src: &str) -> CComplexObject {
+        let art = crate::assemble::parse_artefact_adl14(src).unwrap();
+        match art {
+            Archetype::AuthoredArchetype(a) => match *a {
+                AuthoredArchetype::AuthoredArchetype(d) => d.definition,
+                AuthoredArchetype::Template(t) => t.definition,
+                AuthoredArchetype::OperationalTemplate(o) => o.definition,
+            },
+            Archetype::TemplateOverlay(t) => t.definition,
+        }
+    }
+
+    /// The ADL 1.4 defaults are EFFECTIVE values, applied by the accessor and
+    /// never written back: `ADL1.4/master05-cadl.adoc` §Existence L210 ("The
+    /// default existence constraint, if none is shown, is {1..1}") and
+    /// §Occurrences L316 ("The default occurrences, if none is mentioned, is
+    /// `{1..1}`").
+    #[test]
+    fn adl14_effective_defaults_are_one_to_one() {
+        let root = definition_of_adl14(ADL14_USE_NODE_SRC);
+        let items = complex_attributes(&root)
+            .iter()
+            .find(|a| a.rm_attribute_name == "items")
+            .unwrap()
+            .clone();
+        // The attribute states no existence ⇒ effective {1..1} (L210); the parsed
+        // structure keeps it absent.
+        assert!(items.existence.is_none());
+        assert_eq!(effective_existence_adl14(&items), Bounds::new(1, Some(1)));
+
+        // at0001 states no occurrences ⇒ effective {1..1} (L316).
+        let plain = &items.children[0];
+        assert!(child_occurrences(plain).is_none());
+        assert_eq!(
+            effective_occurrences_adl14(&root, plain),
+            Bounds::new(1, Some(1))
+        );
+        // at0002 states {0..2} ⇒ that wins.
+        assert_eq!(
+            effective_occurrences_adl14(&root, &items.children[1]),
+            Bounds::new(0, Some(2))
+        );
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Internal References L515: a `use_node` with no
+    /// stated `occurrences` takes the REFERENCED node's — here at0002's {0..2},
+    /// not the {1..1} default.
+    #[test]
+    fn adl14_use_node_inherits_the_referenced_node_occurrences() {
+        let root = definition_of_adl14(ADL14_USE_NODE_SRC);
+        let items = complex_attributes(&root)
+            .iter()
+            .find(|a| a.rm_attribute_name == "items")
+            .unwrap()
+            .clone();
+        let proxy = &items.children[2];
+        assert!(child_occurrences(proxy).is_none());
+        assert_eq!(
+            effective_occurrences_adl14(&root, proxy),
+            Bounds::new(0, Some(2))
+        );
+    }
+
+    const ADL14_USE_NODE_SRC: &str = "\
+archetype (adl_version=1.4)
+\topenEHR-EHR-CLUSTER.effective.v1
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"AuthorDraft\">
+
+definition
+\tCLUSTER[at0000] matches {
+\t\titems cardinality matches {0..*; unordered} matches {
+\t\t\tELEMENT[at0001] matches {*}
+\t\t\tELEMENT[at0002] occurrences matches {0..2} matches {*}
+\t\t\tuse_node ELEMENT /items[at0002]
+\t\t}
+\t}
+
+ontology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\titems = <
+\t\t\t\t[\"at0000\"] = <text=<\"\"> description=<\"\">>
+\t\t\t\t[\"at0001\"] = <text=<\"\"> description=<\"\">>
+\t\t\t\t[\"at0002\"] = <text=<\"\"> description=<\"\">>
+\t\t\t>
+\t\t>
+\t>
+";
 
     #[test]
     fn node_id_conformance_uses_codes_conformant() {

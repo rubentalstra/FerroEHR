@@ -1,0 +1,63 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SDINV_assumed_value_unmatched.v1
+
+concept
+	[at0000]	-- Assumed value outside the domain list
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Assumed value outside the domain list
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Pressure
+				value matches {
+					-- The assumed value is an instance of the constrained type
+					-- (AOM 1.4 `C_DV_QUANTITY.assumed_value`), so it must satisfy
+					-- one of the `list` rows it is assumed for. "kPa" appears in no
+					-- row, so the assumed value can be bound to no co-constrained
+					-- tuple row (AOM2/master04.3 §Tuple Constraints) and the block
+					-- is refused instead of binding it to an arbitrary row.
+					(C_DV_QUANTITY) <
+						property = <[openehr::122]>
+						assumed_value = <
+							units = <"kPa">
+							magnitude = <8.0>
+						>
+						list = <
+							["1"] = <
+								units = <"mm[Hg]">
+								magnitude = <|>=0.0|>
+							>
+							["2"] = <
+								units = <"cm[H2O]">
+								magnitude = <|>=0.0|>
+							>
+						>
+					>
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Assumed value outside the domain list">
+					description = <"Refusal fixture: a domain `assumed_value` matching no `list` row.">
+				>
+				["at0001"] = <
+					text = <"Pressure">
+					description = <"A pressure measurement.">
+				>
+			>
+		>
+	>

@@ -1,0 +1,67 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SDINV_unsupported_domain_type.v1
+
+concept
+	[at0000]	-- Unsupported inline dADL domain type
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Unsupported inline dADL domain type
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Coded item
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- ADL1.4/master09-customising_adl.adoc §Introduction
+							-- admits ANY `C_DOMAIN_TYPE` descendant in an inline
+							-- dADL block, and each one constrains a DIFFERENT
+							-- reference-model type. `C_CODE_PHRASE` (§Custom Syntax)
+							-- is not lowered yet, so it is refused by type name
+							-- rather than silently lowered to some other RM type.
+							(C_CODE_PHRASE) <
+								terminology_id = <
+									value = <"local">
+								>
+								code_list = <
+									["1"] = <"at0002">
+									["2"] = <"at0003">
+								>
+							>
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Unsupported inline dADL domain type">
+					description = <"Refusal fixture: an inline dADL `C_CODE_PHRASE` domain block.">
+				>
+				["at0001"] = <
+					text = <"Coded item">
+					description = <"A coded data item.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0003"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>

@@ -43,6 +43,45 @@ workflow refuses a tag that has no matching section here.
 - **Multi-line string values drop their continuation-line indentation**, as
   the specification requires (master04 §String Data), instead of carrying the
   source file's leading whitespace into the value.
+- **An inline ADL 1.4 domain constraint is no longer lowered to the wrong data
+  type.** `(TYPE) <…>` domain blocks (ADL 1.4 master09 §Customising ADL) other
+  than `C_DV_ORDINAL` were all turned into a `DV_QUANTITY`, so e.g. a
+  `C_CODE_PHRASE` coded-term constraint silently became a quantity constraint.
+  `C_DV_QUANTITY` and `C_DV_ORDINAL` are lowered as before; any other domain
+  type is now a syntax error naming the type instead of a wrong answer.
+- **An inline ADL 1.4 domain constraint's `assumed_value` is no longer
+  dropped.** It is now carried onto the constrained leaves (and an assumed
+  value that satisfies none of the block's own `list` rows is rejected instead
+  of silently ignored).
+- **ADL 1.4 coded-term constraints are checked for definedness.** The
+  dominant ADL 1.4 spelling of a value set (`[local:: at0004, at0005; at0004]`,
+  master09 §Custom Syntax) bypassed the term-definedness rules entirely, so an
+  archetype referring to codes its own ontology never defines uploaded
+  cleanly. Every listed code — and the assumed-value code — is now checked
+  (VATDF/VACDF, ADL 1.4 master08 §Validity Rules); codes of an external
+  terminology are correctly exempt.
+- **The ADL 1.4 cardinality/occurrences rule VCOC is enforced** (master05
+  §Occurrences): a container whose children's occurrences cannot fit inside
+  its cardinality is now rejected. The ADL 1.4 default `occurrences {1..1}`
+  and `existence {1..1}` (master05 §Occurrences / §Existence) are applied when
+  evaluating it, and the default occurrences is now written out explicitly by
+  the ADL 1.4 → 2 conversion, where an unstated occurrences means something
+  different.
+- **`use_node` type conformance is enforced (VUNT).** An internal reference
+  whose declared type is neither the referenced node's type nor an ancestor of
+  it is now a validation error instead of passing silently.
+
+### Changed
+
+- **An ADL 1.4 upload is now validated as ADL 1.4, not as a permissive
+  superset of ADL 2.** ADL 1.4's cADL keyword set is closed (master05
+  §Keywords), so constructs that only ADL 2 defines are refused in a 1.4 text
+  with a syntax error naming the construct: `use_archetype`, the archetype-slot
+  `closed` marker, the `_default` pseudo-attribute, second-order attribute
+  tuples, term-constraint strengths (`required`/`extensible`/`preferred`/
+  `example`), and `@terminology` operational bindings. `before`/`after` sibling
+  order stays accepted — master05 lists both as ADL 1.4 cADL keywords. ADL 2
+  uploads are unaffected.
 
 ## [3.14.0] - 2026-07-30
 
