@@ -6,11 +6,11 @@
 //! - [`request`] — the normalized execute-call request/outcome pair
 //!   (`ADHOC_QUERY_EXECUTE_SPEC` / `STORED_QUERY_EXECUTE_SPEC` +
 //!   the execute-call parameters).
-//! - [`execute`] — the `I_QUERY_SERVICE` calls on `EhrbaseService` and the
+//! - `execute` — the `I_QUERY_SERVICE` calls on `EhrbaseService` and the
 //!   execution orchestration (parse → plan → execute → assemble), paging
 //!   composition, `ehr_ids` resolution, and the per-query execution budget.
 //!   The AQL *engine* it drives is [`crate::aql`].
-//! - [`result_set`] — `RESULT_SET` / `RESULT_SET_COLUMN` / `RESULT_SET_ROW`
+//! - `result_set` — `RESULT_SET` / `RESULT_SET_COLUMN` / `RESULT_SET_ROW`
 //!   assembly (`result_set.adoc`) + parameter substitution, isolated so the
 //!   SM-vs-ITS-REST shape divergences (the `RESULT_SET.id` MUST)
 //!   live in one spec-cited place.

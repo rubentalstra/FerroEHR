@@ -134,8 +134,10 @@ fn samples_for(text: &str, base: &str) -> (Option<String>, Option<String>, Vec<M
 
 /// The metric name at the start of a sample line (up to `{` or whitespace).
 fn metric_name(line: &str) -> Option<&str> {
-    let end = line.find(['{', ' ']).unwrap_or(line.len());
-    let name = &line[..end];
+    let name = line
+        .find(['{', ' '])
+        .and_then(|end| line.get(..end))
+        .unwrap_or(line);
     (!name.is_empty()).then_some(name)
 }
 
@@ -157,7 +159,7 @@ fn parse_sample(line: &str) -> Option<Measurement> {
         .find('{')
         .and_then(|open| {
             let close = name_labels.rfind('}')?;
-            (close > open).then(|| parse_labels(&name_labels[open + 1..close]))
+            name_labels.get(open + 1..close).map(parse_labels)
         })
         .unwrap_or_default();
     Some(Measurement { labels, value })
@@ -176,12 +178,6 @@ fn parse_labels(block: &str) -> BTreeMap<String, String> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

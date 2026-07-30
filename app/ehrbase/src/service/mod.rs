@@ -134,7 +134,7 @@ pub struct EhrbaseService {
     /// behaviour byte-identical.
     pub(crate) multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
     /// The optional Subject Proxy FHIR-frame executor, selected when a
-    /// deployment configures FHIR systems ([`SubjectProxyConfig`]). `None`
+    /// deployment configures FHIR systems ([`crate::service::subject_proxy::config::SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
     pub(crate) subject_proxy_fhir: Option<Arc<SubjectProxyFhir>>,
     /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
@@ -294,7 +294,7 @@ impl EhrbaseService {
     }
 
     /// Install the Subject Proxy FHIR-frame executor (opt-in via
-    /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
+    /// [`crate::service::subject_proxy::config::SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
     /// `DATA_FRAME` is a typed rejection (fail-closed).
     #[must_use]
     pub fn with_subject_proxy(mut self, fhir: Arc<SubjectProxyFhir>) -> Self {

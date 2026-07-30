@@ -34,18 +34,11 @@ uuid.workspace = true
 workspace = true
 
 [dev-dependencies]
-testkit = { path = "../../tools/testkit" }
-insta.workspace = true
-opentelemetry.workspace = true
-opentelemetry_sdk = { workspace = true, features = ["trace", "testing"] }
-tracing-opentelemetry.workspace = true
-tracing-subscriber.workspace = true
-axum.workspace = true
-http.workspace = true
-http-body-util.workspace = true
-jiff.workspace = true
-serde.workspace = true
-testcontainers.workspace = true
-testcontainers-modules.workspace = true
-tower.workspace = true
-wiremock.workspace = true
+# The wiring-seam tests (`tests/it/`) drive `Cli` parsing and the pure-stdout
+# `config default` dispatch: the CLI derive, the async `run` entry point, and
+# its `anyhow` result. Everything past that seam is tested in the crate that
+# owns it (`app/ehrbase/tests/it/`, `app/ehrbase-rest/tests/it/`), so no
+# database, HTTP, or container harness is needed here.
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true

@@ -59,6 +59,11 @@ impl JwtValidator {
         cfg: &OidcConfig,
         role_claims: Vec<String>,
     ) -> Result<Self, String> {
+        #[expect(
+            clippy::map_err_ignore,
+            reason = "`jsonwebtoken`'s algorithm parse error carries no detail beyond \
+                      \"unrecognised name\", and the message already echoes the name"
+        )]
         let algorithms = cfg
             .algorithms
             .iter()
@@ -226,12 +231,6 @@ impl RemoteJwks {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use crate::extensions::access::authz::roles::default_role_claims;
     use jsonwebtoken::{EncodingKey, Header, encode};

@@ -33,7 +33,11 @@ const CONTRIBUTION_FORMATS: &[WireFormat] = &[
     WireFormat::Structured,
 ];
 
-#[allow(clippy::too_many_lines)] // create + get, each with envelope + simplified branches
+#[expect(
+    clippy::too_many_lines,
+    reason = "create + get, each with an envelope and a simplified-format branch: \
+              a flat match keeps every operation's wire behaviour in one place"
+)]
 pub(super) async fn run(
     state: AppState,
     op: &'static str,
@@ -151,8 +155,11 @@ pub(super) async fn run(
                     p.ehr_id.clone(),
                     cid.to_string(),
                 );
-                if let Some(at) = body["audit"]["time_committed"]["value"]
-                    .as_str()
+                if let Some(at) = body
+                    .get("audit")
+                    .and_then(|a| a.get("time_committed"))
+                    .and_then(|t| t.get("value"))
+                    .and_then(serde_json::Value::as_str)
                     .and_then(|raw| raw.parse::<jiff::Timestamp>().ok())
                 {
                     m = m.with_last_modified(at);

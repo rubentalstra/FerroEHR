@@ -1,0 +1,56 @@
+//! Integration tests for `ehrbase-rest` — the ITS-REST protocol adapter: the
+//! assembled axum router end to end (routing, content negotiation, committal and
+//! versioning headers, the status/error table), every API group's wire behaviour
+//! (EHR / COMPOSITION / DIRECTORY / CONTRIBUTION, definitions, demographics,
+//! query, admin, message), the Simplified Formats surface, authentication
+//! (Basic + Bearer) with the RBAC/ABAC PEP and SMART scope enforcement, the ATNA
+//! audit middleware, and the flagged extensions (FHIR, terminology, management,
+//! tenancy, event subscriptions, TLS).
+//!
+//! Most tests drive the real `EhrbaseService` over a fully-migrated `PostgreSQL`
+//! 18 database taken from the shared harness (`testkit::db()`), assembled by the
+//! shared [`common`] fixture module.
+//!
+//! One binary per crate, split into topic modules
+//! (`.claude/rules/testing.md` §One integration-test binary per crate).
+
+mod common;
+
+mod abac_e2e;
+mod admin_extension_http;
+mod admin_http;
+mod audit_e2e;
+mod audit_iti81;
+mod authz_cedar_engine;
+mod authz_remote_pdp;
+mod composition_validation_http;
+mod definition_adl2_http;
+mod definition_archetype_http;
+mod demographic_http;
+mod demographic_tags_http;
+mod directory_http;
+mod ehr_access_gate;
+mod event_subscription_http;
+mod example_http;
+mod extensions_openapi;
+mod fhir_http;
+mod fhir_inbound;
+mod fixture_smoke;
+mod flat_http;
+mod headers;
+mod http;
+mod management;
+mod message_extension_http;
+mod overload_http;
+mod protocol_tail;
+mod query_ehr_id_header;
+mod rbac_e2e;
+mod served_openapi;
+mod server_tls;
+mod service_query;
+mod smart_http;
+mod stored_query_definition_http;
+mod template_adl14_http;
+mod tenant_http;
+mod terminology_http;
+mod trace_shape;

@@ -1,5 +1,5 @@
 //! HTTP dispatch for the tenant admin extension API group over the
-//! [`TenantAdapter`](ehrbase::service::TenantAdapter) seam.
+//! `ehrbase::service::TenantAdapter` seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (multi-
 //! tenancy).** The tenancy model has zero SM/ITS-REST governance, so this
@@ -10,7 +10,7 @@
 //! the physical-delete ADMIN group.
 //!
 //! NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
-//! [`TenantAdapter`] extension, not an SM interface. Like the terminology
+//! `TenantAdapter` extension, not an SM interface. Like the terminology
 //! extension it carries no ABAC resource kind (the generic PEP `Skip`s it) and
 //! no ATNA audit-table entry — the fallbacks apply automatically.
 //!
@@ -220,6 +220,11 @@ async fn run(
 
 /// Parse the `{tenant_id}` path parameter as a UUID → `400` when malformed
 /// (a missing param is a routing bug → `500`).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`uuid::Error` carries only \"this is not a UUID\", which the 400 body \
+              already states"
+)]
 fn tenant_id(parts: &RequestParts) -> Result<Uuid, RestError> {
     let raw = parts.path.get("tenant_id").ok_or_else(|| {
         RestError(ApiError::Internal(

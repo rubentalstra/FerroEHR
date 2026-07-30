@@ -40,7 +40,7 @@
 //! `system_id` (Release-1.1.0): a client MAY supply it here; when it is
 //! absent "the server MUST set it to its own configured system identifier"
 //! (line 94). The header layer only carries a client-supplied value into
-//! [`UpdateAudit::system_id`]; the server default is asserted at the versioning
+//! `UpdateAudit::system_id`; the server default is asserted at the versioning
 //! seam, not here.
 //!
 //! NOTE (wire, spec-silent): the per-attribute value grammar is given only
@@ -151,7 +151,7 @@ fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, Str
 /// is never a default the client chose.
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
-    committer: openehr_rm::prelude::PartyProxy,
+    committer: PartyProxy,
 ) -> Option<ehrbase::service::version_update::UpdateAudit> {
     merged_committal(headers, Some(committer)).map(|c| c.audit)
 }
@@ -294,19 +294,23 @@ fn build_committer(pairs: &[(String, String)]) -> Option<PartyProxy> {
     if name.is_none() && ext_id.is_none() {
         return None;
     }
-    let mut party = json!({ "_type": "PARTY_IDENTIFIED" });
+    let mut party = serde_json::Map::new();
+    party.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
     if let Some(name) = name {
-        party["name"] = json!(name);
+        party.insert("name".to_owned(), json!(name));
     }
     if let Some(id) = ext_id {
-        party["external_ref"] = json!({
-            "_type": "PARTY_REF",
-            "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
-            "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
-            "id": { "_type": "HIER_OBJECT_ID", "value": id },
-        });
+        party.insert(
+            "external_ref".to_owned(),
+            json!({
+                "_type": "PARTY_REF",
+                "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
+                "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
+                "id": { "_type": "HIER_OBJECT_ID", "value": id },
+            }),
+        );
     }
-    openehr_its::json::from_canonical_value(&party).ok()
+    openehr_its::json::from_canonical_value(&serde_json::Value::Object(party)).ok()
 }
 
 /// The value of the first `key` in a parsed pair list.
@@ -327,60 +331,47 @@ fn scalar(pairs: &[(String, String)]) -> Option<String> {
 /// and keys is trimmed. See the module NOTE — the grammar is example-only.
 fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
-    let bytes = input.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
+    let mut rest = input;
+    loop {
         // Skip leading separators/whitespace.
-        while i < bytes.len() && (bytes[i] == b',' || bytes[i].is_ascii_whitespace()) {
-            i += 1;
-        }
-        // Read the key up to '='.
-        let key_start = i;
-        while i < bytes.len() && bytes[i] != b'=' && bytes[i] != b',' {
-            i += 1;
-        }
-        if i >= bytes.len() || bytes[i] != b'=' {
-            // No '=' — not a pair; skip to the next comma.
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            continue;
-        }
-        let key = input[key_start..i].trim().to_owned();
-        i += 1; // consume '='
-        // Read the value: quoted (opaque) or bare (to next comma).
-        let value = if i < bytes.len() && bytes[i] == b'"' {
-            i += 1; // consume opening quote
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b'"' {
-                i += 1;
-            }
-            let v = input[val_start..i].to_owned();
-            if i < bytes.len() {
-                i += 1; // consume closing quote
-            }
-            v
-        } else {
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            input[val_start..i].trim().to_owned()
+        rest = rest.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace());
+        // Read the key up to '='. A segment whose next delimiter is a comma
+        // carries no '=' — not a pair; leave the comma for the skip above.
+        let Some((key, after_key)) = rest.find(['=', ',']).and_then(|d| rest.split_at_checked(d))
+        else {
+            break;
         };
+        let Some(after_eq) = after_key.strip_prefix('=') else {
+            rest = after_key;
+            continue;
+        };
+        // Read the value: quoted (opaque) or bare (to next comma).
+        let (value, tail) = if let Some(quoted) = after_eq.strip_prefix('"') {
+            match quoted.find('"').and_then(|q| quoted.split_at_checked(q)) {
+                // Consume the closing quote; anything before the next comma is
+                // then skipped as a keyless segment.
+                Some((v, after_v)) => (v.to_owned(), after_v.get(1..).unwrap_or_default()),
+                None => (quoted.to_owned(), ""),
+            }
+        } else {
+            match after_eq
+                .find(',')
+                .and_then(|c| after_eq.split_at_checked(c))
+            {
+                Some((v, after_v)) => (v.trim().to_owned(), after_v),
+                None => (after_eq.trim().to_owned(), ""),
+            }
+        };
+        let key = key.trim();
         if !key.is_empty() {
-            out.push((key, value));
+            out.push((key.to_owned(), value));
         }
+        rest = tail;
     }
     out
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use ehrbase::service::version_update::UpdateAudit;

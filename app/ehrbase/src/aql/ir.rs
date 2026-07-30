@@ -2,8 +2,8 @@
 //!
 //! This is a relational-algebra-flavoured, fully typed intermediate
 //! representation of an AQL `SELECT` query over the greenfield node store. It is
-//! produced by [`crate::aql::plan`] (path analysis in [`super::analyze`] +
-//! lowering in [`super::lower`]) and consumed by the *next* package (IR→SQL via
+//! produced by [`crate::aql::plan`] (path analysis in `super::analyze` +
+//! lowering in `super::lower`) and consumed by the *next* package (IR→SQL via
 //! `sea-query`). **No SQL strings appear anywhere in this module** — the IR
 //! records typed intent (structure hops, fragment jsonpaths, coercions, version
 //! scope, wildcard semantics) and leaves every SQL-shaped decision to the SQL

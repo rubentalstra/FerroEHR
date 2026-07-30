@@ -161,12 +161,8 @@ async fn persist_request_tags(
     h: &HeaderMap,
     resp: &mut ServiceResponse,
 ) -> Result<(), RestError> {
-    let object_entries =
-        crate::overview::params::parse_item_tag_header(h, crate::overview::params::H_ITEM_TAG);
-    let version_entries = crate::overview::params::parse_item_tag_header(
-        h,
-        crate::overview::params::H_VERSION_ITEM_TAG,
-    );
+    let object_entries = params::parse_item_tag_header(h, params::H_ITEM_TAG);
+    let version_entries = params::parse_item_tag_header(h, params::H_VERSION_ITEM_TAG);
     if object_entries.is_none() && version_entries.is_none() {
         return Ok(());
     }
@@ -178,7 +174,7 @@ async fn persist_request_tags(
         .map_or(version_uid.as_str(), |(object_id, _)| object_id)
         .to_owned();
     if let Some(entries) = object_entries {
-        let tags = crate::overview::params::item_tags_from_header_entries(&entries);
+        let tags = params::item_tags_from_header_entries(&entries);
         let stored = state
             .backend()
             .party_tags_update(kind, container_uid, tags)
@@ -188,7 +184,7 @@ async fn persist_request_tags(
         }
     }
     if let Some(entries) = version_entries {
-        let tags = crate::overview::params::item_tags_from_header_entries(&entries);
+        let tags = params::item_tags_from_header_entries(&entries);
         let stored = state
             .backend()
             .party_tags_update(kind, version_uid, tags)

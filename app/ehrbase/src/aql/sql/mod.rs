@@ -16,9 +16,9 @@
 //! No openEHR spec governs the execution — openEHR defines the *language*, not
 //! its lowering; the SQL shapes are our own design.
 //! The construct-by-construct mapping to QUERY master03 lives in each submodule:
-//! [`from`] (FROM/containment + scope gates), [`select`] (SELECT/aggregates),
-//! [`predicate`] (WHERE/functions), [`value`] (the path split + coercions), and
-//! [`expr`] (the typed building blocks + the `LIKE`/archetype translations).
+//! `from` (FROM/containment + scope gates), `select` (SELECT/aggregates),
+//! `predicate` (WHERE/functions), `value` (the path split + coercions), and
+//! `expr` (the typed building blocks + the `LIKE`/archetype translations).
 //!
 //! ## Coupling to the storage schema
 //!

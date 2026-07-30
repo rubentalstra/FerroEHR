@@ -1,5 +1,5 @@
 //! HTTP dispatch for the terminology extension API group over the
-//! [`TerminologyService`](ehrbase::service::TerminologyService) seam.
+//! `ehrbase::service::TerminologyService` seam.
 //!
 //! **Operation semantics — SM `I_TERMINOLOGY_SERVICE`**
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master12-terminology_service.adoc`,

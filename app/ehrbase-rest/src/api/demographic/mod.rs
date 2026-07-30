@@ -17,17 +17,17 @@
 //! justified from the demographic contract, not by analogy.
 //!
 //! The **only** genuinely spec-absent surface is `PARTY_RELATIONSHIP` (see
-//! [`relationship`]): the vendored Demographic API defines no
+//! `relationship`): the vendored Demographic API defines no
 //! `party_relationship` paths — those routes are our own extension realizing SM
 //! `I_PARTY_RELATIONSHIP` and are excluded from conformance-profile claims.
 //!
 //! The five per-kind operation families are collapsed by mapping the
-//! operation-id prefix to a [`PartyKind`] ([`parse_party_op`]); the generated
+//! operation-id prefix to a [`PartyKind`] (`parse_party_op`); the generated
 //! per-kind `*Params` structs are field-identical, so one representative struct
 //! is reused across kinds. File layout mirrors the spec resources:
-//! [`party`] (`{kind}` CRUD), [`tags`] (`ITEM_TAG` sub-resources +
-//! `demographic_tags_get`), [`versioned_party`], [`contribution`],
-//! [`relationship`] (extension), and [`dispatch`] as the operation-id match.
+//! `party` (`{kind}` CRUD), `tags` (`ITEM_TAG` sub-resources +
+//! `demographic_tags_get`), `versioned_party`, `contribution`,
+//! `relationship` (extension), and `dispatch` as the operation-id match.
 
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, header};
@@ -179,8 +179,10 @@ fn set_write_headers(resp: &mut Response, base: &str, segment: &str, meta: Optio
 /// its `Last-Modified` rides the service metadata (the version spine's
 /// newest commit instant, overview §"`ETag` and Last-Modified").
 fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMeta {
-    let uid = body["uid"]["value"]
-        .as_str()
+    let uid = body
+        .get("uid")
+        .and_then(|u| u.get("value"))
+        .and_then(serde_json::Value::as_str)
         .unwrap_or(versioned_object_uid);
     // Parties are not EHR-scoped, so the demographic `ehr_id` is empty.
     let meta = ResourceMeta::new(String::new(), uid.to_owned());
@@ -194,13 +196,20 @@ fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMe
 /// `commit_audit.time_committed`, else a `REVISION_HISTORY`'s most recent item's
 /// first audit (see [`read_meta`] for the citations).
 fn commit_time(body: &serde_json::Value) -> Option<jiff::Timestamp> {
-    let raw = body["commit_audit"]["time_committed"]["value"]
-        .as_str()
+    let raw = body
+        .get("commit_audit")
+        .and_then(|a| a.get("time_committed"))
+        .and_then(|t| t.get("value"))
+        .and_then(serde_json::Value::as_str)
         .or_else(|| {
-            body["items"]
-                .as_array()
+            body.get("items")
+                .and_then(serde_json::Value::as_array)
                 .and_then(|items| items.last())
-                .and_then(|item| item["audits"][0]["time_committed"]["value"].as_str())
+                .and_then(|item| item.get("audits"))
+                .and_then(|audits| audits.get(0))
+                .and_then(|audit| audit.get("time_committed"))
+                .and_then(|t| t.get("value"))
+                .and_then(serde_json::Value::as_str)
         })?;
     raw.parse::<jiff::Timestamp>().ok()
 }
@@ -266,13 +275,6 @@ fn error_with_meta(error: ApiError, meta: Option<&ResourceMeta>) -> Response {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 

@@ -21,16 +21,16 @@
 //!
 //! | module | concern |
 //! |---|---|
-//! | [`object_version_id`] | `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding (BASE master05) |
-//! | [`lifecycle`] | `version_lifecycle_state` codes + the transition state machine |
-//! | [`audit`] | `AUDIT_DETAILS` values, the `audit_change_type` group, committer invariants |
+//! | `object_version_id` | `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding (BASE master05) |
+//! | `lifecycle` | `version_lifecycle_state` codes + the transition state machine |
+//! | `audit` | `AUDIT_DETAILS` values, the `audit_change_type` group, committer invariants |
 //! | [`change`] | the change-set unit, version-tree placement, the shared commit engine |
-//! | [`contribution`] | CONTRIBUTION classify + commit orchestration + retrieval |
-//! | [`attestation`] | attaching `ATTESTATION`s at or after committal |
-//! | [`read`] | loading stored versions ([`read::VersionRead`] and friends) |
-//! | [`wire`] | the served canonical-JSON builders (`ORIGINAL_VERSION`, `VERSIONED_*`, `REVISION_HISTORY`) |
-//! | [`integrity`] | signing policy at commit + verification policy at read |
-//! | [`import`] | replaying received originals as `IMPORTED_VERSION`s |
+//! | `contribution` | CONTRIBUTION classify + commit orchestration + retrieval |
+//! | `attestation` | attaching `ATTESTATION`s at or after committal |
+//! | `read` | loading stored versions (`read::VersionRead` and friends) |
+//! | `wire` | the served canonical-JSON builders (`ORIGINAL_VERSION`, `VERSIONED_*`, `REVISION_HISTORY`) |
+//! | `integrity` | signing policy at commit + verification policy at read |
+//! | `import` | replaying received originals as `IMPORTED_VERSION`s |
 //! | [`signature`] | the digest / `OpenPGP` signature primitives + configuration |
 //!
 //! # Seam with storage (`crate::storage`)

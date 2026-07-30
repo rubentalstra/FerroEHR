@@ -4,9 +4,9 @@
 //!
 //! The `dispatch` module is the operation match implementing the generated
 //! operation contract over the `ehrbase-sm` native API; it splits along the
-//! spec's query-type axis — [`adhoc`] (`/query/aql`) and [`stored`]
+//! spec's query-type axis — `adhoc` (`/query/aql`) and `stored`
 //! (`/query/{qualified_query_name}[/{version}]`) — over shared request-decoding
-//! and `RESULT_SET` rendering in [`response`].
+//! and `RESULT_SET` rendering in `response`.
 
 mod adhoc;
 pub(crate) mod dispatch;

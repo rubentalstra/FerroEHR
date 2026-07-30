@@ -5,7 +5,7 @@
 //! (`docs/architecture.md` §Storage). [`decompose`] turns a versioned object's
 //! canonical JSON into nested-set-numbered [`NodeRow`]s (structure children
 //! pruned out of their parents' fragments, everything else kept verbatim);
-//! [`reassemble`] is its lossless inverse over the lean [`ReadRow`] the
+//! [`reassemble`] is its lossless inverse over the lean [`crate::storage::row::ReadRow`] the
 //! repository fetches back. The codec never re-formats a leaf value — a leaf's
 //! lexical form (ISO-8601 partial precision, decimal-comma, timezone suffix,
 //! duration form; BASE `foundation_types` master06) survives verbatim inside its
@@ -194,7 +194,7 @@ fn is_structure(v: &Value) -> bool {
 /// ordered by `num` internally). Lossless inverse of [`decompose`]. Generic over
 /// [`NodeContent`], so it accepts either the write [`NodeRow`] (from
 /// [`decompose`], e.g. to reassemble the served form for signing) or the lean
-/// [`ReadRow`] the repository fetches back.
+/// [`crate::storage::row::ReadRow`] the repository fetches back.
 ///
 /// # Errors
 ///

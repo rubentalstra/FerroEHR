@@ -43,8 +43,8 @@
 //!
 //! - **Surface-A callers.** The A entry points are reached here from `service/`:
 //!   `templates::store` calls [`validate_opt_artefact`] +
-//!   [`validate_opt_structure`]; `service::definition::adl14` calls
-//!   [`validate_opt_structure`]. (ADL2 source validation is the `openehr-adl`
+//!   `validate_opt_structure`; `service::definition::adl14` calls
+//!   `validate_opt_structure`. (ADL2 source validation is the `openehr-adl`
 //!   engine, called from `service::definition::{adl2,wire}` — not this module.)
 //! - **Surface-C dispatch (wired).** `service::ehr`'s `validate_for_commit`
 //!   routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/

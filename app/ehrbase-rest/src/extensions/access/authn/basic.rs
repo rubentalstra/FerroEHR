@@ -18,6 +18,12 @@ use ehrbase::config::auth::BasicConfig;
 /// # Errors
 /// [`AuthError::InvalidCredentials`] on a malformed header, unknown user, or a
 /// password that does not match the stored Argon2 hash.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "every failure on the credential path collapses to one opaque outcome \
+              deliberately: a caller must not learn from the 401 whether the header \
+              was malformed, the user unknown, or the password wrong"
+)]
 pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principal, AuthError> {
     let raw = header.to_str().map_err(|_| AuthError::InvalidCredentials)?;
     let b64 = raw
@@ -75,12 +81,17 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
         }
     }
     let s = s.trim_end_matches('=').as_bytes();
+    #[expect(
+        clippy::integer_division,
+        reason = "a capacity hint only: floor(3/4 of the encoded length) is exactly \
+                  the decoded byte count for a well-formed group sequence"
+    )]
     let mut out = Vec::with_capacity(s.len() * 3 / 4);
     let mut acc = 0u32;
     let mut bits = 0u32;
     for &c in s {
         let v = u32::from(val(c)?);
-        acc = acc << 6 | v;
+        acc = (acc << 6) | v;
         bits += 6;
         if bits >= 8 {
             bits -= 8;
@@ -91,12 +102,6 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use argon2::password_hash::{PasswordHasher, SaltString};
@@ -135,11 +140,11 @@ mod tests {
                 *chunk.get(1).unwrap_or(&0),
                 *chunk.get(2).unwrap_or(&0),
             ];
-            let n = u32::from(b[0]) << 16 | u32::from(b[1]) << 8 | u32::from(b[2]);
-            out.push(T[(n >> 18 & 63) as usize] as char);
-            out.push(T[(n >> 12 & 63) as usize] as char);
+            let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+            out.push(T[((n >> 18) & 63) as usize] as char);
+            out.push(T[((n >> 12) & 63) as usize] as char);
             out.push(if chunk.len() > 1 {
-                T[(n >> 6 & 63) as usize] as char
+                T[((n >> 6) & 63) as usize] as char
             } else {
                 '='
             });

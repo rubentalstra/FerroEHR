@@ -41,9 +41,7 @@
 //! execution carries no principal context yet); the per-EHR gate still applies
 //! to the REST query surface where an `ehr_id` is bound.
 //!
-//! The PEP returns `Result<(), Response>` (the deny path is a ready `403`, a
-//! large type) — `result_large_err` is allowed module-wide accordingly.
-#![allow(clippy::result_large_err)]
+//! The PEP returns `Result<(), Response>` — the deny path is a ready `403`.
 
 use axum::response::{IntoResponse, Response};
 use ehrbase::service::ehr::access_types::{AccessLevel, principal_matches};
@@ -276,12 +274,6 @@ fn server_error(principal: Option<&Principal>, detail: &str) -> Response {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

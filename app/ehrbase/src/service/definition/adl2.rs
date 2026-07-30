@@ -505,7 +505,7 @@ impl EhrbaseService {
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
     /// the am24 front end
-    /// ([`build_web_template_am24`](openehr_its::flat::webtemplate::build_web_template_am24)),
+    /// ([`openehr_its::flat::webtemplate::build_web_template_am24`]),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
     /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is
@@ -542,7 +542,7 @@ impl EhrbaseService {
     /// The [`WebTemplate`] of a stored ADL2 template: resolve `template_id` →
     /// HRID, fetch the source, compile it to its operational template, and build
     /// the Web Template with the am24 front end
-    /// ([`build_web_template_am24`](openehr_its::flat::webtemplate::build_web_template_am24)).
+    /// ([`build_web_template_am24`]).
     /// The ADL2 twin of [`web_template`](Self::web_template) (which reads the
     /// ADL 1.4 OPT store), used by the example endpoint's FLAT/STRUCTURED
     /// negotiation.

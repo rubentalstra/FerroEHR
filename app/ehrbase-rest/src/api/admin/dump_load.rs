@@ -323,6 +323,11 @@ fn export_spec(body: &Value) -> Result<ExportSpec, RestError> {
             )))
         })?,
     };
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "`TryFromIntError` says only \"out of range\", which the 400 body \
+                  already states while echoing the rejected size"
+    )]
     let segment_split_size = i32::try_from(segment_split_size).map_err(|_| {
         RestError(ApiError::BadRequest(format!(
             "`segment_split_size` {segment_split_size} is outside the representable kb range"
