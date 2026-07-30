@@ -14,10 +14,12 @@ it**.
   `tools/src/test/resources/com/nedap/archie/flattener/{specexamples,siblingorder}`,
   commit `e8d92f28aca33f92ea08a826ea19f9581d579720` (2026-07-08).
 
-**One tree here is NOT vendored:** `adl14-dadl/` is hand-written from
+**Two trees here are NOT vendored:** `adl14-dadl/` is hand-written from
 `docs/specs/openehr/AM/docs/ADL1.4/master04-dadl.adoc` (+ `master08-adl.adoc`
-§Revision History Section) — see `PROVENANCE.md` §`adl14-dadl/` and §11 below.
-It is excluded from the vendored file-count ratchet in `corpus_coverage.rs`.
+§Revision History Section) and `adl14-cadl/` from `master05-cadl.adoc` (+
+`master08-adl.adoc` §Validity Rules and `master09-customising_adl.adoc`) — see
+`PROVENANCE.md` and §§11-12 below. Both are excluded from the vendored
+file-count ratchet in `corpus_coverage.rs`.
 
 **Maintenance:** regenerate/update this file whenever the corpus is re-vendored
 (the pins above change). File counts, the code frequency table, and the gap
@@ -471,6 +473,8 @@ tag in `validity/**` should be a hard coverage-gate error (only the two
 | `upgrade/upgrade_from_14/*.adls` | parse + validate clean (also the compare target) | — |
 | `upgrade/upgrade_from_15/*.adls` | parse + validate clean (no conversion input) | — |
 | `flattener/specexamples/**`, `flattener/siblingorder/**` | flatten child→parent, compare to hand-authored spec-derived expected | `AOM2/master08` §Flattening; `ADL2/master09` (hand-authored) |
+| `adl14-dadl/*.adl` | accept/refuse per fixture + leaf-value assertions (`tests/adl14_dadl_breadth.rs`) | file name + `regression` tag |
+| `adl14-cadl/*.adl` | accept/refuse/invalid per fixture (`tests/adl14_cadl_gates.rs`) | file name + `regression` tag |
 
 **Decisions needed for a zero-ambiguity 100% claim:**
 
@@ -505,5 +509,38 @@ assertions).
 |---|---|---|
 | `…dadl_breadth.v1.adl` | PASS | every leaf/structure form of master04: `<...>` empty sections (leaf, nested, behind a cast), the full partial date/time family incl. `T??:??:??`, integer exponents (`29e6`), case-insensitive booleans, intervals incl. `+/-` and the `infinity`/`-infinity`/`*` endpoints, qualified and local (`[at0200]`) term codes, lists + the open-list marker, URIs, characters, multi-line strings, `&quot;` |
 | `…revision_history.v1.adl` | PASS | the master08 §Revision History Section example, incl. its space-separated timestamp |
-| `…SDINV_default_interval.v1.adl` | SDINV | an interval inside a `_default` value — refused, not silently nulled |
 | `…SDINV_duplicate_sibling_attribute.v1.adl` | SDINV | a repeated sibling attribute name (rule VDATU / master04 §General Form) |
+
+---
+
+## 12. `adl14-cadl/` — the hand-written ADL 1.4 cADL tree
+
+Not vendored (PROVENANCE.md §`adl14-cadl/`): authored from
+`docs/specs/openehr/AM/docs/ADL1.4/master05-cadl.adoc` (+ `master08-adl.adoc`
+§Validity Rules, `master09-customising_adl.adoc`) because the vendored
+`adl2-reference` library is an ADL2 corpus and exercises none of the ADL 1.4
+cADL language. File names encode the expectation, corpus-convention style: an
+`S*_` prefix is a parse refusal with that syntax code, a `V*_` prefix is a
+phase-1 validation error with that validation code. Harness:
+`tests/adl14_cadl_gates.rs` (per-file expectation table + a tree/table
+cross-check).
+
+| File | Expects | Exercises |
+|---|---|---|
+| `…SCOAT_adl2_default_value.v1.adl` | SCOAT | the ADL2 `_default` pseudo-attribute refused in a 1.4 text (master05 §Keywords L48-53) |
+| `…SCOAT_adl2_attribute_tuple.v1.adl` | SCOAT | an ADL2 second-order attribute tuple refused in a 1.4 text |
+| `…SCCOG_adl2_use_archetype.v1.adl` | SCCOG | `use_archetype` refused in a 1.4 text (1.4 has `use_node`/`allow_archetype` only) |
+| `…SCCOG_adl2_slot_closed.v1.adl` | SCCOG | the ADL2 slot `closed` marker refused in a 1.4 text |
+| `…STCCP_adl2_constraint_strength.v1.adl` | STCCP | an ADL2 term-constraint strength refused in a 1.4 text |
+| `…STCCP_adl2_terminology_binding.v1.adl` | STCCP | an ADL2 `@terminology` operational binding refused in a 1.4 text |
+| `…SDINV_unsupported_domain_type.v1.adl` | SDINV | an inline dADL `C_CODE_PHRASE` refused BY NAME, never lowered to another RM type |
+| `…SDINV_assumed_value_unmatched.v1.adl` | SDINV | a domain `assumed_value` satisfying no `list` row |
+| `…domain_assumed_value.v1.adl` | PASS | the accepting twin: an `assumed_value` landing on the tuple row it satisfies |
+| `…VATDF_undefined_listed_code.v1.adl` | VATDF | an undefined code inside the 1.4 listed term constraint `[local:: …]` |
+| `…VATDF_undefined_assumed_code.v1.adl` | VATDF | an undefined ASSUMED code of a 1.4 listed term constraint |
+| `…VACDF_undefined_constraint_code.v1.adl` | VACDF | an undefined `ac` code in a 1.4 qualified term constraint |
+| `…term_constraint_codes_defined.v1.adl` | PASS | the accepting twin, incl. that EXTERNAL terminology codes are not archetype terms |
+| `…VCOC_occurrences_exceed_cardinality.v1.adl` | VCOC | master05 L321-324: the occurrences sum overfills the cardinality |
+| `…VCOC_occurrences_below_cardinality.v1.adl` | VCOC | master05 L321-324: the occurrences sum cannot reach the cardinality lower |
+| `…default_occurrences.v1.adl` | PASS | the effective occurrences default `{1..1}` (master05 L316) keeps VCOC quiet |
+| `…sibling_order.v1.adl` | PASS | `before [atNNNN]` — a cADL 1.4 keyword (master05 §Keywords L53), never gated |

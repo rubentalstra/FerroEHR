@@ -467,3 +467,76 @@ ontology
     openehr_adl::assemble::parse_artefact(&printed)
         .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
 }
+
+/// The ADL 1.4 default `occurrences` is WRITTEN OUT on container children by the
+/// conversion, because the two formalisms read an absent `occurrences`
+/// differently: ADL 1.4 means `{1..1}` (`ADL1.4/master05-cadl.adoc` §Occurrences
+/// L316) while ADL 2 infers `0..cardinality.upper`
+/// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Occurrences
+/// inferencing rules). Leaving it implicit would widen "exactly once" to "none to
+/// many". A `use_node` proxy stays unstated — master05 L515 gives it the
+/// referenced node's occurrences.
+#[test]
+fn conversion_writes_out_the_14_default_occurrences_on_container_children() {
+    let src = "\
+archetype (adl_version=1.4)
+\topenEHR-EHR-CLUSTER.default_occurrences.v1
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"AuthorDraft\">
+
+definition
+\tCLUSTER[at0000] matches {
+\t\titems cardinality matches {1..*; unordered} matches {
+\t\t\tELEMENT[at0001] matches {*}
+\t\t\tELEMENT[at0002] occurrences matches {0..2} matches {*}
+\t\t\tuse_node ELEMENT /items[at0002]
+\t\t}
+\t}
+
+ontology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\titems = <
+\t\t\t\t[\"at0000\"] = <text=<\"\"> description=<\"\">>
+\t\t\t\t[\"at0001\"] = <text=<\"\"> description=<\"\">>
+\t\t\t\t[\"at0002\"] = <text=<\"\"> description=<\"\">>
+\t\t\t>
+\t\t>
+\t>
+";
+    let mut log = ConversionLog::new();
+    let converted = parse_and_convert(src, &ConvertConfig::default(), &mut log).expect("converts");
+    let (definition, _) = data(&converted);
+    let items = openehr_adl::paths::complex_attributes(definition)
+        .iter()
+        .find(|a| a.rm_attribute_name == "items")
+        .expect("the items attribute")
+        .clone();
+
+    // at0001 stated nothing in 1.4 ⇒ explicit {1..1} in the ADL2 output.
+    let first = occurrences_of(&items.children[0]).expect("materialised occurrences");
+    assert_eq!((first.lower, first.upper), (Some(1), Some(1)));
+    // at0002 stated {0..2} ⇒ carried through unchanged.
+    let second = occurrences_of(&items.children[1]).expect("stated occurrences");
+    assert_eq!((second.lower, second.upper), (Some(0), Some(2)));
+    // The use_node keeps no occurrences of its own (master05 L515).
+    assert!(occurrences_of(&items.children[2]).is_none());
+}
+
+/// The `occurrences` of a converted child object, if it carries one.
+fn occurrences_of(
+    obj: &openehr_am::am24::aom2::constraint_model::c_object::CObject,
+) -> Option<&openehr_base::prelude::MultiplicityInterval> {
+    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+    match obj {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences.as_ref(),
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences.as_ref(),
+        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
+        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
+        _ => None,
+    }
+}

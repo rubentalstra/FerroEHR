@@ -1,0 +1,57 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.sibling_order.v1
+
+concept
+	[at0000]	-- Sibling order in a 1.4 text
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Sibling order in a 1.4 text
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- First item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			-- `before` and `after` ARE cADL 1.4 keywords:
+			-- ADL1.4/master05-cadl.adoc §Keywords L53 lists both among "the
+			-- keywords … recognised in cADL", so a sibling order in a 1.4 text is
+			-- legal 1.4 and must NOT be dialect-gated.
+			before [at0001] ELEMENT[at0002] occurrences matches {0..1} matches {	-- Second item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Sibling order in a 1.4 text">
+					description = <"Accepting fixture: `before [atNNNN]` sibling order in ADL 1.4.">
+				>
+				["at0001"] = <
+					text = <"First item">
+					description = <"The first item.">
+				>
+				["at0002"] = <
+					text = <"Second item">
+					description = <"The re-ordered second item.">
+				>
+			>
+		>
+	>

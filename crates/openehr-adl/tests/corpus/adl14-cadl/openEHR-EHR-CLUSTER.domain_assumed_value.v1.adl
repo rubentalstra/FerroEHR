@@ -1,0 +1,75 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.domain_assumed_value.v1
+
+concept
+	[at0000]	-- Domain assumed value
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Domain assumed value
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Temperature
+				value matches {
+					-- The accepting twin of SDINV_assumed_value_unmatched: the
+					-- assumed value satisfies the FIRST list row, so its leaves land
+					-- on that row's `C_PRIMITIVE_OBJECT.assumed_value`s
+					-- (AOM2/master04.2 §Assumed_value). `precision` is not
+					-- constrained by the block, so it has no AOM2 carrier.
+					(C_DV_QUANTITY) <
+						property = <[openehr::127]>
+						assumed_value = <
+							units = <"C">
+							precision = <0>
+							magnitude = <8.0>
+						>
+						list = <
+							["1"] = <
+								units = <"C">
+								magnitude = <|>=4.0|>
+							>
+							["2"] = <
+								units = <"F">
+								magnitude = <|>=40.0|>
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Body site
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Domain assumed value">
+					description = <"Accepting fixture: a domain `assumed_value` satisfying a `list` row.">
+				>
+				["at0001"] = <
+					text = <"Temperature">
+					description = <"A temperature measurement.">
+				>
+				["at0002"] = <
+					text = <"Body site">
+					description = <"Where the measurement was taken.">
+				>
+			>
+		>
+	>

@@ -1,0 +1,67 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.VCOC_occurrences_exceed_cardinality.v1
+
+concept
+	[at0000]	-- Occurrences sum above the cardinality
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"VCOC">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Occurrences sum above the cardinality
+		-- ADL1.4/master05-cadl.adoc §Occurrences L321-324, VCOC: "the interval
+		-- represented by: (the sum of all occurrences minimum values) .. (the sum
+		-- of all occurrences maximum values) must be inside the interval of the
+		-- cardinality". Three mandatory children sum to 3..3, which is outside the
+		-- container cardinality 0..2.
+		items cardinality matches {0..2; unordered} matches {
+			ELEMENT[at0001] occurrences matches {1..1} matches {	-- First item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {1..1} matches {	-- Second item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {1..1} matches {	-- Third item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Occurrences sum above the cardinality">
+					description = <"Refusal fixture: VCOC, the occurrences sum exceeds the cardinality upper.">
+				>
+				["at0001"] = <
+					text = <"First item">
+					description = <"The first item.">
+				>
+				["at0002"] = <
+					text = <"Second item">
+					description = <"The second item.">
+				>
+				["at0003"] = <
+					text = <"Third item">
+					description = <"The third item.">
+				>
+			>
+		>
+	>

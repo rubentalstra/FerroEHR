@@ -31,13 +31,14 @@ use std::collections::BTreeSet;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
 use openehr_rm::model;
 
 use super::{ArchetypeView, ValidationCode, ValidationIssue, view};
 use crate::codes::{is_at_code, is_id_code};
-use crate::paths::{complex_attributes, complex_rm_type, object_node_id, object_rm_type};
+use crate::paths::{complex_attributes, complex_rm_type, locate, object_node_id, object_rm_type};
 
 /// A multiplicity bound, extracted from an RM attribute or a cADL constraint.
 /// `upper == None` denotes an unbounded (∞) upper limit.
@@ -423,6 +424,7 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
         .collect();
     let mut scan = RmScan {
         rm,
+        root: v.definition,
         defined,
         is_specialised: v.is_specialised(),
         issues: Vec::new(),
@@ -446,6 +448,8 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
 /// Mutable state threaded through the reference-model walk.
 struct RmScan<'a> {
     rm: &'a dyn RmModel,
+    /// The definition root, against which a `use_node` target path resolves (VUNT).
+    root: &'a CComplexObject,
     /// The union of terminology-defined codes (for the interior-node VATID
     /// half); a code defined in any language counts as defined.
     defined: BTreeSet<String>,
@@ -655,9 +659,60 @@ impl RmScan<'_> {
                 }
             }
 
+            if let CObject::CComplexObjectProxy(proxy) = child {
+                self.check_proxy_type(&child_path, proxy);
+            }
+
             if let CObject::CComplexObject(cco) = child {
                 self.walk_complex(&child_path, child_type, cco);
             }
+        }
+    }
+
+    /// VUNT: the type named in a `use_node` must be the same as, or a super-type
+    /// of, the reference-model type of the node it refers to.
+    ///
+    /// `ADL2/master04.5-cadl_primitive_types.adoc` has the AOM2 wording
+    /// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Validity Rules:
+    /// `C_COMPLEX_OBJECT_PROXY`, VUNT); the ADL 1.4 formalism states the same rule
+    /// in `ADL1.4/master05-cadl.adoc` §Internal References L510-513 — "The type
+    /// mentioned in the `use_node` reference must always be the same type as, or a
+    /// super-type of the referenced type … a `use_node` reference to such a node can
+    /// legally mention the parent type".
+    ///
+    /// It lives HERE, in the reference-model pass, rather than in phase 1, because
+    /// the rule is explicitly "according to the reference model": deciding
+    /// super-type-hood needs [`RmModel::conforms`], which phase 1 does not have.
+    /// (Same reason VACSO moved here.) The target node is resolved against the
+    /// archetype's own definition tree, which is the flat form for a
+    /// non-specialised archetype (`ADL2/master09.02` §Differential and Flat Forms);
+    /// an unresolvable path is VUNP's business, not VUNT's, so it is left alone
+    /// here.
+    fn check_proxy_type(&mut self, path: &str, proxy: &CComplexObjectProxy) {
+        let declared = normalise_type_name(&proxy.rm_type_name);
+        if declared.is_empty() {
+            return; // no declared type ⇒ nothing to compare (1.4 accepts none).
+        }
+        let Some(target) = locate(self.root, &proxy.target_path) else {
+            return; // unresolvable target path ⇒ VUNP (phase 3), not VUNT.
+        };
+        let target_type = object_rm_type(target);
+        if target_type.is_empty() {
+            return;
+        }
+        // `conforms(sub, sup)`: the REFERENCED type must conform to the DECLARED
+        // one (declared is the same type or an ancestor). `None` = a type unknown
+        // to the model, already reported as VCORM — undecidable here.
+        if type_conforms(self.rm, target_type, &proxy.rm_type_name) == Some(false) {
+            self.push(
+                ValidationCode::Vunt,
+                format!(
+                    "use_node type {:?} is neither the same as nor a super-type of the referenced \
+                     node's type {target_type:?} at {:?}",
+                    proxy.rm_type_name, proxy.target_path
+                ),
+                path,
+            );
         }
     }
 
@@ -678,6 +733,11 @@ impl RmScan<'_> {
                     ),
                     &child_path,
                 );
+            }
+            // VUNT does not depend on the owning attribute's declared type, so it
+            // runs on this branch too.
+            if let CObject::CComplexObjectProxy(proxy) = child {
+                self.check_proxy_type(&child_path, proxy);
             }
             if let CObject::CComplexObject(cco) = child {
                 self.walk_complex(&child_path, child_type, cco);
@@ -891,6 +951,71 @@ mod tests {
         let star = Bounds::new(0, None);
         assert!(star.contains(Bounds::new(1, Some(5))));
         assert!(!Bounds::new(1, Some(5)).contains(star)); // {0..*} escapes {1..5}
+    }
+
+    /// A `use_node` archetype built around `body`, for the VUNT pair below.
+    fn cluster_with_proxy(proxy: &str) -> String {
+        format!(
+            "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+             \topenEHR-EHR-CLUSTER.vunt.v1.0.0\n\n\
+             language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+             description\n\tlifecycle_state = <\"draft\">\n\n\
+             definition\n\
+             \tCLUSTER[id1] matches {{\n\
+             \t\titems matches {{\n\
+             \t\t\tELEMENT[id2] matches {{*}}\n\
+             \t\t\t{proxy}\n\
+             \t\t}}\n\
+             \t}}\n\n\
+             terminology\n\tterm_definitions = <\n\
+             \t\t[\"en\"] = <\n\
+             \t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>\n\
+             \t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>\n\
+             \t\t\t[\"id5\"] = <text=<\"\"> description=<\"\">>\n\
+             \t\t>\n\
+             \t>\n"
+        )
+    }
+
+    fn rm_codes(src: &str) -> Vec<ValidationCode> {
+        let a = parse_artefact(src).expect("the fixture must parse");
+        validate_phase2_rm(&a, &ProductionRmModel)
+            .into_iter()
+            .map(|i| i.code)
+            .collect()
+    }
+
+    /// VUNT: `ADL1.4/master05-cadl.adoc` §Internal References L510-513 (same rule
+    /// as `AOM2/master04.5` §`C_COMPLEX_OBJECT_PROXY` VUNT) — the `use_node` type
+    /// must be the same as, or a super-type of, the referenced node's type.
+    /// `CLUSTER` is a SIBLING of the referenced `ELEMENT`, not an ancestor.
+    #[test]
+    fn vunt_use_node_type_is_not_a_supertype_of_the_target() {
+        let codes = rm_codes(&cluster_with_proxy("use_node CLUSTER[id5] /items[id2]"));
+        assert!(
+            codes.contains(&ValidationCode::Vunt),
+            "expected VUNT, got {:?}",
+            codes.iter().map(|c| c.mnemonic()).collect::<Vec<_>>()
+        );
+    }
+
+    /// The accepting twin: master05 L510-513 blesses naming an ANCESTOR type ("a
+    /// `use_node` reference to such a node can legally mention the parent type"), so
+    /// `ITEM` over an `ELEMENT` target is clean — a check that only compared type
+    /// names for equality would false-reject this.
+    #[test]
+    fn vunt_use_node_may_name_a_supertype_of_the_target() {
+        for proxy in [
+            "use_node ITEM[id5] /items[id2]",
+            "use_node ELEMENT[id5] /items[id2]",
+        ] {
+            let codes = rm_codes(&cluster_with_proxy(proxy));
+            assert!(
+                !codes.contains(&ValidationCode::Vunt),
+                "{proxy}: expected no VUNT, got {:?}",
+                codes.iter().map(|c| c.mnemonic()).collect::<Vec<_>>()
+            );
+        }
     }
 
     #[test]

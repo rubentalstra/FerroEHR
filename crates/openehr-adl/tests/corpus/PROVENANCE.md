@@ -53,4 +53,29 @@
   ever added or corrected against the spec text, never weakened to make a
   build pass, and the accept/refuse twins stay paired.
 
+## `adl14-cadl/`
+
+- **Hand-written in this repository — NOT vendored.** Sibling of `adl14-dadl/`
+  for the **cADL** half of an ADL 1.4 text
+  (`docs/specs/openehr/AM/docs/ADL1.4/master05-cadl.adoc`, plus
+  `master08-adl.adoc` §Validity Rules and `master09-customising_adl.adoc`); the
+  vendored `adl2-reference` library is an ADL2 corpus and covers none of it.
+- Three families: the **dialect gates** (a construct ADL 2 introduced is refused
+  in a 1.4 text — master05 §Keywords L48-53 is a closed keyword set), the
+  **inline dADL domain lowering** refusals with their accepting twin, and
+  **positive fixtures** for behaviour an over-strict reader would break
+  (`before`/`after` sibling order — a 1.4 keyword at L53 — and the effective
+  occurrences default `{1..1}` at L316).
+- File names encode the expected outcome corpus-convention style: an `S*_`
+  prefix is a parse refusal with that syntax code, a `V*_` prefix is a phase-1
+  validation error with that validation code, everything else parses and
+  validates clean and repeats that in its in-file `regression` tag.
+- The accepting twin of every DIALECT-GATE refusal is the vendored ADL2 corpus,
+  which exercises the same construct in its own dialect; the twins of the
+  1.4-only refusals live in this tree.
+- Owner: `crates/openehr-adl/tests/adl14_cadl_gates.rs` (the per-file
+  expectation table lives there; `corpus_coverage.rs` cross-checks the tree).
+- Same editing rule as `adl14-dadl/`: fixtures are added or corrected against
+  the spec text, never weakened to make a build pass.
+
 Never hand-edit vendored fixtures; re-vendor and update the pins here.
