@@ -410,7 +410,7 @@ fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
     }
 }
 
-/// Resolve the sub-path of a coded (DV_CODED_TEXT) version field to the
+/// Resolve the sub-path of a coded (`DV_CODED_TEXT`) version field to the
 /// representation it addresses; any other suffix — including the bare coded
 /// object, which has no defined scalar comparison form — is a typed reject.
 fn coded_version_field(

@@ -244,7 +244,7 @@ fn assemble_original_language(
     art: &SourceArtefact,
     errors: &mut Vec<SyntaxError>,
 ) -> TerminologyCode {
-    let Some(OdinValue::Object(map)) = art.language.as_ref() else {
+    let Some(map) = art.language.as_ref().and_then(as_object) else {
         return term_code("ISO_639-1", "en");
     };
     match map.get("original_language") {
@@ -265,9 +265,7 @@ fn assemble_original_language(
 /// `translations = <["de"] = < language=<…> author=<…> … >>` →
 /// `lang → TRANSLATION_DETAILS` (`master07.07`).
 fn assemble_translations(language: &OdinValue) -> Option<BTreeMap<String, TranslationDetails>> {
-    let OdinValue::Object(map) = language else {
-        return None;
-    };
+    let map = as_object(language)?;
     let entries = as_keyed(map.get("translations")?)?;
     let mut out = BTreeMap::new();
     for (key, value) in entries {
@@ -373,9 +371,9 @@ fn assemble_terminology(
     original_language: String,
     errors: &mut Vec<SyntaxError>,
 ) -> Box<ArchetypeTerminology> {
-    let map = match art.terminology.as_ref() {
-        Some(OdinValue::Object(m)) => Some(m),
-        Some(other) => {
+    let map = match art.terminology.as_ref().map(|t| (as_object(t), t)) {
+        Some((Some(m), _)) => Some(m),
+        Some((None, other)) => {
             errors.push(SyntaxError::at(
                 SyntaxErrorCode::Saon,
                 format!("terminology section must be an ODIN object, found {other:?}"),
@@ -507,7 +505,7 @@ fn merge_value_sets(v: &OdinValue, out: &mut BTreeMap<String, ValueSet>) {
 fn assemble_annotations(annotations: &OdinValue) -> ResourceAnnotations {
     let mut documentation: BTreeMap<String, BTreeMap<String, BTreeMap<String, String>>> =
         BTreeMap::new();
-    if let OdinValue::Object(map) = annotations {
+    if let Some(map) = as_object(annotations) {
         let top = map
             .get("documentation")
             .or_else(|| map.get("items"))
@@ -532,7 +530,7 @@ fn assemble_annotations(annotations: &OdinValue) -> ResourceAnnotations {
 /// `master07.12`).
 fn assemble_rm_overlay(rm_overlay: &OdinValue) -> RmOverlay {
     let mut rm_visibility: BTreeMap<String, RmAttributeVisibility> = BTreeMap::new();
-    if let OdinValue::Object(map) = rm_overlay
+    if let Some(map) = as_object(rm_overlay)
         && let Some(entries) = map.get("rm_visibility").and_then(as_keyed)
     {
         for (path_key, path_val) in entries {
@@ -760,15 +758,33 @@ impl From<&ArtefactMeta> for Meta {
 
 // ── ODIN accessors ────────────────────────────────────────────────────────
 
+/// Peel any `(TYPE)` casts off an ODIN value.
+///
+/// `master07.08`/`master07.13` section data carries the optional ODIN type
+/// cast of `LANG/docs/odin/master05-content` §Adding Type Information — a
+/// *dynamic-binding hint for the parser* ("Where dynamic binding occurs in the
+/// data, it must be indicated in an ODIN document"), never part of the datum.
+/// Every accessor below therefore reads straight through it: a section written
+/// `details = (Hash<RESOURCE_DESCRIPTION_ITEM,String>) <…>` assembles exactly
+/// like the uncast form, instead of silently yielding nothing. The cast itself
+/// stays on the tree in [`OdinValue::Typed`] for any caller that wants it.
+fn untyped(v: &OdinValue) -> &OdinValue {
+    let mut cur = v;
+    while let OdinValue::Typed { value, .. } = cur {
+        cur = value;
+    }
+    cur
+}
+
 fn as_object(v: &OdinValue) -> Option<&indexmap::IndexMap<String, OdinValue>> {
-    match v {
+    match untyped(v) {
         OdinValue::Object(m) => Some(m),
         _ => None,
     }
 }
 
 fn as_keyed(v: &OdinValue) -> Option<&[(OdinKey, OdinValue)]> {
-    match v {
+    match untyped(v) {
         OdinValue::KeyedList(items) => Some(items),
         _ => None,
     }
@@ -785,7 +801,7 @@ fn key_str(k: &OdinKey) -> String {
 
 /// The scalar string an ODIN leaf carries (or a single-element list's leaf).
 fn string_of(v: Option<&OdinValue>) -> Option<String> {
-    match v? {
+    match untyped(v?) {
         OdinValue::String(s)
         | OdinValue::Date(s)
         | OdinValue::Time(s)
@@ -805,7 +821,7 @@ fn string_of(v: Option<&OdinValue>) -> Option<String> {
 /// A list of strings from an ODIN `List` (or a single scalar as a one-element
 /// list), dropping the trailing open-list marker.
 fn string_list(v: &OdinValue) -> Vec<String> {
-    match v {
+    match untyped(v) {
         OdinValue::List(items) => items
             .iter()
             .filter(|x| !matches!(x, OdinValue::ListContinue))
@@ -818,7 +834,7 @@ fn string_list(v: &OdinValue) -> Vec<String> {
 /// A `key → String` map from an ODIN keyed list or object of string leaves.
 fn string_map(v: &OdinValue) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
-    match v {
+    match untyped(v) {
         OdinValue::KeyedList(items) => {
             for (k, val) in items {
                 if let Some(s) = string_of(Some(val)) {
@@ -862,18 +878,19 @@ fn term_other_items(obj: &indexmap::IndexMap<String, OdinValue>) -> BTreeMap<Str
 /// (`master07.13` §Deprecated Terminology Section Features); returns the inner
 /// value, or `v` unchanged if there is no wrapper.
 fn unwrap_items(v: &OdinValue) -> &OdinValue {
+    let v = untyped(v);
     if let OdinValue::Object(map) = v
         && map.len() == 1
         && let Some(inner) = map.get("items")
     {
-        return inner;
+        return untyped(inner);
     }
     v
 }
 
 /// The URI string a binding value carries, stripped of ODIN `<>` delimiters.
 fn uri_string(v: &OdinValue) -> String {
-    match v {
+    match untyped(v) {
         OdinValue::Uri(u) => strip_uri_delims(u),
         OdinValue::TermCode(t) => t.clone(),
         OdinValue::PathList(ps) => ps.first().cloned().unwrap_or_default(),
@@ -887,7 +904,7 @@ fn strip_uri_delims(u: &str) -> String {
 
 /// A `TerminologyCode` from an ODIN term-code leaf (`[ISO_639-1::en]`).
 fn term_code_of(v: &OdinValue) -> TerminologyCode {
-    match v {
+    match untyped(v) {
         OdinValue::TermCode(code) => parse_term_code(code),
         other => string_of(Some(other)).map_or_else(
             || term_code(LOCAL_TERMINOLOGY_ID, ""),
