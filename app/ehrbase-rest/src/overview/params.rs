@@ -216,7 +216,7 @@ pub(crate) fn parse_item_tag_header(
         if segment.trim().is_empty() {
             continue;
         }
-        let pairs = tag_pairs(segment);
+        let pairs = key_value_pairs(segment);
         let Some(key) = tag_value(&pairs, "key") else {
             continue;
         };
@@ -306,11 +306,14 @@ fn tag_value(pairs: &[(String, String)], key: &str) -> Option<String> {
     pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
 }
 
-/// Parse one `;`-segment's comma-separated `key="value"` (or bare `key=value`)
-/// pairs. Quoted values are read opaquely (may contain commas); a bare value
-/// runs to the next comma. The grammar is example-only (overview §"openehr-item-
-/// tag and openehr-version-item-tag" gives no ABNF).
-fn tag_pairs(input: &str) -> Vec<(String, String)> {
+/// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
+/// pairs — the one scanner behind both the tag-pair segments here and the
+/// committal attribute headers ([`crate::overview::committal`]). A
+/// double-quoted value is read opaquely (may contain commas); a bare value
+/// runs to the next top-level comma; whitespace around separators and keys is
+/// trimmed. Both grammars are example-only in the ITS-REST overview (no ABNF
+/// is given), hence the shared tolerant reader.
+pub(crate) fn key_value_pairs(input: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let mut rest = input;
     loop {
