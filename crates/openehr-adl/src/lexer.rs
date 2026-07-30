@@ -345,8 +345,9 @@ pub enum Token {
     /// `master03` (`\r \n \t \\ \" \'` + `\uHHHH`/`\uHHHHHHHH`).
     #[regex(r#""([^"\\]|\\.)*""#, validate_string)]
     String(String),
-    /// A single-quoted `CHARACTER`.
-    #[regex(r"'([^'\\\r\n]|\\.)'", |lex| lex.slice().to_owned())]
+    /// A single-quoted `CHARACTER`. An escaped character must be one of the
+    /// six legal quoted forms (see [`validate_char`]).
+    #[regex(r"'([^'\\\r\n]|\\.)'", validate_char)]
     Character(String),
 
     // ── rule/assertion variable ids (base_lexer.g4) ──
@@ -466,6 +467,25 @@ pub enum Token {
 /// Illegal escapes (anything other than `\r \n \t \\ \" \'` or a
 /// `\u` + 4/8 hex-digit sequence) fail the lex, per
 /// `ADL2/master03-file_encoding.adoc`.
+/// Validate a `CHARACTER` token: an escaped character must be one of the six
+/// legal quoted forms `\r \n \t \\ \" \'` — "Any other character combination
+/// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
+/// §Special Character Sequences). The `\uHHHH` forms cannot fit the
+/// single-character token.
+fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
+    let raw = lex.slice();
+    let bytes = raw.as_bytes();
+    if bytes.get(1) == Some(&b'\\')
+        && !matches!(
+            bytes.get(2),
+            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
+        )
+    {
+        return Err(());
+    }
+    Ok(raw.to_owned())
+}
+
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
     let bytes = raw.as_bytes();
@@ -747,6 +767,21 @@ mod tests {
             toks("\u{feff}archetype"),
             vec![Token::AlphaLcId("archetype".into())]
         );
+    }
+
+    #[test]
+    fn character_escapes() {
+        // The six legal quoted forms and a plain/unicode character lex
+        // (`ADL2/master03-file_encoding.adoc` §Special Character Sequences).
+        for ok in [
+            r"'\n'", r"'\t'", r"'\r'", r"'\\'", r#"'\"'"#, r"'\''", "'x'", "'ü'",
+        ] {
+            assert!(lex(ok).is_ok(), "legal character must lex: {ok}");
+        }
+        // "Any other character combination starting with a backslash is
+        // illegal" — an unknown escape fails the lex.
+        assert!(lex(r"'\q'").is_err());
+        assert!(lex(r"'\d'").is_err());
     }
 
     #[test]

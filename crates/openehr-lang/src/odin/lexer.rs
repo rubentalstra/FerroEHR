@@ -142,8 +142,9 @@ pub(crate) enum Token {
     /// [`validate_string`]).
     #[regex(r#""([^"\\]|\\.)*""#, validate_string)]
     String(String),
-    /// A single-quoted `CHARACTER`.
-    #[regex(r"'([^'\\\r\n]|\\.)'", |lex| lex.slice().to_owned())]
+    /// A single-quoted `CHARACTER`. An escaped character must be one of the
+    /// six legal quoted forms (see [`validate_char`]).
+    #[regex(r"'([^'\\\r\n]|\\.)'", validate_char)]
     Character(String),
 
     /// `ALPHA_UC_ID` — upper-initial identifier (ODIN keys / `rm_type_id`).
@@ -236,6 +237,25 @@ pub(crate) enum Token {
 /// normative literal-quote encoding, and decoding `&quot;` would be
 /// irreversible for text that legitimately contains it. The sequence is
 /// therefore carried through verbatim, as authored.
+/// Validate a `CHARACTER` token: an escaped character must be one of the six
+/// legal quoted forms `\r \n \t \\ \" \'` — "Any other character combination
+/// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
+/// §Special Character Sequences, verbatim in `ADL1.4/master03-adl_basics`).
+/// The `\uHHHH` forms cannot fit the single-character token.
+fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
+    let raw = lex.slice();
+    let bytes = raw.as_bytes();
+    if bytes.get(1) == Some(&b'\\')
+        && !matches!(
+            bytes.get(2),
+            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
+        )
+    {
+        return Err(());
+    }
+    Ok(raw.to_owned())
+}
+
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
     let bytes = raw.as_bytes();
