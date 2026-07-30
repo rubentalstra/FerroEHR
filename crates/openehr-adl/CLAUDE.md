@@ -19,7 +19,15 @@ into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
   `cadl::Dialect::Adl14` both ADDS the 1.4-only forms (qualified/listed term
   constraints, inline dADL domain blocks) and REMOVES the constructs ADL 2
   introduced — the cADL 1.4 keyword set is closed (`ADL1.4/master05-cadl.adoc`
-  §Keywords). The 1.4-only validity rules (VCOC; VATDF/VACDF over the
+  §Keywords). The dialect reaches the OUTER structure too
+  (`source::parse_source_adl14`, the entry every 1.4 caller uses): 1.4 section
+  keywords are case-insensitive (`master08-adl.adoc` §Symbols), an old-form
+  archetype with `primary_language`/`languages_available` in its ontology and
+  no `language` section is accepted and upgraded on parse (§Language Section +
+  §Ontology Header Statements), and the `concept` section is mandatory
+  (§Syntax Specification `arch_concept`; VARCN). ADL2 outer parsing is
+  unchanged — exact lowercase keywords, unconditional `SALAN`, no concept
+  clause. The 1.4-only validity rules (VCOC; VATDF/VACDF over the
   qualified/listed spelling) run on the `Dialect::Adl14` phase-1 path only.
   The `S*` error space is a verbatim 1:1 mirror of the openEHR catalogue
   (`ADL2/master04.6`): never invent a code — reuse the catalogue code for the
