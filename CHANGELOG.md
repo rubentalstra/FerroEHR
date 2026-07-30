@@ -43,6 +43,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A malformed deprecated `concept` section in an ADL 2 archetype is now
+  rejected with the `SACO` syntax code** ("must consist of the 'concept'
+  keyword and a single local term") instead of being ignored silently;
+  well-formed deprecated concept sections stay accepted and ignored.
+
 - **A `use_node` internal reference targeting its own ancestor, or another
   internal reference, is now rejected at validation** (`VUNP` for ADL 2,
   `VDFPT` for ADL 1.4): an ancestor target defines an infinitely recursive
