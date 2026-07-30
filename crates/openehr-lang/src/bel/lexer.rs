@@ -115,11 +115,11 @@ pub(crate) enum Token {
     Integer(String),
     /// A double-quoted `STRING` (may span lines). Escapes are validated per
     /// `ADL2/master03-file_encoding.adoc` §Special Character Sequences (see
-    /// [`validate_string`]).
+    /// `validate_string`).
     #[regex(r#""([^"\\]|\\.)*""#, validate_string)]
     String(String),
     /// A single-quoted `CHARACTER`. An escaped character must be one of the
-    /// six legal quoted forms (see [`validate_char`]).
+    /// six legal quoted forms (see `validate_char`).
     #[regex(r"'([^'\\\r\n]|\\.)'", validate_char)]
     Character(String),
 

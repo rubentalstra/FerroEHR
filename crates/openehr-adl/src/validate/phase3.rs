@@ -22,7 +22,7 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
 use super::{ValidationCode, ValidationIssue, view};
-use crate::paths::{Resolution, complex_attributes, object_node_id, resolve};
+use crate::paths::{Resolution, complex_attributes, locate, object_node_id, parse_path, resolve};
 
 /// Validate the FLAT form `flat` against the phase-3 catalogue (VUNP, VACMCO).
 #[must_use]
@@ -98,6 +98,13 @@ impl Phase3<'_> {
     /// definition — VUNP on the AOM2 flat form (`master04.5`
     /// §`C_COMPLEX_OBJECT_PROXY`, VUNP L482-483), VDFPT on an assembled
     /// ADL 1.4 definition (`ADL1.4/master08-adl.adoc` §Definition Section).
+    /// Beyond bare resolution, VUNP's own text requires the target "is not
+    /// itself an internal reference node", and the target must not lie on the
+    /// proxy's own ancestor path ("The path must not be in the parent path of
+    /// the proxy object itself, but may be a sibling",
+    /// `ADL2/master04.3-cadl_complex_types.adoc` §Internal References) — an
+    /// ancestor target makes the proxy's deep-copy expansion infinitely
+    /// recursive, so it is rejected for both dialect codes.
     fn check_proxy(&mut self, target_path: &str, path: &str) {
         if target_path.is_empty() {
             self.issues.push(
@@ -106,16 +113,44 @@ impl Phase3<'_> {
             );
             return;
         }
-        if resolve(self.root, target_path) != Resolution::Found {
+        if is_ancestor_path(target_path, path) {
             self.issues.push(
                 ValidationIssue::new(
                     self.proxy_code,
                     format!(
-                        "use_node target path {target_path:?} does not resolve to an object node in the definition"
+                        "use_node target path {target_path:?} is in the parent path of the proxy object itself"
                     ),
                 )
                 .at_path(path.to_owned()),
             );
+            return;
+        }
+        match locate(self.root, target_path) {
+            Some(CObject::CComplexObjectProxy(_)) => {
+                self.issues.push(
+                    ValidationIssue::new(
+                        self.proxy_code,
+                        format!(
+                            "use_node target path {target_path:?} refers to another internal reference node"
+                        ),
+                    )
+                    .at_path(path.to_owned()),
+                );
+            }
+            Some(_) => {}
+            None => {
+                if resolve(self.root, target_path) != Resolution::Found {
+                    self.issues.push(
+                        ValidationIssue::new(
+                            self.proxy_code,
+                            format!(
+                                "use_node target path {target_path:?} does not resolve to an object node in the definition"
+                            ),
+                        )
+                        .at_path(path.to_owned()),
+                    );
+                }
+            }
         }
     }
 
@@ -172,6 +207,25 @@ fn child_path(attr_path: &str, node_id: &str) -> String {
     } else {
         format!("{attr_path}[{node_id}]")
     }
+}
+
+/// True iff `target` addresses the proxy's own ancestor line: its parsed
+/// segments are a (non-proper-checked) prefix of the proxy's own path
+/// segments, compared segment-wise on attribute name + node-id predicate —
+/// a string prefix would false-positive on `/items[id2]` vs `/items[id22]`.
+/// A root target (`/`, zero segments) is the ultimate ancestor. Sibling and
+/// cross-branch targets differ in some segment and stay legal
+/// (`ADL2/master04.3-cadl_complex_types.adoc` §Internal References).
+fn is_ancestor_path(target: &str, proxy: &str) -> bool {
+    let target_segs = parse_path(target);
+    let proxy_segs = parse_path(proxy);
+    if target_segs.len() > proxy_segs.len() {
+        return false;
+    }
+    target_segs
+        .iter()
+        .zip(&proxy_segs)
+        .all(|(t, p)| t.attribute == p.attribute && (t.node_id.is_none() || t.node_id == p.node_id))
 }
 
 #[cfg(test)]
@@ -318,6 +372,121 @@ terminology
 \t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
 \t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
 \t\t\t[\"id5\"] = <text=<\"\"> description=<\"\">>
+\t\t>
+\t>
+";
+        assert!(!codes(src).contains(&ValidationCode::Vunp));
+    }
+    #[test]
+    fn vunp_ancestor_target_is_rejected() {
+        // `ADL2/master04.3` §Internal References: "The path must not be in the
+        // parent path of the proxy object itself" — an ancestor target defines
+        // an infinitely recursive expansion.
+        let src = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-CLUSTER.vunp_cycle.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"draft\">
+
+definition
+\tCLUSTER[id1] matches {
+\t\titems cardinality matches {0..*} matches {
+\t\t\tCLUSTER[id2] matches {
+\t\t\t\titems cardinality matches {0..*} matches {
+\t\t\t\t\tuse_node CLUSTER[id3] /items[id2]
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id3\"] = <text=<\"\"> description=<\"\">>
+\t\t>
+\t>
+";
+        assert!(codes(src).contains(&ValidationCode::Vunp));
+    }
+
+    #[test]
+    fn vunp_proxy_target_that_is_a_proxy_is_rejected() {
+        // VUNP's own text (`master04.5` §C_COMPLEX_OBJECT_PROXY): the target
+        // "is not itself an internal reference node".
+        let src = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-CLUSTER.vunp_chain.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"draft\">
+
+definition
+\tCLUSTER[id1] matches {
+\t\titems cardinality matches {0..*} matches {
+\t\t\tELEMENT[id2] matches {*}
+\t\t\tuse_node ELEMENT[id3] /items[id2]
+\t\t\tuse_node ELEMENT[id4] /items[id3]
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id3\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id4\"] = <text=<\"\"> description=<\"\">>
+\t\t>
+\t>
+";
+        assert!(codes(src).contains(&ValidationCode::Vunp));
+    }
+
+    #[test]
+    fn vunp_sibling_and_cross_branch_targets_stay_clean() {
+        // The sibling case is expressly legal ("may be a sibling of the proxy
+        // object", `master04.3` §Internal References); a cross-branch target
+        // sharing an attribute name but a different node id is not an ancestor.
+        let src = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-CLUSTER.vunp_ok.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"draft\">
+
+definition
+\tCLUSTER[id1] matches {
+\t\titems cardinality matches {0..*} matches {
+\t\t\tELEMENT[id2] matches {*}
+\t\t\tuse_node ELEMENT[id3] /items[id2]
+\t\t\tCLUSTER[id5] matches {
+\t\t\t\titems cardinality matches {0..*} matches {
+\t\t\t\t\tuse_node ELEMENT[id6] /items[id2]
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id3\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id5\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id6\"] = <text=<\"\"> description=<\"\">>
 \t\t>
 \t>
 ";
