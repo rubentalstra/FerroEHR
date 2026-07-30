@@ -29,4 +29,6 @@
 - [Merge on local gates](merge-on-local-gates.md) — owner 2026-07-26: local gates green (fmt+clippy+nextest+cnf validate) → merge the PR immediately, no CI watchers between issues; CI is a post-merge backstop (release cuts keep normal discipline)
 - [Spec-chapter audit programs](spec-chapter-audit-programs.md) — owner method: milestone=component, issue=chapter, whole-codebase /spec-audit sweep, fix-first cadence; v3.13.0=BASE (#686), v4.0.0=admin-UI (CDS adjudicated out 2026-07-29 — not a CDR component, #716 closed)
 - [Valid+invalid twins rule](valid-invalid-twins-rule.md) — owner hard rule 2026-07-29: a spec-correct refusal always keeps the invalid shape as a corpus entry + refusal case beside the fixed valid twin
-- [Pause after #767 for rust-practices update](pause-after-767-for-rust-practices-update.md) — hold-point: re-read rules before resuming AM program
+- [Pause after #767 for rust-practices update](pause-after-767-for-rust-practices-update.md) — RESOLVED 2026-07-30 (#1311 merged); kept for the pointer to re-read the updated rules
+- [Rust hardening baseline is live](rust-hardening-baseline.md) — #1311 merged 2026-07-30: #[expect(reason)] only, missing_docs+rustdoc gates, one tests/it binary per crate, API bans, split CI lanes; write to this bar from the start
+- [Rust practices #1311](rust-practices-1311.md) — expect-with-reason, banned APIs, tests/it single binary, Book-ch11 shapes; full spec in rules files
