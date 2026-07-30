@@ -263,10 +263,15 @@ END $$;
 -- used in DML (the write INSERT and the backfill), where STABLE is correct.
 -- Canonical DV_DATE_TIME values carrying an explicit offset/Z are
 -- TimeZone-independent.
+-- ISO 8601 permits a COMMA decimal sign on the fractional second (canonical
+-- DV_DATE_TIME values may carry it; BASE foundation_types master06), which
+-- PostgreSQL's timestamptz input rejects. A comma cannot occur elsewhere in a
+-- valid ISO timestamp, so it normalizes to the dot before the cast — matching
+-- the AQL engine's query-time normalization (app/ehrbase/src/aql/sql/value.rs).
 CREATE FUNCTION openehr_timestamp(v text) RETURNS timestamptz
 LANGUAGE plpgsql STABLE STRICT PARALLEL SAFE AS $$
 BEGIN
-    RETURN v::timestamptz;
+    RETURN replace(v, ',', '.')::timestamptz;
 EXCEPTION WHEN others THEN
     RETURN NULL;
 END;
