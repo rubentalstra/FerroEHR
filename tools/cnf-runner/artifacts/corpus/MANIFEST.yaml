@@ -2317,3 +2317,10 @@ cnf.composition.terminology_unbound_sct_non_member:
   validity: { verdict: valid }
   template_id: "cnf.tpl.dv_coded_text_constraint_ref"
   provenance: "authored 2026-07-29 as the counter-example of cnf.composition.terminology_unbound_sct_member: the same UNBOUND template with code 1000003, which the seeded value set excludes. It is intrinsically valid and commits successfully — its role is to be present in the EHR and NOT selected by the AQL TERMINOLOGY('expand', …) filter, so a query that ignored the value set would return two rows instead of one"
+cnf.composition.minimal_event_coded_name.v1:
+  source: fixtures/composition/minimal_event_coded_name.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "minimal_evaluation.en.v1"
+  provenance: "derived 2026-07-30 from cnf.composition.minimal_event.v1 (the vendored CNF Robot fixture) — the single ELEMENT's name upgraded to DV_CODED_TEXT (snomed_ct(3.1)::271649006 |Systolic blood pressure|; DV_CODED_TEXT IS-A DV_TEXT, so the unconstrained LOCATABLE.name admits it) to give the query battery a fake-proof coded-name target (#969)"

@@ -7114,3 +7114,37 @@ AMB-174:
     `FORWARD` default) keeps its own cases. SPECQUERY candidate.
   disposition: report_only
   upstream_ref: "UPR-129"
+AMB-175:
+  ambiguity: >-
+    SPEC SILENCE on the version SCOPE a VERSION standard predicate filters
+    within. The released grammar (QUERY master07 / AqlParser.g4
+    `versionPredicate: LATEST_VERSION | ALL_VERSIONS | standardPredicate`)
+    admits a standard predicate over version metadata as the third
+    alternative of the version class expression, and QUERY master03
+    §Predicates/§Class expressions shows the form — but no released text
+    says whether such a predicate selects from ALL versions of the
+    container or filters only the LATEST: `[commit_audit/change_type/
+    defining_code/code_string='249']` over a created-then-amended object
+    answers 1 under the former reading and 0 under the latter. (#970)
+  source: >-
+    QUERY docs/AQL/master07-grammar.adoc §grammar (versionPredicate,
+    quoted from the released AqlParser.g4); QUERY
+    docs/AQL/master03-syntax.adoc §Predicates/Standard predicate, §Class
+    expressions; RM common master06-change_control_package.adoc
+    §Versioned Object (the version-set model the predicate ranges over).
+  handling: >-
+    The predicate selects from the container's WHOLE version set. WHY:
+    the grammar places the three forms as PEER alternatives of
+    `versionPredicate` — LATEST_VERSION is the explicit way to address
+    currency, and a standard predicate that implicitly filtered only the
+    latest version would be redundant with `LATEST_VERSION` plus a WHERE
+    clause, collapsing two grammar alternatives into one; the peer
+    position is only meaningful if the predicate is its own selection
+    over the version set (the same set ALL_VERSIONS names). The one
+    metadata field with richer defined semantics is `time_committed`,
+    which realizes version-at-time (the trunk version whose validity
+    contains the instant — RM common master06). The case
+    I_QUERY_SERVICE.execute_ad_hoc_query-version_metadata_predicate pins
+    the whole-set reading (created-then-amended: the creation predicate
+    answers exactly the first version).
+  disposition: fixed_handling

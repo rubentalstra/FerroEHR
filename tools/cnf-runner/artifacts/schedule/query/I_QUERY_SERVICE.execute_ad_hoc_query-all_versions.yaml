@@ -16,11 +16,10 @@
 # versioned object and `[LATEST_VERSION]` over the one latest — here 2 rows
 # against 1.
 #
-# NOT covered here: a VERSION class expression carrying the third alternative,
-# a bare `standardPredicate` on version metadata. Nothing in the released QUERY
-# text says which version SCOPE such a predicate filters within (all versions,
-# or the latest only), so its row count is not derivable and no honest
-# expectation can be written for it.
+# The third alternative — a bare `standardPredicate` on version metadata — is
+# covered by the sibling case
+# I_QUERY_SERVICE.execute_ad_hoc_query-version_metadata_predicate under the
+# AMB-175 adjudication (whole-version-set scope).
 id: I_QUERY_SERVICE.execute_ad_hoc_query-all_versions
 kind: functional
 component: QUERY
