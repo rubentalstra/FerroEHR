@@ -99,6 +99,9 @@ pub(super) fn run(
     if let Some((src, text)) = source {
         check_object_key_unique(src, issues); // VOKU (source-level)
         check_rule_paths(v, src, text, issues); // VRRLP (raw rules text)
+        if dialect == Dialect::Adl14 {
+            check_concept_term_adl14(v, src, issues); // VARCN (terminology half)
+        }
     }
 
     let basic_clean = basic.is_empty();
@@ -219,6 +222,40 @@ fn check_identification(
     // VALC: language conformance to the flat parent (master03 §Validity Rules,
     // G3) — needs the parent; runs only when resolvable.
     check_language_conformance(v, repo, out);
+}
+
+/// VARCN (ADL 1.4, terminology half): the `concept` section's term must exist
+/// in the archetype ontology — `ADL1.4/master08-adl.adoc` §Validity Rules
+/// VARCN: "archetype concept validity. The archetype must have an archetype
+/// term value in the concept section. The term must exist in the archetype
+/// ontology."
+///
+/// The FORM half (a root code well-formed for the specialisation depth) is
+/// checked for every dialect in [`check_identification`]; this half needs the
+/// parsed 1.4 `concept` clause, which only the source-level entry points carry
+/// (ADL2 has no concept section — `ADL2/master07.09`). A concept term is judged
+/// defined when any language's `term_definitions` bucket carries it, matching
+/// the definedness union [`check_terminology`] uses. An ABSENT concept section
+/// is refused earlier, at assembly ([`crate::error::SyntaxErrorCode::Saco`]).
+fn check_concept_term_adl14(
+    v: &ArchetypeView<'_>,
+    source: &SourceArtefact,
+    out: &mut Vec<ValidationIssue>,
+) {
+    let Some(code) = source.concept.as_deref() else {
+        return;
+    };
+    let defined = v
+        .terminology
+        .term_definitions
+        .values()
+        .any(|bucket| bucket.contains_key(code));
+    if !defined {
+        out.push(ValidationIssue::new(
+            ValidationCode::Varcn,
+            format!("concept term {code:?} is not defined in the archetype ontology"),
+        ));
+    }
 }
 
 /// VACSD: the specialisation depth of the archetype must be one greater than

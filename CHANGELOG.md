@@ -43,6 +43,28 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL 1.4 archetypes whose section keywords are not all-lowercase now
+  upload.** The ADL 1.4 lexical specification (master08 §Symbols) spells
+  every section keyword case-insensitively, so `ARCHETYPE (adl_version=1.4)`,
+  `Specialise`, `CONCEPT`, `DEFINITION` and `ONTOLOGY` are valid headers; they
+  were previously rejected with "expected an artefact keyword" / "expected a
+  section header". ADL 2 keeps the exact lowercase spelling its own grammar
+  defines.
+- **Old-form ADL 1.4 archetypes with no `language` section now upload.** Where
+  the archetype carries `primary_language`/`languages_available` in its
+  `ontology` section instead — the form master08 §Language Section and
+  §Ontology Header Statements tell tools to accept and upgrade — the language
+  is now lifted into `original_language` plus one translation entry per other
+  available language, instead of the upload failing with "no language section
+  found". An archetype with neither a `language` section nor a
+  `primary_language` is still rejected.
+- **A missing or undefined ADL 1.4 `concept` section is now reported instead
+  of passing silently.** The 1.4 grammar makes the `concept` section mandatory
+  and master08 §Validity Rules VARCN requires its term to exist in the
+  archetype ontology: an archetype with no concept section (or a concept
+  clause that is not a term-code reference) is refused with a `SACO` syntax
+  error, and a concept term missing from `term_definitions` now raises `VARCN`
+  on the 1.4 validation path.
 - **ADL 1.4 assertion expressions now accept the chapter's full operator
   set**: the ADL 1.4 inequality spelling `<>` and the symbolic existential
   quantifier `∃` applied to a path (equivalent to the `exists` keyword per
