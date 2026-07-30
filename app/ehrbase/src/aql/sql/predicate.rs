@@ -355,12 +355,22 @@ impl Builder<'_> {
         match n {
             NameConstraint::Value(s) => Ok(col(node, "name").eq(Expr::val(s.clone()))),
             NameConstraint::Param(p) => Ok(col(node, "name").eq(Expr::val(self.param_str(p)?))),
-            NameConstraint::TermCode(c) => {
-                let extract = as_text(jsonb_path(
+            // The canonical expansion of the coded-name shortcut (QUERY
+            // master03 §Node predicate): code_string AND terminology_id/value
+            // compared separately; the informational `|value|` tail was
+            // already dropped at analysis.
+            NameConstraint::TermCode { terminology, code } => {
+                let code_extract = as_text(jsonb_path(
                     col(node, "data"),
                     "$.name.defining_code.code_string",
                 ));
-                Ok(extract.eq(Expr::val(c.clone())))
+                let term_extract = as_text(jsonb_path(
+                    col(node, "data"),
+                    "$.name.defining_code.terminology_id.value",
+                ));
+                Ok(code_extract
+                    .eq(Expr::val(code.clone()))
+                    .and(term_extract.eq(Expr::val(terminology.clone()))))
             }
         }
     }

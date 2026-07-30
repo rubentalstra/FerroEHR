@@ -537,9 +537,35 @@ fn resolve_node_name(n: &NodeNameConstraint) -> NameConstraint {
     match n {
         NodeNameConstraint::String(s) => NameConstraint::Value(s.clone()),
         NodeNameConstraint::Parameter(p) => NameConstraint::Param(param_name(p)),
-        NodeNameConstraint::TermCode(c) | NodeNameConstraint::Code(c) => {
-            NameConstraint::TermCode(c.clone())
-        }
+        NodeNameConstraint::TermCode(c) => parse_name_term_code(c),
+        // A bare at/id-code as the name operand is a term from the archetype's
+        // own terminology — the canonical expansion asserts
+        // `terminology_id/value = 'local'` (QUERY master03 §Node predicate).
+        NodeNameConstraint::Code(c) => NameConstraint::TermCode {
+            terminology: "local".to_owned(),
+            code: c.clone(),
+        },
+    }
+}
+
+/// Decompose a `terminology::code|value|` name term-code lexeme into its
+/// matching parts (QUERY master03 §Node predicate): the part before `::` is
+/// the terminology id (an optional `(version)` suffix stays part of it), the
+/// part after is the code string, and a trailing `|value|` is informational
+/// only — it takes no part in matching and is dropped.
+fn parse_name_term_code(raw: &str) -> NameConstraint {
+    let (terminology, rest) = match raw.split_once("::") {
+        Some((t, r)) => (t, r),
+        // The lexer guarantees `::` is present; keep a lossless fallback.
+        None => ("local", raw),
+    };
+    let code = match rest.split_once('|') {
+        Some((c, _informational)) => c,
+        None => rest,
+    };
+    NameConstraint::TermCode {
+        terminology: terminology.to_owned(),
+        code: code.to_owned(),
     }
 }
 

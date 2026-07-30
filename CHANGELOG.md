@@ -15,6 +15,25 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **AQL coded-name node predicates match correctly.** The name term-code
+  shortcut (`[at0002, snomed_ct(3.1)::313267000]`, and the
+  `terminology::code|informational text|` form) was compared as one raw
+  token against `code_string` and could never match. It now decomposes per
+  the AQL specification's canonical expansion: `code_string` and
+  `terminology_id/value` are compared separately, the informational `|…|`
+  tail is ignored, and a bare at-code name operand asserts the archetype's
+  `local` terminology.
+
+### Changed
+
+- **`TOP n BACKWARD` is now rejected with rewrite guidance.** The deprecated
+  direction variant previously returned the *first* n rows silently. The
+  server now refuses it as an invalid query whose message shows the
+  recommended rewrite (`ORDER BY <path> DESC LIMIT n`). Plain `TOP n` and
+  `TOP n FORWARD` are unchanged.
+
 ## [3.13.0] - 2026-07-30
 
 ### Added

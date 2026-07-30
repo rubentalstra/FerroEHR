@@ -143,6 +143,16 @@ pub enum AqlFeatureError {
     #[error("TOP and LIMIT cannot be combined in one query (QUERY §Query structure/LIMIT)")]
     TopWithLimit,
 
+    /// `TOP n BACKWARD` — the deprecated direction variant is not supported;
+    /// the reject carries the spec's own rewrite guidance
+    /// (QUERY §SELECT/TOP deprecation note).
+    #[error(
+        "TOP {0} BACKWARD is not supported: TOP is deprecated as of AQL 1.1.0 \
+         (QUERY §SELECT/TOP) — rewrite the query with the recommended form, \
+         e.g. `ORDER BY <path> DESC LIMIT {0}`"
+    )]
+    TopBackward(i64),
+
     /// A named scalar function that is not on the supported whitelist.
     /// QUERY §Functions.
     #[error("function `{0}` is not supported (QUERY §Functions)")]
