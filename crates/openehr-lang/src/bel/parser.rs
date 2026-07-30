@@ -374,8 +374,18 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     /// `there_exists_expr` — existential quantification (mapped to the same
     /// quantifier node as `for_all` with an `exists` operator via the builder).
+    ///
+    /// The `∃` symbol is ALSO the symbolic rendering of the path-existence
+    /// operator in ADL 1.4 assertions (ADL1.4 `master06-assertions.adoc`
+    /// §Keywords equates `exists` ↔ `∃`), whose operand is a path, not a
+    /// `$variable` binding — so a non-variable operand dispatches to the
+    /// same unary the `exists` keyword builds.
     fn parse_there_exists(&mut self) -> Result<B::Expr, BelError> {
         self.pos += 1; // there_exists
+        if !matches!(self.peek(), Some(Token::Variable(_))) {
+            let operand = self.parse_ref_leaf()?;
+            return Ok(self.builder.unary(kind("exists"), "exists", operand));
+        }
         let var = self.expect_variable_name()?;
         if !self.eat(&Token::Colon) && !self.eat(&Token::In) {
             return self.err("expected ':' or 'in' after the there_exists variable");

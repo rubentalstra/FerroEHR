@@ -43,6 +43,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL 1.4 assertion expressions now accept the chapter's full operator
+  set**: the ADL 1.4 inequality spelling `<>` and the symbolic existential
+  quantifier `∃` applied to a path (equivalent to the `exists` keyword per
+  the assertion-language symbol table) both parse in `invariant`/`rules`
+  sections instead of being rejected.
+
 - **A server-side failure of the password-verification task no longer
   masquerades as `401 Invalid credentials`**: if the blocking Argon2
   verification task itself fails (panic/cancellation), the API now returns
