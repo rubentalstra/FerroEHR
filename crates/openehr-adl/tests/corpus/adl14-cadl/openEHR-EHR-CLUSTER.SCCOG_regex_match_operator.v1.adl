@@ -1,0 +1,69 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SCCOG_regex_match_operator.v1
+
+concept
+	[at0000]	-- Regex-match operator in a string constraint
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"SCCOG">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Regex-match operator in a string constraint
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				value matches {
+					DV_TEXT matches {
+						-- ADL1.4/master05-cadl.adoc §Regular Expression L691-693 shows
+						-- `string_attr matches {=~ /regular expression}` and
+						-- `{!~ /regular expression}`, but that prose is itself
+						-- malformed — BOTH example regexes are unterminated (an
+						-- opening `/` with no closing `/`) — and the sentence at L696
+						-- says the first two forms "are identical", i.e. `=~` adds
+						-- nothing to the bare form. No normative grammar defines the
+						-- operators: `c_string_spec` is `V_STRING | string_list_value
+						-- | string_list_value ',' SYM_LIST_CONTINUE | V_REGEXP`
+						-- (§Syntax L1244-1249) with `V_REGEXP` the bare delimited form
+						-- (§Symbols L1471-1476), §Symbols has no `=~`/`!~` token, and
+						-- `cadl14_primitives.g4` `c_string` is `( string_value |
+						-- string_list_value | regex_constraint )`. Guessing a
+						-- negated-regex semantics from defective prose would be a
+						-- silent wrong answer, so the operator is refused.
+						value matches {=~ /[a-z]+/}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Regex-match operator in a string constraint">
+					description = <"Refusal fixture: the '=~' operator has no cADL production.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"The recorded position.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0003"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>
