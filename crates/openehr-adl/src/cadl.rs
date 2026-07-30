@@ -1235,7 +1235,10 @@ impl Parser<'_> {
     /// The list form additionally carries the two catalogue rules on the code
     /// list itself — STCDC (duplicates) and STCAC (an assumed code outside the
     /// list), both raised at position below.
-    #[allow(clippy::too_many_lines)] // one linear parse: bracket, codes, assumed, the two list rules
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear parse: bracket, codes, assumed, the two list rules"
+    )]
     fn parse_adl14_term_object(&mut self) -> PResult<CObject> {
         let constraint = if let Some(Token::TermCodeRef(raw)) = self.peek().cloned() {
             self.pos += 1;
