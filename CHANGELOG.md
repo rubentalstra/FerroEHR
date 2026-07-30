@@ -43,6 +43,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Converting an ADL 1.4 archetype to ADL 2 now carries its extended
+  meta-data across.** The standardised `description/other_details` items of
+  ADL 1.4 App.B (Extended Meta-data Guide) — items "intended to be
+  implemented by any ADL 1.4 => ADL 2 conversion tool" — previously survived
+  conversion only as opaque `other_details` strings (only `revision` was
+  converted). They now land in their ADL 2 homes: `build_uid` becomes the
+  archetype's build identifier; `original_namespace`, `original_publisher`,
+  `custodian_namespace`, `custodian_organisation` and `licence` become the
+  matching description attributes; and `references` / `ip_acknowledgements`
+  become keyed lists, one entry per line with surrounding whitespace
+  stripped. Each converted item is removed from `other_details`; a value that
+  does not match its documented syntax (e.g. a `build_uid` that is not a
+  GUID) is left in `other_details` untouched rather than guessed at, and the
+  guide's "other items" (`MD5-CAM-1.0.1`, `current_contact`, `review_date`,
+  `responsible_organisation`) pass through unchanged as before.
 - **ADL 1.4 archetypes using the chapter's custom constraint forms now
   upload.** Two constructs of ADL 1.4 §Customising ADL (master09) were
   rejected outright:
