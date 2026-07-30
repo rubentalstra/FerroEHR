@@ -1,5 +1,5 @@
 ---
-source: crates/openehr-its/tests/canonical_contract.rs
+source: crates/openehr-its/tests/it/canonical_contract.rs
 assertion_line: 113
 expression: manifest
 ---

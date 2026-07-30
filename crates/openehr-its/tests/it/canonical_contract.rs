@@ -28,9 +28,7 @@
 //! 3. **`_type`-first member order** — spec-silent; our own design, pinned
 //!    here so it can only change deliberately.
 
-mod common;
-
-use common::{corpus_files, excluded};
+use crate::common::{corpus_files, excluded};
 use openehr_its::json::{from_canonical_json, to_canonical_json};
 use openehr_rm::prelude::{
     Composition, Contribution, DvCount, DvOrdinal, DvQuantity, EhrStatus, Folder, ItemTree,

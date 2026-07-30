@@ -1,5 +1,5 @@
 ---
-source: crates/openehr-its/tests/structured.rs
+source: crates/openehr-its/tests/it/structured.rs
 expression: structured
 ---
 {
