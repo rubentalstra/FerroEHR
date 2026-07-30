@@ -31,6 +31,29 @@ pub(super) fn validate_phase3(flat: &Archetype) -> Vec<ValidationIssue> {
     let mut scan = Phase3 {
         root: v.definition,
         issues: Vec::new(),
+        proxy_code: ValidationCode::Vunp,
+        check_cardinality: true,
+    };
+    scan.walk(v.definition, "");
+    scan.issues
+}
+
+/// VDFPT for an assembled **ADL 1.4** archetype: every `use_node` internal
+/// reference (a `C_COMPLEX_OBJECT_PROXY` after assembly) must carry a target
+/// path that resolves within the definition section (`ADL1.4/master08-adl.adoc`
+/// §Definition Section validity rules, VDFPT). A 1.4 artefact is standalone —
+/// no differential lineage — so its own definition tree IS the resolution
+/// target; the AOM2 flat-form mirror of this rule is VUNP
+/// ([`validate_phase3`]). Cardinality/occurrences stay with the 1.4-dialect
+/// VCOC check in phase 1, so only the proxy walk runs here.
+#[must_use]
+pub(super) fn validate_definition_paths_adl14(archetype: &Archetype) -> Vec<ValidationIssue> {
+    let v = view(archetype);
+    let mut scan = Phase3 {
+        root: v.definition,
+        issues: Vec::new(),
+        proxy_code: ValidationCode::Vdfpt,
+        check_cardinality: false,
     };
     scan.walk(v.definition, "");
     scan.issues
@@ -39,13 +62,21 @@ pub(super) fn validate_phase3(flat: &Archetype) -> Vec<ValidationIssue> {
 struct Phase3<'a> {
     root: &'a CComplexObject,
     issues: Vec<ValidationIssue>,
+    /// The catalogue code a non-resolving proxy target raises: VUNP on the
+    /// AOM2 flat form, VDFPT on an assembled ADL 1.4 definition.
+    proxy_code: ValidationCode,
+    /// VACMCO runs on the AOM2 flat form only — the ADL 1.4 dialect enforces
+    /// its own VCOC in phase 1 instead.
+    check_cardinality: bool,
 }
 
 impl Phase3<'_> {
     fn walk(&mut self, node: &CComplexObject, path: &str) {
         for attr in complex_attributes(node) {
             let attr_path = format!("{path}/{}", attr.rm_attribute_name);
-            self.check_cardinality_occurrences(attr, &attr_path);
+            if self.check_cardinality {
+                self.check_cardinality_occurrences(attr, &attr_path);
+            }
             for child in &attr.children {
                 let child_path = child_path(&attr_path, object_node_id(child));
                 match child {
@@ -63,12 +94,14 @@ impl Phase3<'_> {
         }
     }
 
-    /// VUNP: the proxy target path must resolve to an object node in the flat
-    /// form (`master04.5` §`C_COMPLEX_OBJECT_PROXY`, VUNP L482-483).
+    /// The proxy target path must resolve to an object node in the walked
+    /// definition — VUNP on the AOM2 flat form (`master04.5`
+    /// §`C_COMPLEX_OBJECT_PROXY`, VUNP L482-483), VDFPT on an assembled
+    /// ADL 1.4 definition (`ADL1.4/master08-adl.adoc` §Definition Section).
     fn check_proxy(&mut self, target_path: &str, path: &str) {
         if target_path.is_empty() {
             self.issues.push(
-                ValidationIssue::new(ValidationCode::Vunp, "use_node proxy has no target path")
+                ValidationIssue::new(self.proxy_code, "use_node proxy has no target path")
                     .at_path(path.to_owned()),
             );
             return;
@@ -76,9 +109,9 @@ impl Phase3<'_> {
         if resolve(self.root, target_path) != Resolution::Found {
             self.issues.push(
                 ValidationIssue::new(
-                    ValidationCode::Vunp,
+                    self.proxy_code,
                     format!(
-                        "use_node target path {target_path:?} does not resolve to an object node in the flat form"
+                        "use_node target path {target_path:?} does not resolve to an object node in the definition"
                     ),
                 )
                 .at_path(path.to_owned()),
