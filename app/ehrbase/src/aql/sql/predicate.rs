@@ -319,7 +319,20 @@ impl Builder<'_> {
             Operand::Path(t) => self.value_expr(t, ValueMode::Value(coercion)),
             Operand::Literal(lit) => Ok(coerce_rhs(super::expr::literal_value(lit), coercion)),
             Operand::Param(p) => Ok(coerce_rhs(self.param_value(p)?, coercion)),
-            Operand::Function { func, args } => self.scalar_fn_expr(*func, args),
+            Operand::Function { func, args } => {
+                let expr = self.scalar_fn_expr(*func, args)?;
+                // A function operand joins the comparison in the requested
+                // coercion space like any literal: the date/time functions
+                // render ISO-8601 text (QUERY master03 §Date and time
+                // functions), so a temporal comparison casts them to
+                // timestamptz exactly as it casts a temporal literal —
+                // otherwise a promoted timestamptz column has no operator
+                // against text.
+                Ok(match coercion {
+                    Coercion::Temporal => cast(expr, "timestamptz"),
+                    _ => expr,
+                })
+            }
         }
     }
 

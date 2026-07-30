@@ -202,6 +202,16 @@ pub enum AnalysisError {
         minimum: i64,
     },
 
+    /// `SELECT DISTINCT` ordered by an expression that is not one of the
+    /// selected columns. QUERY master03 §DISTINCT defines no semantics for
+    /// sorting a de-duplicated projection by an unselected expression (and
+    /// the DBMS requires ORDER BY expressions to appear in the select list).
+    #[error(
+        "ORDER BY with SELECT DISTINCT must sort by a selected column \
+         (QUERY §SELECT/DISTINCT)"
+    )]
+    DistinctOrderByUnselected,
+
     /// An aggregate applied to a non-conforming input type (`SUM`/`AVG`
     /// accept Integer/Real input only — QUERY master03 §Functions/SUM, AVG).
     #[error("{func} requires a numeric (Integer/Real) input; the path selects {got}")]
