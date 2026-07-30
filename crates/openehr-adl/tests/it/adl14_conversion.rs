@@ -487,6 +487,9 @@ fn conversion_writes_out_the_14_default_occurrences_on_container_children() {
 archetype (adl_version=1.4)
 \topenEHR-EHR-CLUSTER.default_occurrences.v1
 
+concept
+\t[at0000]
+
 language
 \toriginal_language = <[ISO_639-1::en]>
 

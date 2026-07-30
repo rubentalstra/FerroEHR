@@ -82,6 +82,13 @@
 - The accepting twin of every DIALECT-GATE refusal is the vendored ADL2 corpus,
   which exercises the same construct in its own dialect; the twins of the
   1.4-only refusals live in this tree.
+- Two fixtures here (`openehr-TEST_PKG-SOME_TYPE.{c_dv_quantity,code_phrase}_
+  concept.v1.adl`) are DERIVED from vendored `legacy_adl_1.4` sources: they are
+  those files with the `concept` section the ADL 1.4 grammar requires
+  (`master08-adl.adoc` §Syntax Specification `arch_concept`; §Validity Rules
+  VARCN), added so the constructs they exercise keep an accepting twin now that
+  the concept-less originals are pinned as SACO refusals. Their origin is
+  recorded in each file's `purpose`; the vendored originals are untouched.
 - Owner: `crates/openehr-adl/tests/adl14_cadl_gates.rs` (the per-file
   expectation table lives there; `corpus_coverage.rs` cross-checks the tree).
 - Same editing rule as `adl14-dadl/`: fixtures are added or corrected against

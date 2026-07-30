@@ -158,6 +158,8 @@ No `.adlf` files; expected flats are not vendored (§7).
 | SCAS | basics · SCAS_attribute_empty.v1.0.0.adls |
 | SCOAT | basics · SCOAT_object_empty.v1.0.0.adls |
 | SDINV | legacy_adl_1.4 · FAIL_c_dv_quantity_minimal.v1.adl *(filename FAIL)* |
+| SACO | legacy_adl_1.4 · openehr-test_pkg-SOME_TYPE.c_dv_quantity.v1.adl *(tag PASS — adjudicated)* |
+| SACO | legacy_adl_1.4 · openehr-test_pkg-SOME_TYPE.code_phrase.v1.adl *(tag PASS — adjudicated)* |
 | SEXLU | structure · SEXLU_attribute_wrong_existence.v1.0.0.adls *(SEXLU1/2 family)* |
 | STCNT | consistency · VOTM_terminology_term_definitions_empty.v1.0.0.adls *(filename VOTM)* |
 | SUNK | basics · FAIL_definition_missing.v1.0.0.adls *(filename FAIL)* |
@@ -467,7 +469,7 @@ tag in `validity/**` should be a hard coverage-gate error (only the two
 | `validity/**/*.adls` (all tagged) | validate-expect-code: PASS→clean; FAIL→any typed error; code→exactly that code; W*→warning | `regression` tag (NOT filename) |
 | `validity/templates/*.adls` | filler validation (`validate_fillers`): VTPL→template/filler language mismatch, VARXR→unresolved external ref; PASS/support→clean (`tests/templates_corpus.rs`) | `regression` tag |
 | `validity/legacy_adl_1.4/*.adls` | parse + validate clean | tag = PASS |
-| `validity/legacy_adl_1.4/*.adl` | 1.4-tolerance parse; `FAIL_c_dv_quantity_minimal.v1.adl`→SDINV | tag |
+| `validity/legacy_adl_1.4/*.adl` | 1.4-tolerance parse; `FAIL_c_dv_quantity_minimal.v1.adl`→SDINV; the two concept-less fixtures→SACO | tag, except the two SACO adjudications |
 | `robustness/**` | parse + validate → assert PASS (never-panic floor) | tag = PASS |
 | `upgrade/upgrade_from_14/*.adl` | convert (adl14) → compare to paired `.adls` | the paired `.adls` |
 | `upgrade/upgrade_from_14/*.adls` | parse + validate clean (also the compare target) | — |
@@ -555,3 +557,5 @@ cross-check).
 | `…cadl_breadth_structure.v1.adl` | PASS | every existence/occurrences/cardinality spelling (incl. two modifiers, both modifier orderings, the bare `{*}`), `use_node` with and without occurrences, generic type names, mixed object kinds under one attribute, and the bare + identified slot forms |
 | `…cadl_breadth_primitives.v1.adl` | PASS | every integer/real list and interval shape (incl. `infinity`/`-infinity`, `+/-`, and BOTH exclusive-lower spellings), string lists + the `...` continuation + both regex delimiters, booleans, characters, listed term codes, and assumed values on each |
 | `…cadl_breadth_datetime.v1.adl` | PASS | every date/time/date-time pattern of the valid-pattern table incl. literal substitution (L894) and the ASCII/`±`/`Z` timezone modifiers (L852, L900-906), the space-separated date-time pattern (§Symbols L1422), every duration pattern family, negative durations, the mixed `pattern/interval` form, and symmetric-timezone intervals |
+| `…c_dv_quantity_concept.v1.adl` | PASS | the concept-carrying twin of the vendored `legacy_adl_1.4/openehr-test_pkg-SOME_TYPE.c_dv_quantity.v1.adl`, which master08 refuses (SACO, §2b): the 1.4 inline dADL `C_DV_QUANTITY` blocks keep their accepted-and-validates-clean coverage |
+| `…code_phrase_concept.v1.adl` | PASS | the concept-carrying twin of the vendored `legacy_adl_1.4/openehr-test_pkg-SOME_TYPE.code_phrase.v1.adl` (same SACO adjudication): the vanilla and 1.4-qualified `CODE_PHRASE` constraint spellings keep theirs |

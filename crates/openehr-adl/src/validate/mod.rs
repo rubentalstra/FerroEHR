@@ -56,7 +56,7 @@ use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{ResourceAnnotations, TerminologyCode};
 
 use crate::error::SyntaxError;
-use crate::source::{ArtefactKind, parse_source};
+use crate::source::{ArtefactKind, parse_source, parse_source_adl14};
 
 /// The severity of a [`ValidationIssue`].
 ///
@@ -729,7 +729,7 @@ pub fn validate_source_phase1(
 /// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
 /// validation runs only on a successful parse.
 pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source(src)?;
+    let source = parse_source_adl14(src)?;
     let archetype = crate::assemble::assemble_adl14(&source, src)?;
     let mut issues = Vec::new();
     phase1::run(
@@ -763,7 +763,7 @@ pub fn validate_source_adl14(
     src: &str,
     rm: &dyn rm::RmModel,
 ) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source(src)?;
+    let source = parse_source_adl14(src)?;
     let archetype = crate::assemble::assemble_adl14(&source, src)?;
     let mut issues = Vec::new();
     phase1::run(

@@ -49,7 +49,7 @@ use openehr_lang::odin::{OdinKey, OdinValue};
 use crate::cadl::parse_definition_body;
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::rules::parse_artefact_rules;
-use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source};
+use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source, parse_source_adl14};
 
 /// Parse an ADL2 source into a fully-assembled [`Archetype`].
 ///
@@ -68,7 +68,9 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 }
 
 /// Parse an **ADL 1.4-dialect** source into an [`Archetype`] (the 1.4→2
-/// converter front end): identical to [`parse_artefact`] except the cADL
+/// converter front end): identical to [`parse_artefact`] except that the outer
+/// structure is read by [`crate::source::parse_source_adl14`] (case-insensitive
+/// section keywords, the old-form language tolerance) and the cADL
 /// `definition` is parsed with [`crate::cadl::parse_definition_body_adl14`],
 /// which tolerates the 1.4-only object forms. The result is a *1.4-shaped*
 /// `Archetype` (at-code node ids, qualified/listed terminology constraints in
@@ -81,7 +83,7 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// Returns every [`SyntaxError`] found across the outer parse, the cADL
 /// definition, the rules, and the ODIN-section-to-model mapping.
 pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    let art = parse_source(src)?;
+    let art = parse_source_adl14(src)?;
     assemble_with(&art, src, crate::cadl::Dialect::Adl14)
 }
 
@@ -125,12 +127,27 @@ fn assemble_with(
         }
     };
 
-    let original_language = assemble_original_language(art, &mut errors);
-    let translations = art
-        .language
-        .as_ref()
-        .and_then(assemble_translations)
-        .filter(|t| !t.is_empty());
+    // ADL 1.4 mandates the `concept` section: `master08` §Syntax Specification
+    // gives `arch_concept: SYM_CONCEPT V_LOCAL_TERM_CODE_REF | SYM_CONCEPT
+    // error` — no empty alternative, unlike `arch_specialisation`/
+    // `arch_language`/`arch_description`/`arch_invariant` — and §Validity Rules
+    // VARCN requires "an archetype term value in the concept section". ADL2
+    // derives the concept from the HRID (`ADL2/master07.09`), so the section is
+    // obsolete there and its absence is not an error.
+    if dialect == crate::cadl::Dialect::Adl14
+        && art.kind != ArtefactKind::TemplateOverlay
+        && art.concept.is_none()
+    {
+        errors.push(SyntaxError::at(
+            SyntaxErrorCode::Saco,
+            "missing concept section",
+            0..0,
+            src,
+        ));
+    }
+
+    let original_language = assemble_original_language(art, dialect, &mut errors);
+    let translations = assemble_translations_of(art, dialect).filter(|t| !t.is_empty());
     let description = art
         .description
         .as_ref()
@@ -236,15 +253,22 @@ fn root_node_id(def: &CComplexObject) -> String {
 // ── language (master07.07) ────────────────────────────────────────────────
 
 /// `original_language = <[ISO_639-1::en]>` → a [`TerminologyCode`]. A missing
-/// `language` section is tolerated (`master07.07` legacy upgrade): the language
-/// falls back to `ISO_639-1::en` so the model stays constructible; the absence
-/// is not itself a hard error here (the outer parser already raised `SALAN`
-/// where required).
+/// `language` section is tolerated (`master07.07` legacy upgrade): in the ADL
+/// 1.4 dialect the old form's ontology `primary_language` is lifted into it
+/// (see [`old_form_primary_language`]), otherwise the language falls back to
+/// `ISO_639-1::en` so the model stays constructible; the absence is not itself
+/// a hard error here (the outer parser already raised `SALAN` where required).
 fn assemble_original_language(
     art: &SourceArtefact,
+    dialect: crate::cadl::Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> TerminologyCode {
     let Some(map) = art.language.as_ref().and_then(as_object) else {
+        if dialect == crate::cadl::Dialect::Adl14
+            && let Some(code) = old_form_primary_language(art)
+        {
+            return code;
+        }
         return term_code("ISO_639-1", "en");
     };
     match map.get("original_language") {
@@ -260,6 +284,71 @@ fn assemble_original_language(
         }
         None => term_code("ISO_639-1", "en"),
     }
+}
+
+/// The artefact's translations: from the `language` section where it has one,
+/// and — in the ADL 1.4 dialect only — from the old form's ontology
+/// `languages_available` where it has none (see
+/// [`old_form_primary_language`]).
+fn assemble_translations_of(
+    art: &SourceArtefact,
+    dialect: crate::cadl::Dialect,
+) -> Option<BTreeMap<String, TranslationDetails>> {
+    match art.language.as_ref() {
+        Some(language) => assemble_translations(language),
+        None if dialect == crate::cadl::Dialect::Adl14 => old_form_translations(art),
+        None => None,
+    }
+}
+
+/// The old-form ontology `primary_language` lifted into `original_language`
+/// (`AM/docs/ADL1.4/master08-adl` §Ontology Header Statements).
+///
+/// NOTE: the upgrade is the spec's own instruction, stated twice — §Language
+/// Section and Language Translation: "some non-conforming ADL tools in the past
+/// created archetypes without a `language` section, relying on the `ontology`
+/// section to provide the `original_language` (there called `primary_language`)
+/// and list of languages (`languages_available`). In the interests of backward
+/// compatibility, tool builders should consider accepting archetypes of the old
+/// form and upgrading them when parsing to the correct form, which should then
+/// be used for serialising/saving" — and §Ontology Header Statements, in the
+/// same words for `primary_language`/`languages_available`. It runs on the 1.4
+/// path only: ADL2 has no old form.
+fn old_form_primary_language(art: &SourceArtefact) -> Option<TerminologyCode> {
+    let map = art.terminology.as_ref().and_then(as_object)?;
+    let value = map.get("primary_language")?;
+    match untyped(value) {
+        OdinValue::TermCode(code) => Some(parse_term_code(code)),
+        other => string_of(Some(other)).map(|s| term_code("ISO_639-1", &s)),
+    }
+}
+
+/// The old form's `languages_available` lifted into `translations`: one minimal
+/// [`TranslationDetails`] per listed language other than the primary one (the
+/// old form carries no translator metadata to fill the other fields with) —
+/// `master08` §Ontology Header Statements NOTE, quoted on
+/// [`old_form_primary_language`].
+fn old_form_translations(art: &SourceArtefact) -> Option<BTreeMap<String, TranslationDetails>> {
+    let map = art.terminology.as_ref().and_then(as_object)?;
+    let primary = old_form_primary_language(art).map(|c| c.code_string);
+    let mut out = BTreeMap::new();
+    for lang in string_list(map.get("languages_available")?) {
+        if Some(&lang) == primary.as_ref() {
+            continue;
+        }
+        out.insert(
+            lang.clone(),
+            TranslationDetails {
+                language: term_code("ISO_639-1", &lang),
+                author: BTreeMap::new(),
+                accreditation: None,
+                other_details: None,
+                version_last_translated: None,
+                other_contributors: Vec::new(),
+            },
+        );
+    }
+    Some(out)
 }
 
 /// `translations = <["de"] = < language=<…> author=<…> … >>` →

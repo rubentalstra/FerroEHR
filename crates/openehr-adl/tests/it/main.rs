@@ -11,6 +11,7 @@ mod adl14_cadl_gates;
 mod adl14_cnf_fixture_slot;
 mod adl14_conversion;
 mod adl14_dadl_breadth;
+mod adl14_header_sections;
 mod assembly;
 mod corpus_coverage;
 mod corpus_definition_parse;
