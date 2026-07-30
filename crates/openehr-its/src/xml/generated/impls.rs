@@ -6,7 +6,8 @@
     clippy::pedantic,
     clippy::nursery,
     unused_variables,
-    unused_mut
+    unused_mut,
+    unused_qualifications
 )]
 #[allow(unused_imports)]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};

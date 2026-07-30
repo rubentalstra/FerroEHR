@@ -256,7 +256,7 @@ impl Predicate {
     /// Whether a canonical-JSON RM node satisfies this predicate's
     /// *attribute-based* conjuncts (`archetype_node_id`, `name/value`, `uid`).
     /// The positional conjunct is orthogonal — it selects by container index
-    /// and is applied in [`step`], not here.
+    /// and is applied in `step`, not here.
     ///
     /// `archetype_node_id` matches `LOCATABLE.archetype_node_id`; `name_value`
     /// matches `LOCATABLE.name.value` (a `DV_TEXT`); `uid` matches
