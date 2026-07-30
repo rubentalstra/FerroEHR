@@ -346,7 +346,7 @@ pub enum Token {
     #[regex(r#""([^"\\]|\\.)*""#, validate_string)]
     String(String),
     /// A single-quoted `CHARACTER`. An escaped character must be one of the
-    /// six legal quoted forms (see [`validate_char`]).
+    /// six legal quoted forms (see `validate_char`).
     #[regex(r"'([^'\\\r\n]|\\.)'", validate_char)]
     Character(String),
 
