@@ -1847,6 +1847,20 @@ fn check_corpus_integrity(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 );
             }
         }
+        // A DECLARED view must have a REGISTERED evaluator (#971): the
+        // resolver errors on an unregistered view only at RUN time, so the
+        // cross-check lives here where a dead declaration fails before any
+        // SUT is composed.
+        for (view, _) in entry.views.iter().flatten() {
+            if !crate::exec::resolve::Resolver::REGISTERED_VIEWS.contains(&view.as_str()) {
+                push(
+                    findings,
+                    CheckId::CorpusIntegrity,
+                    &who,
+                    format!("{key}: view {view} has no registered evaluator (exec::resolve)"),
+                );
+            }
+        }
     }
 }
 
