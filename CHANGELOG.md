@@ -17,6 +17,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **AQL `SELECT DISTINCT` with `ORDER BY` executes correctly.** Sorting a
+  DISTINCT projection by one of its selected columns previously failed with
+  a database error surfaced as HTTP 500; it now orders by the output column.
+  Sorting a DISTINCT projection by an expression that is not selected is a
+  clean invalid-query rejection (the AQL specification defines no semantics
+  for it) instead of a 500.
+- **AQL date/time functions work in temporal comparisons.** Comparing a
+  temporal path against `NOW()`/`CURRENT_DATE_TIME` etc. previously failed
+  with a database type error surfaced as HTTP 500; function operands now
+  join the comparison in the same coercion space as literals.
+- **Comma-fraction ISO 8601 timestamps compare correctly in AQL.** Canonical
+  `DV_DATE_TIME` values using the ISO-permitted comma decimal sign
+  (`21:22:19,501+00:00`) were silently excluded from temporal comparisons
+  (and their promoted index column stored NULL). Both the write-time
+  promotion and the query-time casts now normalize the comma form.
 - **AQL coded-name node predicates match correctly.** The name term-code
   shortcut (`[at0002, snomed_ct(3.1)::313267000]`, and the
   `terminology::code|informational text|` form) was compared as one raw
