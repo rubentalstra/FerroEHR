@@ -6,6 +6,7 @@
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
 mod bel_parse;
+mod escape_validation;
 mod vendor_bmm_odin;
 mod vendor_coverage;
 mod vendor_odin;
