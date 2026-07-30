@@ -1336,3 +1336,63 @@ fn top_backward_rejected_with_guidance() {
     plan_ok("SELECT TOP 10 c/uid/value FROM COMPOSITION c");
     plan_ok("SELECT TOP 10 FORWARD c/uid/value FROM COMPOSITION c");
 }
+
+// ── coded version-field sub-paths (#976) ─────────────────────────────────────
+
+/// The coded version fields are sub-path-sensitive: `defining_code/code_string`
+/// reads the stored code column, `value` renders the rubric via a CASE over
+/// the openEHR terminology group, `defining_code/terminology_id/value` is the
+/// `openehr` constant — and any other suffix (incl. the bare coded object) is
+/// a typed reject.
+#[test]
+fn version_coded_field_subpaths() {
+    let code = build_sql(
+        "SELECT v/uid/value FROM VERSION v[commit_audit/change_type/defining_code/code_string='249'] \
+         CONTAINS COMPOSITION c",
+    );
+    assert!(
+        code.contains(r#""change_type" = CAST"#),
+        "the code form compares the stored column directly: {code}"
+    );
+
+    let rubric = build_sql(
+        "SELECT v/uid/value FROM VERSION v[commit_audit/change_type/value='creation'] \
+         CONTAINS COMPOSITION c",
+    );
+    assert!(
+        rubric.contains("CASE") && rubric.contains(r#""change_type""#),
+        "rubric renders as a CASE over the group: {rubric}"
+    );
+
+    let lifecycle_rubric = build_sql(
+        "SELECT v/uid/value FROM VERSION v[lifecycle_state/value='complete'] CONTAINS COMPOSITION c",
+    );
+    assert!(
+        lifecycle_rubric.contains("CASE") && lifecycle_rubric.contains(r#""lifecycle_state""#),
+        "lifecycle rubric CASE: {lifecycle_rubric}"
+    );
+
+    let term = build_sql(
+        "SELECT v/uid/value FROM VERSION \
+         v[commit_audit/change_type/defining_code/terminology_id/value='openehr'] \
+         CONTAINS COMPOSITION c",
+    );
+    // The terminology id is a bound constant on both sides — no column joins
+    // the comparison at all.
+    assert!(
+        !term.contains(r#""change_type""#) && term.contains("= CAST"),
+        "terminology form is a constant comparison: {term}"
+    );
+
+    // The bare coded object has no defined scalar comparison form.
+    let e = plan_err(
+        "SELECT v/uid/value FROM VERSION v[commit_audit/change_type='249'] CONTAINS COMPOSITION c",
+    );
+    assert!(
+        matches!(
+            e,
+            AqlError::Feature(AqlFeatureError::UnsupportedVersionPredicate(_))
+        ),
+        "bare coded object rejects: {e}"
+    );
+}
