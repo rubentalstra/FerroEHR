@@ -42,6 +42,10 @@
 /// `/` and every non-ASCII byte pass through unchanged (RFC 8259 §7).
 static ESCAPE: [u8; 256] = build_escape_table();
 
+#[expect(
+    clippy::indexing_slicing,
+    reason = "a const table builder over a fixed [u8; 256]: every index is a literal or a `u8` widened to usize, so all are inside the array by construction — and `get_mut` is not usable in a const fn"
+)]
 const fn build_escape_table() -> [u8; 256] {
     let mut t = [0u8; 256];
     let mut i = 0;
@@ -86,6 +90,7 @@ impl std::fmt::Debug for JsonWriter {
 }
 
 impl JsonWriter {
+    /// A writer over a fresh, empty buffer.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -228,6 +233,11 @@ impl JsonWriter {
     /// the escape, and finally the trailing run. Escape bytes are single-byte
     /// ASCII (`"`, `\`, C0 controls), so every slice boundary lands on a UTF-8
     /// character boundary.
+    #[expect(
+        clippy::indexing_slicing,
+        clippy::string_slice,
+        reason = "`ESCAPE`/`HEX` are indexed by a widened `u8` and a 4-bit nibble, both inside their fixed-size arrays; the `s[start..i]`/`s[start..]` slices are bounded by `bytes.iter().enumerate()` and split only on ASCII escape bytes, so both ends are UTF-8 boundaries (see the doc comment above)"
+    )]
     fn write_escaped(&mut self, s: &str) {
         self.buf.push('"');
         let bytes = s.as_bytes();
@@ -296,6 +306,7 @@ pub trait ToJson {
         ""
     }
 
+    /// Write this value's canonical-JSON form into `w`.
     fn write_json(&self, w: &mut JsonWriter);
 }
 
@@ -584,7 +595,9 @@ pub trait JsonNode {
 /// spec types never round-trip through `serde_json::Value` on the parse path.
 #[derive(Debug, Clone, PartialEq)]
 pub enum JsonTree<'a> {
+    /// The JSON `null` literal.
     Null,
+    /// A JSON boolean.
     Bool(bool),
     /// A signed integer lexeme that fits `i64`.
     Int(i64),
@@ -592,7 +605,9 @@ pub enum JsonTree<'a> {
     Uint(u64),
     /// A fractional/exponent lexeme, or an integer too large for `u64`.
     Float(f64),
+    /// A JSON string, borrowed from the input when no unescaping was needed.
     Str(std::borrow::Cow<'a, str>),
+    /// A JSON array, in source order.
     Array(Vec<JsonTree<'a>>),
     /// Object members in source order (duplicate keys retained; `get` returns the
     /// last, matching `serde_json`).
@@ -623,7 +638,10 @@ impl JsonNode for JsonTree<'_> {
             _ => None,
         }
     }
-    #[allow(clippy::cast_precision_loss)] // wire number widening to f64, exactly as serde_json::Value::as_f64
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "wire-number widening to f64, exactly what serde_json::Value::as_f64 does"
+    )]
     fn as_f64(&self) -> Option<f64> {
         match self {
             JsonTree::Int(v) => Some(*v as f64),
@@ -867,10 +885,11 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn parse_bool(&mut self) -> Result<JsonTree<'a>, JsonParseError> {
-        if self.bytes[self.pos..].starts_with(b"true") {
+        let rest = self.bytes.get(self.pos..).unwrap_or_default();
+        if rest.starts_with(b"true") {
             self.pos += 4;
             Ok(JsonTree::Bool(true))
-        } else if self.bytes[self.pos..].starts_with(b"false") {
+        } else if rest.starts_with(b"false") {
             self.pos += 5;
             Ok(JsonTree::Bool(false))
         } else {
@@ -879,7 +898,11 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn parse_null(&mut self) -> Result<JsonTree<'a>, JsonParseError> {
-        if self.bytes[self.pos..].starts_with(b"null") {
+        if self
+            .bytes
+            .get(self.pos..)
+            .is_some_and(|r| r.starts_with(b"null"))
+        {
             self.pos += 4;
             Ok(JsonTree::Null)
         } else {
@@ -908,10 +931,12 @@ impl<'a> Tokenizer<'a> {
             return Err(JsonParseError::syntax("invalid number", self.src, start));
         }
         if is_float {
+            // A `ParseFloatError` adds nothing to the positioned syntax error.
             return token
                 .parse::<f64>()
                 .map(JsonTree::Float)
-                .map_err(|_| JsonParseError::syntax("invalid number", self.src, start));
+                .ok()
+                .ok_or_else(|| JsonParseError::syntax("invalid number", self.src, start));
         }
         if let Ok(v) = token.parse::<i64>() {
             return Ok(JsonTree::Int(v));
@@ -920,10 +945,12 @@ impl<'a> Tokenizer<'a> {
             return Ok(JsonTree::Uint(v));
         }
         // An integer literal wider than u64 falls back to f64, as serde_json does.
+        // A `ParseFloatError` adds nothing to the positioned syntax error.
         token
             .parse::<f64>()
             .map(JsonTree::Float)
-            .map_err(|_| JsonParseError::syntax("invalid number", self.src, start))
+            .ok()
+            .ok_or_else(|| JsonParseError::syntax("invalid number", self.src, start))
     }
 
     /// Parse a `"`-delimited string, borrowing from the source when it contains
@@ -1019,7 +1046,10 @@ impl<'a> Tokenizer<'a> {
             .src
             .get(self.pos..self.pos + 4)
             .ok_or_else(|| self.err("truncated \\u escape"))?;
-        let v = u32::from_str_radix(hex, 16).map_err(|_| self.err("invalid hex in \\u escape"))?;
+        // A `ParseIntError` adds nothing to the positioned syntax error.
+        let Ok(v) = u32::from_str_radix(hex, 16) else {
+            return Err(self.err("invalid hex in \\u escape"));
+        };
         self.pos += 4;
         Ok(v)
     }
@@ -1075,7 +1105,10 @@ impl FromJson for f64 {
 }
 
 impl FromJson for f32 {
-    #[allow(clippy::cast_possible_truncation)] // Real→f32 field narrowing, as serde does for an f32 field
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "REAL -> f32 field narrowing, exactly what serde does when a schema declares an f32 field"
+    )]
     fn from_json<N: JsonNode>(node: &N) -> Result<Self, JsonParseError> {
         node.as_f64()
             .map(|v| v as f32)
@@ -1289,7 +1322,10 @@ pub fn from_json_value<T: FromJson>(value: &serde_json::Value) -> Result<T, Json
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp, clippy::panic)]
+#[expect(
+    clippy::float_cmp,
+    reason = "the codec tests pin exact wire lexemes, so bit-equality is the intended assertion"
+)]
 mod tests {
     use super::{JsonWriter, to_json_string};
 

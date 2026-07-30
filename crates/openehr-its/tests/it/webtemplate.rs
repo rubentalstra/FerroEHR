@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! `WebTemplate` builder tests.
 //!
 //! * **smoke gate** — every `.opt` in the 91-file service corpus AND the full

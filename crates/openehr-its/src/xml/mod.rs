@@ -5,7 +5,7 @@
 //! they differ only by the root `xmlns`, selected at serialize time.
 //!
 //! The `ToXml`/`FromXml` impls for the RM/BASE spec types are **generated** by
-//! `openehr-codegen`'s `emit-xml` target into [`generated`], driven by
+//! `openehr-codegen`'s `emit-xml` target into `generated`, driven by
 //! the vendored XSDs (`schemas/xml/`) + the BMM field model. This module is the
 //! hand-written [`runtime`] (traits + `quick-xml` writer/reader) and the public
 //! entry points. Regenerate with `cargo run -p openehr-codegen -- emit-xml`.

@@ -242,7 +242,7 @@ pub fn collect_constraint_binding_checks(
 ///   coded list (`listOpen: false`).
 ///
 /// This is the validation-**report** form of the same two rules the conversion
-/// path enforces as hard rejections: [`crate::flat::map::build_leaf`] returns
+/// path enforces as hard rejections: `crate::flat::map::build_leaf` returns
 /// [`crate::flat::error::FlatError::OtherSuffixConflict`] /
 /// [`crate::flat::error::FlatError::OtherOnClosedValueSet`] when it hits them during a
 /// build, so a converter fails fast. This function instead collects them as
@@ -474,6 +474,10 @@ pub(crate) struct SlotGroup {
 impl NodeWalk {
     /// Build the walk plan for `node` from its (final, post-compaction) constraint
     /// vectors and children. Parses each constraint path once.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`gi` is either an index already recorded in the `child_idx`/`slot_idx` map or `next == len` immediately after the matching `push`, so both `child_groups[gi]` and `slot_groups[gi]` are in bounds by construction"
+    )]
     pub(crate) fn build(node: &WebTemplateNode) -> Self {
         let aql = node.aql_path.as_str();
 
@@ -746,7 +750,7 @@ impl Validator {
     /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
     fn check_nonempty_lists(
         &mut self,
-        obj: &serde_json::Map<String, Value>,
+        obj: &Map<String, Value>,
         ty: Option<&str>,
         mappings_empty: bool,
         reference_ranges_empty: bool,
@@ -847,7 +851,7 @@ impl Validator {
     ///   parameter) — the monomorphized runtime type cannot see `T`.
     fn check_data_structure_shapes(
         &mut self,
-        obj: &serde_json::Map<String, Value>,
+        obj: &Map<String, Value>,
         ty: Option<&str>,
         path: &str,
     ) {
@@ -992,6 +996,10 @@ impl Validator {
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
     /// and lands only behind the ECC zero-drift gate.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`slot_counts` is sized `ca.slots.len()` and every index into it is a `position`/`enumerate` index over those same slots, so all are in bounds by construction"
+    )]
     fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
         for (ca, segs) in wt.closed_attributes.iter().zip(&plan.closed) {
             let Some(segments) = segs else {
@@ -1148,6 +1156,10 @@ impl Validator {
     /// node, or a set of polymorphic type alternatives) against the instance:
     /// occurrence-check the group, then recurse into each matched instance,
     /// routing it to the conforming alternative.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`group.members` holds indices into `wt_parent.children` recorded by `NodeWalk::build` over that same child vector, `members` is non-empty for any recorded group (so `members[0]` exists), and `identity_idx` is an `rposition`/`len() - 1` over `segments` (returned early when empty), so every index and range here is in bounds by construction"
+    )]
     fn check_group(
         &mut self,
         parent: &Value,
@@ -1268,6 +1280,10 @@ impl Validator {
 
     /// Route a matched instance node to the type-choice alternative it conforms
     /// to; if it conforms to none, report a single `WrongType`.
+    #[expect(
+        clippy::indexing_slicing,
+        reason = "`visit_choice` is only reached from `check_group` with `members.len() > 1`, so `group[0]` exists"
+    )]
     fn visit_choice(&mut self, target: &Value, group: &[&WebTemplateNode]) {
         match target.get("_type").and_then(Value::as_str) {
             Some(it) => {
@@ -1425,7 +1441,7 @@ impl Validator {
 ///   class" L35).
 fn select_group_children<'a>(
     container: &'a Value,
-    id_seg: &openehr_rm::paths::PathSegment,
+    id_seg: &PathSegment,
     names: &SiblingNameIndex,
 ) -> Vec<&'a Value> {
     let claimed = id_seg
@@ -1515,12 +1531,6 @@ fn norm_path(p: &str) -> String {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions + the #[ignore] measurement harnesses' report output
 mod tests {
     //! Per-rule unit tests for the composition validator, built on hand-shaped
     //! `WebTemplate` nodes + minimal instances (no OPT parsing) so each rule is
@@ -2080,9 +2090,7 @@ mod tests {
     fn segment_parsing_respects_brackets() {
         // Parsing routes through the single `openehr_rm::paths` implementation
         // via `crate::flat::rmpath`; this asserts the validator sees the same segments.
-        let segs = crate::flat::rmpath::parse(
-            "/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value",
-        );
+        let segs = rmpath::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
         assert_eq!(segs.len(), 3);
         assert_eq!(segs[0].attribute, "content");
         assert_eq!(

@@ -526,7 +526,10 @@ impl<'a> Converter<'a> {
 
     // ── terminology rebuild ──────────────────────────────────────────────────
 
-    #[allow(clippy::too_many_lines)] // one linear rebuild: definitions → bindings → value sets
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear terminology rebuild — definitions, then bindings, then value sets; the steps are sequential, not extractable units"
+    )]
     fn rebuild_terminology(&mut self, old: &ArchetypeTerminology) -> ArchetypeTerminology {
         // `@ internal @` node terms are dropped in every language (the marker is
         // authored in the original language; translations carry the openEHR
@@ -945,9 +948,10 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
         if c == '[' {
             // Read to the matching ']'.
             let start = i + 1;
-            let rest = &path[start..];
-            if let Some(end) = rest.find(']') {
-                let code = &rest[..end];
+            let rest = path.get(start..).unwrap_or_default();
+            if let Some(end) = rest.find(']')
+                && let Some(code) = rest.get(..end)
+            {
                 let mapped = if let Some(id) = cx.node_map.get(code) {
                     id.clone()
                 } else if crate::codes::is_at_code(code) {
@@ -1183,12 +1187,9 @@ fn set_release_version(
 
 fn split_version(v: &str) -> (String, &'static str, String) {
     for (marker, status) in [("-rc", "rc"), ("-alpha", "alpha"), ("-beta", "beta")] {
-        if let Some(idx) = v.find(marker) {
-            let numeric = normalise_numeric(&v[..idx]);
-            let build = v[idx + marker.len()..]
-                .strip_prefix('.')
-                .unwrap_or("")
-                .to_owned();
+        if let Some((numeric, tail)) = v.split_once(marker) {
+            let numeric = normalise_numeric(numeric);
+            let build = tail.strip_prefix('.').unwrap_or("").to_owned();
             return (numeric, status, build);
         }
     }

@@ -1,11 +1,11 @@
 //! The AOM2 validation catalogue.
 //!
-//! A [`Validator`] walks an assembled `openehr_am::am24::aom2` [`Archetype`]
+//! A validator walks an assembled `openehr_am::am24::aom2` [`Archetype`]
 //! and produces typed [`ValidationIssue`]s, each carrying a [`ValidationCode`]
 //! (one variant per AOM2 validity code), a [`Severity`], a message, and — where
 //! derivable — the archetype path the issue is anchored at.
 //!
-//! Phase 1 (basic integrity, standalone) is implemented in [`phase1`]
+//! Phase 1 (basic integrity, standalone) is implemented in `phase1`
 //! ([`validate_phase1`] / [`validate_source_phase1`]); the phase-2
 //! reference-model checks are in [`rm`] ([`rm::validate_phase2_rm`]). The
 //! phase-1 catalogue and its orchestration are defined in
@@ -13,7 +13,7 @@
 //! Integrity, with the full rule texts in `master03-archetype_package.adoc`,
 //! `master04.5-constraint_model-class_definitions.adoc`,
 //! `master06-rm_overlay.adoc`, and `master07-terminology_package.adoc` (cited
-//! per check in [`phase1`]); the phase-2 RM checks are `master08` §Phase 2 →
+//! per check in `phase1`); the phase-2 RM checks are `master08` §Phase 2 →
 //! Validate Against Reference Model (cited per check in [`rm`]).
 //!
 //! Phase orchestration follows `master08` "multi-pass … more basic kinds of
@@ -24,7 +24,7 @@
 //! to the standalone half they can compute (or are skipped).
 //!
 //! The specialised-archetype-vs-flat-parent checks (VSON*/VSANC*/VSSM/VDSS*/
-//! VARX*/…) live in [`phase2`] and run against the flat parent resolved via
+//! VARX*/…) live in `phase2` and run against the flat parent resolved via
 //! [`resolve_flat_parent`]; the `master04.5` conformance functions they build on
 //! are in [`conformance`]. Per `ADL2/master09.02` §Differential and Flat Forms
 //! ("For a top-level archetype, the flat-form is the same as its differential
@@ -32,7 +32,7 @@
 //! needs the full flattener before its DEEP flat form is available — which
 //! [`crate::flatten::flat_form`] now supplies, so a specialised parent
 //! ([`FlatParent::NeedsFlattener`]) is flattened before the deep phase-2 checks
-//! run. Phase 3 ([`phase3`]) runs on the flattened form (VUNP, VACMCO), per
+//! run. Phase 3 (`phase3`) runs on the flattened form (VUNP, VACMCO), per
 //! `master08` §Phase 3 - Validation of Flat Form.
 
 pub mod conformance;
@@ -82,7 +82,7 @@ pub enum Severity {
 /// plus the two corpus-adjudicated additions (VRDLA, WOUC — archie parity, no
 /// full vendored text, NOTE-flagged). Deferred variants (their check needs the
 /// RM model, the flat parent, or an external terminology service) are present
-/// as the vocabulary but not raised in phase 1 — see [`phase1`].
+/// as the vocabulary but not raised in phase 1 — see `phase1`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ValidationCode {
@@ -108,7 +108,7 @@ pub enum ValidationCode {
     /// §`C_ATTRIBUTE`).
     Vdifv,
     /// VDIFP — differential path exists in flat parent (`master04.5` §`C_ATTRIBUTE`;
-    /// checked in [`phase2`] by resolving the differential path against the flat
+    /// checked in `phase2` by resolving the differential path against the flat
     /// parent, with the RM-path half subsumed by that resolution — see [`rm`]).
     Vdifp,
     /// VCORM — object constraint type name exists in the RM (`master04.5`
@@ -198,8 +198,8 @@ pub enum ValidationCode {
     /// Rules).
     Vatcd,
     /// VATDF — value code (at-code) validity (`master03` §Validity Rules; a
-    /// non-specialised archetype is checked in [`phase1`], the specialised
-    /// flat-form half against the flattened terminology in [`phase_flat`]).
+    /// non-specialised archetype is checked in `phase1`, the specialised
+    /// flat-form half against the flattened terminology in `phase_flat`).
     Vatdf,
     /// VACDF — constraint code (ac-code) validity (`master03` §Validity Rules).
     Vacdf,
@@ -260,11 +260,11 @@ pub enum ValidationCode {
     Vcoc,
     /// VACMCO — cardinality/occurrences orphans: every mandatory child and one
     /// optional child must fit within the container cardinality (`master04.5`
-    /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, [`phase3`]).
+    /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, `phase3`).
     Vacmco,
     /// VSONIF — object node identification validity in flat siblings (`master04.5`
     /// §`C_OBJECT` VSONIF L356-357; refs the spec-undefined VACMI). Checked in
-    /// [`phase2`]: a new object node in a specialised container whose flattened
+    /// `phase2`: a new object node in a specialised container whose flattened
     /// siblings are identified must itself be identified.
     Vsonif,
     /// VRDLA — resource-description language-code consistency (archie parity; no
@@ -279,7 +279,7 @@ pub enum ValidationCode {
     // ── phase-2 specialisation-vs-flat-parent codes (`master04.5` §Validity
     //    Rules: `C_ATTRIBUTE` / `C_OBJECT` / `ARCHETYPE_SLOT` / `C_ARCHETYPE_ROOT` /
     //    `C_COMPLEX_OBJECT_PROXY`; `master08` §Phase 2 → Validate Specialised
-    //    Definition). Raised by [`phase2`] against the flat parent.
+    //    Definition). Raised by `phase2` against the flat parent.
     /// VSANCE — specialised attribute node existence conformance (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vsance,
@@ -323,7 +323,7 @@ pub enum ValidationCode {
     Vunt,
     /// VUNP — `use_node` path validity: the proxy target path must resolve to an
     /// object node in the flat form (`master04.5` §`C_COMPLEX_OBJECT_PROXY`
-    /// VUNP L482-483; a phase-3 flat-form check, [`phase3`]).
+    /// VUNP L482-483; a phase-3 flat-form check, `phase3`).
     Vunp,
     /// VDSSID — slot redefinition child node id (`master04.5` §`ARCHETYPE_SLOT`).
     Vdssid,
@@ -361,7 +361,6 @@ impl ValidationCode {
     /// The bare mnemonic (e.g. `"VARDT"`), as used in the spec catalogue and
     /// the conformance-corpus `regression` tags.
     #[must_use]
-    #[allow(clippy::too_many_lines)] // one arm per catalogue code
     pub fn mnemonic(self) -> &'static str {
         match self {
             Self::Vardt => "VARDT",
@@ -625,9 +624,9 @@ fn raw_id_lookup_key(raw: &str) -> String {
 /// immediately followed by a digit (so a concept id starting with `v`, e.g.
 /// `…ENTRY.valc_parent…`, is not mistaken for the version).
 fn version_marker(s: &str) -> Option<usize> {
-    let bytes = s.as_bytes();
-    (0..bytes.len().saturating_sub(2))
-        .find(|&i| bytes[i] == b'.' && bytes[i + 1] == b'v' && bytes[i + 2].is_ascii_digit())
+    s.as_bytes()
+        .windows(3)
+        .position(|w| matches!(w, [b'.', b'v', third] if third.is_ascii_digit()))
 }
 
 /// Validate an assembled [`Archetype`] against the AOM2 **phase-1** catalogue.
@@ -686,7 +685,7 @@ pub fn validate_source_phase1(
 /// source is validated against the 1.4 formalism's own (smaller) catalogue. The
 /// checks that correspond to an ADL 1.4 / AOM 1.4 rule run unchanged; the
 /// AOM2-only rules that would false-reject a valid 1.4 archetype are suppressed
-/// at their check sites in [`phase1`] (each spec-cited there):
+/// at their check sites in `phase1` (each spec-cited there):
 /// - **VARAV / VARRV** — AOM 1.4 has no `adl_version`/`rm_release` 3-part rule
 ///   (`adl_version` is `1.4`-form metadata; 1.4 carries no `rm_release`).
 /// - **VCOID** — relaxed to the AOM 1.4 `node_id` rule (required only for
@@ -707,7 +706,7 @@ pub fn validate_source_phase1(
 /// Two checks are 1.4-ONLY (the ADL 1.4 formalism's own rules, absent from AOM2):
 /// - **VCOC** — cardinality/occurrences validity over the children's EFFECTIVE
 ///   occurrences (`ADL1.4/master05-cadl.adoc` §Occurrences L321-324; the AOM2
-///   successor is the VACMCU/WACMCL pair). See [`phase1`] for the adjudication of
+///   successor is the VACMCU/WACMCL pair). See `phase1` for the adjudication of
 ///   which half of the literal formula is enforceable.
 /// - **VATDF/VACDF over the 1.4 term-constraint spelling** — the qualified/listed
 ///   form `[local:: a, b ; assumed]` of
@@ -862,7 +861,7 @@ fn run_phase3(
     issues.extend(phase3::validate_phase3(flat_ref));
     // The deferred flat-form terminology/structure checks (VATDF / VTVSMD /
     // VACMCU / WACMCL / VCOSU) run only for a *specialised* archetype: a
-    // non-specialised archetype is its own flat form, so [`phase1`] already ran
+    // non-specialised archetype is its own flat form, so `phase1` already ran
     // their equivalents (never double-firing here).
     if view(archetype).is_specialised() {
         issues.extend(phase_flat::validate_flat_form(flat_ref));
@@ -1007,12 +1006,14 @@ pub(crate) fn view(archetype: &Archetype) -> ArchetypeView<'_> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)]
 mod tests {
     use super::*;
 
     #[test]
-    #[allow(clippy::too_many_lines)] // one line per catalogue code — an exhaustive list, not logic
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one line per catalogue code — an exhaustive list whose whole point is to name every code, not logic"
+    )]
     fn every_code_has_a_unique_mnemonic_and_severity() {
         let all = [
             ValidationCode::Vardt,

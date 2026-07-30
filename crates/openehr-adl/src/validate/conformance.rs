@@ -5,7 +5,7 @@
 //! implemented 1:1 from the Eiffel blocks in
 //! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
 //! (line ranges cited per function). They are the pure machinery the phase-2
-//! specialisation validator ([`super::phase2`]) drives; each is unit-tested
+//! specialisation validator (`phase2`) drives; each is unit-tested
 //! against the spec text's own examples.
 //!
 //! The functions take their context explicitly (owning attribute, grand-parent
@@ -581,7 +581,7 @@ where
 /// and the lexical `codes_conformant` half only. The `value_set_expanded` subset
 /// half (`master04.5` §`C_TERMINOLOGY_NODE` L683-690) needs the child + flat
 /// parent terminologies, which this function does not receive; it is applied in
-/// [`super::phase2`] (`check_terminology_leaf`), which has both flattened
+/// `phase2` (`check_terminology_leaf`), which has both flattened
 /// terminologies. This lexical core is used for the non-specialisation value
 /// path (`c_value_conforms_to`), where no value-set expansion is required.
 fn terminology_conforms(
@@ -613,7 +613,6 @@ fn status_value(status: Option<&ConstraintStatus>) -> i32 {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)]
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;

@@ -2,7 +2,11 @@
 //! [`BeomBuilder`] path). Structural assertions over the generated `beom` tree;
 //! the AOM-extended path is exercised in `openehr-adl`.
 
-#![allow(clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_lang::bel::{BelError, parse_statements};
 use openehr_lang::prelude::{Expression, Statement};

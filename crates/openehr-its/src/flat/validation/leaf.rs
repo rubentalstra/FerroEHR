@@ -794,8 +794,8 @@ fn split_date_time(s: &str) -> (&str, &str) {
 /// Strip a timezone designator from a time part (`Z`, `+hh:mm`, `-hh:mm`).
 fn trim_timezone(t: &str) -> &str {
     let t = t.strip_suffix('Z').unwrap_or(t);
-    match t.rfind(['+', '-']) {
-        Some(i) => &t[..i],
+    match t.rfind(['+', '-']).and_then(|i| t.get(..i)) {
+        Some(core) => core,
         None => t,
     }
 }
@@ -819,8 +819,10 @@ fn temporal_in_range(value: &str, range: &WebTemplateRange) -> bool {
     let val = norm(value);
     let cmp = |bound: &str| -> std::cmp::Ordering {
         let b = norm(bound);
+        // Truncate both to the shorter precision. ISO 8601 date/time strings
+        // are ASCII, so the byte prefix is always a character boundary.
         let n = val.len().min(b.len());
-        val[..n].cmp(&b[..n])
+        val.get(..n).unwrap_or(&val).cmp(b.get(..n).unwrap_or(&b))
     };
     if let Some(min) = range.min.as_ref().and_then(Value::as_str) {
         let ok = match range.min_op.as_deref() {

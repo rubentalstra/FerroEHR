@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Coded `LOCATABLE.name` + ISM `current_state` rubric fidelity.
 //!
 //! Two spec-facing generator defects, verified against the vendored OPT corpus:

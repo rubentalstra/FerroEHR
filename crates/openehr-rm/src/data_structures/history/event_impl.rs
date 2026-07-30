@@ -17,7 +17,10 @@ use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 fn duration_from_seconds(secs: f64) -> DvDuration {
     let magnitude = secs.abs();
     // Emit an integral second count without a fractional part.
-    #[allow(clippy::float_cmp)]
+    #[expect(
+        clippy::float_cmp,
+        reason = "an exact-integrality test is precisely a bit-equality question (`x.floor() == x`), not a tolerance comparison"
+    )]
     let body = if magnitude.floor() == magnitude {
         format!("PT{magnitude:.0}S")
     } else {
@@ -71,12 +74,6 @@ impl<T> Event<T> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::data_structures::history::point_event::PointEvent;

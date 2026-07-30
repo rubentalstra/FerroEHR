@@ -1197,7 +1197,7 @@ fn temporal(
 fn int_list(constraint: &[Interval<i32>]) -> String {
     constraint
         .iter()
-        .map(|iv| interval_str(iv, std::string::ToString::to_string))
+        .map(|iv| interval_str(iv, ToString::to_string))
         .collect::<Vec<_>>()
         .join(", ")
 }

@@ -792,7 +792,7 @@ impl Scan<'_> {
                 if let Some(av) = i.assumed_value
                     && !i.constraint.is_empty()
                 {
-                    #[allow(clippy::cast_possible_truncation)] // guarded by `fract() == 0`
+                    #[expect(clippy::cast_possible_truncation, reason = "guarded by fract()")]
                     let inside =
                         av.fract() == 0.0 && i.constraint.iter().any(|iv| iv.has(&(av as i32)));
                     if !inside {
@@ -903,7 +903,10 @@ fn temporal_assumed_violates<T: PartialOrd>(constraint: &[Interval<T>], av: &T) 
 // One orchestration function covering the whole terminology/code catalogue; the
 // individual rules are extracted into helpers below, so the length is inherent
 // to the number of codes checked in sequence.
-#[allow(clippy::too_many_lines)]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the individual rules are already extracted into helpers below; the remaining length is the number of terminology codes checked in sequence"
+)]
 fn check_terminology(v: &ArchetypeView<'_>, dialect: Dialect, issues: &mut Vec<ValidationIssue>) {
     let term = v.terminology;
     let level = v.specialisation_level();
@@ -1612,10 +1615,13 @@ fn scan_predicated_paths(text: &str) -> Vec<String> {
     let bytes = text.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        if bytes[i] == b'/' {
+        if bytes.get(i) == Some(&b'/') {
             let start = i;
             i += 1;
-            while i < bytes.len() && !bytes[i].is_ascii_whitespace() && bytes[i] != b'{' {
+            while bytes
+                .get(i)
+                .is_some_and(|b| !b.is_ascii_whitespace() && *b != b'{')
+            {
                 i += 1;
             }
             if let Some(seg) = text.get(start..i)

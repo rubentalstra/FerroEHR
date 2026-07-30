@@ -6,8 +6,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 use indexmap::IndexMap;
 use serde_json::{Value, json};
 

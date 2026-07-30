@@ -121,7 +121,7 @@ fn walk_external_bindings(v: &ArchetypeView<'_>, mut f: impl FnMut(&str, &str, &
 }
 
 /// The external term bindings of `archetype` (`term_bindings` entries under a
-/// genuinely-external terminology id — see [`is_external_terminology`]).
+/// genuinely-external terminology id — see `is_external_terminology`).
 ///
 /// The application iterates these to pre-resolve each `(terminology_id, target)`
 /// against its terminology service and build the [`TerminologyResolver`] the

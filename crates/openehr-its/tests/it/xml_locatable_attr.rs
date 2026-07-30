@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Regression test (canonical-XML audit): `LOCATABLE` subtypes that
 //! live *outside* the v1 `ALL/` XSD bundle — `EHR_STATUS` / `EHR_ACCESS` (EHR
 //! package), the demographic `PARTY` hierarchy, and the extract `LOCATABLE`

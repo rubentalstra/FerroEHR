@@ -27,7 +27,12 @@
 //! Three pairs are ADJUDICATED (converted + idempotent, but not a full
 //! structural match) — the remaining work is specialisation-aware conversion,
 //! called out per case below and reported to the orchestrator.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -464,7 +469,7 @@ ontology
         log.notes
     );
     // The printed ADL2 re-parses (the standalone artefact is well-formed).
-    openehr_adl::assemble::parse_artefact(&printed)
+    parse_artefact(&printed)
         .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
 }
 

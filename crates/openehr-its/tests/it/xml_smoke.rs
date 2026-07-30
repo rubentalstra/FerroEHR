@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Smoke test for the generated canonical-XML `ToXml` path: load a
 //! composition from the JSON corpus, serialize to XML, and check structure.
 use openehr_its::xml::to_canonical_xml;

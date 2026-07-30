@@ -281,7 +281,10 @@ pub fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bo
 pub struct ProductionRmModel;
 
 impl RmModel for ProductionRmModel {
-    #[allow(clippy::unnecessary_literal_bound)] // the trait returns `&str`; the ODIN-backed model borrows a stored `String`
+    #[expect(
+        clippy::unnecessary_literal_bound,
+        reason = "the `RmModel` trait returns `&str` because the ODIN-backed implementation borrows a stored `String`; narrowing this impl to `&'static str` would not match the trait"
+    )]
     fn name(&self) -> &str {
         "openEHR RM 1.2.0"
     }
@@ -390,7 +393,7 @@ fn production_class(base: &str) -> Option<&'static model::RmClass> {
 /// a package that is not a test/foreign schema). Archetypes whose publisher or
 /// package name a model this build does not carry are not RM-checked by the
 /// production model (the caller supplies the appropriate [`RmModel`], or skips —
-/// see [`validate_source`]).
+/// see [`validate_source`](super::validate_source)).
 #[must_use]
 pub fn production_model_governs(archetype: &Archetype) -> bool {
     production_model_governs_view(&view(archetype))
@@ -411,7 +414,7 @@ fn production_model_governs_view(v: &ArchetypeView<'_>) -> bool {
 ///
 /// These are the `master08` §Phase 2 → Validate Against Reference Model checks.
 /// Phase gating (they run only when phase-1 basic integrity passed) is applied
-/// by [`validate_source`] / [`super::validate`]; called directly, they run
+/// by [`validate_source`](super::validate_source) / [`super::validate`]; called directly, they run
 /// unconditionally.
 #[must_use]
 pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
@@ -944,7 +947,6 @@ fn display_bounds(b: Bounds) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)]
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;

@@ -11,6 +11,13 @@ use indexmap::IndexMap;
 use super::lexer::{Spanned, Token};
 use super::{OdinInterval, OdinKey, OdinValue};
 
+// The chumsky extra-parameter alias. `chumsky::extra::Err` stays fully
+// qualified deliberately: shortening it to `Err<Failure>` would make this
+// alias refer to itself.
+#[expect(
+    unused_qualifications,
+    reason = "the local alias shadows the name being qualified — dropping the path makes the definition self-referential"
+)]
 type Err<'a> = chumsky::extra::Err<Failure>;
 
 /// A parse failure: a plain syntactic conflict, or the typed
@@ -437,7 +444,11 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
     let real = real_sign
         .then(select! { Token::Real(s) => s })
         .try_map(|(sign, s), span| {
-            let mag = s.parse::<f64>().map_err(|_| Failure::Syntax(span))?;
+            // The lexeme is already pinned by the token and the span; a
+            // `ParseFloatError` adds nothing a `Syntax(span)` does not carry.
+            let Ok(mag) = s.parse::<f64>() else {
+                return Err(Failure::Syntax(span));
+            };
             Ok(OdinValue::Real(sign.unwrap_or(1.0) * mag))
         });
 
@@ -475,6 +486,10 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
 /// (`2900e-2` = 29); an inexact one has no integer value and is rejected as a
 /// malformed leaf rather than silently truncated. No openEHR spec governs that
 /// case — our own design/extension.
+#[expect(
+    clippy::integer_division,
+    reason = "the `mantissa % scale == 0` guard proves the division is exact — a negative exponent that does not divide evenly returns None instead"
+)]
 fn integer_lexeme(s: &str) -> Option<i64> {
     let Some(e) = s.find(['e', 'E']) else {
         return s.parse::<i64>().ok();

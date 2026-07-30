@@ -40,7 +40,12 @@
 //!
 //! Both twins are kept for every refusal (`.claude/rules/testing.md`).
 
-#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
+#![allow(
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unwrap_used,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 

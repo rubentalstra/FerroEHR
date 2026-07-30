@@ -6,8 +6,8 @@
 //! parent's and child's `aqlPath`, so the container attributes and
 //! collapsed wrappers of ITS-REST `simplified_formats/master04` §Level
 //! Removal never appear as segments. Each populated leaf emits its datum
-//! parts per the `master05-rm_mapping.adoc` tables ([`crate::flat::map`]); the
-//! composition context emits as `ctx/…` ([`crate::flat::ctx`]).
+//! parts per the `master05-rm_mapping.adoc` tables (`crate::flat::map`); the
+//! composition context emits as `ctx/…` (`crate::flat::ctx`).
 //!
 //! Output scope: `in-context` metadata whose FLAT surface is the `ctx/`
 //! vocabulary (composition language/territory/composer, the EVENT_CONTEXT

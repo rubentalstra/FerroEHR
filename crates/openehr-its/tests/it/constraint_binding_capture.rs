@@ -1,4 +1,9 @@
-#![allow(clippy::panic, clippy::print_stdout, let_underscore_drop)] // test assertions/diagnostics
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    let_underscore_drop,
+    reason = "test assertions/diagnostics"
+)]
 //! Archetype **constraint bindings** — the OPT → `WebTemplate` capture and the
 //! instance-side check collection.
 //!

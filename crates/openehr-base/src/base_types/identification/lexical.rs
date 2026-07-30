@@ -58,8 +58,10 @@ pub(crate) fn all_digits(s: &str) -> bool {
 /// `VERSION_TREE_ID` trunk/branch segments — numbering starts at 1).
 #[must_use]
 pub(crate) fn is_positive_int(s: &str) -> bool {
-    let b = s.as_bytes();
-    !b.is_empty() && (b'1'..=b'9').contains(&b[0]) && b[1..].iter().all(u8::is_ascii_digit)
+    match s.as_bytes() {
+        [first, rest @ ..] => (b'1'..=b'9').contains(first) && rest.iter().all(u8::is_ascii_digit),
+        [] => false,
+    }
 }
 
 /// Build a concrete [`Uid`] from a root/identifier string, choosing the subtype
@@ -98,12 +100,6 @@ fn is_oid(s: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

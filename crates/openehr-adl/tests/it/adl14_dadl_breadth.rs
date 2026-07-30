@@ -17,7 +17,11 @@
 //! REFUSE gets its own `SDINV_*` fixture, so a reader that turns lenient fails
 //! here rather than silently mis-reading an archetype.
 
-#![allow(clippy::expect_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 

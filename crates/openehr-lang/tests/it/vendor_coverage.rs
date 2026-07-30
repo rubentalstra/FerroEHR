@@ -10,7 +10,11 @@
 //! (`ODIN_FIXTURES`, 17 files) and `vendor_bmm_odin.rs` (`BMM_FIXTURES`, 38
 //! files) — every claimed path is genuinely parsed and asserted there.
 
-#![allow(clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};

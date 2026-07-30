@@ -32,11 +32,21 @@
 //! direction uses a fixed `NOW`.
 #![allow(
     clippy::panic,
-    clippy::doc_markdown,
-    clippy::too_many_lines,
-    clippy::unreadable_literal,
     clippy::expect_used,
-    clippy::unwrap_used
+    clippy::unwrap_used,
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+#![allow(
+    clippy::doc_markdown,
+    reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
+)]
+#![allow(
+    clippy::too_many_lines,
+    reason = "one spec vector per test fn — the length is the size of the vector being pinned, not logic"
+)]
+#![allow(
+    clippy::unreadable_literal,
+    reason = "the literals are transcribed verbatim from the spec vectors; regrouping their digits would break the textual match"
 )]
 
 use indexmap::IndexMap;

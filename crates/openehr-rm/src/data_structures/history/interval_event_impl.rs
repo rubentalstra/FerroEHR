@@ -30,11 +30,17 @@ impl<T> IntervalEvent<T> {
     pub fn interval_start_time(&self) -> Option<DvDateTime> {
         let (days, secs, tz) = iso_date_time_parts(&self.time.value)?;
         let width_secs = self.width.magnitude()?;
-        #[allow(clippy::cast_precision_loss)] // day counts are far below 2^52
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "day counts over the representable calendar are far below 2^52, where f64 is exact on integers"
+        )]
         let total = days as f64 * SECONDS_IN_DAY + secs - width_secs;
         let start_days = (total / SECONDS_IN_DAY).floor();
         let rem = total - start_days * SECONDS_IN_DAY;
-        #[allow(clippy::cast_possible_truncation)]
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "start_days is a floored day count over the representable calendar — far inside i64"
+        )]
         let mut value = format_iso_date_time(start_days as i64, rem);
         value.push_str(&tz);
         Some(DvDateTime {
@@ -59,12 +65,6 @@ impl<T> Validate for IntervalEvent<T> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::data_types::quantity::date_time::dv_duration::DvDuration;

@@ -2,20 +2,22 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! opt14 ↔ am14 constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
 //! `openehr_am::am14` (the canonical logical model, canonical-JSON codec) and
 //! XSD-generated `openehr_its::opt14` (the Ocean OPT-XML wire adapter). The
-//! divergences between the two are *deliberate and documented* in
-//! `the opt14-wire-model design record`; this test is the drift guard that
-//! ADR requires: it pins both models' constraint-type inventories with
+//! divergences between the two are *deliberate and documented* by the
+//! respective vendored inputs — the AOM 1.4 BMM
+//! (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`) and the Ocean
+//! OPT XSD (`crates/openehr-its/schemas/xml/`). This test is the drift guard:
+//! it pins both models' constraint-type inventories with
 //! **exhaustive** (wildcard-free) matches and explicit inventory lists, so an
 //! AOM/OPT spec bump that regenerates either side with a new/removed/renamed
-//! constraint type fails here and forces a conscious reconciliation (update
-//! the design record + this sentinel together).
+//! constraint type fails here and forces a conscious reconciliation.
 //!
 //! It intentionally does NOT compare field shapes — the field-level divergence
 //! (Interval representation, typed vs `Any` assumed values, domain-type sets)
@@ -24,7 +26,10 @@
 
 /// The opt14 (OPT-XML) polymorphic constraint inventories. Exhaustive matches:
 /// a regeneration that adds or removes an enum variant breaks compilation.
-#[allow(dead_code)]
+#[expect(
+    dead_code,
+    reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"
+)]
 mod opt14_inventory {
     use openehr_its::opt14 as opt;
 
@@ -78,7 +83,10 @@ mod opt14_inventory {
 }
 
 /// The am14 (BMM/AOM 1.4) polymorphic constraint inventories, same mechanism.
-#[allow(dead_code)]
+#[expect(
+    dead_code,
+    reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"
+)]
 mod am14_inventory {
     use openehr_am::am14::prelude as am;
 

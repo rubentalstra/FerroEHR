@@ -1,10 +1,11 @@
-#![allow(clippy::doc_markdown)] // prose with spec/crate proper nouns
+#![allow(clippy::doc_markdown, reason = "prose with spec/crate proper nouns")]
 #![allow(
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Interop fidelity gate — deserialize the real EHRbase / openEHR_SDK canonical
 //! JSON corpus (`tests/vendor/`) into our **generated** `openehr-rm` types.
 //!
@@ -141,10 +142,9 @@ fn is_default_materialization(key: &str, v: &serde_json::Value) -> bool {
 
 fn preview(v: &serde_json::Value) -> String {
     let s = v.to_string();
-    if s.len() > 80 {
-        format!("{}…", &s[..80])
-    } else {
-        s
+    match s.get(..80) {
+        Some(head) => format!("{head}…"),
+        None => s,
     }
 }
 
@@ -329,9 +329,8 @@ fn generated_rm_output_validates_against_its_json_schema() {
 }
 
 fn preview_str(s: &str) -> String {
-    if s.len() > 300 {
-        format!("{}…", &s[..300])
-    } else {
-        s.to_string()
+    match s.get(..300) {
+        Some(head) => format!("{head}…"),
+        None => s.to_string(),
     }
 }

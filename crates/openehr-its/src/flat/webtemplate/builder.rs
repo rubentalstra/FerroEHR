@@ -980,10 +980,9 @@ fn archetype_slot(s: &crate::opt14::ArchetypeSlot) -> WebTemplateArchetypeSlot {
 /// form). Archetype ids contain no `/`, so the last `/}` delimits the regex.
 fn slot_pattern(a: &Assertion) -> Option<String> {
     let s = a.string_expression.as_deref()?;
-    let start = s.find("matches {/")? + "matches {/".len();
-    let rest = &s[start..];
+    let (_, rest) = s.split_once("matches {/")?;
     let end = rest.rfind("/}")?;
-    Some(rest[..end].to_owned())
+    Some(rest.get(..end)?.to_owned())
 }
 
 fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {

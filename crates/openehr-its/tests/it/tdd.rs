@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! TDD (Ocean **Template Data Document**) → canonical `COMPOSITION` conversion,
 //! against the vendored CNF corpus TDD instances + their operational templates
 //! (`docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`).
@@ -19,7 +20,11 @@
 //! (`archetype_node_id`s, re-materialised `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT`
 //! wrappers, `_type` tags) and the *instance* leaf/context values carried from
 //! the TDD are exactly as expected.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_its::flat::tdd::from_tdd;
 use openehr_its::flat::validation::validate_composition;

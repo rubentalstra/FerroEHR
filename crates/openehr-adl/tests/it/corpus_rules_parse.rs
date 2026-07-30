@@ -3,7 +3,11 @@
 //! section yield `None`; a source that does not outer-parse is skipped here (the
 //! outer/definition parse is covered by the sibling corpus gates).
 
-#![allow(clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 

@@ -84,7 +84,10 @@ pub(crate) fn invariant_failed(name: &str, rm_type: &str) -> InvariantViolation 
 
 /// `true` when a floating value denotes a whole number (archie `isInteger`).
 #[must_use]
-#[allow(clippy::float_cmp)] // exact-integrality test, mirrors archie's `x.floor() == x`
+#[expect(
+    clippy::float_cmp,
+    reason = "an exact-integrality test is precisely a bit-equality question (`x.floor() == x`), not a tolerance comparison"
+)]
 pub(crate) fn is_integral(v: f64) -> bool {
     v.is_finite() && v.floor() == v
 }
@@ -136,6 +139,17 @@ pub(crate) fn valid_proportion_kind(k: i32) -> bool {
 
 fn all_digits(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// The byte sub-range of `s`, or `""` when the range is out of bounds or lands
+/// off a UTF-8 boundary.
+///
+/// The compact ISO 8601 forms below extract fixed byte windows only after an
+/// exact-length + all-ASCII-digits test, so the empty fallback is unreachable
+/// there; it exists so the extraction can never panic (a `""` window fails
+/// every `in_range`/`valid_day` predicate, i.e. it rejects rather than aborts).
+fn part(s: &str, range: std::ops::Range<usize>) -> &str {
+    s.get(range).unwrap_or_default()
 }
 
 fn digits_n(s: &str, n: usize) -> bool {
@@ -203,11 +217,11 @@ pub(crate) fn is_valid_iso_date(s: &str) -> bool {
     } else {
         match s.len() {
             4 => all_digits(s),
-            6 => all_digits(s) && in_range(&s[4..6], 1, 12),
+            6 => all_digits(s) && in_range(part(s, 4..6), 1, 12),
             8 => {
                 all_digits(s)
-                    && in_range(&s[4..6], 1, 12)
-                    && valid_day(&s[0..4], &s[4..6], &s[6..8])
+                    && in_range(part(s, 4..6), 1, 12)
+                    && valid_day(part(s, 0..4), part(s, 4..6), part(s, 6..8))
             }
             _ => false,
         }
@@ -237,7 +251,7 @@ fn is_valid_tz(tz: &str) -> bool {
     } else {
         match rest.len() {
             2 => in_range(rest, 0, max_hour),
-            4 => in_range(&rest[0..2], 0, max_hour) && in_range(&rest[2..4], 0, 59),
+            4 => in_range(part(rest, 0..2), 0, max_hour) && in_range(part(rest, 2..4), 0, 59),
             _ => false,
         }
     }
@@ -273,11 +287,13 @@ fn is_valid_time_core(s: &str) -> bool {
     } else {
         match base.len() {
             2 => !has_frac && in_range(base, 0, 23),
-            4 => !has_frac && in_range(&base[0..2], 0, 23) && in_range(&base[2..4], 0, 59),
+            4 => {
+                !has_frac && in_range(part(base, 0..2), 0, 23) && in_range(part(base, 2..4), 0, 59)
+            }
             6 => {
-                in_range(&base[0..2], 0, 23)
-                    && in_range(&base[2..4], 0, 59)
-                    && in_range(&base[4..6], 0, 60)
+                in_range(part(base, 0..2), 0, 23)
+                    && in_range(part(base, 2..4), 0, 59)
+                    && in_range(part(base, 4..6), 0, 60)
             }
             _ => false,
         }
@@ -293,8 +309,8 @@ pub(crate) fn is_valid_iso_time(s: &str) -> bool {
     if let Some(stripped) = s.strip_suffix('Z') {
         return is_valid_time_core(stripped);
     }
-    if let Some(pos) = s.rfind(['+', '-']) {
-        return is_valid_time_core(&s[..pos]) && is_valid_tz(&s[pos..]);
+    if let Some((core, tz)) = s.rfind(['+', '-']).and_then(|pos| s.split_at_checked(pos)) {
+        return is_valid_time_core(core) && is_valid_tz(tz);
     }
     is_valid_time_core(s)
 }
@@ -314,27 +330,31 @@ fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
     let mut i = 0;
     while i < bytes.len() {
         let start = i;
-        while i < bytes.len() && bytes[i].is_ascii_digit() {
+        while bytes.get(i).is_some_and(u8::is_ascii_digit) {
             i += 1;
         }
         let mut has_fraction = false;
-        if i < bytes.len() && (bytes[i] == b'.' || bytes[i] == b',') {
+        if matches!(bytes.get(i), Some(b'.' | b',')) {
             has_fraction = true;
             i += 1;
-            while i < bytes.len() && bytes[i].is_ascii_digit() {
+            while bytes.get(i).is_some_and(u8::is_ascii_digit) {
                 i += 1;
             }
         }
-        if i == start || i >= bytes.len() {
-            return false; // no number, or number without a designator
+        // No number, or a number with no designator after it.
+        let Some(&designator) = bytes.get(i) else {
+            return false;
+        };
+        if i == start {
+            return false;
         }
-        if !allowed.contains(&bytes[i]) {
+        if !allowed.contains(&designator) {
             return false;
         }
         // BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR,
         // only fractional seconds are supported" — a decimal fraction is only
         // permitted on the seconds ('S') component, never on Y/M/W/D/H/M.
-        if has_fraction && bytes[i] != b'S' {
+        if has_fraction && designator != b'S' {
             return false;
         }
         i += 1;
@@ -369,12 +389,6 @@ pub(crate) fn is_valid_iso_duration(s: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

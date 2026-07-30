@@ -97,12 +97,10 @@ fn is_syntax_tag(tag: &str) -> bool {
 /// Read the `regression` tag from raw source (fallback when the file does not
 /// parse, so a tag is still available).
 fn read_tag_raw(src: &str) -> Option<String> {
-    let idx = src.find("regression")?;
-    let rest = &src[idx..];
-    let open = rest.find("<\"")? + 2;
-    let after = &rest[open..];
-    let end = after.find('"')?;
-    Some(after[..end].to_owned())
+    let (_, rest) = src.split_once("regression")?;
+    let (_, after) = rest.split_once("<\"")?;
+    let (value, _) = after.split_once('"')?;
+    Some(value.to_owned())
 }
 
 fn adls_files(dir: &Path) -> Vec<PathBuf> {
@@ -149,7 +147,6 @@ struct Counts {
 }
 
 #[test]
-#[allow(clippy::print_stderr)] // a test harness reporting category counts
 fn corpus_phase1_outcomes() {
     let repo = build_repository();
     let mut counts = Counts::default();

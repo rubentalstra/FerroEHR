@@ -40,12 +40,6 @@ impl Validate for DvMultimedia {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::data_types::text::code_phrase::CodePhrase;

@@ -11,7 +11,12 @@
 //!
 //! Spec oracle: `docs/specs/openehr/AM/docs/AOM2/`.
 
-#![allow(clippy::panic, clippy::unwrap_used)] // test assertions panic/unwrap by design
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    reason = "test assertions panic/unwrap/expect by design, including in fixture helpers outside #[test] fns"
+)]
 
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::validate::{
@@ -435,7 +440,11 @@ fn archetype_root_child_mut(
     a: &mut Archetype,
 ) -> &mut openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot {
     let root = root_data_mut(a);
-    let child = &mut root.attributes[0].children[0];
+    let child = root
+        .attributes
+        .first_mut()
+        .and_then(|attr| attr.children.first_mut())
+        .expect("the fixture root has a first attribute with a first child");
     match child {
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r,
         other => panic!("expected a C_ARCHETYPE_ROOT child, got {other:?}"),

@@ -3,8 +3,9 @@
     clippy::expect_used,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! The two published ITS-XML wire lineages over ONE generated codec.
 //!
 //! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions" states

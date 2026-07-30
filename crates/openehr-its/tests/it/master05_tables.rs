@@ -47,15 +47,25 @@
 //!   the section test carries the negative assertion as well.
 #![allow(
     clippy::panic,
-    clippy::doc_markdown,
     clippy::expect_used,
-    clippy::too_many_lines,
     clippy::unwrap_used,
-    // Fixture builders take `Value` by value so call sites read as the JSON
-    // they build (`element(json!({…}))`); `json!` interpolation borrows, which
-    // trips needless_pass_by_value on every builder.
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+#![allow(
+    clippy::doc_markdown,
+    reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
+)]
+#![allow(
+    clippy::too_many_lines,
+    reason = "one master05 table per test fn — the length is the size of the table being pinned, not logic"
+)]
+#![allow(
     clippy::needless_pass_by_value,
-    clippy::assigning_clones
+    reason = "fixture builders take `Value` by value so call sites read as the JSON they build (`element(json!({…}))`); `json!` interpolation borrows"
+)]
+#![allow(
+    clippy::assigning_clones,
+    reason = "fixture mutation reads clearer as a plain assignment of a freshly-built value than as `clone_from`"
 )]
 
 use indexmap::IndexMap;
@@ -1057,7 +1067,12 @@ fn entry_subject_case(party: Value) -> (WebTemplate, Map<String, Value>) {
 fn built_subject(wt: &WebTemplate, flat: &Map<String, Value>) -> Value {
     let built =
         composition_from_flat(flat, wt, NOW).expect("the master05 ENTRY `/subject` row must build");
-    built["content"][0]["subject"].clone()
+    built
+        .get("content")
+        .and_then(|c| c.get(0))
+        .and_then(|e| e.get("subject"))
+        .cloned()
+        .expect("the built ENTRY carries a `subject`")
 }
 
 /// master05 ENTRY `/subject` (PARTY_PROXY) in both directions, once per

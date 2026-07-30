@@ -3,8 +3,9 @@
     clippy::unwrap_used,
     clippy::panic,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! The **wire-boundary RM class-invariant dispatcher** gate
 //! (`openehr_its::rm_validate`).
 //!

@@ -22,7 +22,12 @@
 //!   asserted).
 //! - `adl14-cadl/*.adl` — the hand-written cADL tree (dialect gates, domain
 //!   lowering, VATDF/VACDF, VCOC), claimed by `adl14_cadl_gates.rs`.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 

@@ -17,8 +17,9 @@
     clippy::expect_used,
     clippy::unwrap_used,
     clippy::print_stdout,
-    let_underscore_drop
-)] // test assertions/diagnostics
+    let_underscore_drop,
+    reason = "test assertions/diagnostics"
+)]
 
 use std::path::PathBuf;
 
@@ -58,8 +59,10 @@ fn observation(state: Option<Value>) -> Value {
             "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []
         }
     });
-    if let Some(state) = state {
-        event["state"] = state;
+    if let Some(state) = state
+        && let Value::Object(m) = &mut event
+    {
+        m.insert("state".to_owned(), state);
     }
     json!({
         "_type": "COMPOSITION",
