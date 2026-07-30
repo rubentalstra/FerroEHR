@@ -150,7 +150,10 @@ fn sample_loop(
                                 .saturating_sub(prev_counters.cpu_total_ns);
                             // % of one core over the interval (100 = one
                             // full core) — both deltas are far below 2^52.
-                            #[allow(clippy::cast_precision_loss)]
+                            #[expect(
+                                clippy::cast_precision_loss,
+                                reason = "nanosecond counters within a sampling window are far below 2^52"
+                            )]
                             let cpu_pct = cpu_ns as f64 / wall_ns as f64 * 100.0;
                             let offset_s = started.elapsed().as_secs();
                             target.samples.push(ResourceSample {
@@ -220,6 +223,12 @@ fn container_counters(container: &str) -> Result<RawCounters, String> {
 /// --unix-socket`; honours a `unix://` `DOCKER_HOST`). One short-lived
 /// subprocess per tick — the sampling cost is negligible against the 10 s
 /// cadence.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "`DOCKER_HOST` is the Docker CLI's own published environment contract \
+              (docs.docker.com/reference/cli/docker/#environment-variables), read \
+              here exactly as the CLI would; it is not server configuration"
+)]
 fn engine_api_get(path: &str) -> Result<String, String> {
     let socket = std::env::var("DOCKER_HOST")
         .ok()
@@ -380,7 +389,6 @@ pub fn db_volume_bytes(db_container: &str) -> Result<u64, String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

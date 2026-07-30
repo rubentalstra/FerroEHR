@@ -7,7 +7,8 @@
     non_camel_case_types,
     clippy::all,
     clippy::pedantic,
-    clippy::nursery
+    clippy::nursery,
+    reason = "mechanically generated model text: the XSD is emitted in full under its own spec-owned element/attribute spellings, so naming, style and dead-code lints do not apply — the hand-written runtime carries the lint bar"
 )]
 
 /// openEHR AOM/OPT `ANNOTATION`.

@@ -61,13 +61,44 @@ struct Version {
     top: BTreeSet<String>,
 }
 
+/// The emission shapes that produce a file: [`Emission`] minus its `Skip`
+/// variant. Narrowing at the planning step makes "a skipped class reached the
+/// render loop" unrepresentable instead of a runtime check.
+enum Shape<'a> {
+    /// [`Emission::Struct`].
+    Struct,
+    /// [`Emission::Enum`].
+    Enum(Vec<String>),
+    /// [`Emission::PolyEnum`].
+    PolyEnum(Vec<String>),
+    /// [`Emission::EnumLiterals`].
+    EnumLiterals(&'a BmmEnumeration),
+    /// [`Emission::Newtype`].
+    Newtype(&'a str),
+}
+
+impl<'a> Shape<'a> {
+    /// The file-producing shape of an emission decision, or `None` for
+    /// [`Emission::Skip`] (a mapped/primitive class emits no file).
+    fn new(emission: Emission<'a>) -> Option<Self> {
+        match emission {
+            Emission::Struct => Some(Self::Struct),
+            Emission::Enum(variants) => Some(Self::Enum(variants)),
+            Emission::PolyEnum(variants) => Some(Self::PolyEnum(variants)),
+            Emission::EnumLiterals(enumeration) => Some(Self::EnumLiterals(enumeration)),
+            Emission::Newtype(prim) => Some(Self::Newtype(prim)),
+            Emission::Skip => None,
+        }
+    }
+}
+
 /// Emit one schema version under `prefix` (empty for a single-version crate).
 /// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
 /// assembles `lib.rs`.
 fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &External) -> Version {
     struct Planned<'a> {
         class: &'a BmmClass,
-        emission: Emission<'a>,
+        shape: Shape<'a>,
         chain: Vec<String>,
     }
 
@@ -92,10 +123,9 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
     let mut planned = Vec::new();
     let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
     for (name, class) in &schema.classes {
-        let emission = decide(model, class, &used);
-        if matches!(emission, Emission::Skip) {
+        let Some(shape) = Shape::new(decide(model, class, &used)) else {
             continue;
-        }
+        };
         let pkg = class_pkg.get(name).cloned().unwrap_or_default();
         let mut chain: Vec<String> = Vec::new();
         if !prefix.is_empty() {
@@ -107,29 +137,28 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         // A polymorphic-concrete class emits a sibling `{Name}Data` struct in the
         // same file (the enum owns `{Name}`); export it from the prelude too so
         // downstream code (e.g. the generated XML impls) can name it.
-        if matches!(emission, Emission::PolyEnum(_)) {
+        if matches!(shape, Shape::PolyEnum(_)) {
             index.insert(format!("{}Data", naming::type_name(name)), chain.clone());
         }
         planned.push(Planned {
             class,
-            emission,
+            shape,
             chain,
         });
     }
 
     let mut files = Vec::new();
     for p in &planned {
-        let body = match &p.emission {
-            Emission::Struct => emit_struct(model, p.class, &index, &local, external),
-            Emission::Enum(variants) => {
+        let body = match &p.shape {
+            Shape::Struct => emit_struct(model, p.class, &index, &local, external),
+            Shape::Enum(variants) => {
                 emit_enum(model, p.class, variants, false, &index, &local, external)
             }
-            Emission::PolyEnum(variants) => {
+            Shape::PolyEnum(variants) => {
                 emit_enum(model, p.class, variants, true, &index, &local, external)
             }
-            Emission::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
-            Emission::Newtype(prim) => emit_newtype(p.class, prim),
-            Emission::Skip => unreachable!(),
+            Shape::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
+            Shape::Newtype(prim) => emit_newtype(p.class, prim),
         };
         files.push(GenFile {
             path: format!("{}.rs", p.chain.join("/")),
@@ -219,9 +248,15 @@ fn emit_module_tree(chains: &[Vec<String>]) -> Vec<GenFile> {
     // dir path ("" = root is handled by lib.rs) → set of child module idents.
     let mut dirs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for chain in chains {
-        for i in 1..chain.len() {
-            let dir = chain[..i].join("/");
-            dirs.entry(dir).or_default().insert(chain[i].clone());
+        // Walk the chain left to right, growing `dir` to the join of every
+        // segment already passed — the index-free form of `chain[..i]`/`chain[i]`.
+        let mut dir = String::new();
+        for (i, segment) in chain.iter().enumerate() {
+            if i > 0 {
+                dirs.entry(dir.clone()).or_default().insert(segment.clone());
+                dir.push('/');
+            }
+            dir.push_str(segment);
         }
     }
     dirs.into_iter()
@@ -263,7 +298,12 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
     //  - closed-slot enums can have size-disparate variants;
     //  - the spec owns the subtype names, so a closed set can share a prefix or
     //    postfix (`OBJECT_ID` ⊇ `TEMPLATE_ID`, `TERMINOLOGY_ID`, …) — renaming
-    //    a variant would fork the spec model.
+    //    a variant would fork the spec model;
+    //  - the spec likewise owns the ATTRIBUTE names, so a class's fields can
+    //    share the class's own stem (`EHR.ehr_id`/`ehr_status`/`ehr_access`,
+    //    `ARCHETYPE.archetype_id`, `C_TEMPORAL.valid_*`) — the BMM attribute
+    //    name is the wire name, so `struct_field_names` cannot be satisfied
+    //    without forking the model.
     // `reason` is mandatory (`clippy::allow_attributes_without_reason` is deny
     // workspace-wide); `expect` is wrong here because a given crate need not
     // trigger every listed lint.
@@ -275,11 +315,13 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
          clippy::doc_lazy_continuation,\n    \
          clippy::doc_overindented_list_items,\n    \
          clippy::struct_excessive_bools,\n    \
+         clippy::struct_field_names,\n    \
          clippy::module_inception,\n    \
          clippy::large_enum_variant,\n    \
          clippy::enum_variant_names,\n    \
          reason = \"inherent to faithful openEHR spec generation: verbatim spec \
-         prose in doc comments, and spec-owned class/variant names\"\n\
+         prose in doc comments, and spec-owned class/variant/field names (a field \
+         name IS the normative BMM attribute name)\"\n\
          )]\n\n",
     );
     for m in top {

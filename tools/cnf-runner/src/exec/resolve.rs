@@ -20,26 +20,41 @@ use crate::refgrammar::{FixtureField, Segment, Template, ValueRef};
 /// something unresolvable), never a conformance outcome.
 #[derive(Debug, thiserror::Error)]
 pub enum ResolveError {
+    /// A referenced corpus key is absent from the manifest.
     #[error("corpus key {0} is not in the manifest")]
     UnknownCorpusKey(CorpusKey),
+    /// A manifest-listed corpus payload could not be loaded or parsed.
     #[error("corpus key {key}: {message}")]
-    Corpus { key: CorpusKey, message: String },
-    #[error("view {view} on {key}: {message}")]
-    View {
+    Corpus {
+        /// The corpus key that failed.
         key: CorpusKey,
-        view: ViewName,
+        /// What went wrong.
         message: String,
     },
+    /// A named projection over a corpus data set failed.
+    #[error("view {view} on {key}: {message}")]
+    View {
+        /// The corpus key the view projects over.
+        key: CorpusKey,
+        /// The view that failed.
+        view: ViewName,
+        /// What went wrong.
+        message: String,
+    },
+    /// A referenced corpus recipe is not registered in the runner.
     #[error("recipe {0} is not registered")]
     UnknownRecipe(RecipeName),
+    /// A registered recipe failed while generating its rows.
     #[error("{0}")]
     Recipe(#[from] recipes::RecipeError),
+    /// A `${row.…}` reference addressed a column the current row lacks.
     #[error("row reference {0} outside the current row")]
     Row(String),
     /// A `${ixit:…}` fact the party's ixit does not declare. Never guessed:
     /// the run records the case not-applicable with this citation.
     #[error("the ixit declares no {0}")]
     Ixit(&'static str),
+    /// A `${…}` variable reference could not be resolved from the case state.
     #[error("{0}")]
     Vars(String),
 }
@@ -534,6 +549,11 @@ impl<'a> Resolver<'a> {
 /// Milliseconds since the Unix epoch → an ISO 8601 UTC instant with
 /// millisecond precision (pure integer arithmetic — no clock, no locale).
 #[must_use]
+#[expect(
+    clippy::integer_division,
+    reason = "time decomposition + Hinnant's civil-from-days: both are DEFINED in \
+              exact integer (floor) division; a float step would break the identity"
+)]
 pub fn format_instant_ms(ms: i64) -> String {
     let (secs, millis) = (ms.div_euclid(1000), ms.rem_euclid(1000));
     let days = secs.div_euclid(86_400);
@@ -554,7 +574,6 @@ pub fn format_instant_ms(ms: i64) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 
@@ -568,7 +587,7 @@ mod tests {
     #[test]
     fn generated_sets_and_instants() {
         let m = manifest();
-        let dir = std::path::PathBuf::from(".");
+        let dir = PathBuf::from(".");
         let mut r = Resolver::new(&m, &dir, None);
         let set = r
             .data_set(&CorpusKey::parse("cnf.set.bp-10").unwrap())
@@ -589,9 +608,9 @@ mod tests {
     #[test]
     fn ixit_system_id_resolves_only_from_the_declaration() {
         let m = manifest();
-        let dir = std::path::PathBuf::from(".");
+        let dir = PathBuf::from(".");
         let vars = VarStore::default();
-        let reference = crate::refgrammar::ValueRef::parse("ixit:system_id").unwrap();
+        let reference = ValueRef::parse("ixit:system_id").unwrap();
 
         let declared: crate::ixit::Ixit = serde_json::from_value(serde_json::json!({
             "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
@@ -624,7 +643,7 @@ mod tests {
     #[test]
     fn absent_cells_drop_from_payloads() {
         let m = manifest();
-        let dir = std::path::PathBuf::from(".");
+        let dir = PathBuf::from(".");
         let mut r = Resolver::new(&m, &dir, None);
         let case: CaseCore = serde_json::from_value(serde_json::json!({
             "id": "I_EHR_SERVICE.create_ehr-x", "kind": "functional", "component": "EHR",

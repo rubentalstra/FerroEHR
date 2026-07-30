@@ -1,26 +1,26 @@
 //! The normative AQL `RESULT_SET` equivalence comparator (the schedule's
-//! `RESULT_SET` equivalence rules — each rule is either **[spec]**, cited to
-//! the vendored QUERY/ITS-REST text, or **[legislated]**, a fixed proposed
+//! `RESULT_SET` equivalence rules — each rule is either **\[spec\]**, cited to
+//! the vendored QUERY/ITS-REST text, or **\[legislated\]**, a fixed proposed
 //! default awaiting upstream ratification; both are implemented exactly as
 //! specified).
 //!
 //! Rules implemented here:
-//! 1. Comparison scope is `rows` only; `meta` is always excluded ([spec]:
+//! 1. Comparison scope is `rows` only; `meta` is always excluded (\[spec\]:
 //!    every `ResultSetMetadata` field is optional and implementation
 //!    dependent — ITS-REST `schemas/query/ResultSetMetadata.yaml`).
-//!    `columns` compare only when the case asserts them ([spec]:
+//!    `columns` compare only when the case asserts them (\[spec\]:
 //!    `ResultSet.yaml` requires only `rows`); column identity is the `AS`
-//!    alias, else `#<0-based index>` ([spec]: `ResultSetColumn.yaml`).
+//!    alias, else `#<0-based index>` (\[spec\]: `ResultSetColumn.yaml`).
 //! 2. `ordered` = sequence equality (legal only under a totally-ordering
 //!    ORDER BY — enforced at authoring); `set` = BAG (multiset) equality
-//!    ([spec]: AQL is bag-semantics absent DISTINCT — QUERY
+//!    (\[spec\]: AQL is bag-semantics absent DISTINCT — QUERY
 //!    `master03-syntax.adoc` §DISTINCT); `count` = row count; `contains` =
 //!    every expected row appears bag-wise, extra rows permitted.
 //! 3. Cell equality: an RM-object cell (carries `_type`) compares by
-//!    canonical-JSON structural equality ([spec]: QUERY
+//!    canonical-JSON structural equality (\[spec\]: QUERY
 //!    `master04-result_structure.adoc`); a scalar numeric cell compares by
-//!    NUMERIC VALUE, not lexeme — `140` = `140.0` ([legislated]); a void
-//!    cell is JSON `null` and equals only `null` ([legislated]).
+//!    NUMERIC VALUE, not lexeme — `140` = `140.0` (\[legislated\]); a void
+//!    cell is JSON `null` and equals only `null` (\[legislated\]).
 
 use serde_json::Value;
 
@@ -32,12 +32,12 @@ pub struct ResultSetMismatch(pub String);
 #[must_use]
 pub fn cells_equal(a: &Value, b: &Value) -> bool {
     match (a, b) {
-        // numeric-value equality, not lexeme ([legislated])
+        // numeric-value equality, not lexeme (\[legislated\])
         (Value::Number(x), Value::Number(y)) => match (x.as_f64(), y.as_f64()) {
             (Some(x), Some(y)) => (x - y).abs() == 0.0,
             _ => x == y,
         },
-        // void equals only void ([legislated])
+        // void equals only void (\[legislated\])
         (Value::Null, Value::Null) => true,
         // RM objects and everything else: canonical structural equality,
         // with numeric leaves compared by value recursively
@@ -79,7 +79,7 @@ fn bag_contains(actual: &[Value], expected: &[Value]) -> Result<(), ResultSetMis
         let found = actual
             .iter()
             .enumerate()
-            .find(|(j, got)| !used[*j] && row_equal(got, want))
+            .find(|(j, got)| used.get(*j) == Some(&false) && row_equal(got, want))
             .map(|(j, _)| j);
         match found {
             Some(j) => {
@@ -193,7 +193,6 @@ pub fn compare_columns(result_set: &Value, expected: &[String]) -> Result<(), Re
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

@@ -56,6 +56,7 @@ pub struct RegisterAdjudication {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CapabilityEntry {
+    /// The rating family this capability belongs to.
     pub family: Family,
     /// Family-scoped tier; `tier.family()` must equal `family` (checked).
     pub tier: Tier,
@@ -163,7 +164,6 @@ impl<'de> Deserialize<'de> for CapabilityMatrix {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

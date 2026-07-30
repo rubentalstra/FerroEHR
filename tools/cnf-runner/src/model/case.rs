@@ -22,16 +22,22 @@ use crate::vocab::{
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Applies {
+    /// Reference Model versions the case applies to.
     #[serde(default)]
     pub rm: Option<VersionRange>,
+    /// BASE component versions the case applies to.
     #[serde(default)]
     pub base: Option<VersionRange>,
+    /// Archetype Model versions the case applies to.
     #[serde(default)]
     pub am: Option<VersionRange>,
+    /// AQL (QUERY component) versions the case applies to.
     #[serde(default)]
     pub aql: Option<VersionRange>,
+    /// ITS-REST API versions the case applies to.
     #[serde(default)]
     pub its_rest: Option<VersionRange>,
+    /// Terminology component versions the case applies to.
     #[serde(default)]
     pub term: Option<VersionRange>,
 }
@@ -110,14 +116,19 @@ pub enum EhrRequirement {
     /// No EHR is provisioned.
     None,
     /// An EHR exists (mints `${ehr_id}`), with the stated commit state.
-    Exists { commits: CommitState },
+    Exists {
+        /// How much committed content the provisioned EHR must hold.
+        commits: CommitState,
+    },
 }
 
 /// Commit-state qualifier of a provisioned EHR.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CommitState {
+    /// The EHR holds no commits at all.
     None,
+    /// The EHR's commit history is irrelevant to the case.
     Any,
 }
 
@@ -147,6 +158,7 @@ impl<'de> Deserialize<'de> for EhrRequirement {
 /// The `requires.directory` precondition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DirectoryRequirement {
+    /// No directory is provisioned.
     None,
     /// A FOLDER tree provisioned in the EHR from the named corpus set.
     Tree(CorpusKey),
@@ -175,6 +187,7 @@ impl<'de> Deserialize<'de> for DirectoryRequirement {
 /// about (`validate::check_realization_markers`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PartyRequirement {
+    /// No party is provisioned.
     None,
     /// A PARTY exists, created from the named corpus set (mints
     /// `${party_id}`, its `VERSIONED_OBJECT` uid).
@@ -215,6 +228,7 @@ impl<'de> Deserialize<'de> for PartyRequirement {
 /// that route, so the requirement is only usable by a party that serves it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PartyRelationshipRequirement {
+    /// No party relationship is provisioned.
     None,
     /// A `PARTY_RELATIONSHIP` exists between two provisioned parties (mints
     /// `${party_relationship_id}`, its `VERSIONED_OBJECT` uid).
@@ -393,6 +407,7 @@ impl<'de> Deserialize<'de> for MatrixCell {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Matrix {
+    /// Column names, in order; each names one `${row.<column>}` binding.
     pub columns: Vec<String>,
     /// Inline rows; each row binds `${row.<column>}`.
     #[serde(default)]
@@ -407,10 +422,14 @@ pub struct Matrix {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FixtureEntry {
+    /// The corpus manifest key of the payload this row drives.
     pub data_set: CorpusKey,
+    /// The outcome a conformant server must produce for this fixture.
     pub expected: OutcomeKind,
+    /// For an invalid fixture: what it violates, in one phrase.
     #[serde(default)]
     pub defect: Option<String>,
+    /// The spec citation grounding this row's expectation.
     #[serde(default)]
     pub spec_ref: Option<String>,
 }
@@ -421,9 +440,13 @@ pub struct FixtureEntry {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Parameters {
+    /// Whether each row re-establishes the preconditions or all rows share
+    /// one server state.
     pub iteration: Iteration,
+    /// The inline value matrix, when the rows are authored in the case file.
     #[serde(default)]
     pub matrix: Option<Matrix>,
+    /// The external-fixture rows, when the rows are corpus payloads.
     #[serde(default)]
     pub fixture_set: Option<Vec<FixtureEntry>>,
 }
@@ -432,6 +455,7 @@ pub struct Parameters {
 /// override `${fixture.expected}`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExpectSpec {
+    /// One fixed outcome kind for every row.
     Kind(OutcomeKind),
     /// `${fixture.expected}` — resolved per fixture-set row.
     FixtureExpected,
@@ -455,6 +479,7 @@ impl<'de> Deserialize<'de> for ExpectSpec {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FlowStep {
+    /// 1-based position in the flow; execution follows this order.
     pub step: u32,
     /// SM operation: short form resolves against `sm_operation`'s interface;
     /// a full `I_X.y` form addresses another interface.
@@ -483,8 +508,11 @@ pub struct FlowStep {
     /// selection).
     #[serde(default)]
     pub scopes: Option<Vec<TemplatedValue>>,
+    /// The step's named arguments, in declaration order — each value is a
+    /// template resolved against the case's bindings before the call.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub with: Option<Vec<(String, TemplatedValue)>>,
+    /// The outcome this step must produce.
     pub expect: ExpectSpec,
     /// Logical captures; bindings map them to wire locations.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
@@ -499,7 +527,9 @@ pub struct FlowStep {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ConstraintContext {
+    /// The corpus key of the operational template carrying the constraint.
     pub template: CorpusKey,
+    /// The constrained node's archetype path within that template.
     pub path: String,
     /// The decision-table columns that are *constraint axis* — cells that
     /// describe the archetype/template constraint the row bakes (e.g.
@@ -522,7 +552,9 @@ pub struct ConstraintContext {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DecisionTable {
+    /// Column names, in order (instance axis + constraint axis + verdict).
     pub columns: Vec<String>,
+    /// One row per committed instance, cells positional against `columns`.
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 
@@ -530,7 +562,9 @@ pub struct DecisionTable {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RowVerdict {
+    /// A conformant server must accept the row's instance.
     Accepted,
+    /// A conformant server must reject the row's instance.
     Rejected,
 }
 
@@ -538,10 +572,14 @@ pub enum RowVerdict {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CaseCore {
+    /// The globally unique case id; never reused, even after retirement.
     pub id: CaseId,
+    /// Which executor drives the case (functional flow or content table).
     pub kind: CaseKind,
+    /// Lifecycle status; only `Active` cases are selected for a run.
     #[serde(default)]
     pub status: CaseStatus,
+    /// The schedule chapter (service component) the case belongs to.
     pub component: Component,
     /// Functional cases: the SM anchor.
     #[serde(default)]
@@ -555,6 +593,7 @@ pub struct CaseCore {
     pub description: String,
     /// Citations (component + document + section); link-checked.
     pub spec_refs: Vec<String>,
+    /// Spec-version windows outside which the case does not apply.
     #[serde(default)]
     pub applies: Applies,
     /// Non-version run conditions, each spec-cited; a failed guard ⇒
@@ -579,8 +618,10 @@ pub struct CaseCore {
     /// Case-level format axis (cases parameterized over format).
     #[serde(default)]
     pub formats: Vec<FormatName>,
+    /// The preconditions the runner provisions before the flow runs.
     #[serde(default)]
     pub requires: Requires,
+    /// Row parameterization (value matrix or fixture set), when present.
     #[serde(default)]
     pub parameters: Option<Parameters>,
     /// Ordered steps (functional cases).
@@ -589,6 +630,7 @@ pub struct CaseCore {
     /// Content cases: the constraint context + decision table.
     #[serde(default)]
     pub constraint_context: Option<ConstraintContext>,
+    /// Content cases: the rows, each one committed instance plus its verdict.
     #[serde(default)]
     pub decision_table: Option<DecisionTable>,
     /// Typed postconditions; default evaluation per parameter row,

@@ -88,8 +88,8 @@ pub(crate) fn decide<'a>(
         // an enumeration-style newtype (VALIDITY_KIND → String).
         let flattened = model.flattened_props(class);
         if flattened.is_empty()
-            && class.ancestors.len() == 1
-            && let Some(prim) = primitive(&class.ancestors[0])
+            && let [sole_ancestor] = class.ancestors.as_slice()
+            && let Some(prim) = primitive(sole_ancestor)
         {
             return Emission::Newtype(prim);
         }
@@ -125,20 +125,13 @@ pub(crate) struct XmlField {
 }
 
 /// One variant of an untagged enum, for the forwarding `ToXml`/`FromXml` impl.
-#[allow(dead_code)] // `spec` consumed by the FromXml pass (landing next)
 pub(crate) struct XmlVariant {
     /// Rust variant identifier (`DvCodedText`, or the enum's own name for the
     /// polymorphic-concrete self-data variant).
     pub ident: String,
-    /// The concrete spec type this variant carries (`DV_CODED_TEXT`), i.e. its
-    /// `xsi:type` value on the wire.
-    pub spec: String,
 }
 
 /// An instantiable type needing a `ToXml`/`FromXml` impl.
-// `spec` is consumed by the `FromXml` pass (xsi:type → variant dispatch), landing
-// next; keep it now so the type is stable across both directions.
-#[allow(dead_code)]
 pub(crate) enum XmlType {
     /// A struct: a plain `Struct` class, or a `PolyEnum`'s `{Name}Data`.
     Struct {
@@ -163,13 +156,12 @@ pub(crate) enum XmlType {
     /// A transparent newtype over a primitive — writes its inner value as
     /// element text. No enumeration class emits as a newtype anymore (they route
     /// to [`XmlType::EnumLiterals`]); kept for a future genuine primitive alias.
-    Newtype { spec: String, rust: String },
+    Newtype { rust: String },
     /// A BMM enumeration emitted as a typed enum (`VALIDITY_KIND`,
     /// `PROPORTION_KIND`) — writes its wire token (`as_str`) or integer (`value`)
     /// as element text; reads the bare primitive back through `from_wire`/
     /// `from_value`.
     EnumLiterals {
-        spec: String,
         rust: String,
         /// `true` for a STRING-underlying enum (`as_str`/`from_wire`), `false`
         /// for an INTEGER-underlying enum (`value`/`from_value`).
@@ -502,8 +494,7 @@ impl Model {
         // sole ancestor is a primitive is a transparent newtype (no `_type`).
         let flattened = self.flattened_props(class);
         !(flattened.is_empty()
-            && class.ancestors.len() == 1
-            && primitive(&class.ancestors[0]).is_some())
+            && matches!(class.ancestors.as_slice(), [sole] if primitive(sole).is_some()))
     }
 
     /// Generic parameter names a type exposes (`Version<T>` → `["T"]`).
@@ -541,14 +532,12 @@ impl Model {
                         .iter()
                         .map(|v| XmlVariant {
                             ident: naming::type_name(v),
-                            spec: v.clone(),
                         })
                         .collect();
                     // The polymorphic-concrete self-data variant is emitted last,
                     // its identifier is the enum's own name (`DvText(DvTextData)`).
                     vs.push(XmlVariant {
                         ident: rust.clone(),
-                        spec: name.clone(),
                     });
                     let dispatch = self.xsi_dispatch(name, &variants);
                     out.push(XmlType::Enum {
@@ -569,21 +558,16 @@ impl Model {
                             .iter()
                             .map(|v| XmlVariant {
                                 ident: naming::type_name(v),
-                                spec: v.clone(),
                             })
                             .collect(),
                         dispatch,
                     });
                 }
                 Emission::EnumLiterals(enumeration) => out.push(XmlType::EnumLiterals {
-                    spec: name.clone(),
                     rust,
                     string_backed: enumeration.underlying_type != "INTEGER",
                 }),
-                Emission::Newtype(_) => out.push(XmlType::Newtype {
-                    spec: name.clone(),
-                    rust,
-                }),
+                Emission::Newtype(_) => out.push(XmlType::Newtype { rust }),
                 Emission::Skip => {}
             }
         }

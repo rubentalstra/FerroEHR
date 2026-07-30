@@ -1,4 +1,3 @@
-#![allow(clippy::expect_used, clippy::panic)] // test assertions
 //! Live gate for the harness itself: server acquisition, template build,
 //! and per-test cloning against a real `PostgreSQL` 18.
 
@@ -55,6 +54,11 @@ async fn clones_are_unique_and_fully_migrated() {
 /// state. The stand-in database carries a unique name inside the harness's
 /// prefix, so parallel test processes cannot collide on it.
 #[tokio::test]
+#[expect(
+    clippy::disallowed_methods,
+    reason = "non-key randomness: a v4 suffix keeping the stand-in database name \
+              unique across parallel test processes on the shared server"
+)]
 async fn sweep_reclaims_ancient_leaked_clones() {
     let db = testkit::db().await.expect("clone");
     let pool = db.pool();

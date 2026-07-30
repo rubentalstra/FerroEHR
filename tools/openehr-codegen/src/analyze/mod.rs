@@ -346,26 +346,27 @@ impl Model {
                 // Foundation container generics map to Rust collections; a
                 // container with the wrong arity (e.g. the deeply-nested
                 // free-form `Hash` in RESOURCE_ANNOTATIONS) is free-form JSON.
-                match root.as_str() {
-                    "Hash" if ps.len() == 2 => {
-                        format!("std::collections::BTreeMap<{}>", ps.join(", "))
+                // Arity is matched structurally (slice patterns), never by index.
+                match (root.as_str(), ps.as_slice()) {
+                    ("Hash", [key, value]) => {
+                        format!("std::collections::BTreeMap<{key}, {value}>")
                     }
-                    "List" | "Array" if ps.len() == 1 => format!("Vec<{}>", ps[0]),
-                    "Set" if ps.len() == 1 => format!("std::collections::BTreeSet<{}>", ps[0]),
+                    ("List" | "Array", [item]) => format!("Vec<{item}>"),
+                    ("Set", [item]) => format!("std::collections::BTreeSet<{item}>"),
                     // A container of the wrong arity (e.g. the deeply-nested
                     // free-form `Hash` in RESOURCE_ANNOTATIONS) or a type neither
                     // emitted here nor by a dependency → free-form JSON.
-                    "Hash" | "List" | "Array" | "Set" => "serde_json::Value".to_string(),
-                    _ if !local.contains(root) && !external.contains(root) => {
+                    ("Hash" | "List" | "Array" | "Set", _) => "serde_json::Value".to_string(),
+                    (r, _) if !local.contains(r) && !external.contains(r) => {
                         "serde_json::Value".to_string()
                     }
                     // Respect the class's *effective* arity: a class whose only
                     // param was unused is monomorphized (emitted non-generic), so
                     // a reference must drop the explicit args (`REFERENCE_RANGE<X>`
                     // → `ReferenceRange`).
-                    _ => match self.generic_param_bounds(root) {
-                        None => naming::type_name(root),
-                        Some(_) => format!("{}<{}>", naming::type_name(root), ps.join(", ")),
+                    (r, _) => match self.generic_param_bounds(r) {
+                        None => naming::type_name(r),
+                        Some(_) => format!("{}<{}>", naming::type_name(r), ps.join(", ")),
                     },
                 }
             }
@@ -693,7 +694,7 @@ fn collect_param_uses(t: &BmmType, declared: &BTreeSet<&str>, out: &mut BTreeSet
 /// schema must **re-emit locally**, because the downstream schema declares
 /// subtypes of upstream polymorphic classes across an `includes` boundary.
 ///
-/// This realizes the owner ruling (2026-07-19, `.claude/rules/codegen.md`):
+/// This realizes the owner ruling (2026-07-19):
 /// cross-component subtype extension (e.g. the AM 2.4 `rules` leaves
 /// `EXPR_ARCHETYPE_REF`/`EXPR_CONSTRAINT` extending LANG's `EXPR_VALUE_REF`/
 /// `EXPR_LEAF`) is re-opened at the **downstream** crate boundary — an
@@ -799,22 +800,23 @@ fn insert_class_into_packages(
     let Some((head, rest)) = segments.split_first() else {
         return;
     };
-    let idx = if let Some(i) = packages.iter().position(|p| p.name.as_str() == *head) {
-        i
-    } else {
+    if !packages.iter().any(|p| p.name.as_str() == *head) {
         packages.push(crate::load::bmm::BmmPackage {
             name: (*head).to_string(),
             classes: Vec::new(),
             packages: Vec::new(),
         });
-        packages.len() - 1
+    }
+    // Found or just pushed, so the lookup succeeds; `find` keeps it index-free.
+    let Some(pkg) = packages.iter_mut().find(|p| p.name.as_str() == *head) else {
+        return;
     };
     if rest.is_empty() {
-        if !packages[idx].classes.iter().any(|c| c == class) {
-            packages[idx].classes.push(class.to_string());
+        if !pkg.classes.iter().any(|c| c == class) {
+            pkg.classes.push(class.to_string());
         }
     } else {
-        insert_class_into_packages(&mut packages[idx].packages, rest, class);
+        insert_class_into_packages(&mut pkg.packages, rest, class);
     }
 }
 

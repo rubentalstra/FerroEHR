@@ -14,6 +14,7 @@ use crate::vocab::{CorpusFormat, FixtureVerdict, PlaceholderPolicy};
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Validity {
+    /// Whether a conformant server must accept or refuse the payload.
     pub verdict: FixtureVerdict,
     /// Mandatory for invalid fixtures: why the payload is invalid.
     #[serde(default)]
@@ -31,8 +32,10 @@ pub struct Validity {
 pub struct ViewDecl {
     /// Path expression over the set.
     pub select: String,
+    /// Row filter applied before selection.
     #[serde(default, rename = "where")]
     pub where_clause: Option<String>,
+    /// Total ordering applied to the projected rows.
     #[serde(default)]
     pub order_by: Option<String>,
 }
@@ -50,6 +53,7 @@ pub struct RecipeDecl {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GeneratedBy {
+    /// The registered recipe that produced the set.
     pub recipe: RecipeName,
     /// Content digest of the generator.
     pub digest: String,
@@ -65,21 +69,26 @@ pub struct CorpusEntry {
     /// The committed, seeded, deterministic generator (generated sets).
     #[serde(default)]
     pub generated_by: Option<GeneratedBy>,
+    /// The payload's wire/source format.
     pub format: CorpusFormat,
     /// The openEHR template identity the payload declares (OPTs and
     /// template-bound instances) — the `openehr-template-id` header source.
     #[serde(default)]
     pub template_id: Option<String>,
+    /// The RM versions the payload is valid against (empty = unconstrained).
     #[serde(default)]
     pub rm_versions: Vec<String>,
+    /// The payload's adjudicated validity.
     pub validity: Validity,
     /// The `__AUTO-GENERATED__` convention, formalized.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub placeholders: Option<Vec<(String, PlaceholderPolicy)>>,
     /// Where the payload came from and how it was re-adjudicated.
     pub provenance: String,
+    /// Named projections over this set, in declaration order.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub views: Option<Vec<(ViewName, ViewDecl)>>,
+    /// Row-to-instance synthesis recipes this set exposes.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub recipes: Option<Vec<(RecipeName, RecipeDecl)>>,
 }
@@ -150,7 +159,6 @@ impl<'de> Deserialize<'de> for CorpusManifest {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

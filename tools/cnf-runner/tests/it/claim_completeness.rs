@@ -7,7 +7,11 @@
 //! The world here is BOTH committed halves — the artifact tree AND the party
 //! statements beside it — because every one of these gates is a relation
 //! between a claim and the catalogue.
-#![allow(clippy::panic, clippy::expect_used)] // test assertions/fixtures
+
+#![expect(
+    clippy::expect_used,
+    reason = "test-support helpers (not `#[test]` fns, so the clippy.toml in-tests scoping does not reach them) are panic-idiomatic: a broken fixture must abort the test loudly, Book ch11"
+)]
 
 use cnf_runner::artifacts::load_root;
 use cnf_runner::validate::{Context, Finding, validate};

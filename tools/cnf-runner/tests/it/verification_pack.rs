@@ -2,7 +2,11 @@
 //! the committed transcript reproduces every adjudicated verdict — and a
 //! deliberately-broken runner (tampered adjudications) is REJECTED, which
 //! is the pack's own falsifiability requirement.
-#![allow(clippy::panic, clippy::expect_used)] // test assertions/fixtures
+
+#![expect(
+    clippy::expect_used,
+    reason = "test-support helpers (not `#[test]` fns, so the clippy.toml in-tests scoping does not reach them) are panic-idiomatic: a broken fixture must abort the test loudly, Book ch11"
+)]
 
 use cnf_runner::artifacts::load_root;
 use cnf_runner::exec::player::{ExpectedVerdict, Transcript, replay_entry, verdict_matches};

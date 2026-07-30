@@ -35,49 +35,68 @@ impl LiteralError {
 pub enum Literal {
     /// JSON null (a first-class cell value in the official `DV_QUANTITY` table).
     Null,
+    /// A boolean cell.
     Bool(bool),
+    /// An integer cell.
     Integer(i64),
+    /// A real-number cell.
     Real(f64),
     /// A plain string cell with no grammar-significant structure.
     Text(String),
     /// A numeric range `a..b`.
     Range {
+        /// The range's lower endpoint.
         lo: f64,
+        /// The range's upper endpoint.
         hi: f64,
     },
     /// An ISO 8601 endpoint range `2020-01..2030-12` (dates, date-times,
     /// times, or durations — the master17.4/`DV_INTERVAL` constraint ranges).
     Iso8601Range {
+        /// The lower endpoint, in its ISO 8601 lexical form.
         lo: String,
+        /// The upper endpoint, in its ISO 8601 lexical form.
         hi: String,
     },
     /// A list `[x, y, …]` of literals.
     List(Vec<Literal>),
     /// A unit-scoped range `cm 5.0..10.0` (inside `C_DV_QUANTITY` list cells).
     UnitRange {
+        /// The units the endpoints are expressed in.
         units: String,
+        /// The range's lower endpoint, in `units`.
         lo: f64,
+        /// The range's upper endpoint, in `units`.
         hi: f64,
     },
     /// A terminology code `openehr::122 (length)` / `local::at0005`.
     TermCode {
+        /// The terminology id the code belongs to (`openehr`, `local`, …).
         terminology: String,
+        /// The code string itself.
         code: String,
+        /// The parenthesised rubric, when the cell carries one.
         rubric: Option<String>,
     },
     /// An ordinal tuple `1|[local::at0005]` (integer head — `DV_ORDINAL`).
     Ordinal {
+        /// The ordinal's integer value.
         value: i64,
+        /// The coded symbol the value is bound to.
         symbol: Box<Literal>,
     },
     /// A scale tuple `1.5|[local::at0005]` (real head — `DV_SCALE`).
     Scale {
+        /// The scale's real value.
         value: f64,
+        /// The coded symbol the value is bound to.
         symbol: Box<Literal>,
     },
     /// A quantity literal `100 mg`.
     Quantity {
+        /// The quantity's magnitude.
         magnitude: f64,
+        /// The UCUM units the magnitude is expressed in.
         units: String,
     },
 }
@@ -255,7 +274,7 @@ fn is_term_lexeme_char(c: char) -> bool {
 /// time (`10:00[:00[.5]]`), duration (`P1Y2M3DT4H5M6.7S`, `PT2H`).
 fn is_iso8601_lexeme(s: &str) -> bool {
     static ISO: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
-        #[allow(clippy::unwrap_used)] // a compile-time-constant pattern
+        #[expect(clippy::unwrap_used, reason = "a compile-time-constant pattern")]
         regex::Regex::new(
             r"^(\d{4}(-\d{2}(-\d{2})?)?(T\d{2}(:\d{2}(:\d{2}(\.\d+)?)?)?(Z|[+-]\d{2}(:?\d{2})?)?)?|\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}(:?\d{2})?)?|P(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?)$",
         )
@@ -394,7 +413,6 @@ impl fmt::Display for ViolationRef {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions
 mod tests {
     use super::*;
 

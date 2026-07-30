@@ -7,7 +7,8 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
-    unused_variables
+    unused_variables,
+    reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
 use serde::{Deserialize, Serialize};
 

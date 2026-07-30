@@ -1324,6 +1324,7 @@ dependencies = [
  "base64 0.22.1",
  "clap",
  "hdrhistogram",
+ "jiff",
  "jsonschema",
  "jsonwebtoken",
  "pgp",
@@ -2466,30 +2467,15 @@ name = "ehrbase-server"
 version = "3.14.0"
 dependencies = [
  "anyhow",
- "axum",
  "clap",
  "ehrbase",
  "ehrbase-rest",
- "http",
- "http-body-util",
- "insta",
- "jiff",
- "opentelemetry",
- "opentelemetry_sdk",
  "reqwest 0.13.4",
- "serde",
  "serde_json",
  "sqlx",
- "testcontainers",
- "testcontainers-modules",
- "testkit",
  "tokio",
- "tower",
  "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
  "uuid",
- "wiremock",
 ]
 
 [[package]]
@@ -8294,6 +8280,7 @@ name = "testkit"
 version = "3.14.0"
 dependencies = [
  "ehrbase",
+ "jiff",
  "sqlx",
  "testcontainers",
  "testcontainers-modules",

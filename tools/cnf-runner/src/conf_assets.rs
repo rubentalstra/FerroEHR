@@ -132,11 +132,10 @@ const MARGIN: f64 = 24.0;
 /// Pure over its inputs: matrix order (authored) within tier bands, no
 /// timestamps.
 #[must_use]
-#[allow(
-    clippy::too_many_lines,
-    clippy::items_after_statements,
-    clippy::cast_precision_loss
-)] // one linear chart emitter; counts/cells << 2^52
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "grid counts/cell coordinates are far below 2^52"
+)]
 pub fn heat_grid_svg(
     sut_label: &str,
     matrix: &CapabilityMatrix,
@@ -215,6 +214,10 @@ pub fn heat_grid_svg(
         y += 8.0;
         for (i, (name, required, evidence)) in entries.iter().enumerate() {
             let col = i % GRID_COLS;
+            #[expect(
+                clippy::integer_division,
+                reason = "grid row = index / columns: exact integer arithmetic is the intent"
+            )]
             let row = i / GRID_COLS;
             let x = MARGIN + col as f64 * (CELL_W + CELL_GAP);
             let cy = y + row as f64 * (CELL_H + CELL_GAP);
@@ -308,8 +311,9 @@ fn xml_escape(s: &str) -> String {
 /// [`chapter_counts`] rejects any pair the table does not declare, so the
 /// mapping function and the table cannot drift apart silently.
 ///
-/// Chapters follow the SM component map (`docs/architecture.md`
-/// §SM platform component map) where the case ids name an SM interface, and
+/// Chapters follow the openEHR SM platform interfaces
+/// (`docs/specs/openehr/SM/docs/openehr_platform/`) where the case ids name an
+/// SM interface, and
 /// the catalogue's own case-id families otherwise. NOTE: no openEHR spec
 /// governs this grouping — our own presentation design.
 pub const TAXONOMY: &[(&str, &[&str])] = &[
@@ -704,7 +708,7 @@ fn write_count_strip(out: &mut String, baseline: f64, counts: BandCounts, strong
         if value == 0 {
             continue;
         }
-        #[allow(clippy::cast_precision_loss)] // four slots
+        #[expect(clippy::cast_precision_loss, reason = "four slots")]
         let slot_end = COUNTS_X + (slot as f64 + 1.0) * SLOT_W - 6.0;
         let _ = write!(
             out,
@@ -733,11 +737,11 @@ fn cases_phrase(total: u64) -> String {
 ///
 /// Pure over its inputs: [`TAXONOMY`] order, no timestamps, no randomness.
 #[must_use]
-#[allow(
+#[expect(
     clippy::too_many_lines,
-    clippy::items_after_statements,
-    clippy::cast_precision_loss
-)] // one linear chart emitter; counts/rows << 2^52
+    clippy::cast_precision_loss,
+    reason = "one linear chart emitter; counts/rows << 2^52"
+)]
 pub fn chapter_bars_svg(sut_label: &str, chapters: &[ChapterRow]) -> String {
     // All bands share ONE scale, and it is DYNAMIC: the widest band in THIS
     // chart is the full bar, so every chart spends its whole width on the
@@ -870,7 +874,6 @@ pub fn chapter_bars_svg(sut_label: &str, chapters: &[ChapterRow]) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
     use crate::party::OutcomeStatus;
@@ -1035,7 +1038,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::too_many_lines)] // one assertion per taxonomy branch
     fn the_two_levels_come_from_the_case_id() {
         assert_eq!(
             band_of("I_EHR_COMPOSITION.create_composition-event").unwrap(),
@@ -1359,7 +1361,7 @@ mod tests {
         // The book + landing pages embed the SVG at this width; the two-level
         // layout is allowed to grow taller, never wider.
         let bands: usize = TAXONOMY.iter().map(|(_, b)| b.len()).sum();
-        #[allow(clippy::cast_precision_loss)] // taxonomy rows << 2^52
+        #[expect(clippy::cast_precision_loss, reason = "taxonomy rows << 2^52")]
         let height =
             BARS_HEAD_H + TAXONOMY.len() as f64 * (CHAP_H + CHAP_GAP) + bands as f64 * BAND_H + 8.0;
         assert!(

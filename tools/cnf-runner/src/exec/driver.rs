@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 
+use base64::Engine as _;
 use serde_json::Value;
 
 use crate::artifacts::ArtifactSet;
@@ -26,10 +27,15 @@ use crate::vocab::{FormatName, HttpMethod, OutcomeKind};
 /// One captured HTTP exchange (also the transcript-recording seam).
 #[derive(Debug, Clone)]
 pub struct Exchange {
+    /// The HTTP method the driver sent.
     pub method: String,
+    /// The absolute request URL.
     pub path: String,
+    /// The status code the SUT answered with.
     pub status: u16,
+    /// The response headers, lower-cased names.
     pub headers: BTreeMap<String, String>,
+    /// The response body, parsed when it was JSON, else absent.
     pub body: Option<Value>,
 }
 
@@ -192,6 +198,13 @@ impl<'a> HttpDriver<'a> {
     /// The `Authorization` header for an instance. `scopes` is the SMART
     /// `scope` claim the step declared (`None` = the step declared none), and
     /// is consumed only by the `bearer_mint` principal.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "credentials are read from the environment BY DESIGN: the ixit \
+                  declares only the variable NAME so no secret ever enters the \
+                  catalogue; cnf-runner is a standalone instrument with no access \
+                  to the server's config tree, which is what that ban protects"
+    )]
     fn auth_header(
         ixit: &Ixit,
         auth: &AuthMode,
@@ -204,15 +217,16 @@ impl<'a> HttpDriver<'a> {
                 password_env,
             } => {
                 let user = std::env::var(user_env)
-                    .map_err(|_| format!("credential env {user_env} unset"))?;
+                    .map_err(|error| format!("credential env {user_env}: {error}"))?;
                 let pass = std::env::var(password_env)
-                    .map_err(|_| format!("credential env {password_env} unset"))?;
-                let token = base64_encode(format!("{user}:{pass}").as_bytes());
+                    .map_err(|error| format!("credential env {password_env}: {error}"))?;
+                let token = base64::engine::general_purpose::STANDARD
+                    .encode(format!("{user}:{pass}").as_bytes());
                 Ok(Some(format!("Basic {token}")))
             }
             AuthMode::Bearer { token_env } => {
                 let token = std::env::var(token_env)
-                    .map_err(|_| format!("credential env {token_env} unset"))?;
+                    .map_err(|error| format!("credential env {token_env}: {error}"))?;
                 Ok(Some(format!("Bearer {token}")))
             }
             AuthMode::BearerMint {
@@ -432,8 +446,17 @@ impl<'a> HttpDriver<'a> {
         };
         // CNF_DEBUG_EXCHANGES=1: dump every wire exchange to stderr (live
         // triage aid; the transcript seam is the durable record).
-        if std::env::var_os("CNF_DEBUG_EXCHANGES").is_some() {
-            #[allow(clippy::print_stderr)] // env-gated triage output in the dev tool
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "the instrument's own debug switch, not server configuration: \
+                      cnf-runner is a standalone tool with no config tree"
+        )]
+        let debug_exchanges = std::env::var_os("CNF_DEBUG_EXCHANGES").is_some();
+        if debug_exchanges {
+            #[expect(
+                clippy::print_stderr,
+                reason = "env-gated triage output in the dev tool"
+            )]
             {
                 eprintln!(
                     "[exchange] {} {} -> {} | {}",
@@ -533,7 +556,10 @@ impl<'a> HttpDriver<'a> {
         Some(value)
     }
 
-    #[allow(clippy::too_many_arguments)] // mirrors the assertion's field set
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "mirrors the assertion's field set"
+    )]
     fn eval_field_assertion(
         &mut self,
         body: &Value,
@@ -575,7 +601,10 @@ impl<'a> HttpDriver<'a> {
     /// mode-agnostic; `verifiable` reconstructs the agreed canonical form and
     /// verifies per `signing` — the posture of the INSTANCE the step ran on
     /// (RM common master06 §Digital Signature; [`crate::exec::signature`]).
-    #[allow(clippy::too_many_arguments)] // one parameter per declared signature fact — mirrors the assertion shape
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one parameter per declared signature fact — mirrors the assertion shape"
+    )]
     fn eval_signature_assertion(
         &mut self,
         body: &Value,
@@ -695,7 +724,10 @@ impl<'a> HttpDriver<'a> {
     }
 
     /// Evaluate the pure-side assertions for a step against the exchange.
-    #[allow(clippy::too_many_lines)] // one match arm per Assertion variant — a dispatch, each arm delegates
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one match arm per Assertion variant — a dispatch, each arm delegates"
+    )]
     fn eval_assertions(
         &mut self,
         _case: &CaseCore,
@@ -938,9 +970,15 @@ fn same_deployment(left: &str, right: &str) -> bool {
 }
 
 /// The capture handle the provisioning binds committed-set uids under.
+#[expect(
+    clippy::expect_used,
+    reason = "the sanctioned logically-impossible-Err escape: `committed_uids` is a \
+              hardcoded literal satisfying CaptureName's grammar, so the parse \
+              cannot fail — and a silent fallback name would mis-bind the \
+              provisioning contract instead of failing loudly"
+)]
 fn committed_uids_handle() -> CaptureName {
-    // The name is part of the provisioning contract; parse cannot fail.
-    CaptureName::parse("committed_uids").unwrap_or_else(|_| unreachable!())
+    CaptureName::parse("committed_uids").expect("`committed_uids` should be a valid capture name")
 }
 
 fn template_is_optional(template: &Template) -> bool {
@@ -982,8 +1020,6 @@ fn template_ref_name(template: &Template) -> Option<&str> {
     })
 }
 
-/// Minimal base64 (standard alphabet, padding) — avoids a crypto dep for
-/// one Basic-auth header.
 /// The equivalence-failure diagnostic: the first differing paths (path, got,
 /// want), so a red row carries triage-usable evidence — two 80-char head
 /// previews forced the 2026-07-28 composition-XML triage to reconstruct the
@@ -1095,43 +1131,29 @@ fn parse_http_date_ms(value: &str) -> Option<i64> {
     let era = y.div_euclid(400);
     let yoe = y - era * 400;
     let mp = (month + 9) % 12;
+    #[expect(
+        clippy::integer_division,
+        reason = "Hinnant's days-from-civil is DEFINED in exact integer (floor) \
+                  division; a float step would break the calendar identity"
+    )]
     let doy = (153 * mp + 2) / 5 + day - 1;
+    #[expect(
+        clippy::integer_division,
+        reason = "Hinnant's days-from-civil is DEFINED in exact integer (floor) \
+                  division; a float step would break the calendar identity"
+    )]
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     let days = era * 146_097 + doe - 719_468;
     Some((days * 86_400 + h * 3_600 + m * 60 + s) * 1_000)
 }
 
 /// Runner-clock milliseconds since the Unix epoch.
+///
+/// Wall-clock time comes from `jiff`, the pinned time library
+/// (`docs/VERSIONS.md`); elapsed-time measurement uses
+/// [`std::time::Instant`] instead.
 pub(crate) fn now_ms() -> i64 {
-    i64::try_from(
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis())
-            .unwrap_or_default(),
-    )
-    .unwrap_or(i64::MAX)
-}
-
-fn base64_encode(input: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
-    for chunk in input.chunks(3) {
-        let b = [
-            chunk.first().copied().unwrap_or(0),
-            chunk.get(1).copied().unwrap_or(0),
-            chunk.get(2).copied().unwrap_or(0),
-        ];
-        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
-        let idx = [(n >> 18) & 63, (n >> 12) & 63, (n >> 6) & 63, n & 63];
-        for (i, v) in idx.iter().enumerate() {
-            if i <= chunk.len() {
-                out.push(char::from(ALPHABET[*v as usize]));
-            } else {
-                out.push('=');
-            }
-        }
-    }
-    out
+    jiff::Timestamp::now().as_millisecond()
 }
 
 /// Mint one RS256 access token against the party's declared static test
@@ -1164,7 +1186,7 @@ pub(crate) fn mint_access_token(
     let mut header = jsonwebtoken::Header::new(jsonwebtoken::Algorithm::RS256);
     header.kid = Some(mint.kid.clone());
 
-    let issued_at = now_ms() / 1000;
+    let issued_at = jiff::Timestamp::now().as_second();
     let expires_at = issued_at.saturating_add(i64::try_from(mint.ttl_seconds).unwrap_or(i64::MAX));
     let mut claims = serde_json::Map::new();
     claims.insert("iss".to_owned(), Value::String(mint.issuer.clone()));
@@ -1484,9 +1506,9 @@ impl HttpDriver<'_> {
             // single object and commits as a one-item set. Anything else is a
             // catalogue defect — never skip silently (the precondition "the
             // EHR has commits" must hold or the run must fail).
-            let items: Vec<serde_json::Value> = match set {
-                serde_json::Value::Array(a) => a,
-                obj @ serde_json::Value::Object(_) => vec![obj],
+            let items: Vec<Value> = match set {
+                Value::Array(a) => a,
+                obj @ Value::Object(_) => vec![obj],
                 other => {
                     return Err(format!(
                         "requires.commit key {key}: expected a set array or a composition object, got {other}"
@@ -1559,8 +1581,10 @@ impl HttpDriver<'_> {
     ///
     /// `scopes` is the step's resolved SMART `scope` claim (`None` = the step
     /// declared none), consumed only by a `bearer_mint` principal.
-    #[allow(clippy::too_many_arguments)] // one parameter per header source; splitting hides the assembly order
-    #[allow(clippy::too_many_arguments)] // the ONE request-construction seam: every input a driven request depends on arrives here explicitly
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one parameter per header source; splitting hides the assembly order"
+    )]
     fn compose_headers(
         set: &ArtifactSet,
         ixit: &Ixit,
@@ -1650,7 +1674,7 @@ impl HttpDriver<'_> {
                             let body_ds_template_id = step.and_then(|step| {
                                 step.with_entries().iter().find_map(|(_, v)| {
                                     v.refs().iter().find_map(|r| match r {
-                                        crate::refgrammar::ValueRef::DataSet { key, .. } => set
+                                        ValueRef::DataSet { key, .. } => set
                                             .corpus
                                             .as_ref()
                                             .and_then(|(_, m)| m.get(key))
@@ -2760,7 +2784,6 @@ fn extract_list(body: &Value, path: &str) -> Vec<String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 
@@ -3157,7 +3180,10 @@ mod tests {
 
     #[test]
     fn base64_and_list_extraction() {
-        assert_eq!(base64_encode(b"user:pass"), "dXNlcjpwYXNz");
+        assert_eq!(
+            base64::engine::general_purpose::STANDARD.encode(b"user:pass"),
+            "dXNlcjpwYXNz"
+        );
         let body = serde_json::json!({
             "versions": [ { "id": { "value": "v1" } }, { "id": { "value": "v2" } } ]
         });

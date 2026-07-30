@@ -19,6 +19,7 @@
 //! floors' peak factor already cites: `arrival_rate` is the BUSY-HOUR
 //! peak, the day curve scales the off-peak troughs below it.
 
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use crate::perf::{ArrivalCurve, JourneyCatalogue, Percent, PerfOp, StageOffset};
@@ -73,9 +74,13 @@ pub(crate) struct PlannedArrival {
 /// declares.
 #[derive(Debug)]
 pub struct JourneyWorkload<'a> {
+    /// Every journey the schedule may draw from.
     pub catalogue: &'a JourneyCatalogue,
+    /// The case's share of scheduled instances per journey.
     pub shares: &'a [(String, Percent)],
+    /// The templates and auxiliary payloads the stages commit.
     pub pack: &'a JourneyPack,
+    /// The arrival-time shape the instants are drawn under.
     pub curve: ArrivalCurve,
     /// The principals available for this run
     /// ([`crate::perf_run::client::PerfPrincipals`]).
@@ -156,10 +161,15 @@ impl ShareSequencer {
         for (credit, share) in self.credit.iter_mut().zip(&self.shares) {
             *credit += *share;
         }
+        // Highest-credit slot wins, ties to the LOWEST index — the scan keeps
+        // that order exactly (a strict `>` never displaces an equal leader),
+        // which is what makes the schedule reproducible.
         let mut best = 0;
-        for i in 1..self.credit.len() {
-            if self.credit[i] > self.credit[best] {
+        let mut best_credit = f64::NEG_INFINITY;
+        for (i, credit) in self.credit.iter().enumerate() {
+            if *credit > best_credit {
                 best = i;
+                best_credit = *credit;
             }
         }
         if let Some(credit) = self.credit.get_mut(best) {
@@ -226,12 +236,15 @@ fn journey_instants(curve: ArrivalCurve, rate_peak: f64, span_s: f64) -> Vec<f64
         ArrivalCurve::Uniform => {
             let interval = 1.0 / rate_peak;
             let count = (span_s * rate_peak).ceil().max(1.0);
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            // journey counts are far below the lossy range
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "journey counts are far below the lossy range and non-negative by construction"
+            )]
             let count = count as u64;
             (0..count)
                 .map(|j| {
-                    #[allow(clippy::cast_precision_loss)] // counts << 2^52
+                    #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
                     {
                         j as f64 * interval
                     }
@@ -267,7 +280,10 @@ fn journey_instants(curve: ArrivalCurve, rate_peak: f64, span_s: f64) -> Vec<f64
 /// # Errors
 /// A message on an unknown journey/operation/template or an empty
 /// expansion.
-#[allow(clippy::too_many_lines)] // one linear construction: expand → clip → extend → sort
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear construction: expand → clip → extend → sort"
+)]
 pub(crate) fn build_schedule(
     workload: &JourneyWorkload<'_>,
     rate: f64,
@@ -365,7 +381,7 @@ pub(crate) fn build_schedule(
     // tail.
     let journey_rate = rate * FLOOR_MARGIN / expansion.arrivals_per_journey;
     let span_s = warmup_s.saturating_add(duration_s);
-    #[allow(clippy::cast_precision_loss)] // spans << 2^52
+    #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
     let virtual_span_s = span_s as f64 + max_offset_s as f64;
     let mut sequencer = ShareSequencer::new(&shares);
     let kinds = resolved.len() as u64;
@@ -377,13 +393,18 @@ pub(crate) fn build_schedule(
     let mut journey_index: u64 = 0;
     for instant in pool {
         let kind = sequencer.next();
-        let journey = &resolved[kind];
-        let seq = kind_seq[kind];
-        kind_seq[kind] += 1;
+        let journey = resolved.get(kind).ok_or_else(|| {
+            format!("journey sequencer chose slot {kind} outside the resolved catalogue")
+        })?;
+        let seq_slot = kind_seq.get_mut(kind).ok_or_else(|| {
+            format!("journey sequencer chose slot {kind} outside the sequence counters")
+        })?;
+        let seq = *seq_slot;
+        *seq_slot += 1;
         let patient = if journey.fresh_ehr {
             None
         } else {
-            #[allow(clippy::cast_possible_truncation)] // ward indices are small
+            #[expect(clippy::cast_possible_truncation, reason = "ward indices are small")]
             Some(((kind as u64 + kinds * seq) % ward_len.max(1) as u64) as usize)
         };
         // The journey's own clock starts max_offset before the window so
@@ -392,7 +413,7 @@ pub(crate) fn build_schedule(
         // a journey with NO seeded fallback (a fresh EHR, a delete of its
         // own commit) must start in-window — a pre-window start skips the
         // instance.
-        #[allow(clippy::cast_precision_loss)] // offsets << 2^52
+        #[expect(clippy::cast_precision_loss, reason = "offsets << 2^52")]
         let start_s = instant - max_offset_s as f64;
         if journey.needs_full_window && start_s < 0.0 {
             continue;
@@ -402,13 +423,13 @@ pub(crate) fn build_schedule(
             let reps = stage.at.arrivals();
             for rep in 0..reps {
                 let offset = offset_s(stage.at, journey_index, stage_index as u64, rep);
-                #[allow(clippy::cast_precision_loss)] // offsets << 2^52
+                #[expect(clippy::cast_precision_loss, reason = "offsets << 2^52")]
                 let at_s = start_s + offset as f64;
-                #[allow(clippy::cast_precision_loss)] // spans << 2^52
+                #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
                 if at_s < 0.0 || at_s >= span_s as f64 {
                     continue;
                 }
-                #[allow(clippy::cast_precision_loss)] // spans << 2^52
+                #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
                 let recorded = at_s >= warmup_s as f64;
                 if recorded {
                     measured_count += 1;
@@ -435,7 +456,9 @@ pub(crate) fn build_schedule(
     }
     arrivals.sort_by_key(|a| a.at);
     // Mark each journey instance's final in-window stage (capture cleanup).
-    let mut last_index: std::collections::HashMap<u64, usize> = std::collections::HashMap::new();
+    // Ordered map: schedule construction must be byte-deterministic, so no
+    // hash-ordered iteration anywhere in it (`clippy::iter_over_hash_type`).
+    let mut last_index: BTreeMap<u64, usize> = BTreeMap::new();
     for (i, arrival) in arrivals.iter().enumerate() {
         last_index.insert(arrival.journey, i);
     }
@@ -453,7 +476,7 @@ pub(crate) fn build_schedule(
             .map(|a| a.at.as_secs_f64())
             .collect();
         if duration_s <= 3600 || workload.curve == ArrivalCurve::Uniform {
-            #[allow(clippy::cast_precision_loss)] // counts << 2^52
+            #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
             {
                 measured.len() as f64 / duration_s.max(1) as f64
             }
@@ -462,18 +485,21 @@ pub(crate) fn build_schedule(
             let mut best = 0.0_f64;
             let mut lo = 0usize;
             let mut hi = 0usize;
-            #[allow(clippy::cast_precision_loss)] // spans << 2^52
+            #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
             let end = (warmup_s + duration_s) as f64;
-            #[allow(clippy::cast_precision_loss)] // spans << 2^52
+            #[expect(clippy::cast_precision_loss, reason = "spans << 2^52")]
             let mut window_start = warmup_s as f64;
             while window_start + 3600.0 <= end + 1.0 {
-                while lo < measured.len() && measured[lo] < window_start {
+                while measured.get(lo).is_some_and(|at| *at < window_start) {
                     lo += 1;
                 }
-                while hi < measured.len() && measured[hi] < window_start + 3600.0 {
+                while measured
+                    .get(hi)
+                    .is_some_and(|at| *at < window_start + 3600.0)
+                {
                     hi += 1;
                 }
-                #[allow(clippy::cast_precision_loss)] // counts << 2^52
+                #[expect(clippy::cast_precision_loss, reason = "counts << 2^52")]
                 {
                     best = best.max((hi - lo) as f64 / 3600.0);
                 }
@@ -492,7 +518,6 @@ pub(crate) fn build_schedule(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
     use crate::ixit::Ixit;
@@ -770,7 +795,10 @@ mod tests {
         // 10 h hold: the busy-hour rate approaches the offered rate, the
         // whole-window mean sits well below it.
         let schedule = build_schedule(&workload, 2.0, 0, 36_000, 50).unwrap();
-        #[allow(clippy::cast_precision_loss)]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "planned journey counts in a 10 h window are far below 2^52"
+        )]
         let mean = schedule.planned_measured as f64 / 36_000.0;
         assert!(schedule.planned_busy_hour > mean * 1.5);
         assert!(schedule.planned_busy_hour <= 2.2);

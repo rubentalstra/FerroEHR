@@ -43,8 +43,11 @@ macro_rules! string_id {
             /// Returns [`IdError`] when the value violates the identifier's
             /// lexical rule.
             pub fn parse(value: &str) -> Result<Self, IdError> {
-                #[allow(clippy::redundant_closure_call)] // macro seam: the rule is a closure literal
-                if ($check)(value) {
+                // The rule arrives either as a non-capturing closure literal or
+                // as a fn item; binding it to a fn pointer accepts both and
+                // keeps the expansion free of a directly-called closure.
+                let rule_holds: fn(&str) -> bool = $check;
+                if rule_holds(value) {
                     Ok(Self(value.to_owned()))
                 } else {
                     Err(IdError { kind: $kind, value: value.to_owned(), rule: $rule })

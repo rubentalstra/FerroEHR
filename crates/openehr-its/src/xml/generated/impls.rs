@@ -7,9 +7,10 @@
     clippy::nursery,
     unused_variables,
     unused_mut,
-    unused_qualifications
+    unused_qualifications,
+    unused_imports,
+    reason = "mechanically generated codec text: every runtime item is named by its full path and every branch shape is emitted uniformly, so style and unused-binding lints do not apply — the hand-written runtime carries the lint bar"
 )]
-#[allow(unused_imports)]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};
 
 impl crate::xml::runtime::ToXml for openehr_base::prelude::AccessGroupRef {
