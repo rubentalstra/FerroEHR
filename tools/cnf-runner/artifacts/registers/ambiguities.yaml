@@ -7079,3 +7079,38 @@ AMB-173:
     three boundary points (exact child id matches; parent id matches child
     data; an unrelated archetype id does not match).
   disposition: fixed_handling
+AMB-174:
+  ambiguity: >-
+    The deprecated `TOP n BACKWARD` selection has no determinable result set.
+    QUERY docs/AQL/master03-syntax.adoc §TOP keeps the modifier in the
+    language — the published grammar (master07-grammar, `top : TOP INTEGER
+    direction=(FORWARD|BACKWARD)?`) still admits it, and the section marks it
+    deprecated rather than removed ("The `TOP` will be removed in a future
+    major release of AQL specification") — but says only that it "uses
+    `BACKWARD` and `FORWARD` to indicate the direction where to start to get
+    the number of results to be returned". Nothing fixes what BACKWARD starts
+    FROM: the same chapter's §ORDER BY states that without an ORDER BY clause
+    "the query result doesn't have any default ordering criteria defined by
+    this specification. Ordering could be defined by each implementation or be
+    random. In terms of compliance to this specification, default ordering in
+    results is undefined" — so there is no defined last row to count back
+    from; and where an ORDER BY IS present, §TOP never says whether BACKWARD
+    reverses the returned ROW ORDER or only shifts which n rows are taken.
+    Two conformant servers can therefore return different sets, and a third
+    can refuse the construct: no clause requires acceptance, and none requires
+    rejection.
+  source: >-
+    QUERY docs/AQL/master03-syntax.adoc §TOP (deprecated; the direction is
+    described only as "where to start") + §ORDER BY (default ordering
+    "undefined") + docs/AQL/master07-grammar §grammar (`top` still admits the
+    direction) + released ITS-REST query Response.md (400 defined for an
+    invalid query, not for an under-defined one) — silence CONFIRMED
+    first-hand.
+  handling: >-
+    The TOP-BACKWARD case carries this entry and is report_only: the outcome
+    is reported per SUT and never gates profile computation, until upstream
+    either defines the selection or removes the modifier. The DEFINED part of
+    §TOP is unaffected and stays gating — plain `TOP n` (and the explicit
+    `FORWARD` default) keeps its own cases. SPECQUERY candidate.
+  disposition: report_only
+  upstream_ref: "UPR-129"

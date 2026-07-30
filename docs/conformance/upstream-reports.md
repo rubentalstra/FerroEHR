@@ -2462,3 +2462,35 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   optional string consisting of a comma or decimal point followed by numeric
   string of 1 or more digits"). A server refusing a body `DV_DATE_TIME` for
   its comma alone is non-conformant, not exercising a latitude.
+
+### UPR-129 — `TOP n BACKWARD` has no determinable result set, and no clause says whether to accept or refuse it
+
+- **Components:** QUERY (`docs/AQL/master03-syntax.adoc` §TOP, §ORDER BY;
+  `docs/AQL/master07-grammar.adoc` §grammar)
+- **Register:** AMB-174 (report_only)
+- **Channel:** SPECQUERY
+- **Status:** draft
+- **Facts:** §TOP is deprecated, not removed ("The `TOP` will be removed in a
+  future major release of AQL specification"), and the published grammar still
+  admits the direction (`top : TOP INTEGER direction=(FORWARD|BACKWARD)?`). The
+  only semantics given are that TOP "uses `BACKWARD` and `FORWARD` to indicate
+  the direction where to start to get the number of results to be returned".
+  Nothing states what BACKWARD starts from. Without an ORDER BY clause the same
+  chapter's §ORDER BY says "the query result doesn't have any default ordering
+  criteria defined by this specification. Ordering could be defined by each
+  implementation or be random. In terms of compliance to this specification,
+  default ordering in results is undefined" — so there is no defined last row.
+  With an ORDER BY clause, §TOP still does not say whether BACKWARD reverses
+  the returned row ORDER or merely selects the final n rows in the stated
+  order.
+- **Problem:** two conformant servers can return different row sets — and
+  different row orders — for the same `SELECT TOP n BACKWARD` query, while a
+  third can refuse it: the released text mandates neither acceptance with fixed
+  semantics nor rejection, so the construct has no verdict.
+- **Ask:** either define `BACKWARD` in terms of the ORDER BY ordering (naming
+  whether the returned rows are reversed) and state what it means with no
+  ORDER BY, or withdraw the direction from the grammar together with the rest
+  of the deprecated modifier. (Ours: register AMB-174 keeps the TOP-BACKWARD
+  case report_only — the outcome is published per SUT and never gates — while
+  the defined part of §TOP, plain `TOP n` and the explicit `FORWARD` default,
+  stays gating in its own cases.)
