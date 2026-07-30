@@ -389,3 +389,31 @@ fn adl14_defined_concept_term_validates_clean() {
         error_codes(LOWER_CASE_14)
     );
 }
+
+// ── ADL2: the deprecated concept section (`ADL2/master07.09`) ────────────────
+
+/// A well-formed deprecated concept section is accepted and ignored in ADL2
+/// (both the inline and next-line spellings), and a malformed one raises SACO
+/// — "if a concept section is present, it must consist of the 'concept'
+/// keyword and a single local term" (`master07.09-adl_deprecated.adoc`).
+#[test]
+fn adl2_deprecated_concept_section_is_shape_checked() {
+    let rest = "\n\nlanguage\n    original_language = <[ISO_639-1::en]>\n\ndescription\n    lifecycle_state = <\"draft\">\n\ndefinition\n    OBSERVATION[id1] matches {*}\n\nterminology\n    term_definitions = <\n        [\"en\"] = <\n            [\"id1\"] = < text = <\"t\"> description = <\"t\"> >\n        >\n    >\n";
+    let head =
+        "archetype (adl_version=2.0.5; rm_release=1.0.2)\n    openEHR-EHR-OBSERVATION.t.v1.0.0\n\n";
+    for ok in [
+        format!("{head}concept [at0000] -- haematology result{rest}"),
+        format!("{head}concept\n    [at0000]{rest}"),
+    ] {
+        assert!(
+            openehr_adl::assemble::parse_artefact(&ok).is_ok(),
+            "a well-formed deprecated concept section must be accepted"
+        );
+    }
+    let bad = format!("{head}concept\n    not_a_code{rest}");
+    let errs = openehr_adl::assemble::parse_artefact(&bad).unwrap_err();
+    assert!(
+        errs.iter().any(|e| e.code == SyntaxErrorCode::Saco),
+        "a malformed concept section must raise SACO, got {errs:?}"
+    );
+}
