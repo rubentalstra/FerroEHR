@@ -1,0 +1,60 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.default_occurrences.v1
+
+concept
+	[at0000]	-- Default occurrences
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Default occurrences
+		-- The accepting twin of the two VCOC fixtures, and the positive test of the
+		-- ADL 1.4 EFFECTIVE occurrences default: neither child states
+		-- `occurrences`, so each is {1..1} (ADL1.4/master05-cadl.adoc §Occurrences
+		-- L316: "The default occurrences, if none is mentioned, is {1..1}"). The sum
+		-- interval is therefore 2..2, inside the container cardinality 0..3 — a
+		-- reader that treated an absent occurrences as {0..*} would compute an
+		-- unbounded sum and report VCOC here.
+		items cardinality matches {0..3; unordered} matches {
+			ELEMENT[at0001] matches {	-- First item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0002] matches {	-- Second item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Default occurrences">
+					description = <"Accepting fixture: the ADL 1.4 default occurrences {1..1} keeps VCOC quiet.">
+				>
+				["at0001"] = <
+					text = <"First item">
+					description = <"The first item.">
+				>
+				["at0002"] = <
+					text = <"Second item">
+					description = <"The second item.">
+				>
+			>
+		>
+	>

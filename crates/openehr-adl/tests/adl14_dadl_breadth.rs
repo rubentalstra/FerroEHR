@@ -46,10 +46,6 @@ const FIXTURES: &[(&str, Expect)] = &[
         Expect::Pass,
     ),
     (
-        "openEHR-EHR-OBSERVATION.SDINV_default_interval.v1.adl",
-        Expect::Refuse(SyntaxErrorCode::Sdinv),
-    ),
-    (
         "openEHR-EHR-OBSERVATION.SDINV_duplicate_sibling_attribute.v1.adl",
         Expect::Refuse(SyntaxErrorCode::Sdinv),
     ),

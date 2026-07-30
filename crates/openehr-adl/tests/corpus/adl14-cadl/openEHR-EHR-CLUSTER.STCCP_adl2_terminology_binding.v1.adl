@@ -1,0 +1,52 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.STCCP_adl2_terminology_binding.v1
+
+concept
+	[at0000]	-- ADL2 operational binding in a 1.4 text
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- ADL2 operational binding in a 1.4 text
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Coded item
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- The `[acN@terminology]` operational binding is ADL2
+							-- only (ADL2/master08-terminology_integration.adoc
+							-- §Terminology Bindings). The cADL 1.4 keyword set
+							-- (ADL1.4/master05-cadl.adoc §Keywords L48-53) has no
+							-- `@` operator; 1.4 names an external terminology with
+							-- the qualified `[terminology::code, …]` form of
+							-- ADL1.4/master09-customising_adl.adoc §Custom Syntax.
+							[ac0001@snomed]
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ADL2 operational binding in a 1.4 text">
+					description = <"Refusal fixture: an ADL2 `@terminology` binding in an ADL 1.4 definition.">
+				>
+				["at0001"] = <
+					text = <"Coded item">
+					description = <"A coded data item.">
+				>
+			>
+		>
+	>
