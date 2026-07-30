@@ -322,7 +322,7 @@
     [
       "AqlBasic",
       {
-        "passed": 20,
+        "passed": 30,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -331,7 +331,7 @@
     [
       "AqlAdvanced",
       {
-        "passed": 2,
+        "passed": 3,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -340,7 +340,7 @@
     [
       "AqlTerminology",
       {
-        "passed": 5,
+        "passed": 6,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 846,
-    "driven": 809,
-    "passed": 809,
+    "selected": 859,
+    "driven": 822,
+    "passed": 822,
     "failed": 0,
     "inconclusive": 0
   }

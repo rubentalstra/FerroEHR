@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ehrbase-rs",
-    "version": "3.12.0"
+    "version": "3.13.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.12.0",
+    "version": "3.13.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -4446,7 +4446,31 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_empty_set",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-all_versions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-archetype_subsumption",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-contains_and_or",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4459,6 +4483,12 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-distinct",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-distinct_limit_order",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4512,6 +4542,12 @@
       "rows_total": 2
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-exists_predicate",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-fetch_over_limit",
       "status": "passed",
       "rows_driven": 1,
@@ -4524,6 +4560,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-like_wildcards",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db",
       "status": "passed",
       "rows_driven": 1,
@@ -4531,6 +4573,18 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-malformed_queries",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-node_predicate_paths",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-not_contains",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4566,6 +4620,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-scalar_functions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-select_literals",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
       "status": "passed",
       "rows_driven": 1,
@@ -4590,6 +4656,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_subsumes",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers",
       "status": "passed",
       "rows_driven": 1,
@@ -4597,6 +4669,12 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-top_backward_rejected",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

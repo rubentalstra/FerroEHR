@@ -178,8 +178,21 @@ PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,
 # admission journey's party commits — the validator runs on every commit, the
 # same reasoning that maps ArchetypeValidation onto CompositionCommit.
 DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 8, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
-AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 19, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
-AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
+# Floor raised 19 -> 30 (2026-07-30): the AQL master03 language battery — LIKE
+# wildcards, EXISTS/NOT EXISTS, NOT CONTAINS, the AND/OR containment operators,
+# node predicates on data paths, the aggregate functions and their empty-input
+# semantics, the string/numeric/date-time single-row functions, literal SELECT
+# columns and the VERSION class expression — joins the projection and
+# predicate cases that were there before. QUERY AQL master03-syntax defines
+# every one of them, so a battery that exercised only projections and a WHERE
+# comparison evidenced a fraction of the language. (The eleventh authored case,
+# -top_backward_rejected, is report_only under AMB-174 and therefore not
+# counted.)
+AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
+# Floor raised 2 -> 3 (2026-07-30): the DISTINCT x LIMIT ordering case
+# (duplicates filtered before LIMIT applies — master03-syntax §LIMIT) joins the
+# two LIMIT cases.
+AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL advanced)" }
 # Floor raised 1 -> 5 (2026-07-29): the four EXTERNAL-terminology-server cases
 # (Boolean validate resolving true and false, the expand filter over committed
 # data, and the two-simultaneous-servers proof) join the in-process expand
@@ -188,7 +201,11 @@ AqlAdvanced: { family: Platform, tier: OPTIONS, required: false, min_cases: 2, s
 # only ever reached an in-process bundle evidenced the language form and not
 # the capability. (The fifth authored case, -terminology_unsupported_forms, is
 # report_only under AMB-30 and therefore not counted.)
-AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 5, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
+# Floor raised 5 -> 6 (2026-07-30): the Boolean subsumption case joins them —
+# §TERMINOLOGY lists `subsumes` as one of the operations the function invokes,
+# and it is the only one whose answer depends on the code system's is-a
+# hierarchy rather than on set membership.
+AqlTerminology: { family: Platform, tier: OPTIONS, required: false, min_cases: 6, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL & terminology)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # admin.openapi.yaml declares exactly two paths, /admin/ehr/{ehr_id} and
 # /admin/ehr/all{?ehr_id*}, so none of the SM I_ADMIN_SERVICE reporting
