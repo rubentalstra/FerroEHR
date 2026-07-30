@@ -1,8 +1,8 @@
 archetype (adl_version=1.4)
-	openEHR-EHR-CLUSTER.VATDF_undefined_assumed_code.v1
+	openEHR-EHR-CLUSTER.STCDC_duplicate_code_in_list.v1
 
 concept
-	[at0000]	-- Undefined assumed code in a listed term constraint
+	[at0000]	-- Duplicate code in a listed term constraint
 
 language
 	original_language = <[ISO_639-1::en]>
@@ -12,27 +12,26 @@ description
 		["name"] = <"openEHR-rs regression corpus">
 	>
 	other_details = <
-		["regression"] = <"VATDF">
+		["regression"] = <"STCDC">
 	>
 	lifecycle_state = <"AuthorDraft">
 
 definition
-	CLUSTER[at0000] matches {	-- Undefined assumed code in a listed term constraint
+	CLUSTER[at0000] matches {	-- Duplicate code in a listed term constraint
 		items cardinality matches {0..*; unordered} matches {
 			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
 				value matches {
 					DV_CODED_TEXT matches {
 						defining_code matches {
-							-- The assumed value of a 1.4 listed term constraint is
-							-- itself an archetype term (ADL1.4/master05-cadl.adoc
-							-- §Assumed Values; ADL1.4/master09-customising_adl.adoc
-							-- §Custom Syntax), so VATDF
-							-- (ADL1.4/master08-adl.adoc §Validity Rules) covers it
-							-- too; at0999 is not defined.
+							-- STCDC — "Syntax error: duplicate code(s) found in code
+							-- list" (ADL2/master04.6-cadl_validity_rules.adoc §Syntax
+							-- Validity Rules). A repeated member adds nothing to the
+							-- constrained set and is a defect in the source, never a
+							-- silently-collapsed set.
 							[local::
 							at0002,
-							at0003;
-							at0999]
+							at0003,
+							at0002]
 						}
 					}
 				}
@@ -45,8 +44,8 @@ ontology
 		["en"] = <
 			items = <
 				["at0000"] = <
-					text = <"Undefined assumed code in a listed term constraint">
-					description = <"Refusal fixture: VATDF on the assumed code of a 1.4 term constraint.">
+					text = <"Duplicate code in a listed term constraint">
+					description = <"Refusal fixture: STCDC on a repeated code.">
 				>
 				["at0001"] = <
 					text = <"Position">

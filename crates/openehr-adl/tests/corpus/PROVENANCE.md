@@ -60,12 +60,21 @@
   (`docs/specs/openehr/AM/docs/ADL1.4/master05-cadl.adoc`, plus
   `master08-adl.adoc` §Validity Rules and `master09-customising_adl.adoc`); the
   vendored `adl2-reference` library is an ADL2 corpus and covers none of it.
-- Three families: the **dialect gates** (a construct ADL 2 introduced is refused
+- Four families: the **dialect gates** (a construct ADL 2 introduced is refused
   in a 1.4 text — master05 §Keywords L48-53 is a closed keyword set), the
-  **inline dADL domain lowering** refusals with their accepting twin, and
+  **inline dADL domain lowering** refusals with their accepting twin,
   **positive fixtures** for behaviour an over-strict reader would break
   (`before`/`after` sibling order — a 1.4 keyword at L53 — and the effective
-  occurrences default `{1..1}` at L316).
+  occurrences default `{1..1}` at L316), and the **breadth trio**
+  (`cadl_breadth_{structure,primitives,datetime}`) covering every construct
+  master05 defines, alongside `cadl_keyword_case` for the case-insensitive
+  lexis of §Symbols L1326-1354.
+- **Operators the chapter NAMES but no grammar DEFINES** get refusal fixtures of
+  their own: the negated-matches family (`~matches`/`~is_in`/`∉`, §Keywords L47
+  + L95-98) and the regex-match operators (`=~`/`!~`, §Regular Expression
+  L691-693, whose example regexes are themselves unterminated). Their accepting
+  twins are the affirmative `matches` and the bare delimited regex, exercised
+  throughout the tree.
 - File names encode the expected outcome corpus-convention style: an `S*_`
   prefix is a parse refusal with that syntax code, a `V*_` prefix is a phase-1
   validation error with that validation code, everything else parses and

@@ -41,7 +41,11 @@ into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
   file names encode the expected rule code) plus two HAND-WRITTEN ADL 1.4 trees
   the vendored ADL2 library cannot cover — `adl14-dadl/` (master04 dADL breadth)
   and `adl14-cadl/` (master05 cADL: dialect gates, domain lowering,
-  VATDF/VACDF, VCOC). Corpus cases are the regression net — never delete/weaken
+  VATDF/VACDF/STCDC/STCAC, VCOC, the operators the chapter names but no grammar
+  defines — `~matches`/`~is_in`/`∉`, `=~`/`!~` — and the
+  `cadl_breadth_{structure,primitives,datetime}` trio covering every construct
+  of the chapter). `app/ehrbase/tests/adl14_knowledge_archetypes.rs` is the
+  DB-free parse gate over the app's real-world CKM 1.4 knowledge resources. Corpus cases are the regression net — never delete/weaken
   one to get green; a defect goes through adjudication, not case edits, and
   every refusal keeps its accepting twin.
 - Dependencies point downward only: `openehr-am`, `openehr-base`, `openehr-lang`

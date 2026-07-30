@@ -1,0 +1,508 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.cadl_breadth_datetime.v1
+
+concept
+	[at0000]	-- cADL 1.4 date/time/duration breadth
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[at0000] matches {	-- cADL 1.4 date/time/duration breadth
+		data matches {
+			ITEM_TREE[at0001] matches {	-- Date/time constraints
+				items cardinality matches {0..*} matches {
+					-- ── DATE patterns: the whole valid-pattern table of
+					-- ADL1.4/master05-cadl.adoc §Patterns L868-874.
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Full date
+						value matches {
+							DV_DATE matches {
+								value matches {yyyy-mm-dd}
+							}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Optional day
+						value matches {
+							DV_DATE matches {
+								value matches {yyyy-mm-??}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Any date
+						value matches {
+							DV_DATE matches {
+								-- With the assumed value of §Patterns L912:
+								-- "`yyyy-??-??; 1970-01-01`".
+								value matches {yyyy-??-??; 1970-01-01}
+							}
+						}
+					}
+					ELEMENT[at0005] occurrences matches {0..1} matches {	-- Month, no day
+						value matches {
+							DV_DATE matches {
+								value matches {yyyy-mm-XX}
+							}
+						}
+					}
+					ELEMENT[at0006] occurrences matches {0..1} matches {	-- Optional month, no day
+						value matches {
+							DV_DATE matches {
+								value matches {yyyy-??-XX}
+							}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {0..1} matches {	-- Literal-substituted year
+						value matches {
+							DV_DATE matches {
+								-- §Patterns L894: "the 'yyyy' etc match strings can be
+								-- replaced by literal date/time numbers. For example,
+								-- `yyyy-??-XX` could be transformed into `1995-??-XX`".
+								value matches {1995-??-XX}
+							}
+						}
+					}
+					-- ── TIME patterns (L876-882) + the timezone modifiers of the
+					-- <<timezone_constraints>> table (L900-906), whose `±` rows are
+					-- glossed "commencing with '+' or '-'"; L852 spells the ASCII
+					-- forms `+hh:mm`, `+hhmm`, `-hh` directly.
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Full time
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:ss}
+							}
+						}
+					}
+					ELEMENT[at0009] occurrences matches {0..1} matches {	-- No seconds
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:XX}
+							}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {	-- Optional minutes, no seconds
+						value matches {
+							DV_TIME matches {
+								value matches {hh:??:XX}
+							}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Any time
+						value matches {
+							DV_TIME matches {
+								value matches {hh:??:??}
+							}
+						}
+					}
+					ELEMENT[at0012] occurrences matches {0..1} matches {	-- Full timezone required
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:ss+hh:mm; 09:30:00+0200}
+							}
+						}
+					}
+					ELEMENT[at0013] occurrences matches {0..1} matches {	-- Compact timezone required
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:ss+hhmm}
+							}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {	-- Hours-only timezone required
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:ss-hh}
+							}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {	-- UTC required
+						value matches {
+							DV_TIME matches {
+								value matches {hh:mm:ssZ}
+							}
+						}
+					}
+					-- ── DATE/TIME patterns (L884-891).
+					ELEMENT[at0016] occurrences matches {0..1} matches {	-- Full date/time
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-mm-ddThh:mm:ss}
+							}
+						}
+					}
+					ELEMENT[at0017] occurrences matches {0..1} matches {	-- Optional seconds
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-mm-ddThh:mm:??}
+							}
+						}
+					}
+					ELEMENT[at0018] occurrences matches {0..1} matches {	-- No seconds
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-mm-ddThh:mm:XX}
+							}
+						}
+					}
+					ELEMENT[at0019] occurrences matches {0..1} matches {	-- Optional minutes, no seconds
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-mm-ddThh:??:XX}
+							}
+						}
+					}
+					ELEMENT[at0020] occurrences matches {0..1} matches {	-- Minimum date/time
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-??-??T??:??:??}
+							}
+						}
+					}
+					ELEMENT[at0021] occurrences matches {0..1} matches {	-- Space-separated date/time
+						value matches {
+							DV_DATE_TIME matches {
+								-- The chapter's own §Symbols lexical rule spells the
+								-- separator `[ T]` (L1422
+								-- `V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN`) and its
+								-- §Assumed Values example L1018 uses the space form:
+								-- "`some_date matches {yyyy-mm-dd hh:mm:XX;
+								-- 1800-01-01T00:00:00}`".
+								value matches {yyyy-mm-dd hh:mm:XX; 1800-01-01T00:00:00}
+							}
+						}
+					}
+					ELEMENT[at0022] occurrences matches {0..1} matches {	-- Date/time with timezone
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {yyyy-mm-ddThh:mm:ss±hh:mm}
+							}
+						}
+					}
+					-- ── DATE/TIME intervals (L914-930).
+					ELEMENT[at0023] occurrences matches {0..1} matches {	-- Time point and one-sided
+						value matches {
+							DV_TIME matches {
+								value matches {|09:30:00|}
+							}
+						}
+					}
+					ELEMENT[at0024] occurrences matches {0..1} matches {	-- One-sided time with timezone
+						value matches {
+							DV_TIME matches {
+								-- L924: "|> 09:30:00+0200| -- any time after 9:30 am in
+								-- UTC+0200 timezone". A one-sided interval is outside
+								-- the timezone-symmetry rule of L932 by its own wording.
+								value matches {|>09:30:00+0200|}
+							}
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- Date range
+						value matches {
+							DV_DATE matches {
+								value matches {|2004-05-20..2004-06-02|}
+							}
+						}
+					}
+					ELEMENT[at0026] occurrences matches {0..1} matches {	-- Date/time range in UTC
+						value matches {
+							DV_DATE_TIME matches {
+								-- L932: within a two-sided interval "if a timezone is
+								-- used on one, it must be used on both". Both carry one.
+								value matches {|2004-05-20T00:00:00Z..2005-05-19T23:59:59Z|}
+							}
+						}
+					}
+					ELEMENT[at0027] occurrences matches {0..1} matches {	-- Date/time range without timezone
+						value matches {
+							DV_DATE_TIME matches {
+								value matches {|2004-05-20T00:00:00..2005-05-19T23:59:59|}
+							}
+						}
+					}
+					-- ── DURATION patterns, values, intervals and the mixed form
+					-- (§Duration Constraints L936-987).
+					ELEMENT[at0028] occurrences matches {0..1} matches {	-- Days only
+						value matches {
+							DV_DURATION matches {
+								value matches {Pd}
+							}
+						}
+					}
+					ELEMENT[at0029] occurrences matches {0..1} matches {	-- Months only
+						value matches {
+							DV_DURATION matches {
+								value matches {Pm}
+							}
+						}
+					}
+					ELEMENT[at0030] occurrences matches {0..1} matches {	-- Minutes only
+						value matches {
+							DV_DURATION matches {
+								value matches {PTm}
+							}
+						}
+					}
+					ELEMENT[at0031] occurrences matches {0..1} matches {	-- Weeks and/or days
+						value matches {
+							DV_DURATION matches {
+								value matches {Pwd}
+							}
+						}
+					}
+					ELEMENT[at0032] occurrences matches {0..1} matches {	-- Hours and/or minutes
+						value matches {
+							DV_DURATION matches {
+								value matches {PThm}
+							}
+						}
+					}
+					ELEMENT[at0033] occurrences matches {0..1} matches {	-- All designators
+						value matches {
+							DV_DURATION matches {
+								value matches {PYMWD}
+							}
+						}
+					}
+					ELEMENT[at0034] occurrences matches {0..1} matches {	-- Duration values
+						value matches {
+							DV_DURATION matches {
+								value matches {PT1m}
+							}
+						}
+					}
+					ELEMENT[at0035] occurrences matches {0..1} matches {	-- Compound duration value
+						value matches {
+							DV_DURATION matches {
+								value matches {P1dT8h}
+							}
+						}
+					}
+					ELEMENT[at0036] occurrences matches {0..1} matches {	-- Duration interval
+						value matches {
+							DV_DURATION matches {
+								value matches {|PT0m..PT1m30s|}
+							}
+						}
+					}
+					ELEMENT[at0037] occurrences matches {0..1} matches {	-- Negative duration
+						value matches {
+							DV_DURATION matches {
+								-- L953: "Pure pattern constraints are used to constrain
+								-- negative durations as well as positive durations …
+								-- any of the above constraints may be used for values
+								-- such as `'-P5d'`".
+								value matches {-P5D}
+							}
+						}
+					}
+					ELEMENT[at0038] occurrences matches {0..1} matches {	-- Mixed pattern and interval
+						value matches {
+							DV_DURATION matches {
+								-- L971: "PWD/|P0W..P50W| -- 0-50 weeks, expressed only
+								-- using weeks and days"; the general form is
+								-- `duration_constraint: duration_pattern '/'
+								-- duration_interval` (L986).
+								value matches {PWD/|P0W..P50W|}
+							}
+						}
+					}
+					ELEMENT[at0039] occurrences matches {0..1} matches {	-- Mixed pattern and one-sided interval
+						value matches {
+							DV_DURATION matches {
+								-- L977: "PYMWD/|<=P0Y| -- negative age, with
+								-- years/months/weeks/days allowed".
+								value matches {PYMWD/|<=P0Y|}
+							}
+						}
+					}
+					ELEMENT[at0040] occurrences matches {0..1} matches {	-- Duration with assumed value
+						value matches {
+							DV_DURATION matches {
+								value matches {|PT0m..PT1m30s|; PT0m}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"cADL 1.4 date/time/duration breadth">
+					description = <"Accepting fixture: every date/time/duration pattern, value and interval form of master05.">
+				>
+				["at0001"] = <
+					text = <"Date/time constraints">
+					description = <"The tree holding the date/time constraints.">
+				>
+				["at0002"] = <
+					text = <"Full date">
+					description = <"Pattern yyyy-mm-dd.">
+				>
+				["at0003"] = <
+					text = <"Optional day">
+					description = <"Pattern yyyy-mm-??.">
+				>
+				["at0004"] = <
+					text = <"Any date">
+					description = <"Pattern yyyy-??-?? with an assumed value.">
+				>
+				["at0005"] = <
+					text = <"Month, no day">
+					description = <"Pattern yyyy-mm-XX.">
+				>
+				["at0006"] = <
+					text = <"Optional month, no day">
+					description = <"Pattern yyyy-??-XX.">
+				>
+				["at0007"] = <
+					text = <"Literal-substituted year">
+					description = <"Pattern 1995-??-XX.">
+				>
+				["at0008"] = <
+					text = <"Full time">
+					description = <"Pattern hh:mm:ss.">
+				>
+				["at0009"] = <
+					text = <"No seconds">
+					description = <"Pattern hh:mm:XX.">
+				>
+				["at0010"] = <
+					text = <"Optional minutes, no seconds">
+					description = <"Pattern hh:??:XX.">
+				>
+				["at0011"] = <
+					text = <"Any time">
+					description = <"Pattern hh:??:??.">
+				>
+				["at0012"] = <
+					text = <"Full timezone required">
+					description = <"Pattern hh:mm:ss+hh:mm with an assumed value.">
+				>
+				["at0013"] = <
+					text = <"Compact timezone required">
+					description = <"Pattern hh:mm:ss+hhmm.">
+				>
+				["at0014"] = <
+					text = <"Hours-only timezone required">
+					description = <"Pattern hh:mm:ss-hh.">
+				>
+				["at0015"] = <
+					text = <"UTC required">
+					description = <"Pattern hh:mm:ssZ.">
+				>
+				["at0016"] = <
+					text = <"Full date/time">
+					description = <"Pattern yyyy-mm-ddThh:mm:ss.">
+				>
+				["at0017"] = <
+					text = <"Optional seconds">
+					description = <"Pattern yyyy-mm-ddThh:mm:??.">
+				>
+				["at0018"] = <
+					text = <"No seconds">
+					description = <"Pattern yyyy-mm-ddThh:mm:XX.">
+				>
+				["at0019"] = <
+					text = <"Optional minutes, no seconds">
+					description = <"Pattern yyyy-mm-ddThh:??:XX.">
+				>
+				["at0020"] = <
+					text = <"Minimum date/time">
+					description = <"Pattern yyyy-??-??T??:??:??.">
+				>
+				["at0021"] = <
+					text = <"Space-separated date/time">
+					description = <"Pattern yyyy-mm-dd hh:mm:XX with an assumed value.">
+				>
+				["at0022"] = <
+					text = <"Date/time with timezone">
+					description = <"Pattern yyyy-mm-ddThh:mm:ss with a required timezone.">
+				>
+				["at0023"] = <
+					text = <"Time point and one-sided">
+					description = <"A point time interval.">
+				>
+				["at0024"] = <
+					text = <"One-sided time with timezone">
+					description = <"A one-sided time interval whose endpoint carries a timezone.">
+				>
+				["at0025"] = <
+					text = <"Date range">
+					description = <"A two-sided date interval.">
+				>
+				["at0026"] = <
+					text = <"Date/time range in UTC">
+					description = <"A two-sided date/time interval with a timezone on both endpoints.">
+				>
+				["at0027"] = <
+					text = <"Date/time range without timezone">
+					description = <"A two-sided date/time interval with a timezone on neither endpoint.">
+				>
+				["at0028"] = <
+					text = <"Days only">
+					description = <"Duration pattern Pd.">
+				>
+				["at0029"] = <
+					text = <"Months only">
+					description = <"Duration pattern Pm.">
+				>
+				["at0030"] = <
+					text = <"Minutes only">
+					description = <"Duration pattern PTm.">
+				>
+				["at0031"] = <
+					text = <"Weeks and/or days">
+					description = <"Duration pattern Pwd.">
+				>
+				["at0032"] = <
+					text = <"Hours and/or minutes">
+					description = <"Duration pattern PThm.">
+				>
+				["at0033"] = <
+					text = <"All designators">
+					description = <"Duration pattern PYMWD.">
+				>
+				["at0034"] = <
+					text = <"Duration values">
+					description = <"A fixed duration value.">
+				>
+				["at0035"] = <
+					text = <"Compound duration value">
+					description = <"A duration value with day and hour components.">
+				>
+				["at0036"] = <
+					text = <"Duration interval">
+					description = <"A two-sided duration interval.">
+				>
+				["at0037"] = <
+					text = <"Negative duration">
+					description = <"A negative duration value.">
+				>
+				["at0038"] = <
+					text = <"Mixed pattern and interval">
+					description = <"A duration pattern followed by a duration interval.">
+				>
+				["at0039"] = <
+					text = <"Mixed pattern and one-sided interval">
+					description = <"A duration pattern followed by a one-sided duration interval.">
+				>
+				["at0040"] = <
+					text = <"Duration with assumed value">
+					description = <"A duration interval carrying an assumed value.">
+				>
+			>
+		>
+	>

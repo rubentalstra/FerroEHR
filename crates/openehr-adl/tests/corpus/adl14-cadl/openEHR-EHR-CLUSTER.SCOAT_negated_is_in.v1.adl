@@ -1,0 +1,57 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SCOAT_negated_is_in.v1
+
+concept
+	[at0000]	-- Negated is_in in attribute position
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"SCOAT">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Negated is_in in attribute position
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				-- The attribute-position twin of the object-position refusal: the
+				-- chapter's own worked negation examples are attribute-level
+				-- (ADL1.4/master05-cadl.adoc L95-97 — `aaa ~matches {5}`,
+				-- `aaa ~is_in {5}`, `aaa ∉ {5}`), and `c_attribute`
+				-- (§Syntax L1107-1109) admits `SYM_MATCHES` only.
+				value ~is_in {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Negated is_in in attribute position">
+					description = <"Refusal fixture: '~is_in' has no cADL production.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"The recorded position.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0003"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>
