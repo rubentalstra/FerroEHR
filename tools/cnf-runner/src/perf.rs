@@ -6,7 +6,7 @@
 //! RE-CHECKABLE from the artifact), and the class-verdict pure function
 //! (earned | not-earned).
 //!
-//! The class floors are the population-anchored [legislated] defaults the
+//! The class floors are the population-anchored \[legislated\] defaults the
 //! schedule publishes (POC 2/s · S 15/s · L 150/s · R 1,500/s peak
 //! arrivals, p99 ≤ 1 s, error rate 0) — implemented exactly as specified;
 //! upstream ratification owns any change. The workload model is OPEN-LOOP
@@ -33,10 +33,14 @@ use crate::ids::{CaseId, CorpusKey};
 /// The volumetric class ladder (the §8.11 step-2c selection key).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PerfClass {
+    /// Proof-of-concept volumes: the lowest rung of the ladder.
     #[serde(rename = "POC")]
     Poc,
+    /// Small deployment volumes.
     S,
+    /// Large deployment volumes.
     L,
+    /// Regional/national deployment volumes: the highest rung.
     R,
 }
 
@@ -46,7 +50,7 @@ impl PerfClass {
         &[PerfClass::Poc, PerfClass::S, PerfClass::L, PerfClass::R];
 
     /// The class's offered-load floor (peak API arrivals/s, sustained) —
-    /// the published [legislated] defaults.
+    /// the published \[legislated\] defaults.
     #[must_use]
     pub fn arrival_floor_per_s(self) -> f64 {
         match self {
@@ -123,6 +127,10 @@ impl<'de> Deserialize<'de> for WorkloadDuration {
 impl Serialize for WorkloadDuration {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use std::fmt::Write as _;
+        #[expect(
+            clippy::integer_division,
+            reason = "whole hours/minutes of an ISO 8601 duration: exact integer split"
+        )]
         let (h, m, s) = (self.0 / 3600, (self.0 % 3600) / 60, self.0 % 60);
         let mut out = String::from("PT");
         if h > 0 {
@@ -141,7 +149,7 @@ impl Serialize for WorkloadDuration {
 /// Microseconds → milliseconds (latency values are far below the f64
 /// mantissa bound; the histogram's value range is capped at recording).
 fn us_to_ms(us: u64) -> f64 {
-    #[allow(clippy::cast_precision_loss)] // latencies << 2^52 microseconds
+    #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 microseconds")]
     {
         us as f64 / 1_000.0
     }
@@ -706,9 +714,19 @@ pub enum StageOffset {
     Fixed(u64),
     /// Uniformly hashed into `[min_s, max_s]` (e.g. a laboratory
     /// turnaround band).
-    Uniform { min_s: u64, max_s: u64 },
+    Uniform {
+        /// Inclusive lower bound of the draw, seconds after arrival.
+        min_s: u64,
+        /// Inclusive upper bound of the draw, seconds after arrival.
+        max_s: u64,
+    },
     /// `count` repetitions at `k * interval_s` (the medication round).
-    Periodic { interval_s: u64, count: u32 },
+    Periodic {
+        /// Seconds between consecutive repetitions.
+        interval_s: u64,
+        /// How many repetitions the stage expands into.
+        count: u32,
+    },
 }
 
 impl StageOffset {
@@ -827,6 +845,7 @@ pub struct JourneyStage {
     /// exactly when [`PerfOp::needs_template`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
+    /// When the stage's operation arrives, relative to the journey arrival.
     pub at: StageOffset,
 }
 
@@ -835,10 +854,12 @@ pub struct JourneyStage {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Journey {
+    /// What clinical journey this models, in one phrase.
     pub description: String,
     /// The official activity statistic the journey's shape/rate traces to
     /// (the same register the class floors derive from).
     pub derivation: String,
+    /// The journey's operations, in arrival order.
     pub stages: Vec<JourneyStage>,
 }
 
@@ -952,7 +973,7 @@ impl JourneyCatalogue {
                 .ok_or_else(|| format!("workload names unknown journey {name:?}"))?;
             for stage in &journey.stages {
                 let op = PerfOp::parse(&stage.op)?;
-                #[allow(clippy::cast_precision_loss)] // stage arrival counts are tiny
+                #[expect(clippy::cast_precision_loss, reason = "stage arrival counts are tiny")]
                 let weight = share.0 / 100.0 * stage.at.arrivals() as f64;
                 arrivals_per_journey += weight;
                 if let Some((_, w)) = op_weight.iter_mut().find(|(o, _)| *o == op) {
@@ -1009,8 +1030,11 @@ pub enum ArrivalCurve {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Workload {
+    /// Aggregate operation arrivals per second the schedule offers.
     pub arrival_rate: RatePerSecond,
+    /// The unrecorded warmup preceding the measured window.
     pub warmup: WorkloadDuration,
+    /// The recorded measurement window.
     pub duration: WorkloadDuration,
     /// The arrival-time shape (default uniform; diurnal only for the
     /// extended holds).
@@ -1042,6 +1066,7 @@ impl Workload {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Threshold {
+    /// The measured quantity this threshold bounds.
     pub metric: Metric,
     /// The operation the metric is scoped to (absent = run-wide).
     #[serde(default)]
@@ -1058,10 +1083,15 @@ pub struct Threshold {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Metric {
+    /// Median request latency.
     LatencyP50,
+    /// 90th-percentile request latency.
     LatencyP90,
+    /// 99th-percentile request latency.
     LatencyP99,
+    /// Failed requests as a fraction of all requests.
     ErrorRate,
+    /// The arrival rate the run actually sustained, arrivals/s.
     OfferedLoadSustained,
 }
 
@@ -1070,17 +1100,25 @@ pub enum Metric {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PerformanceCase {
+    /// The globally unique case id.
     pub id: CaseId,
     /// Always the literal `performance`.
     pub kind: String,
+    /// The schedule chapter the case belongs to (always `PERFORMANCE`).
     pub component: String,
+    /// The schedule's Description row.
     pub description: String,
+    /// The ISO/IEC 9646 test purpose — one narrow conformance requirement.
     pub test_purpose: String,
+    /// Citations (component + document + section); link-checked.
     pub spec_refs: Vec<String>,
     /// The selection key (§8.11 step 2c) — the claimed class selects.
     pub class: PerfClass,
+    /// The seeded corpus the run measures against.
     pub corpus: CorpusKey,
+    /// The offered load the run drives.
     pub workload: Workload,
+    /// Every bound that must hold for the class to be earned.
     pub thresholds: Vec<Threshold>,
 }
 
@@ -1129,11 +1167,17 @@ impl PerformanceCase {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OperationMeasurement {
+    /// The operation these numbers are scoped to.
     pub operation: String,
+    /// Requests recorded in the measured window.
     pub requests: u64,
+    /// How many of those requests failed.
     pub errors: u64,
+    /// Median latency, milliseconds (re-derivable from the histogram).
     pub latency_ms_p50: f64,
+    /// 90th-percentile latency, milliseconds.
     pub latency_ms_p90: f64,
+    /// 99th-percentile latency, milliseconds.
     pub latency_ms_p99: f64,
     /// Standard `HdrHistogram` V2 encoding, base64 (values in microseconds).
     pub hdr_v2_base64: String,
@@ -1185,7 +1229,9 @@ impl OperationMeasurement {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ContainerRole {
+    /// The system under test's own server process.
     Sut,
+    /// The database the SUT runs against.
     Db,
 }
 
@@ -1210,8 +1256,11 @@ impl ContainerRole {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ResourcePhase {
+    /// Before the measured window opened; not recorded in the verdict.
     Warmup,
+    /// Inside the recorded measurement window.
     Measured,
+    /// After the window closed, while in-flight completions drained.
     Drain,
 }
 
@@ -1233,6 +1282,7 @@ impl ResourcePhase {
 pub struct ResourceSample {
     /// Seconds since the measured window started (warmup included).
     pub offset_s: u64,
+    /// Which run phase the sample was taken in.
     pub phase: ResourcePhase,
     /// CPU utilisation percent over the preceding sample interval
     /// (100 = one full core).
@@ -1254,6 +1304,7 @@ pub struct ResourceSample {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ContainerResourceSeries {
+    /// Which container of the deployment this series describes.
     pub role: ContainerRole,
     /// The container-runtime identity sampled (the ixit `containers` block).
     pub name: String,
@@ -1343,7 +1394,9 @@ pub struct ResourcesRecord {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Measurement {
+    /// The performance case this run measured.
     pub case: CaseId,
+    /// The volumetric class the case claims.
     pub class: PerfClass,
     /// The ixit environment block the run was measured in — mandatory:
     /// performance is meaningless without the deployment described, and an
@@ -1355,6 +1408,7 @@ pub struct Measurement {
     pub warmup_s: u64,
     /// The recorded (post-warmup) measurement window (seconds).
     pub duration_s: u64,
+    /// Per-operation records, one per operation the workload drove.
     pub operations: Vec<OperationMeasurement>,
     /// The verdict — computed, never asserted; any consumer re-derives it
     /// from the decoded histograms + the case thresholds.
@@ -1412,7 +1466,9 @@ pub fn verdict_evidence(measurement: &Measurement) -> String {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ClassVerdict {
+    /// Every threshold of the case held in the measured run.
     Earned,
+    /// At least one threshold was violated.
     NotEarned,
 }
 
@@ -1448,7 +1504,7 @@ pub fn class_verdict(
                 let rate = if requests == 0 {
                     1.0
                 } else {
-                    #[allow(clippy::cast_precision_loss)] // request counts << 2^52
+                    #[expect(clippy::cast_precision_loss, reason = "request counts << 2^52")]
                     {
                         errors as f64 / requests as f64
                     }
@@ -1500,7 +1556,6 @@ pub fn class_verdict(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 
@@ -1591,7 +1646,7 @@ mod tests {
         let h = histogram(&[10_000]);
         let op = OperationMeasurement::from_histogram("ehr_read", &h, 0).unwrap();
         let mut m = Measurement {
-            case: crate::ids::CaseId::parse("PERF-hospital_sim-class_POC").unwrap(),
+            case: CaseId::parse("PERF-hospital_sim-class_POC").unwrap(),
             class: PerfClass::Poc,
             environment: serde_json::from_value(serde_json::json!({
                 "hardware_class": "test", "cores": 1, "memory_gb": 1,

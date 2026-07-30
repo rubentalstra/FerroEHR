@@ -39,18 +39,25 @@ use crate::schema;
 /// errors travel alongside).
 #[derive(Debug, Default)]
 pub struct ArtifactSet {
+    /// The loaded functional/content case cores, with their source paths.
     pub cases: Vec<(PathBuf, CaseCore)>,
     /// `kind: performance` cases (their own schema family; measured, not
     /// asserted).
     pub performance: Vec<(PathBuf, crate::perf::PerformanceCase)>,
+    /// The wire realizations, one file per SM operation (plus variants).
     pub bindings: Vec<(PathBuf, OperationBinding)>,
+    /// The outcome-kind vocabulary.
     pub outcomes: Option<(PathBuf, OutcomesVocab)>,
+    /// The selector vocabulary (server-assigned sets, ctx defaults).
     pub selectors: Option<(PathBuf, SelectorsVocab)>,
+    /// The capability matrix: the certificate's rating dimensions.
     pub matrix: Option<(PathBuf, CapabilityMatrix)>,
     /// The clinical journey catalogue the performance workloads decompose
     /// into (`vocab/journey_catalogue.yaml`).
     pub journeys: Option<(PathBuf, crate::perf::JourneyCatalogue)>,
+    /// The corpus manifest: every fixture, its format and its adjudication.
     pub corpus: Option<(PathBuf, CorpusManifest)>,
+    /// The ambiguity register: spec silences with a typed disposition.
     pub register: Option<(PathBuf, AmbiguityRegister)>,
     /// The wire-surface coverage register (`vocab/wire_surface.yaml`) — the
     /// authored, spec-cited exceptions + cross-cutting elements the
@@ -67,7 +74,9 @@ pub struct ArtifactSet {
 /// A load pass over one artifact root.
 #[derive(Debug, Default)]
 pub struct Loaded {
+    /// Everything that loaded and typed successfully.
     pub set: ArtifactSet,
+    /// One error per file that did not, in discovery order.
     pub errors: Vec<LoadError>,
 }
 
@@ -148,7 +157,10 @@ fn load_performance_case(path: &Path) -> Result<crate::perf::PerformanceCase, Lo
 /// Only on a schema-compilation defect in [`crate::schema`] itself — a bug
 /// in this crate, not in the artifact tree. Tree problems come back as
 /// [`Loaded::errors`].
-#[allow(clippy::too_many_lines)] // one singleton-loading block per artifact family
+#[expect(
+    clippy::too_many_lines,
+    reason = "one singleton-loading block per artifact family"
+)]
 pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     let case_schema = compile_schema(&schema::case_core_schema(), "case-core.schema.json")?;
     let binding_schema = compile_schema(

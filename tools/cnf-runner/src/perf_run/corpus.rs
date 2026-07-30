@@ -137,7 +137,10 @@ pub fn ward_size(ehr_count: usize) -> usize {
 /// # Errors
 /// A message on any wire outcome outside the bindings' created/exists
 /// outcomes, or a transport fault.
-#[allow(clippy::too_many_lines)] // one seeding procedure, linear phases
+#[expect(
+    clippy::too_many_lines,
+    reason = "one seeding procedure, linear phases"
+)]
 pub fn seed_scale_ladder(
     client: &PerfClient,
     corpus_key: &str,
@@ -213,7 +216,7 @@ pub fn seed_scale_ladder(
                         });
                     match outcome {
                         Ok(id) => {
-                            if let Ok(mut slot) = ehr_slots[i].lock() {
+                            if let Some(Ok(mut slot)) = ehr_slots.get(i).map(Mutex::lock) {
                                 *slot = Some(id);
                             }
                         }
@@ -271,6 +274,10 @@ pub fn seed_scale_ladder(
                     if t >= total {
                         break;
                     }
+                    #[expect(
+                        clippy::integer_division,
+                        reason = "which EHR the t-th commit belongs to: exact integer bucketing"
+                    )]
                     let ehr_index = t / versions_per_ehr;
                     let series = t % 10;
                     let Some(body) = bodies.get(series) else {
@@ -327,7 +334,7 @@ pub fn seed_scale_ladder(
     }
     let mut compositions = committed
         .into_inner()
-        .map_err(|_| "seeding lock poisoned".to_owned())?;
+        .map_err(|error| format!("seeding lock poisoned: {error}"))?;
     if compositions.len() != total {
         return Err(format!(
             "seeded {}/{total} compositions only",
@@ -352,7 +359,10 @@ pub fn seed_scale_ladder(
 ///
 /// # Errors
 /// A message on any unexpected wire outcome or a transport fault.
-#[allow(clippy::too_many_lines)] // one seeding procedure, linear phases
+#[expect(
+    clippy::too_many_lines,
+    reason = "one seeding procedure, linear phases"
+)]
 pub fn seed_ward(
     client: &PerfClient,
     corpus: &mut SeededCorpus,
@@ -526,7 +536,7 @@ pub fn seed_ward(
                     );
                     match outcome {
                         Ok(entry) => {
-                            if let Ok(mut slot) = slots[offset].lock() {
+                            if let Some(Ok(mut slot)) = slots.get(offset).map(Mutex::lock) {
                                 *slot = Some(entry);
                             }
                         }
@@ -561,7 +571,6 @@ pub fn seed_ward(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)] // one patient's linear seeding chain
 fn seed_one_patient(
     client: &PerfClient,
     corpus: &SeededCorpus,
@@ -658,7 +667,6 @@ fn seed_one_patient(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

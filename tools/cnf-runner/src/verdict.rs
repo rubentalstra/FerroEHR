@@ -64,7 +64,7 @@ pub enum Evidence {
     /// accepted consequence is absolute: a party claiming a tier whose
     /// required capability it cannot evidence FAILS that tier — the upstream
     /// Java product included; no excuse arm survives in
-    /// [`required_all_passed`].
+    /// this module's `required_all_passed`.
     NotEvidenced,
 }
 
@@ -797,7 +797,6 @@ fn intersects(a: &[CapabilityName], b: &[CapabilityName]) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, clippy::too_many_lines)] // test fixtures
 mod tests {
     use super::*;
 

@@ -98,6 +98,13 @@ impl PerfClient {
     /// A message when a credential env var is unset, a `bearer_mint`
     /// instance has no declared SMART lane to mint against, or the client
     /// cannot be built.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "credentials are read from the environment BY DESIGN: the ixit \
+                  declares only the variable NAME so no secret ever enters the \
+                  catalogue; cnf-runner is a standalone instrument with no access \
+                  to the server's config tree, which is what that ban protects"
+    )]
     pub fn from_instance(instance: &Instance, ixit: &Ixit) -> Result<Self, String> {
         let credential = match &instance.auth {
             AuthMode::None => Credential::Fixed(None),
@@ -106,16 +113,16 @@ impl PerfClient {
                 password_env,
             } => {
                 let user = std::env::var(user_env)
-                    .map_err(|_| format!("credential env {user_env} unset"))?;
+                    .map_err(|error| format!("credential env {user_env}: {error}"))?;
                 let pass = std::env::var(password_env)
-                    .map_err(|_| format!("credential env {password_env} unset"))?;
+                    .map_err(|error| format!("credential env {password_env}: {error}"))?;
                 let token = base64::engine::general_purpose::STANDARD
                     .encode(format!("{user}:{pass}").as_bytes());
                 Credential::Fixed(Some(format!("Basic {token}")))
             }
             AuthMode::Bearer { token_env } => {
                 let token = std::env::var(token_env)
-                    .map_err(|_| format!("credential env {token_env} unset"))?;
+                    .map_err(|error| format!("credential env {token_env}: {error}"))?;
                 Credential::Fixed(Some(format!("Bearer {token}")))
             }
             // The SMART resource-server posture IS this product's standard
@@ -151,7 +158,7 @@ impl PerfClient {
                 grant
                     .current
                     .write()
-                    .map_err(|_| "minted-token lock poisoned".to_owned())?
+                    .map_err(|error| format!("minted-token lock poisoned: {error}"))?
                     .clone_from(&token);
                 Credential::Minted(Box::new(grant))
             }
@@ -196,7 +203,10 @@ impl PerfClient {
     /// exchange's default representation (the Simplified-Format reads);
     /// `extra` carries the operation's own declared headers (e.g.
     /// `openehr-template-id` on a FLAT commit).
-    #[allow(clippy::too_many_arguments)] // the single request-construction seam
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "the single request-construction seam"
+    )]
     pub(crate) fn request_negotiated(
         &self,
         method: reqwest::Method,
@@ -283,7 +293,7 @@ impl MintedGrant {
             let current = self
                 .current
                 .read()
-                .map_err(|_| "minted-token lock poisoned".to_owned())?;
+                .map_err(|error| format!("minted-token lock poisoned: {error}"))?;
             if now.saturating_add(MINT_REFRESH_MARGIN_MS) < current.expires_at_ms {
                 return Ok(current.header.clone());
             }
@@ -291,7 +301,7 @@ impl MintedGrant {
         let mut current = self
             .current
             .write()
-            .map_err(|_| "minted-token lock poisoned".to_owned())?;
+            .map_err(|error| format!("minted-token lock poisoned: {error}"))?;
         // Re-check: another arrival may have re-minted while this one
         // waited for the write lock.
         if now.saturating_add(MINT_REFRESH_MARGIN_MS) < current.expires_at_ms {
@@ -456,7 +466,6 @@ pub(crate) fn object_uid_of(version_uid: &str) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

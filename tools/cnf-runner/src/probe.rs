@@ -39,12 +39,21 @@ impl Default for ProbeOptions {
 }
 
 /// Wire-latency percentiles of one probe (milliseconds, client-observed).
+#[expect(
+    clippy::struct_field_names,
+    reason = "the `_ms` suffix is the UNIT, and it is also the published artifact's \
+              JSON key — dropping it would make a bare number ambiguous in the record"
+)]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WireStats {
+    /// Fastest observed request, milliseconds.
     pub min_ms: f64,
+    /// Median observed request, milliseconds.
     pub p50_ms: f64,
+    /// 95th-percentile observed request, milliseconds.
     pub p95_ms: f64,
+    /// Slowest observed request, milliseconds.
     pub max_ms: f64,
 }
 
@@ -53,9 +62,13 @@ pub struct WireStats {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct StatementCost {
+    /// The normalized statement text as `pg_stat_statements` reports it.
     pub sql: String,
+    /// Executions attributed to the probe's request burst.
     pub calls: u64,
+    /// Mean execution time per call, milliseconds.
     pub mean_ms: f64,
+    /// Total execution time across the calls, milliseconds.
     pub total_ms: f64,
     /// Planning share (`pg_stat_statements.track_planning`; `PostgreSQL` docs
     /// section `pg_stat_statements`): mean/total planner time, separated
@@ -64,9 +77,12 @@ pub struct StatementCost {
     /// `track_planning`.
     #[serde(default)]
     pub mean_plan_ms: f64,
+    /// Total planner time across the calls, milliseconds.
     #[serde(default)]
     pub total_plan_ms: f64,
+    /// Shared-buffer hits: blocks served without touching storage.
     pub shared_blks_hit: u64,
+    /// Shared-buffer misses: blocks read from storage.
     pub shared_blks_read: u64,
 }
 
@@ -75,12 +91,16 @@ pub struct StatementCost {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProbeResult {
+    /// The probe's name in the report.
     pub name: String,
+    /// The AQL text the probe executed.
     pub aql: String,
     /// Requests that did not return 200 (a failing probe is a finding,
     /// never an instrument error).
     pub failures: u32,
+    /// Client-observed latency percentiles over the burst.
     pub wire_ms: WireStats,
+    /// The DB statements attributed to the burst, costliest first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statements: Vec<StatementCost>,
 }
@@ -92,7 +112,9 @@ pub struct ProbeResult {
 pub struct AqlProbeReport {
     /// The corpus the probes ran against (a class corpus key).
     pub corpus: String,
+    /// The deployment the probes were measured in.
     pub environment: Environment,
+    /// How many requests each probe fired.
     pub requests_per_probe: u32,
     /// Whether the maintenance debt was settled before probing
     /// (`vacuumdb --analyze` through the DB container).
@@ -100,6 +122,7 @@ pub struct AqlProbeReport {
     /// `pg_stat_statements` when DB-side attribution ran, else the honest
     /// reason it could not.
     pub attribution: String,
+    /// Every executed probe, in execution order.
     pub probes: Vec<ProbeResult>,
     /// The human summary, incl. the explicit exploration disclaimer.
     pub remark: String,
@@ -119,12 +142,12 @@ fn percentile(sorted: &[f64], q: f64) -> f64 {
     if sorted.is_empty() {
         return 0.0;
     }
-    #[allow(
+    #[expect(
         clippy::cast_precision_loss,
         clippy::cast_possible_truncation,
-        clippy::cast_sign_loss
+        clippy::cast_sign_loss,
+        reason = "sample counts are tiny; the nearest-rank index is non-negative by construction"
     )]
-    // sample counts are tiny; nearest-rank index is non-negative by construction
     let index = ((q * sorted.len() as f64).ceil() as usize).saturating_sub(1);
     sorted
         .get(index.min(sorted.len() - 1))
@@ -210,7 +233,7 @@ fn read_statements(db_container: &str) -> Result<Vec<StatementCost>, String> {
 /// A message on a probe-construction failure (an empty corpus); a failing
 /// REQUEST is a recorded finding, and absent attribution/settling degrade
 /// to honest report fields — never errors.
-#[allow(clippy::too_many_lines)] // one linear probe procedure
+#[expect(clippy::too_many_lines, reason = "one linear probe procedure")]
 pub fn run_probe(
     client: &PerfClient,
     corpus: &SeededCorpus,
@@ -391,7 +414,6 @@ pub fn run_probe(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

@@ -171,22 +171,38 @@ pub enum CaseStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Component {
+    /// EHR lifecycle and `EHR_STATUS` (SM `I_EHR_SERVICE` / `I_EHR_STATUS`).
     Ehr,
+    /// COMPOSITION commit/read/versioning (SM `I_EHR_COMPOSITION`).
     EhrComposition,
+    /// CONTRIBUTION commit and retrieval (SM `I_EHR_CONTRIBUTION`).
     EhrContribution,
+    /// The EHR's FOLDER directory (SM `I_EHR_DIRECTORY`).
     EhrDirectory,
+    /// ADL 1.4 template definitions — OPT upload/list/get (SM `I_DEFINITION_ADL14`).
     #[serde(rename = "DEFINITION_ADL14")]
     DefinitionAdl14,
+    /// ADL 2 archetype/template definitions (SM `I_DEFINITION_ADL2`).
     #[serde(rename = "DEFINITION_ADL2")]
     DefinitionAdl2,
+    /// Stored-query definitions (SM `I_DEFINITION_QUERY`).
     DefinitionQuery,
+    /// AQL execution — ad-hoc and stored (SM `I_QUERY_SERVICE`).
     Query,
+    /// Demographic parties and relationships (SM `I_DEMOGRAPHIC_SERVICE`).
     Demographic,
+    /// The administrative surface (SM `I_ADMIN_SERVICE`).
     Admin,
+    /// EHR-Extract / TDD messaging (SM `I_MESSAGE_SERVICE`).
     Messaging,
+    /// RM content semantics asserted per data type, independent of one
+    /// endpoint — the template-parameterized decision-table chapter.
     Content,
+    /// The Simplified Formats sub-specification: FLAT, STRUCTURED, Web Template.
     SimplifiedFormats,
+    /// Authentication, authorization and audit behaviour of the served API.
     Security,
+    /// Measured performance: the volumetric deployment classes.
     Performance,
 }
 
@@ -205,18 +221,25 @@ pub enum Family {
 /// capability-matrix row declaring a foreign tier is a typed error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Tier {
+    /// Platform CORE: the capabilities every conformant CDR must serve.
     #[serde(rename = "CORE")]
     Core,
+    /// Platform STANDARD: capabilities expected of a full platform above CORE.
     #[serde(rename = "STANDARD")]
     Standard,
+    /// Platform OPTIONS: capabilities a CDR may serve, rated when present.
     #[serde(rename = "OPTIONS")]
     Options,
+    /// Security & Privacy basic rung: authentication, authorization, audit.
     #[serde(rename = "SEC-BASIC")]
     SecBasic,
+    /// Enterprise D (the proposed Enterprise family's data-management rung).
     #[serde(rename = "D")]
     EnterpriseD,
+    /// Enterprise M (the proposed Enterprise family's management rung).
     #[serde(rename = "M")]
     EnterpriseM,
+    /// Enterprise X (the proposed Enterprise family's extension rung).
     #[serde(rename = "X")]
     EnterpriseX,
 }
@@ -256,12 +279,16 @@ pub enum Disposition {
 /// `Accept_*`/`ContentType_*` parameter files).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum FormatName {
+    /// Canonical openEHR JSON (`application/json`).
     #[serde(rename = "canonical-json")]
     CanonicalJson,
+    /// Canonical openEHR XML (`application/xml`).
     #[serde(rename = "canonical-xml")]
     CanonicalXml,
+    /// Simplified FLAT JSON (`application/openehr.wt.flat+json`).
     #[serde(rename = "wt-flat")]
     WtFlat,
+    /// Simplified STRUCTURED JSON (`application/openehr.wt.structured+json`).
     #[serde(rename = "wt-structured")]
     WtStructured,
     /// The Web Template itself (`application/openehr.wt+json`, template GET only).
@@ -272,12 +299,16 @@ pub enum FormatName {
 /// A corpus payload format — the wire roles plus the template-source form.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CorpusFormat {
+    /// Canonical openEHR JSON payload.
     #[serde(rename = "canonical-json")]
     CanonicalJson,
+    /// Canonical openEHR XML payload.
     #[serde(rename = "canonical-xml")]
     CanonicalXml,
+    /// Simplified FLAT JSON payload.
     #[serde(rename = "wt-flat")]
     WtFlat,
+    /// Simplified STRUCTURED JSON payload.
     #[serde(rename = "wt-structured")]
     WtStructured,
     /// An ADL 1.4 operational template (OPT XML).
@@ -303,10 +334,15 @@ pub enum CorpusFormat {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum HttpMethod {
+    /// Retrieve a representation of the target resource.
     Get,
+    /// Submit a representation to the target resource.
     Post,
+    /// Replace the target resource with the enclosed representation.
     Put,
+    /// Remove the target resource.
     Delete,
+    /// Like `GET`, but the response carries headers only.
     Head,
     /// "Describe the communication options for the target resource"
     /// (`Requests_and_responses.md` §HTTP Methods) — the method the STABLE
@@ -331,12 +367,14 @@ pub enum Iteration {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ServerState {
+    /// No EHRs, no commits, no OPTs.
     Empty,
     /// The case's ground depends on GLOBAL server state (an empty template
     /// list, a globally-absent artefact) that only an exclusively-owned SUT
     /// can establish — on a shared instance the case is not-applicable
     /// (the ixit environment declares exclusivity).
     Exclusive,
+    /// The case is indifferent to pre-existing server content.
     Any,
 }
 
@@ -344,7 +382,9 @@ pub enum ServerState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FixtureVerdict {
+    /// The fixture is spec-valid: a conformant server must accept it.
     Valid,
+    /// The fixture is spec-invalid: a conformant server must refuse it.
     Invalid,
 }
 
@@ -427,11 +467,17 @@ pub enum IgnoreSetName {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SpecComponent {
+    /// The Reference Model (`RM`).
     Rm,
+    /// The BASE component (foundation + base types).
     Base,
+    /// The Archetype Model (`AM`).
     Am,
+    /// The Archetype Query Language (`QUERY`).
     Aql,
+    /// The REST implementation technology specification (`ITS-REST`).
     ItsRest,
+    /// The Terminology component (`TERM`).
     Term,
 }
 
@@ -440,8 +486,11 @@ pub enum SpecComponent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum ChangeType {
+    /// First version of a versioned object.
     Create,
+    /// A subsequent, non-deleting version.
     Modify,
+    /// The logical-delete version.
     Deleted,
 }
 
@@ -466,6 +515,7 @@ pub enum ResultSetMatch {
 /// binding layer is registered by schedule release.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItsName {
+    /// The openEHR REST API implementation technology specification.
     #[serde(rename = "its-rest")]
     ItsRest,
 }
@@ -684,7 +734,6 @@ impl ItsName {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions
 mod all_consts_tests {
     use super::*;
 

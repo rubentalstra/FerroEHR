@@ -14,7 +14,6 @@ use std::path::{Path, PathBuf};
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
 /// generated XML/REST code). `../../crates/openehr-its` from this tool's
 /// `tools/openehr-codegen` manifest dir.
-#[allow(dead_code)] // used by the emit-xml/emit-rest writers (landing incrementally)
 const ITS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../crates/openehr-its");
 /// v1 (namespace `.../v1`) RM-instance XSD bundle dir — the Stage-1 parity target.
 const XSD_V1_DIR: &str = concat!(
@@ -29,7 +28,11 @@ const XSD_V2_DIR: &str = concat!(
     "/../../crates/openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
 );
 
-pub(crate) fn run() {
+/// Exit code for an unrecognized subcommand (distinct from a pipeline failure,
+/// which exits 1, so a wrapper script can tell a typo from a codegen error).
+const EXIT_USAGE: u8 = 2;
+
+pub(crate) fn run() -> std::process::ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map_or("check", String::as_str);
     let result = match cmd {
@@ -46,13 +49,14 @@ pub(crate) fn run() {
             eprintln!(
                 "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-rm-model`, or `emit-validate`"
             );
-            std::process::exit(2);
+            return std::process::ExitCode::from(EXIT_USAGE);
         }
     };
     if let Err(e) = result {
         eprintln!("error: {e}");
-        std::process::exit(1);
+        return std::process::ExitCode::FAILURE;
     }
+    std::process::ExitCode::SUCCESS
 }
 
 fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
@@ -478,7 +482,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // AM 1.4 and 2.4 share class names.
     // AM 2.4's `rules` package declares subtypes of LANG's beom expression
     // classes (EXPR_ARCHETYPE_REF ⊂ EXPR_VALUE_REF, EXPR_CONSTRAINT ⊂ EXPR_LEAF).
-    // Per `.claude/rules/codegen.md`, that cross-`includes` extension is re-opened
+    // Per the owner ruling 2026-07-19, that cross-`includes` extension is re-opened
     // at the DOWNSTREAM crate: the reachable beom expression/statement closure is
     // re-emitted into `openehr-am` as crate-local types (an extender-level enum
     // set composing the LANG variants + the AM leaves), so `ARCHETYPE.rules` /

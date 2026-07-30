@@ -304,7 +304,10 @@ fn obs_term_defs(extra: &[(&str, &str, &str)]) -> String {
 }
 
 /// The COMPOSITION template envelope (mirrors the Python `composition`).
-#[allow(clippy::similar_names)] // content_exist / context_exist name the two RM attributes precisely
+#[expect(
+    clippy::similar_names,
+    reason = "content_exist / context_exist name the two RM attributes precisely"
+)]
 fn composition(
     template_id: &str,
     obs_children: &str,
@@ -481,7 +484,10 @@ fn cardinality_existence(token: &str) -> (i64, i64) {
 /// `COMPOSITION.content` AND `C_ATTRIBUTE.existence` on `COMPOSITION.context`
 /// in one template (AOM1.4 §`C_MULTIPLE_ATTRIBUTE` + §`C_ATTRIBUTE`) — the
 /// content_card_X-context_mand official cases constrain both axes at once.
-#[allow(clippy::similar_names)] // content_exist / context_exist name the two RM attributes precisely
+#[expect(
+    clippy::similar_names,
+    reason = "content_exist / context_exist name the two RM attributes precisely"
+)]
 fn composition_content_cardinality_context(template_id: &str, row: &Cells<'_>) -> String {
     let token = row.text("cardinality").unwrap_or("any");
     let card = cardinality_token(token);
@@ -647,7 +653,6 @@ fn events_only() -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, clippy::indexing_slicing)] // test fixtures
 mod tests {
     use super::*;
     use serde_json::json;

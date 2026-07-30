@@ -23,6 +23,10 @@ publish = false
 # Dependencies § Development dependencies").
 ehrbase = { path = "../../app/ehrbase" }
 
+# Wall-clock time (the clone-name time base + the sweep's grace window) comes
+# from the pinned time library, never `std::time::SystemTime`
+# (clippy.toml `disallowed-methods`); monotonic deadlines use `std::time::Instant`.
+jiff = { workspace = true }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

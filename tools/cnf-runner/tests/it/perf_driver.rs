@@ -4,7 +4,11 @@
 //! workload, and produces a re-checkable measurement whose class verdict
 //! re-derives from the embedded HDR histograms — including the
 //! falsifiability direction (a faulting SUT can never earn the class).
-#![allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
+
+#![expect(
+    clippy::unwrap_used,
+    reason = "test-support helpers (not `#[test]` fns, so the clippy.toml in-tests scoping does not reach them) are panic-idiomatic: a broken stub must abort the test loudly, Book ch11"
+)]
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -109,7 +113,7 @@ fn serve(
     }
 }
 
-#[allow(clippy::too_many_lines, clippy::too_many_arguments)] // one arm per stubbed wire shape
+#[expect(clippy::too_many_lines, reason = "one arm per stubbed wire shape")]
 fn route(
     method: &str,
     path: &str,
@@ -392,10 +396,22 @@ fn seeded(client: &PerfClient, pack: &JourneyPack) -> SeededCorpus {
     let progress = |_message: String| {};
     let mut corpus =
         seed_scale_ladder(client, "cnf.scale.10k", "<opt/>", 6, 3, 4, &progress).unwrap();
-    assert_eq!(corpus.ehr_ids.len(), 6);
-    assert_eq!(corpus.compositions.len(), 18);
+    assert_eq!(
+        corpus.ehr_ids.len(),
+        6,
+        "scale ladder seeds one EHR per requested slot"
+    );
+    assert_eq!(
+        corpus.compositions.len(),
+        18,
+        "scale ladder seeds versions_per_ehr compositions per EHR"
+    );
     seed_ward(client, &mut corpus, pack, 4, &progress).unwrap();
-    assert_eq!(corpus.ward.len(), 6);
+    assert_eq!(
+        corpus.ward.len(),
+        6,
+        "the standing ward covers every seeded EHR"
+    );
     corpus
 }
 

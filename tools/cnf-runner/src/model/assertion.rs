@@ -157,13 +157,17 @@ pub enum Assertion {
     /// Body parses as the named RM type and validates against the ITS schema
     /// for the active format.
     InstanceOf {
+        /// The RM class name the body must parse as.
         rm_type: String,
+        /// The wire format to parse in; defaults to the step's active format.
         #[serde(default)]
         format: Option<FormatName>,
     },
     /// RM-path-addressed field check; exactly one predicate.
     Field {
+        /// The RM path addressing the field under test.
         path: String,
+        /// The value the field must equal.
         #[serde(default)]
         equals: Option<TemplatedValue>,
         /// The server-set predicate: the stored value must differ from a
@@ -171,10 +175,13 @@ pub enum Assertion {
         /// `AUDIT_DETAILS.time_committed` is always server-set).
         #[serde(default)]
         not_equals: Option<TemplatedValue>,
+        /// The field must be present (`true`) at the path.
         #[serde(default)]
         exists: Option<bool>,
+        /// The field must be absent (`true`) at the path.
         #[serde(default)]
         absent: Option<bool>,
+        /// A regex the field's serialized value must match.
         #[serde(default)]
         matches: Option<String>,
     },
@@ -182,7 +189,9 @@ pub enum Assertion {
     /// declared server-assigned set — normative per operation, never
     /// runner-chosen.
     Equivalent {
+        /// What the retrieved body is compared against.
         to: EquivalentTarget,
+        /// The declared server-assigned paths excluded from the comparison.
         #[serde(default)]
         ignoring: IgnoreList,
     },
@@ -192,8 +201,10 @@ pub enum Assertion {
     /// strength is not). The wire seam is the versioned-object version read
     /// (the `ORIGINAL_VERSION` envelope), resolved by the interpreter.
     Signature {
+        /// The single version the assertion judges.
         #[serde(default)]
         of: Option<SingleRef>,
+        /// A captured set whose every member the assertion judges.
         #[serde(default)]
         for_each: Option<SingleRef>,
         /// The version carries a non-empty signature.
@@ -220,37 +231,54 @@ pub enum Assertion {
     },
     /// RM versioning facts.
     Version {
+        /// The single version the assertion judges.
         #[serde(default)]
         of: Option<SingleRef>,
+        /// A captured set whose every member the assertion judges.
         #[serde(default)]
         for_each: Option<SingleRef>,
+        /// The `commit_audit.change_type` the version must carry.
         #[serde(default)]
         change_type: Option<ChangeType>,
+        /// The `lifecycle_state` value the version must carry.
         #[serde(default)]
         lifecycle_state: Option<String>,
+        /// The exact number of versions the versioned object must hold.
         #[serde(default)]
         count: Option<u64>,
+        /// A template the version's `uid` must match once resolved.
         #[serde(default)]
         uid_pattern: Option<Template>,
     },
     /// AQL results under the normative equivalence rules.
     ResultSet {
+        /// How the expected rows are compared against the served ones.
         #[serde(rename = "match")]
         match_mode: ResultSetMatch,
+        /// The expected rows (inline, or a reference to a corpus row set).
         #[serde(default)]
         rows: Option<RowsSpec>,
+        /// The exact row count the result set must carry.
         #[serde(default)]
         count: Option<u64>,
+        /// The expected columns, identified by `AS` alias.
         #[serde(default)]
         columns: Option<Vec<ColumnSpec>>,
     },
     /// Values captured across rows are pairwise distinct. Aggregate:
     /// evaluated once after all rows; requires `iteration: single_pass`.
-    Unique { over: SingleRef, aggregate: bool },
+    Unique {
+        /// The captured value whose per-row instances must be pairwise distinct.
+        over: SingleRef,
+        /// Evaluate once after every row instead of per row.
+        aggregate: bool,
+    },
     /// Scalar service returns (no RM body).
     Returns {
+        /// The exact value the scalar return must equal.
         #[serde(default)]
         equals: Option<serde_json::Value>,
+        /// A regex the serialized body must match.
         #[serde(default)]
         matches: Option<String>,
         /// A regex the serialized body must NOT match — the negative
@@ -289,11 +317,16 @@ pub enum Assertion {
         namespace: Option<XmlNamespace>,
     },
     /// Informative only — never a pass/fail criterion.
-    MessageExemplar { text: String },
+    MessageExemplar {
+        /// The exemplar message text, recorded for readers of the schedule.
+        text: String,
+    },
     /// A prose postcondition whose machine verification lives in a linked
     /// case or an in-case verification step.
     State {
+        /// The postcondition in prose.
         text: String,
+        /// The case that machine-verifies this postcondition, if separate.
         #[serde(default)]
         verified_by: Option<CaseId>,
     },

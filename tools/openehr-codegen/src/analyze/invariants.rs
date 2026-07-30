@@ -104,19 +104,24 @@ fn classify_tokens(toks: &[String]) -> Bucket {
     }
     // Split at the first depth-0 connective, if any.
     for kw in CONNECTIVES {
-        if let Some(i) = top_level_index(toks, kw) {
-            let left = &toks[..i];
+        if let Some(i) = top_level_index(toks, kw)
+            && let Some((left, tail)) = toks.split_at_checked(i)
+            && let Some((_connective, mut rest)) = tail.split_first()
+        {
             // Drop a trailing `then`/`else` of `and then` / `or else`.
-            let mut rest = &toks[i + 1..];
-            if matches!(rest.first().map(String::as_str), Some("then" | "else")) {
-                rest = &rest[1..];
+            if let Some((head, tail)) = rest.split_first()
+                && matches!(head.as_str(), "then" | "else")
+            {
+                rest = tail;
             }
             return classify_tokens(left).worse(classify_tokens(rest));
         }
     }
     // A leading `not` does not change the bucket; classify the operand.
-    if toks.first().map(String::as_str) == Some("not") {
-        return classify_tokens(&toks[1..]);
+    if let Some((head, rest)) = toks.split_first()
+        && head == "not"
+    {
+        return classify_tokens(rest);
     }
     classify_leaf(toks)
 }
@@ -124,9 +129,17 @@ fn classify_tokens(toks: &[String]) -> Bucket {
 /// If `toks` is a single fully-enclosing `( … )` pair, return the inner slice;
 /// otherwise return `toks` unchanged.
 fn strip_outer_parens(toks: &[String]) -> &[String] {
-    if toks.len() < 2 || toks.first().map(String::as_str) != Some("(") {
+    // `inner` is the token run between a leading `(` and the final token; its
+    // absence (fewer than two tokens, or no leading paren) means nothing to strip.
+    let Some((first, tail)) = toks.split_first() else {
+        return toks;
+    };
+    if first != "(" {
         return toks;
     }
+    let Some((_last, inner)) = tail.split_last() else {
+        return toks;
+    };
     // The opening paren must close exactly at the final token.
     let mut depth = 0i32;
     for (i, t) in toks.iter().enumerate() {
@@ -135,8 +148,8 @@ fn strip_outer_parens(toks: &[String]) -> &[String] {
             ")" => {
                 depth -= 1;
                 if depth == 0 {
-                    return if i == toks.len() - 1 {
-                        strip_outer_parens(&toks[1..toks.len() - 1])
+                    return if i + 1 == toks.len() {
+                        strip_outer_parens(inner)
                     } else {
                         toks
                     };
@@ -275,15 +288,17 @@ fn classify_leaf(toks: &[String]) -> Bucket {
 /// each over the class's own (dot-free) attribute path.
 fn is_emittable_atom(toks: &[String]) -> bool {
     // Drop any leading `not`.
-    let toks = if toks.first().map(String::as_str) == Some("not") {
-        &toks[1..]
-    } else {
-        toks
+    let toks = match toks.split_first() {
+        Some((head, rest)) if head == "not" => rest,
+        _ => toks,
     };
     match toks {
         // `field.is_empty` / `field.empty` (Eiffel emptiness methods, not file
         // extensions — the pedantic extension lint is a false positive here).
-        #[allow(clippy::case_sensitive_file_extension_comparisons)]
+        #[expect(
+            clippy::case_sensitive_file_extension_comparisons,
+            reason = "`.is_empty`/`.empty` are Eiffel method calls in a BMM assertion, not file extensions"
+        )]
         [a] if a.ends_with(".is_empty") || a.ends_with(".empty") => is_field_path(trim_suffix(a)),
         // a lone boolean field: `is_archetype_root`, `is_inline`, `is_masked`, …
         [a] => is_field_path(a),
@@ -328,12 +343,6 @@ fn is_number(s: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

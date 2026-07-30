@@ -124,7 +124,10 @@ use super::{
 
 // `PROPORTION_KIND` codes, generated from the RM BMM enumeration
 // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.proportion_kind.adoc`).
-#[allow(dead_code)] // ratio (code 0) has no dedicated proportion invariant
+#[expect(
+    dead_code,
+    reason = "ratio (code 0) has no dedicated proportion invariant"
+)]
 const PK_RATIO: i32 = 0;
 const PK_UNITARY: i32 = 1;
 const PK_PERCENT: i32 = 2;
@@ -215,7 +218,6 @@ pub(crate) fn magnitude_status_core(
 /// plus the inherited DV_QUANTIFIED `Magnitude_status_valid`. Shared by every
 /// concrete DV_AMOUNT descendant (DV_QUANTITY, DV_COUNT, DV_DURATION,
 /// DV_PROPORTION).
-#[allow(clippy::float_cmp)] // exact accuracy == 0 test, mirrors archie's `accuracy == 0.0`
 pub(crate) fn dv_amount_core(
     ty: &str,
     accuracy: Option<f64>,
@@ -250,7 +252,10 @@ pub(crate) fn temporal_value_core(ty: &str, valid: bool, out: &mut Vec<Invariant
 /// invariants are pushed by the callers.
 // openEHR/archie compare denominator against 0/1/100 by exact value
 // (`denominator.equals(0d)` etc.), so exact float comparison is intended.
-#[allow(clippy::float_cmp)]
+#[expect(
+    clippy::float_cmp,
+    reason = "openEHR/archie compare the denominator against 0/1/100 by exact value"
+)]
 pub(crate) fn dv_proportion_core(
     numerator: f64,
     denominator: f64,

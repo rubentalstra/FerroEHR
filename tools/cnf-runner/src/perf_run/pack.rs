@@ -53,8 +53,11 @@ pub struct PackTemplate {
 /// and the committed FLAT body.
 #[derive(Debug, Clone)]
 pub struct FlatPayload {
+    /// The `template_id` the commit names in `openehr-template-id`.
     pub template_id: String,
+    /// The operational template XML the seeder uploads first.
     pub opt_xml: String,
+    /// The FLAT body committed at each stage arrival.
     pub body: Value,
 }
 
@@ -62,7 +65,9 @@ pub struct FlatPayload {
 /// template it names, which the seeder uploads before any window opens.
 #[derive(Debug, Clone)]
 pub struct TddPayload {
+    /// The operational template the document instantiates.
     pub opt_xml: String,
+    /// The Template Data Document text the stage imports.
     pub document: String,
 }
 
@@ -73,6 +78,7 @@ pub struct TddPayload {
 /// operation that needs it (see [`crate::perf::PerfOp::aux_payload`]).
 #[derive(Debug, Clone, Default)]
 pub struct AuxPayloads {
+    /// The Simplified-FLAT commit payload, when a stage commits FLAT.
     pub flat: Option<FlatPayload>,
     /// The Template Data Document the TDD-import stage commits, with the
     /// operational template it instantiates.
@@ -81,6 +87,7 @@ pub struct AuxPayloads {
     pub person: Option<Value>,
     /// `PERSON`, amended content state (the versioned update body).
     pub person_amended: Option<Value>,
+    /// `PARTY_RELATIONSHIP` body, when a stage creates one.
     pub party_relationship: Option<Value>,
 }
 
@@ -89,9 +96,13 @@ pub struct AuxPayloads {
 /// `journey-envelope` validate gate checks the manifest carries them
 /// whenever the catalogue names an operation that needs one.
 pub const FLAT_OPT_KEY: &str = "cnf.opt.minimal_action";
+/// The FLAT body the FLAT-commit stage posts.
 pub const FLAT_BODY_KEY: &str = "cnf.flat.vitals.minimal_ctx";
+/// The `PERSON` create body the demographic stage posts.
 pub const PERSON_KEY: &str = "cnf.demographic.person.v1";
+/// The amended `PERSON` body the demographic update stage puts.
 pub const PERSON_AMENDED_KEY: &str = "cnf.demographic.person.v2";
+/// The `PARTY_RELATIONSHIP` body the demographic stage creates.
 pub const PARTY_RELATIONSHIP_KEY: &str = "cnf.demographic.party_relationship.v1";
 /// The TDD stage's operational template. `nested.en.v1` is category
 /// `433|event|`, so a sustained arrival commits a fresh COMPOSITION each
@@ -99,13 +110,16 @@ pub const PARTY_RELATIONSHIP_KEY: &str = "cnf.demographic.party_relationship.v1"
 /// master04 §COMPOSITION category) and every arrival after the first would
 /// be a conflict the instrument manufactured.
 pub const TDD_OPT_KEY: &str = "cnf.opt.nested";
+/// The Template Data Document the TDD-import stage sends.
 pub const TDD_BODY_KEY: &str = "cnf.messaging.tdd.nested";
 
 /// The loaded pack: every template the journey catalogue names, plus the
 /// auxiliary payloads its non-COMPOSITION stages carry.
 #[derive(Debug, Clone)]
 pub struct JourneyPack {
+    /// Every operational template the journey catalogue names.
     pub templates: Vec<PackTemplate>,
+    /// The payloads the non-COMPOSITION stages carry.
     pub aux: AuxPayloads,
 }
 
@@ -233,6 +247,11 @@ impl JourneyPack {
 
 /// The deterministic simulated clock: planned offsets map onto a fixed
 /// base date, so renders are byte-identical across SUTs and runs.
+#[expect(
+    clippy::integer_division,
+    reason = "whole hours/minutes/days of the simulated clock: exact integer split, \
+              which is what makes the rendered timestamp byte-identical across runs"
+)]
 pub(crate) fn sim_time(offset_s: u64) -> String {
     let day_s = offset_s % 86_400;
     let (h, m, s) = (day_s / 3600, (day_s % 3600) / 60, day_s % 60);
@@ -447,7 +466,6 @@ pub(crate) fn tags_body(offset_s: u64) -> Vec<u8> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

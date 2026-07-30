@@ -66,7 +66,10 @@ pub struct WindowOutcome {
 /// # Errors
 /// A message on schedule construction or aggregation failure (individual
 /// arrival faults are error observations, not run failures).
-#[allow(clippy::too_many_lines)] // one measured-window procedure: schedule → collect → aggregate
+#[expect(
+    clippy::too_many_lines,
+    reason = "one measured-window procedure: schedule → collect → aggregate"
+)]
 pub fn run_window(
     principals: &PerfPrincipals,
     corpus: &SeededCorpus,
@@ -208,9 +211,16 @@ pub fn run_window(
         start.elapsed()
     });
 
-    let (recorders, generator_faults) = collector
-        .join()
-        .map_err(|_| "collector thread panicked".to_owned())?;
+    // A panic payload is `Box<dyn Any>`, not a `Display` error: recover the
+    // message the panic carried so the run reports WHY the collector died.
+    let (recorders, generator_faults) = collector.join().map_err(|payload| {
+        let detail = payload
+            .downcast_ref::<&str>()
+            .map(|message| (*message).to_owned())
+            .or_else(|| payload.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "non-string panic payload".to_owned());
+        format!("collector thread panicked: {detail}")
+    })?;
     if generator_faults > 0 {
         return Err(format!("{generator_faults} generator faults"));
     }
@@ -222,7 +232,7 @@ pub fn run_window(
     // rate scaled by dispatch fidelity — off-peak troughs are the design,
     // never a shortfall; a lagging generator still deflates it.
     let planned_span_s = warmup_s.saturating_add(duration_s);
-    #[allow(clippy::cast_precision_loss)] // spans/counts << 2^52
+    #[expect(clippy::cast_precision_loss, reason = "spans/counts << 2^52")]
     let (offered_load_sustained, generator_bound) = {
         let actual_span = dispatch_span.as_secs_f64().max(planned_span_s as f64);
         let measured_span = actual_span - warmup_s as f64;
@@ -273,7 +283,7 @@ pub fn run_window(
 /// # Errors
 /// A message on schedule construction or aggregation failure (individual
 /// arrival faults are error observations, not run failures).
-#[allow(clippy::too_many_arguments)] // the one case-drive seam
+#[expect(clippy::too_many_arguments, reason = "the one case-drive seam")]
 pub fn drive_case(
     case: &PerformanceCase,
     principals: &PerfPrincipals,

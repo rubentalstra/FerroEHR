@@ -797,7 +797,7 @@ pub fn statement_schema() -> Value {
 
 /// `results.json` — the party results (the campaign outcomes).
 #[must_use]
-#[allow(clippy::too_many_lines)] // one literal JSON-Schema document
+#[expect(clippy::too_many_lines, reason = "one literal JSON-Schema document")]
 pub fn results_schema() -> Value {
     json!({
         "$schema": DRAFT,
@@ -1654,7 +1654,6 @@ pub fn render(schema: &Value) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions
 mod tests {
     use super::*;
 

@@ -36,15 +36,21 @@ pub(crate) struct XsdType {
 }
 
 #[derive(Clone)]
-#[allow(dead_code)] // type_name/required consumed by the emit-xml emitter (landing next)
 pub(crate) struct XsdAttr {
     pub name: String,
+    /// The declared `type` of the XSD attribute, loaded for completeness: the
+    /// emitters type an attribute from the BMM property it corresponds to, not
+    /// from the schema, so nothing reads this yet.
+    #[expect(
+        dead_code,
+        reason = "the LOAD stage records the XSD attribute declaration in full; \
+                  attribute typing comes from the BMM side of the merge"
+    )]
     pub type_name: String,
     pub required: bool,
 }
 
 #[derive(Clone)]
-#[allow(dead_code)] // type_name/optional/multiple consumed by the emit-xml emitter (landing next)
 pub(crate) struct XsdElem {
     pub name: String,
     pub type_name: String,
@@ -298,25 +304,8 @@ pub(crate) fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
     AM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
 
-/// The v2 RM-instance XSDs, as (component-relative) paths. v2 splits the schemas
-/// per component (RM 1.1.0 + BASE 1.2.0) rather than one flat `ALL/` bundle.
-/// Reserved for a future v2-specific trait; the v1 shape currently
-/// serves both lineages (they differ only by root `xmlns`).
-#[allow(dead_code)]
-pub(crate) const RM_FILES_V2: &[&str] = &[
-    "BASE/Release-1.2.0/BaseTypes.xsd",
-    "BASE/Release-1.2.0/Resource.xsd",
-    "RM/Release-1.1.0/Common.xsd",
-    "RM/Release-1.1.0/DataTypes.xsd",
-    "RM/Release-1.1.0/DataStructures.xsd",
-    "RM/Release-1.1.0/Ehr.xsd",
-    "RM/Release-1.1.0/Demographic.xsd",
-    "RM/Release-1.1.0/EhrExtract.xsd",
-];
-
-/// Resolve the v2 RM-instance file paths under the `its-xml-2.0.0-nsv2/` root.
-#[must_use]
-#[allow(dead_code)] // reserved for a future v2-specific trait
-pub(crate) fn v2_files(root: &Path) -> Vec<std::path::PathBuf> {
-    RM_FILES_V2.iter().map(|f| root.join(f)).collect()
-}
+// NOTE: there is no whole-bundle v2 file list. The two published ITS-XML
+// lineages differ only in the schemas' target namespace, so ONE emitted codec
+// serves both (docs/VERSIONS.md §Spec version policy) and the emit-xml input is
+// the v1 `ALL/` bundle plus the named v2 supplement above
+// ([`RM_FILES_V2_SUPPLEMENT`]) — never a parallel v2 bundle.
