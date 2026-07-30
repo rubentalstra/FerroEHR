@@ -13,6 +13,7 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+mod adl14_knowledge_archetypes;
 mod adl2_vetdf;
 mod aql_planner;
 mod audit_feed;

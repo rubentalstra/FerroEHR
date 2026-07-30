@@ -1,7 +1,7 @@
 //! `EHRbase` server wiring — the binary's testable library half.
 //!
 //! Boots the `ehrbase-rest` ITS-REST server backed by the DB-backed
-//! [`EhrbaseService`](ehrbase::service::EhrbaseService): loads the one
+//! [`EhrbaseService`]: loads the one
 //! configuration tree ([`ehrbase::config`]), initialises tracing, connects the
 //! `PostgreSQL` pool, runs migrations, boots the ATNA audit sender, and serves.
 //! On shutdown the audit queue is drained before exit.

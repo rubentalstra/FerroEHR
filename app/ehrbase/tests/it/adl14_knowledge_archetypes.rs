@@ -19,8 +19,6 @@
 //! and the refused shapes are pinned, so neither a newly-lenient nor a
 //! newly-strict parser passes silently.
 
-#![allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
-
 use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact_adl14;
