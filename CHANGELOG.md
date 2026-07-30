@@ -43,6 +43,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Illegal backslash escapes in ADL character values and rules-section
+  strings are now rejected at parse** (only `\r`, `\n`, `\t`, `\\`, `\"`,
+  `\'` are legal quoted forms, plus `\uHHHH` unicode escapes in strings):
+  previously a form like `'\q'` was accepted silently across the ODIN,
+  assertion and ADL lexers. Unicode content and the legal forms parse as
+  before.
+
 - **Converting an ADL 1.4 archetype to ADL 2 now carries its extended
   meta-data across.** The standardised `description/other_details` items of
   ADL 1.4 App.B (Extended Meta-data Guide) — items "intended to be
