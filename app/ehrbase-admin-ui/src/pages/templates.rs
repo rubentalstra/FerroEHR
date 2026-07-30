@@ -68,7 +68,7 @@ pub struct TemplateRow {
 #[server]
 pub async fn list_templates() -> Result<Vec<TemplateRow>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("definition/template/adl1.4?version=*");
     let response = state
         .cdr
@@ -118,14 +118,17 @@ fn template_row(item: &serde_json::Value) -> TemplateRow {
 /// [`AdminUiError::Forbidden`] / [`AdminUiError::Cdr`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR (the diagnostic verbatim).
 #[server]
-pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
+pub async fn upload_template(
+    /// The operational-template XML to upload, as read in the browser.
+    opt_xml: String,
+) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     if opt_xml.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "the selected file was empty".to_owned(),
         ));
     }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("definition/template/adl1.4");
     let response = state
         .cdr
@@ -156,7 +159,10 @@ pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
 /// Admin API (discover-and-hide — no admin group, no buttons). Whether the
 /// session may USE it is the CDR's per-request answer, surfaced as actionable
 /// copy on refusal.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn TemplatesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();

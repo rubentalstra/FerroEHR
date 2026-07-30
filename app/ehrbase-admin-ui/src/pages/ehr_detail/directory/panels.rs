@@ -74,7 +74,10 @@ pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
 
 /// The toolbar's rendered body (built fresh per directory resolution — no
 /// resource reads at render time; the click handlers read untracked).
-#[allow(clippy::too_many_arguments)] // one view fn wiring the toolbar's full state set
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one view fn wiring the toolbar's full state set"
+)]
 fn toolbar_body(
     ehr_id: Signal<String>,
     directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,

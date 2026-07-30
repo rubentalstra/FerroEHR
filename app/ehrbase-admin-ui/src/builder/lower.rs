@@ -210,7 +210,10 @@ fn criterion_node(node: &CriterionNode) -> Result<WhereExpr, BuilderError> {
                     BoolOp::And => WhereExpr::And(Box::new(a), Box::new(b)),
                     BoolOp::Or => WhereExpr::Or(Box::new(a), Box::new(b)),
                 })
-                .unwrap_or_else(|| unreachable!("children checked non-empty"));
+                // `reduce` yields `None` only for an empty iterator, which the
+                // emptiness check above has already rejected; the typed error
+                // keeps that impossible branch panic-free.
+                .ok_or(BuilderError::EmptyGroup)?;
             Ok(if *negated {
                 WhereExpr::Not(Box::new(joined))
             } else {

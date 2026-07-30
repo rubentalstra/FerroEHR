@@ -16,7 +16,7 @@
 //! own session; running a stored query is a pure READ, so failures render
 //! INLINE and never toast (crate CLAUDE.md); the view is composed from
 //! `.into_any()`-erased sections; the results table reuses
-//! [`results_view`]/[`paging_buttons`]; there is zero authored JavaScript
+//! `results_view`/`paging_buttons`; there is zero authored JavaScript
 //! (`on:` Rust listeners only).
 
 use std::collections::BTreeMap;
@@ -57,7 +57,10 @@ pub(crate) fn run_href(name: &str, version: &str) -> String {
 }
 
 /// The stored-query runner screen.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn QueryStoredPage() -> impl IntoView {
     let query_map = use_query_map();

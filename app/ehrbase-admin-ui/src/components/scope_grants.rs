@@ -165,7 +165,10 @@ fn unrecognized_body(expected: Option<String>) -> AnyView {
 /// `.claude/rules/leptos-ui.md` §9, governs filter/search/pagination). The
 /// parse is client-side, so the field is inert until hydration; the session's
 /// own scopes above it are server-rendered and need no `WASM`.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn ScopePreviewer() -> impl IntoView {
     let input = RwSignal::new(String::new());

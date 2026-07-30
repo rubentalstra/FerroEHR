@@ -83,16 +83,23 @@ pub struct AuditPage {
 /// on an unparseable Bundle.
 #[server]
 pub async fn search_audit(
+    /// Inclusive lower bound on the record instant; empty means unbounded.
     from: String,
+    /// Inclusive upper bound on the record instant; empty means unbounded.
     to: String,
+    /// Patient reference to match; empty means any patient.
     patient: String,
+    /// Agent (acting user) to match; empty means any agent.
     agent: String,
+    /// Outcome code to match; empty means any outcome.
     outcome: String,
+    /// Action code to match; empty means any action.
     action: String,
+    /// First record of the page to return.
     offset: u32,
 ) -> Result<AuditPage, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
 
     let mut params: Vec<String> = Vec::new();
     let mut push = |key: &str, value: &str| {
@@ -255,7 +262,10 @@ fn audit_row(resource: &serde_json::Value) -> AuditRow {
 
 /// The audit-log browser screen: the URL-driven filter form and the paged
 /// record table over the ITI-81 retrieval.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn AuditPage() -> impl IntoView {
     let query = use_query_map();
@@ -505,6 +515,10 @@ fn row_view(row: AuditRow) -> impl IntoView {
 /// The pagination footer: total + prev/next links that preserve the current
 /// filters in the URL (plain router anchors — WASM-optional).
 fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
+    #[expect(
+        clippy::integer_division,
+        reason = "a page index IS the truncating quotient of a page-aligned offset"
+    )]
     let page_index = offset / PAGE_SIZE;
     let shown_from = offset + 1;
     let shown_to = (offset + PAGE_SIZE).min(total);

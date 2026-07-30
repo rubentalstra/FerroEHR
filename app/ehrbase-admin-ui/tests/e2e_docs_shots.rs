@@ -1,9 +1,16 @@
 #![allow(
     clippy::panic,
     clippy::expect_used,
+    reason = "a browser journey asserts by panicking, and the shared harness panics when a configured stack cannot be driven"
+)]
+#![allow(
     clippy::print_stdout,
+    reason = "the skip-with-reason and progress lines ARE this suite's report"
+)]
+#![allow(
     unreachable_pub,
-    dead_code // this binary uses a subset of the shared harness methods
+    dead_code,
+    reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
 // A capture pass, not an assertive journey: it drives the console and writes
 // the canonical per-screen screenshots the website book embeds. Gated behind
@@ -69,7 +76,10 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
 
 /// Capture the canonical documentation screenshots for every console screen.
 #[tokio::test]
-#[allow(clippy::too_many_lines)] // one linear capture script over every console view — sectioning it would obscure the walkthrough order
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear capture script over every console view — sectioning it would obscure the walkthrough order"
+)]
 async fn capture_documentation_screenshots() {
     let Some(h) = Harness::start("docs-shots").await else {
         return;

@@ -129,9 +129,12 @@ pub struct VersionedStatusDetails {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
 #[server]
-pub async fn fetch_ehr_status(ehr_id: String) -> Result<EhrStatusState, AdminUiError> {
+pub async fn fetch_ehr_status(
+    /// The EHR whose current status document to read.
+    ehr_id: String,
+) -> Result<EhrStatusState, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state
         .cdr
         .rest_v1(&format!("ehr/{}/ehr_status", urlencoding::encode(&ehr_id)));
@@ -159,11 +162,13 @@ pub async fn fetch_ehr_status(ehr_id: String) -> Result<EhrStatusState, AdminUiE
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_ehr_status_version(
+    /// The EHR holding the versioned status.
     ehr_id: String,
+    /// The status version to read.
     version_uid: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let version_uid = version_uid.trim();
     if version_uid.is_empty() {
         return Err(AdminUiError::Invalid(
@@ -192,7 +197,7 @@ pub async fn fetch_ehr_status_version(
 /// three attributes replaced: `is_queryable`, `is_modifiable`, and
 /// `other_details` (removed when the text is blank, since the attribute is
 /// optional). Everything else, the `subject` included, travels back verbatim
-/// (the merge is [`edit::apply_status_edits`]), so an edit can never silently
+/// (the merge is `edit::apply_status_edits`), so an edit can never silently
 /// drop an attribute the console does not render.
 ///
 /// `current_version_uid` is the loaded version's `OBJECT_VERSION_ID` and travels
@@ -224,15 +229,21 @@ pub async fn fetch_ehr_status_version(
 /// via [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn update_ehr_status(
+    /// The EHR whose status to update.
     ehr_id: String,
+    /// The version this edit is based on, sent as `If-Match`.
     current_version_uid: String,
+    /// The served status document this edit merges into, verbatim.
     base_body: String,
+    /// The replacement `is_queryable` flag.
     is_queryable: bool,
+    /// The replacement `is_modifiable` flag.
     is_modifiable: bool,
+    /// The replacement `other_details`, as JSON object text; empty leaves it out.
     other_details: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let current = current_version_uid.trim();
     if current.is_empty() {
         return Err(AdminUiError::Invalid(
@@ -269,7 +280,7 @@ pub async fn update_ehr_status(
 ///
 /// The rows are the shared [`VersionEntry`] the composition viewer's history
 /// uses, parsed by the same
-/// [`parse_versions`](crate::pages::composition::parse_versions) — a
+/// `crate::pages::composition::parse_versions` — a
 /// `REVISION_HISTORY` is a `REVISION_HISTORY` whichever versioned object it
 /// belongs to.
 ///
@@ -281,10 +292,11 @@ pub async fn update_ehr_status(
 /// [`AdminUiError::Internal`] when the history is not valid JSON.
 #[server]
 pub async fn fetch_status_revision_history(
+    /// The EHR whose status revision history to read.
     ehr_id: String,
 ) -> Result<Vec<VersionEntry>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/versioned_ehr_status/revision_history",
         urlencoding::encode(&ehr_id)
@@ -321,11 +333,13 @@ pub async fn fetch_status_revision_history(
 /// [`AdminUiError::Internal`] when either body is not valid JSON.
 #[server]
 pub async fn fetch_versioned_status(
+    /// The EHR holding the versioned status.
     ehr_id: String,
+    /// The status version whose envelope facts to read.
     version_uid: String,
 ) -> Result<VersionedStatusDetails, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let ehr = urlencoding::encode(&ehr_id);
     let object_url = state
         .cdr
@@ -366,7 +380,7 @@ pub async fn fetch_versioned_status(
 ///
 /// The `datetime-local` → RFC 3339 completion is the composition viewer's
 /// shared
-/// [`datetime_local_to_rfc3339`](crate::pages::composition::datetime_local_to_rfc3339).
+/// `crate::pages::composition::datetime_local_to_rfc3339`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -376,11 +390,13 @@ pub async fn fetch_versioned_status(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_status_version_at_time(
+    /// The EHR holding the versioned status.
     ehr_id: String,
+    /// The instant to resolve, as a `datetime-local` input value.
     at_time: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let at_time = crate::pages::composition::datetime_local_to_rfc3339(&at_time);
     if at_time.is_empty() {
         return Err(AdminUiError::Invalid(

@@ -90,7 +90,7 @@ async fn run_count_aql(
 #[server]
 pub async fn dashboard_counts() -> Result<(i64, i64, u32), AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let ehrs = run_count_aql(&state, &session, EHR_COUNT_AQL).await?;
     let compositions = run_count_aql(&state, &session, COMPOSITION_COUNT_AQL).await?;
     let templates =
@@ -201,7 +201,7 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
 
 /// The recent commit-activity trend, one [`ActivityPoint`] per calendar day
 /// ascending. Pulls the most recent composition commit times (fetch
-/// [`TREND_FETCH`]) and buckets them per day BFF-side with the shared
+/// `TREND_FETCH`) and buckets them per day BFF-side with the shared
 /// [`bucket_by_day`](crate::activity::bucket_by_day).
 ///
 /// # Errors
@@ -210,7 +210,7 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
 #[server]
 pub async fn commit_trend() -> Result<Vec<ActivityPoint>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("query/aql");
     let body = serde_json::json!({
         "q": TREND_AQL,
@@ -242,7 +242,10 @@ pub async fn commit_trend() -> Result<Vec<ActivityPoint>, AdminUiError> {
 
 /// The `/` dashboard: headline counts, per-namespace stored-query match tiles,
 /// and a commit-activity trend — each an independently-failing section.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn DashboardPage() -> impl IntoView {
     let counts = counts_section();

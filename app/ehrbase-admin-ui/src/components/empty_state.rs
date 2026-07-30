@@ -5,7 +5,10 @@ use leptos::prelude::*;
 use leptos_icons::Icon;
 
 /// A friendly, actionable empty state for a data region.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn EmptyState(
     /// The Lucide icon summarizing the region.

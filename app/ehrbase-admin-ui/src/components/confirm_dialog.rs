@@ -21,7 +21,10 @@ use crate::components::field::{BTN_DANGER, BTN_SECONDARY};
 
 /// A modal confirmation for one destructive action: a title, the consequence
 /// copy naming the exact object, Cancel, and the confirming danger button.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn ConfirmDialog(
     /// Whether the dialog is open — derive it from the caller's "which object

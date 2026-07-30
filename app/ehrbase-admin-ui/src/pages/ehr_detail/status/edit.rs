@@ -6,7 +6,7 @@
 //! (`is_queryable`, `is_modifiable`, `other_details`) and re-sends everything
 //! else — the `subject`, the `name`, the `archetype_node_id`, the `uid`, any
 //! attribute a future spec release adds — byte-for-byte as the CDR served it.
-//! That is what [`apply_status_edits`] guarantees: the console NEVER rebuilds an
+//! That is what `apply_status_edits` guarantees: the console NEVER rebuilds an
 //! `EHR_STATUS` from its own model, so an edit cannot drop what the screen does
 //! not render. (`EHR_STATUS` requires `subject`, `is_queryable` and
 //! `is_modifiable` — RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`; a
