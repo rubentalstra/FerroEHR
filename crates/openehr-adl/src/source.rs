@@ -524,11 +524,13 @@ impl Outer<'_> {
     /// §Syntax Specification `arch_concept: SYM_CONCEPT V_LOCAL_TERM_CODE_REF`,
     /// lexed `\[[a-zA-Z0-9][a-zA-Z0-9.-]*\]` by §Symbols).
     ///
-    /// A body that is not a term-code reference is the grammar's
-    /// `SYM_CONCEPT error` alternative: refused with
-    /// [`SyntaxErrorCode::Saco`] in the 1.4 dialect. ADL2 derives the concept
-    /// from the HRID and treats the clause as obsolete (`ADL2/master07.09`), so
-    /// there the code is captured where it is well-formed and never diagnosed.
+    /// A body that is not a term-code reference is refused with
+    /// [`SyntaxErrorCode::Saco`] in BOTH dialects: the 1.4 grammar's
+    /// `SYM_CONCEPT error` alternative, and ADL2's deprecated-but-allowed
+    /// form's own rule — "if a concept section is present, it must consist of
+    /// the 'concept' keyword and a single local term"
+    /// (`ADL2/master07.09-adl_deprecated.adoc` §Concept Section). ADL2 still
+    /// derives the concept from the HRID and ignores the captured code.
     fn parse_concept(
         &mut self,
         body: &std::ops::Range<usize>,
@@ -556,7 +558,13 @@ impl Outer<'_> {
                 .map(str::to_owned),
             _ => None,
         };
-        if code.is_none() && self.dialect == Dialect::Adl14 {
+        if code.is_none() {
+            // Both dialects diagnose a malformed clause: ADL 1.4 requires the
+            // section (`ADL1.4/master08-adl.adoc` §Syntax Specification), and
+            // ADL2 keeps SACO for the deprecated-but-allowed form — "if a
+            // concept section is present, it must consist of the 'concept'
+            // keyword and a single local term"
+            // (`ADL2/master07.09-adl_deprecated.adoc` §Concept Section).
             self.push(
                 SyntaxErrorCode::Saco,
                 "expected a local term code reference in the concept section",
