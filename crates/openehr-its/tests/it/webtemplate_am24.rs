@@ -13,8 +13,15 @@
     clippy::expect_used,
     clippy::unwrap_used,
     clippy::panic,
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+#![allow(
     clippy::doc_markdown,
-    clippy::items_after_statements
+    reason = "the module docs quote openEHR spec prose and Simplified-Formats key names as text, not as Rust code references"
+)]
+#![allow(
+    clippy::items_after_statements,
+    reason = "fixture helper fns are declared next to the assertions that use them, which keeps each case self-contained"
 )]
 
 use std::path::Path;
@@ -369,10 +376,9 @@ fn pad_items(v: &mut serde_json::Value) {
                 }
             }
             if let Some(serde_json::Value::Array(items)) = o.get_mut("items")
-                && !items.is_empty()
                 && items.len() <= 6
+                && let Some(proto) = items.first().cloned()
             {
-                let proto = items[0].clone();
                 while items.len() < 8 {
                     items.push(proto.clone());
                 }

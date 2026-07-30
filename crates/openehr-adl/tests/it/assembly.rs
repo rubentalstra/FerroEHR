@@ -8,7 +8,11 @@
     clippy::panic,
     clippy::unwrap_used,
     clippy::expect_used,
-    clippy::match_wildcard_for_single_variants
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+#![allow(
+    clippy::match_wildcard_for_single_variants,
+    reason = "the assertions match one artefact variant and treat every other as the failure case; naming the single remaining variant would silently stop covering a newly added one"
 )]
 
 use openehr_adl::assemble::{parse_artefact, regression_tag};

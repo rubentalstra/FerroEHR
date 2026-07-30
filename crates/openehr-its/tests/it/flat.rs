@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! FLAT (simSDT) `RM ⇄ FLAT` converter tests.
 //!
 //! Oracle strategy (see the report / NOTICE files): Better `web-template-tests`
@@ -22,7 +23,10 @@
 //! * **insta goldens** — deterministic flat snapshots for representative pairs.
 //! * **targeted key assertions** — Better flat key shape (`|magnitude`,
 //!   `|unit` singular, `|code`).
-#![allow(clippy::doc_markdown)] // prose with many proper nouns (EHRbase, simSDT, …)
+#![allow(
+    clippy::doc_markdown,
+    reason = "prose with many proper nouns (EHRbase, simSDT, …)"
+)]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -516,7 +520,7 @@ fn terse_coded_text_string_is_rejected() {
     terse.remove(&format!("{base}|value"));
     terse.insert(
         base.clone(),
-        serde_json::Value::String(format!("{terminology}::{code}|{value}|")),
+        Value::String(format!("{terminology}::{code}|{value}|")),
     );
     let err = composition_from_flat(&terse, wt, NOW)
         .expect_err("the terse coded-string form is not part of the STABLE wire");

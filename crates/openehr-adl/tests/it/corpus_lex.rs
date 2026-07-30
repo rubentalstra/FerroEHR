@@ -7,7 +7,10 @@
 //! and each such exclusion is named with its reason in `EXCLUSIONS` below.
 
 // A corpus test reports its pass counts on stdout for the developer running it.
-#![allow(clippy::print_stdout)]
+#![allow(
+    clippy::print_stdout,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 

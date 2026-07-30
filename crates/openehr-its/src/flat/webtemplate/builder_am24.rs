@@ -617,8 +617,10 @@ fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<
         });
     }
     // A single allowed unit promotes its range onto the magnitude.
-    if units.list.len() == 1 && magnitude.validation.is_none() {
-        magnitude.validation.clone_from(&units.list[0].validation);
+    if let [only] = units.list.as_slice()
+        && magnitude.validation.is_none()
+    {
+        magnitude.validation.clone_from(&only.validation);
     }
     vec![magnitude, units]
 }
@@ -992,10 +994,9 @@ fn archetype_slot(s: &ArchetypeSlot) -> WebTemplateArchetypeSlot {
 /// delimits the regex.
 fn slot_pattern(a: &Assertion) -> Option<String> {
     let s = a.string_expression.as_deref()?;
-    let start = s.find("matches {/")? + "matches {/".len();
-    let rest = &s[start..];
+    let (_, rest) = s.split_once("matches {/")?;
     let end = rest.rfind("/}")?;
-    Some(rest[..end].to_owned())
+    Some(rest.get(..end)?.to_owned())
 }
 
 /// The RM-mandatory structural attributes of an ENTRY whose value the FLAT/TDD
@@ -1275,7 +1276,10 @@ fn int_range(iv: &Interval<i32>) -> Option<WebTemplateRange> {
 
 /// `(lower, upper, lower_included, upper_included, lower_unbounded,
 /// upper_unbounded)` of an `Interval<T>` — both the point and proper forms.
-#[allow(clippy::type_complexity)]
+#[expect(
+    clippy::type_complexity,
+    reason = "the six-element tuple IS the interval-bounds result named in the doc comment; a struct would only wrap it for one call site"
+)]
 fn interval_bounds<T: Clone>(
     iv: &Interval<T>,
 ) -> Option<(Option<T>, Option<T>, bool, bool, bool, bool)> {
@@ -1361,9 +1365,12 @@ fn interface_id_of_hrid(h: &ArchetypeHrid) -> String {
 /// (`…​.vMAJOR.MINOR.PATCH[-status.build]` → `…​.vMAJOR`; namespace dropped).
 fn interface_id(full: &str) -> String {
     let bare = full.split("::").last().unwrap_or(full);
-    if let Some(vpos) = bare.rfind(".v") {
-        let head = &bare[..vpos + 2];
-        let major: String = bare[vpos + 2..]
+    if let Some(vpos) = bare.rfind(".v")
+        && let Some(head) = bare.get(..vpos + 2)
+    {
+        let major: String = bare
+            .get(vpos + 2..)
+            .unwrap_or_default()
             .chars()
             .take_while(char::is_ascii_digit)
             .collect();

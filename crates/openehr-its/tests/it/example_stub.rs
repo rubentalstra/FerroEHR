@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Example-COMPOSITION synthesis of RM-mandatory ENTRY structural attributes.
 //!
 //! Regression coverage for the defect where the FLAT/TDD composition builder

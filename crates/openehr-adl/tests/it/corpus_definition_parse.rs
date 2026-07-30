@@ -11,7 +11,10 @@
 //! are the outer-parse gate's concern).
 
 // A corpus test reports its pass counts on stdout for the developer running it.
-#![allow(clippy::print_stdout)]
+#![allow(
+    clippy::print_stdout,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -72,11 +75,8 @@ fn definitions_parse(art: &SourceArtefact, src: &str) -> Result<(), String> {
     for a in std::iter::once(art).chain(art.overlays.iter()) {
         if let Some(def) = a.definition.as_ref() {
             let body = src.get(def.bytes.clone()).unwrap_or_default();
-            openehr_adl::cadl::parse_definition_body(body).map_err(|errs| {
-                errs.first()
-                    .map(std::string::ToString::to_string)
-                    .unwrap_or_default()
-            })?;
+            openehr_adl::cadl::parse_definition_body(body)
+                .map_err(|errs| errs.first().map(ToString::to_string).unwrap_or_default())?;
         }
     }
     Ok(())

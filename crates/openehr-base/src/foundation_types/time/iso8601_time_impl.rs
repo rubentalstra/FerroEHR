@@ -256,7 +256,6 @@ impl PartialOrd for Iso8601Time {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)] // test assertions
 mod tests {
     use super::*;
 

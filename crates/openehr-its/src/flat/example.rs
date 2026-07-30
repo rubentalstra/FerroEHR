@@ -24,12 +24,12 @@
 //! # How it works
 //!
 //! Rather than re-implement the RM housekeeping
-//! ([`composition_from_flat`](crate::flat::convert::composition_from_flat) already
+//! ([`composition_from_flat`] already
 //! materialises the compacted RM structure and fills every RM-mandatory field
 //! FLAT never surfaces — language / territory / category / composer / context /
 //! ENTRY-mandatory fields / event & history scaffolding), the generator walks the
 //! tree to emit a **FLAT map** of deterministic example values and reuses
-//! [`composition_from_flat`](crate::flat::convert::composition_from_flat) to assemble
+//! [`composition_from_flat`] to assemble
 //! the canonical COMPOSITION. The result therefore round-trips cleanly through
 //! [`composition_to_flat`](crate::flat::convert::composition_to_flat) and deserialises
 //! as an `openehr-rm` `Composition`.
@@ -224,7 +224,11 @@ fn walk(
             let ci = card_idx(child);
             let card_full = |counts: &[usize]| {
                 ci.is_some_and(|i| {
-                    counts[i] >= usize::try_from(node.cardinalities[i].max).unwrap_or(usize::MAX)
+                    let max = node
+                        .cardinalities
+                        .get(i)
+                        .map_or(usize::MAX, |c| usize::try_from(c.max).unwrap_or(usize::MAX));
+                    counts.get(i).is_some_and(|&n| n >= max)
                 })
             };
             if is_optional(child) && card_full(&card_counts) {
@@ -237,8 +241,8 @@ fn walk(
             let child_force = !is_optional(child);
             let child_emitted = walk(child, &child_prefix, child_opt, level, child_force, out);
             emitted |= child_emitted;
-            if child_emitted && let Some(i) = ci {
-                card_counts[i] += 1;
+            if child_emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
+                *slot += 1;
             }
             // `Complete` demonstrates repetition: a second occurrence of any
             // repeating node that materialised (cardinality permitting).
@@ -250,8 +254,8 @@ fn walk(
                 let second_prefix = format!("{prefix}/{}:1", child.id);
                 let second_emitted = walk(child, &second_prefix, child_opt, level, false, out);
                 emitted |= second_emitted;
-                if second_emitted && let Some(i) = ci {
-                    card_counts[i] += 1;
+                if second_emitted && let Some(slot) = ci.and_then(|i| card_counts.get_mut(i)) {
+                    *slot += 1;
                 }
             }
         }
@@ -627,7 +631,9 @@ fn emit_code_phrase(node: &WebTemplateNode, base: &str, out: &mut Map<String, Va
 fn coded_example(input: Option<&WebTemplateInput>) -> (String, String, String) {
     match input {
         Some(i) if !i.list.is_empty() => {
-            let cv = &i.list[0];
+            let Some(cv) = i.list.first() else {
+                return (String::new(), String::new(), "local".to_owned());
+            };
             let terminology = i.terminology.clone().unwrap_or_else(|| "local".to_owned());
             let value = cv.label.clone().unwrap_or_else(|| cv.value.clone());
             (cv.value.clone(), value, terminology)
@@ -1159,7 +1165,6 @@ fn fnv1a64(data: &[u8], basis: u64) -> u64 {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
     use crate::flat::webtemplate::build_web_template;
@@ -1355,7 +1360,10 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::float_cmp)] // the picker returns exactly representable values
+    #[expect(
+        clippy::float_cmp,
+        reason = "the example picker returns exactly representable values, so bit-equality is the intended test"
+    )]
     fn pick_decimal_is_non_zero_and_in_range() {
         // Unconstrained: a plausible non-zero default, not 0.0.
         assert_eq!(pick_decimal(None), 10.0);
@@ -1399,7 +1407,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::float_cmp)] // a magnitude of exactly 0.0 is the value under test
     fn pick_decimal_populated_magnitudes_are_non_zero() {
         fn collect(v: &Value, out: &mut Vec<f64>) {
             match v {

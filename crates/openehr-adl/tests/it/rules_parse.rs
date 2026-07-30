@@ -2,7 +2,11 @@
 //! (`openehr_adl::rules`). Deep-structure assertions hand-derived from the
 //! `AOM2` master05 / `master04.3` shapes.
 
-#![allow(clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_adl::rules::{parse_rules_body, parse_slot_assertions};
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;

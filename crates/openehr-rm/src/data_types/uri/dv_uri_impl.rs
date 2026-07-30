@@ -78,7 +78,10 @@ impl DvUriData {
         }
         if let Some(after) = rest.strip_prefix("//") {
             // Authority ends at the next '/', '?' or '#'.
-            rest = after.find(['/', '?', '#']).map_or("", |i| &after[i..]);
+            rest = after
+                .find(['/', '?', '#'])
+                .and_then(|i| after.get(i..))
+                .unwrap_or_default();
         }
         rest.split(['?', '#']).next().unwrap_or("")
     }
@@ -107,12 +110,6 @@ impl Validate for DvUriData {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

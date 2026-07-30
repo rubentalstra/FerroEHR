@@ -10,7 +10,10 @@
 //! rejects (missing/empty required section, malformed HRID, malformed ODIN).
 
 // A corpus test reports its pass counts on stdout for the developer running it.
-#![allow(clippy::print_stdout)]
+#![allow(
+    clippy::print_stdout,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -105,10 +108,7 @@ fn every_adl2_source_outer_parses() {
         match openehr_adl::source::parse_source(&src) {
             Ok(_) => parsed += 1,
             Err(errs) => {
-                let first = errs
-                    .first()
-                    .map(std::string::ToString::to_string)
-                    .unwrap_or_default();
+                let first = errs.first().map(ToString::to_string).unwrap_or_default();
                 failures.push(format!("{}: {first}", path.display()));
             }
         }

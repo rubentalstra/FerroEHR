@@ -18,7 +18,10 @@ use crate::flat::sim::SimNode;
 // ── RM → sim ──────────────────────────────────────────────────────────────────
 
 /// Emit the `_`-prefixed families present on `rm` (see [`super::emit_rm_attrs`]).
-#[allow(clippy::too_many_lines)] // one dispatch over the `_`-attribute families
+#[expect(
+    clippy::too_many_lines,
+    reason = "one dispatch over the `_`-attribute families; the length is the size of that family set, not logic"
+)]
 pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
     let ty = rm
         .get("_type")
@@ -269,7 +272,10 @@ fn emit_instruction_details(det: &Value, out: &mut SimNode) {
 // ── sim → RM ──────────────────────────────────────────────────────────────────
 
 /// One `_`-segment family → `(rm_attribute, value)` (see [`super::build_rm_attr`]).
-#[allow(clippy::too_many_lines)] // one dispatch over the `_`-attribute families
+#[expect(
+    clippy::too_many_lines,
+    reason = "one dispatch over the `_`-attribute families; the length is the size of that family set, not logic"
+)]
 pub(super) fn build_rm_attr(
     seg: &str,
     occurrences: &[SimNode],
@@ -530,8 +536,10 @@ fn build_instruction_details(node: &SimNode) -> Value {
         "type": ref_type,
         "id": {"_type": id_type, "value": uid},
     });
-    if let Some(p) = node.attrs.get("path") {
-        lref["path"] = p.clone();
+    if let Some(p) = node.attrs.get("path")
+        && let Value::Object(m) = &mut lref
+    {
+        m.insert("path".to_owned(), p.clone());
     }
     o.insert("instruction_id".to_owned(), lref);
     if let Some(aid) = node.attrs.get("activity_id") {

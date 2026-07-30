@@ -15,7 +15,12 @@
 //! every master02 checklist bullet, then round-tripped through the printer and
 //! parser.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::{BindingFilter, OptError, ProfileSpec, create_opt, profile_opt};

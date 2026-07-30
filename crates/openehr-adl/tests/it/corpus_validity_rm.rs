@@ -19,7 +19,12 @@
 //! §Validity Rules + `master08-validation.adoc` §Phase 2.
 
 // A test harness: vendored-fixture reads and parses are asserted to succeed.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -93,7 +98,10 @@ impl BmmRmModel {
 }
 
 impl RmModel for BmmRmModel {
-    #[allow(clippy::unnecessary_literal_bound)] // the trait returns `&str`
+    #[expect(
+        clippy::unnecessary_literal_bound,
+        reason = "the `RmModel` trait returns `&str` because other implementations borrow a stored `String`; narrowing this impl to `&'static str` would not match the trait"
+    )]
     fn name(&self) -> &str {
         "openEHR TEST_PKG (adltest 1.0.2)"
     }
@@ -348,7 +356,6 @@ const RECLAIMED: &[&str] = &[
 ];
 
 #[test]
-#[allow(clippy::print_stderr)] // a test harness reporting category counts
 fn corpus_rm_outcomes() {
     let production = ProductionRmModel;
     let test_model = BmmRmModel::load(TEST_BMM);
@@ -468,11 +475,10 @@ fn corpus_rm_outcomes() {
 }
 
 // ── hand-written cases for RM codes with no (exact) corpus coverage ─────────
-// INVENTORY §3b lists VCAM/VCACA among the zero-corpus-coverage codes; these
-// author the missing coverage against the vendored TEST_PKG schema (which,
-// unlike the generated production model, carries RM container cardinality).
+// VCAM/VCACA had no corpus coverage; these author it against the vendored
+// TEST_PKG schema, which — unlike the generated production model — carries RM
+// container cardinality.
 
-#[allow(clippy::unwrap_used, clippy::panic)]
 fn assert_raises(src: &str, rm: &dyn RmModel, code: &str) {
     let archetype = parse_artefact(src).unwrap();
     let issues = validate_phase2_rm(&archetype, rm);
@@ -483,7 +489,6 @@ fn assert_raises(src: &str, rm: &dyn RmModel, code: &str) {
     );
 }
 
-#[allow(clippy::unwrap_used, clippy::panic)]
 fn assert_clean(src: &str, rm: &dyn RmModel) {
     let archetype = parse_artefact(src).unwrap();
     let issues = validate_phase2_rm(&archetype, rm);
@@ -683,7 +688,10 @@ fn vcaca_production_model_lower_bound() {
 struct EnumTestModel;
 
 impl RmModel for EnumTestModel {
-    #[allow(clippy::unnecessary_literal_bound)] // the trait returns `&str`
+    #[expect(
+        clippy::unnecessary_literal_bound,
+        reason = "the `RmModel` trait returns `&str` because other implementations borrow a stored `String`; narrowing this impl to `&'static str` would not match the trait"
+    )]
     fn name(&self) -> &str {
         "enum test model"
     }

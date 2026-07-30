@@ -408,18 +408,18 @@ fn parse_compact_identifiers(compact: &str, index: usize) -> Result<Vec<Value>, 
     let mut out = Vec::new();
     for entry in compact.split(';').filter(|s| !s.is_empty()) {
         let parts: Vec<&str> = entry.split("::").collect();
-        if parts.len() != 4 {
+        let [issuer, assigner, id, id_type] = parts.as_slice() else {
             return Err(FlatError::InvalidValue {
                 path: format!("ctx/participation_identifiers:{index}"),
                 reason: format!("compact identifier {entry:?} must be issuer::assigner::id::type"),
             });
-        }
+        };
         out.push(json!({
             "_type": "DV_IDENTIFIER",
-            "issuer": parts[0],
-            "assigner": parts[1],
-            "id": parts[2],
-            "type": parts[3],
+            "issuer": issuer,
+            "assigner": assigner,
+            "id": id,
+            "type": id_type,
         }));
     }
     Ok(out)

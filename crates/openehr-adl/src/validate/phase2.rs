@@ -1043,7 +1043,6 @@ fn show_bounds(b: Bounds) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)]
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;

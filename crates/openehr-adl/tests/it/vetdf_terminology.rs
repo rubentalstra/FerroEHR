@@ -1,4 +1,9 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test assertions
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "test assertions"
+)]
 //! VETDF external-terminology resolver-seam tests
 //! (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).
 //!

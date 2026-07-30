@@ -16,7 +16,12 @@
 //! rule does not accept; and `odin_test.txt` declares one attribute name
 //! twice, which rule *VDATU* forbids.
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_lang::odin::{OdinErrorKind, OdinInterval, OdinKey, OdinValue, parse};
 use std::path::PathBuf;
@@ -493,15 +498,41 @@ fn referencing_document_parses() {
 /// Assert the eight leaf schema-header attributes archie's
 /// `validateRootLevelAttributes` pins.
 fn assert_schema_header(v: &OdinValue, bmm_version: &str, schema_name: &str, rm_release: &str) {
-    assert_eq!(attr_count(v), 11);
-    assert_eq!(as_str(field(v, "bmm_version")), bmm_version);
-    assert_eq!(as_str(field(v, "rm_publisher")), "CIMI");
-    assert_eq!(as_str(field(v, "schema_name")), schema_name);
-    assert_eq!(as_str(field(v, "rm_release")), rm_release);
-    assert_eq!(as_str(field(v, "schema_lifecycle_state")), "dstu");
+    assert_eq!(attr_count(v), 11, "{schema_name}: root attribute count");
+    assert_eq!(
+        as_str(field(v, "bmm_version")),
+        bmm_version,
+        "{schema_name}: bmm_version"
+    );
+    assert_eq!(
+        as_str(field(v, "rm_publisher")),
+        "CIMI",
+        "{schema_name}: rm_publisher"
+    );
+    assert_eq!(
+        as_str(field(v, "schema_name")),
+        schema_name,
+        "{schema_name}: schema_name"
+    );
+    assert_eq!(
+        as_str(field(v, "rm_release")),
+        rm_release,
+        "{schema_name}: rm_release"
+    );
+    assert_eq!(
+        as_str(field(v, "schema_lifecycle_state")),
+        "dstu",
+        "{schema_name}: schema_lifecycle_state"
+    );
     // packages + class_definitions are the two keyed-list bodies.
-    assert!(!keyed(field(v, "packages")).is_empty());
-    assert!(!keyed(field(v, "class_definitions")).is_empty());
+    assert!(
+        !keyed(field(v, "packages")).is_empty(),
+        "{schema_name}: packages must be a non-empty keyed list"
+    );
+    assert!(
+        !keyed(field(v, "class_definitions")).is_empty(),
+        "{schema_name}: class_definitions must be a non-empty keyed list"
+    );
 }
 
 #[test]

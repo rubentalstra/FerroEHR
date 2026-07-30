@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "integration-test assertions, corpus diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 //! Parse the official openEHR AQL worked-example corpus (vendored under
 //! `vendor/examples/`, from specifications-QUERY). Every `----` listing block
 //! that is standard **AQL 1.1.0** must parse.
@@ -27,8 +28,8 @@ fn out_of_grammar_reason(q: &str) -> Option<&'static str> {
     let nested_typed_matches = {
         // a `matches {` whose operand opens with an UPPER_CASE RM/cADL type.
         let mut hit = false;
-        for (i, _) in q.match_indices("matches") {
-            let rest = q[i + "matches".len()..].trim_start();
+        for (i, keyword) in q.match_indices("matches") {
+            let rest = q.get(i + keyword.len()..).unwrap_or_default().trim_start();
             let rest = rest.strip_prefix('{').map_or("", str::trim_start);
             if rest.chars().next().is_some_and(|c| c.is_ascii_uppercase())
                 && rest.split_whitespace().nth(1) == Some("matches")

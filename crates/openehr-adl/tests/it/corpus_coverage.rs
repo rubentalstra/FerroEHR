@@ -139,7 +139,6 @@ fn adl_sources(dir: &Path) -> Vec<PathBuf> {
 }
 
 #[test]
-#[allow(clippy::print_stderr)] // a coverage-gate harness reporting per-category counts
 fn every_corpus_source_is_claimed_by_exactly_one_harness() {
     // The ADL fixture trees (the `rm/` subtree is the vendored BMM reference-model
     // corpus consumed wholesale by `corpus_validity_rm.rs`, not per-file ADL

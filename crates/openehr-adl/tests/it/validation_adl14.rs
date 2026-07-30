@@ -7,7 +7,12 @@
 //! VATCV-form/VCOSU-archetype-wide/WOUC) are suppressed. Oracle:
 //! `docs/specs/openehr/AM/docs/ADL1.4/master08-adl.adoc` §Validity Rules +
 //! `docs/specs/openehr/AM/docs/AOM1.4/` class invariants.
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
 

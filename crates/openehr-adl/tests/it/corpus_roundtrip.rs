@@ -8,7 +8,10 @@
 //! `V*`-code file whose *assembly* legitimately errors) is excluded with a
 //! reason; there are no silent skips.
 
-#![allow(clippy::print_stdout)]
+#![allow(
+    clippy::print_stdout,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -101,9 +104,7 @@ fn every_assembled_artefact_round_trips() {
             Err(errs) => mismatches.push(format!(
                 "{}: printed form failed to re-parse: {}",
                 path.display(),
-                errs.first()
-                    .map(std::string::ToString::to_string)
-                    .unwrap_or_default()
+                errs.first().map(ToString::to_string).unwrap_or_default()
             )),
         }
     }

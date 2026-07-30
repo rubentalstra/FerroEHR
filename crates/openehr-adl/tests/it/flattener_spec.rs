@@ -10,7 +10,12 @@
 //! openEHR; those orders are reproduced here and cross-checked against the
 //! `master09.04` §Ordering of Sibling Nodes rules.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
 
 use std::path::PathBuf;
 
@@ -528,7 +533,7 @@ fn flat_form_reprints_and_reparses() {
     assert!(
         text.starts_with("flat archetype"),
         "flat header:\n{}",
-        &text[..40.min(text.len())]
+        text.get(..40.min(text.len())).unwrap_or(&text)
     );
     let reparsed = parse_artefact(&text).unwrap_or_else(|e| panic!("reparse flat: {e:?}"));
     assert_eq!(root_node_id(&reparsed), root_node_id(&flat));

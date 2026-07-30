@@ -57,42 +57,61 @@ pub enum CompOp {
 #[logos(skip "\u{feff}")] // UNICODE_BOM -> skip (AqlLexer.g4 `UNICODE_BOM`)
 pub enum Token {
     // ── structural keywords (case-insensitive) ──────────────────────────────
+    /// The `select` keyword token (`SELECT` in the grammar; case-insensitive).
     #[token("select", ignore(case))]
     Select,
+    /// The `as` keyword token, binding a SELECT column alias.
     #[token("as", ignore(case))]
     As,
+    /// The `from` keyword token, opening the FROM clause.
     #[token("from", ignore(case))]
     From,
+    /// The `where` keyword token, opening the WHERE clause.
     #[token("where", ignore(case))]
     Where,
+    /// The `order` keyword token of `ORDER BY`.
     #[token("order", ignore(case))]
     Order,
+    /// The `by` keyword token of `ORDER BY`.
     #[token("by", ignore(case))]
     By,
+    /// The `desc` keyword token — descending sort direction.
     #[token("desc", ignore(case))]
     Desc,
+    /// The `descending` keyword token — the long spelling of `desc`.
     #[token("descending", ignore(case))]
     Descending,
+    /// The `asc` keyword token — ascending sort direction.
     #[token("asc", ignore(case))]
     Asc,
+    /// The `ascending` keyword token — the long spelling of `asc`.
     #[token("ascending", ignore(case))]
     Ascending,
+    /// The `limit` keyword token, opening the LIMIT clause.
     #[token("limit", ignore(case))]
     Limit,
+    /// The `offset` keyword token of the LIMIT clause.
     #[token("offset", ignore(case))]
     Offset,
+    /// The `distinct` keyword token of a SELECT clause.
     #[token("distinct", ignore(case))]
     Distinct,
+    /// The `version` keyword token — the VERSION class in a FROM clause.
     #[token("version", ignore(case))]
     Version,
+    /// The `latest_version` keyword token — the latest-version predicate.
     #[token("latest_version", ignore(case))]
     LatestVersion,
+    /// The `all_versions` keyword token — the all-versions predicate.
     #[token("all_versions", ignore(case))]
     AllVersions,
+    /// The `top` keyword token of a SELECT clause.
     #[token("top", ignore(case))]
     Top,
+    /// The `forward` keyword token — a `TOP` direction.
     #[token("forward", ignore(case))]
     Forward,
+    /// The `backward` keyword token — a `TOP` direction.
     #[token("backward", ignore(case))]
     Backward,
     // NOTE: `TIMEWINDOW` is deliberately NOT a token. AQL 1.1 removed the
@@ -101,44 +120,61 @@ pub enum Token {
     // parse. The CNF query corpus predates the removal — the conformance
     // runner encodes the documented corpus-override (rejection expected), the
     // parser never resurrects removed grammar.
+    /// The `contains` keyword token, joining a containment chain.
     #[token("contains", ignore(case))]
     Contains,
+    /// The `and` keyword token — boolean conjunction.
     #[token("and", ignore(case))]
     And,
+    /// The `or` keyword token — boolean disjunction.
     #[token("or", ignore(case))]
     Or,
+    /// The `not` keyword token — boolean negation.
     #[token("not", ignore(case))]
     Not,
+    /// The `exists` keyword token — the existence operator.
     #[token("exists", ignore(case))]
     Exists,
+    /// The `like` keyword token — the pattern-match operator.
     #[token("like", ignore(case))]
     Like,
+    /// The `matches` keyword token — the value-set match operator.
     #[token("matches", ignore(case))]
     Matches,
 
     // aggregate + terminology (distinct argument grammar → dedicated tokens)
+    /// The `count` aggregate-function keyword token.
     #[token("count", ignore(case))]
     Count,
+    /// The `min` aggregate-function keyword token.
     #[token("min", ignore(case))]
     Min,
+    /// The `max` aggregate-function keyword token.
     #[token("max", ignore(case))]
     Max,
+    /// The `sum` aggregate-function keyword token.
     #[token("sum", ignore(case))]
     Sum,
+    /// The `avg` aggregate-function keyword token.
     #[token("avg", ignore(case))]
     Avg,
+    /// The `terminology` function keyword token.
     #[token("terminology", ignore(case))]
     Terminology,
 
     // literal keywords
+    /// The `true` boolean-literal keyword token.
     #[token("true", ignore(case))]
     True,
+    /// The `false` boolean-literal keyword token.
     #[token("false", ignore(case))]
     False,
+    /// The `null` literal keyword token.
     #[token("null", ignore(case))]
     Null,
 
     // ── operators & symbols ─────────────────────────────────────────────────
+    /// A comparison operator: `=`, `!=`, `>=`, `<=`, `>` or `<`.
     #[token("=", |_| CompOp::Eq)]
     #[token("!=", |_| CompOp::Ne)]
     #[token(">=", |_| CompOp::Ge)]
@@ -147,26 +183,37 @@ pub enum Token {
     #[token("<", |_| CompOp::Lt)]
     Comparison(CompOp),
 
+    /// The `(` symbol token.
     #[token("(")]
     LeftParen,
+    /// The `)` symbol token.
     #[token(")")]
     RightParen,
+    /// The `[` symbol token, opening a node predicate.
     #[token("[")]
     LeftBracket,
+    /// The `]` symbol token, closing a node predicate.
     #[token("]")]
     RightBracket,
+    /// The `{` symbol token.
     #[token("{")]
     LeftCurly,
+    /// The `}` symbol token.
     #[token("}")]
     RightCurly,
+    /// The `,` symbol token.
     #[token(",")]
     Comma,
+    /// The `/` symbol token — a path separator.
     #[token("/")]
     Slash,
+    /// The `*` symbol token — the wildcard path/column.
     #[token("*")]
     Asterisk,
+    /// The `;` symbol token.
     #[token(";")]
     Semicolon,
+    /// The `-` symbol token.
     #[token("-")]
     Minus,
     /// `--` — the grammar's `SYM_DOUBLE_DASH` optional statement terminator.
@@ -181,15 +228,17 @@ pub enum Token {
     DoubleDash,
 
     // ── literals & names ────────────────────────────────────────────────────
-    // A `$name` query parameter.
+    /// A `$name` query parameter, slice included (the grammar's `PARAMETER`).
     #[regex(r"\$[a-zA-Z][a-zA-Z0-9_]*", |lex| lex.slice().to_owned())]
     Parameter(String),
 
     // `idNN[.NN]*` / `atNN[.NN]*` node codes (higher priority than Identifier).
     // The grammar's `CODE_STR` permits leading-zero runs (`at0001`), so a plain
     // `[0-9]+(.[0-9]+)*` after the `id`/`at` prefix is the faithful shape.
+    /// An `idNN[.NN]*` archetype node code, slice included.
     #[regex(r"id[0-9]+(\.[0-9]+)*", |lex| lex.slice().to_owned())]
     IdCode(String),
+    /// An `atNN[.NN]*` archetype node code, slice included.
     #[regex(r"at[0-9]+(\.[0-9]+)*", |lex| lex.slice().to_owned())]
     AtCode(String),
 
@@ -202,6 +251,8 @@ pub enum Token {
         r"([a-zA-Z][a-zA-Z0-9_.\-]*::)?[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_-]*\.v[0-9]+(\.[0-9]+)*((-rc|-alpha)(\.[0-9]+)?)?",
         |lex| lex.slice().to_owned()
     )]
+    /// An archetype HRID (optionally namespaced), slice included — e.g.
+    /// `openEHR-EHR-OBSERVATION.blood_pressure.v1`.
     ArchetypeHrid(String),
 
     // A term code, e.g. `local::at0001`, `SNOMED-CT::1234|text|` or
@@ -214,10 +265,13 @@ pub enum Token {
         r"[a-zA-Z0-9._\-]+(\([a-zA-Z0-9._\-]+\))?::[a-zA-Z0-9._\-]+(\|[^|\[\]]+\|)?",
         |lex| lex.slice().to_owned()
     )]
+    /// A term code, slice included — e.g. `local::at0001` or
+    /// `SNOMED-CT::1234|cyanosis|` (the grammar's `TERM_CODE`).
     TermCode(String),
 
     // A URI, e.g. `http://example.org/x`. Recognised by a `scheme://` lead.
     #[regex(r"[a-zA-Z][a-zA-Z0-9+.\-]*://[^ \t\r\n{}]*", |lex| lex.slice().to_owned())]
+    /// A URI, slice included — recognised by its `scheme://` lead.
     Uri(String),
 
     // A contained regex, e.g. `{/pattern/}` or `{/pattern/; 'name'}` (used in a
@@ -227,26 +281,36 @@ pub enum Token {
         r"\{[ \t\r\n]*/(\\.|[^/\r\n])*/[ \t\r\n]*(;[ \t\r\n]*'([^'\\]|\\.)*')?[ \t\r\n]*\}",
         |lex| lex.slice().to_owned()
     )]
+    /// A contained regex, slice included — `{/pattern/}` or
+    /// `{/pattern/; 'name'}` (the grammar's `CONTAINED_REGEX`).
     ContainedRegex(String),
 
     // Scientific and plain numerics (order: sci before plain via length).
+    /// An integer in scientific notation, lexeme included — e.g. `1e10`.
     #[regex(r"[0-9]+[eE][+\-]?[0-9]+", |lex| lex.slice().to_owned())]
     SciInteger(String),
+    /// A real in scientific notation, lexeme included — e.g. `1.5e-3`.
     #[regex(r"[0-9]*\.[0-9]+[eE][+\-]?[0-9]+", |lex| lex.slice().to_owned())]
     SciReal(String),
+    /// A plain real literal, lexeme included — e.g. `3.14`.
     #[regex(r"[0-9]*\.[0-9]+", |lex| lex.slice().to_owned())]
     Real(String),
+    /// A plain integer literal, lexeme included — e.g. `42`.
     #[regex(r"[0-9]+", |lex| lex.slice().to_owned())]
     Integer(String),
 
     // Single- or double-quoted string (also carries quoted temporals; see the
     // module NOTE). Escapes are preserved in the slice, unescaped later.
+    /// A single- or double-quoted string literal, quotes and escapes
+    /// preserved in the slice (also carries quoted temporals — see the module
+    /// docs).
     #[regex(r"'([^'\\]|\\.)*'", |lex| lex.slice().to_owned())]
     #[regex(r#""([^"\\]|\\.)*""#, |lex| lex.slice().to_owned())]
     String(String),
 
     // Plain identifier (lowest-priority word token).
     #[regex(r"[a-zA-Z][a-zA-Z0-9_]*", |lex| lex.slice().to_owned())]
+    /// A plain identifier, slice included — the lowest-priority word token.
     Identifier(String),
 }
 
@@ -302,7 +366,6 @@ pub struct LexError {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

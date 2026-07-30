@@ -3,8 +3,9 @@
     clippy::expect_used,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! The abstract-root serialization path (`to_canonical_xml_declared`).
 //!
 //! `ALL/Version.xsd` publishes exactly one global element for the change-control

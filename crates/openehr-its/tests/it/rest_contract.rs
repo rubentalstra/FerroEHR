@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Smoke test for the generated ITS-REST contract: the DTOs serde
 //! round-trip, the route table is populated, and the server trait is nameable.
 use openehr_its::rest::generated::query;

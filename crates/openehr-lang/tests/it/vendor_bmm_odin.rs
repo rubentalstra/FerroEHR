@@ -21,13 +21,15 @@
 //! in the per-fixture comments and left as a `// TODO:` for the future P_BMM
 //! validator.
 
-// doc_markdown: the module docs name archie Java classes (BmmOdinParser,
-// BmmSchemaConverter, …) and BMM error codes (EC_…) as prose, not code refs.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::panic,
-    clippy::doc_markdown
+    reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+#![allow(
+    clippy::doc_markdown,
+    reason = "the module docs name archie Java classes (BmmOdinParser, BmmSchemaConverter, …) and BMM error codes (EC_…) as prose, not code refs"
 )]
 
 use openehr_lang::odin::{OdinKey, OdinValue, parse};

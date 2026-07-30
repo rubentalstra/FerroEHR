@@ -161,8 +161,10 @@ fn parse_occurrence(occ: &mut SimNode, value: &Value) -> Result<(), FlatError> {
 }
 
 fn emit_node(node: &SimNode) -> Value {
-    if node.is_bare_leaf() {
-        return node.attrs[""].clone();
+    if node.is_bare_leaf()
+        && let Some(bare) = node.attrs.get("")
+    {
+        return bare.clone();
     }
     let mut out = Map::new();
     for (chain, value) in &node.attrs {
@@ -269,8 +271,10 @@ fn emit_ctx(ctx: &SimNode) -> Value {
 }
 
 fn emit_ctx_item(occ: &SimNode) -> Value {
-    if occ.is_bare_leaf() {
-        return occ.attrs[""].clone();
+    if occ.is_bare_leaf()
+        && let Some(bare) = occ.attrs.get("")
+    {
+        return bare.clone();
     }
     let mut out = Map::new();
     for (chain, value) in &occ.attrs {

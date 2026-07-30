@@ -2,8 +2,9 @@
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! Regression guard for the CNF-runner corpus vitals template
 //! (`tools/cnf-runner/artifacts/corpus/templates/vitals.opt`, corpus alias
 //! `cnf.opt.vitals`, `template_id` `cnf.vitals`).

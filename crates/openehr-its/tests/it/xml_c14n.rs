@@ -1,10 +1,14 @@
-#![allow(clippy::doc_markdown)] // prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)
+#![allow(
+    clippy::doc_markdown,
+    reason = "prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)"
+)]
 #![allow(
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    let_underscore_drop,
+    reason = "test assertions/diagnostics/fixtures"
+)]
 //! C14N byte-parity gate for canonical XML.
 //!
 //! The other two XML gates (`xml_roundtrip`, `xml_ehrbase`) prove only internal
@@ -91,7 +95,7 @@ fn c14n(xml: &str, label: &str) -> Result<String, String> {
         .output()
         .map_err(|e| format!("run xmllint: {e}"))?;
     // Best-effort temp cleanup; a leftover file is harmless.
-    std::fs::remove_file(&tmp).ok();
+    drop(std::fs::remove_file(&tmp));
     if !out.status.success() {
         return Err(format!(
             "xmllint --noblanks --c14n failed ({label}): {}",
@@ -105,16 +109,14 @@ fn c14n(xml: &str, label: &str) -> Result<String, String> {
 fn strip_xsi_type(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut rest = s;
-    while let Some(pos) = rest.find(" xsi:type=\"") {
-        out.push_str(&rest[..pos]);
-        let after = &rest[pos + " xsi:type=\"".len()..];
+    while let Some((head, after)) = rest.split_once(" xsi:type=\"") {
+        out.push_str(head);
         // Skip to the closing quote of the attribute value.
-        if let Some(q) = after.find('"') {
-            rest = &after[q + 1..];
-        } else {
+        let Some((_, tail)) = after.split_once('"') else {
             rest = after;
             break;
-        }
+        };
+        rest = tail;
     }
     out.push_str(rest);
     out
@@ -124,13 +126,13 @@ fn strip_xsi_type(s: &str) -> String {
 fn xsi_type_values(s: &str) -> Vec<&str> {
     let mut vals = Vec::new();
     let mut rest = s;
-    while let Some(pos) = rest.find("xsi:type=\"") {
-        let after = &rest[pos + "xsi:type=\"".len()..];
-        if let Some(q) = after.find('"') {
-            vals.push(&after[..q]);
-            rest = &after[q + 1..];
-        } else {
-            break;
+    while let Some((_, after)) = rest.split_once("xsi:type=\"") {
+        match after.split_once('"') {
+            Some((value, tail)) => {
+                vals.push(value);
+                rest = tail;
+            }
+            None => break,
         }
     }
     vals

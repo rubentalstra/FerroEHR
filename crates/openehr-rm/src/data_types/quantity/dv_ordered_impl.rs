@@ -90,6 +90,10 @@ fn date_parts(s: &str) -> Option<(i64, u32, u32)> {
 
 /// Days from civil date to the proleptic-Gregorian epoch 1970-01-01
 /// (Howard Hinnant's `days_from_civil` algorithm).
+#[expect(
+    clippy::integer_division,
+    reason = "days_from_civil is defined in terms of truncating integer division (era/leap-cycle counting); the discarded remainders are the algorithm"
+)]
 fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = if y >= 0 { y } else { y - 399 } / 400;
@@ -114,24 +118,23 @@ fn split_tz(s: &str) -> (&str, f64) {
     if let Some(core) = s.strip_suffix('Z') {
         return (core, 0.0);
     }
-    if let Some(pos) = s.rfind(['+', '-']) {
-        let tz = &s[pos..];
+    if let Some((core, tz)) = s.rfind(['+', '-']).and_then(|pos| s.split_at_checked(pos)) {
         let sign = if tz.starts_with('-') { -1.0 } else { 1.0 };
-        let rest = &tz[1..];
+        let rest = tz.get(1..).unwrap_or_default();
         let (h, m) = if let Some((h, m)) = rest.split_once(':') {
             (parse_u32(h), parse_u32(m))
         } else {
             match rest.len() {
                 2 => (parse_u32(rest), Some(0)),
-                4 => (parse_u32(&rest[0..2]), parse_u32(&rest[2..4])),
+                4 => (
+                    rest.get(0..2).and_then(parse_u32),
+                    rest.get(2..4).and_then(parse_u32),
+                ),
                 _ => (None, None),
             }
         };
         if let (Some(h), Some(m)) = (h, m) {
-            return (
-                &s[..pos],
-                sign * (f64::from(h) * 3600.0 + f64::from(m) * 60.0),
-            );
+            return (core, sign * (f64::from(h) * 3600.0 + f64::from(m) * 60.0));
         }
     }
     (s, 0.0)
@@ -161,11 +164,16 @@ fn time_core_seconds(s: &str) -> Option<f64> {
     } else {
         match base.len() {
             2 => (parse_u32(base)?, 0, 0, 3600.0),
-            4 => (parse_u32(&base[0..2])?, parse_u32(&base[2..4])?, 0, 60.0),
+            4 => (
+                base.get(0..2).and_then(parse_u32)?,
+                base.get(2..4).and_then(parse_u32)?,
+                0,
+                60.0,
+            ),
             6 => (
-                parse_u32(&base[0..2])?,
-                parse_u32(&base[2..4])?,
-                parse_u32(&base[4..6])?,
+                base.get(0..2).and_then(parse_u32)?,
+                base.get(2..4).and_then(parse_u32)?,
+                base.get(4..6).and_then(parse_u32)?,
                 1.0,
             ),
             _ => return None,
@@ -193,7 +201,10 @@ pub(crate) fn iso_date_time_magnitude_seconds(s: &str) -> Option<f64> {
     if !is_valid_iso_date_time(s) {
         return None;
     }
-    #[allow(clippy::cast_precision_loss)] // day counts are far below 2^52
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "day counts over the representable calendar are far below 2^52, where f64 is exact on integers"
+    )]
     if let Some((date, time)) = s.split_once('T') {
         let days = iso_date_magnitude_days(date)?;
         let (core, tz_offset) = split_tz(time);
@@ -229,12 +240,13 @@ pub(crate) fn iso_duration_to_seconds(s: &str) -> Option<f64> {
         let mut i = 0;
         while i < bytes.len() {
             let start = i;
-            while i < bytes.len()
-                && (bytes[i].is_ascii_digit() || bytes[i] == b'.' || bytes[i] == b',')
+            while bytes
+                .get(i)
+                .is_some_and(|b| b.is_ascii_digit() || *b == b'.' || *b == b',')
             {
                 i += 1;
             }
-            let num: f64 = part[start..i].replace(',', ".").parse().ok()?;
+            let num: f64 = part.get(start..i)?.replace(',', ".").parse().ok()?;
             let designator = *bytes.get(i)?;
             i += 1;
             let unit_seconds = match (designator, in_time) {
@@ -343,6 +355,10 @@ macro_rules! ordered_limit {
             /// `is_strictly_comparable_to(other)` fails or a magnitude is
             /// unavailable.
             #[must_use]
+            #[expect(
+                clippy::same_name_method,
+                reason = "the inherent method IS the RM `DV_ORDERED.less_than` surface; it deliberately shares the name of the internal `OrderedLimit` trait method it forwards to"
+            )]
             pub fn less_than(&self, other: &Self) -> Option<bool> {
                 OrderedLimit::less_than(self, other)
             }
@@ -360,7 +376,10 @@ ordered_limit!(
 );
 
 // DV_COUNT: any two counts are comparable; ordered by `magnitude`.
-#[allow(clippy::cast_precision_loss)] // i64 counts are far below 2^52 in practice
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "DV_COUNT magnitudes are clinical counts, far below 2^52 where f64 is exact on integers"
+)]
 mod dv_count_limit {
     use super::{DvCount, OrderedLimit};
     ordered_limit!(
@@ -398,7 +417,10 @@ ordered_limit!(
 );
 
 // DV_DATE: any two dates are comparable; ordered by day-magnitude.
-#[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the day count over the representable calendar is far below 2^52, where f64 is exact on integers"
+)]
 mod dv_date_limit {
     use super::{DvDate, OrderedLimit, iso_date_magnitude_days};
     ordered_limit!(
@@ -458,7 +480,10 @@ impl DvProportion {
     /// `denominator` values are integers (the value-level test the
     /// `Is_integral_validity` invariant binds this function to).
     #[must_use]
-    #[allow(clippy::float_cmp)] // exact-integrality test per the spec invariant
+    #[expect(
+        clippy::float_cmp,
+        reason = "an exact-integrality test is precisely a bit-equality question (`x.floor() == x`), not a tolerance comparison"
+    )]
     pub fn is_integral(&self) -> bool {
         self.numerator.floor() == self.numerator && self.denominator.floor() == self.denominator
     }
@@ -533,7 +558,10 @@ impl DvOrdered {
     /// `DV_ORDINAL` / `DV_SCALE` (which order by `value`, not magnitude) and
     /// for unavailable temporal magnitudes.
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "DV_COUNT magnitudes and day counts are far below 2^52, where f64 is exact on integers"
+    )]
     pub fn magnitude(&self) -> Option<f64> {
         match self {
             Self::DvQuantity(x) => Some(x.magnitude),
@@ -559,6 +587,10 @@ impl DvOrdered {
     /// RM `DV_ORDERED.less_than` (`<`). `None` when the values are not
     /// strictly comparable or a magnitude is unavailable.
     #[must_use]
+    #[expect(
+        clippy::same_name_method,
+        reason = "the inherent method IS the RM `DV_ORDERED.less_than` surface; it deliberately shares the name of the internal `OrderedLimit` trait method it forwards to"
+    )]
     pub fn less_than(&self, other: &Self) -> Option<bool> {
         OrderedLimit::less_than(self, other)
     }
@@ -699,7 +731,15 @@ impl OrderedLimit for DvOrdered {
 
 /// Civil date from a day count relative to 1970-01-01 (Howard Hinnant's
 /// `civil_from_days` — the inverse of `days_from_civil`).
-#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)] // d/m are in [1,31]/[1,12] by construction
+#[expect(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    reason = "the algorithm's own bounds put d in [1, 31] and m in [1, 12] — both non-negative and inside u32"
+)]
+#[expect(
+    clippy::integer_division,
+    reason = "civil_from_days is defined in terms of truncating integer division (era/leap-cycle counting); the discarded remainders are the algorithm"
+)]
 fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let z = z + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
@@ -718,14 +758,26 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 /// seconds included only when non-zero, at millisecond precision). Used by
 /// `INTERVAL_EVENT.interval_start_time` / `EVENT.offset` arithmetic.
 #[must_use]
+#[expect(
+    clippy::integer_division,
+    reason = "whole hours/minutes are exactly the truncated quotients; the remainders are taken by the paired `%` terms"
+)]
 pub(crate) fn format_iso_date_time(days_since_origin: i64, secs_in_day: f64) -> String {
     let (y, m, d) = civil_from_days(days_since_origin + days_from_civil(1, 1, 1));
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a seconds-in-day value is non-negative and below 86_400, so its floor fits u64"
+    )]
     let whole = secs_in_day.floor() as u64;
     let frac = secs_in_day - secs_in_day.floor();
     let (hh, mm, ss) = (whole / 3600, (whole % 3600) / 60, whole % 60);
     if frac > 1e-9 {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "frac is in [0, 1), so frac * 1000 rounds into 0..=1000 — non-negative and inside u64"
+        )]
         let millis = (frac * 1000.0).round() as u64;
         format!("{y:04}-{m:02}-{d:02}T{hh:02}:{mm:02}:{ss:02}.{millis:03}")
     } else {
@@ -752,8 +804,8 @@ pub(crate) fn iso_date_time_parts(s: &str) -> Option<(i64, f64, String)> {
                     time.rfind(['+', '-'])
                 }
             };
-            let (core, tz) = match tz_start {
-                Some(i) => (&time[..i], time[i..].to_owned()),
+            let (core, tz) = match tz_start.and_then(|i| time.split_at_checked(i)) {
+                Some((core, tz)) => (core, tz.to_owned()),
                 None => (time, String::new()),
             };
             Some((days, time_core_seconds(core)?, tz))
@@ -790,12 +842,6 @@ pub(crate) fn push_normal_range_consistency<T: OrderedLimit>(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -33,6 +33,7 @@ pub enum Namespace {
 }
 
 impl Namespace {
+    /// The namespace URI this lineage declares on the document root.
     #[must_use]
     pub const fn uri(self) -> &'static str {
         match self {
@@ -45,12 +46,17 @@ impl Namespace {
 /// Errors from canonical-XML (de)serialization.
 #[derive(Debug, thiserror::Error)]
 pub enum XmlError {
+    /// The `quick-xml` writer rejected an event.
     #[error("xml write error: {0}")]
     Write(#[from] quick_xml::Error),
+    /// The underlying byte sink or source failed.
     #[error("xml io error: {0}")]
     Io(#[from] std::io::Error),
+    /// The written bytes were not valid UTF-8.
     #[error("xml output was not valid utf-8: {0}")]
     Utf8(#[from] std::string::FromUtf8Error),
+    /// The input was not well-formed, or did not match the expected canonical
+    /// shape.
     #[error("xml parse error: {0}")]
     Parse(String),
 }
@@ -73,6 +79,7 @@ impl std::fmt::Debug for XmlWriter {
 }
 
 impl XmlWriter {
+    /// A writer over a fresh in-memory buffer, with no namespace pending.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -290,7 +297,9 @@ impl ToXml for serde_json::Value {
 /// reader so it can cross recursive `from_xml` calls.
 #[derive(Debug, Clone)]
 pub struct StartTag {
+    /// The element name exactly as it appeared, prefix included.
     pub name: String,
+    /// The element's attributes as `(name, value)` pairs, in document order.
     pub attrs: Vec<(String, String)>,
 }
 
@@ -319,9 +328,13 @@ impl StartTag {
 /// One decoded XML event (owned).
 #[derive(Debug)]
 pub enum XmlEvent {
+    /// An element start tag (empty elements are expanded to `Start` + `End`).
     Start(StartTag),
+    /// An element end tag.
     End,
+    /// Character data.
     Text(String),
+    /// End of input.
     Eof,
 }
 
@@ -338,6 +351,7 @@ impl std::fmt::Debug for XmlReader<'_> {
 }
 
 impl<'a> XmlReader<'a> {
+    /// A reader over `xml`, configured to expand empty elements.
     #[must_use]
     pub fn new(xml: &'a str) -> Self {
         let mut r = Reader::from_str(xml);

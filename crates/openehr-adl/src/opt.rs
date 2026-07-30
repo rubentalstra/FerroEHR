@@ -590,7 +590,6 @@ fn nil_uuid() -> Uuid {
 
 /// Mutable references to the four common `C_OBJECT` fields
 /// (`rm_type_name`, `node_id`, `occurrences`, `sibling_order`).
-#[allow(clippy::type_complexity)]
 fn common_mut(
     o: &mut CObject,
 ) -> (

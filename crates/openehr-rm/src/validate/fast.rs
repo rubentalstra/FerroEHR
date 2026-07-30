@@ -370,7 +370,10 @@ fn present(obj: &Map<String, Value>, key: &str) -> bool {
 /// violation text has a single source. Returns `false` (nothing appended)
 /// for the rare sub-cases the fast path declines (e.g. a periodic `HISTORY`,
 /// whose `Period_consistency` needs the typed event/offset arithmetic).
-#[allow(clippy::too_many_lines)] // a flat per-class dispatch, mirror of the typed table
+#[expect(
+    clippy::too_many_lines,
+    reason = "a flat per-RM-class dispatch table; splitting it would scatter the mirror of the typed invariant table"
+)]
 fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantViolation>) -> bool {
     match ty {
         "CODE_PHRASE" => {

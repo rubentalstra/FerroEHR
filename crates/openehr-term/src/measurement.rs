@@ -25,7 +25,7 @@ pub fn is_valid_units_string(units: &str) -> bool {
     }
     let mut pos = 0usize;
     // mainTerm = ['/'] term
-    if bytes[pos] == b'/' {
+    if bytes.first() == Some(&b'/') {
         pos += 1;
     }
     match parse_term(bytes, pos) {
@@ -37,7 +37,7 @@ pub fn is_valid_units_string(units: &str) -> bool {
 /// term = component { ('.' | '/') component }
 fn parse_term(b: &[u8], mut pos: usize) -> Option<usize> {
     pos = parse_component(b, pos)?;
-    while pos < b.len() && (b[pos] == b'.' || b[pos] == b'/') {
+    while matches!(b.get(pos), Some(b'.' | b'/')) {
         pos = parse_component(b, pos + 1)?;
     }
     Some(pos)
@@ -45,25 +45,23 @@ fn parse_term(b: &[u8], mut pos: usize) -> Option<usize> {
 
 /// component = '(' term ')' [exponent] | annotation | annotatable [annotation]
 fn parse_component(b: &[u8], mut pos: usize) -> Option<usize> {
-    if pos >= b.len() {
-        return None;
-    }
-    if b[pos] == b'(' {
+    let &opener = b.get(pos)?;
+    if opener == b'(' {
         pos = parse_term(b, pos + 1)?;
-        if pos >= b.len() || b[pos] != b')' {
+        if b.get(pos) != Some(&b')') {
             return None;
         }
         pos += 1;
         pos = parse_exponent_opt(b, pos);
         return Some(pos);
     }
-    if b[pos] == b'{' {
+    if opener == b'{' {
         return parse_annotation(b, pos);
     }
     // annotatable = simple-unit [exponent]; simple-unit = factor | atom
     pos = parse_atom_or_factor(b, pos)?;
     pos = parse_exponent_opt(b, pos);
-    if pos < b.len() && b[pos] == b'{' {
+    if b.get(pos) == Some(&b'{') {
         pos = parse_annotation(b, pos)?;
     }
     Some(pos)
@@ -73,12 +71,15 @@ fn parse_component(b: &[u8], mut pos: usize) -> Option<usize> {
 /// balanced `[...]` segments; or a bare integer factor.
 fn parse_atom_or_factor(b: &[u8], mut pos: usize) -> Option<usize> {
     let start = pos;
-    while pos < b.len() {
-        match b[pos] {
+    while let Some(&c) = b.get(pos) {
+        match c {
             b'[' => {
                 pos += 1;
-                while pos < b.len() && b[pos] != b']' {
-                    if !(0x21..=0x7e).contains(&b[pos]) || b[pos] == b'[' {
+                while let Some(&inner) = b.get(pos) {
+                    if inner == b']' {
+                        break;
+                    }
+                    if !(0x21..=0x7e).contains(&inner) || inner == b'[' {
                         return None;
                     }
                     pos += 1;
@@ -101,9 +102,9 @@ fn parse_atom_or_factor(b: &[u8], mut pos: usize) -> Option<usize> {
 /// exponent = ['+'|'-'] digits — but bare trailing digits are already consumed
 /// by the atom scan (`mm3`), so this handles the signed form (`s-1`, `m+2`).
 fn parse_exponent_opt(b: &[u8], mut pos: usize) -> usize {
-    if pos < b.len() && (b[pos] == b'+' || b[pos] == b'-') {
+    if matches!(b.get(pos), Some(b'+' | b'-')) {
         let mut digits = pos + 1;
-        while digits < b.len() && b[digits].is_ascii_digit() {
+        while b.get(digits).is_some_and(u8::is_ascii_digit) {
             digits += 1;
         }
         if digits > pos + 1 {
@@ -115,10 +116,17 @@ fn parse_exponent_opt(b: &[u8], mut pos: usize) -> usize {
 
 /// annotation = '{' printable-except-braces '}'
 fn parse_annotation(b: &[u8], mut pos: usize) -> Option<usize> {
-    debug_assert_eq!(b[pos], b'{');
+    debug_assert_eq!(
+        b.get(pos),
+        Some(&b'{'),
+        "parse_annotation must be entered on the opening brace of an annotation"
+    );
     pos += 1;
-    while pos < b.len() && b[pos] != b'}' {
-        if !(0x21..=0x7e).contains(&b[pos]) || b[pos] == b'{' {
+    while let Some(&c) = b.get(pos) {
+        if c == b'}' {
+            break;
+        }
+        if !(0x21..=0x7e).contains(&c) || c == b'{' {
             return None;
         }
         pos += 1;
@@ -127,12 +135,6 @@ fn parse_annotation(b: &[u8], mut pos: usize) -> Option<usize> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::is_valid_units_string;
 
