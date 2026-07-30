@@ -1,0 +1,46 @@
+archetype (adl_version=1.4)
+    openEHR-EHR-SECTION.slot_domain_concept_regex.v1
+
+concept
+    [at0000]
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    original_author = <
+        ["name"] = <"cadl audit">
+    >
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"A slot assertion targeting domain_concept, not archetype_id: its literal regex must NOT be treated as an archetype id (VDFAI false positive, ADL1.4 master05 §Archetype Slots).">
+        >
+    >
+    lifecycle_state = <"unmanaged">
+
+definition
+    SECTION[at0000] matches {
+        items cardinality matches {0..*; unordered} matches {
+            allow_archetype OBSERVATION[at0001] occurrences matches {0..1} matches {
+                include
+                    domain_concept matches {/medication\.v1/}
+            }
+        }
+    }
+
+ontology
+    term_definitions = <
+        ["en"] = <
+            items = <
+                ["at0000"] = <
+                    text = <"section">
+                    description = <"section">
+                >
+                ["at0001"] = <
+                    text = <"slot">
+                    description = <"a domain_concept-constrained slot">
+                >
+            >
+        >
+    >

@@ -164,6 +164,13 @@ const FIXTURES: &[(&str, Expect)] = &[
     // ── 1.4 keywords that must stay accepted ──────────────────────────────
     ("openEHR-EHR-CLUSTER.sibling_order.v1.adl", Expect::Pass),
     ("openEHR-EHR-CLUSTER.cadl_keyword_case.v1.adl", Expect::Pass),
+    // A slot assertion targeting domain_concept: its literal regex is NOT an
+    // archetype id, so VDFAI must not fire (master05 §Archetype Slots; the
+    // VDFAI subject is the archetype identifier).
+    (
+        "openEHR-EHR-SECTION.slot_domain_concept_regex.v1.adl",
+        Expect::Pass,
+    ),
     // ── the master05 breadth trio (every construct of the chapter) ────────
     (
         "openEHR-EHR-OBSERVATION.cadl_breadth_structure.v1.adl",
