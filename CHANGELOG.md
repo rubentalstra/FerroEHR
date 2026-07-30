@@ -53,6 +53,10 @@ workflow refuses a tag that has no matching section here.
   relative paths with a node predicate (`items[at0001]`) parse instead of
   being rejected; absolute/relative multi-segment paths and the
   position/meaning/at-code predicate forms were already accepted.
+- **ADL 1.4 `use_node` internal references with a target path that does not
+  resolve within the definition are now reported as a `VDFPT` validation
+  error** (path validity in definition) instead of passing silently; a
+  resolving target stays clean.
 
 - **A server-side failure of the password-verification task no longer
   masquerades as `401 Invalid credentials`**: if the blocking Argon2

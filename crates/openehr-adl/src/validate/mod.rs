@@ -239,6 +239,12 @@ pub enum ValidationCode {
     /// VDFAI — archetype id validity in slot definition (`master04.5`
     /// §`ARCHETYPE_SLOT`).
     Vdfai,
+    /// VDFPT — path validity in definition: any path mentioned in the
+    /// definition section must be valid syntactically and valid with respect
+    /// to the hierarchical structure of the definition section (ADL 1.4 only;
+    /// `ADL1.4/master08-adl.adoc` §Definition Section validity rules — the
+    /// AOM2 mirror is [`ValidationCode::Vunp`] on the flat form).
+    Vdfpt,
     /// VOBAV — object node assumed value validity (`master04.5`
     /// §`C_PRIMITIVE_OBJECT`).
     Vobav,
@@ -417,6 +423,7 @@ impl ValidationCode {
             Self::Vcosu => "VCOSU",
             Self::Vcatu => "VCATU",
             Self::Vdfai => "VDFAI",
+            Self::Vdfpt => "VDFPT",
             Self::Vobav => "VOBAV",
             Self::Vrmvp => "VRMVP",
             Self::Vrmvav => "VRMVAV",
@@ -713,6 +720,10 @@ pub fn validate_source_phase1(
 ///   `ADL1.4/master09-customising_adl.adoc` §Custom Syntax is decomposed into its
 ///   codes (assumed code included) so definedness is judged per code; external
 ///   terminology codes are not archetype terms and are excluded.
+/// - **VDFPT** — `use_node` target paths must resolve within the definition
+///   section (`ADL1.4/master08-adl.adoc` §Definition Section; a 1.4 artefact
+///   is standalone, so its own assembled definition is the resolution target —
+///   [`phase3::validate_definition_paths_adl14`]).
 ///
 /// # Errors
 /// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
@@ -728,6 +739,7 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
         crate::cadl::Dialect::Adl14,
         &mut issues,
     );
+    issues.extend(phase3::validate_definition_paths_adl14(&archetype));
     Ok(issues)
 }
 
@@ -761,6 +773,7 @@ pub fn validate_source_adl14(
         crate::cadl::Dialect::Adl14,
         &mut issues,
     );
+    issues.extend(phase3::validate_definition_paths_adl14(&archetype));
     if issues.iter().all(|i| i.severity != Severity::Error) {
         issues.extend(rm::validate_adl14_rm(&archetype, rm));
     }
