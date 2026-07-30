@@ -445,6 +445,29 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
     scan.issues
 }
 
+/// Validate `archetype` against `rm` with the **ADL 1.4** reference-model rule
+/// set — which is VUNT and nothing else.
+///
+/// The ADL 1.4 formalism defines exactly two cADL validity rules of its own:
+/// VCOC (`ADL1.4/master05-cadl.adoc` §Occurrences L324), which needs no RM and
+/// runs in the 1.4 phase-1 pass, and **VUNT** (§Internal References L512-513:
+/// "the type mentioned in a `use_node` must be the same as or a super-type
+/// (according to the reference model) of the reference model type of the node
+/// referred to"), whose "according to the reference model" clause puts it here.
+/// Every other check [`validate_phase2_rm`] performs (VCORM, VCORMT, VCARM,
+/// VCAEX, VCACA, VCAM, VACSO, the interior-node VATID half, the enumeration
+/// family) is an AOM2 rule with no ADL 1.4 counterpart — running them would
+/// judge a 1.4 artefact by ADL 2's catalogue, which this crate does not do (a
+/// 1.4 upload is judged AS 1.4). So the walk runs once and only VUNT is
+/// reported.
+#[must_use]
+pub fn validate_adl14_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
+    validate_phase2_rm(archetype, rm)
+        .into_iter()
+        .filter(|i| i.code == ValidationCode::Vunt)
+        .collect()
+}
+
 /// Mutable state threaded through the reference-model walk.
 struct RmScan<'a> {
     rm: &'a dyn RmModel,

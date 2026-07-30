@@ -537,10 +537,21 @@ cross-check).
 | `…SDINV_assumed_value_unmatched.v1.adl` | SDINV | a domain `assumed_value` satisfying no `list` row |
 | `…domain_assumed_value.v1.adl` | PASS | the accepting twin: an `assumed_value` landing on the tuple row it satisfies |
 | `…VATDF_undefined_listed_code.v1.adl` | VATDF | an undefined code inside the 1.4 listed term constraint `[local:: …]` |
-| `…VATDF_undefined_assumed_code.v1.adl` | VATDF | an undefined ASSUMED code of a 1.4 listed term constraint |
+| `…VATDF_undefined_code_with_assumed.v1.adl` | VATDF | an undefined listed code in the assumed-value SPELLING of the 1.4 term constraint (the assumed code itself is a member, so STCAC stays quiet) |
 | `…VACDF_undefined_constraint_code.v1.adl` | VACDF | an undefined `ac` code in a 1.4 qualified term constraint |
 | `…term_constraint_codes_defined.v1.adl` | PASS | the accepting twin, incl. that EXTERNAL terminology codes are not archetype terms |
+| `…STCDC_duplicate_code_in_list.v1.adl` | STCDC | a repeated code in the 1.4 listed term constraint (master04.6 §Syntax Validity Rules) |
+| `…STCAC_assumed_code_not_in_list.v1.adl` | STCAC | an assumed code that is not a member of its own code list (master04.6; master05 §Assumed Values L1012). **Adjudication (2026-07-30):** this file previously carried the name `VATDF_undefined_assumed_code` and asserted VATDF over an assumed code that was both undefined AND outside the list. With STCAC raised at the parse site the source never reaches validation, and an assumed code is by construction a member — so "undefined assumed code" collapses into "undefined listed code". The invalid shape is kept (renamed to the rule that now governs it) and the VATDF-over-the-assumed-spelling coverage moved to `VATDF_undefined_code_with_assumed`; nothing was dropped |
+| `…SCCOG_negated_matches.v1.adl` | SCCOG | `~matches` in OBJECT position — named at master05 §Keywords L47/L95-98, defined by no grammar production |
+| `…SCOAT_negated_is_in.v1.adl` | SCOAT | `~is_in` in ATTRIBUTE position (the chapter's own worked spelling, L96) |
+| `…SCOAT_not_in_symbol.v1.adl` | SCOAT | the `∉` symbol (L97), which no §Symbols lexical rule produces |
+| `…SCCOG_regex_match_operator.v1.adl` | SCCOG | `=~` — shown at L691-693 in prose whose example regexes are unterminated, and absent from every grammar |
+| `…SCDTAV_interval_timezone_asymmetry.v1.adl` | SCDTAV | a two-sided date/time interval with a timezone on one endpoint only (master05 §Intervals L932) |
 | `…VCOC_occurrences_exceed_cardinality.v1.adl` | VCOC | master05 L321-324: the occurrences sum overfills the cardinality |
 | `…VCOC_occurrences_below_cardinality.v1.adl` | VCOC | master05 L321-324: the occurrences sum cannot reach the cardinality lower |
 | `…default_occurrences.v1.adl` | PASS | the effective occurrences default `{1..1}` (master05 L316) keeps VCOC quiet |
 | `…sibling_order.v1.adl` | PASS | `before [atNNNN]` — a cADL 1.4 keyword (master05 §Keywords L53), never gated |
+| `…cadl_keyword_case.v1.adl` | PASS | a whole definition in upper/mixed case — the chapter's lexical spec is case-insensitive (§Symbols L1326-1354) — plus the `is_in` and `∈` spellings of `matches` |
+| `…cadl_breadth_structure.v1.adl` | PASS | every existence/occurrences/cardinality spelling (incl. two modifiers, both modifier orderings, the bare `{*}`), `use_node` with and without occurrences, generic type names, mixed object kinds under one attribute, and the bare + identified slot forms |
+| `…cadl_breadth_primitives.v1.adl` | PASS | every integer/real list and interval shape (incl. `infinity`/`-infinity`, `+/-`, and BOTH exclusive-lower spellings), string lists + the `...` continuation + both regex delimiters, booleans, characters, listed term codes, and assumed values on each |
+| `…cadl_breadth_datetime.v1.adl` | PASS | every date/time/date-time pattern of the valid-pattern table incl. literal substitution (L894) and the ASCII/`±`/`Z` timezone modifiers (L852, L900-906), the space-separated date-time pattern (§Symbols L1422), every duration pattern family, negative durations, the mixed `pattern/interval` form, and symmetric-timezone intervals |

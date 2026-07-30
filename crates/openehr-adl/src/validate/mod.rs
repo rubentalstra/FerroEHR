@@ -732,6 +732,42 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
     Ok(issues)
 }
 
+/// Parse an **ADL 1.4** source and validate it against the FULL ADL 1.4
+/// catalogue: [`validate_source_phase1_adl14`] plus the one 1.4 validity rule
+/// that needs a reference model, VUNT ([`rm::validate_adl14_rm`]).
+///
+/// VUNT is a rule of the ADL 1.4 formalism itself — `ADL1.4/master05-cadl.adoc`
+/// §Internal References L512-513 — so a 1.4 artefact that violates it is
+/// invalid 1.4, and a 1.4 upload path that stops at phase 1 can never reach it.
+/// The RM pass runs only when phase 1 raised no [`Severity::Error`] — the
+/// `master08` §Overview phase gate ("more basic kinds of errors being checked
+/// first"). A type `rm` does not know is undecidable rather than wrong
+/// ([`rm::type_conforms`] returns `None`), so an artefact built on a reference
+/// model the supplied [`rm::RmModel`] does not carry simply raises no VUNT.
+///
+/// # Errors
+/// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
+/// validation runs only on a successful parse.
+pub fn validate_source_adl14(
+    src: &str,
+    rm: &dyn rm::RmModel,
+) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
+    let source = parse_source(src)?;
+    let archetype = crate::assemble::assemble_adl14(&source, src)?;
+    let mut issues = Vec::new();
+    phase1::run(
+        &view(&archetype),
+        None,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl14,
+        &mut issues,
+    );
+    if issues.iter().all(|i| i.severity != Severity::Error) {
+        issues.extend(rm::validate_adl14_rm(&archetype, rm));
+    }
+    Ok(issues)
+}
+
 /// Validate an assembled [`Archetype`] against phase 1 and — only if phase 1
 /// raised no [`Severity::Error`] — the phase-2 reference-model checks against
 /// `rm`.

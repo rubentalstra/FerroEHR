@@ -21,10 +21,19 @@
 //!   strings safe: a `STRING` token maximally munches across newlines, so a
 //!   section keyword appearing inside a quoted value can never be mistaken for
 //!   a header.
-//! - `// NOTE:` Booleans are accepted in the canonical `True`/`False` and the
-//!   all-lower `true`/`false` forms; the grammar's fully case-insensitive
-//!   `SYM_TRUE`/`SYM_FALSE` (`base_lexer.g4`) is a superset — an all-caps
-//!   `TRUE` lexes as an identifier here. ODIN corpora use the canonical forms.
+//! - `// NOTE:` Keywords are lexed CASE-INSENSITIVELY, as both normative
+//!   lexical specifications require: `adl_keywords.g4` spells every keyword
+//!   `[Mm][Aa][Tt][Cc][Hh][Ee][Ss]`-style, and the ADL 1.4 chapter's own
+//!   lexical specification does the same
+//!   (`ADL1.4/master05-cadl.adoc` §Symbols L1326-1354, incl.
+//!   `[Ii][Nn][Ff][Ii][Nn][Ii][Tt][Yy] -> SYM_INFINITY`). Identifiers cannot
+//!   collide: an RM type id or attribute id that IS a keyword in some casing
+//!   (`MATCHES`, `ORDERED`) would be unlexable as an identifier in ANY casing
+//!   under those lexers too, so the keyword reading is the spec's own.
+//!   Booleans follow the same rule (`base_lexer.g4` `SYM_TRUE`,
+//!   `master05` L1337), so `TRUE`/`fAlSe` lex as booleans. The single
+//!   exception is `there_exists`, which both lexers spell case-SENSITIVELY —
+//!   see the note on [`Token::SymThereExists`].
 //! - `// NOTE:` A leading UTF-8 BOM is skipped though `master03` forbids it;
 //!   18 vendored ADL2 corpus sources carry one, so tolerating it is the
 //!   pragmatic superset (a rejection would be a lexer-level FAIL the corpus
@@ -57,101 +66,112 @@ pub enum Token {
     //    fold to one variant. Exact-literal `#[token]`s outrank the
     //    ALPHA_*_ID regexes by logos priority, so keywords beat identifiers. ──
     /// `matches` / `is_in` / `∈` (`SYM_MATCHES`).
-    #[token("matches")]
-    #[token("is_in")]
+    #[token("matches", ignore(case))]
+    #[token("is_in", ignore(case))]
     #[token("\u{2208}")]
     SymMatches,
     /// `∉` — "not in" (`~matches` is lexed as `SymNot` `SymMatches`).
     #[token("\u{2209}")]
     SymNotMatches,
     /// `and` / `∧` (`SYM_AND`).
-    #[token("and")]
+    #[token("and", ignore(case))]
     #[token("\u{2227}")]
     SymAnd,
     /// `or` / `∨` (`SYM_OR`).
-    #[token("or")]
+    #[token("or", ignore(case))]
     #[token("\u{2228}")]
     SymOr,
     /// `xor` (`SYM_XOR`).
-    #[token("xor")]
+    #[token("xor", ignore(case))]
     SymXor,
     /// `not` / `~` / `∼` / `¬` / `!` (`SYM_NOT`).
-    #[token("not")]
+    #[token("not", ignore(case))]
     #[token("~")]
     #[token("\u{223C}")]
     #[token("\u{00AC}")]
     #[token("!")]
     SymNot,
     /// `implies` / `®` / `->` (`SYM_IMPLIES`).
-    #[token("implies")]
+    #[token("implies", ignore(case))]
     #[token("\u{00AE}")]
     #[token("->")]
     SymImplies,
     /// `for_all` / `∀` (`SYM_FOR_ALL`).
-    #[token("for_all")]
+    #[token("for_all", ignore(case))]
     #[token("\u{2200}")]
     SymForAll,
     /// `exists` (`SYM_EXISTS`).
-    #[token("exists")]
+    #[token("exists", ignore(case))]
     SymExists,
     /// `there_exists` / `∃` (`SYM_THERE_EXISTS`).
+    ///
+    /// The ONE keyword that is NOT case-folded: `adl_keywords.g4` spells it as
+    /// the plain literal `SYM_THERE_EXISTS: 'there_exists' | '∃' ;` rather than
+    /// in the `[Tt][Hh]…` form every other keyword on that list uses, and the
+    /// ADL 1.4 chapter's own §Symbols lexer has no `there_exists` rule at all
+    /// (`ADL1.4/master05-cadl.adoc` L1329-1340 stops at `SYM_EXISTS`). Folding
+    /// it anyway would swallow `There_Exists`, a well-formed `ALPHA_UC_ID`
+    /// under both lexers.
     #[token("there_exists")]
     #[token("\u{2203}")]
     SymThereExists,
     /// `occurrences` (`SYM_OCCURRENCES`).
-    #[token("occurrences")]
+    #[token("occurrences", ignore(case))]
     SymOccurrences,
     /// `existence` (`SYM_EXISTENCE`).
-    #[token("existence")]
+    #[token("existence", ignore(case))]
     SymExistence,
     /// `cardinality` (`SYM_CARDINALITY`).
-    #[token("cardinality")]
+    #[token("cardinality", ignore(case))]
     SymCardinality,
     /// `ordered` (`SYM_ORDERED`).
-    #[token("ordered")]
+    #[token("ordered", ignore(case))]
     SymOrdered,
     /// `unordered` (`SYM_UNORDERED`).
-    #[token("unordered")]
+    #[token("unordered", ignore(case))]
     SymUnordered,
     /// `unique` (`SYM_UNIQUE`).
-    #[token("unique")]
+    #[token("unique", ignore(case))]
     SymUnique,
+    /// `infinity` (`SYM_INFINITY`) — the unbounded interval endpoint of
+    /// `ADL1.4/master05-cadl.adoc` §Keywords L50 + §Symbols L1349, whose own
+    /// worked example is `rate matches {|0..infinity|}` (L771).
+    #[token("infinity", ignore(case))]
+    SymInfinity,
     /// `use_node` (`SYM_USE_NODE`).
-    #[token("use_node")]
+    #[token("use_node", ignore(case))]
     SymUseNode,
     /// `use_archetype` (`SYM_USE_ARCHETYPE`).
-    #[token("use_archetype")]
+    #[token("use_archetype", ignore(case))]
     SymUseArchetype,
     /// `allow_archetype` (`SYM_ALLOW_ARCHETYPE`).
-    #[token("allow_archetype")]
+    #[token("allow_archetype", ignore(case))]
     SymAllowArchetype,
     /// `include` (`SYM_INCLUDE`).
-    #[token("include")]
+    #[token("include", ignore(case))]
     SymInclude,
     /// `exclude` (`SYM_EXCLUDE`).
-    #[token("exclude")]
+    #[token("exclude", ignore(case))]
     SymExclude,
     /// `after` (`SYM_AFTER`).
-    #[token("after")]
+    #[token("after", ignore(case))]
     SymAfter,
     /// `before` (`SYM_BEFORE`).
-    #[token("before")]
+    #[token("before", ignore(case))]
     SymBefore,
     /// `closed` (`SYM_CLOSED`).
-    #[token("closed")]
+    #[token("closed", ignore(case))]
     SymClosed,
     /// `then` (`SYM_THEN`).
-    #[token("then")]
+    #[token("then", ignore(case))]
     SymThen,
 
     // ── boolean word symbols (base_lexer.g4 SYM_TRUE / SYM_FALSE) ──
-    /// `True` / `true`.
-    #[token("True")]
-    #[token("true")]
+    /// `True` / `true` (case-insensitive per `base_lexer.g4` `SYM_TRUE`).
+    #[token("true", ignore(case))]
     SymTrue,
-    /// `False` / `false`.
-    #[token("False")]
-    #[token("false")]
+    /// `False` / `false` (case-insensitive per `base_lexer.g4` `SYM_FALSE`).
+    #[token("false", ignore(case))]
     SymFalse,
 
     // ── codes (base_lexer.g4). Higher priority than ALPHA_*_ID so `id1`/`at3`
@@ -192,6 +212,14 @@ pub enum Token {
     Guid(String),
 
     // ── ISO8601 date/time/duration VALUES (base_lexer.g4) ──
+    //
+    // The three date/time VALUE tokens carry an explicit high priority so they
+    // win every tie against the constraint-PATTERN tokens below, whose fields
+    // admit literal date/time numbers (`ADL1.4/master05-cadl.adoc` §Patterns
+    // L894). Where a text is BOTH a legal value and a legal all-literal
+    // pattern (`1995-??-??`), the value reading is the established one and the
+    // pattern adds nothing — the pattern tokens keep the shapes only they
+    // match (`1995-??-XX`, `1995-mm-dd`).
     /// `ISO8601_DATE_TIME` (with optional partial `??` fields / timezone).
     ///
     /// The `??`-partial family covers the whole set of
@@ -201,23 +229,27 @@ pub enum Token {
     /// ODIN sections `openehr_lang::odin` accepts.
     #[regex(
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}(:[0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|:\?\?:\?\?)?|\?\?:\?\?:\?\?)(Z|[+\-][0-9]{4})?",
-        |lex| lex.slice().to_owned()
+        |lex| lex.slice().to_owned(),
+        priority = 30
     )]
     #[regex(
         r"[0-9]{4}-([0-9]{2}-\?\?|\?\?-\?\?)T\?\?:\?\?:\?\?(Z|[+\-][0-9]{4})?",
-        |lex| lex.slice().to_owned()
+        |lex| lex.slice().to_owned(),
+        priority = 30
     )]
     Iso8601DateTime(String),
     /// `ISO8601_DATE` (with optional partial `??` fields).
     #[regex(
         r"[0-9]{4}-([0-9]{2}(-([0-9]{2}|\?\?))?|\?\?-\?\?)",
-        |lex| lex.slice().to_owned()
+        |lex| lex.slice().to_owned(),
+        priority = 30
     )]
     Iso8601Date(String),
     /// `ISO8601_TIME` (with optional partial `??` fields / timezone).
     #[regex(
         r"[0-9]{2}:([0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|\?\?:\?\?)(Z|[+\-][0-9]{4})?",
-        |lex| lex.slice().to_owned()
+        |lex| lex.slice().to_owned(),
+        priority = 30
     )]
     Iso8601Time(String),
     /// `ISO8601_DURATION`, requiring at least one component (never bare `P`).
@@ -227,23 +259,46 @@ pub enum Token {
     )]
     Iso8601Duration(String),
 
-    // ── constraint PATTERNS (base_lexer.g4) ──
+    // ── constraint PATTERNS (base_lexer.g4 + the ADL 1.4 chapter's own
+    //    lexical spec, `ADL1.4/master05-cadl.adoc` §Symbols L1415-1426) ──
+    //
+    // Three spec-grounded widenings over `base_lexer.g4`'s transcription, all
+    // supersets that reject nothing the narrower form accepted:
+    // 1. Every field also admits a LITERAL date/time number — master05 L894:
+    //    "the 'yyyy' etc match strings can be replaced by literal date/time
+    //    numbers. For example, `yyyy-??-XX` could be transformed into
+    //    `1995-??-XX`".
+    // 2. The timezone modifier admits the ASCII `+`/`-` forms, not only the
+    //    literal `±` character — master05 §Patterns L852 ("the addition of a
+    //    patterns such as `+hh:mm`, `+hhmm`, and `-hh`") and the
+    //    <<timezone_constraints>> table L900-906, whose `±` column head is
+    //    glossed "commencing with '+' or '-'".
+    // 3. The date/time separator is `[T ]`, per the chapter's own
+    //    `V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN` (master05 L1422:
+    //    `…[dD?X][dD?X][ T][hH?X][hH?X]:…`); `base_lexer.g4` L37 spells only
+    //    `'T'`, so the space form is the 1.4 chapter's superset.
+    //
+    // The explicit low priority keeps the date/time VALUE tokens above winning
+    // every equal-length tie (see the note on those tokens).
     /// `DATE_TIME_CONSTRAINT_PATTERN` — e.g. `yyyy-mm-ddThh:mm:ss`.
     #[regex(
-        r"(yyyy|YYYY|yyy|YYY)-(mm|MM|\?\?|XX|xx)-(dd|DD|\?\?|XX|xx)T(hh|HH|\?\?|XX|xx):(mm|MM|\?\?|XX|xx):(ss|SS|\?\?|XX|xx)(\u{00B1}(hh|HH)(:?(mm|MM))?|Z)?",
-        |lex| lex.slice().to_owned()
+        r"(yyyy|YYYY|yyy|YYY|[0-9]{4})-(mm|MM|\?\?|XX|xx|[0-9]{2})-(dd|DD|\?\?|XX|xx|[0-9]{2})[T ](hh|HH|\?\?|XX|xx|[0-9]{2}):(mm|MM|\?\?|XX|xx|[0-9]{2}):(ss|SS|\?\?|XX|xx|[0-9]{2})([+\-\u{00B1}](hh|HH)(:?(mm|MM))?|Z)?",
+        |lex| lex.slice().to_owned(),
+        priority = 3
     )]
     DateTimeConstraintPattern(String),
-    /// `DATE_CONSTRAINT_PATTERN` — e.g. `yyyy-mm-??`.
+    /// `DATE_CONSTRAINT_PATTERN` — e.g. `yyyy-mm-??`, `1995-??-XX`.
     #[regex(
-        r"(yyyy|YYYY|yyy|YYY)-(mm|MM|\?\?|XX|xx)-(dd|DD|\?\?|XX|xx)",
-        |lex| lex.slice().to_owned()
+        r"(yyyy|YYYY|yyy|YYY|[0-9]{4})-(mm|MM|\?\?|XX|xx|[0-9]{2})-(dd|DD|\?\?|XX|xx|[0-9]{2})",
+        |lex| lex.slice().to_owned(),
+        priority = 3
     )]
     DateConstraintPattern(String),
-    /// `TIME_CONSTRAINT_PATTERN` — e.g. `hh:??:XX`.
+    /// `TIME_CONSTRAINT_PATTERN` — e.g. `hh:??:XX`, `hh:mm:ss+hh:mm`.
     #[regex(
-        r"(hh|HH|\?\?|XX|xx):(mm|MM|\?\?|XX|xx):(ss|SS|\?\?|XX|xx)(\u{00B1}(hh|HH)(:?(mm|MM))?|Z)?",
-        |lex| lex.slice().to_owned()
+        r"(hh|HH|\?\?|XX|xx|[0-9]{2}):(mm|MM|\?\?|XX|xx|[0-9]{2}):(ss|SS|\?\?|XX|xx|[0-9]{2})([+\-\u{00B1}](hh|HH)(:?(mm|MM))?|Z)?",
+        |lex| lex.slice().to_owned(),
+        priority = 3
     )]
     TimeConstraintPattern(String),
     /// `DURATION_CONSTRAINT_PATTERN` — letters only, e.g. `PYMD`, `PWD`, `PT`.
@@ -698,5 +753,126 @@ mod tests {
         assert_eq!(toks("True"), vec![Token::SymTrue]);
         assert_eq!(toks("False"), vec![Token::SymFalse]);
         assert_eq!(toks("true"), vec![Token::SymTrue]);
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Symbols L1326-1354 + `adl_keywords.g4`
+    /// spell every keyword in the `[Mm][Aa]…` case-insensitive form.
+    #[test]
+    fn keywords_are_case_insensitive() {
+        assert_eq!(toks("MATCHES"), vec![Token::SymMatches]);
+        assert_eq!(toks("Is_In"), vec![Token::SymMatches]);
+        assert_eq!(toks("OCCURRENCES"), vec![Token::SymOccurrences]);
+        assert_eq!(toks("Existence"), vec![Token::SymExistence]);
+        assert_eq!(toks("CaRdInAlItY"), vec![Token::SymCardinality]);
+        assert_eq!(toks("ORDERED"), vec![Token::SymOrdered]);
+        assert_eq!(toks("UNORDERED"), vec![Token::SymUnordered]);
+        assert_eq!(toks("Unique"), vec![Token::SymUnique]);
+        assert_eq!(toks("INFINITY"), vec![Token::SymInfinity]);
+        assert_eq!(toks("Use_Node"), vec![Token::SymUseNode]);
+        assert_eq!(toks("ALLOW_ARCHETYPE"), vec![Token::SymAllowArchetype]);
+        assert_eq!(toks("Include"), vec![Token::SymInclude]);
+        assert_eq!(toks("EXCLUDE"), vec![Token::SymExclude]);
+        assert_eq!(toks("Before"), vec![Token::SymBefore]);
+        assert_eq!(toks("AFTER"), vec![Token::SymAfter]);
+        assert_eq!(toks("TRUE"), vec![Token::SymTrue]);
+        assert_eq!(toks("fAlSe"), vec![Token::SymFalse]);
+        assert_eq!(toks("NOT"), vec![Token::SymNot]);
+        assert_eq!(toks("Implies"), vec![Token::SymImplies]);
+        // The one keyword the grammars spell case-sensitively.
+        assert_eq!(toks("there_exists"), vec![Token::SymThereExists]);
+        assert_eq!(
+            toks("There_Exists"),
+            vec![Token::AlphaUcId("There_Exists".into())]
+        );
+    }
+
+    /// `infinity` is its own keyword token (`master05` §Keywords L50, §Symbols
+    /// L1349), used as an interval endpoint (`|0..infinity|`, L771).
+    #[test]
+    fn infinity_is_a_keyword_not_an_identifier() {
+        assert_eq!(
+            toks("|0..infinity|"),
+            vec![
+                Token::SymIvlDelim,
+                Token::Integer("0".into()),
+                Token::SymIvlSep,
+                Token::SymInfinity,
+                Token::SymIvlDelim,
+            ]
+        );
+        assert_eq!(
+            toks("|-infinity..5.0|"),
+            vec![
+                Token::SymIvlDelim,
+                Token::SymMinus,
+                Token::SymInfinity,
+                Token::SymIvlSep,
+                Token::Real("5.0".into()),
+                Token::SymIvlDelim,
+            ]
+        );
+    }
+
+    /// Literal-substituted pattern fields (`master05` §Patterns L894), the
+    /// ASCII timezone modifiers (L852 + the tz table L900-906) and the
+    /// space-separated date/time pattern (§Symbols L1422 `[ T]`).
+    #[test]
+    fn pattern_variants() {
+        assert_eq!(
+            toks("1995-??-XX"),
+            vec![Token::DateConstraintPattern("1995-??-XX".into())]
+        );
+        assert_eq!(
+            toks("1995-mm-dd"),
+            vec![Token::DateConstraintPattern("1995-mm-dd".into())]
+        );
+        assert_eq!(
+            toks("hh:mm:ss+hh:mm"),
+            vec![Token::TimeConstraintPattern("hh:mm:ss+hh:mm".into())]
+        );
+        assert_eq!(
+            toks("hh:mm:ss-hh"),
+            vec![Token::TimeConstraintPattern("hh:mm:ss-hh".into())]
+        );
+        assert_eq!(
+            toks("hh:mm:ss+hhmm"),
+            vec![Token::TimeConstraintPattern("hh:mm:ss+hhmm".into())]
+        );
+        assert_eq!(
+            toks("hh:mm:ssZ"),
+            vec![Token::TimeConstraintPattern("hh:mm:ssZ".into())]
+        );
+        assert_eq!(
+            toks("yyyy-mm-dd hh:mm:XX"),
+            vec![Token::DateTimeConstraintPattern(
+                "yyyy-mm-dd hh:mm:XX".into()
+            )]
+        );
+        assert_eq!(
+            toks("yyyy-mm-ddThh:mm:ss\u{00B1}hh:mm"),
+            vec![Token::DateTimeConstraintPattern(
+                "yyyy-mm-ddThh:mm:ss\u{00B1}hh:mm".into()
+            )]
+        );
+        // A text that is both a legal VALUE and a legal all-literal pattern
+        // stays the value reading (see the note on the ISO8601 value tokens).
+        assert_eq!(
+            toks("2004-06-01"),
+            vec![Token::Iso8601Date("2004-06-01".into())]
+        );
+    }
+
+    /// The `^…^` regex delimiter is a `CONTAINED_REGEXP` in its own right
+    /// (`master05` §Regular Expression L696-702; `V_REGEXP` L1476).
+    #[test]
+    fn caret_delimited_regexp_lexes() {
+        assert_eq!(
+            toks("{^km/h|mi/h^}"),
+            vec![Token::ContainedRegexp("{^km/h|mi/h^}".into())]
+        );
+        assert_eq!(
+            toks(r"{/km\/h|mi\/h/}"),
+            vec![Token::ContainedRegexp(r"{/km\/h|mi\/h/}".into())]
+        );
     }
 }

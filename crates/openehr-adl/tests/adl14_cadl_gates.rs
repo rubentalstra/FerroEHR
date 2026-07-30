@@ -8,7 +8,7 @@
 //! derived first-hand from the spec text, cited in the fixture beside the
 //! construct it exercises.
 //!
-//! Three families live here:
+//! Four families live here:
 //!
 //! 1. **Dialect gates.** ADL 1.4's cADL keyword set is CLOSED
 //!    (`ADL1.4/master05-cadl.adoc` §Keywords L48-53), so a construct ADL 2
@@ -25,6 +25,18 @@
 //!    get wrong: `before`/`after` sibling order (a 1.4 keyword — L53 — that must
 //!    NOT be gated), the effective occurrences default `{1..1}` (L316), and the
 //!    assumed-value lowering.
+//! 4. **The breadth trio** — `cadl_breadth_{structure,primitives,datetime}` —
+//!    which exercises every construct `master05-cadl.adoc` defines (existence
+//!    and occurrences and cardinality spellings incl. two modifiers and the bare
+//!    star, the whole interval shape set incl. the `infinity` endpoints and both
+//!    exclusive-lower spellings, every string/boolean/character/term-code form,
+//!    every date/time/date-time/duration pattern family incl. the
+//!    literal-substituted and ASCII-timezone variants and the mixed
+//!    `pattern/interval` form, assumed values on every primitive, `use_node`
+//!    with and without occurrences, generic type names, and the bare and
+//!    identified slot forms) plus `cadl_keyword_case`, which repeats a whole
+//!    definition in upper/mixed case because the chapter's own lexical
+//!    specification is case-insensitive (§Symbols L1326-1354).
 //!
 //! Both twins are kept for every refusal (`.claude/rules/testing.md`).
 
@@ -94,7 +106,7 @@ const FIXTURES: &[(&str, Expect)] = &[
         Expect::Invalid(ValidationCode::Vatdf),
     ),
     (
-        "openEHR-EHR-CLUSTER.VATDF_undefined_assumed_code.v1.adl",
+        "openEHR-EHR-CLUSTER.VATDF_undefined_code_with_assumed.v1.adl",
         Expect::Invalid(ValidationCode::Vatdf),
     ),
     (
@@ -104,6 +116,37 @@ const FIXTURES: &[(&str, Expect)] = &[
     (
         "openEHR-EHR-CLUSTER.term_constraint_codes_defined.v1.adl",
         Expect::Pass,
+    ),
+    // ── 1.4 term-constraint LIST integrity (master04.6 STCDC/STCAC) ───────
+    (
+        "openEHR-EHR-CLUSTER.STCDC_duplicate_code_in_list.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Stcdc),
+    ),
+    (
+        "openEHR-EHR-CLUSTER.STCAC_assumed_code_not_in_list.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Stcac),
+    ),
+    // ── operators the chapter names but no grammar defines ────────────────
+    (
+        "openEHR-EHR-CLUSTER.SCCOG_negated_matches.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Sccog),
+    ),
+    (
+        "openEHR-EHR-CLUSTER.SCOAT_negated_is_in.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Scoat),
+    ),
+    (
+        "openEHR-EHR-CLUSTER.SCOAT_not_in_symbol.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Scoat),
+    ),
+    (
+        "openEHR-EHR-CLUSTER.SCCOG_regex_match_operator.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Sccog),
+    ),
+    // ── the date/time interval timezone-symmetry rule (master05 L932) ─────
+    (
+        "openEHR-EHR-CLUSTER.SCDTAV_interval_timezone_asymmetry.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Scdtav),
     ),
     // ── cardinality/occurrences (master05 VCOC + the {1..1} defaults) ─────
     (
@@ -120,6 +163,20 @@ const FIXTURES: &[(&str, Expect)] = &[
     ),
     // ── 1.4 keywords that must stay accepted ──────────────────────────────
     ("openEHR-EHR-CLUSTER.sibling_order.v1.adl", Expect::Pass),
+    ("openEHR-EHR-CLUSTER.cadl_keyword_case.v1.adl", Expect::Pass),
+    // ── the master05 breadth trio (every construct of the chapter) ────────
+    (
+        "openEHR-EHR-OBSERVATION.cadl_breadth_structure.v1.adl",
+        Expect::Pass,
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.cadl_breadth_primitives.v1.adl",
+        Expect::Pass,
+    ),
+    (
+        "openEHR-EHR-OBSERVATION.cadl_breadth_datetime.v1.adl",
+        Expect::Pass,
+    ),
 ];
 
 fn tree() -> PathBuf {

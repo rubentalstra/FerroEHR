@@ -1,0 +1,91 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.cadl_keyword_case.v1
+
+concept
+	[at0000]	-- Case-insensitive cADL keywords
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	-- Every cADL keyword is CASE-INSENSITIVE. The ADL 1.4 chapter's own lexical
+	-- specification spells each one in the bracketed-alternative form —
+	-- ADL1.4/master05-cadl.adoc §Symbols L1326-1354, e.g.
+	-- `[Mm][Aa][Tt][Cc][Hh][Ee][Ss] -- -> SYM_MATCHES`,
+	-- `[Ii][Nn][Ff][Ii][Nn][Ii][Tt][Yy] -- -> SYM_INFINITY` — and so does the
+	-- normative ANTLR set (`cadl14.g4` SYM_EXISTENCE … SYM_EXCLUDE,
+	-- `adl_keywords.g4` SYM_MATCHES/SYM_NOT/…, `base_lexer.g4` SYM_TRUE/SYM_FALSE).
+	CLUSTER[at0000] MATCHES {	-- Case-insensitive cADL keywords
+		items CARDINALITY MATCHES {0..*; UNORDERED; UNIQUE} MATCHES {
+			ELEMENT[at0001] OCCURRENCES MATCHES {0..1} Matches {	-- Rate
+				value EXISTENCE matches {1..1} matches {
+					DV_QUANTITY matches {
+						magnitude matches {|0..INFINITY|}
+					}
+				}
+			}
+			-- `is_in` and `∈` are the same token as `matches` (§Symbols L1326-1327:
+			-- both `[Mm][Aa][Tt][Cc][Hh][Ee][Ss]` and `[Ii][Ss]_[Ii][Nn]` map to
+			-- SYM_MATCHES; the §Keywords symbol table L57-64 adds `∈`).
+			ELEMENT[at0002] occurrences Is_In {0..1} IS_IN {	-- Flag
+				value ∈ {
+					DV_BOOLEAN ∈ {
+						value ∈ {TRUE, fAlSe; TRUE}
+					}
+				}
+			}
+			BEFORE [at0002] ELEMENT[at0003] occurrences matches {0..1} matches {	-- Re-ordered item
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			Allow_Archetype CLUSTER[at0004] OCCURRENCES matches {0..*} matches {	-- Slot
+				INCLUDE
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.device\.v1/}
+				Exclude
+					archetype_id/value matches {/.*/}
+			}
+			USE_NODE ELEMENT[at0005] Occurrences matches {0..2} /items[at0001]
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Case-insensitive cADL keywords">
+					description = <"Accepting fixture: cADL keywords lexed in mixed and upper case.">
+				>
+				["at0001"] = <
+					text = <"Rate">
+					description = <"A quantity with an unbounded upper interval endpoint.">
+				>
+				["at0002"] = <
+					text = <"Flag">
+					description = <"A boolean written with the is_in and set-membership operators.">
+				>
+				["at0003"] = <
+					text = <"Re-ordered item">
+					description = <"An element carrying an upper-case sibling order.">
+				>
+				["at0004"] = <
+					text = <"Slot">
+					description = <"An archetype slot written with upper-case keywords.">
+				>
+				["at0005"] = <
+					text = <"Re-used rate">
+					description = <"An internal reference written with upper-case keywords.">
+				>
+			>
+		>
+	>
