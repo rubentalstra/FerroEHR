@@ -815,6 +815,14 @@ impl Parser<'_> {
         let _ = start;
         match openehr_lang::odin::parse(text) {
             Ok(v) => {
+                if odin_contains_interval(&v) {
+                    self.push(
+                        SyntaxErrorCode::Sdinv,
+                        "interval values are not supported in a '_default' value",
+                        start_byte..end_byte,
+                    );
+                    return Err(());
+                }
                 let mut json = odin_to_json(&v);
                 if let Some(t) = cast
                     && let serde_json::Value::Object(m) = &mut json
@@ -2753,10 +2761,23 @@ fn is_adl14_domain_type(id: &str) -> bool {
     matches!(id, "C_DV_QUANTITY" | "C_DV_ORDINAL")
 }
 
+/// Peel any `(TYPE)` casts off an ODIN value: the cast of
+/// `LANG/docs/odin/master05-content` §Adding Type Information is a
+/// dynamic-binding hint for the parser, not part of the datum, so the domain
+/// lowering reads straight through it (the cast stays on the tree for a caller
+/// that wants it).
+fn untyped(v: &OdinValue) -> &OdinValue {
+    let mut cur = v;
+    while let OdinValue::Typed { value, .. } = cur {
+        cur = value;
+    }
+    cur
+}
+
 /// Lower a parsed 1.4 inline dADL domain block into a `DV_QUANTITY`/`DV_ORDINAL`
 /// complex object. Returns `None` for an empty/unusable block (→ `SDINV`).
 fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Option<CObject> {
-    let OdinValue::Object(map) = odin else {
+    let OdinValue::Object(map) = untyped(odin) else {
         return None; // empty `<>` or a bare scalar — nothing to constrain.
     };
     if map.is_empty() {
@@ -2773,7 +2794,7 @@ fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Option<CObject> {
     // `property = <[openehr::122]>` → a `property` at-code constraint (the
     // external code is rewritten to a synthesised at-code + binding by the
     // converter).
-    if let Some(OdinValue::TermCode(tc)) = map.get("property") {
+    if let Some(OdinValue::TermCode(tc)) = map.get("property").map(untyped) {
         let constraint = tc.trim_start_matches('[').trim_end_matches(']').to_owned();
         attributes.push(cattr_single(
             "property",
@@ -2857,10 +2878,10 @@ fn domain_list_rows(list: &OdinValue) -> Vec<Vec<(String, OdinValue)>> {
     let row_of = |m: &indexmap::IndexMap<String, OdinValue>| -> Vec<(String, OdinValue)> {
         m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
     };
-    match list {
+    match untyped(list) {
         OdinValue::KeyedList(entries) => entries
             .iter()
-            .filter_map(|(_, v)| match v {
+            .filter_map(|(_, v)| match untyped(v) {
                 OdinValue::Object(m) => Some(row_of(m)),
                 _ => None,
             })
@@ -2874,7 +2895,7 @@ fn domain_list_rows(list: &OdinValue) -> Vec<Vec<(String, OdinValue)>> {
 /// attribute name disambiguates integer-vs-real intervals (`precision` is
 /// integral, `magnitude` real).
 fn domain_value_to_primitive(attr: &str, v: &OdinValue) -> Option<CPrimitiveObject> {
-    match v {
+    match untyped(v) {
         OdinValue::String(s) => Some(CPrimitiveObject::CString(cstring_values(
             std::slice::from_ref(s),
         ))),
@@ -3070,12 +3091,13 @@ fn point_int(v: i64) -> Interval<i32> {
 }
 
 fn odin_interval_to_real(iv: &openehr_lang::odin::OdinInterval) -> Interval<f64> {
-    let (lower, li, upper, ui) = odin_range_bounds(iv, odin_as_real);
+    let (lower, li, upper, ui) = odin_range_bounds(iv, odin_as_real, |r| r);
     proper_or_point_real(lower, li, upper, ui)
 }
 
 fn odin_interval_to_int(iv: &openehr_lang::odin::OdinInterval) -> Interval<i32> {
-    let (lower, li, upper, ui) = odin_range_bounds(iv, |v| odin_as_real(v).map(real_to_i32));
+    let (lower, li, upper, ui) =
+        odin_range_bounds(iv, |v| odin_as_real(v).map(real_to_i32), real_to_i32);
     if lower == upper && lower.is_some() {
         return point_int(i64::from(lower.unwrap_or_default()));
     }
@@ -3108,10 +3130,24 @@ fn proper_or_point_real(
     }))
 }
 
+/// The `(lower, lower_included, upper, upper_included)` of an ODIN interval,
+/// each endpoint converted with `conv` (a `None` endpoint stays unbounded).
+///
+/// The `|N +/- M|` form lowers to the closed interval `[N-M, N+M]`, per
+/// `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types —
+/// "`|N +/-M|` -- interval of N ± M", whose worked example glosses
+/// `|5.0 +/-0.5|` as "4.5 - 5.5" — and identically
+/// `LANG/docs/odin/master07-leaf_data` §Intervals of Ordered Primitive Types.
+/// The arithmetic is done in `f64` and mapped back with `from_real`, since the
+/// AOM2 targets of this lowering (`C_REAL` / `C_INTEGER`) are numeric; a
+/// non-numeric centre or half-width (a date ± duration, which cannot be
+/// reduced without type context) yields an unbounded interval rather than a
+/// fabricated endpoint.
 #[allow(clippy::type_complexity)]
 fn odin_range_bounds<T>(
     iv: &openehr_lang::odin::OdinInterval,
     conv: impl Fn(&OdinValue) -> Option<T>,
+    from_real: impl Fn(f64) -> T,
 ) -> (Option<T>, bool, Option<T>, bool) {
     match iv {
         openehr_lang::odin::OdinInterval::Range {
@@ -3125,8 +3161,11 @@ fn odin_range_bounds<T>(
             upper.as_deref().and_then(&conv),
             *upper_included,
         ),
-        openehr_lang::odin::OdinInterval::PlusMinus { centre, .. } => {
-            (conv(centre), true, None, true)
+        openehr_lang::odin::OdinInterval::PlusMinus { centre, delta } => {
+            match (odin_as_real(centre), odin_as_real(delta)) {
+                (Some(c), Some(d)) => (Some(from_real(c - d)), true, Some(from_real(c + d)), true),
+                _ => (None, true, None, true),
+            }
         }
     }
 }
@@ -3348,13 +3387,36 @@ fn decode_string_inner(inner: &str) -> String {
     out
 }
 
+/// Whether an ODIN value tree contains an interval anywhere.
+///
+/// An interval has no canonical-JSON encoding here (see [`odin_to_json`]), so
+/// a `_default` carrying one is refused outright rather than silently reduced
+/// to `null` — the loss would turn "this default is an interval" into "this
+/// node has a null default", which no reader can tell from a real absence.
+fn odin_contains_interval(v: &openehr_lang::odin::OdinValue) -> bool {
+    use openehr_lang::odin::OdinValue;
+    match v {
+        OdinValue::Interval(_) => true,
+        OdinValue::List(items) => items.iter().any(odin_contains_interval),
+        OdinValue::Object(map) => map.values().any(odin_contains_interval),
+        OdinValue::KeyedList(items) => items.iter().any(|(_, val)| odin_contains_interval(val)),
+        OdinValue::Typed { value, .. } => odin_contains_interval(value),
+        _ => false,
+    }
+}
+
 /// Convert an [`openehr_lang::odin::OdinValue`] to canonical JSON for a
 /// `C_DEFINED_OBJECT.default_value`.
 ///
-/// NOTE: interval ODIN values are represented as `null` here (rare in
-/// definition-section default values; a fuller typed encoding lands with the
-/// template/OPT phase — no openEHR spec mandates the intermediate JSON shape,
-/// our own design).
+/// NOTE: `AOM2/master04` types `C_DEFINED_OBJECT.default_value` as an instance
+/// of the constrained RM type, and no openEHR spec mandates an intermediate
+/// JSON shape for it — the canonical-JSON encoding used here is our own
+/// design/extension. An `<>` / `<...>` empty block is a genuine "no value" and
+/// maps to `null`.
+///
+// TODO: encode ODIN interval values (`|0..5|`) as a typed default instead of
+// `null` — [`odin_contains_interval`] refuses them at the parse for now, so a
+// `_default = <|0..5|>` is an error rather than a silent null.
 fn odin_to_json(v: &openehr_lang::odin::OdinValue) -> serde_json::Value {
     use openehr_lang::odin::OdinValue;
     match v {
@@ -3728,6 +3790,54 @@ mod tests {
             }
             _ => panic!("expected DV_ORDINAL complex object"),
         }
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types
+    /// defines `|N +/-M|` as "interval of N ± M" and glosses its own example
+    /// `|5.0 +/-0.5|` as "4.5 - 5.5" — so an inline 1.4 domain block's
+    /// `magnitude` lowers to the CLOSED interval `[N-M, N+M]`, not to the
+    /// centre alone.
+    #[test]
+    fn adl14_plus_minus_domain_interval_lowers_to_both_bounds() {
+        let cco = parse_definition_body_adl14(
+            "OBSERVATION[at0000] matches {\n\
+             value matches {\n\
+             C_DV_QUANTITY <\n\
+             list = <\n\
+             [\"1\"] = <\n\
+             magnitude = <|5.0 +/-0.5|>\n\
+             >\n\
+             >\n\
+             >\n\
+             }\n\
+             }",
+        )
+        .expect("the 1.4 inline domain block must parse");
+        let CComplexObject::CComplexObject(d) = &cco else {
+            panic!("expected a plain complex object root");
+        };
+        let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
+            &d.attributes[0].children[0]
+        else {
+            panic!("expected the lowered DV_QUANTITY object");
+        };
+        let magnitude = quantity
+            .attributes
+            .iter()
+            .find(|a| a.rm_attribute_name == "magnitude")
+            .expect("magnitude attribute");
+        let CObject::CReal(real) = &magnitude.children[0] else {
+            panic!("expected a C_REAL magnitude constraint");
+        };
+        let [Interval::ProperInterval(ProperInterval::ProperInterval(range))] =
+            real.constraint.as_slice()
+        else {
+            panic!("expected one proper interval, got {:?}", real.constraint);
+        };
+        assert_eq!(range.lower, Some(4.5));
+        assert_eq!(range.upper, Some(5.5));
+        assert!(range.lower_included);
+        assert!(range.upper_included);
     }
 
     #[test]

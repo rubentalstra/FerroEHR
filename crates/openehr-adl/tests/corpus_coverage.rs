@@ -27,6 +27,11 @@
 //! | `Upgrade15` | `upgrade/upgrade_from_15/*.adls` | `legacy14_corpus.rs` (parse+validate) |
 //! | `FeaturesAdls` | `features/**/*.adls` | `corpus_{outer_parse,definition_parse,roundtrip}.rs` |
 //! | `FeaturesAdl` | `features/**/*.adl` | `legacy14_corpus.rs` (1.4-tolerant parse) |
+//! | `Adl14Dadl` | `adl14-dadl/*.adl` | `adl14_dadl_breadth.rs` (accept/refuse per fixture) |
+//!
+//! `adl14-dadl/` is the one HAND-WRITTEN tree here (`tests/corpus/PROVENANCE.md`
+//! §`adl14-dadl/`); it is counted separately so the vendored-corpus size ratchet
+//! below stays a statement about the vendored trees alone.
 
 use std::path::{Path, PathBuf};
 
@@ -47,6 +52,7 @@ enum Category {
     Upgrade15,
     FeaturesAdls,
     FeaturesAdl,
+    Adl14Dadl,
 }
 
 /// Classify a corpus source file (relative to `tests/corpus/`) into exactly one
@@ -62,6 +68,10 @@ fn classify(rel: &str, is_adl: bool) -> Option<Category> {
             return Some(Category::FlattenerSiblingOrder);
         }
         return None;
+    }
+    // The hand-written ADL 1.4 dADL breadth tree.
+    if rel.starts_with("adl14-dadl/") {
+        return Some(Category::Adl14Dadl);
     }
     // adl2-reference fixtures.
     let r = rel.strip_prefix("adl2-reference/")?;
@@ -128,18 +138,28 @@ fn every_corpus_source_is_claimed_by_exactly_one_harness() {
     // The ADL fixture trees (the `rm/` subtree is the vendored BMM reference-model
     // corpus consumed wholesale by `corpus_validity_rm.rs`, not per-file ADL
     // fixtures, so it is not walked here).
-    let roots = [
+    let vendored_roots = [
         PathBuf::from(format!("{CORPUS}/adl2-reference")),
         PathBuf::from(format!("{CORPUS}/flattener")),
     ];
+    let hand_written_roots = [PathBuf::from(format!("{CORPUS}/adl14-dadl"))];
 
     let mut counts: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
     let mut unclaimed: Vec<String> = Vec::new();
     let mut total = 0usize;
 
-    for root in &roots {
+    let mut hand_written = 0usize;
+    for (root, vendored) in vendored_roots
+        .iter()
+        .map(|r| (r, true))
+        .chain(hand_written_roots.iter().map(|r| (r, false)))
+    {
         for path in adl_sources(root) {
-            total += 1;
+            if vendored {
+                total += 1;
+            } else {
+                hand_written += 1;
+            }
             let rel = path
                 .strip_prefix(CORPUS)
                 .unwrap_or(&path)
@@ -155,7 +175,7 @@ fn every_corpus_source_is_claimed_by_exactly_one_harness() {
     }
 
     eprintln!(
-        "corpus coverage: {total} ADL sources across {} categories",
+        "corpus coverage: {total} vendored + {hand_written} hand-written ADL sources across {} categories",
         counts.len()
     );
     for (cat, n) in &counts {
@@ -174,6 +194,12 @@ fn every_corpus_source_is_claimed_by_exactly_one_harness() {
     // re-derive INVENTORY.md and update this expected total in the same change.
     assert_eq!(
         total, 340,
-        "expected 340 ADL source files (302 adl2-reference + 38 flattener); found {total}"
+        "expected 340 vendored ADL source files (302 adl2-reference + 38 flattener); found {total}"
+    );
+    // The hand-written tree only ratchets up: a fixture is added, never
+    // removed to go green (`.claude/rules/testing.md`).
+    assert!(
+        hand_written >= 4,
+        "expected at least the 4 hand-written adl14-dadl fixtures; found {hand_written}"
     );
 }

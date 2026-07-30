@@ -91,6 +91,24 @@ pub struct SourceArtefact {
     pub rm_overlay: Option<openehr_lang::odin::OdinValue>,
     /// The `component_terminologies` section (ODIN; OPT only).
     pub component_terminologies: Option<openehr_lang::odin::OdinValue>,
+    /// The ADL **1.4** `revision_history` section (ODIN;
+    /// `AM/docs/ADL1.4/master08-adl` §Revision History Section: "The revision
+    /// history section of an archetype shows the audit history of changes to
+    /// the archetype, and is expressed in dADL syntax. It is optional, and is
+    /// included at the end of the archetype").
+    ///
+    /// NOTE: it has no landing site in the assembled AOM2 model, and that is
+    /// deliberate upstream, not a generated-model gap —
+    /// `AM/docs/ADL2/master01-preface` §Changes from ADL 1.4: "the
+    /// `revision_history` section is removed, since the AOM2 uses the openEHR
+    /// Base Types version of the Resource package" (SPECAM-61 in that
+    /// specification's amendment record, and the mirroring "Remove
+    /// `revision_history` property" entry in the BASE resource amendment
+    /// record). So the section is read and preserved *here*, at the 1.4 source
+    /// level, where a caller that wants the audit history can reach it, and it
+    /// is not carried into the ADL2 artefact that
+    /// [`crate::adl14::convert`] produces.
+    pub revision_history: Option<openehr_lang::odin::OdinValue>,
     /// The `definition` (cADL) body as a raw span.
     pub definition: Option<RawSpan>,
     /// The `rules`/`invariant` body as a raw span.
@@ -154,6 +172,9 @@ enum SectionKw {
     Annotations,
     ComponentTerminologies,
     RmOverlay,
+    /// The ADL 1.4-only `revision_history` clause
+    /// (`AM/docs/ADL1.4/master08-adl` §Revision History Section).
+    RevisionHistory,
     /// The obsolete `concept` clause (`master07.09`) — recognised as a section
     /// boundary and otherwise ignored in ADL2.
     Concept,
@@ -173,6 +194,11 @@ fn classify_section(s: &str) -> Option<SectionKw> {
         "terminology" | "ontology" => Some(SectionKw::Terminology),
         "annotations" => Some(SectionKw::Annotations),
         "component_terminologies" => Some(SectionKw::ComponentTerminologies),
+        // ADL 1.4-only (`master08` §Revision History Section); removed in ADL2
+        // (`ADL2/master01-preface` §Changes from ADL 1.4). Recognised so a
+        // spec-valid 1.4 archetype carrying one parses instead of sinking on
+        // "expected a section header".
+        "revision_history" => Some(SectionKw::RevisionHistory),
         // Obsolete in ADL2 (concept derives from the HRID); recognised as a
         // boundary and ignored (`master07.09`).
         "concept" => Some(SectionKw::Concept),
@@ -304,6 +330,7 @@ impl Outer<'_> {
             annotations: None,
             rm_overlay: None,
             component_terminologies: None,
+            revision_history: None,
             definition: None,
             rules: None,
             overlays: Vec::new(),
@@ -419,6 +446,9 @@ impl Outer<'_> {
             SectionKw::ComponentTerminologies => {
                 art.component_terminologies =
                     self.parse_odin(body, header_idx, "component_terminologies");
+            }
+            SectionKw::RevisionHistory => {
+                art.revision_history = self.parse_odin(body, header_idx, "revision_history");
             }
             // The obsolete `concept` clause is consumed and ignored in ADL2.
             SectionKw::Concept | SectionKw::ArtefactBoundary => {}

@@ -1,0 +1,67 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.revision_history.v1
+
+concept
+	[at0000]	-- Revision history section
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A spec-valid ADL 1.4 archetype carrying the optional revision_history section of master08.">
+			keywords = <"revision_history", "regression">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[at0000] matches {*}	-- Revision history section
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Revision history section">
+					description = <"Root of the revision-history regression fixture.">
+				>
+			>
+		>
+	>
+
+revision_history
+	revision_history = <
+		["1.57"] = <
+			committer = <"Miriam Hanoosh">
+			committer_organisation = <"AIHW.org.au">
+			time_committed = <2004-11-02 09:31:04+1000>
+			revision = <"1.2">
+			reason = <"Added social history section">
+			change_type = <"Modification">
+		>
+		["1.1"] = <
+			committer = <"Enrico Barrios">
+			committer_organisation = <"AIHW.org.au">
+			time_committed = <2004-09-24T11:57:00+1000>
+			revision = <"1.1">
+			reason = <"Updated HbA1C test result reference">
+			change_type = <"Modification">
+		>
+		["1.0"] = <
+			committer = <"Enrico Barrios">
+			committer_organisation = <"AIHW.org.au">
+			time_committed = <2004-09-14T16:05:00+1000>
+			revision = <"1.0">
+			reason = <"Initial Writing">
+			change_type = <"Creation">
+		>
+	>

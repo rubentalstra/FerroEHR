@@ -1292,9 +1292,18 @@ fn check_rule_paths(
 /// model's `BTreeMap`s already dedupe keys).
 fn check_object_key_unique(src: &SourceArtefact, issues: &mut Vec<ValidationIssue>) {
     for section in [
+        // The `language` section is keyed too — `master07.07` types
+        // `translations` as `Hash<TRANSLATION_DETAILS, String>`, so a repeated
+        // `translations = <["de"] = <…> ["de"] = <…>>` key is the same VOKU
+        // violation as a repeated terminology code, and went unreported while
+        // this section was left out of the scanned set.
+        src.language.as_ref(),
         src.description.as_ref(),
         src.terminology.as_ref(),
         src.annotations.as_ref(),
+        src.rm_overlay.as_ref(),
+        src.component_terminologies.as_ref(),
+        src.revision_history.as_ref(),
     ]
     .into_iter()
     .flatten()
@@ -1328,6 +1337,10 @@ fn check_odin_key_unique(value: &OdinValue, issues: &mut Vec<ValidationIssue>) {
                 check_odin_key_unique(val, issues);
             }
         }
+        // A `(TYPE)` cast is a parser hint, not a level of the data
+        // (`LANG/docs/odin/master05-content` §Adding Type Information) — walk
+        // through it so a cast block's keys are checked like any other.
+        OdinValue::Typed { value, .. } => check_odin_key_unique(value, issues),
         _ => {}
     }
 }

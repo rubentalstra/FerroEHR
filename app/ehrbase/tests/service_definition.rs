@@ -30,6 +30,10 @@ const ARCHETYPE_REL: &str =
     "tests/resources/service/knowledge/archetypes/openEHR-EHR-COMPOSITION.prescription.v1.adl";
 const ARCHETYPE_ID: &str = "openEHR-EHR-COMPOSITION.prescription.v1";
 
+const REVISION_HISTORY_ARCHETYPE_REL: &str =
+    "tests/resources/service/knowledge/archetypes/openEHR-EHR-OBSERVATION.revision_history.v1.adl";
+const REVISION_HISTORY_ARCHETYPE_ID: &str = "openEHR-EHR-OBSERVATION.revision_history.v1";
+
 const OPT_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
 const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 
@@ -97,6 +101,41 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .expect("delete");
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
     assert_eq!(svc.archetypes_count_adl14().await.unwrap(), 0);
+}
+
+/// An ADL 1.4 archetype carrying the optional `revision_history` section
+/// (`docs/specs/openehr/AM/docs/ADL1.4/master08-adl.adoc` §Revision History
+/// Section — "It is optional, and is included at the end of the archetype")
+/// is a spec-valid 1.4 source: it must validate and upload like any other.
+///
+/// The section has no landing field on the assembled AOM2 artefact by upstream
+/// decision — `AM/docs/ADL2/master01-preface.adoc` §Changes from ADL 1.4
+/// removed it "since the AOM2 uses the openEHR Base Types version of the
+/// Resource package" (SPECAM-61) — but the upload stores the 1.4 *source*
+/// verbatim, so nothing is lost on the round trip.
+#[tokio::test]
+async fn archetype_with_revision_history_section_uploads() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+    let adl = fixture(REVISION_HISTORY_ARCHETYPE_REL);
+
+    assert!(
+        svc.valid_archetype(&adl).unwrap(),
+        "a 1.4 archetype with a revision_history section is valid"
+    );
+    svc.upload_archetype(adl.clone()).await.expect("upload");
+    assert!(
+        svc.has_archetype(REVISION_HISTORY_ARCHETYPE_ID.to_owned())
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        svc.get_archetype(REVISION_HISTORY_ARCHETYPE_ID.to_owned())
+            .await
+            .expect("get"),
+        adl,
+        "the revision_history section survives storage verbatim"
+    );
 }
 
 #[tokio::test]
