@@ -1,3 +1,6 @@
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 // Build-time codegen library (never ships in the server): the console IS its
 // user interface and a malformed vendored spec must abort loudly, so the
 // reliability deny-tier for shipped code is deliberately relaxed here

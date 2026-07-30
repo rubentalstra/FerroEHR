@@ -77,11 +77,57 @@ Unit tests live beside the code they test (`#[cfg(test)] mod tests` in the
 same file) — and ONLY there: **dedicated test FILES under `src/` are banned**
 (owner ruling 2026-07-17; the four historical ones were relocated). A test
 that drives the public API belongs in the owning crate's `tests/` directory
-(`crates/*/tests/`, `app/*/tests/`, `tools/*/tests/`) with a descriptive
-file name; a test of private internals stays a small inline module next to
-the code it tests. If an internals test grows large, that is a design signal
-to test through the public seam, not to split the tests into a src file.
-Do not invent a third location.
+(`crates/*/tests/`, `app/*/tests/`, `tools/*/tests/`); a test of private
+internals stays a small inline module next to the code it tests. If an
+internals test grows large, that is a design signal to test through the
+public seam, not to split the tests into a src file. Do not invent a third
+location.
+
+**One integration-test binary per crate** (issue #1311, 2026-07-30): the
+`tests/` directory is `tests/it/main.rs` + one `mod` per topic file — NOT
+one top-level `.rs` per topic. Cargo compiles and links every top-level
+`tests/*.rs` as its own crate ("each integration test results in a separate
+executable binary … this can be inefficient, as it can take longer to
+compile" — https://doc.rust-lang.org/cargo/reference/cargo-targets.html;
+the pre-consolidation tree had 163 binaries). nextest still runs each test
+as its own process, so isolation is unchanged; only the compile/link waste
+goes. Shared helpers live in a plain module under `tests/it/` (the
+`tests/common/mod.rs` rule generalizes: helper modules are never top-level
+test files). A second binary in one crate needs a real reason (e.g. a
+different harness) stated in a comment.
+
+**A binary-only crate is untestable by construction** (Book ch11.3): its
+`main.rs` cannot be imported from `tests/`. The wiring binary
+(`app/ehrbase-server`) therefore keeps a thin `main.rs` over a testable
+`lib.rs` run path (Book ch12.3), and its integration tests import the lib.
+Never park tests for crate X under crate Y's `tests/` directory.
+
+## Test shapes (the Book ch11 doctrine)
+
+- **`Result`-returning tests are the preferred shape**: `fn t() ->
+  Result<(), E>` with `?` instead of unwrap chains — the officially blessed
+  way to keep test bodies panic-idiom-free
+  (https://doc.rust-lang.org/book/ch11-01-writing-tests.html). The
+  `clippy.toml` `allow-*-in-tests` scoping keeps assertion panics legal, but
+  plumbing failures should propagate with `?`, not `.unwrap()`.
+- **`#[should_panic]` always carries `expected = "…"`** — bare
+  `should_panic` passes when the code panics for the WRONG reason (Book
+  ch11.1), unacceptable in a suite that adjudicates spec behaviour.
+  Constraint: `should_panic` is illegal on Result-returning tests — assert
+  `value.is_err()` there instead.
+- **Assertions**: `assert_eq!`/`assert_ne!` over bare `assert!` for
+  comparisons (they print both values); production-code asserts carry a
+  message (`missing_assert_message` — the lint ignores test fns by design).
+- **Doctests are copy-paste templates**: `?` via a hidden `# Ok::<(), E>(())`
+  tail or hidden `fn main` wrapper, never `unwrap` (C-QUESTION-MARK;
+  enforced by `#![doc(test(attr(deny(warnings))))]` on library roots).
+  `no_run` for examples that would touch Postgres/HTTP, `text` for
+  non-code — **never `ignore`** ("almost never what you want",
+  https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html).
+  Edition 2024 merges compatible doctests; a doctest asserting line numbers
+  or panic locations must be marked `standalone_crate`. The five generated
+  spec crates keep `doctest = false` DELIBERATELY (generated doc text is not
+  curated examples) — do not "fix" that.
 
 ## CNF coverage (breadth is a mandate, not just pass rate)
 

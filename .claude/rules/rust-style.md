@@ -74,6 +74,49 @@ There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
   are not renames and are fine.)
 - Edition 2024, resolver v3, MSRV 1.96. `cargo fmt` clean; run `cargo clippy` on
   the crate you touched before considering it done.
+- **Suppressions are `#[expect(lint, reason = "…")]`**, scoped to the smallest
+  item; `#[allow(lint, reason = "…")]` only for cfg/feature-conditional fire
+  (full policy: reliability.md §When a lint fights a legitimate case —
+  `allow_attributes_without_reason` is deny). The one sanctioned
+  logically-impossible-`Err` escape is also there (Book ch9 shape:
+  should-phrased message + inspection-proving reason).
+
+## Documentation (missing_docs is enforced workspace-wide)
+
+- Every public item carries a doc comment (rustc `missing_docs`; generated
+  crates get theirs from the emitter — never hand-edit `// @generated`).
+  Shape per the rustdoc book: first line = ONE plain-language summary
+  sentence (it is what search results and module indexes show); detail after
+  a blank line; `# Errors` on fallible fns and `# Panics` where a panic is
+  possible (pedantic-enforced).
+- Intra-doc links (`[`Type`]`) resolve in the scope of the module where the
+  item is DEFINED — which under the zero-re-exports rule is also where
+  readers import it from. `rustdoc::broken_intra_doc_links` is deny; the CI
+  doc job is the gate. Bare URLs go in `<…>` angle brackets; literal
+  square brackets in prose are escaped `\[…\]`.
+- `#[doc(alias = "EHR_STATUS")]`-style aliases on spec-named types are
+  encouraged — rustdoc search then finds the Rust type from the openEHR
+  spelling.
+
+## Edition-2024 standing guidance (behaviour that compiles fine and differs)
+
+- **`if let` scrutinee temporaries drop before `else`** — the guard rule
+  lives in reliability.md; rewrite as `match` when a guard must span arms.
+- **Never-type fallback**: `f()?;` on a fn generic over the `Ok` type can
+  now infer `!` — annotate the turbofish/binding type at such call sites
+  instead of leaning on inference
+  (https://doc.rust-lang.org/edition-guide/rust-2024/never-type-fallback.html).
+- **RPIT captures every in-scope lifetime by default** — when a returned
+  `impl Trait` must NOT capture one, say so with precise capturing
+  (`use<…>`); the old `Captures<..>` trick is obsolete
+  (https://doc.rust-lang.org/edition-guide/rust-2024/rpit-lifetime-capture.html).
+- **`Future`/`IntoFuture` are in the prelude** — a collision with a local
+  trait method is resolved with fully-qualified syntax
+  (`<T as MyTrait>::poll(…)`), never an import rename (the no-alias rule
+  stands).
+- The `unsafe_*` 2024 items are all moot under `unsafe_code = "forbid"`;
+  `static_mut_refs` is compiler-enforced and the `LazyLock` convention
+  already complies. Do not re-litigate them.
 
 ## What not to do
 

@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Release binaries are hardened for diagnosability**: production panics now
+  carry file:line backtraces (`debug = "line-tables-only"`), and the unwind
+  panic strategy the clean-500 error contract depends on is pinned explicitly
+  in the release profile so it can never silently regress to `abort`.
+  Runtime behaviour is otherwise unchanged.
+- **The workspace now enforces the official Rust best-practice baseline as
+  compile-time policy** (Rust API Guidelines, Clippy/rustdoc/Cargo books):
+  every public item is documented (including the generated openEHR spec
+  crates, whose docs now come from the BMM meta-model), panicking indexing
+  and string slicing are compile errors outside tests, wall-clock/env/UUIDv4
+  API bans are machine-enforced, lint suppressions must carry a machine-read
+  `reason`, and doc links are verified by a new rustdoc CI gate. No wire or
+  storage behaviour changes.
+
 ### Fixed
 
 - **ADL 1.4 archetypes carrying a `revision_history` section now parse and
