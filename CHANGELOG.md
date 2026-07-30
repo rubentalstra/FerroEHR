@@ -43,6 +43,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A `use_node` internal reference targeting its own ancestor, or another
+  internal reference, is now rejected at validation** (`VUNP` for ADL 2,
+  `VDFPT` for ADL 1.4): an ancestor target defines an infinitely recursive
+  expansion and previously validated clean; sibling and cross-branch targets
+  are unaffected.
+
 - **Illegal backslash escapes in ADL character values and rules-section
   strings are now rejected at parse** (only `\r`, `\n`, `\t`, `\\`, `\"`,
   `\'` are legal quoted forms, plus `\uHHHH` unicode escapes in strings):
