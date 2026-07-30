@@ -736,6 +736,9 @@ mod tests {
 archetype (adl_version=1.4)
 \topenEHR-EHR-CLUSTER.effective.v1
 
+concept
+\t[at0000]
+
 language
 \toriginal_language = <[ISO_639-1::en]>
 

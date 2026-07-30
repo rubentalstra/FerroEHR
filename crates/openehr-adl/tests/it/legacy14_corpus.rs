@@ -15,7 +15,9 @@
 //!   ([`openehr_adl::validate::validate_source_phase1_adl14`]; every file here
 //!   is `regression`-tagged PASS), EXCEPT `FAIL_c_dv_quantity_minimal.v1.adl`
 //!   which rejects at parse with `SDINV` (its `regression` tag) — an empty
-//!   `(C_DV_QUANTITY) <>` inline dADL block.
+//!   `(C_DV_QUANTITY) <>` inline dADL block — and the two concept-less
+//!   fixtures, which reject with `SACO` against the spec text over their own
+//!   `PASS` tag (adjudication + citation at the assertion site).
 //! - `features/**/*.adl` — parse (1.4 dialect) clean.
 //! - `adl14-dadl/*.adl` — the hand-written dADL breadth tree, claimed by
 //!   `adl14_dadl_breadth.rs` (accept/refuse per fixture, leaf values
@@ -36,6 +38,14 @@ use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::SyntaxErrorCode;
 use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
+
+/// The vendored `legacy_adl_1.4` fixtures that carry no `concept` section and
+/// are therefore refused with `SACO` (the adjudication is stated at the
+/// assertion site below).
+const CONCEPT_LESS: &[&str] = &[
+    "openehr-test_pkg-SOME_TYPE.c_dv_quantity.v1.adl",
+    "openehr-test_pkg-SOME_TYPE.code_phrase.v1.adl",
+];
 
 fn corpus_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus")
@@ -97,6 +107,27 @@ fn every_adl_file_is_claimed_with_an_outcome() {
                 assert!(
                     err.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
                     "{r}: expected SDINV, got {:?}",
+                    err.iter().map(|e| e.code).collect::<Vec<_>>()
+                );
+            } else if CONCEPT_LESS.iter().any(|f| r.ends_with(f)) {
+                // Adjudicated against the spec text, over the file's own `PASS`
+                // tag: these two vendored fixtures carry NO `concept` section,
+                // which ADL 1.4 does not allow. `ADL1.4/master08-adl.adoc`
+                // §Syntax Specification gives `arch_concept: SYM_CONCEPT
+                // V_LOCAL_TERM_CODE_REF | SYM_CONCEPT error` — no empty
+                // alternative, unlike `arch_specialisation`/`arch_language`/
+                // `arch_description`/`arch_invariant` — and §Validity Rules
+                // VARCN: "The archetype must have an archetype term value in the
+                // concept section." The ADL Workbench that produced the tag is
+                // prior art, not the oracle. Their concept-carrying twins live
+                // in `adl14-cadl/` (see `adl14_cadl_gates.rs`), so the
+                // constructs they exercise keep their accepting coverage.
+                let err = parse_artefact_adl14(&src)
+                    .err()
+                    .unwrap_or_else(|| panic!("{r}: a concept-less 1.4 source must reject"));
+                assert!(
+                    err.iter().any(|e| e.code == SyntaxErrorCode::Saco),
+                    "{r}: expected SACO, got {:?}",
                     err.iter().map(|e| e.code).collect::<Vec<_>>()
                 );
             } else {
