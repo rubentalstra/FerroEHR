@@ -393,7 +393,7 @@ impl<T: PartialOrd> Interval<T> {
         }
     }
 
-    /// Three-valued containment ([`BoundaryView::has_definite`]): `Some(true)`
+    /// Three-valued containment (`BoundaryView::has_definite`): `Some(true)`
     /// definitely inside, `Some(false)` definitely outside, `None` undecidable
     /// (a comparison against a bound was incomparable). Use this instead of
     /// [`Interval::has`] over a partially-ordered value space (the `Iso8601_*`

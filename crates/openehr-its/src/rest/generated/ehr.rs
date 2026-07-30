@@ -11,116 +11,199 @@
 )]
 use serde::{Deserialize, Serialize};
 
+/// The `VersionOfComposition` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionOfComposition {
+    /// The `_type` property of `VersionOfComposition`.
     pub _type: Option<String>,
+    /// The `contribution` property of `VersionOfComposition`.
     pub contribution: ObjectRefOfHierObjectId,
+    /// The `signature` property of `VersionOfComposition`.
     pub signature: Option<String>,
+    /// The `commit_audit` property of `VersionOfComposition`.
     pub commit_audit: serde_json::Value,
+    /// The `data` property of `VersionOfComposition`.
     pub data: serde_json::Value,
 }
 
+/// The `VersionOfEhrStatus` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionOfEhrStatus {
+    /// The `_type` property of `VersionOfEhrStatus`.
     pub _type: Option<String>,
+    /// The `contribution` property of `VersionOfEhrStatus`.
     pub contribution: ObjectRefOfHierObjectId,
+    /// The `signature` property of `VersionOfEhrStatus`.
     pub signature: Option<String>,
+    /// The `commit_audit` property of `VersionOfEhrStatus`.
     pub commit_audit: serde_json::Value,
+    /// The `data` property of `VersionOfEhrStatus`.
     pub data: serde_json::Value,
 }
 
+/// The `ObjectRefOfObjectVersionId` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfObjectVersionId {
+    /// The `id` property of `ObjectRefOfObjectVersionId`.
     pub id: Option<serde_json::Value>,
 }
 
+/// The `Clstr` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Clstr {
+    /// The `_type` property of `Clstr`.
     pub _type: Option<String>,
+    /// The `items` property of `Clstr`.
     pub items: Vec<serde_json::Value>,
 }
 
+/// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `Identifier` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identifier {
+    /// The `uid` property of `Identifier`.
     pub uid: String,
 }
 
+/// The `Error` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Error {
+    /// The `message` property of `Error`.
     pub message: String,
+    /// The `validationErrors` property of `Error`.
     #[serde(rename = "validationErrors")]
     pub validation_errors: Vec<String>,
 }
 
+/// The `UpdateItemTag` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateItemTag {
+    /// The `key` property of `UpdateItemTag`.
     pub key: String,
+    /// The `value` property of `UpdateItemTag`.
     pub value: Option<String>,
+    /// The `target_path` property of `UpdateItemTag`.
     pub target_path: Option<String>,
 }
 
+/// The `ObjectRefOfHierObjectId` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfHierObjectId {
+    /// The `id` property of `ObjectRefOfHierObjectId`.
     pub id: Option<serde_json::Value>,
 }
 
+/// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDateTime {
+    /// The `_type` property of `DvIntervalOfDateTime`.
     pub _type: Option<String>,
+    /// The `lower` property of `DvIntervalOfDateTime`.
     pub lower: Option<serde_json::Value>,
+    /// The `upper` property of `DvIntervalOfDateTime`.
     pub upper: Option<serde_json::Value>,
 }
 
+/// The `AbstractEntry` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AbstractEntry {
+    /// The `language` property of `AbstractEntry`.
     pub language: serde_json::Value,
+    /// The `encoding` property of `AbstractEntry`.
     pub encoding: serde_json::Value,
+    /// The `other_participations` property of `AbstractEntry`.
     pub other_participations: Option<Vec<serde_json::Value>>,
+    /// The `workflow_id` property of `AbstractEntry`.
     pub workflow_id: Option<serde_json::Value>,
+    /// The `subject` property of `AbstractEntry`.
     pub subject: serde_json::Value,
+    /// The `provider` property of `AbstractEntry`.
     pub provider: Option<serde_json::Value>,
 }
 
+/// The `UpdateAudit` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAudit {
+    /// The `_type` property of `UpdateAudit`.
     pub _type: Option<String>,
+    /// The `system_id` property of `UpdateAudit`.
     pub system_id: Option<String>,
+    /// The `change_type` property of `UpdateAudit`.
     pub change_type: serde_json::Value,
+    /// The `description` property of `UpdateAudit`.
     pub description: Option<serde_json::Value>,
+    /// The `committer` property of `UpdateAudit`.
     pub committer: serde_json::Value,
 }
 
+/// The `UpdateAttestation` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAttestation {
+    /// The `_type` property of `UpdateAttestation`.
     pub _type: Option<String>,
+    /// The `attested_view` property of `UpdateAttestation`.
     pub attested_view: Option<serde_json::Value>,
+    /// The `proof` property of `UpdateAttestation`.
     pub proof: Option<String>,
+    /// The `items` property of `UpdateAttestation`.
     pub items: Option<Vec<serde_json::Value>>,
+    /// The `reason` property of `UpdateAttestation`.
     pub reason: serde_json::Value,
+    /// The `is_pending` property of `UpdateAttestation`.
     pub is_pending: bool,
 }
 
+/// The `UpdateVersion` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateVersion {
+    /// The `preceding_version_uid` property of `UpdateVersion`.
     pub preceding_version_uid: Option<serde_json::Value>,
+    /// The `signature` property of `UpdateVersion`.
     pub signature: Option<String>,
+    /// The `lifecycle_state` property of `UpdateVersion`.
     pub lifecycle_state: serde_json::Value,
+    /// The `attestations` property of `UpdateVersion`.
     pub attestations: Option<Vec<serde_json::Value>>,
+    /// The `data` property of `UpdateVersion`.
     pub data: Versionable,
+    /// The `commit_audit` property of `UpdateVersion`.
     pub commit_audit: UpdateAudit,
 }
 
+/// The `NewContribution` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewContribution {
+    /// The `uid` property of `NewContribution`.
     pub uid: Option<serde_json::Value>,
+    /// The `versions` property of `NewContribution`.
     pub versions: Vec<serde_json::Value>,
+    /// The `audit` property of `NewContribution`.
     pub audit: UpdateAudit,
 }
 
+/// The `ItemTagOfComposition` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ItemTagOfComposition = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `ItemTagOfEhrStatus` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ItemTagOfEhrStatus = std::collections::BTreeMap<String, serde_json::Value>;
 
 /// Parameters for `ehr_get_by_subject` (path/query/header).

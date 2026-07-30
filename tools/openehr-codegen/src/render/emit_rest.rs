@@ -251,7 +251,9 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             .collect();
         let _ = write!(
             b,
-            "#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {ty_name} {{\n"
+            "/// The `{name}` transport DTO of this API group (an ITS-REST OAS\n\
+             /// component schema).\n\
+             #[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {ty_name} {{\n"
         );
         for (pname, pschema) in props {
             let ident = field_id(pname);
@@ -259,6 +261,9 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
             if !required.contains(pname.as_str()) {
                 ty = format!("Option<{ty}>");
             }
+            // A struct field is a public item `missing_docs` checks; the OAS
+            // property name is the honest, deterministic summary.
+            let _ = writeln!(b, "    /// The `{pname}` property of `{name}`.");
             // A docs-text-wins correction carries its citation into the
             // generated code (the OAS lists the field as required; the
             // ITS-REST docs text wins).
@@ -276,7 +281,9 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
         // string/array/map/ref alias.
         let _ = writeln!(
             b,
-            "pub type {} = {};\n",
+            "/// The `{name}` ITS-REST OAS component schema (a non-object shape, so\n\
+             /// it is an alias rather than a struct).\n\
+             pub type {} = {};\n",
             dto_type(name),
             ctx.rust_type(schema)
         );

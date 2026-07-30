@@ -13,616 +13,908 @@
 /// openEHR AOM/OPT `ANNOTATION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Annotation {
+    /// The `path` attribute/element of the OPT `ANNOTATION` XSD type.
     pub path: String,
+    /// The `items` attribute/element of the OPT `ANNOTATION` XSD type.
     pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Archetype {
+    /// The `original_language` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub original_language: openehr_base::prelude::CodePhrase,
+    /// The `is_controlled` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub is_controlled: Option<bool>,
+    /// The `description` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub description: Option<ResourceDescription>,
+    /// The `translations` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub translations: Vec<TranslationDetails>,
+    /// The `revision_history` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub revision_history: Option<openehr_rm::prelude::RevisionHistory>,
+    /// The `uid` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub uid: Option<openehr_base::prelude::HierObjectId>,
+    /// The `archetype_id` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub archetype_id: openehr_base::prelude::ArchetypeId,
+    /// The `adl_version` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub adl_version: Option<String>,
+    /// The `concept` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub concept: String,
+    /// The `parent_archetype_id` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub parent_archetype_id: Option<openehr_base::prelude::ArchetypeId>,
+    /// The `definition` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub definition: CComplexObject,
+    /// The `invariants` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub invariants: Vec<Assertion>,
+    /// The `ontology` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub ontology: ArchetypeOntology,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_CONSTRAINT`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ArchetypeConstraint {
+    /// The OPT `ARCHETYPE_INTERNAL_REF` subtype of `ARCHETYPE_CONSTRAINT`.
     ArchetypeInternalRef(ArchetypeInternalRef),
+    /// The OPT `ARCHETYPE_SLOT` subtype of `ARCHETYPE_CONSTRAINT`.
     ArchetypeSlot(ArchetypeSlot),
+    /// The OPT `CONSTRAINT_REF` subtype of `ARCHETYPE_CONSTRAINT`.
     ConstraintRef(ConstraintRef),
+    /// The OPT `C_ARCHETYPE_ROOT` subtype of `ARCHETYPE_CONSTRAINT`.
     CArchetypeRoot(CArchetypeRoot),
+    /// The OPT `C_CODE_PHRASE` subtype of `ARCHETYPE_CONSTRAINT`.
     CCodePhrase(CCodePhrase),
+    /// The OPT `C_CODE_REFERENCE` subtype of `ARCHETYPE_CONSTRAINT`.
     CCodeReference(CCodeReference),
+    /// The OPT `C_COMPLEX_OBJECT` subtype of `ARCHETYPE_CONSTRAINT`.
     CComplexObject(CComplexObject),
+    /// The OPT `C_DEFINED_OBJECT` subtype of `ARCHETYPE_CONSTRAINT`.
     CDefinedObject(CDefinedObject),
+    /// The OPT `C_DV_ORDINAL` subtype of `ARCHETYPE_CONSTRAINT`.
     CDvOrdinal(CDvOrdinal),
+    /// The OPT `C_DV_QUANTITY` subtype of `ARCHETYPE_CONSTRAINT`.
     CDvQuantity(CDvQuantity),
+    /// The OPT `C_DV_STATE` subtype of `ARCHETYPE_CONSTRAINT`.
     CDvState(CDvState),
+    /// The OPT `C_MULTIPLE_ATTRIBUTE` subtype of `ARCHETYPE_CONSTRAINT`.
     CMultipleAttribute(CMultipleAttribute),
+    /// The OPT `C_PRIMITIVE_OBJECT` subtype of `ARCHETYPE_CONSTRAINT`.
     CPrimitiveObject(CPrimitiveObject),
+    /// The OPT `C_SINGLE_ATTRIBUTE` subtype of `ARCHETYPE_CONSTRAINT`.
     CSingleAttribute(CSingleAttribute),
+    /// The OPT `T_COMPLEX_OBJECT` subtype of `ARCHETYPE_CONSTRAINT`.
     TComplexObject(TComplexObject),
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_INTERNAL_REF`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeInternalRef {
+    /// The `rm_type_name` attribute/element of the OPT `ARCHETYPE_INTERNAL_REF` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `ARCHETYPE_INTERNAL_REF` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `ARCHETYPE_INTERNAL_REF` XSD type.
     pub node_id: String,
+    /// The `target_path` attribute/element of the OPT `ARCHETYPE_INTERNAL_REF` XSD type.
     pub target_path: String,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_ONTOLOGY`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeOntology {
+    /// The `term_definitions` attribute/element of the OPT `ARCHETYPE_ONTOLOGY` XSD type.
     pub term_definitions: Vec<Codedefinitionset>,
+    /// The `constraint_definitions` attribute/element of the OPT `ARCHETYPE_ONTOLOGY` XSD type.
     pub constraint_definitions: Vec<Codedefinitionset>,
+    /// The `term_bindings` attribute/element of the OPT `ARCHETYPE_ONTOLOGY` XSD type.
     pub term_bindings: Vec<Termbindingset>,
+    /// The `constraint_bindings` attribute/element of the OPT `ARCHETYPE_ONTOLOGY` XSD type.
     pub constraint_bindings: Vec<Constraintbindingset>,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_SLOT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeSlot {
+    /// The `rm_type_name` attribute/element of the OPT `ARCHETYPE_SLOT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `ARCHETYPE_SLOT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `ARCHETYPE_SLOT` XSD type.
     pub node_id: String,
+    /// The `includes` attribute/element of the OPT `ARCHETYPE_SLOT` XSD type.
     pub includes: Vec<Assertion>,
+    /// The `excludes` attribute/element of the OPT `ARCHETYPE_SLOT` XSD type.
     pub excludes: Vec<Assertion>,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_TERM`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeTerm {
+    /// The `code` attribute/element of the OPT `ARCHETYPE_TERM` XSD type.
     pub code: String,
+    /// The `items` attribute/element of the OPT `ARCHETYPE_TERM` XSD type.
     pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ASSERTION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Assertion {
+    /// The `tag` attribute/element of the OPT `ASSERTION` XSD type.
     pub tag: Option<String>,
+    /// The `string_expression` attribute/element of the OPT `ASSERTION` XSD type.
     pub string_expression: Option<String>,
+    /// The `expression` attribute/element of the OPT `ASSERTION` XSD type.
     pub expression: Box<ExprItem>,
+    /// The `variables` attribute/element of the OPT `ASSERTION` XSD type.
     pub variables: Vec<AssertionVariable>,
 }
 
 /// openEHR AOM/OPT `ASSERTION_VARIABLE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssertionVariable {
+    /// The `name` attribute/element of the OPT `ASSERTION_VARIABLE` XSD type.
     pub name: String,
+    /// The `definition` attribute/element of the OPT `ASSERTION_VARIABLE` XSD type.
     pub definition: String,
 }
 
 /// openEHR AOM/OPT `AUTHORED_RESOURCE`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AuthoredResource {
+    /// The OPT `ARCHETYPE` subtype of `AUTHORED_RESOURCE`.
     Archetype(Archetype),
 }
 
 /// openEHR AOM/OPT `CARDINALITY`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cardinality {
+    /// The `is_ordered` attribute/element of the OPT `CARDINALITY` XSD type.
     pub is_ordered: bool,
+    /// The `is_unique` attribute/element of the OPT `CARDINALITY` XSD type.
     pub is_unique: bool,
+    /// The `interval` attribute/element of the OPT `CARDINALITY` XSD type.
     pub interval: Intervalofinteger,
 }
 
 /// openEHR AOM/OPT `CONSTRAINT_BINDING_ITEM`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintBindingItem {
+    /// The `code` attribute/element of the OPT `CONSTRAINT_BINDING_ITEM` XSD type.
     pub code: String,
+    /// The `value` attribute/element of the OPT `CONSTRAINT_BINDING_ITEM` XSD type.
     pub value: String,
 }
 
 /// openEHR AOM/OPT `CONSTRAINT_REF`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintRef {
+    /// The `rm_type_name` attribute/element of the OPT `CONSTRAINT_REF` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `CONSTRAINT_REF` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `CONSTRAINT_REF` XSD type.
     pub node_id: String,
+    /// The `reference` attribute/element of the OPT `CONSTRAINT_REF` XSD type.
     pub reference: String,
 }
 
 /// openEHR AOM/OPT `C_ARCHETYPE_ROOT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CArchetypeRoot {
+    /// The `rm_type_name` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub node_id: String,
+    /// The `attributes` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub attributes: Vec<CAttribute>,
+    /// The `archetype_id` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub archetype_id: openehr_base::prelude::ArchetypeId,
+    /// The `template_id` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub template_id: Option<openehr_base::prelude::TemplateId>,
+    /// The `term_definitions` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub term_definitions: Vec<ArchetypeTerm>,
+    /// The `term_bindings` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub term_bindings: Vec<Termbindingset>,
 }
 
 /// openEHR AOM/OPT `C_ATTRIBUTE`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CAttribute {
+    /// The OPT `C_MULTIPLE_ATTRIBUTE` subtype of `C_ATTRIBUTE`.
     CMultipleAttribute(CMultipleAttribute),
+    /// The OPT `C_SINGLE_ATTRIBUTE` subtype of `C_ATTRIBUTE`.
     CSingleAttribute(CSingleAttribute),
 }
 
 /// openEHR AOM/OPT `C_BOOLEAN`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CBoolean {
+    /// The `true_valid` attribute/element of the OPT `C_BOOLEAN` XSD type.
     pub true_valid: bool,
+    /// The `false_valid` attribute/element of the OPT `C_BOOLEAN` XSD type.
     pub false_valid: bool,
+    /// The `assumed_value` attribute/element of the OPT `C_BOOLEAN` XSD type.
     pub assumed_value: Option<bool>,
 }
 
 /// openEHR AOM/OPT `C_CODE_PHRASE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CCodePhrase {
+    /// The `rm_type_name` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub node_id: String,
+    /// The `assumed_value` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub assumed_value: Option<openehr_base::prelude::CodePhrase>,
+    /// The `terminology_id` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub terminology_id: Option<openehr_base::prelude::TerminologyId>,
+    /// The `code_list` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub code_list: Vec<String>,
 }
 
 /// openEHR AOM/OPT `C_CODE_REFERENCE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CCodeReference {
+    /// The `rm_type_name` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub node_id: String,
+    /// The `assumed_value` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub assumed_value: Option<openehr_base::prelude::CodePhrase>,
+    /// The `terminology_id` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub terminology_id: Option<openehr_base::prelude::TerminologyId>,
+    /// The `code_list` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub code_list: Vec<String>,
+    /// The `referenceSetUri` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub referenceSetUri: String,
 }
 
 /// openEHR AOM/OPT `C_COMPLEX_OBJECT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CComplexObject {
+    /// The `rm_type_name` attribute/element of the OPT `C_COMPLEX_OBJECT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_COMPLEX_OBJECT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_COMPLEX_OBJECT` XSD type.
     pub node_id: String,
+    /// The `attributes` attribute/element of the OPT `C_COMPLEX_OBJECT` XSD type.
     pub attributes: Vec<CAttribute>,
 }
 
 /// openEHR AOM/OPT `C_DATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDate {
+    /// The `pattern` attribute/element of the OPT `C_DATE` XSD type.
     pub pattern: Option<String>,
+    /// The `timezone_validity` attribute/element of the OPT `C_DATE` XSD type.
     pub timezone_validity: Option<String>,
+    /// The `range` attribute/element of the OPT `C_DATE` XSD type.
     pub range: Option<Intervalofdate>,
+    /// The `assumed_value` attribute/element of the OPT `C_DATE` XSD type.
     pub assumed_value: Option<String>,
 }
 
 /// openEHR AOM/OPT `C_DATE_TIME`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDateTime {
+    /// The `pattern` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub pattern: Option<String>,
+    /// The `timezone_validity` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub timezone_validity: Option<String>,
+    /// The `range` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub range: Option<Intervalofdatetime>,
+    /// The `assumed_value` attribute/element of the OPT `C_DATE_TIME` XSD type.
     pub assumed_value: Option<String>,
 }
 
 /// openEHR AOM/OPT `C_DEFINED_OBJECT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDefinedObject {
+    /// The `rm_type_name` attribute/element of the OPT `C_DEFINED_OBJECT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_DEFINED_OBJECT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_DEFINED_OBJECT` XSD type.
     pub node_id: String,
 }
 
 /// openEHR AOM/OPT `C_DOMAIN_TYPE`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CDomainType {
+    /// The OPT `C_CODE_PHRASE` subtype of `C_DOMAIN_TYPE`.
     CCodePhrase(CCodePhrase),
+    /// The OPT `C_CODE_REFERENCE` subtype of `C_DOMAIN_TYPE`.
     CCodeReference(CCodeReference),
+    /// The OPT `C_DV_ORDINAL` subtype of `C_DOMAIN_TYPE`.
     CDvOrdinal(CDvOrdinal),
+    /// The OPT `C_DV_QUANTITY` subtype of `C_DOMAIN_TYPE`.
     CDvQuantity(CDvQuantity),
+    /// The OPT `C_DV_STATE` subtype of `C_DOMAIN_TYPE`.
     CDvState(CDvState),
 }
 
 /// openEHR AOM/OPT `C_DURATION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDuration {
+    /// The `pattern` attribute/element of the OPT `C_DURATION` XSD type.
     pub pattern: Option<String>,
+    /// The `range` attribute/element of the OPT `C_DURATION` XSD type.
     pub range: Option<Intervalofduration>,
+    /// The `assumed_value` attribute/element of the OPT `C_DURATION` XSD type.
     pub assumed_value: Option<String>,
 }
 
 /// openEHR AOM/OPT `C_DV_ORDINAL`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDvOrdinal {
+    /// The `rm_type_name` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub node_id: String,
+    /// The `assumed_value` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub assumed_value: Option<openehr_rm::prelude::DvOrdinal>,
+    /// The `list` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub list: Vec<openehr_rm::prelude::DvOrdinal>,
 }
 
 /// openEHR AOM/OPT `C_DV_QUANTITY`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDvQuantity {
+    /// The `rm_type_name` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub node_id: String,
+    /// The `assumed_value` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub assumed_value: Option<openehr_rm::prelude::DvQuantity>,
+    /// The `property` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub property: Option<openehr_base::prelude::CodePhrase>,
+    /// The `list` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub list: Vec<CQuantityItem>,
 }
 
 /// openEHR AOM/OPT `C_DV_STATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDvState {
+    /// The `rm_type_name` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub node_id: String,
+    /// The `assumed_value` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub assumed_value: Option<openehr_rm::prelude::DvState>,
+    /// The `value` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub value: StateMachine,
 }
 
 /// openEHR AOM/OPT `C_INTEGER`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CInteger {
+    /// The `list` attribute/element of the OPT `C_INTEGER` XSD type.
     pub list: Vec<i32>,
+    /// The `range` attribute/element of the OPT `C_INTEGER` XSD type.
     pub range: Option<Intervalofinteger>,
+    /// The `assumed_value` attribute/element of the OPT `C_INTEGER` XSD type.
     pub assumed_value: Option<i32>,
 }
 
 /// openEHR AOM/OPT `C_MULTIPLE_ATTRIBUTE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CMultipleAttribute {
+    /// The `rm_attribute_name` attribute/element of the OPT `C_MULTIPLE_ATTRIBUTE` XSD type.
     pub rm_attribute_name: String,
+    /// The `existence` attribute/element of the OPT `C_MULTIPLE_ATTRIBUTE` XSD type.
     pub existence: Intervalofinteger,
+    /// The `children` attribute/element of the OPT `C_MULTIPLE_ATTRIBUTE` XSD type.
     pub children: Vec<CObject>,
+    /// The `cardinality` attribute/element of the OPT `C_MULTIPLE_ATTRIBUTE` XSD type.
     pub cardinality: Cardinality,
 }
 
 /// openEHR AOM/OPT `C_OBJECT`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CObject {
+    /// The OPT `ARCHETYPE_INTERNAL_REF` subtype of `C_OBJECT`.
     ArchetypeInternalRef(ArchetypeInternalRef),
+    /// The OPT `ARCHETYPE_SLOT` subtype of `C_OBJECT`.
     ArchetypeSlot(ArchetypeSlot),
+    /// The OPT `CONSTRAINT_REF` subtype of `C_OBJECT`.
     ConstraintRef(ConstraintRef),
+    /// The OPT `C_ARCHETYPE_ROOT` subtype of `C_OBJECT`.
     CArchetypeRoot(CArchetypeRoot),
+    /// The OPT `C_CODE_PHRASE` subtype of `C_OBJECT`.
     CCodePhrase(CCodePhrase),
+    /// The OPT `C_CODE_REFERENCE` subtype of `C_OBJECT`.
     CCodeReference(CCodeReference),
+    /// The OPT `C_COMPLEX_OBJECT` subtype of `C_OBJECT`.
     CComplexObject(CComplexObject),
+    /// The OPT `C_DEFINED_OBJECT` subtype of `C_OBJECT`.
     CDefinedObject(CDefinedObject),
+    /// The OPT `C_DV_ORDINAL` subtype of `C_OBJECT`.
     CDvOrdinal(CDvOrdinal),
+    /// The OPT `C_DV_QUANTITY` subtype of `C_OBJECT`.
     CDvQuantity(CDvQuantity),
+    /// The OPT `C_DV_STATE` subtype of `C_OBJECT`.
     CDvState(CDvState),
+    /// The OPT `C_PRIMITIVE_OBJECT` subtype of `C_OBJECT`.
     CPrimitiveObject(CPrimitiveObject),
+    /// The OPT `T_COMPLEX_OBJECT` subtype of `C_OBJECT`.
     TComplexObject(TComplexObject),
 }
 
 /// openEHR AOM/OPT `C_PRIMITIVE`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CPrimitive {
+    /// The OPT `C_BOOLEAN` subtype of `C_PRIMITIVE`.
     CBoolean(CBoolean),
+    /// The OPT `C_DATE` subtype of `C_PRIMITIVE`.
     CDate(CDate),
+    /// The OPT `C_DATE_TIME` subtype of `C_PRIMITIVE`.
     CDateTime(CDateTime),
+    /// The OPT `C_DURATION` subtype of `C_PRIMITIVE`.
     CDuration(CDuration),
+    /// The OPT `C_INTEGER` subtype of `C_PRIMITIVE`.
     CInteger(CInteger),
+    /// The OPT `C_REAL` subtype of `C_PRIMITIVE`.
     CReal(CReal),
+    /// The OPT `C_STRING` subtype of `C_PRIMITIVE`.
     CString(CString),
+    /// The OPT `C_TIME` subtype of `C_PRIMITIVE`.
     CTime(CTime),
 }
 
 /// openEHR AOM/OPT `C_PRIMITIVE_OBJECT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CPrimitiveObject {
+    /// The `rm_type_name` attribute/element of the OPT `C_PRIMITIVE_OBJECT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `C_PRIMITIVE_OBJECT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `C_PRIMITIVE_OBJECT` XSD type.
     pub node_id: String,
+    /// The `item` attribute/element of the OPT `C_PRIMITIVE_OBJECT` XSD type.
     pub item: Option<Box<CPrimitive>>,
 }
 
 /// openEHR AOM/OPT `C_QUANTITY_ITEM`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CQuantityItem {
+    /// The `magnitude` attribute/element of the OPT `C_QUANTITY_ITEM` XSD type.
     pub magnitude: Option<Intervalofreal>,
+    /// The `precision` attribute/element of the OPT `C_QUANTITY_ITEM` XSD type.
     pub precision: Option<Intervalofinteger>,
+    /// The `units` attribute/element of the OPT `C_QUANTITY_ITEM` XSD type.
     pub units: String,
 }
 
 /// openEHR AOM/OPT `C_REAL`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CReal {
+    /// The `list` attribute/element of the OPT `C_REAL` XSD type.
     pub list: Vec<f64>,
+    /// The `range` attribute/element of the OPT `C_REAL` XSD type.
     pub range: Option<Intervalofreal>,
+    /// The `assumed_value` attribute/element of the OPT `C_REAL` XSD type.
     pub assumed_value: Option<f64>,
 }
 
 /// openEHR AOM/OPT `C_SINGLE_ATTRIBUTE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CSingleAttribute {
+    /// The `rm_attribute_name` attribute/element of the OPT `C_SINGLE_ATTRIBUTE` XSD type.
     pub rm_attribute_name: String,
+    /// The `existence` attribute/element of the OPT `C_SINGLE_ATTRIBUTE` XSD type.
     pub existence: Intervalofinteger,
+    /// The `children` attribute/element of the OPT `C_SINGLE_ATTRIBUTE` XSD type.
     pub children: Vec<CObject>,
 }
 
 /// openEHR AOM/OPT `C_STRING`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CString {
+    /// The `pattern` attribute/element of the OPT `C_STRING` XSD type.
     pub pattern: Option<String>,
+    /// The `list` attribute/element of the OPT `C_STRING` XSD type.
     pub list: Vec<String>,
+    /// The `list_open` attribute/element of the OPT `C_STRING` XSD type.
     pub list_open: Option<bool>,
+    /// The `assumed_value` attribute/element of the OPT `C_STRING` XSD type.
     pub assumed_value: Option<String>,
 }
 
 /// openEHR AOM/OPT `C_TIME`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CTime {
+    /// The `pattern` attribute/element of the OPT `C_TIME` XSD type.
     pub pattern: Option<String>,
+    /// The `timezone_validity` attribute/element of the OPT `C_TIME` XSD type.
     pub timezone_validity: Option<String>,
+    /// The `range` attribute/element of the OPT `C_TIME` XSD type.
     pub range: Option<Intervaloftime>,
+    /// The `assumed_value` attribute/element of the OPT `C_TIME` XSD type.
     pub assumed_value: Option<String>,
 }
 
 /// openEHR AOM/OPT `CodeDefinitionSet`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Codedefinitionset {
+    /// The `language` attribute/element of the OPT `CodeDefinitionSet` XSD type.
     pub language: String,
+    /// The `items` attribute/element of the OPT `CodeDefinitionSet` XSD type.
     pub items: Vec<ArchetypeTerm>,
 }
 
 /// openEHR AOM/OPT `ConstraintBindingSet`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Constraintbindingset {
+    /// The `terminology` attribute/element of the OPT `ConstraintBindingSet` XSD type.
     pub terminology: String,
+    /// The `items` attribute/element of the OPT `ConstraintBindingSet` XSD type.
     pub items: Vec<ConstraintBindingItem>,
 }
 
 /// openEHR AOM/OPT `EXPR_BINARY_OPERATOR`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprBinaryOperator {
+    /// The `type` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub r#type: String,
+    /// The `operator` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub operator: String,
+    /// The `precedence_overridden` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub precedence_overridden: bool,
+    /// The `left_operand` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub left_operand: Box<ExprItem>,
+    /// The `right_operand` attribute/element of the OPT `EXPR_BINARY_OPERATOR` XSD type.
     pub right_operand: Box<ExprItem>,
 }
 
 /// openEHR AOM/OPT `EXPR_ITEM`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprItem {
+    /// The OPT `EXPR_BINARY_OPERATOR` subtype of `EXPR_ITEM`.
     ExprBinaryOperator(ExprBinaryOperator),
+    /// The OPT `EXPR_LEAF` subtype of `EXPR_ITEM`.
     ExprLeaf(ExprLeaf),
+    /// The OPT `EXPR_UNARY_OPERATOR` subtype of `EXPR_ITEM`.
     ExprUnaryOperator(ExprUnaryOperator),
 }
 
 /// openEHR AOM/OPT `EXPR_LEAF`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprLeaf {
+    /// The `type` attribute/element of the OPT `EXPR_LEAF` XSD type.
     pub r#type: String,
+    /// The `item` attribute/element of the OPT `EXPR_LEAF` XSD type.
     pub item: serde_json::Value,
+    /// The `reference_type` attribute/element of the OPT `EXPR_LEAF` XSD type.
     pub reference_type: String,
 }
 
 /// openEHR AOM/OPT `EXPR_OPERATOR`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprOperator {
+    /// The OPT `EXPR_BINARY_OPERATOR` subtype of `EXPR_OPERATOR`.
     ExprBinaryOperator(ExprBinaryOperator),
+    /// The OPT `EXPR_UNARY_OPERATOR` subtype of `EXPR_OPERATOR`.
     ExprUnaryOperator(ExprUnaryOperator),
 }
 
 /// openEHR AOM/OPT `EXPR_UNARY_OPERATOR`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprUnaryOperator {
+    /// The `type` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub r#type: String,
+    /// The `operator` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub operator: String,
+    /// The `precedence_overridden` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub precedence_overridden: bool,
+    /// The `operand` attribute/element of the OPT `EXPR_UNARY_OPERATOR` XSD type.
     pub operand: Box<ExprItem>,
 }
 
 /// openEHR AOM/OPT `FLAT_ARCHETYPE_ONTOLOGY`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FlatArchetypeOntology {
+    /// The `archetype_id` attribute/element of the OPT `FLAT_ARCHETYPE_ONTOLOGY` XSD type.
     pub archetype_id: String,
+    /// The `term_definitions` attribute/element of the OPT `FLAT_ARCHETYPE_ONTOLOGY` XSD type.
     pub term_definitions: Vec<Codedefinitionset>,
+    /// The `constraint_definitions` attribute/element of the OPT `FLAT_ARCHETYPE_ONTOLOGY` XSD type.
     pub constraint_definitions: Vec<Codedefinitionset>,
+    /// The `term_bindings` attribute/element of the OPT `FLAT_ARCHETYPE_ONTOLOGY` XSD type.
     pub term_bindings: Vec<Termbindingset>,
+    /// The `constraint_bindings` attribute/element of the OPT `FLAT_ARCHETYPE_ONTOLOGY` XSD type.
     pub constraint_bindings: Vec<Constraintbindingset>,
 }
 
 /// openEHR AOM/OPT `IntervalOfDate`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofdate {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub lower: Option<String>,
+    /// The `upper` attribute/element of the OPT `IntervalOfDate` XSD type.
     pub upper: Option<String>,
 }
 
 /// openEHR AOM/OPT `IntervalOfDateTime`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofdatetime {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub lower: Option<String>,
+    /// The `upper` attribute/element of the OPT `IntervalOfDateTime` XSD type.
     pub upper: Option<String>,
 }
 
 /// openEHR AOM/OPT `IntervalOfDuration`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofduration {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub lower: Option<String>,
+    /// The `upper` attribute/element of the OPT `IntervalOfDuration` XSD type.
     pub upper: Option<String>,
 }
 
 /// openEHR AOM/OPT `IntervalOfInteger`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofinteger {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub lower: Option<i32>,
+    /// The `upper` attribute/element of the OPT `IntervalOfInteger` XSD type.
     pub upper: Option<i32>,
 }
 
 /// openEHR AOM/OPT `IntervalOfReal`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofreal {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub lower: Option<f64>,
+    /// The `upper` attribute/element of the OPT `IntervalOfReal` XSD type.
     pub upper: Option<f64>,
 }
 
 /// openEHR AOM/OPT `IntervalOfTime`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Intervaloftime {
+    /// The `lower_included` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub lower_included: Option<bool>,
+    /// The `upper_included` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub upper_included: Option<bool>,
+    /// The `lower_unbounded` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub lower_unbounded: bool,
+    /// The `upper_unbounded` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub upper_unbounded: bool,
+    /// The `lower` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub lower: Option<String>,
+    /// The `upper` attribute/element of the OPT `IntervalOfTime` XSD type.
     pub upper: Option<String>,
 }
 
 /// openEHR AOM/OPT `NON_TERMINAL_STATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NonTerminalState {
+    /// The `name` attribute/element of the OPT `NON_TERMINAL_STATE` XSD type.
     pub name: String,
+    /// The `transitions` attribute/element of the OPT `NON_TERMINAL_STATE` XSD type.
     pub transitions: Vec<Transition>,
 }
 
 /// openEHR AOM/OPT `OPERATIONAL_TEMPLATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OperationalTemplate {
+    /// The `language` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub language: openehr_base::prelude::CodePhrase,
+    /// The `is_controlled` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub is_controlled: Option<bool>,
+    /// The `description` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub description: Option<ResourceDescription>,
+    /// The `revision_history` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub revision_history: Option<openehr_rm::prelude::RevisionHistory>,
+    /// The `uid` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub uid: Option<openehr_base::prelude::HierObjectId>,
+    /// The `template_id` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub template_id: openehr_base::prelude::TemplateId,
+    /// The `concept` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub concept: String,
+    /// The `definition` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub definition: CArchetypeRoot,
+    /// The `ontology` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub ontology: Option<FlatArchetypeOntology>,
+    /// The `component_ontologies` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub component_ontologies: Vec<FlatArchetypeOntology>,
+    /// The `annotations` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub annotations: Vec<Annotation>,
+    /// The `constraints` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub constraints: Option<TConstraint>,
+    /// The `view` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub view: Option<serde_json::Value>,
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescription {
+    /// The `original_author` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub original_author: indexmap::IndexMap<String, String>,
+    /// The `other_contributors` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub other_contributors: Vec<String>,
+    /// The `lifecycle_state` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub lifecycle_state: String,
+    /// The `resource_package_uri` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub resource_package_uri: Option<String>,
+    /// The `other_details` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub other_details: Option<indexmap::IndexMap<String, String>>,
+    /// The `details` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub details: Vec<ResourceDescriptionItem>,
+    /// The `parent_resource` attribute/element of the OPT `RESOURCE_DESCRIPTION` XSD type.
     pub parent_resource: Option<Box<AuthoredResource>>,
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION_ITEM`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {
+    /// The `language` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub language: openehr_base::prelude::CodePhrase,
+    /// The `purpose` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub purpose: String,
+    /// The `keywords` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub keywords: Vec<String>,
+    /// The `use` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub use_: Option<String>,
+    /// The `misuse` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub misuse: Option<String>,
+    /// The `copyright` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub copyright: Option<String>,
+    /// The `original_resource_uri` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub original_resource_uri: Option<indexmap::IndexMap<String, String>>,
+    /// The `other_details` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub other_details: Option<indexmap::IndexMap<String, String>>,
 }
 
 /// openEHR AOM/OPT `STATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum State {
+    /// The OPT `NON_TERMINAL_STATE` subtype of `STATE`.
     NonTerminalState(NonTerminalState),
+    /// The OPT `TERMINAL_STATE` subtype of `STATE`.
     TerminalState(TerminalState),
 }
 
 /// openEHR AOM/OPT `STATE_MACHINE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct StateMachine {
+    /// The `states` attribute/element of the OPT `STATE_MACHINE` XSD type.
     pub states: Vec<State>,
 }
 
 /// openEHR AOM/OPT `TERMINAL_STATE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TerminalState {
+    /// The `name` attribute/element of the OPT `TERMINAL_STATE` XSD type.
     pub name: String,
 }
 
 /// openEHR AOM/OPT `TERM_BINDING_ITEM`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TermBindingItem {
+    /// The `code` attribute/element of the OPT `TERM_BINDING_ITEM` XSD type.
     pub code: String,
+    /// The `value` attribute/element of the OPT `TERM_BINDING_ITEM` XSD type.
     pub value: openehr_base::prelude::CodePhrase,
 }
 
 /// openEHR AOM/OPT `TRANSITION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transition {
+    /// The `event` attribute/element of the OPT `TRANSITION` XSD type.
     pub event: String,
+    /// The `action` attribute/element of the OPT `TRANSITION` XSD type.
     pub action: Option<String>,
+    /// The `guard` attribute/element of the OPT `TRANSITION` XSD type.
     pub guard: Option<String>,
+    /// The `next_state` attribute/element of the OPT `TRANSITION` XSD type.
     pub next_state: Option<Box<State>>,
 }
 
 /// openEHR AOM/OPT `TRANSLATION_DETAILS`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
+    /// The `language` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
     pub language: openehr_base::prelude::CodePhrase,
+    /// The `author` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
     pub author: indexmap::IndexMap<String, String>,
+    /// The `accreditation` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
     pub accreditation: Option<String>,
+    /// The `other_details` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
     pub other_details: Option<indexmap::IndexMap<String, String>>,
 }
 
 /// openEHR AOM/OPT `T_ATTRIBUTE`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TAttribute {
+    /// The `rm_attribute_name` attribute/element of the OPT `T_ATTRIBUTE` XSD type.
     pub rm_attribute_name: String,
+    /// The `children` attribute/element of the OPT `T_ATTRIBUTE` XSD type.
     pub children: Vec<TComplexObject>,
+    /// The `differential_path` attribute/element of the OPT `T_ATTRIBUTE` XSD type.
     pub differential_path: String,
 }
 
 /// openEHR AOM/OPT `T_COMPLEX_OBJECT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TComplexObject {
+    /// The `rm_type_name` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub rm_type_name: String,
+    /// The `occurrences` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub occurrences: Intervalofinteger,
+    /// The `node_id` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub node_id: String,
+    /// The `attributes` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub attributes: Vec<CAttribute>,
+    /// The `default_value` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub default_value: Option<openehr_rm::prelude::DataValue>,
 }
 
 /// openEHR AOM/OPT `T_CONSTRAINT`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TConstraint {
+    /// The `attributes` attribute/element of the OPT `T_CONSTRAINT` XSD type.
     pub attributes: Vec<TAttribute>,
 }
 
 /// openEHR AOM/OPT `TermBindingSet`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Termbindingset {
+    /// The `terminology` attribute/element of the OPT `TermBindingSet` XSD type.
     pub terminology: String,
+    /// The `items` attribute/element of the OPT `TermBindingSet` XSD type.
     pub items: Vec<TermBindingItem>,
 }

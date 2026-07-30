@@ -11,59 +11,101 @@
 )]
 use serde::{Deserialize, Serialize};
 
+/// The `AQL` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Aql = String;
 
+/// The `QueryParameters` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryParameters = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `ResultSetMetadata` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultSetMetadata {
+    /// The `_href` property of `ResultSetMetadata`.
     pub _href: Option<String>,
+    /// The `_type` property of `ResultSetMetadata`.
     pub _type: Option<String>,
+    /// The `_schema_version` property of `ResultSetMetadata`.
     pub _schema_version: Option<String>,
+    /// The `_created` property of `ResultSetMetadata`.
     pub _created: Option<String>,
+    /// The `_generator` property of `ResultSetMetadata`.
     pub _generator: Option<String>,
+    /// The `_executed_aql` property of `ResultSetMetadata`.
     pub _executed_aql: Option<String>,
 }
 
+/// The `QueryName` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryName = String;
 
+/// The `ResultSetColumn` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultSetColumn {
+    /// The `name` property of `ResultSetColumn`.
     pub name: String,
+    /// The `path` property of `ResultSetColumn`.
     pub path: Option<String>,
 }
 
+/// The `ResultSetRow` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ResultSetRow = Vec<serde_json::Value>;
 
+/// The `ResultSet` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultSet {
+    /// The `meta` property of `ResultSet`.
     pub meta: Option<ResultSetMetadata>,
+    /// The `name` property of `ResultSet`.
     pub name: Option<QueryName>,
+    /// The `q` property of `ResultSet`.
     pub q: Option<Aql>,
+    /// The `columns` property of `ResultSet`.
     pub columns: Option<Vec<serde_json::Value>>,
+    /// The `rows` property of `ResultSet`.
     pub rows: Vec<Vec<serde_json::Value>>,
 }
 
+/// The `Offset` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Offset = i64;
 
+/// The `Fetch` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Fetch = i64;
 
+/// The `AdhocQueryExecute` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdhocQueryExecute {
+    /// The `q` property of `AdhocQueryExecute`.
     pub q: Aql,
+    /// The `offset` property of `AdhocQueryExecute`.
     pub offset: Option<Offset>,
+    /// The `fetch` property of `AdhocQueryExecute`.
     pub fetch: Option<Fetch>,
+    /// The `query_parameters` property of `AdhocQueryExecute`.
     pub query_parameters: Option<QueryParameters>,
 }
 
+/// The `Query` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Query {
+    /// The `offset` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`offset` … default `0`"
     /// (A required member cannot default; the stored-query execute body must accept `{}` (a parameterless stored query).)
     pub offset: Option<Offset>,
+    /// The `fetch` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Common Headers and Query Parameters — "`fetch` … default depends on the implementation"
     /// (A required member cannot default; the stored-query execute body must accept `{}`.)
     pub fetch: Option<Fetch>,
+    /// The `query_parameters` property of `Query`.
     /// OPTIONAL by the docs text — ITS-REST docs/query/Request.md §Query parameters — parameters exist "Depending on each query definition"; a parameterless stored query binds none
     /// (A stored query with no $parameters must be executable with an empty body.)
     pub query_parameters: Option<QueryParameters>,

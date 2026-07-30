@@ -6,7 +6,7 @@
 //! Two things live here:
 //!
 //! 1. **The allocation-free fast-path RM class-invariant check**
-//!    ([`try_fast_validate`] → [`fast`]) over a live canonical-JSON node, plus
+//!    ([`try_fast_validate`] → the private `fast` path) over a live canonical-JSON node, plus
 //!    the **shared invariant helpers** used by the sibling `*_impl.rs`
 //!    behaviour files (the DV_AMOUNT / DV_QUANTIFIED accuracy + magnitude-status
 //!    rules, the LOCATABLE `Archetype_node_id_valid` rule, ISO-8601 value
@@ -25,7 +25,7 @@
 //! **archie** (`com.nedap.archie.rmobjectvalidator`). Archie runs each
 //! `@Invariant`-annotated boolean method and, on failure, emits one uniform
 //! message: `Invariant <Name> failed on type <RM_TYPE>`. We reproduce that
-//! message verbatim (see [`invariant_failed`]) so a violation is identifiable
+//! message verbatim (see `invariant_failed`) so a violation is identifiable
 //! by archie's own invariant name.
 //!
 //! What we deliberately do **not** implement here (`// NOTE:`):
@@ -66,7 +66,7 @@ pub(crate) mod generated;
 ///
 /// NOTE: no openEHR spec governs the fast path — it is our own performance
 /// design; the *semantics* it realizes are exactly the RM class invariants of
-/// the `*_impl.rs` siblings (see [`fast`]).
+/// the `*_impl.rs` siblings (see the private `fast` module).
 #[must_use]
 pub fn try_fast_validate(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) -> bool {
     fast::try_validate(ty, value, out)
