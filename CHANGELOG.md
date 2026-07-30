@@ -48,6 +48,11 @@ workflow refuses a tag that has no matching section here.
   quantifier `∃` applied to a path (equivalent to the `exists` keyword per
   the assertion-language symbol table) both parse in `invariant`/`rules`
   sections instead of being rejected.
+- **ADL 1.4 assertions now accept every path form the ADL paths grammar
+  defines**: movable path patterns (leading `//`) and single-segment
+  relative paths with a node predicate (`items[at0001]`) parse instead of
+  being rejected; absolute/relative multi-segment paths and the
+  position/meaning/at-code predicate forms were already accepted.
 
 - **A server-side failure of the password-verification task no longer
   masquerades as `401 Invalid credentials`**: if the blocking Argon2
