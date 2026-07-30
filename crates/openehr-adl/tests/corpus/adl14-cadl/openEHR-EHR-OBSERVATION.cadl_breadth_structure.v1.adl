@@ -1,0 +1,199 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.cadl_breadth_structure.v1
+
+concept
+	[at0000]	-- cADL 1.4 structural breadth
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[at0000] matches {	-- cADL 1.4 structural breadth
+		-- EXISTENCE is an ATTRIBUTE modifier (`c_attr_head : V_ATTRIBUTE_IDENTIFIER
+		-- c_existence …`, ADL1.4/master05-cadl.adoc §Syntax L1111-1114); both
+		-- spellings of `existence_spec` (L1137-1140) — the single value and the
+		-- two-value range — appear below, in all four legal combinations.
+		protocol existence matches {0..1} matches {
+			ITEM_TREE[at0001] matches {	-- Protocol
+				items cardinality matches {0..*} matches {
+					ELEMENT[at0002] occurrences matches {1} matches {	-- Device
+						value existence matches {1..1} matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Site
+						value existence matches {1} matches {
+							DV_TEXT matches {*}
+						}
+						null_flavour existence matches {0} matches {
+							DV_CODED_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0013] occurrences matches {0..1} matches {	-- Comment
+						value existence matches {0..0} matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		data matches {
+			HISTORY[at0004] matches {	-- History
+				events cardinality matches {1..*; unordered} matches {
+					-- OCCURRENCES is an OBJECT modifier, and `multiplicity`
+					-- (§Syntax L1163-1171) has four spellings — `{n}`, `{n..m}`,
+					-- `{n..*}` and the bare `{*}` of `cardinality_limit_value`.
+					EVENT[at0005] occurrences matches {1} matches {	-- Fixed-occurrence event
+						data matches {
+							ITEM_TREE[at0006] matches {	-- Event data
+								-- Cardinality with TWO modifiers, in both of the
+								-- orderings `cardinality_spec` admits (§Syntax
+								-- L1147-1156: `ordered;unique` … `unique;unordered`).
+								items cardinality matches {0..*; ordered; unique} matches {
+									ELEMENT[at0007] occurrences matches {0..*} matches {	-- Any number
+										value matches {*}
+									}
+								}
+							}
+						}
+					}
+					EVENT[at0008] occurrences matches {*} matches {	-- Bare-star occurrences
+						data matches {
+							ITEM_TREE[at0009] matches {	-- Second event data
+								items cardinality matches {0..*; unique; unordered} matches {
+									-- One attribute carrying several DIFFERENT object
+									-- kinds: `c_attr_values` is a list of `c_object`,
+									-- whose alternatives include the complex object, the
+									-- internal reference and the archetype slot alike
+									-- (§Syntax L1056-1063 + L1116-1120).
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- Mixed-structure element
+										value matches {
+											-- A generic (parameterised) type name —
+											-- §Information Model Identifiers L116: "A
+											-- generic type name (including nested forms)
+											-- additionally may include commas, angle
+											-- brackets and spaces".
+											DV_INTERVAL<DV_QUANTITY> matches {*}
+										}
+										null_flavour matches {
+											-- A BARE (anonymous) archetype slot: §Archetype
+											-- Slots writes the un-bracketed form in its own
+											-- normative examples, with both an `include` and
+											-- an `exclude` list (`c_includes`/`c_excludes`,
+											-- §Syntax L1122-1130). A specific `include`
+											-- pairs only with an empty or match-any
+											-- `exclude` (AOM2/master04.5 §`ARCHETYPE_SLOT`
+											-- VDSEV), so the exclusion here is the any-form.
+											allow_archetype CLUSTER occurrences matches {0..1} matches {
+												include
+													archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam\.v1/}
+												exclude
+													archetype_id/value matches {/.*/}
+											}
+										}
+									}
+									-- `use_node` WITH an identifying bracket and an
+									-- overriding occurrences — the §Internal References
+									-- L528 spelling.
+									use_node ELEMENT[at0012] occurrences matches {0..2} /data[at0004]/events[at0005]/data[at0006]/items[at0007]
+									-- An IDENTIFIED archetype slot (§cADL node types).
+									allow_archetype CLUSTER[at0011] occurrences matches {0..*} matches {	-- Identified slot
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.device\.v1/}
+									}
+								}
+							}
+						}
+					}
+					EVENT[at0014] occurrences matches {0..1} matches {	-- Inheriting event
+						data matches {
+							-- `use_node` WITHOUT occurrences: §Internal References L515
+							-- — "if no `occurrences` is mentioned, the value of the
+							-- `occurrences` is set to that of the referenced node".
+							use_node ITEM_TREE /data[at0004]/events[at0005]/data[at0006]
+						}
+					}
+				}
+			}
+		}
+		-- The `matches {*}` == "any" attribute body (`c_any : '*'`, §Syntax
+		-- L1098-1100, also used on `value` above).
+		state matches {*}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"cADL 1.4 structural breadth">
+					description = <"Accepting fixture: existence/occurrences/cardinality/use_node/slot forms of master05.">
+				>
+				["at0001"] = <
+					text = <"Protocol">
+					description = <"The protocol tree.">
+				>
+				["at0002"] = <
+					text = <"Device">
+					description = <"The measuring device.">
+				>
+				["at0003"] = <
+					text = <"Site">
+					description = <"The measurement site.">
+				>
+				["at0004"] = <
+					text = <"History">
+					description = <"The event history.">
+				>
+				["at0005"] = <
+					text = <"Fixed-occurrence event">
+					description = <"An event that must occur exactly once.">
+				>
+				["at0006"] = <
+					text = <"Event data">
+					description = <"The data tree of the first event.">
+				>
+				["at0007"] = <
+					text = <"Any number">
+					description = <"An element with unbounded occurrences.">
+				>
+				["at0008"] = <
+					text = <"Bare-star occurrences">
+					description = <"An event whose occurrences are the bare star form.">
+				>
+				["at0009"] = <
+					text = <"Second event data">
+					description = <"The data tree of the second event.">
+				>
+				["at0010"] = <
+					text = <"Mixed-structure element">
+					description = <"An element sharing its attribute with a proxy and a slot.">
+				>
+				["at0011"] = <
+					text = <"Identified slot">
+					description = <"An archetype slot carrying its own node id.">
+				>
+				["at0012"] = <
+					text = <"Re-used element">
+					description = <"An internal reference to the first event's element.">
+				>
+				["at0013"] = <
+					text = <"Comment">
+					description = <"An element whose value existence is constrained away.">
+				>
+				["at0014"] = <
+					text = <"Inheriting event">
+					description = <"An event whose internal reference inherits its occurrences.">
+				>
+			>
+		>
+	>

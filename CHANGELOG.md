@@ -69,7 +69,47 @@ workflow refuses a tag that has no matching section here.
   different.
 - **`use_node` type conformance is enforced (VUNT).** An internal reference
   whose declared type is neither the referenced node's type nor an ancestor of
-  it is now a validation error instead of passing silently.
+  it is now a validation error instead of passing silently. It is also reached
+  by an ADL 1.4 upload: VUNT is a rule of the ADL 1.4 specification itself
+  (master05 §Internal References), so the 1.4 validity check now runs the
+  reference-model pass for that rule instead of stopping before it.
+- **cADL keywords are recognised in any case.** `MATCHES`, `Occurrences`,
+  `CARDINALITY`, `Is_In`, `TRUE` and every other keyword are now lexed as
+  keywords, as both the ADL 1.4 specification's own lexical rules (master05
+  §Symbols) and the normative ANTLR grammars require; previously only the
+  lower-case spelling worked, so an upper-case archetype failed to parse.
+- **`infinity` is accepted as an interval bound in cADL constraints.**
+  `rate matches {|0..infinity|}` — the ADL 1.4 specification's own worked
+  example (master05 §Interval of Integer) — parsed in a dADL section but was
+  rejected in a cADL constraint. `-infinity` and `*` are accepted likewise,
+  and each yields a genuinely unbounded endpoint.
+- **The `^…^` regular-expression delimiter survives a re-print.** A constraint
+  written `{^km/h|mi/h^}` (master05 §Regular Expression) was normalised to
+  `{/km/h|mi/h/}`, which no longer re-parsed; the inner delimiters are now
+  escaped, so parse → print → parse is lossless.
+- **More date/time constraint-pattern forms are accepted:** patterns with
+  literal date/time numbers substituted for the placeholder fields
+  (`1995-??-XX`, master05 §Patterns), the ASCII timezone modifiers `+hh:mm` /
+  `+hhmm` / `-hh` (previously only the literal `±` character worked), and the
+  space-separated date/time pattern (`yyyy-mm-dd hh:mm:XX`), which the
+  specification's own assumed-value example uses.
+- **Character constraints are accepted** (`color_name matches {'r','g','b'}`,
+  master05 §Constraints on Character), as are the `, ...` list-continuation
+  marker on every primitive list and the exclusive-lower interval spelling the
+  ADL 1.4 chapters write (`|0>..<1000|`).
+- **An inline ADL 1.4 domain block containing a one-sided interval now
+  parses.** A `C_DV_QUANTITY <… magnitude = <|>0.0|> …>` block was cut short at
+  the interval's own `>`, so the archetype was rejected as invalid dADL.
+- **Defects inside an ADL 1.4 listed term constraint are now reported**: a
+  repeated code (STCDC) and an assumed-value code that is not a member of the
+  list (STCAC).
+- **A date/time interval must use a timezone on both endpoints or on neither**
+  (master05 §Intervals), so two endpoints that cannot be compared are rejected
+  instead of silently accepted.
+- **Operators the ADL 1.4 chapter names but no grammar defines are refused
+  with a message that says so** — the negated `~matches` / `~is_in` / `∉`
+  family and the `=~` / `!~` regex-match operators — instead of being read as
+  their affirmative counterparts, which would invert the constraint.
 
 ### Changed
 

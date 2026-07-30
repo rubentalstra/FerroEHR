@@ -1,0 +1,57 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SCOAT_not_in_symbol.v1
+
+concept
+	[at0000]	-- Not-in symbol in attribute position
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"SCOAT">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Not-in symbol in attribute position
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				-- `∉` is the symbolic spelling of the same absent production
+				-- (ADL1.4/master05-cadl.adoc L97: `aaa ∉ {5}`). The §Keywords
+				-- symbol-equivalence table (L57-64) pairs `matches` with `∈` and
+				-- `not`/`~` with `∼`; it never introduces `∉`, and no lexical rule
+				-- in §Symbols produces it.
+				value ∉ {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Not-in symbol in attribute position">
+					description = <"Refusal fixture: the not-in symbol has no cADL production.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"The recorded position.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0003"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>

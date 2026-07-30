@@ -1,0 +1,371 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.cadl_breadth_primitives.v1
+
+concept
+	[at0000]	-- cADL 1.4 primitive-constraint breadth
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[at0000] matches {	-- cADL 1.4 primitive-constraint breadth
+		data matches {
+			ITEM_TREE[at0001] matches {	-- Primitive constraints
+				items cardinality matches {0..*} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- Integer constraints
+						-- ADL1.4/master05-cadl.adoc §Constraints on Integer
+						-- L749-782: the list forms, every two-sided interval shape
+						-- and every one-sided interval shape.
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {1000}
+							}
+						}
+						-- `is_in` is the exact synonym of `matches` (§Keywords L47 +
+						-- §Symbols L1326-1327, both folding to `SYM_MATCHES`).
+						null_flavour is_in {
+							DV_CODED_TEXT matches {
+								defining_code matches {[local::at0020]}
+							}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Integer intervals
+						value matches {
+							DV_COUNT matches {
+								-- `{0, 5, 8}` list, point interval, closed interval,
+								-- half-open, the postfix and prefix exclusive-lower
+								-- spellings (master04-dadl §Intervals L611-614 vs
+								-- `odin_values.g4`), `+/-`, and `infinity` (L771).
+								magnitude matches {|950..1050|}
+							}
+							DV_ORDINAL matches {
+								value matches {0, 5, 8}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- More integer intervals
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|0..<1000|}
+							}
+						}
+					}
+					ELEMENT[at0005] occurrences matches {0..1} matches {	-- Exclusive-lower intervals
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|0>..<1000|}
+							}
+						}
+					}
+					ELEMENT[at0006] occurrences matches {0..1} matches {	-- Prefix exclusive-lower
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>0..<1000|}
+							}
+						}
+					}
+					ELEMENT[at0007] occurrences matches {0..1} matches {	-- Centre plus/minus
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|100+/-5|}
+							}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Unbounded upper
+						value matches {
+							DV_COUNT matches {
+								-- The chapter's own worked example, L771:
+								-- `rate matches {|0..infinity|}` — "allow 0 - infinity,
+								-- i.e. same as >= 0". `INFINITY` is case-insensitive
+								-- (§Symbols L1349).
+								magnitude matches {|0..INFINITY|}
+							}
+						}
+					}
+					ELEMENT[at0009] occurrences matches {0..1} matches {	-- One-sided integers
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|<10|}
+							}
+							DV_QUANTITY matches {
+								magnitude matches {|>=10.0|}
+							}
+						}
+					}
+					ELEMENT[at0010] occurrences matches {0..1} matches {	-- Integer with assumed value
+						value matches {
+							DV_COUNT matches {
+								-- §Assumed Values L1016: `length matches {|0..1000|; 200}`.
+								magnitude matches {|0..1000|; 200}
+							}
+						}
+					}
+					ELEMENT[at0011] occurrences matches {0..1} matches {	-- Real constraints
+						-- §Constraints on Real L786-800.
+						value matches {
+							DV_QUANTITY matches {
+								magnitude matches {5.5, 6.0, 6.5}
+							}
+						}
+					}
+					ELEMENT[at0012] occurrences matches {0..1} matches {	-- Real intervals
+						value matches {
+							DV_QUANTITY matches {
+								magnitude matches {|0.0..<1000.0|}
+							}
+						}
+					}
+					ELEMENT[at0013] occurrences matches {0..1} matches {	-- Real plus/minus and assumed
+						value matches {
+							DV_QUANTITY matches {
+								magnitude matches {|80.0+/-12.0|; 80.0}
+							}
+						}
+					}
+					ELEMENT[at0014] occurrences matches {0..1} matches {	-- Real unbounded lower
+						value matches {
+							DV_QUANTITY matches {
+								-- `-infinity` and `*` are the other two unbounded
+								-- endpoint spellings (master04-dadl §Intervals of
+								-- Ordered Primitive Types L625-630).
+								magnitude matches {|-infinity..0.0|}
+							}
+						}
+					}
+					ELEMENT[at0015] occurrences matches {0..1} matches {	-- String list
+						-- §Constraints on String L672-683.
+						value matches {
+							DV_TEXT matches {
+								value matches {"platypus", "kangaroo", "wombat"}
+							}
+						}
+					}
+					ELEMENT[at0016] occurrences matches {0..1} matches {	-- String open list
+						value matches {
+							DV_TEXT matches {
+								-- The list-continuation marker of §Syntax L1244-1249
+								-- (`string_list_value ',' SYM_LIST_CONTINUE`); its only
+								-- normative gloss is the single-datum list indicator
+								-- (master04-dadl §Data of any primitive type L686).
+								value matches {"en", ...}
+							}
+						}
+					}
+					ELEMENT[at0017] occurrences matches {0..1} matches {	-- String with assumed value
+						value matches {
+							DV_TEXT matches {
+								value matches {"lying", "sitting"; "lying"}
+							}
+						}
+					}
+					ELEMENT[at0018] occurrences matches {0..1} matches {	-- Slash-delimited regex
+						-- §Regular Expression L687-702, the `//` delimiter, used as a
+						-- plain string constraint.
+						value matches {
+							DV_TEXT matches {
+								value matches {/[a-z][a-z0-9]*/}
+							}
+						}
+					}
+					ELEMENT[at0019] occurrences matches {0..1} matches {	-- Caret-delimited regex
+						value matches {
+							DV_TEXT matches {
+								-- The chapter's own equivalence pair, L700-701:
+								-- `units ∈ {/km\/h|mi\/h/}` and `units ∈ {^km/h|mi/h^}`
+								-- "are equivalent".
+								value matches {^km/h|mi/h^}
+							}
+						}
+					}
+					ELEMENT[at0021] occurrences matches {0..1} matches {	-- Booleans
+						-- §Constraints on Boolean L804-810: `{True}`, `{False}`,
+						-- `{True, False}`; §Assumed Values L1017 adds the assumed form.
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[at0022] occurrences matches {0..1} matches {	-- Boolean pair with assumed
+						value matches {
+							DV_BOOLEAN matches {
+								value matches {True, False; True}
+							}
+						}
+					}
+					ELEMENT[at0023] occurrences matches {0..1} matches {	-- Character list
+						-- §Constraints on Character L813-825:
+						-- `color_name matches {'r', 'g', 'b'}`.
+						value matches {
+							DV_TEXT matches {
+								value matches {'r', 'g', 'b'}
+							}
+						}
+					}
+					ELEMENT[at0024] occurrences matches {0..1} matches {	-- Single character with assumed
+						value matches {
+							DV_TEXT matches {
+								value matches {'r', 'g'; 'r'}
+							}
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- Character class regex
+						-- §Constraints on Character L827-835: a single-character
+						-- regular-expression character class.
+						value matches {
+							DV_TEXT matches {
+								value matches {/[rgbcmyk]/}
+							}
+						}
+					}
+					ELEMENT[at0026] ∈ {	-- Term code list
+						-- `∈` is the symbolic rendering of `matches` (§Keywords, the
+						-- symbol-equivalence table L57-64).
+						value ∈ {
+							DV_CODED_TEXT ∈ {
+								defining_code ∈ {
+									[local::
+									at0027,
+									at0028;
+									at0027]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"cADL 1.4 primitive-constraint breadth">
+					description = <"Accepting fixture: every primitive constraint form of master05.">
+				>
+				["at0001"] = <
+					text = <"Primitive constraints">
+					description = <"The tree holding the primitive constraints.">
+				>
+				["at0002"] = <
+					text = <"Integer constraints">
+					description = <"A fixed integer value.">
+				>
+				["at0003"] = <
+					text = <"Integer intervals">
+					description = <"A two-sided integer interval and an integer list.">
+				>
+				["at0004"] = <
+					text = <"More integer intervals">
+					description = <"A half-open integer interval.">
+				>
+				["at0005"] = <
+					text = <"Exclusive-lower intervals">
+					description = <"The postfix exclusive-lower interval spelling.">
+				>
+				["at0006"] = <
+					text = <"Prefix exclusive-lower">
+					description = <"The prefix exclusive-lower interval spelling.">
+				>
+				["at0007"] = <
+					text = <"Centre plus/minus">
+					description = <"A centre plus-or-minus interval.">
+				>
+				["at0008"] = <
+					text = <"Unbounded upper">
+					description = <"An interval whose upper endpoint is infinity.">
+				>
+				["at0009"] = <
+					text = <"One-sided integers">
+					description = <"One-sided integer and real intervals.">
+				>
+				["at0010"] = <
+					text = <"Integer with assumed value">
+					description = <"An integer interval carrying an assumed value.">
+				>
+				["at0011"] = <
+					text = <"Real constraints">
+					description = <"A list of real values.">
+				>
+				["at0012"] = <
+					text = <"Real intervals">
+					description = <"A half-open real interval.">
+				>
+				["at0013"] = <
+					text = <"Real plus/minus and assumed">
+					description = <"A real plus-or-minus interval with an assumed value.">
+				>
+				["at0014"] = <
+					text = <"Real unbounded lower">
+					description = <"An interval whose lower endpoint is minus infinity.">
+				>
+				["at0015"] = <
+					text = <"String list">
+					description = <"A list of fixed strings.">
+				>
+				["at0016"] = <
+					text = <"String open list">
+					description = <"A string list written with the continuation marker.">
+				>
+				["at0017"] = <
+					text = <"String with assumed value">
+					description = <"A string list carrying an assumed value.">
+				>
+				["at0018"] = <
+					text = <"Slash-delimited regex">
+					description = <"A regular expression in the slash delimiters.">
+				>
+				["at0019"] = <
+					text = <"Caret-delimited regex">
+					description = <"A regular expression in the caret delimiters.">
+				>
+				["at0020"] = <
+					text = <"Null flavour">
+					description = <"The null-flavour code.">
+				>
+				["at0021"] = <
+					text = <"Booleans">
+					description = <"A single boolean value.">
+				>
+				["at0022"] = <
+					text = <"Boolean pair with assumed">
+					description = <"Both boolean values with an assumed value.">
+				>
+				["at0023"] = <
+					text = <"Character list">
+					description = <"A list of single-character values.">
+				>
+				["at0024"] = <
+					text = <"Single character with assumed">
+					description = <"A character list carrying an assumed value.">
+				>
+				["at0025"] = <
+					text = <"Character class regex">
+					description = <"A single-character regular-expression class.">
+				>
+				["at0026"] = <
+					text = <"Term code list">
+					description = <"A listed terminology constraint with an assumed code.">
+				>
+				["at0027"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0028"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>

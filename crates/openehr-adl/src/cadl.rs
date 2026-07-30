@@ -283,6 +283,54 @@ impl Parser<'_> {
         )
     }
 
+    /// True if the cursor is at a NEGATED matches operator (`~matches`,
+    /// `~is_in`, `∉`) — lexically `SymNot SymMatches` or the single `∉`.
+    fn at_negated_matches(&self) -> bool {
+        matches!(self.peek(), Some(Token::SymNotMatches))
+            || (matches!(self.peek(), Some(Token::SymNot))
+                && matches!(self.peek_at(1), Some(Token::SymMatches)))
+    }
+
+    /// True if the cursor is at a regex-match operator (`=~` or `!~`).
+    ///
+    /// Neither is a token in any normative lexical specification, so both
+    /// arrive here as a token PAIR: `=~` as `SymEq SymNot` and `!~` as
+    /// `SymNot SymNot` (`!` and `~` both fold into `SYM_NOT` —
+    /// `adl_keywords.g4` `SYM_NOT : [Nn][Oo][Tt] | '!' | '∼' | '~' | '¬'`).
+    fn at_regex_match_operator(&self) -> bool {
+        matches!(self.peek(), Some(Token::SymEq | Token::SymNot))
+            && matches!(self.peek_at(1), Some(Token::SymNot))
+    }
+
+    /// Refuse a negated matches operator with a message that says where the
+    /// negation IS admitted.
+    ///
+    /// `ADL1.4/master05-cadl.adoc` §Keywords lists `~matches`/`~is_in` (L47)
+    /// and glosses them at L91-98 ("Occasionally, the matches operator needs to
+    /// be used in the negative, usually at a leaf block"), but NO production of
+    /// any normative grammar admits them:
+    /// * the chapter's own §Syntax has one `SYM_MATCHES` in `c_attribute`,
+    ///   `c_complex_object` and `archetype_slot` (L1069-1120) and its §Symbols
+    ///   lexer (L1300-1354) has no `~` symbol and no `∉` token at all;
+    /// * the vendored ANTLR set is identical — `cadl14.g4` uses `SYM_MATCHES`
+    ///   only, and `adl_keywords.g4` `SYM_MATCHES` folds `matches`/`is_in`/`∈`
+    ///   with no negated counterpart.
+    ///
+    /// The only negation the grammars DO admit is prefix `not`/`~`/`!`/`¬` on a
+    /// whole boolean expression (`base_expressions.g4` `boolean_expr : SYM_NOT
+    /// boolean_expr`), i.e. inside a slot `include`/`exclude` assertion or the
+    /// rules section, which this crate parses through `openehr_lang::bel`. So
+    /// the negated operator is refused HERE, in cADL constraint position, and
+    /// accepted there — never silently read as an affirmative `matches`, which
+    /// would invert the constraint.
+    fn negated_matches_reject<T>(&mut self, code: SyntaxErrorCode) -> PResult<T> {
+        self.err(
+            code,
+            "a negated matches operator ('~matches' / '~is_in' / '∉') is not a cADL production; \
+             negation is available as the prefix 'not' operator of a slot include/exclude assertion",
+        )
+    }
+
     /// Consume a token matching `pred` or record `code`/`msg` and bail.
     fn expect(
         &mut self,
@@ -480,6 +528,9 @@ impl Parser<'_> {
             None
         };
 
+        if self.at_negated_matches() {
+            return self.negated_matches_reject(SyntaxErrorCode::Sccog);
+        }
         let mut obj = if matches!(self.peek(), Some(Token::SymMatches)) {
             self.pos += 1; // SYM_MATCHES
             self.expect(
@@ -651,6 +702,9 @@ impl Parser<'_> {
         };
         let is_multiple = cardinality.is_some();
 
+        if self.at_negated_matches() {
+            return self.negated_matches_reject(SyntaxErrorCode::Scoat);
+        }
         let children = if self.eat(|t| matches!(t, Token::SymMatches)) {
             if let Some(Token::ContainedRegexp(raw)) = self.peek().cloned() {
                 // `attr matches {/re/}` — a C_STRING regex shortcut (`cadl2.g4`).
@@ -1066,7 +1120,32 @@ impl Parser<'_> {
 
     /// `c_regular_object : c_complex_object | c_archetype_root |
     /// c_complex_object_proxy | archetype_slot | c_regular_primitive_object`.
+    /// One object inside an attribute body.
+    ///
+    /// NOTE: the `=~` / `!~` regex-match operators the chapter's prose shows
+    /// (`ADL1.4/master05-cadl.adoc` §Regular Expression L691-693:
+    /// `string_attr matches {=~ /regular expression}` …
+    /// `{!~ /regular expression}`) are refused here, because no normative
+    /// grammar defines them and the prose that does is itself malformed — both
+    /// example regexes are UNTERMINATED (opening `/` with no closing `/`),
+    /// while the sentence that follows says the first two forms are "identical",
+    /// i.e. `=~` adds nothing. The chapter's own §Syntax gives
+    /// `c_string_spec : V_STRING | string_list_value | string_list_value ','
+    /// SYM_LIST_CONTINUE | V_REGEXP` (L1244-1249) with `V_REGEXP` the bare
+    /// delimited form (L1471-1476), its §Symbols lexer has no `=~`/`!~` token,
+    /// and `cadl14_primitives.g4` `c_string` is `( string_value |
+    /// string_list_value | regex_constraint )` with `regex_constraint :
+    /// SLASH_REGEX | CARET_REGEX`. Guessing a negated-regex semantics from
+    /// defective prose would be a silent wrong answer, so the operator is a
+    /// typed refusal naming the defect.
     fn parse_c_regular_object(&mut self) -> PResult<CObject> {
+        if self.at_regex_match_operator() {
+            return self.err(
+                SyntaxErrorCode::Sccog,
+                "the '=~' / '!~' regex-match operators are not a cADL production; \
+                 write the regex constraint directly, as '{/re/}' or '{^re^}'",
+            );
+        }
         if self.dialect == Dialect::Adl14 {
             // 1.4-only object forms (converter front end; no openEHR spec —
             // see `crate::adl14`): a bare qualified/listed terminology
@@ -1146,6 +1225,11 @@ impl Parser<'_> {
     /// form is preserved verbatim in `C_TERMINOLOGY_CODE.constraint` for
     /// `crate::adl14::convert` to rewrite. No openEHR spec governs this — our
     /// own design (1.4→2 converter front end).
+    ///
+    /// The list form additionally carries the two catalogue rules on the code
+    /// list itself — STCDC (duplicates) and STCAC (an assumed code outside the
+    /// list), both raised at position below.
+    #[allow(clippy::too_many_lines)] // one linear parse: bracket, codes, assumed, the two list rules
     fn parse_adl14_term_object(&mut self) -> PResult<CObject> {
         let constraint = if let Some(Token::TermCodeRef(raw)) = self.peek().cloned() {
             self.pos += 1;
@@ -1153,6 +1237,7 @@ impl Parser<'_> {
             raw.trim_start_matches('[').trim_end_matches(']').to_owned()
         } else {
             // `[` terminology `::` code ( `,` code )* ( `;` assumed )? `]`.
+            let start = self.cur_span().start;
             self.expect(
                 |t| matches!(t, Token::LBracket),
                 SyntaxErrorCode::Stccp,
@@ -1204,11 +1289,53 @@ impl Parser<'_> {
                 }
                 break;
             }
+            let list_span = start..self.cur_span().end;
             self.expect(
                 |t| matches!(t, Token::RBracket),
                 SyntaxErrorCode::Stccp,
                 "expecting ']' closing a terminology code",
             )?;
+            // STCDC: "duplicate code(s) found in code list"
+            // (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
+            // Rules). A repeated member adds no value to the constrained set
+            // and is a defect in the source, not a silently-collapsed set.
+            let mut seen: Vec<&str> = Vec::with_capacity(codes.len());
+            let duplicates: Vec<&str> = codes
+                .iter()
+                .filter(|c| {
+                    let dup = seen.contains(&c.as_str());
+                    seen.push(c.as_str());
+                    dup
+                })
+                .map(String::as_str)
+                .collect();
+            if !duplicates.is_empty() {
+                self.push(
+                    SyntaxErrorCode::Stcdc,
+                    format!(
+                        "duplicate code(s) found in code list: {}",
+                        duplicates.join(", ")
+                    ),
+                    list_span.clone(),
+                );
+                return Err(());
+            }
+            // STCAC: "assumed value code $1 not found in code list" (same
+            // catalogue). `ADL1.4/master05-cadl.adoc` §Assumed Values L1012
+            // requires the assumed value to be "a value of the same type as
+            // that implied by the preceding part of the constraint" — for a
+            // listed term constraint the implied type is the listed set, so an
+            // assumed code outside it can never be assumed.
+            if let Some(a) = assumed.as_deref()
+                && !codes.iter().any(|c| c == a)
+            {
+                self.push(
+                    SyntaxErrorCode::Stcac,
+                    format!("assumed value code {a} not found in code list"),
+                    list_span,
+                );
+                return Err(());
+            }
             let mut s = format!("{terminology}::{}", codes.join(","));
             if let Some(a) = assumed {
                 s.push(';');
@@ -1275,6 +1402,17 @@ impl Parser<'_> {
             )?;
         }
         // The ODIN block spans from the opening '<' to its matching '>'.
+        //
+        // The `<`/`>` nesting depth is counted OUTSIDE `|…|` intervals only: a
+        // one-sided interval endpoint carries its own `<`/`>` relational
+        // operator (`magnitude = <|>0.0|>`), which would otherwise close the
+        // block early and hand `openehr_lang::odin` a truncated text. The 1.4
+        // chapter flags exactly this hazard in its own scanner specification —
+        // `ADL1.4/master05-cadl.adoc` §Symbols L1448-1453,
+        // `V_C_DOMAIN_TYPE`: "this is an attempt to match a dADL section inside
+        // cADL. It will probably never work 100% properly since there can be
+        // '>' inside '||' ranges" — so the interval delimiter is tracked
+        // instead of scanning raw characters.
         let open = self.pos;
         if !matches!(self.peek(), Some(Token::SymLt)) {
             return self.err(
@@ -1283,11 +1421,13 @@ impl Parser<'_> {
             );
         }
         let mut depth = 0usize;
+        let mut in_interval = false;
         let mut close = None;
         while let Some(tok) = self.peek() {
             match tok {
-                Token::SymLt => depth += 1,
-                Token::SymGt => {
+                Token::SymIvlDelim => in_interval = !in_interval,
+                Token::SymLt if !in_interval => depth += 1,
+                Token::SymGt if !in_interval => {
                     depth -= 1;
                     if depth == 0 {
                         close = Some(self.pos);
@@ -1516,6 +1656,9 @@ impl Parser<'_> {
             if matches!(self.peek(), Some(Token::SymOccurrences)) {
                 occurrences = Some(self.parse_occurrences()?);
             }
+            if self.at_negated_matches() {
+                return self.negated_matches_reject(SyntaxErrorCode::Sccog);
+            }
             if self.eat(|t| matches!(t, Token::SymMatches)) {
                 self.expect(
                     |t| matches!(t, Token::LCurly),
@@ -1631,6 +1774,7 @@ impl Parser<'_> {
                 Token::SymTrue
                 | Token::SymFalse
                 | Token::String(_)
+                | Token::Character(_)
                 | Token::Integer(_)
                 | Token::Real(_)
                 | Token::Iso8601Date(_)
@@ -1657,6 +1801,7 @@ impl Parser<'_> {
         match self.peek().cloned() {
             Some(Token::SymTrue | Token::SymFalse) => self.parse_c_boolean(node_id),
             Some(Token::String(_)) => self.parse_c_string(node_id),
+            Some(Token::Character(_)) => self.parse_c_character(node_id),
             Some(Token::LBracket) => self.parse_c_terminology_code(node_id, None),
             Some(Token::AlphaLcId(s)) if is_strength_keyword(&s) => {
                 // ADL2-only: constraint strengths (`required`/`extensible`/
@@ -1711,7 +1856,8 @@ impl Parser<'_> {
     }
 
     /// Peek inside a `|…|` interval to classify its value kind by the first
-    /// endpoint token (skipping relational operators and signs).
+    /// endpoint token (skipping relational operators, signs, and the unbounded
+    /// endpoint markers — `|-infinity..5.0|` is typed by its UPPER endpoint).
     fn classify_bar_kind(&mut self) -> PResult<PrimKind> {
         let mut i = self.pos + 1;
         while matches!(
@@ -1723,6 +1869,9 @@ impl Parser<'_> {
                     | Token::SymLe
                     | Token::SymPlus
                     | Token::SymMinus
+                    | Token::SymInfinity
+                    | Token::SymStar
+                    | Token::SymIvlSep
             )
         ) {
             i += 1;
@@ -1752,7 +1901,7 @@ impl Parser<'_> {
                 }
                 _ => return self.err(SyntaxErrorCode::Scbav, "expecting 'True' or 'False'"),
             }
-            if !self.eat(|t| matches!(t, Token::SymComma)) {
+            if !self.eat(|t| matches!(t, Token::SymComma)) || self.eat_list_continue() {
                 break;
             }
         }
@@ -1792,6 +1941,67 @@ impl Parser<'_> {
         }))
     }
 
+    /// `c_character` — a `Character` constraint written as a list of
+    /// single-quoted characters (`ADL1.4/master05-cadl.adoc` §Constraints on
+    /// Character L813-825, identically `ADL2/master04.5` §Constraints on
+    /// Character L160-172: "`color_name matches {'r', 'g', 'b'}`"). The
+    /// single-character regex form (L827-841) needs no separate production —
+    /// it is a `CONTAINED_REGEXP` and lands on the same carrier.
+    ///
+    /// NOTE: there is no `C_CHARACTER` class to build. Neither vendored AOM
+    /// generation defines one — the AM 1.4.0 BMM's constraint model has
+    /// `C_BOOLEAN`/`C_STRING`/`C_INTEGER`/`C_REAL`/`C_DATE`/`C_TIME`/
+    /// `C_DATE_TIME`/`C_DURATION`/`C_ORDINAL`/`C_CODED_TEXT`/`C_QUANTITY` and
+    /// the AM 2.4.0 BMM's has the AOM2 successors of the same set, neither with
+    /// a character constrainer, and `cadl14_primitives.g4` `c_primitive_object`
+    /// likewise has no `c_character` alternative. The carrier is therefore
+    /// `C_STRING` — whose value space, a set of literal strings, contains the
+    /// single-character strings exactly — with the constrained RM type name
+    /// (`Character`) kept on the object so nothing downstream has to guess.
+    /// No openEHR spec governs this mapping — our own design/extension.
+    fn parse_c_character(&mut self, node_id: String) -> PResult<CObject> {
+        let mut constraint = Vec::new();
+        loop {
+            match self.peek().cloned() {
+                Some(Token::Character(c)) => {
+                    self.pos += 1;
+                    constraint.push(decode_character(&c));
+                }
+                _ => return self.err(SyntaxErrorCode::Scsav, "expecting a character value"),
+            }
+            if !self.eat(|t| matches!(t, Token::SymComma)) || self.eat_list_continue() {
+                break;
+            }
+        }
+        let assumed_value = if self.eat(|t| matches!(t, Token::SymSemiColon)) {
+            match self.peek().cloned() {
+                Some(Token::Character(c)) => {
+                    self.pos += 1;
+                    Some(decode_character(&c))
+                }
+                _ => {
+                    return self.err(SyntaxErrorCode::Scsav, "assumed value must be a character");
+                }
+            }
+        } else {
+            None
+        };
+        Ok(CObject::CString(CString {
+            parent: None,
+            soc_parent: None,
+            rm_type_name: "Character".to_owned(),
+            occurrences: None,
+            node_id,
+            alternative_ids: Vec::new(),
+            is_deprecated: None,
+            sibling_order: None,
+            default_value: None,
+            assumed_value,
+            is_enumerated_type_constraint: None,
+            constraint,
+        }))
+    }
+
     fn parse_c_string(&mut self, node_id: String) -> PResult<CObject> {
         let mut constraint = Vec::new();
         loop {
@@ -1802,7 +2012,7 @@ impl Parser<'_> {
                 }
                 _ => return self.err(SyntaxErrorCode::Scsav, "expecting a string value"),
             }
-            if !self.eat(|t| matches!(t, Token::SymComma)) {
+            if !self.eat(|t| matches!(t, Token::SymComma)) || self.eat_list_continue() {
                 break;
             }
         }
@@ -2146,6 +2356,32 @@ impl Parser<'_> {
         }))
     }
 
+    /// Consume a trailing list-continuation marker (`, ...`) — the comma is
+    /// already eaten by the caller, so this only tests for the `...`.
+    ///
+    /// Every ODIN list production ends with the alternative
+    /// `',' SYM_LIST_CONTINUE` (`odin_values.g4` `string_list_value` and its
+    /// siblings), and the cADL 1.4 grammar spells it out for strings as
+    /// `c_string_spec : … | string_list_value ',' SYM_LIST_CONTINUE`
+    /// (`ADL1.4/master05-cadl.adoc` §Syntax L1244-1249).
+    ///
+    /// NOTE: the marker adds no member and no openness flag. Its only normative
+    /// gloss in the vendored specs is a LIST INDICATOR — `ADL1.4/master04-dadl`
+    /// §Data of any primitive type L686 and `LANG/docs/odin/master07-leaf_data`
+    /// §Lists L208, both: "Lists which happen to have only one datum are
+    /// indicated by using a comma followed by a list continuation marker of
+    /// three dots". AOM 1.4's `C_STRING.list_open` ("the list … is not
+    /// considered exhaustive") is the only model property the marker could
+    /// otherwise set, but no vendored ADL 1.4 text binds the syntax to it, and
+    /// the AOM2 `C_STRING` this parser builds has no such property at all
+    /// (AM 2.4.0 BMM: `constraint` / `default_value` / `assumed_value` only).
+    /// Inferring openness from the marker would silently turn a stated
+    /// constraint into "any value"; the list-indicator reading is the one the
+    /// spec states, so the constraint is exactly the listed values.
+    fn eat_list_continue(&mut self) -> bool {
+        self.eat(|t| matches!(t, Token::SymListContinue))
+    }
+
     /// Parse a comma-separated list of `Interval<V>` items (a value list, an
     /// interval, or a list of intervals — the AOM2 constraint is a flat
     /// `Vec<Interval<V>>` regardless).
@@ -2153,7 +2389,7 @@ impl Parser<'_> {
         let mut out = Vec::new();
         loop {
             out.push(self.parse_value_item::<V>()?);
-            if !self.eat(|t| matches!(t, Token::SymComma)) {
+            if !self.eat(|t| matches!(t, Token::SymComma)) || self.eat_list_continue() {
                 break;
             }
         }
@@ -2172,42 +2408,79 @@ impl Parser<'_> {
     }
 
     /// A `|…|` interval (`odin_values.g4` interval forms): two-sided
-    /// (`|a..b|`, `|>a..<b|`), single-relop (`|>a|`,`|<=a|`), point (`|a|`),
-    /// or centre±delta (`|a+/-b|`).
+    /// (`|a..b|`, `|>a..<b|`, `|a>..<b|`), single-relop (`|>a|`,`|<=a|`), point
+    /// (`|a|`), or centre±delta (`|a+/-b|`). Either endpoint may be an unbounded
+    /// marker (see [`Parser::parse_endpoint`]).
+    ///
+    /// The exclusive LOWER bound of a two-sided interval has two spellings and
+    /// both are accepted: the prefix `>` of the normative grammar
+    /// (`odin_values.g4` `integer_interval_value : '|' SYM_GT? integer_value
+    /// '..' SYM_LT? integer_value '|'`) and the postfix `>` the ADL 1.4 chapters
+    /// write — `ADL1.4/master04-dadl.adoc` §Intervals of Ordered Primitive Types
+    /// L611-614 (`|N>..M|` "the two-sided range N > x <= M", `|N>..<M|`) and the
+    /// cADL chapter's own worked example `length matches {|0>..<1000|}`
+    /// (`ADL1.4/master05-cadl.adoc` §Interval of Integer L769). Accepting both is
+    /// a superset that rejects nothing either source admits.
     fn parse_bar_interval<V: CadlValue>(&mut self) -> PResult<Interval<V>> {
+        self.check_interval_timezone_symmetry()?;
         self.pos += 1; // opening '|'
         let lower_rel = self.eat_relop();
-        let first = V::parse_one(self)?;
+        let first = self.parse_endpoint::<V>()?;
+        // Only a `>` that immediately precedes the `..` is the postfix
+        // exclusive-lower marker; anywhere else it is not part of the form.
+        let lower_excl_postfix = matches!(self.peek(), Some(Token::SymGt))
+            && matches!(self.peek_at(1), Some(Token::SymIvlSep));
+        if lower_excl_postfix {
+            self.pos += 1;
+        }
         let ivl = if self.eat(|t| matches!(t, Token::SymIvlSep)) {
-            // Two-sided: [rel] first '..' ['<'] upper.
+            // Two-sided: [rel] first ['>'] '..' ['<'] upper.
             let upper_excl = self.eat(|t| matches!(t, Token::SymLt));
-            let upper = V::parse_one(self)?;
-            let lower_included = !matches!(lower_rel, Some(Relop::Gt));
+            let upper = self.parse_endpoint::<V>()?;
+            let lower_included =
+                first.is_some() && !lower_excl_postfix && !matches!(lower_rel, Some(Relop::Gt));
+            let lower_unbounded = first.is_none();
+            let upper_unbounded = upper.is_none();
             proper_interval(
-                Some(first),
-                Some(upper),
+                first,
+                upper,
                 lower_included,
-                !upper_excl,
-                false,
-                false,
+                !upper_excl && !upper_unbounded,
+                lower_unbounded,
+                upper_unbounded,
             )
         } else if self.eat(|t| matches!(t, Token::SymPlusOrMinus)) {
-            let delta = V::parse_one(self)?;
-            match V::plus_minus(&first, &delta) {
-                Some((lo, hi)) => proper_interval(Some(lo), Some(hi), true, true, false, false),
-                // NOTE: `±` on a non-numeric type is not reducible without RM
-                // type context; represented as a point at the centre for now
-                // (rare — not exercised by the primitive corpus).
-                None => point_interval(first),
+            let delta = self.parse_endpoint::<V>()?;
+            match (&first, &delta) {
+                (Some(centre), Some(delta)) => match V::plus_minus(centre, delta) {
+                    Some((lo, hi)) => proper_interval(Some(lo), Some(hi), true, true, false, false),
+                    // NOTE: `±` on a non-numeric type is not reducible without
+                    // RM type context; represented as a point at the centre for
+                    // now (rare — not exercised by the primitive corpus).
+                    None => point_interval(centre.clone()),
+                },
+                // An unbounded centre or half-width constrains nothing.
+                _ => proper_interval(None, None, false, false, true, true),
             }
         } else {
             // Point `|a|` or single-relop `|>a|`,`|<=a|`.
-            match lower_rel {
-                None => point_interval(first),
-                Some(Relop::Gt) => proper_interval(Some(first), None, false, false, false, true),
-                Some(Relop::Ge) => proper_interval(Some(first), None, true, false, false, true),
-                Some(Relop::Lt) => proper_interval(None, Some(first), false, false, true, false),
-                Some(Relop::Le) => proper_interval(None, Some(first), false, true, true, false),
+            match (lower_rel, first) {
+                (None, Some(v)) => point_interval(v),
+                (Some(Relop::Gt), Some(v)) => {
+                    proper_interval(Some(v), None, false, false, false, true)
+                }
+                (Some(Relop::Ge), Some(v)) => {
+                    proper_interval(Some(v), None, true, false, false, true)
+                }
+                (Some(Relop::Lt), Some(v)) => {
+                    proper_interval(None, Some(v), false, false, true, false)
+                }
+                (Some(Relop::Le), Some(v)) => {
+                    proper_interval(None, Some(v), false, true, true, false)
+                }
+                // A one-sided form whose single endpoint is itself an unbounded
+                // marker (`|>=-infinity|`, `|<*|`) constrains nothing at all.
+                (_, None) => proper_interval(None, None, false, false, true, true),
             }
         };
         self.expect(
@@ -2216,6 +2489,80 @@ impl Parser<'_> {
             "expecting '|' closing the interval",
         )?;
         Ok(ivl)
+    }
+
+    /// The timezone-symmetry rule for a two-sided date/time interval, checked
+    /// with the cursor still on the opening `|`.
+    ///
+    /// `ADL1.4/master05-cadl.adoc` §Intervals L932: "Within any interval
+    /// containing two literal date/time values (i.e. not one-sided intervals),
+    /// if a timezone is used on one, it must be used on both, to ensure
+    /// comparability. The timezones need not be identical." So the rule fires
+    /// exactly when the `|…|` window holds TWO literal time / date-time values
+    /// whose timezone presence differs; a one-sided form (one value) and a
+    /// date interval (dates carry no timezone) are outside its scope.
+    ///
+    /// NOTE: the openEHR `S*` catalogue
+    /// (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity Rules) has
+    /// no dedicated code for this rule, and this crate never invents one — so
+    /// the refusal reuses the catalogue code this parser already uses for a bad
+    /// time / date-time value in a constraint position (`SCTAV` / `SCDTAV`) and
+    /// names the rule in the message.
+    fn check_interval_timezone_symmetry(&mut self) -> PResult<()> {
+        let mut endpoints: Vec<(bool, SyntaxErrorCode)> = Vec::new();
+        let mut i = self.pos + 1;
+        while let Some(spanned) = self.toks.get(i) {
+            match &spanned.token {
+                Token::SymIvlDelim => break,
+                Token::Iso8601Time(v) => {
+                    endpoints.push((iso_has_timezone(v), SyntaxErrorCode::Sctav));
+                }
+                Token::Iso8601DateTime(v) => {
+                    endpoints.push((iso_has_timezone(v), SyntaxErrorCode::Scdtav));
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        if let [(lower_tz, code), (upper_tz, _)] = endpoints[..]
+            && lower_tz != upper_tz
+        {
+            let span = self.cur_span().start..self.span_at(i).end;
+            self.push(
+                code,
+                "a two-sided date/time interval must use a timezone on both endpoints or on \
+                 neither (the timezones need not be identical)",
+                span,
+            );
+            return Err(());
+        }
+        Ok(())
+    }
+
+    /// One interval endpoint: a value, or an unbounded marker yielding `None`.
+    ///
+    /// The markers are `infinity`, `-infinity` and `*`. `infinity` is a cADL
+    /// keyword in its own right (`ADL1.4/master05-cadl.adoc` §Keywords L50 and
+    /// §Symbols L1349 `[Ii][Nn][Ff][Ii][Nn][Ii][Tt][Yy] -> SYM_INFINITY`) and
+    /// the chapter's own §Interval of Integer example is
+    /// `rate matches {|0..infinity|}  -- allow 0 - infinity, i.e. same as >= 0`
+    /// (L771); L761 defers the interval syntax itself to dADL, whose §Intervals
+    /// of Ordered Primitive Types lists `infinity` / `-infinity` / `*` as
+    /// allowable endpoint values (`ADL1.4/master04-dadl.adoc` L628-643). The
+    /// sign carried by `-infinity` is not recorded separately: the side of the
+    /// interval the endpoint sits on already fixes the direction — the same
+    /// representation `openehr_lang::odin` uses for the identical markers.
+    fn parse_endpoint<V: CadlValue>(&mut self) -> PResult<Option<V>> {
+        if self.eat(|t| matches!(t, Token::SymStar)) {
+            return Ok(None);
+        }
+        let save = self.pos;
+        self.eat(|t| matches!(t, Token::SymMinus));
+        if self.eat(|t| matches!(t, Token::SymInfinity)) {
+            return Ok(None);
+        }
+        self.pos = save;
+        V::parse_one(self).map(Some)
     }
 
     fn eat_relop(&mut self) -> Option<Relop> {
@@ -2312,26 +2659,25 @@ impl Parser<'_> {
             );
             return Err(());
         }
-        Ok((format!("/{inner}/"), assumed))
+        Ok((format!("/{}/", escape_regex_delimiter(inner)), assumed))
     }
 
     // ── constraint-pattern validators (`master04.5` valid-pattern tables) ──
 
     fn validate_date_pattern(&mut self, p: &str, code: SyntaxErrorCode) -> PResult<()> {
         // Fields: year(4)-month(2)-day(2). Degradation: after a `??` field, only
-        // `??`/`XX`; after `XX`, only `XX`.
+        // `??`/`XX`; after `XX`, only `XX`. A date pattern carries NO timezone
+        // modifier — `master05` §Patterns L896 admits one on "any of the time or
+        // date/time (but not date) patterns".
         let fields: Vec<&str> = p.split('-').collect();
-        if fields.len() != 3
-            || !fields[0].eq_ignore_ascii_case("yyyy") && !fields[0].eq_ignore_ascii_case("yyy")
-        {
+        if fields.len() != 3 || !is_year_field(fields[0]) {
             return self.pattern_err(code, p);
         }
         self.validate_pattern_degradation(&fields[1..], code, p)
     }
 
     fn validate_time_pattern(&mut self, p: &str, code: SyntaxErrorCode) -> PResult<()> {
-        let time_core = p.split(['+', '\u{00B1}', 'Z']).next().unwrap_or(p);
-        let fields: Vec<&str> = time_core.split(':').collect();
+        let fields: Vec<&str> = pattern_time_core(p).split(':').collect();
         if fields.len() != 3 || !is_present_field(fields[0], "hh") {
             return self.pattern_err(code, p);
         }
@@ -2339,17 +2685,17 @@ impl Parser<'_> {
     }
 
     fn validate_date_time_pattern(&mut self, p: &str, code: SyntaxErrorCode) -> PResult<()> {
-        let Some((date, time)) = p.split_once('T') else {
+        // The date/time separator is `T` or a space: the chapter's own
+        // `V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN` spells `…[dD?X][dD?X][ T]…`
+        // (`ADL1.4/master05-cadl.adoc` §Symbols L1422) and its assumed-value
+        // example uses the space form (`yyyy-mm-dd hh:mm:XX; 1800-01-01T00:00:00`,
+        // §Assumed Values L1018).
+        let Some((date, time)) = p.split_once(['T', ' ']) else {
             return self.pattern_err(code, p);
         };
         let date_fields: Vec<&str> = date.split('-').collect();
-        let time_core = time.split(['+', '\u{00B1}', 'Z']).next().unwrap_or(time);
-        let time_fields: Vec<&str> = time_core.split(':').collect();
-        if date_fields.len() != 3
-            || time_fields.len() != 3
-            || !(date_fields[0].eq_ignore_ascii_case("yyyy")
-                || date_fields[0].eq_ignore_ascii_case("yyy"))
-        {
+        let time_fields: Vec<&str> = pattern_time_core(time).split(':').collect();
+        if date_fields.len() != 3 || time_fields.len() != 3 || !is_year_field(date_fields[0]) {
             return self.pattern_err(code, p);
         }
         // Degradation flows date → time as one chain (`master04.5`): the hour
@@ -3773,9 +4119,84 @@ fn regex_inner(delimited: &str) -> &str {
     }
 }
 
-/// Whether a date/time pattern field is the "present" placeholder (e.g. `hh`).
+/// Backslash-escape every UNESCAPED `/` in a regex body.
+///
+/// `AOM2/master04.5` §`C_STRING` types `constraint` as "a list of literal
+/// strings and / or regular expression strings **delimited by the '/'
+/// character**", so the AOM carrier is always the `/…/` form — which makes the
+/// `^…^` delimiter a purely lexical alternative that has to be normalised on
+/// the way in. The chapter states the two forms' equivalence with its own
+/// worked pair (`ADL1.4/master05-cadl.adoc` §Regular Expression L696-702:
+/// "If the delimiter character is required in the pattern, it must be quoted
+/// with the backslash ('\\') character, or else alternative delimiters can be
+/// used … The following two patterns are equivalent: `{/km\\/h|mi\\/h/}` …
+/// `{^km/h|mi/h^}`"), so escaping on normalisation is the spec's own mapping
+/// and keeps parse → print → parse lossless. An already-escaped `\/` (a
+/// slash-delimited source) is left alone, so the transform is idempotent.
+fn escape_regex_delimiter(inner: &str) -> String {
+    let mut out = String::with_capacity(inner.len());
+    let mut escaped = false;
+    for ch in inner.chars() {
+        if escaped {
+            out.push(ch);
+            escaped = false;
+            continue;
+        }
+        match ch {
+            '\\' => {
+                escaped = true;
+                out.push(ch);
+            }
+            '/' => out.push_str("\\/"),
+            _ => out.push(ch),
+        }
+    }
+    out
+}
+
+/// Whether a date/time pattern field is the "present" placeholder (e.g. `hh`)
+/// or a literal date/time number substituted for it.
+///
+/// `ADL1.4/master05-cadl.adoc` §Patterns L894: "In the above patterns, the
+/// 'yyyy' etc match strings can be replaced by literal date/time numbers. For
+/// example, `yyyy-??-XX` could be transformed into `1995-??-XX`". A literal
+/// field constrains the value to exactly that number, so it is "present" in
+/// the same sense the placeholder is — which is what the degradation rules
+/// (L860-861) range over.
 fn is_present_field(f: &str, present: &str) -> bool {
-    f.eq_ignore_ascii_case(present)
+    f.eq_ignore_ascii_case(present) || is_literal_field(f, 2)
+}
+
+/// Whether an ISO8601 time / date-time literal carries a timezone modifier
+/// (`Z` or a `±hh[:mm]` offset). Only the part after the `T` is examined, so
+/// the `-` separators of the date part are never mistaken for a sign
+/// (`base_lexer.g4` `ISO8601_DATE_TIME` / `ISO8601_TIME`).
+fn iso_has_timezone(v: &str) -> bool {
+    let tail = v.split_once('T').map_or(v, |(_, t)| t);
+    tail.ends_with('Z') || tail.contains('+') || tail.contains('-')
+}
+
+/// The year field: the `yyyy`/`yyy` placeholder or a literal 4-digit year
+/// (`master05` §Patterns L894).
+fn is_year_field(f: &str) -> bool {
+    f.eq_ignore_ascii_case("yyyy") || f.eq_ignore_ascii_case("yyy") || is_literal_field(f, 4)
+}
+
+/// Whether `f` is exactly `width` ASCII digits — a literal-substituted field.
+fn is_literal_field(f: &str, width: usize) -> bool {
+    f.len() == width && f.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// The time part of a pattern with its timezone modifier stripped.
+///
+/// The modifier is `Z` or a sign-led `hh`/`hh:mm`/`hhmm` group; the sign is
+/// `+`, `-` or the literal `±` — `master05` §Patterns L852 ("the addition of a
+/// patterns such as `+hh:mm`, `+hhmm`, and `-hh`") and the
+/// `<<timezone_constraints>>` table L900-906, whose `±` rows are glossed
+/// "commencing with '+' or '-'". A time never contains `+`/`-`/`Z` otherwise,
+/// so the split is unambiguous.
+fn pattern_time_core(t: &str) -> &str {
+    t.split(['+', '-', '\u{00B1}', 'Z']).next().unwrap_or(t)
 }
 
 /// The strength-keyword set (`master04.5` §Constraint strengths).
@@ -3800,6 +4221,16 @@ fn decode_string(raw: &str) -> String {
     let inner = raw
         .strip_prefix('"')
         .and_then(|s| s.strip_suffix('"'))
+        .unwrap_or(raw);
+    decode_string_inner(inner)
+}
+
+/// Decode a single-quoted `CHARACTER` literal (delimiters included) into the
+/// one-character string that carries it (`base_lexer.g4` `CHARACTER`).
+fn decode_character(raw: &str) -> String {
+    let inner = raw
+        .strip_prefix('\'')
+        .and_then(|s| s.strip_suffix('\''))
         .unwrap_or(raw);
     decode_string_inner(inner)
 }
@@ -4777,6 +5208,242 @@ mod tests {
         match &d.attributes[1].children[0] {
             CObject::CString(cs) => assert_eq!(cs.assumed_value.as_deref(), Some("y")),
             _ => panic!("expected CString with assumed"),
+        }
+    }
+
+    /// The `(lower, upper, lower_included, upper_included)` of the single
+    /// interval an integer constraint carries; an unbounded endpoint is `None`.
+    fn int_bounds(o: &CObject) -> (Option<f64>, Option<f64>, bool, bool) {
+        match o {
+            CObject::CInteger(ci) => interval_bounds_f64(&ci.constraint[0]),
+            other => panic!("expected CInteger, got {other:?}"),
+        }
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Interval of Integer L771 —
+    /// `rate matches {|0..infinity|}` — plus the `-infinity` and `*` endpoint
+    /// spellings of `master04-dadl` §Intervals of Ordered Primitive Types
+    /// L625-630.
+    #[test]
+    fn infinity_endpoints_are_unbounded() {
+        let cco = parse(
+            "WHOLE[id1] matches {\n\
+             a matches {|0..infinity|}\n\
+             b matches {|-infinity..5|}\n\
+             c matches {|0..*|}\n\
+             d matches {|0..10|}\n\
+             }",
+        );
+        let d = data(&cco);
+        assert_eq!(
+            int_bounds(&d.attributes[0].children[0]),
+            (Some(0.0), None, true, false)
+        );
+        assert_eq!(
+            int_bounds(&d.attributes[1].children[0]),
+            (None, Some(5.0), false, true)
+        );
+        assert_eq!(
+            int_bounds(&d.attributes[2].children[0]),
+            (Some(0.0), None, true, false)
+        );
+        assert_eq!(
+            int_bounds(&d.attributes[3].children[0]),
+            (Some(0.0), Some(10.0), true, true)
+        );
+    }
+
+    /// Both spellings of the exclusive lower bound denote the same interval:
+    /// the prefix `>` of `odin_values.g4` and the postfix `>` of
+    /// `ADL1.4/master04-dadl.adoc` §Intervals L611-614 (used by `master05` L769
+    /// as `length matches {|0>..<1000|}`).
+    #[test]
+    fn both_exclusive_lower_spellings_agree() {
+        let cco = parse(
+            "WHOLE[id1] matches {\n\
+             a matches {|>0..<1000|}\n\
+             b matches {|0>..<1000|}\n\
+             c matches {|0>..1000|}\n\
+             }",
+        );
+        let d = data(&cco);
+        assert_eq!(
+            int_bounds(&d.attributes[0].children[0]),
+            (Some(0.0), Some(1000.0), false, false)
+        );
+        assert_eq!(
+            int_bounds(&d.attributes[1].children[0]),
+            (Some(0.0), Some(1000.0), false, false)
+        );
+        assert_eq!(
+            int_bounds(&d.attributes[2].children[0]),
+            (Some(0.0), Some(1000.0), false, true)
+        );
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Regular Expression L696-702: the `^…^` and
+    /// the backslash-escaped `/…/` spellings "are equivalent", so the caret form
+    /// normalises onto the AOM's `/`-delimited carrier WITH the inner delimiters
+    /// escaped — and the result re-parses to itself (parse → print → parse is
+    /// lossless; the printer emits `C_STRING.constraint` verbatim).
+    #[test]
+    fn caret_regex_normalises_losslessly() {
+        let cco = parse("WHOLE[id1] matches {\n u matches {^km/h|mi/h^}\n}");
+        let printed = match &data(&cco).attributes[0].children[0] {
+            CObject::CString(cs) => cs.constraint[0].clone(),
+            other => panic!("expected CString regex, got {other:?}"),
+        };
+        assert_eq!(printed, r"/km\/h|mi\/h/");
+        // The chapter's own equivalent slash spelling yields the same carrier…
+        let slash = parse(
+            r"WHOLE[id1] matches {\n u matches {/km\/h|mi\/h/}\n}"
+                .replace("\\n", "\n")
+                .as_str(),
+        );
+        match &data(&slash).attributes[0].children[0] {
+            CObject::CString(cs) => assert_eq!(cs.constraint[0], printed),
+            other => panic!("expected CString regex, got {other:?}"),
+        }
+        // …and re-parsing the printed form reproduces it unchanged.
+        let again = parse(&format!(
+            "WHOLE[id1] matches {{\n u matches {{{printed}}}\n}}"
+        ));
+        match &data(&again).attributes[0].children[0] {
+            CObject::CString(cs) => assert_eq!(cs.constraint[0], printed),
+            other => panic!("expected CString regex, got {other:?}"),
+        }
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Constraints on Character L813-825 —
+    /// `color_name matches {'r', 'g', 'b'}`. No AOM generation defines a
+    /// `C_CHARACTER`, so the carrier is `C_STRING` with the constrained RM type
+    /// name kept (see [`Parser::parse_c_character`]).
+    #[test]
+    fn character_lists_land_on_c_string() {
+        let cco = parse(
+            "WHOLE[id1] matches {\n\
+             a matches {'r'}\n\
+             b matches {'r', 'g', 'b'}\n\
+             c matches {'r', 'g'; 'r'}\n\
+             }",
+        );
+        let d = data(&cco);
+        match &d.attributes[0].children[0] {
+            CObject::CString(cs) => {
+                assert_eq!(cs.rm_type_name, "Character");
+                assert_eq!(cs.constraint, vec!["r".to_owned()]);
+            }
+            other => panic!("expected CString, got {other:?}"),
+        }
+        match &d.attributes[1].children[0] {
+            CObject::CString(cs) => assert_eq!(cs.constraint.len(), 3),
+            other => panic!("expected CString, got {other:?}"),
+        }
+        match &d.attributes[2].children[0] {
+            CObject::CString(cs) => assert_eq!(cs.assumed_value.as_deref(), Some("r")),
+            other => panic!("expected CString, got {other:?}"),
+        }
+    }
+
+    /// The `, ...` list-continuation marker (`ADL1.4/master05-cadl.adoc` §Syntax
+    /// L1244-1249 for strings, `master04-dadl` §Syntax L985-1160 for every other
+    /// primitive list) is a list INDICATOR, not a member and not an openness
+    /// flag — see [`Parser::eat_list_continue`].
+    #[test]
+    fn list_continuation_adds_no_member() {
+        let cco = parse(
+            "WHOLE[id1] matches {\n\
+             a matches {\"en\", ...}\n\
+             b matches {1, 2, ...}\n\
+             c matches {True, ...}\n\
+             }",
+        );
+        let d = data(&cco);
+        match &d.attributes[0].children[0] {
+            CObject::CString(cs) => assert_eq!(cs.constraint, vec!["en".to_owned()]),
+            other => panic!("expected CString, got {other:?}"),
+        }
+        match &d.attributes[1].children[0] {
+            CObject::CInteger(ci) => assert_eq!(ci.constraint.len(), 2),
+            other => panic!("expected CInteger, got {other:?}"),
+        }
+        match &d.attributes[2].children[0] {
+            CObject::CBoolean(cb) => assert_eq!(cb.constraint, vec![true]),
+            other => panic!("expected CBoolean, got {other:?}"),
+        }
+    }
+
+    /// `ADL1.4/master05-cadl.adoc` §Intervals L932: a two-sided date/time
+    /// interval must carry a timezone on both endpoints or on neither; a
+    /// one-sided interval is outside the rule by its own wording.
+    #[test]
+    fn interval_timezone_symmetry_is_enforced() {
+        let asymmetric = parse_definition_body(
+            "WHOLE[id1] matches {\n d matches {|2004-05-20T00:00:00Z..2005-05-19T23:59:59|}\n}",
+        )
+        .expect_err("an asymmetric-timezone interval must be refused");
+        assert!(
+            asymmetric.iter().any(|e| e.code == SyntaxErrorCode::Scdtav),
+            "expected SCDTAV, got {:?}",
+            asymmetric.iter().map(|e| e.code).collect::<Vec<_>>()
+        );
+        let time_asymmetric = parse_definition_body(
+            "WHOLE[id1] matches {\n t matches {|09:30:00+0200..10:30:00|}\n}",
+        )
+        .expect_err("an asymmetric-timezone time interval must be refused");
+        assert!(
+            time_asymmetric
+                .iter()
+                .any(|e| e.code == SyntaxErrorCode::Sctav),
+            "expected SCTAV, got {:?}",
+            time_asymmetric.iter().map(|e| e.code).collect::<Vec<_>>()
+        );
+        // Both endpoints with a timezone, both without, and the one-sided form
+        // all parse.
+        parse(
+            "WHOLE[id1] matches {\n\
+             a matches {|2004-05-20T00:00:00Z..2005-05-19T23:59:59Z|}\n\
+             b matches {|2004-05-20T00:00:00..2005-05-19T23:59:59|}\n\
+             c matches {|>09:30:00+0200|}\n\
+             }",
+        );
+    }
+
+    /// The negated-matches family and the `=~`/`!~` regex-match operators are
+    /// named by `ADL1.4/master05-cadl.adoc` (§Keywords L47/L95-98, §Regular
+    /// Expression L691-693) but defined by no grammar production, so each is a
+    /// typed refusal rather than a silent affirmative reading.
+    #[test]
+    fn operators_without_a_production_are_refused() {
+        for (src, code) in [
+            (
+                "WHOLE[id1] matches {\n v matches {\n TEXT ~matches {\"a\"}\n }\n}",
+                SyntaxErrorCode::Sccog,
+            ),
+            (
+                "WHOLE[id1] matches {\n v ~is_in {\n TEXT matches {*}\n }\n}",
+                SyntaxErrorCode::Scoat,
+            ),
+            (
+                "WHOLE[id1] matches {\n v \u{2209} {\n TEXT matches {*}\n }\n}",
+                SyntaxErrorCode::Scoat,
+            ),
+            (
+                "WHOLE[id1] matches {\n v matches {=~ /[a-z]+/}\n}",
+                SyntaxErrorCode::Sccog,
+            ),
+            (
+                "WHOLE[id1] matches {\n v matches {!~ /[a-z]+/}\n}",
+                SyntaxErrorCode::Sccog,
+            ),
+        ] {
+            let errs = parse_definition_body(src)
+                .expect_err("an operator with no cADL production must be refused");
+            assert!(
+                errs.iter().any(|e| e.code == code),
+                "expected {code} for {src:?}, got {:?}",
+                errs.iter().map(|e| e.code).collect::<Vec<_>>()
+            );
         }
     }
 
