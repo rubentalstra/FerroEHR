@@ -43,6 +43,9 @@
 //! console's scope previewer) shares the very grammar the CDR enforces instead
 //! of carrying a second parser.
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 #[cfg(feature = "full")]
 pub mod bmm;
 #[cfg(feature = "full")]

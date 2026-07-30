@@ -35,6 +35,9 @@
 //! runs, which matters: thousands of databases inflate the server's
 //! cumulative-statistics area until dynamic shared memory is exhausted.
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use sqlx::{Connection, PgConnection, PgPool};

@@ -122,8 +122,13 @@ openEHR spec versions are pinned in the "Code generation" section above (RM 1.2.
 ```bash
 cargo build --workspace
 cargo nextest run --workspace
-cargo clippy --workspace --all-targets --all-features   # the EXACT CI flags — dropping --all-features misses feature-gated lints
+# clippy = the EXACT CI lanes. The console is excluded from --all-features
+# (mutually exclusive hydrate/ssr, compile_error!-guarded) and linted per-feature:
+cargo clippy --workspace --exclude ehrbase-admin-ui --all-targets --all-features -- -D warnings
+cargo clippy -p ehrbase-admin-ui --all-targets --features ssr -- -D warnings
+cargo clippy -p ehrbase-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
 cargo fmt --all
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude ehrbase-admin-ui --all-features --no-deps   # the rustdoc gate (intra-doc links, doc lints)
 cargo audit && cargo deny check
 # conformance pipeline (the acceptance instrument) — the CNF 2.0 runner:
 bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF catalogue → verdicts → docs/conformance/<sut>/ (results + verdicts + report/statement/certificate + badges); baseline numbers live ONLY in the committed artifacts

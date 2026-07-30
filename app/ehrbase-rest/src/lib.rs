@@ -33,6 +33,9 @@
 //! PEP compose on top when wired ([`extensions::access`]). Auth is out of band
 //! per the spec (`overview/Requests_and_responses.md` §Authentication).
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 pub mod api;
 pub mod config;
 pub mod extensions;

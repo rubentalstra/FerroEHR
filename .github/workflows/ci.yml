@@ -175,7 +175,50 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
-      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+          target: wasm32-unknown-unknown
+      # The console's `hydrate`/`ssr` features are mutually exclusive (a
+      # compile_error! guard per the Cargo book §Mutually exclusive features),
+      # so the workspace lane excludes it and the crate gets its own two
+      # per-feature lanes — the same split as /ui-gates. `--locked` everywhere:
+      # CI must fail on new commits only, never on registry drift
+      # (https://doc.rust-lang.org/cargo/faq.html#why-have-cargolock-in-version-control).
+      - run: cargo clippy --locked --workspace --exclude ehrbase-admin-ui --all-targets --all-features -- -D warnings
+      - run: cargo clippy --locked -p ehrbase-admin-ui --all-targets --features ssr -- -D warnings
+      - run: cargo clippy --locked -p ehrbase-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
+
+  # ── Rustdoc: intra-doc links + doc lints are inert unless rustdoc runs ──────
+  # [workspace.lints.rustdoc] levels apply to every `cargo doc`; the -D
+  # warnings env additionally promotes the warn-tier doc lints in CI
+  # (https://doc.rust-lang.org/rustdoc/lints.html).
+  doc:
+    name: rustdoc
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo doc --locked --workspace --exclude ehrbase-admin-ui --all-features --no-deps
+      - run: cargo doc --locked -p ehrbase-admin-ui --features ssr --no-deps
+
+  # ── MSRV verification: the declared rust-version must actually build ────────
+  # The Cargo book names cargo-hack as the verification tool — a pinned stable
+  # toolchain plus clippy::incompatible_msrv is not verification
+  # (https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-rust-version).
+  msrv:
+    name: msrv (cargo-hack)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - run: cargo hack check --rust-version --workspace --locked
 
   # ── Generated code must stay in sync with the vendored specs ──
   codegen-drift:
@@ -214,8 +257,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo nextest run -p cnf-runner
-      - run: cargo run -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
+      - run: cargo nextest run --locked -p cnf-runner
+      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
 
   # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
   test:
@@ -258,10 +301,14 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo build --workspace --all-features
+      # The console is excluded from --all-features lanes (mutually exclusive
+      # hydrate/ssr, compile_error!-guarded) and tested per-feature instead.
+      - run: cargo build --locked --workspace --exclude ehrbase-admin-ui --all-features
+      - run: cargo build --locked -p ehrbase-admin-ui --features ssr
       # --no-tests=pass: empty crates are expected until P17 (nextest exits 4 otherwise)
-      - run: cargo nextest run --workspace --all-features --no-tests=pass --profile ci
-      - run: cargo test --workspace --doc
+      - run: cargo nextest run --locked --workspace --exclude ehrbase-admin-ui --all-features --no-tests=pass --profile ci
+      - run: cargo nextest run --locked -p ehrbase-admin-ui --features ssr --no-tests=pass --profile ci
+      - run: cargo test --locked --workspace --doc
 
   coverage:
     name: coverage
@@ -296,7 +343,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov,cargo-nextest
-      - run: cargo llvm-cov nextest --workspace --no-tests=pass --lcov --output-path lcov.info
+      - run: cargo llvm-cov nextest --locked --workspace --no-tests=pass --lcov --output-path lcov.info
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-lcov
