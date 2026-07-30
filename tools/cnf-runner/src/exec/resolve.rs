@@ -236,6 +236,20 @@ impl<'a> Resolver<'a> {
     /// # Errors
     /// [`ResolveError`] when the view is undeclared or its evaluator is
     /// not registered.
+    /// Every view name the evaluator match in [`Self::view`] can answer — the
+    /// single list the `corpus-integrity` validate gate cross-checks the
+    /// manifest's DECLARED views against, so a declared view without an
+    /// evaluator fails at validate time instead of at run time (#971).
+    pub const REGISTERED_VIEWS: &'static [&'static str] = &[
+        "current_state_code",
+        "signature",
+        "magnitude_ge_140_by_uid",
+        "magnitude_ge_140",
+        "systolic_ge_140_uids_asc",
+        "all_uids_asc",
+        "top3_systolic_desc_uids",
+    ];
+
     pub fn view(&mut self, key: &CorpusKey, view: &ViewName) -> Result<Value, ResolveError> {
         let entry = self
             .manifest
@@ -273,7 +287,7 @@ impl<'a> Resolver<'a> {
             // query time against committed uids — the driver substitutes the
             // captured uid list; here we return the SELECTION SPEC the
             // driver evaluates.
-            "magnitude_ge_140_by_uid" | "magnitude_ge_140" => {
+            "magnitude_ge_140_by_uid" | "magnitude_ge_140" | "systolic_ge_140_uids_asc" => {
                 Ok(serde_json::json!({ "systolic_min": 140, "order": "uid" }))
             }
             // the whole committed set, uid-ascending (bag/order anchors)

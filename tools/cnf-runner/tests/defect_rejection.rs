@@ -51,6 +51,13 @@ const DEFECTS: &[(&str, &str, &str)] = &[
         "corpus/MANIFEST.yaml",
         "load",
     ),
+    // A declared view with no registered evaluator fails corpus-integrity at
+    // validate time, never at run time (#971).
+    (
+        "corpus-view-without-evaluator.yaml",
+        "corpus/MANIFEST.yaml",
+        "corpus-integrity",
+    ),
     (
         "matrix-bad-tier.yaml",
         "vocab/capability_matrix.yaml",
