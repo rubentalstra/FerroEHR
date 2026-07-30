@@ -193,8 +193,18 @@ pub enum Token {
 
     // ── ISO8601 date/time/duration VALUES (base_lexer.g4) ──
     /// `ISO8601_DATE_TIME` (with optional partial `??` fields / timezone).
+    ///
+    /// The `??`-partial family covers the whole set of
+    /// `AM/docs/ADL1.4/master04-dadl` §Partial Date/Times, including the
+    /// `yyyy-MM-ddT??:??:??`, `yyyy-MM-??T??:??:??` and `yyyy-??-??T??:??:??`
+    /// forms — a whole-file lex failure here would reject an artefact whose
+    /// ODIN sections `openehr_lang::odin` accepts.
     #[regex(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}(:[0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|:\?\?:\?\?)?(Z|[+\-][0-9]{4})?",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}(:[0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|:\?\?:\?\?)?|\?\?:\?\?:\?\?)(Z|[+\-][0-9]{4})?",
+        |lex| lex.slice().to_owned()
+    )]
+    #[regex(
+        r"[0-9]{4}-([0-9]{2}-\?\?|\?\?-\?\?)T\?\?:\?\?:\?\?(Z|[+\-][0-9]{4})?",
         |lex| lex.slice().to_owned()
     )]
     Iso8601DateTime(String),

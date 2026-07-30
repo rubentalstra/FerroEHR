@@ -14,6 +14,11 @@ it**.
   `tools/src/test/resources/com/nedap/archie/flattener/{specexamples,siblingorder}`,
   commit `e8d92f28aca33f92ea08a826ea19f9581d579720` (2026-07-08).
 
+**One tree here is NOT vendored:** `adl14-dadl/` is hand-written from
+`docs/specs/openehr/AM/docs/ADL1.4/master04-dadl.adoc` (+ `master08-adl.adoc`
+§Revision History Section) — see `PROVENANCE.md` §`adl14-dadl/` and §11 below.
+It is excluded from the vendored file-count ratchet in `corpus_coverage.rs`.
+
 **Maintenance:** regenerate/update this file whenever the corpus is re-vendored
 (the pins above change). File counts, the code frequency table, and the gap
 lists are all derived from the tree — re-derive them, do not hand-patch.
@@ -88,6 +93,7 @@ No `.adlf` files; expected flats are not vendored (§7).
 | `validity/terminology` | 12 | 0 |
 | `flattener/specexamples` | 25 | 0 |
 | `flattener/siblingorder` | 13 | 0 |
+| `adl14-dadl` *(hand-written)* | 0 | 4 |
 
 **Flags**
 
@@ -482,3 +488,22 @@ tag in `validity/**` should be a hard coverage-gate error (only the two
    claimable.
 6. Gate keys on full path (2 duplicate basenames) and the lexer strips the BOM
    (29 files).
+
+---
+
+## 11. `adl14-dadl/` — the hand-written ADL 1.4 dADL breadth tree
+
+Not vendored (PROVENANCE.md §`adl14-dadl/`): authored from
+`docs/specs/openehr/AM/docs/ADL1.4/master04-dadl.adoc` because the vendored
+`adl2-reference` library exercises only a fraction of the dADL leaf grammar.
+File names encode the expectation, corpus-convention style; the accepting
+fixtures repeat it in the `regression` tag. Harness:
+`tests/adl14_dadl_breadth.rs` (per-file expectation table + leaf-value
+assertions).
+
+| File | Expects | Exercises |
+|---|---|---|
+| `…dadl_breadth.v1.adl` | PASS | every leaf/structure form of master04: `<...>` empty sections (leaf, nested, behind a cast), the full partial date/time family incl. `T??:??:??`, integer exponents (`29e6`), case-insensitive booleans, intervals incl. `+/-` and the `infinity`/`-infinity`/`*` endpoints, qualified and local (`[at0200]`) term codes, lists + the open-list marker, URIs, characters, multi-line strings, `&quot;` |
+| `…revision_history.v1.adl` | PASS | the master08 §Revision History Section example, incl. its space-separated timestamp |
+| `…SDINV_default_interval.v1.adl` | SDINV | an interval inside a `_default` value — refused, not silently nulled |
+| `…SDINV_duplicate_sibling_attribute.v1.adl` | SDINV | a repeated sibling attribute name (rule VDATU / master04 §General Form) |

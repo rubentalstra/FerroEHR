@@ -24,7 +24,9 @@ use indexmap::IndexMap;
 #[derive(Debug, Clone, PartialEq)]
 pub enum OdinValue {
     /// `attr_vals` — an object with attribute → value members (insertion
-    /// order preserved). A later duplicate key overwrites the earlier value.
+    /// order preserved). Sibling names are unique by construction: a repeat
+    /// fails the parse with [`OdinErrorKind::DuplicateAttribute`] (rule
+    /// *VDATU*), it is never overwritten.
     Object(IndexMap<String, OdinValue>),
     /// `keyed_object*` — an insertion-ordered keyed list (`["k"] = <…>`).
     KeyedList(Vec<(OdinKey, OdinValue)>),
@@ -93,8 +95,11 @@ pub enum OdinKey {
 /// An ODIN interval value (`odin_values.g4` `*_interval_value`).
 #[derive(Debug, Clone, PartialEq)]
 pub enum OdinInterval {
-    /// A range `| >? lower .. <? upper |`, or a single-bounded `| relop v |`
-    /// (one endpoint `None` = unbounded on that side).
+    /// A range `| >? lower .. <? upper |`, or a single-bounded `| relop v |`.
+    /// A `None` endpoint is unbounded on that side — either because the form
+    /// is one-sided, or because the endpoint was written as one of the
+    /// `infinity` / `-infinity` / `*` markers of
+    /// `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types.
     Range {
         /// Lower bound (`None` = unbounded below).
         lower: Option<Box<OdinValue>>,
@@ -115,10 +120,29 @@ pub enum OdinInterval {
     },
 }
 
+/// What kind of ODIN failure occurred — the discriminant a caller branches on
+/// (the `message` is display text, never a decision input).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OdinErrorKind {
+    /// An unrecognised character or an illegal string escape.
+    UnrecognisedToken,
+    /// A syntactically unexpected token.
+    UnexpectedToken,
+    /// Two sibling attributes of one object node share a name — rule *VDATU*
+    /// of `LANG/docs/odin/master05-content` §General Structure ("sibling
+    /// attributes occurring within an object node must be uniquely named with
+    /// respect to each other"), the principle "Sibling attribute names must be
+    /// unique" of `AM/docs/ADL1.4/master04-dadl` §General Form. Carries the
+    /// repeated name.
+    DuplicateAttribute(String),
+}
+
 /// An ODIN parse or lex failure, with a 1-based line/column and a byte span.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("ODIN syntax error at line {line}, column {column}: {message}")]
 pub struct OdinError {
+    /// The failure kind.
+    pub kind: OdinErrorKind,
     /// A human-readable message.
     pub message: String,
     /// 1-based line number.
@@ -142,19 +166,31 @@ pub fn parse(src: &str) -> Result<OdinValue, OdinError> {
     let spanned = lexer::lex(src).map_err(|span| {
         let (line, column) = line_col(src, span.start);
         OdinError {
+            kind: OdinErrorKind::UnrecognisedToken,
             message: "unrecognised token".to_owned(),
             line,
             column,
             span,
         }
     })?;
-    parser::parse_tokens(&spanned).map_err(|offset| {
-        let (line, column) = line_col(src, offset);
+    parser::parse_tokens(&spanned).map_err(|located| {
+        let (line, column) = line_col(src, located.offset);
+        let (kind, message) = match located.failure {
+            parser::Failure::Syntax(_) => (
+                OdinErrorKind::UnexpectedToken,
+                "unexpected token".to_owned(),
+            ),
+            parser::Failure::DuplicateAttribute { name, .. } => (
+                OdinErrorKind::DuplicateAttribute(name.clone()),
+                format!("duplicate sibling attribute {name:?} (VDATU)"),
+            ),
+        };
         OdinError {
-            message: "unexpected token".to_owned(),
+            kind,
+            message,
             line,
             column,
-            span: offset..offset,
+            span: located.offset..located.offset,
         }
     })
 }
@@ -296,5 +332,176 @@ mod tests {
     #[test]
     fn illegal_escape_is_error() {
         assert!(parse(r#"a = <"bad \d">"#).is_err());
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Empty Sections ("Empty sections can
+    /// appear anywhere"; "Nested empty sections can be used") +
+    /// `LANG/docs/odin/master05-content` §Void Objects.
+    #[test]
+    fn empty_sections_appear_anywhere() {
+        let m = obj("address = <...>");
+        assert_eq!(m.get("address"), Some(&OdinValue::Empty));
+
+        // nested: inside an object, inside a keyed list, and behind a cast.
+        let m = obj("a = <b = <...> c = <d = <...>>>\ne = <[1] = <...>>\nf = (PENSION) <...>");
+        let OdinValue::Object(inner) = m.get("a").expect("a") else {
+            panic!("expected object");
+        };
+        assert_eq!(inner.get("b"), Some(&OdinValue::Empty));
+        let OdinValue::KeyedList(entries) = m.get("e").expect("e") else {
+            panic!("expected keyed list");
+        };
+        assert_eq!(entries[0].1, OdinValue::Empty);
+        assert_eq!(
+            m.get("f"),
+            Some(&OdinValue::Typed {
+                rm_type: "PENSION".to_owned(),
+                value: Box::new(OdinValue::Empty),
+            })
+        );
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Partial Date/Times, the `T??:??:??`
+    /// family the ODIN chapter omits.
+    #[test]
+    fn partial_date_time_family() {
+        for src in [
+            "2004-06-11T10:30:??",
+            "2004-06-11T10:??:??",
+            "2004-06-11T??:??:??",
+            "2004-06-??T??:??:??",
+            "2004-??-??T??:??:??",
+        ] {
+            let m = obj(&format!("d = <{src}>"));
+            assert_eq!(
+                m.get("d"),
+                Some(&OdinValue::DateTime(src.to_owned())),
+                "{src}"
+            );
+        }
+    }
+
+    /// `AM/docs/ADL1.4/master08-adl` §Revision History Section writes
+    /// `time_committed = <2004-11-02 09:31:04+1000>`; the space form is
+    /// accepted and normalised to the ISO `T` form (see the lexer NOTE).
+    #[test]
+    fn space_separated_date_time_normalises() {
+        let m = obj("time_committed = <2004-11-02 09:31:04+1000>");
+        assert_eq!(
+            m.get("time_committed"),
+            Some(&OdinValue::DateTime("2004-11-02T09:31:04+1000".to_owned()))
+        );
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Integer Data lists `29e6` as integer
+    /// data; §Boolean Data + §Symbols make the boolean words case-insensitive.
+    #[test]
+    fn integer_exponents_and_case_insensitive_booleans() {
+        let m = obj("a = <29e6>\nb = <2900e-2>\nc = <TRUE>\nd = <fAlSe>");
+        assert_eq!(m.get("a"), Some(&OdinValue::Integer(29_000_000)));
+        assert_eq!(m.get("b"), Some(&OdinValue::Integer(29)));
+        assert_eq!(m.get("c"), Some(&OdinValue::Boolean(true)));
+        assert_eq!(m.get("d"), Some(&OdinValue::Boolean(false)));
+        // an inexact negative exponent has no integer value.
+        assert!(parse("a = <29e-2>").is_err());
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types:
+    /// `infinity` / `-infinity` / `*` are allowable endpoint values, e.g.
+    /// `|0..infinity|`.
+    #[test]
+    fn unbounded_interval_endpoints() {
+        for src in ["|0..infinity|", "|0..*|", "|0..INFINITY|"] {
+            let m = obj(&format!("r = <{src}>"));
+            let Some(OdinValue::Interval(OdinInterval::Range {
+                lower,
+                lower_included,
+                upper,
+                upper_included,
+            })) = m.get("r")
+            else {
+                panic!("expected range interval for {src}");
+            };
+            assert_eq!(lower.as_deref(), Some(&OdinValue::Integer(0)), "{src}");
+            assert!(*lower_included, "{src}");
+            assert_eq!(upper.as_deref(), None, "{src}");
+            assert!(!*upper_included, "{src}");
+        }
+
+        let m = obj("r = <|-infinity..5.0|>");
+        let Some(OdinValue::Interval(OdinInterval::Range { lower, upper, .. })) = m.get("r") else {
+            panic!("expected range interval");
+        };
+        assert_eq!(lower.as_deref(), None);
+        assert_eq!(upper.as_deref(), Some(&OdinValue::Real(5.0)));
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Lists of Built-in Types +
+    /// `LANG/docs/odin/master07-leaf_data` §Lists of Built-in Types both list
+    /// `[at0200], ...` as leaf data (see the lexer NOTE on the chapter's own
+    /// yacc disagreeing).
+    #[test]
+    fn local_term_codes_are_leaf_values() {
+        let m = obj("a = <[at0200]>\nb = <[at0200], ...>\nc = <[at0010.2]>");
+        assert_eq!(
+            m.get("a"),
+            Some(&OdinValue::TermCode("[at0200]".to_owned()))
+        );
+        assert_eq!(
+            m.get("b"),
+            Some(&OdinValue::List(vec![
+                OdinValue::TermCode("[at0200]".to_owned()),
+                OdinValue::ListContinue,
+            ]))
+        );
+        assert_eq!(
+            m.get("c"),
+            Some(&OdinValue::TermCode("[at0010.2]".to_owned()))
+        );
+        // integer / date container keys still lex as keys, not local codes.
+        let map = obj("k = <[1] = <\"x\">>");
+        let Some(OdinValue::KeyedList(entries)) = map.get("k") else {
+            panic!("expected keyed list");
+        };
+        assert_eq!(entries[0].0, OdinKey::Integer(1));
+    }
+
+    /// Rule *VDATU* (`LANG/docs/odin/master05-content` §General Structure) /
+    /// the "Sibling attribute names must be unique" principle of
+    /// `AM/docs/ADL1.4/master04-dadl` §General Form.
+    #[test]
+    fn duplicate_sibling_attributes_are_refused() {
+        let err = parse("a = <1>\nb = <2>\na = <3>").expect_err("duplicate `a`");
+        assert_eq!(err.kind, OdinErrorKind::DuplicateAttribute("a".to_owned()));
+
+        // …at any depth.
+        let err = parse("outer = <x = <1> x = <2>>").expect_err("duplicate nested `x`");
+        assert_eq!(err.kind, OdinErrorKind::DuplicateAttribute("x".to_owned()));
+
+        // the same name under DIFFERENT parents is not a duplicate.
+        assert!(parse("p = <x = <1>>\nq = <x = <2>>").is_ok());
+    }
+
+    /// `LANG/docs/odin/master07-leaf_data` §String Data (verbatim in
+    /// `AM/docs/ADL1.4/master04-dadl` §String Data): multi-line string
+    /// contents drop the white-space leaders of the continuation lines.
+    #[test]
+    fn multi_line_string_leaders_are_stripped() {
+        let m = obj(
+            "    text = <\"And now the STORM-BLAST came, and he\n        Was tyrannous and strong :\n        And chased us south along.\">",
+        );
+        assert_eq!(
+            m.get("text"),
+            Some(&OdinValue::String(
+                "And now the STORM-BLAST came, and he\nWas tyrannous and strong :\nAnd chased us south along."
+                    .to_owned()
+            ))
+        );
+        // `&quot;` is carried through verbatim (see the lexer NOTE).
+        let m = obj(r#"t = <"a &quot;phrase&quot;.">"#);
+        assert_eq!(
+            m.get("t"),
+            Some(&OdinValue::String("a &quot;phrase&quot;.".to_owned()))
+        );
     }
 }

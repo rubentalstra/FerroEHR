@@ -37,4 +37,20 @@
   the spec text is corrected/adjudicated (recorded here), never followed
   blindly.
 
+## `adl14-dadl/`
+
+- **Hand-written in this repository — NOT vendored.** No upstream corpus
+  exercises the breadth of the ADL 1.4 dADL leaf/structure grammar
+  (`docs/specs/openehr/AM/docs/ADL1.4/master04-dadl.adoc`), so these fixtures
+  are authored directly from that chapter (plus `master08-adl.adoc` §Revision
+  History Section for the revision-history fixture).
+- Each file name encodes its expected outcome, corpus-convention style: an
+  `SDINV_*` prefix is a refusal fixture, everything else parses and validates
+  clean and repeats that in its in-file `regression` tag.
+- Owner: `crates/openehr-adl/tests/adl14_dadl_breadth.rs` (the per-file
+  expectation table lives there; `corpus_coverage.rs` cross-checks the tree).
+- Because it is not vendored, this tree may be edited — but a fixture is only
+  ever added or corrected against the spec text, never weakened to make a
+  build pass, and the accept/refuse twins stay paired.
+
 Never hand-edit vendored fixtures; re-vendor and update the pins here.

@@ -17,6 +17,9 @@
 //!   which rejects at parse with `SDINV` (its `regression` tag) — an empty
 //!   `(C_DV_QUANTITY) <>` inline dADL block.
 //! - `features/**/*.adl` — parse (1.4 dialect) clean.
+//! - `adl14-dadl/*.adl` — the hand-written dADL breadth tree, claimed by
+//!   `adl14_dadl_breadth.rs` (accept/refuse per fixture, leaf values
+//!   asserted).
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use std::path::{Path, PathBuf};
@@ -112,6 +115,11 @@ fn every_adl_file_is_claimed_with_an_outcome() {
             // The lone 1.4 features source (intervention_decisions.v0).
             parse_artefact_adl14(&src)
                 .unwrap_or_else(|e| panic!("{r}: 1.4-tolerant parse failed: {e:?}"));
+            claimed += 1;
+        } else if r.starts_with("adl14-dadl/") {
+            // The hand-written dADL breadth tree, owned by
+            // `adl14_dadl_breadth.rs` (which asserts each fixture's declared
+            // accept/refuse outcome and its leaf values).
             claimed += 1;
         } else {
             panic!("unclaimed .adl file (no coverage category): {r}");
