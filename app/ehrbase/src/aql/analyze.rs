@@ -379,17 +379,52 @@ fn resolve_version_field(object_path: Option<&ObjectPath>) -> Result<VersionFiel
 fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
     match parts {
         ["uid", ..] => Ok(VersionField::Uid),
-        ["lifecycle_state", ..] => Ok(VersionField::LifecycleState),
+        // The two CODED version fields are sub-path-sensitive: the stored
+        // representation is the numeric group code, the rubric renders from
+        // the openEHR terminology group, and the terminology id is the
+        // constant `openehr` — a flat mapping would compare the rubric form
+        // against the code and silently never match (#976).
+        ["lifecycle_state", rest @ ..] => coded_version_field(
+            rest,
+            parts,
+            VersionField::LifecycleState,
+            VersionField::LifecycleStateRubric,
+            VersionField::LifecycleStateTerminology,
+        ),
         ["contribution", ..] => Ok(VersionField::ContributionId),
-        ["commit_audit", rest @ ..] => match rest.first().copied() {
-            Some("time_committed") => Ok(VersionField::TimeCommitted),
-            Some("system_id") => Ok(VersionField::SystemId),
-            Some("change_type") => Ok(VersionField::ChangeType),
-            Some("committer") => Ok(VersionField::Committer),
-            Some("description") => Ok(VersionField::Description),
+        ["commit_audit", rest @ ..] => match rest {
+            ["time_committed", ..] => Ok(VersionField::TimeCommitted),
+            ["system_id", ..] => Ok(VersionField::SystemId),
+            ["change_type", rest2 @ ..] => coded_version_field(
+                rest2,
+                parts,
+                VersionField::ChangeType,
+                VersionField::ChangeTypeRubric,
+                VersionField::ChangeTypeTerminology,
+            ),
+            ["committer", ..] => Ok(VersionField::Committer),
+            ["description", ..] => Ok(VersionField::Description),
             _ => Err(AqlFeatureError::UnsupportedVersionPredicate(parts.join("/")).into()),
         },
         _ => Err(AqlFeatureError::UnsupportedVersionPredicate(parts.join("/")).into()),
+    }
+}
+
+/// Resolve the sub-path of a coded (DV_CODED_TEXT) version field to the
+/// representation it addresses; any other suffix — including the bare coded
+/// object, which has no defined scalar comparison form — is a typed reject.
+fn coded_version_field(
+    suffix: &[&str],
+    full: &[&str],
+    code: VersionField,
+    rubric: VersionField,
+    terminology: VersionField,
+) -> Result<VersionField, AqlError> {
+    match suffix {
+        ["defining_code", "code_string"] => Ok(code),
+        ["value"] => Ok(rubric),
+        ["defining_code", "terminology_id", "value"] => Ok(terminology),
+        _ => Err(AqlFeatureError::UnsupportedVersionPredicate(full.join("/")).into()),
     }
 }
 

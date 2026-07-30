@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **AQL VERSION coded-field predicates respect their sub-paths.** Predicates
+  on `commit_audit/change_type` and `lifecycle_state` compared every
+  sub-path against the stored numeric code, so the rubric form
+  (`…/value='creation'`) silently never matched. The three defined
+  sub-paths now compare correctly (`defining_code/code_string` against the
+  code, `value` against the terminology rubric, `terminology_id/value`
+  against `openehr`); other suffixes are clean invalid-query rejections.
 - **AQL `SELECT DISTINCT` with `ORDER BY` executes correctly.** Sorting a
   DISTINCT projection by one of its selected columns previously failed with
   a database error surfaced as HTTP 500; it now orders by the output column.
