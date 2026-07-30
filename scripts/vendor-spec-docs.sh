@@ -15,7 +15,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$REPO_ROOT/docs/specs/openehr"
-INCLUDE_EXT=(adoc md txt csv json yaml yml robot xml opt)
+INCLUDE_EXT=(adoc md txt csv json yaml yml robot xml opt g4)
 
 # component | upstream repo | human ref | pinned commit
 # Master pins: the latest published spec versions (RM 1.2.0, BASE 1.3.0,
