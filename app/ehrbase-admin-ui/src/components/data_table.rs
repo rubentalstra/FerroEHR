@@ -194,6 +194,10 @@ pub struct PageWindow {
 #[must_use]
 pub fn page_window(total: u32, page: u32, size: u32) -> PageWindow {
     let size = size.clamp(MIN_PAGE_SIZE, MAX_PAGE_SIZE);
+    #[expect(
+        clippy::integer_division,
+        reason = "a page index IS the truncating quotient: row `total-1` sits on page `(total-1)/size`"
+    )]
     let last_page = total.saturating_sub(1) / size;
     let page = page.min(last_page);
     let start = page.saturating_mul(size).min(total);

@@ -10,6 +10,17 @@
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
 #![doc(test(attr(deny(warnings))))]
+// Every `#[component]` in this crate expands `#[derive(TypedBuilder)]` on its
+// generated props struct, and that derive emits an inherent `builder()` whose
+// name matches a trait method already in scope — so `same_name_method` fires
+// once per component with the macro invocation as its only span, never on
+// hand-written code. Crate-level because there is no smaller item to scope it
+// to: the finding does not exist in this crate's source
+// (https://docs.rs/leptos/0.8/leptos/attr.component.html).
+#![allow(
+    clippy::same_name_method,
+    reason = "emitted only by leptos's TypedBuilder derive inside #[component]; no hand-written method in this crate shadows a trait method"
+)]
 // `hydrate` (wasm client) and `ssr` (server) are mutually exclusive build
 // modes — cargo-leptos always builds them separately. Guarded per the Cargo
 // book's prescription for genuinely exclusive features

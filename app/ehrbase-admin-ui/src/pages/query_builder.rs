@@ -19,6 +19,7 @@
 //! field updates only the live preview (which subscribes to the query), never
 //! the surrounding editor — inputs keep focus.
 
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 
 use leptos::component;
@@ -74,9 +75,15 @@ impl BuilderCtx {
 
 /// The Query Builder screen: template picker, path catalog, criterion tree,
 /// output shape, a live AQL preview, and the run/save surface.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
-#[allow(clippy::too_many_lines)] // one setup pass: signals, resources, the ?load lift wiring
+#[expect(
+    clippy::too_many_lines,
+    reason = "one setup pass: signals, resources, the ?load lift wiring"
+)]
 pub fn QueryBuilderPage() -> impl IntoView {
     let ctx = BuilderCtx {
         query: RwSignal::new(BuilderQuery::new(String::new())),
@@ -290,7 +297,7 @@ fn seed_leaf_meta_from_catalog(
             return;
         };
         seeded.set_value(true);
-        let mut found = HashMap::new();
+        let mut found = BTreeMap::new();
         collect_selectable(&root, &mut found);
         if found.is_empty() {
             return;
@@ -305,7 +312,10 @@ fn seed_leaf_meta_from_catalog(
 }
 
 /// Every selectable node of a catalog subtree, keyed by its `aql_path`.
-fn collect_selectable(node: &CatalogNode, out: &mut HashMap<String, CatalogNode>) {
+///
+/// Ordered by key so the seeding pass below walks the collected nodes
+/// deterministically (a `HashMap` would visit them in an arbitrary order).
+fn collect_selectable(node: &CatalogNode, out: &mut BTreeMap<String, CatalogNode>) {
     if node.selectable && !node.aql_path.is_empty() {
         out.insert(node.aql_path.clone(), node.clone());
     }
@@ -1718,7 +1728,7 @@ fn preview_run_section(
     let disabled = Signal::derive(move || preview.with(Result::is_err));
     let save_disabled = Signal::derive(move || {
         preview.with(Result::is_err)
-            || fields.name.with(std::string::String::is_empty)
+            || fields.name.with(String::is_empty)
             || fields.version_is_unstorable()
     });
     let run_click = move |_| {
@@ -1982,7 +1992,6 @@ fn results_section(
 /// not intercept native forms). The hidden inputs track the screen's current
 /// query/parameters signals via `prop:value`; the route exports the query's own
 /// `LIMIT` window, or the CDR's default fetch limit. Shared with the raw editor.
-#[allow(clippy::must_use_candidate)] // consumed by the caller's view!
 pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) -> AnyView {
     view! {
         <div class="flex flex-wrap items-center gap-2">
@@ -2013,7 +2022,6 @@ pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) 
 /// Render one page of an AQL `RESULT_SET`: a big single stat for a count query,
 /// the empty state, or the table | chart pair. Shared with the raw AQL editor
 /// screen.
-#[allow(clippy::must_use_candidate)] // consumed by the caller's view!
 pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
     if is_count {
         let n = page
@@ -2119,7 +2127,6 @@ fn result_row(row: &[serde_json::Value]) -> AnyView {
 /// Prev/next paging buttons wired to a local `offset` signal (page window is
 /// [`PAGE_SIZE`]). Prev is disabled at the first page; next when the page is
 /// not full. Offsets use saturating arithmetic (reliability rule).
-#[allow(clippy::must_use_candidate)] // consumed by the caller's view!
 pub(crate) fn paging_buttons(offset: RwSignal<u32>, row_count: usize) -> AnyView {
     let full = u32::try_from(row_count).unwrap_or(u32::MAX) >= PAGE_SIZE;
     let prev_disabled = Signal::derive(move || offset.get() == 0);
@@ -2508,7 +2515,6 @@ fn set_leaf_kind(query: &mut BuilderQuery, path: &[usize], kind: CriterionKind) 
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions on tree shapes
 mod tests {
     // The chart derivation this screen used to own (its column-picking rule and
     // its rejection cases) now lives in `crate::chart_model`, re-specified for
@@ -2747,9 +2753,9 @@ mod tests {
         aql_path: &str,
         rm_type: &str,
         selectable: bool,
-        children: Vec<crate::builder::catalog::CatalogNode>,
-    ) -> crate::builder::catalog::CatalogNode {
-        crate::builder::catalog::CatalogNode {
+        children: Vec<CatalogNode>,
+    ) -> CatalogNode {
+        CatalogNode {
             label: format!("label for {aql_path}"),
             rm_type: rm_type.to_owned(),
             aql_path: aql_path.to_owned(),
@@ -2789,7 +2795,7 @@ mod tests {
                 ],
             )],
         );
-        let mut found = std::collections::HashMap::new();
+        let mut found = std::collections::BTreeMap::new();
         super::collect_selectable(&tree, &mut found);
         assert_eq!(found.len(), 2);
         assert_eq!(

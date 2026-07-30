@@ -38,7 +38,7 @@ const CHIP_OFF: &str = "inline-flex items-center gap-1.5 rounded-control border 
 ///
 /// Takes the result set's columns and rows (never a screen type), so both
 /// results panes and the unit tests share one entry point.
-#[allow(clippy::must_use_candidate)] // consumed by the caller's view!
+#[expect(clippy::must_use_candidate, reason = "consumed by the caller's view!")]
 pub fn results_chart(columns: &[String], rows: &[Vec<Value>]) -> AnyView {
     match crate::chart_model::derive(columns, rows) {
         Some(model) => chart_panel(model),

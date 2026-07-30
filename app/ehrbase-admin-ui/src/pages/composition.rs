@@ -71,11 +71,13 @@ pub struct VersionEntry {
 /// [`AdminUiError::Internal`] when the history is not valid JSON.
 #[server]
 pub async fn fetch_versions(
+    /// The EHR holding the versioned composition.
     ehr_id: String,
+    /// The `VERSIONED_COMPOSITION` uid whose revision history to read.
     uid: String,
 ) -> Result<Vec<VersionEntry>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/versioned_composition/{}/revision_history",
         urlencoding::encode(&ehr_id),
@@ -106,12 +108,16 @@ pub async fn fetch_versions(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_composition(
+    /// The EHR holding the composition.
     ehr_id: String,
+    /// The version to read: a full `OBJECT_VERSION_ID`, or the object uid
+    /// for the latest version.
     version_uid: String,
+    /// Which representation to negotiate for the document body.
     format: ReprFormat,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/composition/{}",
         urlencoding::encode(&ehr_id),
@@ -142,12 +148,15 @@ pub async fn fetch_composition(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_version_at_time(
+    /// The EHR holding the versioned composition.
     ehr_id: String,
+    /// The `VERSIONED_COMPOSITION` uid to read a version of.
     versioned_object_uid: String,
+    /// The instant to resolve, as a `datetime-local` input value.
     at_time: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let at_time = datetime_local_to_rfc3339(&at_time);
     if at_time.is_empty() {
         return Err(AdminUiError::Invalid(
@@ -228,13 +237,17 @@ pub(crate) fn new_version_uid(body: &str) -> String {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn update_composition(
+    /// The EHR holding the composition.
     ehr_id: String,
+    /// The `VERSIONED_COMPOSITION` uid being updated.
     versioned_object_uid: String,
+    /// The version this edit is based on, sent as `If-Match`.
     current_version_uid: String,
+    /// The replacement composition document, as canonical JSON text.
     body: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     if body.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "the composition body is empty".to_owned(),
@@ -311,9 +324,14 @@ pub async fn update_composition(
 /// normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
-pub async fn delete_composition(ehr_id: String, version_uid: String) -> Result<(), AdminUiError> {
+pub async fn delete_composition(
+    /// The EHR holding the composition.
+    ehr_id: String,
+    /// The latest version's full `OBJECT_VERSION_ID`, which the delete requires.
+    version_uid: String,
+) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let version_uid = version_uid.trim();
     if version_uid.is_empty() || !version_uid.contains("::") {
         return Err(AdminUiError::Invalid(
@@ -399,12 +417,15 @@ pub struct VersionedCompositionDetails {
 /// [`AdminUiError::Internal`] when either body is not valid JSON.
 #[server]
 pub async fn fetch_versioned_composition(
+    /// The EHR holding the versioned composition.
     ehr_id: String,
+    /// The `VERSIONED_COMPOSITION` uid whose envelope facts to read.
     versioned_object_uid: String,
+    /// The specific version within that versioned object.
     version_uid: String,
 ) -> Result<VersionedCompositionDetails, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let ehr = urlencoding::encode(&ehr_id);
     let object = urlencoding::encode(&versioned_object_uid);
     let object_url = state
@@ -523,9 +544,15 @@ fn json_str(value: &Value, path: &[&str]) -> String {
 }
 
 /// The composition viewer screen.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
-#[allow(clippy::too_many_lines)] // resource/action setup plus the erased section locals — one screen, one function (rules §1)
+#[expect(
+    clippy::too_many_lines,
+    reason = "resource/action setup plus the erased section locals — one screen, one function (rules §1)"
+)]
 pub fn CompositionPage() -> impl IntoView {
     let params = leptos_router::hooks::use_params_map();
     let ehr_id = Signal::derive(move || params.with(|p| p.get("ehr_id").unwrap_or_default()));
@@ -901,7 +928,10 @@ fn versioned_row(label: &'static str, hook: &'static str, value: String) -> AnyV
 /// the update `commits on top of the latest version`. Structure is constant
 /// (visibility toggled with `class:hidden`) so server and client views match
 /// (rules §8).
-#[allow(clippy::too_many_arguments)] // the section wires several page-level signals + two resources
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the section wires several page-level signals + two resources"
+)]
 fn edit_section(
     ehr_id: Signal<String>,
     uid: Signal<String>,

@@ -39,7 +39,10 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 /// UUID) so the server pass and client hydration emit an identical
 /// `data-thaw-id` and generated-style selector — a hydration-determinism
 /// requirement (rules §8).
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();

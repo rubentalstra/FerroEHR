@@ -111,7 +111,7 @@ impl ChartModel {
 /// nothing in it is worth drawing (no column carries two or more numbers).
 ///
 /// A column becomes a series when at least half of its non-null cells are
-/// finite numbers and at least [`MIN_POINTS`] of them are — the rule the
+/// finite numbers and at least `MIN_POINTS` of them are — the rule the
 /// single-column predecessor used, now applied to EVERY column instead of
 /// stopping at the first match.
 #[must_use]
@@ -227,7 +227,10 @@ fn temporal_columns(
 /// The row-order axis: X is the row's position in the fetched page, so an
 /// `ORDER BY` in the query is the order on screen.
 fn row_order_axis(series: &[SeriesSpec], rows: &[Vec<Value>]) -> AxisSpec {
-    #[allow(clippy::cast_precision_loss)] // row ordinals of one page are tiny
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "row ordinals of one page are tiny"
+    )]
     let points = rows
         .iter()
         .enumerate()
@@ -335,7 +338,10 @@ pub fn iso_epoch_seconds(text: &str) -> Option<f64> {
     } else {
         return None;
     };
-    #[allow(clippy::cast_precision_loss)] // instants are inside f64's exact integer range
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "instants are inside f64's exact integer range"
+    )]
     Some(seconds as f64)
 }
 
@@ -351,7 +357,10 @@ pub fn time_tick_label(seconds: f64, span_seconds: f64) -> String {
     if !seconds.is_finite() || seconds.abs() > 1e12 {
         return "-".to_owned();
     }
-    #[allow(clippy::cast_possible_truncation)] // range-guarded immediately above
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "range-guarded immediately above"
+    )]
     let Ok(timestamp) = jiff::Timestamp::from_second(seconds as i64) else {
         return "-".to_owned();
     };
@@ -377,7 +386,6 @@ pub fn time_tick_label(seconds: f64, span_seconds: f64) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used)] // test assertions on a derived model
 mod tests {
     use serde_json::json;
 

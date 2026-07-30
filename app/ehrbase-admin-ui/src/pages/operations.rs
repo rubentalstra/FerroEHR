@@ -63,7 +63,10 @@ type ApplyFilterAction = Action<String, (String, Result<LoggerView, AdminUiError
 type ResetFilterAction = Action<(), Result<LoggerView, AdminUiError>>;
 
 /// The `/operations` screen.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn OperationsPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();

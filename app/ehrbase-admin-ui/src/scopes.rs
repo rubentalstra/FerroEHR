@@ -300,7 +300,6 @@ fn resource_expectation(raw: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions on a derived presentation model
 mod tests {
     use crate::scopes::{
         Grant, GrantDetail, ResourceGrant, grant, grants, grants_of, policy_source,

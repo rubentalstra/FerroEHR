@@ -155,12 +155,11 @@ pub enum Permission {
 
 impl Permissions {
     /// Whether this set contains a given permission.
+    // A by-value receiver: `Permissions` is a 5-byte `Copy` set, so the copy
+    // is cheaper than the reference (clippy::trivially_copy_pass_by_ref), and
+    // method-call auto-copy keeps every `&Permissions` call site unchanged.
     #[must_use]
-    #[expect(
-        clippy::trivially_copy_pass_by_ref,
-        reason = "a `&self` predicate keeps the method usable on a borrowed `Permissions` held inside a larger scope struct without forcing a copy at every call site"
-    )]
-    pub const fn contains(&self, perm: Permission) -> bool {
+    pub const fn contains(self, perm: Permission) -> bool {
         match perm {
             Permission::Create => self.create,
             Permission::Read => self.read,

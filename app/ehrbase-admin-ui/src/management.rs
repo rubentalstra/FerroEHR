@@ -232,7 +232,7 @@ pub fn readiness_view(body: &serde_json::Value) -> ReadinessView {
 #[server]
 pub async fn fetch_readiness() -> Result<ReadinessView, AdminUiError> {
     crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.origin_url("health/readiness");
     let response = state.cdr.get_public(&url, "application/json").await?;
     let body = if response.status == 503 {
@@ -264,7 +264,7 @@ pub async fn fetch_readiness() -> Result<ReadinessView, AdminUiError> {
 #[server]
 pub async fn probe_management_api() -> Result<ManagementAvailability, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.management_url("info");
     let response = state
         .cdr
@@ -493,7 +493,10 @@ pub async fn fetch_metric_names() -> Result<Option<Vec<String>>, AdminUiError> {
 /// [`AdminUiError::Invalid`] for an empty name; otherwise as
 /// [`fetch_build_info`].
 #[server]
-pub async fn fetch_metric_detail(name: String) -> Result<Option<MetricDetailView>, AdminUiError> {
+pub async fn fetch_metric_detail(
+    /// The metric name to read, as listed by the metrics index.
+    name: String,
+) -> Result<Option<MetricDetailView>, AdminUiError> {
     if name.trim().is_empty() {
         return Err(AdminUiError::Invalid("no metric name given".to_owned()));
     }
@@ -507,7 +510,7 @@ pub async fn fetch_metric_detail(name: String) -> Result<Option<MetricDetailView
 }
 
 /// The headline metric tiles: the registry's names, then one detail read per
-/// [`HEADLINE_METRICS`] entry the CDR actually registers (so a tile never
+/// `HEADLINE_METRICS` entry the CDR actually registers (so a tile never
 /// provokes a `404`, and a metric the deployment does not record renders `—`).
 ///
 /// `Ok(None)` = the metrics endpoint is not mounted.
@@ -598,7 +601,10 @@ pub async fn fetch_loggers() -> Result<Option<LoggerView>, AdminUiError> {
 /// [`AdminUiError::CdrUnreachable`] from the CDR; [`AdminUiError::Internal`]
 /// when the body is not JSON.
 #[server]
-pub async fn set_log_filter(filter: String) -> Result<LoggerView, AdminUiError> {
+pub async fn set_log_filter(
+    /// The replacement log filter, one or more `target=level` directives.
+    filter: String,
+) -> Result<LoggerView, AdminUiError> {
     let session = crate::session::require_session().await?;
     let filter = filter.trim().to_owned();
     if filter.is_empty() {
@@ -606,7 +612,7 @@ pub async fn set_log_filter(filter: String) -> Result<LoggerView, AdminUiError> 
             "a log filter needs at least one directive, e.g. `ehrbase=debug`".to_owned(),
         ));
     }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.management_url("loggers");
     let body = serde_json::json!({ "filter": filter }).to_string();
     let response = state
@@ -633,7 +639,7 @@ pub async fn set_log_filter(filter: String) -> Result<LoggerView, AdminUiError> 
 #[server]
 pub async fn reset_log_filter() -> Result<LoggerView, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.management_url("loggers");
     let response = state.cdr.delete(&session.credential, &url, &[]).await?;
     let body = crate::cdr::CdrClient::expect_success(response)?.body;
@@ -652,7 +658,7 @@ pub async fn reset_log_filter() -> Result<LoggerView, AdminUiError> {
 #[cfg(feature = "ssr")]
 async fn management_get(path: &str) -> Result<Option<String>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.management_url(path);
     let response = state
         .cdr

@@ -5,7 +5,10 @@ use leptos::prelude::*;
 use leptos_icons::Icon;
 
 /// One dashboard metric tile.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn StatCard(
     /// The metric label ("EHRs", "Compositions", …).

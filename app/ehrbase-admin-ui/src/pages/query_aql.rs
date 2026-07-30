@@ -67,7 +67,10 @@ pub(crate) fn load_href(name: &str, version: &str) -> String {
 }
 
 /// The raw AQL editor screen.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn QueryAqlPage() -> impl IntoView {
     let query_map = use_query_map();
@@ -218,7 +221,7 @@ fn seed_editor_from_loaded_query(
             return;
         }
         if let Some(Ok(Some((qualified, version, text)))) = load_resource.get() {
-            if aql.with_untracked(std::string::String::is_empty) {
+            if aql.with_untracked(String::is_empty) {
                 aql.set(text);
             }
             let (namespace, name) = split_qualified(&qualified);
@@ -312,7 +315,7 @@ fn editor_section(
                     <button
                         type="button"
                         class=BTN_SECONDARY
-                        disabled=Signal::derive(move || aql.with(std::string::String::is_empty))
+                        disabled=Signal::derive(move || aql.with(String::is_empty))
                         on:click=validate_click
                     >
                         "Validate"
@@ -383,12 +386,12 @@ fn run_save_section(
     ran: RwSignal<Option<(String, String)>>,
     offset: RwSignal<u32>,
 ) -> AnyView {
-    let empty_aql = Signal::derive(move || aql.with(std::string::String::is_empty));
+    let empty_aql = Signal::derive(move || aql.with(String::is_empty));
     // The namespace stays optional (the spec makes it optional), so only the
     // AQL and the query name gate the Save button.
     let save_disabled = Signal::derive(move || {
-        aql.with(std::string::String::is_empty)
-            || fields.name.with(std::string::String::is_empty)
+        aql.with(String::is_empty)
+            || fields.name.with(String::is_empty)
             || fields.version_is_unstorable()
     });
     let run_click = move |_| {

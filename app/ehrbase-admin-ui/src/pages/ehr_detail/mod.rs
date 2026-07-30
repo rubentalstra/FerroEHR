@@ -15,7 +15,7 @@
 //! This module owns the [`EhrDetailPage`] shell, the EHR summary header (the
 //! one read of the EHR resource itself — `GET /ehr/{ehr_id}`, so an unknown id
 //! fails once at the top of the screen instead of once per tab), the shared
-//! [`tab_bar`] strip, and the `commit_version_uid` helper shared by the
+//! `tab_bar` strip, and the `commit_version_uid` helper shared by the
 //! directory and composition commit paths.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
@@ -108,9 +108,12 @@ pub struct EhrSummary {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the body is not valid JSON.
 #[server]
-pub async fn fetch_ehr_summary(ehr_id: String) -> Result<EhrSummary, AdminUiError> {
+pub async fn fetch_ehr_summary(
+    /// The EHR whose summary facts to read.
+    ehr_id: String,
+) -> Result<EhrSummary, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state
         .cdr
         .rest_v1(&format!("ehr/{}", urlencoding::encode(&ehr_id)));
@@ -240,7 +243,10 @@ fn summary_fact(label: String, value: String) -> AnyView {
 
 /// The `/ehrs/{ehr_id}` screen: the tab bar plus five always-mounted,
 /// visibility-toggled tab bodies.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn EhrDetailPage() -> impl IntoView {
     let params = leptos_router::hooks::use_params_map();
