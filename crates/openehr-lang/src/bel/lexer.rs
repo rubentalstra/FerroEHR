@@ -193,9 +193,12 @@ pub(crate) enum Token {
     /// `@` (terminology binding separator in `[ac1@terminology]`).
     #[token("@")]
     At,
-    /// `/=` / `!=` / `≠` (`SYM_NE`).
+    /// `/=` / `!=` / `≠` (`SYM_NE`) — plus the ADL 1.4 spelling `<>`
+    /// (ADL1.4 `master06-assertions.adoc` §Equality Operators and its yacc
+    /// `SYM_NE`; a superset for the BEL callers).
     #[token("/=")]
     #[token("!=")]
+    #[token("<>")]
     #[token("\u{2260}")]
     Ne,
     /// `=` (`SYM_EQ`).
