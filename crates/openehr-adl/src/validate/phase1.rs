@@ -1574,6 +1574,19 @@ fn assertion_constraint_body(text: &str) -> Option<&str> {
 fn assertion_archetype_ids(a: &Assertion) -> Vec<String> {
     // Slot assertions constrain `archetype_id/value matches {/regex/}`; the
     // regex, when it is a literal id (no meta-characters), is itself the id.
+    // VDFAI's subject is the ARCHETYPE IDENTIFIER (ADL1.4 master05 §Archetype
+    // Slots) — an assertion targeting another property (`domain_concept`,
+    // `short_concept_name`, a path) constrains something that is not an
+    // archetype id, so extracting its regex as one is a false positive (#767
+    // audit: `domain_concept matches {/medication\.v1/}` yielded the bogus
+    // id `medication.v1`).
+    let targets_archetype_id = a
+        .string_expression
+        .as_deref()
+        .is_some_and(|s| s.trim_start().starts_with("archetype_id"));
+    if !targets_archetype_id {
+        return Vec::new();
+    }
     let Some(body) = a
         .string_expression
         .as_deref()
