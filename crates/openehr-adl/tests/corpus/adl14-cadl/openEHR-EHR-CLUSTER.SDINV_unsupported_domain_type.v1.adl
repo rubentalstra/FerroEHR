@@ -23,17 +23,15 @@ definition
 							-- ADL1.4/master09-customising_adl.adoc §Introduction
 							-- admits ANY `C_DOMAIN_TYPE` descendant in an inline
 							-- dADL block, and each one constrains a DIFFERENT
-							-- reference-model type. `C_CODE_PHRASE` (§Custom Syntax)
-							-- is not lowered yet, so it is refused by type name
+							-- reference-model type. `C_DV_STATE` is defined by no
+							-- vendored openEHR spec text (the oAP custom type is not
+							-- vendored, and AOM1.4/masterAppA-domain_extension.adoc
+							-- works only C_ORDINAL/C_QUANTITY/C_CODED_TEXT), so it
+							-- has no citable shape and is refused by type name
 							-- rather than silently lowered to some other RM type.
-							(C_CODE_PHRASE) <
-								terminology_id = <
-									value = <"local">
-								>
-								code_list = <
-									["1"] = <"at0002">
-									["2"] = <"at0003">
-								>
+							(C_DV_STATE) <
+								value = <"at0002">
+								is_terminal = <False>
 							>
 						}
 					}
@@ -48,7 +46,7 @@ ontology
 			items = <
 				["at0000"] = <
 					text = <"Unsupported inline dADL domain type">
-					description = <"Refusal fixture: an inline dADL `C_CODE_PHRASE` domain block.">
+					description = <"Refusal fixture: an inline dADL `C_DV_STATE` domain block, a domain constrainer the vendored spec text does not define.">
 				>
 				["at0001"] = <
 					text = <"Coded item">

@@ -1,0 +1,138 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.code_phrase_dadl_block.v1
+
+concept
+	[at0000]	-- Inline dADL C_CODE_PHRASE
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Inline dADL C_CODE_PHRASE
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				value matches {
+					DV_CODED_TEXT matches {
+						-- ADL1.4/master09-customising_adl.adoc §Custom Syntax,
+						-- the chapter's own worked example verbatim. The section
+						-- presents it and the compact `[local:: at0039, at0040]`
+						-- spelling below as alternatives that "express exactly
+						-- the same constraint", so both lower identically.
+						defining_code matches {
+							C_CODE_PHRASE <
+								terminology_id = <
+									value = <"local">
+								>
+								code_list = <
+									["1"] = <"at0039">
+									["2"] = <"at0040">
+								>
+							>
+						}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Position (custom syntax)
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0039,	-- lying
+							at0040]	-- sitting
+						}
+					}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- Position (assumed)
+				value matches {
+					DV_CODED_TEXT matches {
+						-- AOM1.4/master04-constraint_model_package.adoc
+						-- §Assumed_value: assumed values appear on descendants of
+						-- `C_PRIMITIVE` and `C_DOMAIN_TYPE`; the profiled
+						-- `C_CODE_PHRASE` carries a whole CODE_PHRASE there.
+						defining_code matches {
+							(C_CODE_PHRASE) <
+								terminology_id = <
+									value = <"local">
+								>
+								code_list = <
+									["1"] = <"at0039">
+									["2"] = <"at0040">
+								>
+								assumed_value = <
+									terminology_id = <
+										value = <"local">
+									>
+									code_string = <"at0039">
+								>
+							>
+						}
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Finding
+				value matches {
+					DV_CODED_TEXT matches {
+						-- An EXTERNAL terminology in the same block: its codes are
+						-- not archetype terms, so VATDF/VACDF leave them alone
+						-- (ADL1.4/master08-adl.adoc §Validity Rules).
+						defining_code matches {
+							C_CODE_PHRASE <
+								terminology_id = <
+									value = <"SNOMED-CT">
+								>
+								code_list = <
+									["1"] = <"163035008">
+								>
+							>
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Inline dADL C_CODE_PHRASE">
+					description = <"Accepting fixture: the master09 §Custom Syntax C_CODE_PHRASE block.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"Patient position, as an inline dADL block.">
+				>
+				["at0002"] = <
+					text = <"Position (custom syntax)">
+					description = <"Patient position, as the compact custom syntax.">
+				>
+				["at0003"] = <
+					text = <"Position (assumed)">
+					description = <"Patient position, with an assumed value.">
+				>
+				["at0004"] = <
+					text = <"Finding">
+					description = <"A finding coded in an external terminology.">
+				>
+				["at0039"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0040"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+			>
+		>
+	>

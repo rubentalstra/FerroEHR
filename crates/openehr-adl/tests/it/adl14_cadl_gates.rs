@@ -105,6 +105,15 @@ const FIXTURES: &[(&str, Expect)] = &[
         "openEHR-EHR-CLUSTER.domain_assumed_value.v1.adl",
         Expect::Pass,
     ),
+    (
+        "openEHR-EHR-CLUSTER.code_phrase_dadl_block.v1.adl",
+        Expect::Pass,
+    ),
+    // ── the deprecated 1.4 pipe-ordinal shorthand (master04.4) ────────────
+    (
+        "openEHR-EHR-CLUSTER.ordinal_pipe_shorthand.v1.adl",
+        Expect::Pass,
+    ),
     // ── 1.4 term-constraint definedness (master08 VATDF/VACDF) ────────────
     (
         "openEHR-EHR-CLUSTER.VATDF_undefined_listed_code.v1.adl",

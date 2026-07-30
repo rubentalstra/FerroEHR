@@ -535,9 +535,11 @@ cross-check).
 | `…SCCOG_adl2_slot_closed.v1.adl` | SCCOG | the ADL2 slot `closed` marker refused in a 1.4 text |
 | `…STCCP_adl2_constraint_strength.v1.adl` | STCCP | an ADL2 term-constraint strength refused in a 1.4 text |
 | `…STCCP_adl2_terminology_binding.v1.adl` | STCCP | an ADL2 `@terminology` operational binding refused in a 1.4 text |
-| `…SDINV_unsupported_domain_type.v1.adl` | SDINV | an inline dADL `C_CODE_PHRASE` refused BY NAME, never lowered to another RM type |
+| `…SDINV_unsupported_domain_type.v1.adl` | SDINV | an inline dADL `C_DV_STATE` refused BY NAME, never lowered to another RM type. **Adjudication (2026-07-30):** the file previously carried `C_CODE_PHRASE`, which master09 §Custom Syntax DOES define and which is now lowered; the refusal it pins is "a domain constrainer with no vendored shape", so the fixture moved to `C_DV_STATE` — the one such type met in the wild, absent from every vendored spec file (the oAP specification is not vendored) |
 | `…SDINV_assumed_value_unmatched.v1.adl` | SDINV | a domain `assumed_value` satisfying no `list` row |
 | `…domain_assumed_value.v1.adl` | PASS | the accepting twin: an `assumed_value` landing on the tuple row it satisfies |
+| `…code_phrase_dadl_block.v1.adl` | PASS | master09 §Custom Syntax's own `C_CODE_PHRASE` dADL example (bare + `(…)`-cast spellings), beside the compact `[local:: …]` form it "express[es] exactly the same constraint" as, plus the `assumed_value` CODE_PHRASE and an external terminology |
+| `…ordinal_pipe_shorthand.v1.adl` | PASS | the deprecated openEHR-profiled 1.4 ordinal syntax `0|[local::at0005], …` (master04.4 §Tuple Constraints; `cadl14.g4` `c_ordinal`), incl. the `; assumed` tail and an external-terminology symbol |
 | `…VATDF_undefined_listed_code.v1.adl` | VATDF | an undefined code inside the 1.4 listed term constraint `[local:: …]` |
 | `…VATDF_undefined_code_with_assumed.v1.adl` | VATDF | an undefined listed code in the assumed-value SPELLING of the 1.4 term constraint (the assumed code itself is a member, so STCAC stays quiet) |
 | `…VACDF_undefined_constraint_code.v1.adl` | VACDF | an undefined `ac` code in a 1.4 qualified term constraint |
