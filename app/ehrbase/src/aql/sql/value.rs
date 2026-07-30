@@ -490,17 +490,20 @@ pub(super) fn version_field_expr(
         // same rule as the versioning render edge); the terminology id of
         // both coded version fields is the constant `openehr` (#976).
         VersionField::ChangeTypeRubric => {
-            coded_rubric_case(col(&audit(), "change_type"), "audit_change_type")
+            coded_rubric_case(&col(&audit(), "change_type"), "audit_change_type")
         }
-        VersionField::ChangeTypeTerminology => Expr::val("openehr").into(),
         VersionField::Committer => col(&audit(), "committer"),
         VersionField::Description => col(&audit(), "description"),
         VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
         VersionField::LifecycleState => col(voa, "lifecycle_state"),
         VersionField::LifecycleStateRubric => {
-            coded_rubric_case(col(voa, "lifecycle_state"), "version_lifecycle_state")
+            coded_rubric_case(&col(voa, "lifecycle_state"), "version_lifecycle_state")
         }
-        VersionField::LifecycleStateTerminology => Expr::val("openehr").into(),
+        // Both coded version fields belong to the constant `openehr`
+        // terminology (#976).
+        VersionField::ChangeTypeTerminology | VersionField::LifecycleStateTerminology => {
+            Expr::val("openehr")
+        }
     }
 }
 
@@ -508,7 +511,7 @@ pub(super) fn version_field_expr(
 /// terminology group, generated from the vendored TERM bundle (TERM 3.1.0
 /// `openehr_terminology.xml`) — the coded version fields store the numeric
 /// group code; their `…/value` sub-path compares against the rubric.
-fn coded_rubric_case(code_col: Expr, group_id: &str) -> Expr {
+fn coded_rubric_case(code_col: &Expr, group_id: &str) -> Expr {
     let mut case = sea_query::CaseStatement::new();
     for concept in openehr_term::bundle::openehr().concepts_in_group(group_id) {
         case = case.case(

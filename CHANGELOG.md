@@ -15,6 +15,35 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **ADL 1.4 archetypes carrying a `revision_history` section now parse and
+  upload.** The section is defined by the ADL 1.4 specification (master08
+  §Revision History Section) but was not recognised, so an entire spec-valid
+  archetype was rejected with a "expected a section header" syntax error. It
+  is now read and preserved on the 1.4 source model. (ADL 2 removed the
+  section, so it has no ADL 2 counterpart; a 1.4 upload stores the source
+  verbatim, so nothing is lost.)
+- **The dADL/ODIN reader accepts the leaf and structure forms the ADL 1.4
+  specification defines** (master04 §dADL), which were previously rejected:
+  the `<...>` empty-section marker at any level; the whole partial date/time
+  family (`yyyy-MM-ddT??:??:??`, `yyyy-MM-??T??:??:??`,
+  `yyyy-??-??T??:??:??`); integers written with an exponent (`29e6`);
+  booleans in any case (`TRUE`, `fAlSe`); `infinity` / `-infinity` / `*` as
+  unbounded interval endpoints; and local term codes (`[at0200]`) as leaf
+  values.
+- **Values that were silently mis-read are now read correctly or rejected
+  loudly.** A `(TYPE)`-cast section value is read through instead of being
+  dropped; an `|N +/- M|` domain constraint becomes the interval
+  `[N-M, N+M]` instead of collapsing to the centre; a duplicate sibling
+  attribute is a typed error naming the attribute instead of the last one
+  silently winning (rule VDATU); duplicate keys in the `language` section are
+  now reported (VOKU); and an interval used as a `_default` value is rejected
+  instead of silently becoming a null default.
+- **Multi-line string values drop their continuation-line indentation**, as
+  the specification requires (master04 §String Data), instead of carrying the
+  source file's leading whitespace into the value.
+
 ## [3.14.0] - 2026-07-30
 
 ### Fixed

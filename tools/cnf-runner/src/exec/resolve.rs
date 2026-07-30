@@ -250,6 +250,11 @@ impl<'a> Resolver<'a> {
         "top3_systolic_desc_uids",
     ];
 
+    /// Resolve a declared corpus view to its selection-spec value.
+    ///
+    /// # Errors
+    /// [`ResolveError`] when the view is undeclared or its evaluator is
+    /// not registered.
     pub fn view(&mut self, key: &CorpusKey, view: &ViewName) -> Result<Value, ResolveError> {
         let entry = self
             .manifest

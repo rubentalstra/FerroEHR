@@ -1,0 +1,32 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.SDINV_duplicate_sibling_attribute.v1
+
+concept
+	[at0000]	-- Duplicate sibling attribute
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+	-- master04 §General Form: "Sibling attribute names must be unique";
+	-- LANG odin master05 rule VDATU. `lifecycle_state` is declared twice.
+	lifecycle_state = <"published">
+
+definition
+	OBSERVATION[at0000] matches {*}	-- Duplicate sibling attribute
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Duplicate sibling attribute">
+					description = <"Refusal fixture: a repeated sibling attribute name.">
+				>
+			>
+		>
+	>

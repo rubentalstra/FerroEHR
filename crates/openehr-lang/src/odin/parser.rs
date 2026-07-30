@@ -2,27 +2,118 @@
 //! transcribed from `odin.g4` / `odin_values.g4`. Produces an
 //! [`OdinValue`] tree.
 
+use chumsky::DefaultExpected;
+use chumsky::error::{Error, LabelError};
 use chumsky::prelude::*;
+use chumsky::util::MaybeRef;
 use indexmap::IndexMap;
 
 use super::lexer::{Spanned, Token};
 use super::{OdinInterval, OdinKey, OdinValue};
 
-type Err<'a> = chumsky::extra::Err<Simple<'a, Token>>;
+type Err<'a> = chumsky::extra::Err<Failure>;
+
+/// A parse failure: a plain syntactic conflict, or the typed
+/// duplicate-sibling-attribute violation.
+#[derive(Debug, Clone)]
+pub(super) enum Failure {
+    /// An unexpected token at the given token-index span.
+    Syntax(SimpleSpan),
+    /// VDATU: two sibling attributes share a name
+    /// (`LANG/docs/odin/master05-content` §General Structure).
+    DuplicateAttribute {
+        /// The repeated attribute name.
+        name: String,
+        /// Token-index span of the offending (second) occurrence.
+        span: SimpleSpan,
+    },
+}
+
+impl Failure {
+    /// The token-index span the failure points at.
+    fn span(&self) -> SimpleSpan {
+        match self {
+            Self::Syntax(s) | Self::DuplicateAttribute { span: s, .. } => *s,
+        }
+    }
+
+    /// Keep whichever failure carries the most information: a typed
+    /// duplicate-attribute violation always outranks a bare syntax conflict
+    /// (the enclosing `choice`s retry other alternatives after it, and each of
+    /// those contributes a syntax error at the same position).
+    fn preferred(self, other: Self) -> Self {
+        match (&self, &other) {
+            (Self::DuplicateAttribute { .. }, _) => self,
+            (_, Self::DuplicateAttribute { .. }) => other,
+            _ => self,
+        }
+    }
+}
+
+impl<'a> Error<'a, &'a [Token]> for Failure {
+    fn merge(self, other: Self) -> Self {
+        self.preferred(other)
+    }
+}
+
+impl<'a> LabelError<'a, &'a [Token], DefaultExpected<'a, Token>> for Failure {
+    fn expected_found<E: IntoIterator<Item = DefaultExpected<'a, Token>>>(
+        _expected: E,
+        _found: Option<MaybeRef<'a, Token>>,
+        span: SimpleSpan,
+    ) -> Self {
+        Self::Syntax(span)
+    }
+
+    fn merge_expected_found<E: IntoIterator<Item = DefaultExpected<'a, Token>>>(
+        self,
+        _expected: E,
+        _found: Option<MaybeRef<'a, Token>>,
+        span: SimpleSpan,
+    ) -> Self {
+        self.preferred(Self::Syntax(span))
+    }
+
+    fn replace_expected_found<E: IntoIterator<Item = DefaultExpected<'a, Token>>>(
+        self,
+        _expected: E,
+        _found: Option<MaybeRef<'a, Token>>,
+        span: SimpleSpan,
+    ) -> Self {
+        self.preferred(Self::Syntax(span))
+    }
+}
+
+/// A parse failure resolved to a byte offset in the original source.
+pub(super) struct Located {
+    /// The failure.
+    pub(super) failure: Failure,
+    /// Byte offset of the failure in the original source.
+    pub(super) offset: usize,
+}
 
 /// Parse a spanned ODIN token stream into an [`OdinValue`].
 ///
 /// # Errors
-/// Returns the byte offset (into the original source) of the first parse error.
-pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<OdinValue, usize> {
+/// Returns the first failure, resolved to a byte offset in the original
+/// source.
+pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<OdinValue, Located> {
     let tokens: Vec<Token> = spanned.iter().map(|s| s.token.clone()).collect();
     odin_text().parse(&tokens).into_result().map_err(|errs| {
-        let idx = errs.first().map_or(spanned.len(), |e| e.span().start);
-        spanned
+        let failure = errs
+            .into_iter()
+            .reduce(Failure::preferred)
+            .unwrap_or(Failure::Syntax(SimpleSpan::new(
+                (),
+                spanned.len()..spanned.len(),
+            )));
+        let idx = failure.span().start;
+        let offset = spanned
             .get(idx)
             .map(|s| s.span.start)
             .or_else(|| spanned.last().map(|s| s.span.end))
-            .unwrap_or(0)
+            .unwrap_or(0);
+        Located { failure, offset }
     })
 }
 
@@ -34,6 +125,15 @@ fn odin_text<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> {
 }
 
 /// `attr_vals : ( attr_val ';'? )+` → [`OdinValue::Object`].
+///
+/// Sibling attribute names must be unique — `LANG/docs/odin/master05-content`
+/// §General Structure rule *VDATU*: "attribute name uniqueness: sibling
+/// attributes occurring within an object node must be uniquely named with
+/// respect to each other, in the same way as in class definitions in an
+/// information model", stated as the principle "Sibling attribute names must
+/// be unique" in `AM/docs/ADL1.4/master04-dadl` §General Form. A repeat is a
+/// typed [`Failure::DuplicateAttribute`], never a silent last-one-wins
+/// overwrite.
 fn attr_vals<'a>(
     block: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
@@ -45,10 +145,19 @@ fn attr_vals<'a>(
     key.then_ignore(just(Token::Eq))
         .then(block)
         .then_ignore(just(Token::SemiColon).or_not())
+        .map_with(|pair, e| (pair, e.span()))
         .repeated()
         .at_least(1)
-        .collect::<Vec<(String, OdinValue)>>()
-        .map(|pairs| OdinValue::Object(pairs.into_iter().collect::<IndexMap<_, _>>()))
+        .collect::<Vec<((String, OdinValue), SimpleSpan)>>()
+        .try_map(|pairs, _| {
+            let mut map: IndexMap<String, OdinValue> = IndexMap::with_capacity(pairs.len());
+            for ((name, value), span) in pairs {
+                if map.insert(name.clone(), value).is_some() {
+                    return Err(Failure::DuplicateAttribute { name, span });
+                }
+            }
+            Ok(OdinValue::Object(map))
+        })
 }
 
 /// `object_block : object_value_block | object_reference_block` (+ the
@@ -96,7 +205,23 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
                 OdinValue::PathList(v)
             });
 
+        // `<...>` — an empty section / void object, legal at any level.
+        // `AM/docs/ADL1.4/master04-dadl` §Empty Sections: "Empty sections are
+        // allowed at both internal and leaf node levels … Nested empty
+        // sections can be used", with the principle "Empty sections can appear
+        // anywhere"; `LANG/docs/odin/master05-content` §Void Objects: "A void
+        // object, i.e. an object attribute that has no value is allowed in an
+        // ODIN text, but ignored by parsers."
+        //
+        // NOTE: it maps to [`OdinValue::Empty`], the same value as `<>` —
+        // both spec passages define the construct as "this attribute exists
+        // and has no data", so no consumer can act on the distinction between
+        // the two spellings, and a separate variant would force every match
+        // arm in every consumer to handle a second no-data case.
+        let void = just(Token::ListContinue).to(OdinValue::Empty);
+
         let inner = choice((
+            void,
             ref_list,
             keyed_list,
             attr_vals(block.clone()),
@@ -130,6 +255,13 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
 
 /// `rm_type_id : ALPHA_UC_ID ( '<' rm_type_id ( ',' rm_type_id )* '>' )?`,
 /// reconstructed as a flat string (e.g. `Interval<Quantity>`).
+///
+// TODO: accept the dot-separated namespace form of a type identifier
+// (`org.openehr.rm.ehr.content.ENTRY`, `Core.Abstractions.Relationships.
+// Relationship`) — `AM/docs/ADL1.4/master04-dadl` §Adding Type Information and
+// `LANG/docs/odin/master05-content` §Adding Type Information both allow it,
+// but the vendored `odin.g4` `rm_type_id` rule this parser transcribes does
+// not, so such a cast currently fails the parse.
 fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
     recursive(|t| {
         select! { Token::AlphaUcId(s) => s }
@@ -197,18 +329,36 @@ fn primitive_object<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + 
 fn interval_value<'a>(
     leaf: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
+    // An interval endpoint: a leaf value, or one of the unbounded markers
+    // `infinity` / `-infinity` / `*` (`AM/docs/ADL1.4/master04-dadl`
+    // §Intervals of Ordered Primitive Types — its own example `|0..infinity|`
+    // is glossed "0 - infinity (i.e. >= 0)"). An unbounded marker yields
+    // `None`, the representation this crate already uses for the open side of
+    // a one-sided interval; the sign carried by `-infinity` is not recorded
+    // separately because the side of the interval the endpoint sits on already
+    // determines the direction.
+    let unbounded = choice((
+        just(Token::Minus)
+            .or_not()
+            .ignore_then(just(Token::Infinity))
+            .ignored(),
+        just(Token::Star).ignored(),
+    ))
+    .to(None);
+    let bound = choice((unbounded, leaf.clone().map(Some)));
+
     // `| '>'? a '..' '<'? b |`
     let range = just(Token::Gt)
         .or_not()
-        .then(leaf.clone())
+        .then(bound.clone())
         .then_ignore(just(Token::IvlSep))
         .then(just(Token::Lt).or_not())
-        .then(leaf.clone())
+        .then(bound.clone())
         .map(|(((gt, lo), lt), hi)| OdinInterval::Range {
-            lower: Some(Box::new(lo)),
-            lower_included: gt.is_none(),
-            upper: Some(Box::new(hi)),
-            upper_included: lt.is_none(),
+            lower_included: gt.is_none() && lo.is_some(),
+            upper_included: lt.is_none() && hi.is_some(),
+            lower: lo.map(Box::new),
+            upper: hi.map(Box::new),
         });
 
     // `| a '+/-' b |`
@@ -228,24 +378,32 @@ fn interval_value<'a>(
         just(Token::Le).to(RelBound::Upper(true)),
         just(Token::Lt).to(RelBound::Upper(false)),
     ));
-    let single = relop.or_not().then(leaf).map(|(op, v)| match op {
-        None => OdinInterval::Range {
+    let single = relop.or_not().then(bound).map(|(op, v)| match (op, v) {
+        (None, Some(v)) => OdinInterval::Range {
             lower: Some(Box::new(v.clone())),
             lower_included: true,
             upper: Some(Box::new(v)),
             upper_included: true,
         },
-        Some(RelBound::Lower(incl)) => OdinInterval::Range {
+        (Some(RelBound::Lower(incl)), Some(v)) => OdinInterval::Range {
             lower: Some(Box::new(v)),
             lower_included: incl,
             upper: None,
             upper_included: false,
         },
-        Some(RelBound::Upper(incl)) => OdinInterval::Range {
+        (Some(RelBound::Upper(incl)), Some(v)) => OdinInterval::Range {
             lower: None,
             lower_included: false,
             upper: Some(Box::new(v)),
             upper_included: incl,
+        },
+        // A one-sided form whose single endpoint is itself an unbounded marker
+        // (`|>=-infinity|`, `|<*|`) constrains nothing at all.
+        (_, None) => OdinInterval::Range {
+            lower: None,
+            lower_included: false,
+            upper: None,
+            upper_included: false,
         },
     });
 
@@ -268,15 +426,18 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
     let integer = int_sign
         .then(select! { Token::Integer(s) => s })
         .try_map(|(sign, s), span| {
-            let mag = s.parse::<i64>().map_err(|_| Simple::new(None, span))?;
-            Ok(OdinValue::Integer(sign.unwrap_or(1) * mag))
+            let mag = integer_lexeme(&s).ok_or(Failure::Syntax(span))?;
+            sign.unwrap_or(1)
+                .checked_mul(mag)
+                .map(OdinValue::Integer)
+                .ok_or(Failure::Syntax(span))
         });
 
     let real_sign = choice((just(Token::Plus).to(1f64), just(Token::Minus).to(-1f64))).or_not();
     let real = real_sign
         .then(select! { Token::Real(s) => s })
         .try_map(|(sign, s), span| {
-            let mag = s.parse::<f64>().map_err(|_| Simple::new(None, span))?;
+            let mag = s.parse::<f64>().map_err(|_| Failure::Syntax(span))?;
             Ok(OdinValue::Real(sign.unwrap_or(1.0) * mag))
         });
 
@@ -287,7 +448,10 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
     };
     let character =
         select! { Token::Character(s) => s }.map(|s| OdinValue::Character(decode_char(&s)));
-    let term_code = select! { Token::TermCodeRef(s) => OdinValue::TermCode(s) };
+    let term_code = select! {
+        Token::TermCodeRef(s) => OdinValue::TermCode(s),
+        Token::LocalTermCodeRef(s) => OdinValue::TermCode(s),
+    };
     let date = select! { Token::Date(s) => OdinValue::Date(s) };
     let time = select! { Token::Time(s) => OdinValue::Time(s) };
     let date_time = select! { Token::DateTime(s) => OdinValue::DateTime(s) };
@@ -296,6 +460,35 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
     choice((
         real, integer, string, boolean, character, term_code, date_time, date, time, duration,
     ))
+}
+
+/// The value of an `INTEGER` lexeme, evaluating the optional exponent suffix.
+///
+/// `AM/docs/ADL1.4/master04-dadl` §Integer Data lists `29e6` beside `25` and
+/// `300000` as integer data, and both the chapter's lex rule
+/// (`[0-9]+[eE][+-]?[0-9]+`) and the vendored `base_lexer.g4`
+/// (`INTEGER : DIGIT+ E_SUFFIX?`) admit the suffix — so the lexeme is
+/// *evaluated*, not parsed as a bare decimal literal.
+///
+/// NOTE: neither chapter says what a negative exponent means for an integer
+/// (`29e-2` is not an integer). It is accepted only when the scaling is exact
+/// (`2900e-2` = 29); an inexact one has no integer value and is rejected as a
+/// malformed leaf rather than silently truncated. No openEHR spec governs that
+/// case — our own design/extension.
+fn integer_lexeme(s: &str) -> Option<i64> {
+    let Some(e) = s.find(['e', 'E']) else {
+        return s.parse::<i64>().ok();
+    };
+    let mantissa = s.get(..e)?.parse::<i64>().ok()?;
+    let exponent = s.get(e + 1..)?.parse::<i32>().ok()?;
+    let scale = 10i64.checked_pow(exponent.unsigned_abs())?;
+    if exponent >= 0 {
+        mantissa.checked_mul(scale)
+    } else if mantissa % scale == 0 {
+        Some(mantissa / scale)
+    } else {
+        None
+    }
 }
 
 /// Strip the surrounding double quotes and decode `master03` escapes.

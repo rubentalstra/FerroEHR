@@ -9,15 +9,16 @@
 //! and the normative spec text (`docs/specs/openehr/LANG/docs/odin/`) are the
 //! syntax authority.
 //!
-//! Three fixtures are adjudicated as expected-error (see the individual tests
-//! for the citation): `log4j2.xml` is a log4j configuration, not ODIN; and the
-//! two illustrative `master`-style example documents use bareword / meta-id
+//! Four fixtures are adjudicated as expected-error (see the individual tests
+//! for the citation): `log4j2.xml` is a log4j configuration, not ODIN; the two
+//! illustrative `master`-style example documents use bareword / meta-id
 //! placeholders and a top-level keyed-object list that the `odin_text` start
-//! rule does not accept.
+//! rule does not accept; and `odin_test.txt` declares one attribute name
+//! twice, which rule *VDATU* forbids.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue, parse};
+use openehr_lang::odin::{OdinErrorKind, OdinInterval, OdinKey, OdinValue, parse};
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------
@@ -95,7 +96,9 @@ const ODIN_FIXTURES: &[(&str, bool)] = &[
     ("odin/odin/odin_primitive_lists.txt", true),
     ("odin/odin/odin_primitive_types.txt", true),
     ("odin/odin/odin_term_binding_test.txt", true),
-    ("odin/odin/odin_test.txt", true),
+    // Expected-error: the fixture declares the top-level attribute `people`
+    // twice — see `referencing_document_is_refused_for_duplicate_attribute`.
+    ("odin/odin/odin_test.txt", false),
     ("odin/odin/odin_types.txt", true),
 ];
 
@@ -405,16 +408,64 @@ fn typed_casts_and_generic_types() {
     assert_eq!(as_str(field(value, "bmmType")), "CODED_TEXT");
 }
 
+/// The INVALID twin of [`referencing_document_parses`]: the vendored fixture
+/// itself, which declares the top-level attribute `people` twice (once with
+/// integer keys, once with string keys — archie's fixture concatenates the two
+/// container examples of `AM/docs/ADL1.4/master04-dadl` §Container Objects
+/// under the same attribute name).
+///
+/// This assertion was MOVED TOWARD THE SPEC: it previously pinned a
+/// last-one-wins overwrite (6 surviving attributes). Sibling attribute names
+/// must be unique — `LANG/docs/odin/master05-content` §General Structure rule
+/// *VDATU*, and the principle "Sibling attribute names must be unique" of
+/// `AM/docs/ADL1.4/master04-dadl` §General Form — so the document is
+/// spec-invalid and the reader now refuses it with the typed error naming the
+/// repeated attribute. The vendored fixture is unchanged; only the expectation
+/// moved, from an implementation behaviour to the spec rule.
+#[test]
+fn referencing_document_is_refused_for_duplicate_attribute() {
+    let err = parse(&read("odin/odin/odin_test.txt")).expect_err("duplicate `people` must refuse");
+    assert_eq!(
+        err.kind,
+        OdinErrorKind::DuplicateAttribute("people".to_owned())
+    );
+}
+
+/// The spec-valid twin of the fixture above, with the duplicated attribute
+/// renamed and nothing else changed — so every construct archie's
+/// `OdinBaseVisitorReferencingTest` exercises stays asserted: `;`-separated
+/// attributes (`term = <text = <"plan">; …>`), object-reference paths
+/// (`</hotels["gran sevilla"]>`), and typed keyed values
+/// (`(HISTORIC_HOTEL) <…>`).
+const REFERENCING_DOCUMENT_VALID_TWIN: &str = r#"
+term = <text = <"plan">; description = <"The clinician's advice">>
+
+people_by_index = <
+    [1] = <name = <"akmal"> birth_date = <1975-02-21> interests = <"painting", "running"> >
+>
+
+people = <
+    ["akmal:1975-04-22"] = <name = <"akmal"> birth_date = <1975-04-22> >
+>
+
+destinations = <
+    ["seville"] = <
+        hotels = <
+            ["gran sevilla"] = </hotels["gran sevilla"]>
+        >
+    >
+>
+
+hotels = <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <name=<"Gran Sevilla Hotel">>
+    ["sofitel"] = (LUXURY_HOTEL) <name=<"Sofitel">>
+>
+"#;
+
 #[test]
 fn referencing_document_parses() {
-    // archie OdinBaseVisitorReferencingTest: only asserts the document loads.
-    // It exercises `;`-separated attrs (`term = <text = <"plan">; ...>`),
-    // object-reference paths (`</hotels["gran sevilla"]>`), and typed keyed
-    // values (`(HISTORIC_HOTEL) <...>`).
-    let v = parse_ok("odin/odin/odin_test.txt");
-    // `people` appears twice at top level; a later duplicate overwrites the
-    // earlier (documented `OdinValue::Object` semantics), leaving 6 attrs.
-    assert_eq!(attr_count(&v), 6);
+    let v = parse(REFERENCING_DOCUMENT_VALID_TWIN).expect("valid twin parses");
+    assert_eq!(attr_count(&v), 5);
     assert_eq!(as_str(field(field(&v, "term"), "text")), "plan");
     // hotels holds typed keyed objects.
     let hotels = field(&v, "hotels");

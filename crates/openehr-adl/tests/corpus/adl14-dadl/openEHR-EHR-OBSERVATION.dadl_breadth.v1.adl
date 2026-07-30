@@ -1,0 +1,196 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.dadl_breadth.v1
+
+concept
+	[at0000]	-- dADL leaf/structure breadth
+
+language
+	original_language = <[ISO_639-1::en]>
+	-- master04 §Adding Type Information: the '(TYPE)' cast is a parser hint on
+	-- the data, so a cast section value must read exactly like the uncast form.
+	translations = (Hash<TRANSLATION_DETAILS,String>) <
+		["de"] = (TRANSLATION_DETAILS) <
+			language = <[ISO_639-1::de]>
+			author = <["name"] = <"Ein Autor">>
+		>
+	>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Exercise every leaf and structure form of ADL 1.4 dADL (master04) that the shared ODIN reader must accept.">
+			keywords = <"dadl", "odin", "regression">
+			use = <"Regression fixture only.">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_details = <
+		["regression"] = <"PASS">
+
+		-- master04 §Empty Sections: "Empty sections can appear anywhere",
+		-- at internal and leaf level, and nested.
+		["empty_leaf"] = <...>
+		["empty_block"] = <>
+		["empty_nested"] = <
+			inner = <...>
+			deeper = <
+				leaf = <...>
+			>
+		>
+		["empty_cast"] = (PENSION) <...>
+
+		-- master04 §Complete Date/Times + §Partial Date/Times.
+		["date_full"] = <1919-01-23>
+		["date_no_day"] = <2004-06>
+		["date_unknown_day"] = <2004-06-??>
+		["date_unknown_month_day"] = <2004-??-??>
+		["time_full"] = <16:35:04,5>
+		["time_no_seconds"] = <08:02>
+		["time_unknown_seconds"] = <16:35:??>
+		["time_unknown_min_sec"] = <16:??:??>
+		["date_time_full"] = <2001-05-12T07:35:20+1000>
+		["date_time_no_seconds"] = <2004-06-11T10:30>
+		["date_time_hour_only"] = <2004-06-11T10>
+		["date_time_unknown_seconds"] = <2004-06-11T10:30:??>
+		["date_time_unknown_min_sec"] = <2004-06-11T10:??:??>
+		["date_time_unknown_time"] = <2004-06-11T??:??:??>
+		["date_time_unknown_day_time"] = <2004-06-??T??:??:??>
+		["date_time_unknown_month_day_time"] = <2004-??-??T??:??:??>
+		["duration"] = <P22DT4H15M0S>
+
+		-- master04 §Integer Data / §Real Data / §Boolean Data (case-insensitive)
+		-- / §Character Data.
+		["integer"] = <300000>
+		["integer_signed"] = <-25>
+		["integer_exponent"] = <29e6>
+		["real"] = <3.1415926>
+		["real_exponent"] = <6.023e23>
+		["boolean_upper"] = <TRUE>
+		["boolean_mixed"] = <fAlSe>
+		["boolean_title"] = <True>
+		["boolean_lower"] = <false>
+		["character"] = <'a'>
+
+		-- master04 §Intervals of Ordered Primitive Types, including the
+		-- infinity / -infinity / '*' endpoint markers and the '+/-' form.
+		["interval_int"] = <|0..5|>
+		["interval_real_open_upper"] = <|0.0..<1000.0|>
+		["interval_open_lower"] = <|>0..10|>
+		["interval_time"] = <|08:02..09:10|>
+		["interval_ge_date"] = <|>=1939-02-01|>
+		["interval_le"] = <|<=100|>
+		["interval_point"] = <|42|>
+		["interval_plus_minus"] = <|5.0 +/-0.5|>
+		["interval_to_infinity"] = <|0..infinity|>
+		["interval_from_neg_infinity"] = <|-infinity..0|>
+		["interval_to_star"] = <|0..*|>
+
+		-- master04 §Coded Terms + §Lists of Built-in Types (the local
+		-- '[at0200]' leaf form).
+		["term_code"] = <[icd10AM::F60.1]>
+		["term_code_versioned"] = <[snomed-ct(3.1)::2004950]>
+		["local_code"] = <[at0200]>
+		["local_code_specialised"] = <[at0010.2]>
+		["local_code_open_list"] = <[at0200], ...>
+
+		-- master04 §Lists of Built-in Types.
+		["string_list"] = <"cyan", "magenta", "yellow">
+		["integer_list"] = <1, 1, 2, 3, 5>
+		["time_list"] = <08:02, 08:35, 09:10>
+		["open_list"] = <"en", ...>
+
+		-- master04 §URIs + §String Data (multi-line leader removal, and the
+		-- '&quot;' form carried through verbatim).
+		["uri"] = <http://archetypes.are.us/home.html>
+		["multi_line"] = <"And now the STORM-BLAST came, and he
+			Was tyrannous and strong :
+			And chased us south along.">
+		["quoted_phrase"] = <"what one might call a &quot;phrase&quot;.">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- dADL leaf/structure breadth
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Measured amount
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::122]>
+												list = <
+													["1"] = <
+														units = <"mm[Hg]">
+														magnitude = <|0.0..1000.0|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"dADL leaf/structure breadth">
+					description = <"Root of the dADL breadth regression fixture.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any event.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Measured amount">
+					description = <"A measured amount, constrained by an inline 1.4 dADL domain block.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000"] = <
+					text = <"dADL-Blattwerte">
+					description = <"Wurzel der dADL-Breiten-Regressionsvorlage.">
+				>
+				["at0001"] = <
+					text = <"Ereignisserie">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Beliebiges Ereignis">
+					description = <"Beliebiges Ereignis.">
+				>
+				["at0003"] = <
+					text = <"Baum">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Gemessene Menge">
+					description = <"Eine gemessene Menge.">
+				>
+			>
+		>
+	>

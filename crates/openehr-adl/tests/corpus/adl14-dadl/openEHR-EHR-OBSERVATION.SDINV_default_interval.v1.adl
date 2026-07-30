@@ -1,0 +1,52 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.SDINV_default_interval.v1
+
+concept
+	[at0000]	-- Interval default value
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[at0000] matches {	-- Interval default value
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {	-- Any event
+						-- An interval has no canonical-JSON default encoding, so
+						-- it is refused rather than silently reduced to null.
+						_default = (DV_QUANTITY) <
+							units = <"mm[Hg]">
+							magnitude = <|0.0..5.0|>
+						>
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Interval default value">
+					description = <"Refusal fixture: an interval as a _default value.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Any event.">
+				>
+			>
+		>
+	>
