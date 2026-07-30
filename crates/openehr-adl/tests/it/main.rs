@@ -6,6 +6,7 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+mod adl14_assertions;
 mod adl14_cadl_gates;
 mod adl14_cnf_fixture_slot;
 mod adl14_conversion;
