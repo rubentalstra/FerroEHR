@@ -1,8 +1,8 @@
 archetype (adl_version=1.4)
-	openEHR-EHR-OBSERVATION.SDINV_default_interval.v1
+	openEHR-EHR-OBSERVATION.SCOAT_adl2_default_value.v1
 
 concept
-	[at0000]	-- Interval default value
+	[at0000]	-- ADL2 default value in a 1.4 text
 
 language
 	original_language = <[ISO_639-1::en]>
@@ -14,16 +14,19 @@ description
 	lifecycle_state = <"AuthorDraft">
 
 definition
-	OBSERVATION[at0000] matches {	-- Interval default value
+	OBSERVATION[at0000] matches {	-- ADL2 default value in a 1.4 text
 		data matches {
 			HISTORY[at0001] matches {	-- Event Series
 				events cardinality matches {1..*; unordered} matches {
 					EVENT[at0002] occurrences matches {0..*} matches {	-- Any event
-						-- An interval has no canonical-JSON default encoding, so
-						-- it is refused rather than silently reduced to null.
+						-- The `_default` pseudo-attribute is ADL2 only
+						-- (ADL2/master06-default_values.adoc §Default Values); the
+						-- cADL 1.4 keyword set (ADL1.4/master05-cadl.adoc §Keywords
+						-- L48-53) has no such construct, so a 1.4 text carrying one
+						-- is refused rather than silently accepted.
 						_default = (DV_QUANTITY) <
 							units = <"mm[Hg]">
-							magnitude = <|0.0..5.0|>
+							magnitude = <5.0>
 						>
 					}
 				}
@@ -36,8 +39,8 @@ ontology
 		["en"] = <
 			items = <
 				["at0000"] = <
-					text = <"Interval default value">
-					description = <"Refusal fixture: an interval as a _default value.">
+					text = <"ADL2 default value in a 1.4 text">
+					description = <"Refusal fixture: an ADL2 `_default` in an ADL 1.4 definition.">
 				>
 				["at0001"] = <
 					text = <"Event Series">

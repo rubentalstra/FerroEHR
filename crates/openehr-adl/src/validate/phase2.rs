@@ -19,12 +19,15 @@
 //! [`super::FlatParent::NeedsFlattener`]).
 //!
 //! The [`ValidationCode`] variants `Vtpnc`/`Vtpin` (tuple conformance vs the
-//! parent node, `master08` §Phase 2 gloss) and `Vunt` (`use_node` RM type
-//! validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY` VUNT L479-480) are present as
-//! the phase-2 vocabulary but not yet raised here.
+//! parent node, `master08` §Phase 2 gloss) are present as the phase-2 vocabulary
+//! but not yet raised here.
 //! TODO: implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE` conformance
-//! (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN, and resolve the
-//! `use_node` target node to raise VUNT.
+//! (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN.
+//!
+//! `Vunt` (`use_node` RM type validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY`
+//! VUNT L479-480) is NOT raised here: the rule is "according to the reference
+//! model", so it lives in the RM pass ([`super::rm`]) where an [`RmModel`] decides
+//! super-type-hood, exactly as VACSO does.
 
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;

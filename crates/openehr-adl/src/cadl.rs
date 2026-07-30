@@ -119,16 +119,24 @@ pub fn parse_definition(src: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
 
 /// Which ADL dialect the cADL parser accepts.
 ///
-/// `Adl2` is the spec-conformant grammar (`cadl2.g4`); `Adl14` additionally
-/// tolerates the ADL 1.4-only definition forms the `adl14` 1.4→2 converter
-/// front end feeds it — qualified/listed terminology constraints
-/// (`[local::at0001]`, `[local:: a, b, c ; assumed]`, `[openehr::524]`) and the
-/// inline dADL domain constraints (`C_DV_QUANTITY <…>`, `(C_DV_ORDINAL) <…>`).
+/// `Adl2` is the spec-conformant grammar (`cadl2.g4`). `Adl14` accepts the ADL
+/// 1.4 cADL language: it ADDS the 1.4-only definition forms — qualified/listed
+/// terminology constraints (`[local::at0001]`, `[local:: a, b, c ; assumed]`,
+/// `[openehr::524]`) and the inline dADL domain constraints
+/// (`C_DV_QUANTITY <…>`, `(C_DV_ORDINAL) <…>`) — and REMOVES the constructs ADL
+/// 2 introduced, because a 1.4 source is judged as 1.4 rather than as a
+/// permissive superset. The removed set (each refused with a typed
+/// [`SyntaxError`] naming the construct, see [`Parser::adl2_only`]):
+/// `use_archetype`, the slot `closed` marker, the `_default` pseudo-attribute,
+/// second-order attribute tuples, term-constraint strengths, and `@terminology`
+/// operational bindings. `before`/`after` sibling order stays accepted —
+/// `ADL1.4/master05-cadl.adoc` §Keywords L53 lists both as cADL 1.4 keywords.
 ///
-/// NOTE: no openEHR spec governs 1.4→2 conversion — the `Adl14` acceptance here
-/// exists only to feed `crate::adl14`; it is our own design (see the module
-/// flag on `crate::adl14`). It is purely additive (the tolerated forms are not
-/// valid `cadl2.g4`), so `Adl2` parsing is byte-identical.
+/// NOTE: no openEHR spec governs 1.4→2 conversion — the additive half exists
+/// only to feed `crate::adl14` and is our own design (see the module flag on
+/// `crate::adl14`). The subtractive half IS spec-grounded: the closed cADL 1.4
+/// keyword set of `ADL1.4/master05-cadl.adoc` §Keywords (L48-53). `Adl2` parsing
+/// is unchanged either way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dialect {
     /// The spec-conformant ADL2 grammar.
@@ -248,6 +256,31 @@ impl Parser<'_> {
         let span = self.cur_span();
         self.push(code, msg, span);
         Err(())
+    }
+
+    /// Refuse an ADL 2-only cADL construct met while parsing in the
+    /// [`Dialect::Adl14`] dialect.
+    ///
+    /// A 1.4 source is judged AS 1.4. The cADL 1.4 keyword set is CLOSED —
+    /// `ADL1.4/master05-cadl.adoc` §Keywords (L48-53) lists exactly
+    /// `matches`/`~matches`/`is_in`/`~is_in`, `occurrences`/`existence`/
+    /// `cardinality`, `ordered`/`unordered`/`unique`, `infinity`,
+    /// `use_node`/`allow_archetype`, `include`/`exclude`, `before`/`after` — so a
+    /// construct that ADL 2 added is a syntax error in a 1.4 text, not a
+    /// silently-accepted superset.
+    ///
+    /// NOTE: the `S*` code space is a verbatim 1:1 mirror of the openEHR
+    /// catalogue (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
+    /// Rules) and carries no "wrong ADL generation" code, so each gate reuses the
+    /// catalogue code for its parse POSITION (`SCOAT` in an object body, `SCCOG`
+    /// in object position, `STCCP` inside a term-code constraint) and names the
+    /// construct plus the generation in the message. Inventing a code would break
+    /// the 1:1 mirror [`SyntaxErrorCode`] documents.
+    fn adl2_only<T>(&mut self, code: SyntaxErrorCode, construct: &str) -> PResult<T> {
+        self.err(
+            code,
+            format!("{construct} is an ADL 2 construct and is not valid in ADL 1.4"),
+        )
     }
 
     /// Consume a token matching `pred` or record `code`/`msg` and bail.
@@ -552,10 +585,33 @@ impl Parser<'_> {
         while !matches!(self.peek(), Some(Token::RCurly) | None) {
             match self.peek() {
                 Some(Token::AlphaUnderscoreId(s)) if s == "_default" => {
+                    // ADL2-only: the `_default` pseudo-attribute is introduced by
+                    // `ADL2/master06-default_values.adoc` §Default Values; the 1.4
+                    // cADL keyword set (master05 §Keywords L48-53) has no such
+                    // construct and no 1.4 chapter defines default values.
+                    if self.dialect == Dialect::Adl14 {
+                        return self
+                            .adl2_only(SyntaxErrorCode::Scoat, "the '_default' pseudo-attribute");
+                    }
                     default = Some(self.parse_default_value()?);
                     break; // default_value is last in the body (`cadl2.g4`).
                 }
-                Some(Token::LBracket) => tuples.push(self.parse_c_attribute_tuple()?),
+                Some(Token::LBracket) => {
+                    // ADL2-only: second-order attribute tuples
+                    // (`ADL2/master04.4-cadl_second_order.adoc` §Second Order
+                    // Constraints). ADL 1.4 expresses the same co-constraint with
+                    // an inline dADL domain type — `AOM2/master04.3` §Tuple
+                    // Constraints: "The tuple constraint type replaces all
+                    // domain-specific constraint types defined in ADL/AOM 1.4,
+                    // including `C_DV_QUANTITY` and `C_DV_ORDINAL`."
+                    if self.dialect == Dialect::Adl14 {
+                        return self.adl2_only(
+                            SyntaxErrorCode::Scoat,
+                            "a second-order attribute tuple '[attr, …] matches {…}'",
+                        );
+                    }
+                    tuples.push(self.parse_c_attribute_tuple()?);
+                }
                 _ => attrs.push(self.parse_c_attribute()?),
             }
         }
@@ -967,6 +1023,13 @@ impl Parser<'_> {
     }
 
     /// `c_regular_object_ordered : sibling_order? c_regular_object`.
+    ///
+    /// NOTE: the `before`/`after` sibling-order markers are NOT dialect-gated.
+    /// `ADL1.4/master05-cadl.adoc` §Keywords L53 lists `before` and `after` among
+    /// "the keywords … recognised in cADL" for the 1.4 formalism itself, so a
+    /// sibling order in a 1.4 text is legal 1.4 cADL — even though no 1.4 chapter
+    /// elaborates its semantics beyond that list. Refusing it here would
+    /// contradict the 1.4 keyword set.
     fn parse_c_regular_object_ordered(&mut self) -> PResult<CObject> {
         let sibling = if matches!(self.peek(), Some(Token::SymAfter | Token::SymBefore)) {
             Some(self.parse_sibling_order()?)
@@ -1013,13 +1076,18 @@ impl Parser<'_> {
                     return self.parse_adl14_term_object();
                 }
                 Some(Token::LParen) => return self.parse_adl14_domain_object(true),
-                // Bare `C_DV_QUANTITY <…>` / `C_DV_ORDINAL <…>` (no parens): a
+                // ADL2-only: `use_archetype` (`C_ARCHETYPE_ROOT`). The 1.4 cADL
+                // keyword set (master05 §Keywords L51) has `use_node` and
+                // `allow_archetype` only — an external archetype reference is
+                // expressed in 1.4 by an `allow_archetype` slot whose assertions
+                // name the archetype id (master05 §Archetype Slots).
+                Some(Token::SymUseArchetype) => {
+                    return self.adl2_only(SyntaxErrorCode::Sccog, "'use_archetype'");
+                }
+                // Bare `C_DV_QUANTITY <…>` / `(C_CODE_PHRASE) <…>` (no parens): a
                 // domain type immediately followed by an ODIN block would
                 // otherwise be misread as a generic type by `parse_rm_type_id`.
-                Some(Token::AlphaUcId(id))
-                    if is_adl14_domain_type(id)
-                        && matches!(self.peek_at(1), Some(Token::SymLt)) =>
-                {
+                Some(Token::AlphaUcId(_)) if self.is_adl14_domain_block_start() => {
                     return self.parse_adl14_domain_object(false);
                 }
                 _ => {}
@@ -1035,6 +1103,25 @@ impl Parser<'_> {
                 "expecting a new node definition, primitive node, 'use' path, or archetype reference",
             ),
         }
+    }
+
+    /// True if the cursor is at a BARE (unparenthesised) 1.4 inline dADL domain
+    /// block: a type name immediately followed by `<` whose first inner token is
+    /// an attribute name.
+    ///
+    /// `ADL1.4/master09-customising_adl.adoc` §Introduction fixes the shape —
+    /// "the dADL section must be 'typed', i.e. it must start with a type name"
+    /// followed by the ODIN object — so the discriminator against a generic cADL
+    /// type (`HISTORY<ITEM_LIST>`, whose `<` is followed by a TYPE name) is the
+    /// case of the token after `<`. Matching on the shape rather than on a
+    /// known-type list is what lets an unsupported domain type
+    /// (`C_CODE_PHRASE <…>`) reach the typed refusal in
+    /// [`Parser::parse_adl14_domain_object`] instead of being mis-parsed as a
+    /// generic type.
+    fn is_adl14_domain_block_start(&self) -> bool {
+        matches!(self.peek(), Some(Token::AlphaUcId(_)))
+            && matches!(self.peek_at(1), Some(Token::SymLt))
+            && matches!(self.peek_at(2), Some(Token::AlphaLcId(_)))
     }
 
     /// True if the cursor is at a 1.4 qualified/listed terminology constraint
@@ -1150,10 +1237,25 @@ impl Parser<'_> {
     /// `C_DV_ORDINAL <…>`. The ODIN block is parsed via `openehr_lang::odin`
     /// and lowered to a `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` (the RM
     /// type the domain constrainer targets), carrying the `property` external
-    /// code as a `C_TERMINOLOGY_CODE` and the `list` rows as an attribute tuple
-    /// (multi-member) or plain attributes (single member). No openEHR spec
-    /// governs this — our own design (1.4→2 converter front end;
-    /// `AOM2/master04.4` §Second-Order Constraints is the ADL2 tuple target).
+    /// code as a `C_TERMINOLOGY_CODE`, the `list` rows as an attribute tuple
+    /// (multi-member) or plain attributes (single member), and the
+    /// `assumed_value` object as the per-leaf `C_PRIMITIVE_OBJECT.assumed_value`s
+    /// it decomposes into. No openEHR spec governs the 1.4→2 lowering — our own
+    /// design (converter front end); `AOM2/master04.3` §Tuple Constraints is the
+    /// ADL2 target ("The tuple constraint type replaces all domain-specific
+    /// constraint types defined in ADL/AOM 1.4, including `C_DV_QUANTITY` and
+    /// `C_DV_ORDINAL`").
+    ///
+    /// A domain type this lowering does not model is refused with a typed
+    /// [`SyntaxErrorCode::Sdinv`] naming the type, never lowered to some other
+    /// type: `ADL1.4/master09-customising_adl.adoc` §Introduction admits any
+    /// `C_DOMAIN_TYPE` descendant here ("This approach can be used for any custom
+    /// type which represents a constraint on a reference model type"), and each
+    /// one targets a DIFFERENT RM type, so guessing is a silent wrong answer.
+    // TODO: lower the remaining openEHR Archetype Profile domain constrainers
+    // (`C_CODE_PHRASE` → `CODE_PHRASE`, `C_DV_STATE` → `DV_STATE`;
+    // `ADL1.4/master09-customising_adl.adoc` §Custom Syntax) so they stop being
+    // refused — tracked as the ADL1.4 master09 chapter audit.
     fn parse_adl14_domain_object(&mut self, parenthesised: bool) -> PResult<CObject> {
         let start = self.cur_span().start;
         if parenthesised {
@@ -1200,22 +1302,44 @@ impl Parser<'_> {
         let Some(close) = close else {
             return self.err(SyntaxErrorCode::Sdinv, "unterminated domain block '<…>'");
         };
+        let span = start..self.span_at(close).end;
+        if !is_adl14_domain_type(&rm_type) {
+            self.push(
+                SyntaxErrorCode::Sdinv,
+                format!(
+                    "inline dADL domain constrainer {rm_type:?} is not supported; only \
+                     'C_DV_QUANTITY' and 'C_DV_ORDINAL' are lowered"
+                ),
+                span,
+            );
+            return Err(());
+        }
         let block = &self.src[self.span_at(open).start..self.span_at(close).end];
         let Ok(odin) = openehr_lang::odin::parse(block) else {
-            let span = start..self.span_at(close).end;
             self.push(SyntaxErrorCode::Sdinv, "invalid dADL in domain block", span);
             return Err(());
         };
-        if let Some(obj) = lower_adl14_domain(&rm_type, &odin) {
-            Ok(obj)
-        } else {
-            let span = start..self.span_at(close).end;
-            self.push(
-                SyntaxErrorCode::Sdinv,
-                "empty or unsupported inline dADL domain block",
-                span,
-            );
-            Err(())
+        match lower_adl14_domain(&rm_type, &odin) {
+            Ok(obj) => Ok(obj),
+            Err(DomainLoweringError::Empty) => {
+                self.push(
+                    SyntaxErrorCode::Sdinv,
+                    "empty or unsupported inline dADL domain block",
+                    span,
+                );
+                Err(())
+            }
+            Err(DomainLoweringError::AssumedValueUnmatched(attrs)) => {
+                self.push(
+                    SyntaxErrorCode::Sdinv,
+                    format!(
+                        "the domain block's 'assumed_value' ({attrs}) satisfies none of its \
+                         'list' rows"
+                    ),
+                    span,
+                );
+                Err(())
+            }
         }
     }
 
@@ -1377,7 +1501,16 @@ impl Parser<'_> {
         let mut includes = Vec::new();
         let mut excludes = Vec::new();
 
-        if self.eat(|t| matches!(t, Token::SymClosed)) {
+        if matches!(self.peek(), Some(Token::SymClosed)) {
+            // ADL2-only: the `closed` slot marker (`ADL2/master04.3` §Archetype
+            // Slots; `ARCHETYPE_SLOT.is_closed`, redefinition rule VDSSC). The 1.4
+            // cADL keyword set (master05 §Keywords L51-52) has `allow_archetype`
+            // with `include`/`exclude` only.
+            if self.dialect == Dialect::Adl14 {
+                return self
+                    .adl2_only(SyntaxErrorCode::Sccog, "the archetype-slot 'closed' marker");
+            }
+            self.pos += 1;
             is_closed = true;
         } else {
             if matches!(self.peek(), Some(Token::SymOccurrences)) {
@@ -1526,6 +1659,18 @@ impl Parser<'_> {
             Some(Token::String(_)) => self.parse_c_string(node_id),
             Some(Token::LBracket) => self.parse_c_terminology_code(node_id, None),
             Some(Token::AlphaLcId(s)) if is_strength_keyword(&s) => {
+                // ADL2-only: constraint strengths (`required`/`extensible`/
+                // `preferred`/`example`) are `C_TERMINOLOGY_CODE.constraint_status`,
+                // introduced by `AOM2/master04.2` §Constraint Strengths ("Uniquely
+                // in the AOM, a Terminology code constraint may not be required").
+                // The 1.4 cADL keyword set (master05 §Keywords L48-53) has no
+                // strength vocabulary and AOM 1.4 has no such attribute.
+                if self.dialect == Dialect::Adl14 {
+                    return self.adl2_only(
+                        SyntaxErrorCode::Stccp,
+                        format!("the term-constraint strength {s:?}").as_str(),
+                    );
+                }
                 self.pos += 1;
                 self.parse_c_terminology_code(node_id, Some(strength_status(&s)))
             }
@@ -1711,6 +1856,19 @@ impl Parser<'_> {
             _ => return self.err(SyntaxErrorCode::Stccp, "expecting an ac-code or at-code"),
         };
         // Optional OPT operational binding `@terminology`.
+        //
+        // ADL2-only: the `[acN@terminology]` operational binding belongs to the
+        // ADL2 terminology-integration surface (`ADL2/master08-terminology_integration.adoc`
+        // §Terminology Bindings / OPT2 operational form). The 1.4 cADL keyword set
+        // (master05 §Keywords L48-53) has no `@` operator, and 1.4 expresses
+        // external terminology through the qualified `[terminology::code, …]` form
+        // of `ADL1.4/master09-customising_adl.adoc` §Custom Syntax.
+        if matches!(self.peek(), Some(Token::SymAt)) && self.dialect == Dialect::Adl14 {
+            return self.adl2_only(
+                SyntaxErrorCode::Stccp,
+                "an '@terminology' operational binding on a term-code constraint",
+            );
+        }
         if self.eat(|t| matches!(t, Token::SymAt)) {
             match self.peek().cloned() {
                 Some(Token::AlphaLcId(t) | Token::AlphaUcId(t)) => {
@@ -2774,19 +2932,36 @@ fn untyped(v: &OdinValue) -> &OdinValue {
     cur
 }
 
+/// Why an inline dADL domain block could not be lowered (each maps to `SDINV`).
+enum DomainLoweringError {
+    /// An empty `<>` block, a bare scalar, or a type this lowering does not model.
+    Empty,
+    /// The block's `assumed_value` satisfies none of its `list` rows (the
+    /// attribute names carried for the message).
+    AssumedValueUnmatched(String),
+}
+
 /// Lower a parsed 1.4 inline dADL domain block into a `DV_QUANTITY`/`DV_ORDINAL`
-/// complex object. Returns `None` for an empty/unusable block (→ `SDINV`).
-fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Option<CObject> {
+/// complex object.
+///
+/// # Errors
+/// [`DomainLoweringError`] for an empty/unusable block or an `assumed_value` that
+/// matches no `list` row; the caller turns both into `SDINV`.
+fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Result<CObject, DomainLoweringError> {
     let OdinValue::Object(map) = untyped(odin) else {
-        return None; // empty `<>` or a bare scalar — nothing to constrain.
+        // Empty `<>` or a bare scalar — nothing to constrain.
+        return Err(DomainLoweringError::Empty);
     };
     if map.is_empty() {
-        return None;
+        return Err(DomainLoweringError::Empty);
     }
-    let target_rm = if rm_type == "C_DV_ORDINAL" {
-        "DV_ORDINAL"
-    } else {
-        "DV_QUANTITY"
+    let target_rm = match rm_type {
+        "C_DV_ORDINAL" => "DV_ORDINAL",
+        "C_DV_QUANTITY" => "DV_QUANTITY",
+        // Unreachable: the parse site gates the type before calling in. Kept as a
+        // typed refusal rather than a fallback so no other domain constrainer can
+        // ever be silently lowered to the wrong RM type.
+        _ => return Err(DomainLoweringError::Empty),
     };
     let mut attributes: Vec<CAttribute> = Vec::new();
     let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
@@ -2862,13 +3037,295 @@ fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Option<CObject> {
         }
     }
 
-    Some(complex_object(
+    // `assumed_value = <units=<"C"> magnitude=<8.0> …>` — the 1.4 domain
+    // constrainer's assumed value is an INSTANCE of the constrained RM type
+    // (AOM 1.4 `C_DV_QUANTITY.assumed_value: DV_QUANTITY`). AOM2 has no
+    // `assumed_value` on `C_COMPLEX_OBJECT` — `AOM2/master04.2` §Assumed_value
+    // puts it on `C_PRIMITIVE_OBJECT`/`C_TERMINOLOGY_CODE`, and §Assumed_value
+    // L175 expressly separates it from `default_value` ("default values do appear
+    // in data, while assumed values don't"), so `default_value` is NOT a legal
+    // carrier. The instance is therefore decomposed into its per-attribute leaves
+    // and each leaf lands on the `C_PRIMITIVE_OBJECT.assumed_value` of the
+    // constraint this lowering already produced for that attribute.
+    if let Some(OdinValue::Object(assumed)) = map.get("assumed_value").map(untyped) {
+        apply_domain_assumed_values(assumed, &mut attributes, &mut attribute_tuples)?;
+    }
+
+    Ok(complex_object(
         target_rm.to_owned(),
         String::new(),
         attributes,
         attribute_tuples,
         None,
     ))
+}
+
+/// Land the leaves of a domain block's `assumed_value` object on the constraints
+/// `attributes`/`attribute_tuples` already carry.
+///
+/// A leaf whose attribute is a plain constraint sets that constraint's
+/// `assumed_value` directly. A leaf whose attribute is a tuple member sets the
+/// member of the ONE tuple row the whole assumed combination satisfies — a tuple
+/// row is a co-constrained alternative (`AOM2/master04.3` §Tuple Constraints), so
+/// the assumed instance belongs to exactly one row, never to all of them.
+///
+/// NOTE: a leaf for an attribute the block does not constrain at all (e.g.
+/// `precision` in an `assumed_value` whose `list` rows carry only
+/// `units`/`magnitude`) has no AOM2 carrier — `assumed_value` is a field OF a
+/// `C_PRIMITIVE_OBJECT` (`AOM2/master04.2` §`Assumed_value`), and an unconstrained
+/// attribute has no constraint object to hold it. Such a leaf is dropped rather
+/// than carried on a fabricated "any" constraint, which has no ADL2 rendering.
+/// No openEHR spec governs 1.4→2 conversion — our own design.
+///
+/// # Errors
+/// [`DomainLoweringError::AssumedValueUnmatched`] when tuple members are present
+/// and no row admits the assumed combination — the 1.4 source states an assumed
+/// value outside its own `list`, which the parse refuses loudly rather than
+/// binding to an arbitrary row.
+fn apply_domain_assumed_values(
+    assumed: &indexmap::IndexMap<String, OdinValue>,
+    attributes: &mut [CAttribute],
+    attribute_tuples: &mut [CAttributeTuple],
+) -> Result<(), DomainLoweringError> {
+    // The assumed leaves, as the primitive shape the constraint side uses.
+    let leaves: Vec<(String, CPrimitiveObject)> = assumed
+        .iter()
+        .filter_map(|(name, value)| {
+            domain_value_to_primitive(name, value).map(|p| (name.clone(), p))
+        })
+        .collect();
+    if leaves.is_empty() {
+        return Ok(());
+    }
+
+    // Plain attributes first.
+    for (name, leaf) in &leaves {
+        if let Some(attr) = attributes.iter_mut().find(|a| &a.rm_attribute_name == name)
+            && let Some(child) = attr.children.first_mut()
+        {
+            set_assumed_on_cobject(child, leaf);
+        }
+    }
+
+    // Tuple members: pick the single row the whole combination satisfies.
+    for tuple in attribute_tuples.iter_mut() {
+        let positions: Vec<(usize, &CPrimitiveObject)> = tuple
+            .members
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, m)| {
+                leaves
+                    .iter()
+                    .find(|(name, _)| name == &m.rm_attribute_name)
+                    .map(|(_, leaf)| (idx, leaf))
+            })
+            .collect();
+        if positions.is_empty() {
+            continue;
+        }
+        let row = tuple.tuples.iter().position(|row| {
+            positions.iter().all(|(idx, leaf)| {
+                row.members
+                    .get(*idx)
+                    .is_some_and(|constraint| primitive_admits(constraint, leaf))
+            })
+        });
+        let Some(row) = row else {
+            let named = positions
+                .iter()
+                .filter_map(|(idx, _)| tuple.members.get(*idx))
+                .map(|m| m.rm_attribute_name.clone())
+                .collect::<Vec<_>>()
+                .join(", ");
+            return Err(DomainLoweringError::AssumedValueUnmatched(named));
+        };
+        for (idx, leaf) in positions {
+            if let Some(row) = tuple.tuples.get_mut(row)
+                && let Some(member) = row.members.get_mut(idx)
+            {
+                set_assumed_on_primitive(member, leaf);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// True if `constraint` admits the single value `value` carries.
+///
+/// Deliberately CONSERVATIVE: it answers `false` only where non-membership is
+/// positively decidable (a string not in a value list, a number outside every
+/// interval). A mismatched kind or an unconstrained (`{*}`) constraint answers
+/// `true`, so the refusal it feeds can never fire on a case this lowering does
+/// not fully understand.
+fn primitive_admits(constraint: &CPrimitiveObject, value: &CPrimitiveObject) -> bool {
+    match (constraint, value) {
+        (CPrimitiveObject::CString(c), CPrimitiveObject::CString(v)) => {
+            c.constraint.is_empty()
+                || v.constraint
+                    .iter()
+                    .all(|want| c.constraint.iter().any(|have| have == want))
+        }
+        (CPrimitiveObject::CReal(c), CPrimitiveObject::CReal(v)) => {
+            c.constraint.is_empty()
+                || v.constraint
+                    .iter()
+                    .filter_map(interval_point_f64)
+                    .all(|p| c.constraint.iter().any(|iv| real_interval_contains(iv, p)))
+        }
+        (CPrimitiveObject::CInteger(c), CPrimitiveObject::CInteger(v)) => {
+            c.constraint.is_empty()
+                || v.constraint
+                    .iter()
+                    .filter_map(interval_point_i32)
+                    .all(|p| c.constraint.iter().any(|iv| int_interval_contains(iv, p)))
+        }
+        _ => true,
+    }
+}
+
+/// Set `leaf`'s single value as the `assumed_value` of the primitive `target`.
+fn set_assumed_on_primitive(target: &mut CPrimitiveObject, leaf: &CPrimitiveObject) {
+    match (target, leaf) {
+        (CPrimitiveObject::CString(t), CPrimitiveObject::CString(l)) => {
+            t.assumed_value = l.constraint.first().cloned();
+        }
+        (CPrimitiveObject::CReal(t), CPrimitiveObject::CReal(l)) => {
+            t.assumed_value = l.constraint.first().and_then(interval_point_f64);
+        }
+        (CPrimitiveObject::CInteger(t), CPrimitiveObject::CInteger(l)) => {
+            t.assumed_value = l
+                .constraint
+                .first()
+                .and_then(interval_point_i32)
+                .map(f64::from);
+        }
+        (CPrimitiveObject::CBoolean(t), CPrimitiveObject::CBoolean(l)) => {
+            t.assumed_value = l.constraint.first().copied();
+        }
+        // Kind mismatch (or a leaf kind the domain lowering never produces):
+        // leave the constraint untouched rather than coerce across types.
+        _ => {}
+    }
+}
+
+/// Set `leaf`'s single value as the `assumed_value` of the primitive object
+/// `target` wraps, if it is one.
+fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
+    match target {
+        CObject::CString(t) => {
+            if let CPrimitiveObject::CString(l) = leaf {
+                t.assumed_value = l.constraint.first().cloned();
+            }
+        }
+        CObject::CReal(t) => {
+            if let CPrimitiveObject::CReal(l) = leaf {
+                t.assumed_value = l.constraint.first().and_then(interval_point_f64);
+            }
+        }
+        CObject::CInteger(t) => {
+            if let CPrimitiveObject::CInteger(l) = leaf {
+                t.assumed_value = l
+                    .constraint
+                    .first()
+                    .and_then(interval_point_i32)
+                    .map(f64::from);
+            }
+        }
+        CObject::CBoolean(t) => {
+            if let CPrimitiveObject::CBoolean(l) = leaf {
+                t.assumed_value = l.constraint.first().copied();
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The single point value of a real interval (`{v}` / `{v..v}`), else `None`.
+fn interval_point_f64(iv: &Interval<f64>) -> Option<f64> {
+    match iv {
+        Interval::PointInterval(p) => p.lower,
+        Interval::ProperInterval(_) => None,
+    }
+}
+
+/// The single point value of an integer interval (`{v}` / `{v..v}`), else `None`.
+fn interval_point_i32(iv: &Interval<i32>) -> Option<i32> {
+    match iv {
+        Interval::PointInterval(p) => p.lower,
+        Interval::ProperInterval(_) => None,
+    }
+}
+
+/// The `(lower, upper)` bounds of an interval as `f64`, each `None` when open or
+/// unbounded, plus the two inclusivity flags. A `MultiplicityInterval` variant
+/// (structurally possible on the generic enum but never produced for a domain
+/// leaf constraint) yields fully-open bounds, so membership is undecided and the
+/// conservative `true` answer stands.
+fn interval_bounds_f64<T: Copy + Into<f64>>(
+    iv: &Interval<T>,
+) -> (Option<f64>, Option<f64>, bool, bool) {
+    let (lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included) = match iv
+    {
+        Interval::PointInterval(p) => (
+            p.lower,
+            p.upper,
+            p.lower_unbounded,
+            p.upper_unbounded,
+            p.lower_included,
+            p.upper_included,
+        ),
+        Interval::ProperInterval(ProperInterval::ProperInterval(p)) => (
+            p.lower,
+            p.upper,
+            p.lower_unbounded,
+            p.upper_unbounded,
+            p.lower_included,
+            p.upper_included,
+        ),
+        Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => {
+            return (None, None, true, true);
+        }
+    };
+    (
+        if lower_unbounded {
+            None
+        } else {
+            lower.map(Into::into)
+        },
+        if upper_unbounded {
+            None
+        } else {
+            upper.map(Into::into)
+        },
+        lower_included,
+        upper_included,
+    )
+}
+
+/// True if the real interval `iv` contains `v` (honouring open/closed bounds).
+fn real_interval_contains(iv: &Interval<f64>, v: f64) -> bool {
+    bounds_admit(v, interval_bounds_f64(iv))
+}
+
+/// True if the integer interval `iv` contains `v` (honouring open/closed bounds).
+fn int_interval_contains(iv: &Interval<i32>, v: i32) -> bool {
+    bounds_admit(f64::from(v), interval_bounds_f64(iv))
+}
+
+/// Interval membership over `f64` bounds, shared by the real/integer tests.
+fn bounds_admit(v: f64, bounds: (Option<f64>, Option<f64>, bool, bool)) -> bool {
+    let (lower, upper, lower_included, upper_included) = bounds;
+    if let Some(lo) = lower
+        && (v < lo || (!lower_included && (v - lo).abs() < f64::EPSILON))
+    {
+        return false;
+    }
+    if let Some(hi) = upper
+        && (v > hi || (!upper_included && (v - hi).abs() < f64::EPSILON))
+    {
+        return false;
+    }
+    true
 }
 
 /// The `["1"] = <…> …` rows of a domain `list`, each an ordered
@@ -3838,6 +4295,302 @@ mod tests {
         assert_eq!(range.upper, Some(5.5));
         assert!(range.lower_included);
         assert!(range.upper_included);
+    }
+
+    /// An interval has no ODIN/JSON default-value encoding
+    /// (`ADL2/master06-default_values.adoc` §Default Values: a `_default` is an
+    /// object INSTANCE, and an interval is a constraint), so a `_default`
+    /// carrying one is refused rather than silently reduced to null. This is the
+    /// ADL2 dialect's own behaviour — a 1.4 text has no `_default` at all
+    /// (`ADL1.4/master05-cadl.adoc` §Keywords L48-53), and the 1.4 refusal of the
+    /// construct is `tests/corpus/adl14-cadl/…SCOAT_adl2_default_value.v1.adl`.
+    #[test]
+    fn adl2_default_value_rejects_an_interval() {
+        let errs = parse_definition_body(
+            "OBSERVATION[id1] matches {\n\
+             data matches {\n\
+             HISTORY[id2] matches {\n\
+             _default = (DV_QUANTITY) <\n\
+             units = <\"mm[Hg]\">\n\
+             magnitude = <|0.0..5.0|>\n\
+             >\n\
+             }\n\
+             }\n\
+             }",
+        )
+        .expect_err("an interval in a `_default` must be refused");
+        assert!(
+            errs.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
+            "expected SDINV, got {:?}",
+            errs.iter().map(|e| e.code).collect::<Vec<_>>()
+        );
+    }
+
+    /// Every ADL2-only cADL construct is refused in the 1.4 dialect with the
+    /// typed code for its parse position, and is still accepted in ADL 2 — the
+    /// gate must narrow the 1.4 dialect only (`ADL1.4/master05-cadl.adoc`
+    /// §Keywords L48-53 is the closed 1.4 keyword set).
+    #[test]
+    fn adl2_only_constructs_are_refused_in_the_14_dialect_only() {
+        let cases: &[(&str, SyntaxErrorCode)] = &[
+            // `_default` (ADL2/master06-default_values.adoc).
+            (
+                "OBSERVATION[at0000] matches {\n\
+                 data matches {\n\
+                 HISTORY[at0001] matches {\n\
+                 _default = (DV_QUANTITY) <units = <\"mm[Hg]\"> magnitude = <5.0>>\n\
+                 }\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Scoat,
+            ),
+            // Second-order attribute tuple (ADL2/master04.4).
+            (
+                "OBSERVATION[at0000] matches {\n\
+                 value matches {\n\
+                 DV_QUANTITY matches {\n\
+                 [magnitude, units] matches {\n\
+                 [{|>=0.0|}, {\"mm[Hg]\"}]\n\
+                 }\n\
+                 }\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Scoat,
+            ),
+            // `use_archetype` (ADL2/master04.3 §Archetype Slots).
+            (
+                "SECTION[at0000] matches {\n\
+                 items cardinality matches {0..*} matches {\n\
+                 use_archetype CLUSTER[at0001, openEHR-EHR-CLUSTER.dimensions.v1]\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Sccog,
+            ),
+            // The slot `closed` marker (ADL2/master04.3 §Archetype Slots).
+            (
+                "SECTION[at0000] matches {\n\
+                 items cardinality matches {0..*} matches {\n\
+                 allow_archetype CLUSTER[at0001] closed\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Sccog,
+            ),
+            // Constraint strength (AOM2/master04.2 §Constraint Strengths).
+            (
+                "ELEMENT[at0000] matches {\n\
+                 value matches {\n\
+                 DV_CODED_TEXT matches {\n\
+                 defining_code matches {preferred [ac0001]}\n\
+                 }\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Stccp,
+            ),
+            // `@terminology` operational binding (ADL2/master08).
+            (
+                "ELEMENT[at0000] matches {\n\
+                 value matches {\n\
+                 DV_CODED_TEXT matches {\n\
+                 defining_code matches {[ac0001@snomed]}\n\
+                 }\n\
+                 }\n\
+                 }",
+                SyntaxErrorCode::Stccp,
+            ),
+        ];
+        for (src, code) in cases {
+            let errs = parse_definition_body_adl14(src)
+                .err()
+                .unwrap_or_else(|| panic!("the 1.4 dialect must refuse:\n{src}"));
+            assert!(
+                errs.iter().any(|e| &e.code == code),
+                "expected {code} for:\n{src}\ngot {:?}",
+                errs.iter().map(|e| e.code).collect::<Vec<_>>()
+            );
+            assert!(
+                parse_definition_body(src).is_ok(),
+                "the ADL2 dialect must still accept:\n{src}"
+            );
+        }
+    }
+
+    /// `before`/`after` are cADL 1.4 keywords (`ADL1.4/master05-cadl.adoc`
+    /// §Keywords L53), so a sibling order is legal in a 1.4 text and must not be
+    /// gated with the ADL2-only constructs.
+    #[test]
+    fn adl14_accepts_sibling_order() {
+        let cco = parse_definition_body_adl14(
+            "CLUSTER[at0000] matches {\n\
+             items cardinality matches {0..*} matches {\n\
+             ELEMENT[at0001] matches {*}\n\
+             before [at0001] ELEMENT[at0002] matches {*}\n\
+             }\n\
+             }",
+        )
+        .expect("sibling order is legal ADL 1.4 cADL");
+        let CComplexObject::CComplexObject(d) = &cco else {
+            panic!("expected a plain complex object root");
+        };
+        let CObject::CComplexObject(CComplexObject::CComplexObject(second)) =
+            &d.attributes[0].children[1]
+        else {
+            panic!("expected the re-ordered ELEMENT");
+        };
+        let order = second.sibling_order.as_ref().expect("a sibling order");
+        assert!(order.is_before);
+        assert_eq!(order.sibling_node_id, "at0001");
+    }
+
+    /// A domain block's `assumed_value` decomposes onto the leaf constraints the
+    /// lowering produced: `AOM2/master04.2` §`Assumed_value` puts `assumed_value` on
+    /// `C_PRIMITIVE_OBJECT` (never on a `C_COMPLEX_OBJECT`, and never on
+    /// `default_value` — L175 separates the two notions), and
+    /// `AOM2/master04.3` §Tuple Constraints makes a tuple ROW one co-constrained
+    /// alternative, so the assumed instance binds to exactly the row it satisfies.
+    #[test]
+    fn adl14_domain_assumed_value_lands_on_the_matching_tuple_row() {
+        let cco = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             C_DV_QUANTITY <\n\
+             assumed_value = <units = <\"C\"> precision = <0> magnitude = <8.0>>\n\
+             list = <\n\
+             [\"1\"] = <units = <\"C\"> magnitude = <|>=4.0|>>\n\
+             [\"2\"] = <units = <\"F\"> magnitude = <|>=40.0|>>\n\
+             >\n\
+             >\n\
+             }\n\
+             }",
+        )
+        .expect("the 1.4 inline domain block must parse");
+        let CComplexObject::CComplexObject(d) = &cco else {
+            panic!("expected a plain complex object root");
+        };
+        let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
+            &d.attributes[0].children[0]
+        else {
+            panic!("expected the lowered DV_QUANTITY object");
+        };
+        let tuple = &quantity.attribute_tuples[0];
+        assert_eq!(
+            tuple
+                .members
+                .iter()
+                .map(|m| m.rm_attribute_name.as_str())
+                .collect::<Vec<_>>(),
+            ["units", "magnitude"]
+        );
+        // Row 0 (`"C"`, >=4.0) admits the assumed combination; row 1 (`"F"`,
+        // >=40.0) does not and must be left untouched.
+        let CPrimitiveObject::CString(units0) = &tuple.tuples[0].members[0] else {
+            panic!("units is a string constraint");
+        };
+        assert_eq!(units0.assumed_value.as_deref(), Some("C"));
+        let CPrimitiveObject::CReal(magnitude0) = &tuple.tuples[0].members[1] else {
+            panic!("magnitude is a real constraint");
+        };
+        assert_eq!(magnitude0.assumed_value, Some(8.0));
+        let CPrimitiveObject::CString(units1) = &tuple.tuples[1].members[0] else {
+            panic!("units is a string constraint");
+        };
+        assert_eq!(units1.assumed_value, None);
+    }
+
+    /// A single-attribute domain block merges its rows into one plain constraint,
+    /// so the `assumed_value` lands directly on that leaf's
+    /// `C_PRIMITIVE_OBJECT.assumed_value` (`AOM2/master04.2` §`Assumed_value`).
+    #[test]
+    fn adl14_domain_assumed_value_lands_on_a_plain_attribute() {
+        let cco = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             C_DV_QUANTITY <\n\
+             assumed_value = <units = <\"F\">>\n\
+             list = <\n\
+             [\"1\"] = <units = <\"C\">>\n\
+             [\"2\"] = <units = <\"F\">>\n\
+             >\n\
+             >\n\
+             }\n\
+             }",
+        )
+        .expect("the 1.4 inline domain block must parse");
+        let CComplexObject::CComplexObject(d) = &cco else {
+            panic!("expected a plain complex object root");
+        };
+        let CObject::CComplexObject(CComplexObject::CComplexObject(quantity)) =
+            &d.attributes[0].children[0]
+        else {
+            panic!("expected the lowered DV_QUANTITY object");
+        };
+        let units = quantity
+            .attributes
+            .iter()
+            .find(|a| a.rm_attribute_name == "units")
+            .expect("units attribute");
+        let CObject::CString(c) = &units.children[0] else {
+            panic!("expected a C_STRING units constraint");
+        };
+        assert_eq!(c.constraint, vec!["C".to_owned(), "F".to_owned()]);
+        assert_eq!(c.assumed_value.as_deref(), Some("F"));
+    }
+
+    /// An assumed value satisfying no `list` row is refused: the 1.4 source states
+    /// an assumed instance outside its own constraint, and no tuple row can carry
+    /// it (`AOM2/master04.3` §Tuple Constraints).
+    #[test]
+    fn adl14_domain_assumed_value_outside_every_row_is_refused() {
+        let errs = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             C_DV_QUANTITY <\n\
+             assumed_value = <units = <\"kPa\"> magnitude = <8.0>>\n\
+             list = <\n\
+             [\"1\"] = <units = <\"mm[Hg]\"> magnitude = <|>=0.0|>>\n\
+             [\"2\"] = <units = <\"cm[H2O]\"> magnitude = <|>=0.0|>>\n\
+             >\n\
+             >\n\
+             }\n\
+             }",
+        )
+        .expect_err("an unmatched assumed value must be refused");
+        assert!(
+            errs.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
+            "expected SDINV, got {:?}",
+            errs.iter().map(|e| e.code).collect::<Vec<_>>()
+        );
+    }
+
+    /// An inline dADL domain block whose type is not one this lowering models is
+    /// refused by NAME, never lowered to a different RM type
+    /// (`ADL1.4/master09-customising_adl.adoc` §Introduction admits any
+    /// `C_DOMAIN_TYPE` descendant, each targeting a different RM type).
+    #[test]
+    fn adl14_unsupported_domain_type_is_refused_by_name() {
+        let errs = parse_definition_body_adl14(
+            "ELEMENT[at0000] matches {\n\
+             value matches {\n\
+             DV_CODED_TEXT matches {\n\
+             defining_code matches {\n\
+             (C_CODE_PHRASE) <\n\
+             terminology_id = <value = <\"local\">>\n\
+             code_list = <[\"1\"] = <\"at0001\">>\n\
+             >\n\
+             }\n\
+             }\n\
+             }\n\
+             }",
+        )
+        .expect_err("an unmodelled domain constrainer must be refused");
+        let sdinv = errs
+            .iter()
+            .find(|e| e.code == SyntaxErrorCode::Sdinv)
+            .expect("SDINV");
+        assert!(
+            sdinv.message.contains("C_CODE_PHRASE"),
+            "the message must name the type, got {:?}",
+            sdinv.message
+        );
     }
 
     #[test]

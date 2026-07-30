@@ -1,0 +1,108 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.term_constraint_codes_defined.v1
+
+concept
+	[at0000]	-- Defined term constraint codes
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Defined term constraint codes
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Position
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- The accepting twin of the VATDF/VACDF fixtures: every
+							-- archetype term of the 1.4 listed constraint — the
+							-- listed codes AND the assumed code — is defined in the
+							-- ontology (ADL1.4/master08-adl.adoc §Validity Rules
+							-- VATDF).
+							[local::
+							at0002,
+							at0003;
+							at0002]
+						}
+					}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- Agent
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- The `ac` placeholder is defined in
+							-- `constraint_definitions` (VACDF).
+							[local::ac0001]
+						}
+					}
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Setting
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							-- Codes of an EXTERNAL terminology are not archetype
+							-- terms, so VATDF/VACDF definedness does not apply to
+							-- them (ADL1.4/master08-adl.adoc §Validity Rules judges
+							-- the archetype's own `term_definitions`).
+							[openehr::
+							253,
+							271]
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Defined term constraint codes">
+					description = <"Accepting fixture: every 1.4 term-constraint code is defined.">
+				>
+				["at0001"] = <
+					text = <"Position">
+					description = <"The recorded position.">
+				>
+				["at0002"] = <
+					text = <"Lying">
+					description = <"Lying position.">
+				>
+				["at0003"] = <
+					text = <"Sitting">
+					description = <"Sitting position.">
+				>
+				["at0004"] = <
+					text = <"Agent">
+					description = <"The responsible agent.">
+				>
+				["at0005"] = <
+					text = <"Setting">
+					description = <"The care setting.">
+				>
+			>
+		>
+	>
+	constraint_definitions = <
+		["en"] = <
+			items = <
+				["ac0001"] = <
+					text = <"Substances or Agents">
+					description = <"All substances or agents of interest.">
+				>
+			>
+		>
+	>

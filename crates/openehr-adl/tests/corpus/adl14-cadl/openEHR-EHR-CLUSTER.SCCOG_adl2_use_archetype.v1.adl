@@ -1,0 +1,43 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SCCOG_adl2_use_archetype.v1
+
+concept
+	[at0000]	-- ADL2 use_archetype in a 1.4 text
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- ADL2 use_archetype in a 1.4 text
+		items cardinality matches {0..*; unordered} matches {
+			-- `use_archetype` is ADL2 only (ADL2/master04.3 §Archetype Slots,
+			-- `C_ARCHETYPE_ROOT`). The cADL 1.4 keyword set
+			-- (ADL1.4/master05-cadl.adoc §Keywords L51) has `use_node` and
+			-- `allow_archetype` only; a 1.4 text names an external archetype
+			-- through an `allow_archetype` slot assertion instead
+			-- (ADL1.4/master05-cadl.adoc §Archetype Slots).
+			use_archetype CLUSTER[at0001, openEHR-EHR-CLUSTER.dimensions.v1]
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"ADL2 use_archetype in a 1.4 text">
+					description = <"Refusal fixture: an ADL2 `use_archetype` in an ADL 1.4 definition.">
+				>
+				["at0001"] = <
+					text = <"Nested cluster">
+					description = <"An externally referenced cluster.">
+				>
+			>
+		>
+	>
