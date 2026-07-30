@@ -212,3 +212,39 @@ fn use_node_naming_the_same_or_a_super_type_is_clean() {
         );
     }
 }
+
+// ── VDFPT: path validity in the 1.4 definition section ───────────────────────
+
+#[test]
+fn use_node_target_that_does_not_resolve_raises_vdfpt() {
+    // `ADL1.4/master08-adl.adoc` §Definition Section, VDFPT: any path mentioned
+    // in the definition section must be valid with respect to its hierarchical
+    // structure. The helper's resolving target is the accepting twin
+    // (`use_node_naming_the_same_or_a_super_type_is_clean` proves it stays
+    // clean); here the same archetype pointing at a node that does not exist
+    // must be reported.
+    let bad = use_node_archetype("ELEMENT").replace(
+        "/items[at0001]/items[at0002]",
+        "/items[at0001]/items[at0099]",
+    );
+    assert!(
+        errors(&bad).contains(&"VDFPT".to_owned()),
+        "a use_node target that does not resolve must raise VDFPT, got {:?}",
+        errors(&bad)
+    );
+    // The full-catalogue entry reports it too.
+    assert!(adl14_codes(&bad).contains(&"VDFPT".to_owned()));
+}
+
+#[test]
+fn use_node_target_leaving_the_archetype_raises_vdfpt() {
+    // A target whose first segment is not a constrained attribute of the root:
+    // syntactically fine, structurally invalid per VDFPT.
+    let bad = use_node_archetype("ELEMENT")
+        .replace("/items[at0001]/items[at0002]", "/no_such_attr[at0002]");
+    assert!(
+        errors(&bad).contains(&"VDFPT".to_owned()),
+        "a use_node path outside the definition structure must raise VDFPT, got {:?}",
+        errors(&bad)
+    );
+}
