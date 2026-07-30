@@ -723,7 +723,7 @@ pub fn validate_source_phase1(
 /// - **VDFPT** — `use_node` target paths must resolve within the definition
 ///   section (`ADL1.4/master08-adl.adoc` §Definition Section; a 1.4 artefact
 ///   is standalone, so its own assembled definition is the resolution target —
-///   [`phase3::validate_definition_paths_adl14`]).
+///   `phase3::validate_definition_paths_adl14`).
 ///
 /// # Errors
 /// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;

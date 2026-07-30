@@ -43,6 +43,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL 1.4 archetypes using the chapter's custom constraint forms now
+  upload.** Two constructs of ADL 1.4 §Customising ADL (master09) were
+  rejected outright:
+  - the inline dADL `C_CODE_PHRASE <…>` section — the chapter's own worked
+    example — is now read and lowered to exactly the constraint its compact
+    `[local:: at0039, at0040]` twin produces (the chapter presents them as two
+    spellings of the same constraint), including an `assumed_value`
+    `CODE_PHRASE`; a block that is not a `C_CODE_PHRASE` instance (no
+    terminology, no or empty code list, an attribute the type does not define)
+    is refused with a syntax error naming the defect instead of being guessed
+    at;
+  - the openEHR-profiled ordinal shorthand `0|[local::at0005],
+    1|[local::at0006]` — ubiquitous in real 1.4 scores and scales, and
+    optionally carrying a `; assumed` value — now parses in ADL 1.4 and is
+    lowered to the generic `DV_ORDINAL` `[value, symbol]` tuple that ADL 2
+    names as its replacement. ADL 2, which removed the form, still refuses it.
+
+  Both forms' codes take part in validation exactly as the equivalent standard
+  spellings do (an undefined at-code still raises `VATDF`). `C_DV_STATE`, the
+  remaining custom constrainer, has no shape in any openEHR specification and
+  stays a loud refusal naming the type.
 - **ADL 1.4 archetypes whose section keywords are not all-lowercase now
   upload.** The ADL 1.4 lexical specification (master08 §Symbols) spells
   every section keyword case-insensitively, so `ARCHETYPE (adl_version=1.4)`,
