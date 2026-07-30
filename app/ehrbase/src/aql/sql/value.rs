@@ -485,11 +485,38 @@ pub(super) fn version_field_expr(
         VersionField::TimeCommitted => col(&audit(), "time_committed"),
         VersionField::SystemId => col(&audit(), "system_id"),
         VersionField::ChangeType => col(&audit(), "change_type"),
+        // The rubric renders from the openEHR terminology group at SQL-build
+        // time (the bundle is the authority, never a hardcoded rubric — the
+        // same rule as the versioning render edge); the terminology id of
+        // both coded version fields is the constant `openehr` (#976).
+        VersionField::ChangeTypeRubric => {
+            coded_rubric_case(col(&audit(), "change_type"), "audit_change_type")
+        }
+        VersionField::ChangeTypeTerminology => Expr::val("openehr").into(),
         VersionField::Committer => col(&audit(), "committer"),
         VersionField::Description => col(&audit(), "description"),
         VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
         VersionField::LifecycleState => col(voa, "lifecycle_state"),
+        VersionField::LifecycleStateRubric => {
+            coded_rubric_case(col(voa, "lifecycle_state"), "version_lifecycle_state")
+        }
+        VersionField::LifecycleStateTerminology => Expr::val("openehr").into(),
     }
+}
+
+/// `CASE <code_col> WHEN '<code>' THEN '<rubric>' … END` over an openEHR
+/// terminology group, generated from the vendored TERM bundle (TERM 3.1.0
+/// `openehr_terminology.xml`) — the coded version fields store the numeric
+/// group code; their `…/value` sub-path compares against the rubric.
+fn coded_rubric_case(code_col: Expr, group_id: &str) -> Expr {
+    let mut case = sea_query::CaseStatement::new();
+    for concept in openehr_term::bundle::openehr().concepts_in_group(group_id) {
+        case = case.case(
+            code_col.clone().eq(Expr::val(concept.id.clone())),
+            Expr::val(concept.rubric.clone()),
+        );
+    }
+    case.into()
 }
 
 /// The typed SQL for an EHR attribute (`ehr_id/value`, `time_created`,
