@@ -66,11 +66,13 @@ impl ArchetypeId {
     #[must_use]
     pub fn rm_entity(&self) -> &str {
         // rm_originator '-' rm_name '-' rm_entity: take everything after the
-        // second '-'.
+        // second '-'. `splitn(3, ..)` leaves any further '-' inside the third
+        // segment, which is exactly the `rm_entity` remainder.
         let q = self.qualified_rm_entity();
-        match q.match_indices('-').nth(1) {
-            Some((i, _)) => &q[i + 1..],
-            None => "",
+        let mut segments = q.splitn(3, '-');
+        match (segments.next(), segments.next(), segments.next()) {
+            (Some(_), Some(_), Some(rest)) => rest,
+            _ => "",
         }
     }
 
@@ -129,12 +131,6 @@ impl FromStr for ArchetypeId {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
@@ -240,12 +236,6 @@ impl crate::validate::Validate for ArchetypeId {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod validity_tests {
     use super::*;
 

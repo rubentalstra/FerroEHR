@@ -15,19 +15,36 @@ pub enum LoadError {
     /// Filesystem failure.
     #[error("{path}: {source}")]
     Io {
+        /// The file that could not be read.
         path: PathBuf,
+        /// The underlying filesystem error.
         #[source]
         source: std::io::Error,
     },
     /// YAML parse failure (incl. budget breaches and duplicate keys).
     #[error("{path}: YAML: {message}")]
-    Yaml { path: PathBuf, message: String },
+    Yaml {
+        /// The file that failed to parse.
+        path: PathBuf,
+        /// The parser's diagnostic.
+        message: String,
+    },
     /// JSON-Schema validation failure.
     #[error("{path}: schema: {message}")]
-    Schema { path: PathBuf, message: String },
+    Schema {
+        /// The file that failed validation.
+        path: PathBuf,
+        /// The schema violation.
+        message: String,
+    },
     /// Typed-model parse failure (closed grammars, invariants).
     #[error("{path}: model: {message}")]
-    Model { path: PathBuf, message: String },
+    Model {
+        /// The file whose typed parse failed.
+        path: PathBuf,
+        /// The invariant or grammar that rejected it.
+        message: String,
+    },
 }
 
 impl LoadError {

@@ -818,8 +818,11 @@ impl EhrbaseService {
         let mut segment_names = Vec::with_capacity(ranges.len());
         for (seg_no, range) in ranges.iter().enumerate() {
             let name = format!("segment-{seg_no:04}.json");
-            // Re-serialize the segment as one JSON array of records.
-            let slice = &records[range.clone()];
+            // Re-serialize the segment as one JSON array of records. The range
+            // was planned over `sizes`, which has the same length as `records`,
+            // so it is in bounds; fetched rather than indexed so a planner
+            // defect cannot panic the admin route.
+            let slice = records.get(range.clone()).unwrap_or_default();
             let bytes = serde_json::to_vec(slice).map_err(ServiceError::from)?;
             archive.write(&name, &bytes)?;
             segment_names.push(name);
@@ -858,7 +861,7 @@ impl EhrbaseService {
     ///   the manifest / a segment entry / a blob entry cannot be read, the
     ///   manifest or a segment is not parseable as part of this archive format
     ///   (a mangled or truncated archive is the same fact as an unreadable
-    ///   one — see [`unreadable_archive_entry`]), or the manifest declares a
+    ///   one — see `unreadable_archive_entry`), or the manifest declares a
     ///   logical format that names no `EXPORT_FORMAT` member.
     /// - `precondition_violation` (`400`) — the archive carries externalized
     ///   multimedia blobs but this server has no multimedia store configured.
@@ -1038,7 +1041,11 @@ impl EhrbaseService {
     /// Read one EHR's `ehr`/audit/contribution/version/tag/archive content. The
     /// per-version canonical body is reassembled through the storage codec
     /// ([`node_repo::read_version_canonical`] — the codec's lossless inverse).
-    #[allow(clippy::too_many_lines)] // one linear per-EHR collection pass
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear per-EHR collection pass; splitting it would hide \
+                  the segment order"
+    )]
     async fn collect_one_ehr(&self, ehr_id: EhrId) -> Result<EhrRecord, ServiceError> {
         let row = sqlx::query(
             "SELECT system_id, time_created::text, subject_id, subject_namespace \
@@ -1416,12 +1423,6 @@ async fn insert_version(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::plan_segments;
 

@@ -142,7 +142,6 @@ fn child_path(attr_path: &str, node_id: &str) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)]
 mod tests {
     use super::validate_phase3;
     use crate::assemble::parse_artefact;

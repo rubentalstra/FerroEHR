@@ -37,7 +37,7 @@
 //! cross-cutting rule "If a method is recognized but not allowed for the target
 //! resource, the response SHOULD be `405 Method Not Allowed` status code"
 //! (`docs/overview/Requests_and_responses.md` §"HTTP Methods"). See the gate
-//! comment in `run` below and the declarations in [`super::openapi_routes`].
+//! comment in `run` below and the declarations in `super::openapi_routes`.
 
 use axum::Json;
 use axum::response::{IntoResponse, Response};
@@ -220,12 +220,6 @@ fn ehr_id_list(query: Option<&str>) -> Vec<String> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::ehr_id_list;
 

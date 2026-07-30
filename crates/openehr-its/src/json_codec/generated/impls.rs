@@ -6,9 +6,11 @@
     clippy::pedantic,
     clippy::nursery,
     unused_variables,
-    unused_mut
+    unused_mut,
+    unused_qualifications,
+    unused_imports,
+    reason = "mechanically generated codec text: every runtime item is named by its full path and every branch shape is emitted uniformly, so style and unused-binding lints do not apply — the hand-written runtime carries the lint bar"
 )]
-#[allow(unused_imports)]
 use crate::json_codec::runtime::{self, FromJson, JsonNode, JsonParseError, JsonWriter, ToJson};
 
 impl crate::json_codec::runtime::ToJson for openehr_base::prelude::AccessGroupRef {
@@ -287,7 +289,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_base::prelude::Interval<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -457,7 +458,6 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::Iso8601Type {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Iso8601Type {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -585,7 +585,6 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::ObjectId {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ObjectId {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -670,7 +669,6 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::ObjectRef {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_base::prelude::ObjectRef {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -855,7 +853,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_base::prelude::ProperInterval<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -1206,7 +1203,6 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::Uid {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_base::prelude::Uid {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -1250,7 +1246,6 @@ impl crate::json_codec::runtime::ToJson for openehr_base::prelude::UidBasedId {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_base::prelude::UidBasedId {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -1526,7 +1521,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Actor {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Actor {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -1899,7 +1893,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::AuditDetails {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::AuditDetails {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2034,7 +2027,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::CareEntry {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::CareEntry {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2296,7 +2288,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ContentItem {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ContentItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2388,7 +2379,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DataStructure {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DataStructure {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2474,7 +2464,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DataValue {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DataValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2581,7 +2570,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvAbsoluteQuant
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvAbsoluteQuantity {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2629,7 +2617,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvAmount {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvAmount {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -2954,7 +2941,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvEncapsulated 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvEncapsulated {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3173,7 +3159,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvOrdered {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvOrdered {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3423,7 +3408,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvQuantified {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvQuantified {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3607,7 +3591,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvTemporal {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTemporal {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3695,7 +3678,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvText {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvText {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3786,7 +3768,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvTimeSpecifica
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvTimeSpecification {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -3855,7 +3836,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::DvUri {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::DvUri {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -4104,7 +4084,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Entry {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Entry {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -4228,7 +4207,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_rm::prelude::Event<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -4477,7 +4455,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractChapter 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractChapter {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -4516,7 +4493,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractContentI
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractContentItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -4737,7 +4713,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ExtractItem {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ExtractItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -5697,7 +5672,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Item {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Item {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -5832,7 +5806,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::ItemStructure {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ItemStructure {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6107,7 +6080,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Locatable {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Locatable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6312,7 +6284,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::MessageContent 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::MessageContent {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6456,7 +6427,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::OpenehrCodeSetI
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::OpenehrCodeSetIdentifiers {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6588,7 +6558,6 @@ openehr_rm::prelude::OpenehrTerminologyGroupIdentifiers::OpenehrTerminologyGroup
 impl crate::json_codec::runtime::FromJson
     for openehr_rm::prelude::OpenehrTerminologyGroupIdentifiers
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6791,7 +6760,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Party {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Party {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6875,7 +6843,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyIdentified
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyIdentified {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -6962,7 +6929,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::PartyProxy {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::PartyProxy {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -7204,7 +7170,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::Pathable {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::Pathable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -7482,9 +7447,9 @@ impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::ProportionKin
         let __v = node.as_i64().ok_or_else(|| {
             crate::json_codec::runtime::JsonParseError::type_error("an integer", node.kind())
         })?;
-        let __v = i32::try_from(__v).map_err(|_| {
+        let __v = i32::try_from(__v).map_err(|__e| {
             crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                "integer {__v} out of range for i32"
+                "integer {__v} out of range for i32: {__e}"
             ))
         })?;
         ::core::result::Result::Ok(openehr_rm::prelude::ProportionKind::from_value(__v))
@@ -8001,7 +7966,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_rm::prelude::Version<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8190,7 +8154,6 @@ impl crate::json_codec::runtime::ToJson for openehr_rm::prelude::VersionedObject
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_rm::prelude::VersionedObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8555,7 +8518,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_rm::prelude::XVersionedObject<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8845,7 +8807,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmBuiltinTyp
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmBuiltinType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -8955,7 +8916,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClass {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClass {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9022,7 +8982,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmClassifier
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmClassifier {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9221,7 +9180,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerP
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerProperty {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9294,7 +9252,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmContainerT
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmContainerType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9460,7 +9417,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmDefinition
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmDefinitions {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9616,7 +9572,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEffectiveT
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEffectiveType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9759,7 +9714,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmEnumeratio
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmEnumeration {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -9977,7 +9931,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFeature {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFeature {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10091,7 +10044,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmFormalElem
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmFormalElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10528,7 +10480,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmInstantiab
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmInstantiableFeature {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10641,7 +10592,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmLiteralVal
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmLiteralValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -10919,7 +10869,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmModelEleme
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmModelElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11238,7 +11187,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPackageCon
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPackageContainer {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11409,7 +11357,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmPrimitiveV
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmPrimitiveValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11628,7 +11575,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_lang::prelude::BmmProperty<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11703,7 +11649,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmReadonlyVa
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmReadonlyVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11780,7 +11725,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutine {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutine {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11823,7 +11767,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineDef
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineDefinition {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -11898,7 +11841,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmRoutineTyp
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmRoutineType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12078,7 +12020,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSchemaCore
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSchemaCore {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12258,7 +12199,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSignature 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSignature {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12368,7 +12308,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmSimpleStat
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmSimpleStatement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12495,7 +12434,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatement 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12579,7 +12517,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatementI
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatementItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12632,7 +12569,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmStatic {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmStatic {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12771,7 +12707,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmType {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12861,7 +12796,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmTypeElemen
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmTypeElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -12990,7 +12924,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryTyp
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13047,7 +12980,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmUnitaryVal
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmUnitaryValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13124,7 +13056,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmVariable {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13192,7 +13123,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::BmmWritableVa
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::BmmWritableVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13233,7 +13163,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgent {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgent {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13274,7 +13203,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElAgentCall {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElAgentCall {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13527,7 +13455,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElConstrained
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElConstrained {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13571,7 +13498,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_lang::prelude::ElDecisionBranch<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13618,7 +13544,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_lang::prelude::ElDecisionTable<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13713,7 +13638,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElExpression 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElExpression {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13805,7 +13729,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElFeatureRef 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElFeatureRef {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13953,7 +13876,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElOperator {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElOperator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -13994,7 +13916,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElPredicate {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElPredicate {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14155,7 +14076,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElSimple {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElSimple {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14277,7 +14197,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElTerminal {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElTerminal {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14485,7 +14404,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElValueGenera
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElValueGenerator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14544,7 +14462,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ElVariable {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ElVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14623,7 +14540,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::Expression {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::Expression {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14785,7 +14701,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExprLeaf {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprLeaf {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14858,7 +14773,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExprOperator 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprOperator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -14920,7 +14834,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExprTypeDef {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprTypeDef {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15036,7 +14949,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::ExprValue {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::ExprValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15194,7 +15106,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmBaseType 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmBaseType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15310,7 +15221,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmClass {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmClass {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15499,7 +15409,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmContainer
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmContainerProperty {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15584,7 +15493,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmContainer
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmContainerType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -15715,7 +15623,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmEnumerati
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmEnumeration {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -16011,7 +15918,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmFunctionP
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmFunctionParameter {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -16408,7 +16314,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmModelElem
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmModelElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -16609,7 +16514,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmPackageCo
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmPackageContainer {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -16655,7 +16559,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmProperty 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmProperty {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -17069,7 +16972,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmType {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -17193,7 +17095,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::SchemaDescrip
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::SchemaDescriptor {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -17234,7 +17135,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::Statement {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::Statement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -17712,7 +17612,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::Archetype
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ArchetypeConstraint {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18035,7 +17934,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CAttribut
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CAttribute {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18286,7 +18184,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CDefinedO
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CDefinedObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18338,7 +18235,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CDomainTy
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CDomainType {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18529,7 +18425,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CObject {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18636,7 +18531,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CPrimitiv
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CPrimitive {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -18833,7 +18727,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::CReferenc
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::CReferenceObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19029,7 +18922,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::ExprItem 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ExprItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19101,7 +18993,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am14::prelude::ExprOpera
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am14::prelude::ExprOperator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19270,7 +19161,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::AdlCodeDe
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AdlCodeDefinitions {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19481,7 +19371,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Archetype
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Archetype {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19556,7 +19445,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Archetype
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ArchetypeConstraint {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -19995,7 +19883,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::AuthoredA
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AuthoredArchetype {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20039,7 +19926,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::AuthoredR
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::AuthoredResource {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20285,7 +20171,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmDefini
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmDefinitions {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20443,7 +20328,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFeatur
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFeature {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20536,7 +20420,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmFormal
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmFormalElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20663,7 +20546,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmInstan
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmInstantiableFeature {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -20806,7 +20688,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmModelE
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmModelElement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21072,7 +20953,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmReadon
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmReadonlyVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21149,7 +21029,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmRoutin
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRoutine {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21196,7 +21075,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmRoutin
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmRoutineDefinition {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21279,7 +21157,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmSimple
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmSimpleStatement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21378,7 +21255,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmStatem
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStatement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21462,7 +21338,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmStatem
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStatementItem {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21515,7 +21390,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmStatic
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmStatic {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21560,7 +21434,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmVariab
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21607,7 +21480,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::BmmWritab
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::BmmWritableVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -21645,9 +21517,9 @@ impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Constra
         let __v = node.as_i64().ok_or_else(|| {
             crate::json_codec::runtime::JsonParseError::type_error("an integer", node.kind())
         })?;
-        let __v = i32::try_from(__v).map_err(|_| {
+        let __v = i32::try_from(__v).map_err(|__e| {
             crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                "integer {__v} out of range for i32"
+                "integer {__v} out of range for i32: {__e}"
             ))
         })?;
         ::core::result::Result::Ok(openehr_am::am24::prelude::ConstraintStatus::from_value(__v))
@@ -21945,7 +21817,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CComplexO
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CComplexObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22198,7 +22069,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CDefinedO
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CDefinedObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22428,7 +22298,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CObject {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22510,7 +22379,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::COrdered 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::COrdered {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22577,7 +22445,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CPrimitiv
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CPrimitiveObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22734,7 +22601,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CSecondOr
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CSecondOrder {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -22848,7 +22714,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::CTemporal
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::CTemporal {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23118,7 +22983,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElAgent {
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElAgent {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23159,7 +23023,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElAgentCa
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElAgentCall {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23412,7 +23275,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElConstra
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElConstrained {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23458,7 +23320,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_am::am24::prelude::ElDecisionBranch<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23505,7 +23366,6 @@ impl<T: crate::json_codec::runtime::ToJson> crate::json_codec::runtime::ToJson
 impl<T: crate::json_codec::runtime::FromJson> crate::json_codec::runtime::FromJson
     for openehr_am::am24::prelude::ElDecisionTable<T>
 {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23600,7 +23460,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElExpress
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElExpression {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23692,7 +23551,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElFeature
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElFeatureRef {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23816,7 +23674,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElOperato
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElOperator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -23857,7 +23714,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElPredica
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElPredicate {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24018,7 +23874,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElSimple 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElSimple {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24140,7 +23995,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElTermina
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElTerminal {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24322,7 +24176,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElValueGe
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElValueGenerator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24381,7 +24234,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ElVariabl
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ElVariable {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24462,7 +24314,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Expressio
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Expression {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24643,7 +24494,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprConst
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprConstraint {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24756,7 +24606,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprLeaf 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprLeaf {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24816,7 +24665,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprOpera
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprOperator {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -24908,7 +24756,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprValue
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprValue {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25004,7 +24851,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::ExprValue
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::ExprValueRef {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25137,7 +24983,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PArchetyp
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchetype {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25203,7 +25048,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PArchetyp
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PArchetypeConstraint {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25486,7 +25330,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PAuthored
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthoredArchetype {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25528,7 +25371,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PAuthored
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PAuthoredResource {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25793,7 +25635,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCComplex
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCComplexObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -25918,7 +25759,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCDefined
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCDefinedObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -26018,7 +25858,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCObject 
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -26078,7 +25917,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::PCPrimiti
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::PCPrimitiveObject {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -26610,7 +26448,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Statement
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::Statement {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {
@@ -26804,7 +26641,6 @@ impl crate::json_codec::runtime::ToJson for openehr_am::am24::prelude::Terminolo
 }
 
 impl crate::json_codec::runtime::FromJson for openehr_am::am24::prelude::TerminologyRelation {
-    #[allow(clippy::match_same_arms)]
     fn from_json<__N: crate::json_codec::runtime::JsonNode>(
         node: &__N,
     ) -> ::core::result::Result<Self, crate::json_codec::runtime::JsonParseError> {

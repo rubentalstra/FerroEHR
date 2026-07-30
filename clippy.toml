@@ -1,2 +1,44 @@
-allow-expect-in-tests = true
-allow-unwrap-in-tests = true
+# Clippy value-configuration (lint LEVELS live in the root Cargo.toml
+# [workspace.lints] tables — the only legal home; this file carries behaviour).
+# Reference: https://doc.rust-lang.org/clippy/lint_configuration.html
+# `msrv` is deliberately NOT set: it defaults to the workspace `rust-version`
+# (1.96); duplicating it here invites silent drift.
+
+# ── test scoping: panicking assertion idioms are correct IN TESTS (Book ch11) ─
+allow-unwrap-in-tests = true            # clippy::unwrap_used
+allow-expect-in-tests = true            # clippy::expect_used
+allow-panic-in-tests = true             # clippy::panic
+allow-print-in-tests = true             # clippy::print_stdout / print_stderr
+allow-indexing-slicing-in-tests = true  # clippy::indexing_slicing
+check-incompatible-msrv-in-tests = true # clippy::incompatible_msrv reaches tests too
+# allow-dbg-in-tests stays false (default): dbg! is never committed, tests included
+
+# ── every crate is publish = false: there is no external semver surface, so the
+#    ~15 API-shape lints this option suppresses report real findings instead ──
+avoid-breaking-exported-api = false
+
+# ── clippy::doc_markdown domain vocabulary (".." appends to the defaults) ────
+doc-valid-idents = [
+  "..",
+  "openEHR", "EHRbase", "OpenAPI", "PostgreSQL", "JSONB",
+  "AQL", "cADL", "dADL", "ODIN", "WebTemplate", "GraphQL",
+  "FHIR", "SNOMED", "LOINC", "DICOM", "IANA", "OAuth2", "OpenID",
+]
+
+# ── type-level enforcement of the jiff time pin (docs/VERSIONS.md; sqlx's
+#    chrono feature can leak chrono types into our signatures by accident) ────
+disallowed-types = [
+  { path = "chrono::DateTime", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
+  { path = "chrono::NaiveDateTime", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
+  { path = "chrono::NaiveDate", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
+  { path = "chrono::Utc", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
+]
+
+# ── owner-ruled method bans (issue #1311, 2026-07-30); a legitimate exception
+#    site carries a narrowly-scoped #[expect(clippy::disallowed_methods, reason)] ─
+disallowed-methods = [
+  { path = "std::time::SystemTime::now", reason = "wall-clock time comes from jiff (Zoned/Timestamp); std::time::Instant stays fine for latency measurement" },
+  { path = "std::env::var", reason = "configuration flows through the config tree (ehrbase::config), never ad-hoc env reads" },
+  { path = "std::env::var_os", reason = "configuration flows through the config tree (ehrbase::config), never ad-hoc env reads" },
+  { path = "uuid::Uuid::new_v4", reason = "DB keys are uuidv7 (Uuid::now_v7) for index locality; v4 only for non-key randomness with a scoped expect" },
+]

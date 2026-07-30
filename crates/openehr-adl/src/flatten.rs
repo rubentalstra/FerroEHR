@@ -175,6 +175,10 @@ fn overlay_root(
 /// Overlay a single child `C_ATTRIBUTE` onto the base attribute list. Matches by
 /// `rm_attribute_name`; a new attribute is added, an existing one has its
 /// existence/cardinality overrides applied and its children overlaid.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`pos` is the `Iterator::position` of the matching attribute in this very `base_attrs` vector — the let-else below returns when there is none, and nothing removes from the vector before the indexed accesses, so every index is in bounds by construction"
+)]
 fn overlay_attribute(base_attrs: &mut Vec<CAttribute>, child_attr: &CAttribute, level: usize) {
     let Some(pos) = base_attrs
         .iter()
@@ -229,6 +233,10 @@ enum Overlaid {
 ///    anchors the run of nodes following it until the next marker
 ///    (`master09.04` L249), resolved with dependency ordering so an anchor that
 ///    is itself placed by a later run is available first.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "every index here is in bounds by construction: `base_idx` is a `find_congruent_idx` result over `base_nodes`, `split` is a `position(..).unwrap_or(len)` so both `classified[..split]` and `classified[split..]` are valid, and `runs[i]` is guarded by the enclosing `i < runs.len()`"
+)]
 fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level: usize) {
     let base_nodes = base_attr.children.clone();
 
@@ -427,8 +435,8 @@ fn clone_not_needed(base_node: &CObject, base_attr: &CAttribute, redefs: &[&CObj
     }
     // Case 2: the child node is the sole redefinition of this parent and has an
     // explicit max occurrences of 1.
-    if redefs.len() == 1
-        && child_occurrences_of(redefs[0]).is_some_and(|o| !o.upper_unbounded && o.upper == Some(1))
+    if let [only] = redefs
+        && child_occurrences_of(only).is_some_and(|o| !o.upper_unbounded && o.upper == Some(1))
     {
         return true;
     }
@@ -503,6 +511,10 @@ fn overlay_node(base: &CObject, child: &CObject) -> CObject {
 /// proxy overridden through its path is expanded inline). Returns a mutable
 /// reference to the target complex object, or `None` if the path does not
 /// resolve.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`attr_pos` is an `Iterator::position` over `current.attributes` and `child_pos` a `pick_child_pos` result over that attribute's `children`, so both are in bounds by construction; a `get_mut` rewrite would split the reborrow chain this `&mut` navigation loop depends on"
+)]
 fn resolve_object_mut<'a>(
     root: &'a mut CComplexObject,
     path: &str,
@@ -595,7 +607,7 @@ fn pick_child_pos(attr: &CAttribute, seg: &PathSegment) -> Option<usize> {
 }
 
 fn pick_child_ref<'a>(attr: &'a CAttribute, seg: &PathSegment) -> Option<&'a CObject> {
-    pick_child_pos(attr, seg).map(|i| &attr.children[i])
+    pick_child_pos(attr, seg).and_then(|i| attr.children.get(i))
 }
 
 // ── terminology merge ──────────────────────────────────────────────────────

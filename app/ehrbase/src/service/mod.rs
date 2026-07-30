@@ -79,7 +79,7 @@ pub(crate) type TenantCache = moka::future::Cache<String, Option<TenantContext>>
 pub(crate) fn tenant_cache() -> TenantCache {
     moka::future::Cache::builder()
         .max_capacity(10_000)
-        .time_to_live(std::time::Duration::from_mins(5))
+        .time_to_live(Duration::from_mins(5))
         .build()
 }
 
@@ -134,7 +134,7 @@ pub struct EhrbaseService {
     /// behaviour byte-identical.
     pub(crate) multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
     /// The optional Subject Proxy FHIR-frame executor, selected when a
-    /// deployment configures FHIR systems ([`SubjectProxyConfig`]). `None`
+    /// deployment configures FHIR systems ([`crate::service::subject_proxy::config::SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
     pub(crate) subject_proxy_fhir: Option<Arc<SubjectProxyFhir>>,
     /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
@@ -294,7 +294,7 @@ impl EhrbaseService {
     }
 
     /// Install the Subject Proxy FHIR-frame executor (opt-in via
-    /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
+    /// [`crate::service::subject_proxy::config::SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
     /// `DATA_FRAME` is a typed rejection (fail-closed).
     #[must_use]
     pub fn with_subject_proxy(mut self, fhir: Arc<SubjectProxyFhir>) -> Self {
@@ -355,6 +355,13 @@ impl EhrbaseService {
     /// tenant's own `system_id` when tenancy is on, else the configured
     /// default (with tenancy off the task-local is never set and this is
     /// byte-identical to the configured `system_id`).
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(crate) fn effective_system_id(&self) -> String {
         crate::extensions::tenant_context::current()
             .map_or_else(|| self.system_id.clone(), |t| t.system_id)
@@ -373,6 +380,13 @@ impl EhrbaseService {
 
     /// The write-time signing context (RM common master06 §Digital Signature)
     /// threaded into every versioned-object commit.
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(crate) fn signing_ctx(&self) -> SigningCtx<'_> {
         SigningCtx {
             system_id: self.effective_system_id(),

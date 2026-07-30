@@ -17,7 +17,7 @@
 //! `I_TERMINOLOGY_SERVICE` seam — the in-process `openehr-term` bundle by
 //! default, a remote FHIR TS when configured) and rewrites the AST value list
 //! *in place* to explicit string codes, **before** planning/SQL generation. The
-//! engine planner ([`super::lower`]) then sees an ordinary `matches { … }` value
+//! engine planner (`super::lower`) then sees an ordinary `matches { … }` value
 //! list and needs no terminology awareness.
 //!
 //! All three master03 §TERMINOLOGY usage forms are realised here:
@@ -303,7 +303,6 @@ fn code_items(codes: Option<&Vec<String>>) -> Vec<ValueListItem> {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
     use openehr_query::parser::parse_str;

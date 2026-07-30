@@ -1,7 +1,13 @@
 edition = "2024"
+# Pinned explicitly per the rustfmt docs recommendation: bare `rustfmt`
+# (IDE-on-save, hooks) defaults to style edition 2015, while `cargo fmt`
+# infers it from Cargo.toml — pinning removes the divergence
+# (https://rust-lang.github.io/rustfmt/?search=style_edition). The deprecated
+# `version` key is superseded by this one — never add it.
+style_edition = "2024"
 max_width = 100
 use_small_heuristics = "Default"
-# Nightly-only as of Rust 1.96 (warn-spam on stable); re-enable when stabilized.
-# imports_granularity = "Crate"
-# group_imports = "StdExternalCrate"
 newline_style = "Unix"
+# Nightly-only as of Rust 1.96 (warn-spam on stable); re-enable when stabilized:
+# imports_granularity = "Crate"        # tracking: rust-lang/rustfmt#4991
+# group_imports = "StdExternalCrate"   # tracking: rust-lang/rustfmt#5083

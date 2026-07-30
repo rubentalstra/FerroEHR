@@ -15,6 +15,9 @@
 //! - [`parser`] — `chumsky` parser tokens → [`ast::SelectQuery`]. ✅
 //! - `semantics` — path analysis against Web Templates. (later)
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 pub mod ast;
 pub mod lexer;
 pub mod parser;

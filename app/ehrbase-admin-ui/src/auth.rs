@@ -26,8 +26,11 @@ pub struct SessionInfo {
 /// [`AdminUiError::CdrUnreachable`] when the CDR misbehaves.
 #[server]
 pub async fn login_basic(
+    /// The CDR username the console authenticates as.
     username: String,
+    /// The matching CDR password; it never leaves the server.
     password: String,
+    /// Where to land after a successful login; the dashboard when absent.
     next: Option<String>,
 ) -> Result<(), AdminUiError> {
     let state: crate::state::AppState = leptos::prelude::expect_context();

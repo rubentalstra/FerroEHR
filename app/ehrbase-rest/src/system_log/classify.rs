@@ -18,7 +18,7 @@
 //! Keyed by the generated ITS-REST operation ids
 //! (`openehr_its::rest::generated`). Every operation id in every generated
 //! `ROUTES` table is **explicitly** classified here; the completeness test
-//! ([`tests::every_generated_operation_is_explicit`]) fails the build the moment
+//! (`tests::every_generated_operation_is_explicit`) fails the build the moment
 //! a newly generated operation is not, mirroring the codegen drift guard.
 //!
 //! # Fail-closed default
@@ -66,7 +66,7 @@ impl Classification {
 /// unaudited. Extension routes (terminology/subject-proxy/events/FHIR) and any
 /// future operation land here until given an explicit entry.
 pub const DEFAULT: Classification =
-    Classification::audited(EventActionCode::Execute, ObjectClass::ApplicationActivity);
+    Classification::audited(Execute, ObjectClass::ApplicationActivity);
 
 use EventActionCode::{Create, Delete, Execute, Read, Update};
 use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query, Template};
@@ -76,7 +76,12 @@ use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query,
 /// guard; the request path uses [`classify`], which applies the fail-closed
 /// [`DEFAULT`] to a `None`.
 #[must_use]
-#[allow(clippy::match_same_arms)] // grouped by resource; per-op explicitness is the point
+#[expect(
+    clippy::match_same_arms,
+    reason = "the arms are grouped by audited resource, so naming every operation \
+              explicitly is the point — merging equal arms would hide which \
+              operations belong to which DICOM EventID"
+)]
 pub fn lookup(op: &str) -> Option<Classification> {
     let c = match op {
         // ── EHR / Patient Record (DICOM EventID 110110) ──────────────────────
@@ -225,12 +230,6 @@ pub fn audit_for(op: &str) -> Option<(EventActionCode, ObjectClass)> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

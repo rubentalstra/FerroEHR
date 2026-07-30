@@ -50,6 +50,10 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
   ONLY (stalled — NOT a behavioural oracle; the ITS-REST docs text is the
   oracle), never served.
 - URL/percent encoding ONLY via the `urlencoding` crate (owner hard rule).
+- **One integration-test binary:** `tests/it/main.rs` + one `mod` per topic
+  file, with the shared router/DB fixture in `tests/it/common/mod.rs` (topic
+  modules reach it as `use crate::common;`). Add a `mod` line — never a new
+  top-level `tests/*.rs`.
 - Rules: `.claude/rules/rest-axum.md`, `.claude/rules/auth.md`,
   `.claude/rules/serialization.md`.
 - Gates: `cargo clippy -p ehrbase-rest --all-targets` +

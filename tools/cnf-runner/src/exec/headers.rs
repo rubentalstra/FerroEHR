@@ -260,7 +260,6 @@ fn resolve_placeholders(pattern: &str, vars: &VarStore) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
     use crate::exec::state::Captured;

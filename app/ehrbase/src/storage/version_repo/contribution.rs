@@ -15,10 +15,15 @@ use crate::storage::error::StorageError;
 /// A CONTRIBUTION's own audit row (`contribution` ⋈ `audit`), flattened.
 #[derive(Debug, Clone)]
 pub struct ContributionAudit {
+    /// `AUDIT_DETAILS.system_id`.
     pub system_id: String,
+    /// The numeric `audit_change_type` group code of the change set.
     pub change_type: String,
+    /// `AUDIT_DETAILS.description`, when the committer supplied one.
     pub description: Option<String>,
+    /// The canonical `PARTY_PROXY` JSON of the committer.
     pub committer: Value,
+    /// The server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
 
@@ -101,11 +106,14 @@ pub async fn contribution_version_refs(
 /// flattened to the fields the list surface reports.
 #[derive(Debug, Clone)]
 pub struct ContributionSummary {
+    /// The CONTRIBUTION uid.
     pub uid: Uuid,
+    /// The server-computed commit instant.
     pub time_committed: jiff::Timestamp,
     /// The committer `PARTY_PROXY`'s `name` (`PARTY_IDENTIFIED` /
     /// `PARTY_RELATED`); `None` for a `PARTY_SELF` committer, which has no name.
     pub committer: Option<String>,
+    /// The numeric `audit_change_type` group code of the change set.
     pub change_type: String,
 }
 

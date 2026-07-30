@@ -6,8 +6,8 @@
 //! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata".
 //! [`build_web_template`] turns a parsed
 //! [`crate::opt14::OperationalTemplate`] into a [`WebTemplate`]. See
-//! [`builder`] for the walk and the recorded scope boundaries, [`id`] for the
-//! master04 §"Node ID Generation Rules" algorithm, and [`inputs`] for the
+//! `builder` for the walk and the recorded scope boundaries, `id` for the
+//! master04 §"Node ID Generation Rules" algorithm, and `inputs` for the
 //! per-RM-type input mapping.
 
 mod builder;

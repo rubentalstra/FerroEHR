@@ -14,7 +14,7 @@
 //! client-visible state.
 //!
 //! This module owns the DIRECTORY `#[server]` fns, the shared wire types, and
-//! the [`directory_section`] orchestrator; the view is split across
+//! the `directory_section` orchestrator; the view is split across
 //! [`tree`] (the structured editor), [`panels`] (history / time / path /
 //! delete), [`create`] (the empty-directory create flow), and the pure
 //! [`edit`] helpers.
@@ -41,8 +41,9 @@ use crate::pages::ehrs::ResultPage;
 
 /// The EHR's directory as its canonical FOLDER JSON body plus the current
 /// version uid (the FOLDER's `uid.value`, an `OBJECT_VERSION_ID`). The uid is
-/// the `If-Match` value on update/delete: [`CdrResponse`] carries no header
-/// map, so it is read from the returned FOLDER body — a FOLDER is
+/// the `If-Match` value on update/delete:
+/// [`CdrResponse`](crate::cdr::CdrResponse) carries no header map, so it is
+/// read from the returned FOLDER body — a FOLDER is
 /// `VERSIONABLE` and always carries `uid` (ITS-REST
 /// `specifications/schemas/ehr/Folder.yaml`; RM common
 /// `master05-directory_package`).
@@ -152,9 +153,12 @@ pub(crate) fn is_conflict(error: &AdminUiError) -> bool {
 /// errors pass through; a non-2xx, non-404 CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
-pub async fn fetch_directory(ehr_id: String) -> Result<Option<DirectoryState>, AdminUiError> {
+pub async fn fetch_directory(
+    /// The EHR whose directory to read.
+    ehr_id: String,
+) -> Result<Option<DirectoryState>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state
         .cdr
         .rest_v1(&format!("ehr/{}/directory", urlencoding::encode(&ehr_id)));
@@ -189,9 +193,14 @@ pub async fn fetch_directory(ehr_id: String) -> Result<Option<DirectoryState>, A
 /// renders verbatim, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
-pub async fn create_directory(ehr_id: String, body: String) -> Result<String, AdminUiError> {
+pub async fn create_directory(
+    /// The EHR to create the directory in.
+    ehr_id: String,
+    /// The root FOLDER document to commit, as canonical JSON text.
+    body: String,
+) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     if body.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "the directory body is empty".to_owned(),
@@ -220,7 +229,7 @@ pub async fn create_directory(ehr_id: String, body: String) -> Result<String, Ad
 /// `preceding_version_uid`) is sent quoted in `If-Match`, per ITS-REST
 /// `specifications/operations/directory_update.yaml`;
 /// `Prefer: return=representation` yields the new version uid. A stale uid is
-/// answered `412` by the CDR and surfaces as [`is_conflict`].
+/// answered `412` by the CDR and surfaces as `is_conflict`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -230,12 +239,15 @@ pub async fn create_directory(ehr_id: String, body: String) -> Result<String, Ad
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn update_directory(
+    /// The EHR holding the directory.
     ehr_id: String,
+    /// The version this edit is based on, sent as `If-Match`.
     current_version_uid: String,
+    /// The replacement root FOLDER document, as canonical JSON text.
     body: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     if body.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "the directory body is empty".to_owned(),
@@ -272,7 +284,7 @@ pub async fn update_directory(
 /// Delete the EHR's directory (`DELETE /ehr/{ehr_id}/directory`). The current
 /// `version_uid` (the `preceding_version_uid`) is sent quoted in `If-Match`,
 /// per ITS-REST `specifications/operations/directory_delete.yaml`; a stale uid
-/// is answered `412` and surfaces as [`is_conflict`].
+/// is answered `412` and surfaces as `is_conflict`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
@@ -281,11 +293,13 @@ pub async fn update_directory(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn delete_directory(
+    /// The EHR holding the directory.
     ehr_id: String,
+    /// The version being deleted, sent as `If-Match`.
     current_version_uid: String,
 ) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let current = current_version_uid.trim();
     if current.is_empty() {
         return Err(AdminUiError::Invalid(
@@ -321,10 +335,11 @@ pub async fn delete_directory(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn list_directory_versions(
+    /// The EHR whose directory version list to read.
     ehr_id: String,
 ) -> Result<Vec<DirectoryVersion>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let base = state
         .cdr
         .rest_v1(&format!("ehr/{}/directory", urlencoding::encode(&ehr_id)));
@@ -379,11 +394,13 @@ pub async fn list_directory_versions(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_directory_at_time(
+    /// The EHR holding the directory.
     ehr_id: String,
+    /// The instant to resolve the directory at.
     time: String,
 ) -> Result<DirectoryAtTime, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let time = time.trim();
     if time.is_empty() {
         return Err(AdminUiError::Invalid(
@@ -425,11 +442,13 @@ pub async fn fetch_directory_at_time(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_directory_subtree(
+    /// The EHR holding the directory.
     ehr_id: String,
+    /// The folder path within the directory to read.
     path: String,
 ) -> Result<DirectorySubtree, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let path = path.trim();
     if path.is_empty() {
         return Err(AdminUiError::Invalid("a path is required".to_owned()));
@@ -494,7 +513,10 @@ fn summarize_directory_version(body: &str, number: i32, is_latest: bool) -> Dire
 /// (rules §6 — never fetch-in-effect). Every read resource is created ONCE
 /// here (never inside a `Suspend` — rules §4) and gated on the active tab plus
 /// its own trigger, so only the visible, opened surfaces fetch.
-#[allow(clippy::too_many_lines)] // the tab's resources/actions/panels are wired as one unit; splitting would separate state from its wiring
+#[expect(
+    clippy::too_many_lines,
+    reason = "the tab's resources/actions/panels are wired as one unit; splitting would separate state from its wiring"
+)]
 pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let toaster = thaw::ToasterInjection::expect_context();
 

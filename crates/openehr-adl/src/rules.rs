@@ -11,7 +11,7 @@
 //!   (`master05`; the path is a runtime-value proxy);
 //! * a `matches { c_primitive_object }` right-hand side becomes an
 //!   `EXPR_CONSTRAINT` wrapping the cADL primitive (reusing the A3a primitive
-//!   parser, [`crate::cadl::parse_inline_primitive_text`]);
+//!   parser, `crate::cadl::parse_inline_primitive_text`);
 //! * inside a **slot** assertion (`master04.3` §Archetype Slots), a
 //!   `matches { /regex/ }` right-hand side becomes an
 //!   `EXPR_ARCHETYPE_ID_CONSTRAINT` (an archetype-id regex matcher).
@@ -435,7 +435,7 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
 
 /// Resolve every `EXPR_ARCHETYPE_REF` proxy in a parsed `rules` [`StatementSet`]
 /// against the assembled archetype `definition`, replacing the parse-time
-/// placeholder `item` (see [`unresolved_ref_target`]) with the target node the
+/// placeholder `item` (see `unresolved_ref_target`) with the target node the
 /// reference path addresses (`AOM2` master05 — the path is the runtime-value
 /// proxy, `item` its resolved `ARCHETYPE_CONSTRAINT` target). A path that does
 /// not resolve within the archetype keeps the placeholder (the unresolved path

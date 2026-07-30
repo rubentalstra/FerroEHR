@@ -23,8 +23,8 @@
 //! condition. [`openehr`] therefore panics (once, on first access) if an asset
 //! fails to parse, rather than propagating an error into every call site.
 
-use std::collections::{HashMap, HashSet};
-use std::sync::LazyLock;
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::{Arc, LazyLock};
 
 use openehr_base::prelude::Iso8601Date;
 
@@ -115,13 +115,17 @@ struct LanguageBundle {
     /// code-set `openehr_id` → index into `terminology.code_sets`.
     code_set_by_id: HashMap<String, usize>,
     /// group `openehr_id` → (concept `id` → index into that group's `concepts`).
-    group_codes: HashMap<String, HashMap<String, usize>>,
+    ///
+    /// A `BTreeMap` on purpose: [`OpenehrTerminology::concept_rubric`] scans
+    /// every group, and a hash map would make that scan order
+    /// implementation-defined (`clippy::iter_over_hash_type`).
+    group_codes: BTreeMap<String, HashMap<String, usize>>,
 }
 
 impl LanguageBundle {
     fn index(terminology: Terminology) -> Self {
         let mut group_by_id = HashMap::new();
-        let mut group_codes: HashMap<String, HashMap<String, usize>> = HashMap::new();
+        let mut group_codes: BTreeMap<String, HashMap<String, usize>> = BTreeMap::new();
         for (gi, group) in terminology.vocabularies.iter().enumerate() {
             group_by_id.insert(group.openehr_id.clone(), gi);
             let codes = group
@@ -155,7 +159,12 @@ impl LanguageBundle {
 #[derive(Debug)]
 pub struct OpenehrTerminology {
     /// Parsed terminology per language (keyed by ISO 639-1 code); `en` is canonical.
-    languages: HashMap<String, LanguageBundle>,
+    languages: HashMap<String, Arc<LanguageBundle>>,
+    /// The canonical (`en`) bundle, held directly so [`Self::canonical`] needs
+    /// no map lookup — the language-independent validity checks resolve against
+    /// it, and holding it makes its presence a construction guarantee rather
+    /// than a key assumption.
+    canonical: Arc<LanguageBundle>,
     /// External code sets (countries, languages, character sets, media types).
     external: Vec<CodeSet>,
     /// external code-set `openehr_id` → index into `external`.
@@ -172,10 +181,19 @@ impl OpenehrTerminology {
     /// Parse and index every vendored asset. Fails only on a corrupt asset.
     fn load() -> Result<Self, TerminologyError> {
         let mut languages = HashMap::new();
+        let mut canonical = None;
         for &(lang, xml) in LANGUAGE_ASSETS {
-            let terminology = parse_terminology(xml)?;
-            languages.insert(lang.to_owned(), LanguageBundle::index(terminology));
+            let bundle = Arc::new(LanguageBundle::index(parse_terminology(xml)?));
+            if lang == CANONICAL_LANG {
+                canonical = Some(Arc::clone(&bundle));
+            }
+            languages.insert(lang.to_owned(), bundle);
         }
+        let Some(canonical) = canonical else {
+            return Err(TerminologyError::Malformed(format!(
+                "no vendored asset for the canonical language {CANONICAL_LANG}"
+            )));
+        };
 
         let external = parse_terminology(EXTERNAL_XML)?.code_sets;
         let mut external_by_id = HashMap::new();
@@ -196,6 +214,7 @@ impl OpenehrTerminology {
 
         Ok(Self {
             languages,
+            canonical,
             external,
             external_by_id,
             external_by_external_id,
@@ -204,10 +223,9 @@ impl OpenehrTerminology {
         })
     }
 
-    /// The canonical (English) bundle. Present by the build-time invariant that
-    /// every vendored asset — `en` included — parses.
+    /// The canonical (English) bundle, held as its own field by [`Self::load`].
     fn canonical(&self) -> &LanguageBundle {
-        &self.languages[CANONICAL_LANG]
+        &self.canonical
     }
 
     // ── Internal vocabularies (openehr_terminology.xml <group>) ──────────────
@@ -516,9 +534,12 @@ static OPENEHR: LazyLock<OpenehrTerminology> = LazyLock::new(|| {
     // and embedded at compile time, so a parse failure is a corrupt build
     // artifact — a build-time invariant, not a runtime condition. We therefore
     // panic here (once) rather than thread a `Result` through every lookup.
-    #[allow(clippy::expect_used)]
+    #[expect(
+        clippy::expect_used,
+        reason = "the assets are `include_str!`-embedded at compile time and parsed by the crate's own tests, so an Err here is a corrupt build artifact, not a runtime condition; the message is should-phrased per the Book ch9 shape"
+    )]
     OpenehrTerminology::load()
-        .expect("vendored openEHR terminology assets must parse (build-time invariant)")
+        .expect("vendored openEHR terminology assets should parse (build-time invariant)")
 });
 
 /// The shared openEHR terminology bundle (TERM 3.1.0).
@@ -659,12 +680,6 @@ fn attr<'a>(node: &roxmltree::Node<'a, '_>, name: &str) -> Option<&'a str> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

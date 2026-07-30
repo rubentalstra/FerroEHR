@@ -52,7 +52,10 @@ type CdrQueryDelete = Action<(String, String), ((String, String), Result<(), Adm
 
 /// The `/queries` screen: a stored-queries table with an on-demand AQL detail,
 /// alongside the read-only namespace grouping derived from the same listing.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn QueriesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();

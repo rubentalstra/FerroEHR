@@ -24,7 +24,9 @@ pub struct OutcomeRow {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OutcomeClassToken {
+    /// The outcome is a successful completion of the operation.
     Success,
+    /// The outcome is a refusal or failure.
     Error,
 }
 
@@ -223,7 +225,6 @@ impl SelectorsVocab {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

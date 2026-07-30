@@ -14,11 +14,11 @@
 //! ATNA audit (SM System Log, wraps auth so it observes auth rejections) · HTTP
 //! metrics · root span · **overload shedding** (bounded in-flight concurrency +
 //! load shed; the API subtree's outermost layer, so a shed request is rejected
-//! before auth, audit, or reading the request body — [`crate::overload`]). The
+//! before auth, audit, or reading the request body — `crate::overload`). The
 //! whole tree is then wrapped in the shared `tower-http` request stack
 //! (request-id, tracing, CORS, body limit, timeout, compression), so a shed
 //! `503` still carries a request id and is traced. Between the CORS layer and
-//! the body-limit/timeout pair sits [`align_transport_error_body`], which
+//! the body-limit/timeout pair sits `align_transport_error_body`, which
 //! re-renders the two responses those layers produce on their own (`408`,
 //! `413`) in the openEHR `{ error, message }` shape. The System Options `OPTIONS`
 //! endpoint is mounted **above** the CORS layer — `CorsLayer` treats every
@@ -129,7 +129,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     };
     let api = api.layer(from_fn_with_state(
         authn::AuthLayer {
-            authenticator: authenticator.clone(),
+            authenticator: Arc::clone(&authenticator),
             authz: state.authz(),
         },
         authn::middleware,
@@ -280,7 +280,11 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
 /// error path consistent.
 // The by-value `Box<dyn Any>` parameter is dictated by tower-http's
 // `ResponseForPanic` closure signature (`CatchPanicLayer::custom`), not a choice.
-#[allow(clippy::needless_pass_by_value)]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "tower-http's `CatchPanicLayer` handler contract hands the panic \
+              payload over by value"
+)]
 fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     let detail = if let Some(s) = err.downcast_ref::<&str>() {
         (*s).to_owned()
@@ -383,13 +387,6 @@ pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) ->
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use axum::body::{Body, to_bytes};
     use axum::response::Response;

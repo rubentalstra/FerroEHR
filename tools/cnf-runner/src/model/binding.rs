@@ -19,11 +19,16 @@ use crate::vocab::{FormatName, HttpMethod, ItsName, OutcomeKind};
 /// `capture <name>`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WireFrom {
+    /// `header <Name>` — a response header's value.
     Header {
+        /// The response header field name.
         name: String,
+        /// Take only the last `/`-separated segment of the header value.
         last_segment: bool,
     },
+    /// `body "<path>"` — a value inside the response body.
     Body {
+        /// The path addressing the value inside the response body.
         path: String,
     },
     /// Derive from another capture.
@@ -86,6 +91,7 @@ impl<'de> Deserialize<'de> for WireFrom {
 /// Post-extraction modifier: strip the weak-ETag wrapper.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum StripRule {
+    /// Unwrap a weak `ETag` (`W/"…"`) down to the bare entity tag.
     #[serde(rename = "weak-quotes")]
     WeakQuotes,
 }
@@ -150,9 +156,12 @@ impl TransformRule {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WireCapture {
+    /// The wire location the value is read from.
     pub from: WireFrom,
+    /// Wrapper removed from the extracted value, if any.
     #[serde(default)]
     pub strip: Option<StripRule>,
+    /// Component/case transform applied to the extracted value, if any.
     #[serde(default)]
     pub transform: Option<TransformRule>,
     /// Tried when `from` yields nothing (e.g. body field under
@@ -171,7 +180,9 @@ pub struct WireCapture {
 /// that silently means something different from every other one.
 #[derive(Debug, Clone, PartialEq)]
 pub enum HeaderMatcher {
+    /// The header must be present, with any value.
     Present,
+    /// The header must not be present.
     Absent,
     /// Equals the negotiated media type.
     Negotiated,
@@ -372,8 +383,10 @@ pub enum BodySelector {
     /// Body media type equals the negotiated type.
     #[serde(rename = "negotiated")]
     Negotiated,
+    /// A body must be present, of any shape.
     #[serde(rename = "present")]
     Present,
+    /// The response must carry no body.
     #[serde(rename = "absent")]
     Absent,
 }
@@ -382,6 +395,7 @@ pub enum BodySelector {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WireExpectation {
+    /// The status code the outcome is primarily served with.
     pub status: StatusCode,
     /// Additional non-conflicting status codes the overview permits beyond
     /// the operation's OAS enumeration (ITS-REST `Requests_and_responses.md`
@@ -391,8 +405,10 @@ pub struct WireExpectation {
     /// exactly like the primary.
     #[serde(default)]
     pub alt_status: Option<Vec<StatusCode>>,
+    /// Per-header expectations, in declaration order.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub headers: Option<Vec<(String, HeaderExpectation)>>,
+    /// The body shape the outcome must carry.
     #[serde(default)]
     pub body: Option<BodySelector>,
 }
@@ -425,7 +441,12 @@ impl<'de> Deserialize<'de> for StatusCode {
 pub enum RequestBody {
     /// A named payload role (`composition`, `opt_xml`), optionally optional
     /// (`ehr_status?`).
-    Named { name: String, optional: bool },
+    Named {
+        /// The payload role name the corpus resolves.
+        name: String,
+        /// The request is legal without this body.
+        optional: bool,
+    },
     /// A structured body template (the query binding's
     /// `{ q: ${q}, offset: ${offset?} … }`).
     Structured(crate::model::value::TemplatedValue),
@@ -433,7 +454,7 @@ pub enum RequestBody {
     /// body is a captured resource with the named fields overwritten.
     Patched {
         /// The case capture holding the current resource body.
-        from_capture: crate::ids::CaptureName,
+        from_capture: CaptureName,
         /// Field overwrites (top-level attribute → literal value).
         set: Vec<(String, serde_json::Value)>,
     },
@@ -450,7 +471,7 @@ impl<'de> Deserialize<'de> for RequestBody {
                 .get("from_capture")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| D::Error::custom("from_capture must be a capture name"))?;
-            let from_capture = crate::ids::CaptureName::parse(from).map_err(D::Error::custom)?;
+            let from_capture = CaptureName::parse(from).map_err(D::Error::custom)?;
             let set = map
                 .get("set")
                 .and_then(serde_json::Value::as_object)
@@ -610,15 +631,19 @@ impl<'de> Deserialize<'de> for PathTemplate {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RequestSpec {
+    /// The HTTP method the operation is driven with.
     pub method: HttpMethod,
+    /// The request path, with `${…}` placeholders resolved per step.
     pub path: PathTemplate,
     /// Query parameters (name → value; optional refs `${x?}` omit the
     /// parameter when unresolved, a sequence declares the repeated form —
     /// see [`QueryValue`]).
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub query: Option<Vec<(String, QueryValue)>>,
+    /// The request payload, when the operation carries one.
     #[serde(default)]
     pub body: Option<RequestBody>,
+    /// Request headers, in declaration order.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub headers: Option<Vec<(String, Template)>>,
 }
@@ -626,7 +651,9 @@ pub struct RequestSpec {
 /// A per-format extra-header requirement (`openehr-template-id: required`).
 #[derive(Debug, Clone, PartialEq)]
 pub enum FormatHeaderReq {
+    /// The header must be sent; its value comes from the case.
     Required,
+    /// The header is sent with this fixed (templated) value.
     Literal(Template),
 }
 
@@ -687,7 +714,9 @@ pub struct ExtensionDecl {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OperationBinding {
+    /// The SM operation this file realizes on the wire.
     pub sm_operation: SmOperationRef,
+    /// The implementation technology specification the realization targets.
     pub its: ItsName,
     /// Realization discriminator when several bindings share one
     /// `sm_operation` (e.g. the plain `get_opt` OPT GET vs the `example`
@@ -710,20 +739,27 @@ pub struct OperationBinding {
     /// goes on the matcher and the case still runs.
     #[serde(default)]
     pub applies: Option<Applies>,
+    /// Present instead of `request` when the released ITS publishes no wire
+    /// for the operation at all.
     #[serde(default)]
     pub unrealized: Option<UnrealizedDecl>,
     /// Present when the realization drives a declared extension route
     /// instead of a released ITS-REST operation ([`ExtensionDecl`]).
     #[serde(default)]
     pub extension: Option<ExtensionDecl>,
+    /// How the request is constructed (absent only for an `unrealized` file).
     #[serde(default)]
     pub request: Option<RequestSpec>,
+    /// The wire formats this operation is served in.
     #[serde(default)]
     pub formats: Vec<FormatName>,
+    /// Extra headers a given format requires, keyed by format.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub format_headers: Option<Vec<(FormatKey, FormatHeaderMap)>>,
+    /// The wire expectation per outcome kind, in declaration order.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub outcomes: Option<Vec<(OutcomeKey, WireExpectation)>>,
+    /// Where each logical capture is read from on the wire.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub captures: Option<Vec<(CaptureName, WireCapture)>>,
     /// The operation's server-assigned ignore-set membership (the paths the
@@ -788,7 +824,7 @@ impl OperationBinding {
     }
 }
 
-/// Newtype keys so [`crate::model::de::ordered_map`] can parse them from
+/// Newtype keys so the crate's `model::de::ordered_map` can parse them from
 /// mapping keys.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutcomeKey(pub OutcomeKind);
@@ -817,7 +853,7 @@ impl std::str::FromStr for FormatKey {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_json::from_value(serde_json::Value::String(s.to_owned()))
             .map(Self)
-            .map_err(|_| format!("{s:?} is not a format name"))
+            .map_err(|error| format!("{s:?} is not a format name: {error}"))
     }
 }
 
@@ -841,7 +877,6 @@ impl<'de> Deserialize<'de> for FormatHeaderMap {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, clippy::indexing_slicing)] // test assertions/fixtures
 mod tests {
     use super::*;
     use crate::model::case::VersionRange;

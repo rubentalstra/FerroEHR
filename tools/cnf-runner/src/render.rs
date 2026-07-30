@@ -31,7 +31,10 @@ use crate::vocab::{Family, FormatName, Tier};
 /// [`crate::conf_assets::TaxonomyError`] when an outcome's case id maps to no
 /// taxonomy band — a taxonomy gap to close, never a silent bucket; the report
 /// refuses to publish rather than mis-group.
-#[allow(clippy::too_many_lines)] // one linear document renderer per published artifact
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear document renderer per published artifact"
+)]
 pub fn render_report(
     results: &Results,
     verdicts: &VerdictReport,
@@ -395,7 +398,10 @@ fn write_served_extensions(
 /// need it). A single [`Results`] covers one technology profile, so the
 /// result column is that profile's ITS.
 #[must_use]
-#[allow(clippy::too_many_lines)] // one linear document renderer per published artifact
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear document renderer per published artifact"
+)]
 pub fn render_certificate(
     statement: &Statement,
     results: &Results,
@@ -758,7 +764,6 @@ fn performance_scope_cell(verdicts: &VerdictReport) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

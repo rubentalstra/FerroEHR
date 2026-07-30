@@ -99,7 +99,7 @@ pub trait HealthIndicator: Send + Sync + std::fmt::Debug {
 /// Cheaply cloneable (`Arc` of indicator handles).
 #[derive(Clone, Default, Debug)]
 pub struct HealthRegistry {
-    indicators: Arc<Vec<Arc<dyn HealthIndicator>>>,
+    indicators: Arc<[Arc<dyn HealthIndicator>]>,
 }
 
 impl HealthRegistry {
@@ -107,7 +107,7 @@ impl HealthRegistry {
     #[must_use]
     pub fn new(indicators: Vec<Arc<dyn HealthIndicator>>) -> Self {
         Self {
-            indicators: Arc::new(indicators),
+            indicators: indicators.into(),
         }
     }
 
@@ -198,12 +198,6 @@ impl AggregateHealth {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
@@ -231,7 +225,7 @@ mod tests {
         HealthRegistry::new(
             indicators
                 .into_iter()
-                .map(|i| Arc::new(i) as Arc<dyn HealthIndicator>)
+                .map(|i| -> Arc<dyn HealthIndicator> { Arc::new(i) })
                 .collect(),
         )
     }

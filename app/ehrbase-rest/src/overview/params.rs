@@ -216,7 +216,7 @@ pub(crate) fn parse_item_tag_header(
         if segment.trim().is_empty() {
             continue;
         }
-        let pairs = tag_pairs(segment);
+        let pairs = key_value_pairs(segment);
         let Some(key) = tag_value(&pairs, "key") else {
             continue;
         };
@@ -306,51 +306,51 @@ fn tag_value(pairs: &[(String, String)], key: &str) -> Option<String> {
     pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
 }
 
-/// Parse one `;`-segment's comma-separated `key="value"` (or bare `key=value`)
-/// pairs. Quoted values are read opaquely (may contain commas); a bare value
-/// runs to the next comma. The grammar is example-only (overview §"openehr-item-
-/// tag and openehr-version-item-tag" gives no ABNF).
-fn tag_pairs(input: &str) -> Vec<(String, String)> {
+/// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
+/// pairs — the one scanner behind both the tag-pair segments here and the
+/// committal attribute headers ([`crate::overview::committal`]). A
+/// double-quoted value is read opaquely (may contain commas); a bare value
+/// runs to the next top-level comma; whitespace around separators and keys is
+/// trimmed. Both grammars are example-only in the ITS-REST overview (no ABNF
+/// is given), hence the shared tolerant reader.
+pub(crate) fn key_value_pairs(input: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
-    let bytes = input.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        while i < bytes.len() && (bytes[i] == b',' || bytes[i].is_ascii_whitespace()) {
-            i += 1;
-        }
-        let key_start = i;
-        while i < bytes.len() && bytes[i] != b'=' && bytes[i] != b',' {
-            i += 1;
-        }
-        if i >= bytes.len() || bytes[i] != b'=' {
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            continue;
-        }
-        let key = input[key_start..i].trim().to_owned();
-        i += 1; // consume '='
-        let value = if i < bytes.len() && bytes[i] == b'"' {
-            i += 1;
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b'"' {
-                i += 1;
-            }
-            let v = input[val_start..i].to_owned();
-            if i < bytes.len() {
-                i += 1;
-            }
-            v
-        } else {
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            input[val_start..i].trim().to_owned()
+    let mut rest = input;
+    loop {
+        // Skip leading separators/whitespace.
+        rest = rest.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace());
+        // Read the key up to '='. A segment whose next delimiter is a comma
+        // carries no '=' — not a pair; leave the comma for the skip above.
+        let Some((key, after_key)) = rest.find(['=', ',']).and_then(|d| rest.split_at_checked(d))
+        else {
+            break;
         };
+        let Some(after_eq) = after_key.strip_prefix('=') else {
+            rest = after_key;
+            continue;
+        };
+        // Read the value: quoted (opaque) or bare (to next comma).
+        let (value, tail) = if let Some(quoted) = after_eq.strip_prefix('"') {
+            match quoted.find('"').and_then(|q| quoted.split_at_checked(q)) {
+                // Consume the closing quote; anything before the next comma is
+                // then skipped as a keyless segment.
+                Some((v, after_v)) => (v.to_owned(), after_v.get(1..).unwrap_or_default()),
+                None => (quoted.to_owned(), ""),
+            }
+        } else {
+            match after_eq
+                .find(',')
+                .and_then(|c| after_eq.split_at_checked(c))
+            {
+                Some((v, after_v)) => (v.trim().to_owned(), after_v),
+                None => (after_eq.trim().to_owned(), ""),
+            }
+        };
+        let key = key.trim();
         if !key.is_empty() {
-            out.push((key, value));
+            out.push((key.to_owned(), value));
         }
+        rest = tail;
     }
     out
 }
@@ -403,10 +403,9 @@ impl<'de> MapAccess<'de> for RequestMapAccess {
         &mut self,
         seed: K,
     ) -> Result<Option<K::Value>, Self::Error> {
-        if self.cursor >= self.entries.len() {
+        let Some((key, val)) = self.entries.get(self.cursor).cloned() else {
             return Ok(None);
-        }
-        let (key, val) = self.entries[self.cursor].clone();
+        };
         self.cursor += 1;
         self.value = Some(val);
         seed.deserialize(key.into_deserializer()).map(Some)
@@ -522,12 +521,6 @@ impl IntoDeserializer<'_, ValueError> for ScalarDeserializer {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     // ── named query parameters (Request.md §Query parameters) ────────────────
 
@@ -545,7 +538,7 @@ mod tests {
         ]
         .into_iter()
         .collect();
-        let got = super::named_query_parameters(
+        let got = named_query_parameters(
             Some(
                 "temperature_from=36&temperature_unit=Cel&$flagged=true\
                  &uid=90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1\
@@ -553,7 +546,7 @@ mod tests {
                  &shared=named-form&name=a+b",
             ),
             base,
-            super::QUERY_RESERVED_KEYS,
+            QUERY_RESERVED_KEYS,
         );
         assert_eq!(got["temperature_from"], json!(36));
         assert_eq!(got["temperature_unit"], json!("Cel"));
@@ -570,7 +563,7 @@ mod tests {
             "named form wins a collision"
         );
         assert_eq!(got["name"], json!("a b"), "form decoding applies");
-        for reserved in super::QUERY_RESERVED_KEYS {
+        for reserved in QUERY_RESERVED_KEYS {
             assert!(
                 !got.contains_key(*reserved),
                 "reserved control {reserved:?} must not bind"
@@ -584,16 +577,16 @@ mod tests {
     #[test]
     fn named_query_parameters_edges() {
         use serde_json::{Value, json};
-        let got = super::named_query_parameters(
+        let got = named_query_parameters(
             Some("list=%5B1%2C2%5D"),
             std::collections::BTreeMap::new(),
-            super::QUERY_RESERVED_KEYS,
+            QUERY_RESERVED_KEYS,
         );
         assert_eq!(got["list"], json!("[1,2]"), "structured literals stay text");
         let base: std::collections::BTreeMap<String, Value> =
             [("kept".to_owned(), json!(1))].into_iter().collect();
         assert_eq!(
-            super::named_query_parameters(None, base.clone(), super::QUERY_RESERVED_KEYS),
+            named_query_parameters(None, base.clone(), QUERY_RESERVED_KEYS),
             base
         );
     }

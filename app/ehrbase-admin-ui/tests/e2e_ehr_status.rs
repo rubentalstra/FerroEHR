@@ -1,9 +1,16 @@
 #![allow(
     clippy::panic,
     clippy::expect_used,
+    reason = "a browser journey asserts by panicking, and the shared harness panics when a configured stack cannot be driven"
+)]
+#![allow(
     clippy::print_stdout,
+    reason = "the skip-with-reason and progress lines ARE this suite's report"
+)]
+#![allow(
     unreachable_pub,
-    dead_code // each test binary uses a subset of the shared harness methods
+    dead_code,
+    reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
@@ -69,8 +76,9 @@ async fn create_ehr(http: &reqwest::Client, v1: &str) -> String {
         .json()
         .await
         .expect("EHR body");
-    body["ehr_id"]["value"]
-        .as_str()
+    body.get("ehr_id")
+        .and_then(|id| id.get("value"))
+        .and_then(serde_json::Value::as_str)
         .expect("the created ehr_id")
         .to_owned()
 }

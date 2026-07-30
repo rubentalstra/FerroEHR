@@ -20,15 +20,15 @@
 //! a sibling that shifts into a deleted slot inherits the vacated row's state
 //! and `<For>` view (rules §4, `view/04_iteration`). To give each node such an
 //! identity, the working copy stamps every FOLDER object **and every `items`
-//! `OBJECT_REF`** with a `_key` string ([`stamp_keys`]), all drawn from one
+//! `OBJECT_REF`** with a `_key` string (`stamp_keys`), all drawn from one
 //! counter so folder and item keys share a namespace and can never collide.
 //! This is a **client-only artifact of the in-memory editing tree**: it is
-//! assigned after load, preserved across edits, and STRIPPED ([`strip_keys`])
+//! assigned after load, preserved across edits, and STRIPPED (`strip_keys`)
 //! from every body serialized for the CDR and from the advanced-JSON view — it
 //! never appears on the wire and no openEHR spec governs it (our own
 //! design/extension). Positions are then re-derived from the `_key` on demand
-//! (a folder's path with [`find_path_by_key`], an item's index within its
-//! folder with [`find_item_index`]) so mutations keep targeting the `&[usize]`
+//! (a folder's path with `find_path_by_key`, an item's index within its
+//! folder with `find_item_index`) so mutations keep targeting the `&[usize]`
 //! path + index pair, which stays correct after siblings shift.
 
 use serde_json::{Value, json};

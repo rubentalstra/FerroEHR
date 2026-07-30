@@ -32,7 +32,10 @@ pub struct StoredQueryRow {
 /// [`AdminUiError::Unauthenticated`] without a session;
 /// [`AdminUiError::Invalid`] carrying the parse diagnostic.
 #[server]
-pub async fn validate_aql(aql: String) -> Result<(), AdminUiError> {
+pub async fn validate_aql(
+    /// The AQL text to parse.
+    aql: String,
+) -> Result<(), AdminUiError> {
     crate::session::require_session().await?;
     openehr_query::parser::parse_str(&aql)
         .map(|_| ())
@@ -49,8 +52,11 @@ pub async fn validate_aql(aql: String) -> Result<(), AdminUiError> {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn run_aql(
+    /// The AQL to execute.
     aql: String,
+    /// Parameter bindings as a JSON object text; empty means none.
     parameters_json: String,
+    /// First row of the page to return.
     offset: u32,
 ) -> Result<ResultPage, AdminUiError> {
     let session = crate::session::require_session().await?;
@@ -145,7 +151,12 @@ pub async fn list_stored_queries() -> Result<Vec<StoredQueryRow>, AdminUiError> 
 /// [`AdminUiError::Unauthenticated`] without a session; CDR errors
 /// normalized (a `404` for an unknown name included).
 #[server]
-pub async fn fetch_stored_query(name: String, version: String) -> Result<String, AdminUiError> {
+pub async fn fetch_stored_query(
+    /// The qualified stored-query name.
+    name: String,
+    /// The version to read; a partial pattern resolves by prefix.
+    version: String,
+) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
     let url = state.cdr.rest_v1(&format!(
@@ -203,8 +214,11 @@ pub async fn fetch_stored_query(name: String, version: String) -> Result<String,
 /// `(name, version)` pair).
 #[server]
 pub async fn store_query(
+    /// The qualified name to file the definition under.
     name: String,
+    /// The concrete `major.minor.patch` version; the CDR assigns one when absent.
     version: Option<String>,
+    /// The AQL text to store.
     aql: String,
 ) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
@@ -296,10 +310,15 @@ pub async fn store_query(
 /// [`AdminUiError::Internal`] when the result set is not valid JSON.
 #[server]
 pub async fn run_stored_query(
+    /// The qualified stored-query name.
     name: String,
+    /// The version to run; a partial pattern resolves by prefix.
     version: String,
+    /// Parameter bindings as a JSON object text; empty means none.
     parameters_json: String,
+    /// First row of the page to return.
     offset: u32,
+    /// Whether the request owns the row window (see above).
     paged: bool,
 ) -> Result<ResultPage, AdminUiError> {
     let session = crate::session::require_session().await?;
@@ -366,7 +385,12 @@ pub async fn run_stored_query(
 /// [`AdminUiError::Unauthenticated`] without a session; CDR errors
 /// normalized; [`AdminUiError::Internal`] on an unparseable result.
 #[server]
-pub async fn run_stored_count(name: String, version: String) -> Result<i64, AdminUiError> {
+pub async fn run_stored_count(
+    /// The qualified stored-query name.
+    name: String,
+    /// The version to run.
+    version: String,
+) -> Result<i64, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
     let url = state.cdr.rest_v1(&format!(
@@ -388,9 +412,12 @@ pub async fn run_stored_count(name: String, version: String) -> Result<i64, Admi
         .unwrap_or_default();
     // A single 1x1 numeric cell (COUNT-shaped query) IS the count.
     if rows.len() == 1
-        && let Some(cell) = rows[0]
-            .as_array()
-            .and_then(|r| if r.len() == 1 { r[0].as_i64() } else { None })
+        && let Some(cell) = rows
+            .first()
+            .and_then(serde_json::Value::as_array)
+            .filter(|row| row.len() == 1)
+            .and_then(|row| row.first())
+            .and_then(serde_json::Value::as_i64)
     {
         return Ok(cell);
     }

@@ -4,11 +4,11 @@
 //! (the SM assumes a single logical repository). Flagged here per the repo rule
 //! that spec-silent behaviour is called out rather than presented as conformance.
 //!
-//! Runs *inside* the authentication layer (so the [`Principal`] and its JWT
+//! Runs *inside* the authentication layer (so the [`crate::extensions::access::authn::Principal`] and its JWT
 //! claims are established), resolves the request's tenant from the configured
 //! claim — or an optional dev header override — via the platform's
-//! [`TenantAdapter::tenant_resolve`], and opens the
-//! [`ehrbase::service::tenant`] task-local scope around the rest of the request. The
+//! `ehrbase::service::admin::tenant::TenantAdapter::tenant_resolve`, and opens the
+//! `ehrbase::service::admin::tenant` task-local scope around the rest of the request. The
 //! application's tenant-scoped pool then reads that scope on every acquired
 //! connection to set `ehrbase.tenant_id` for RLS.
 //!

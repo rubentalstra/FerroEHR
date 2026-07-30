@@ -84,7 +84,6 @@ pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Viola
         }
         CPrimitive::CReal(c) => {
             if let Some(assumed) = c.assumed_value {
-                #[allow(clippy::float_cmp)] // list membership is exact per cADL
                 let list_ok = c.list.is_empty() || c.list.contains(&assumed);
                 let range_ok = c.range.as_ref().is_none_or(|r| real_in_range(assumed, r));
                 if !list_ok || !range_ok {
@@ -362,21 +361,18 @@ pub(super) fn valid_duration_pattern(p: &str) -> bool {
 fn in_order_subset(s: &str, order: &[char]) -> bool {
     let mut pos = 0usize;
     for c in s.chars() {
-        match order[pos..].iter().position(|o| *o == c) {
-            Some(i) => pos += i + 1,
-            None => return false,
-        }
+        let Some(i) = order
+            .get(pos..)
+            .and_then(|rest| rest.iter().position(|o| *o == c))
+        else {
+            return false;
+        };
+        pos += i + 1;
     }
     true
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::{
         valid_date_pattern, valid_date_time_pattern, valid_duration_pattern, valid_time_pattern,

@@ -18,7 +18,7 @@
 //!   ITS-REST System API defines only `OPTIONS /`).
 //! - [`management`] — metrics/info/env/loggers, a pure ops-introspection
 //!   surface (no openEHR spec governs it). Hosts the single spec-version
-//!   [`provenance`] source below.
+//!   `provenance` source below (the module constants).
 //! - [`openapi`] — serves the server's OWN `utoipa`-generated document (never a
 //!   vendored OAS), not an API the spec itself defines.
 //! - [`terminology`] — the `/terminology` wire: `I_TERMINOLOGY_SERVICE` is SM

@@ -1,0 +1,7 @@
+//! Integration tests for `openehr-query`: the AQL 1.1.0 front end exercised
+//! against the official vendored worked-example corpus (`vendor/examples/`).
+//!
+//! One binary per crate, split into topic modules
+//! (`.claude/rules/testing.md` §One integration-test binary per crate).
+
+mod corpus;

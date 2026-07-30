@@ -5,7 +5,7 @@
 //! multiplicity, cardinality and optionality in models (it is the interval the
 //! AM occurrence/existence/cardinality validator interrogates). It inherits the
 //! `Interval` boundary algebra (`has`/`intersects`/`contains`, reused here via
-//! the shared [`BoundaryView`]) and adds the classification predicates
+//! the shared `BoundaryView`) and adds the classification predicates
 //! `is_open`/`is_optional`/`is_mandatory`/`is_prohibited`.
 //!
 //! Spec sources (vendored):
@@ -112,12 +112,6 @@ impl Validate for MultiplicityInterval {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

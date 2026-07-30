@@ -110,7 +110,7 @@ pub(crate) fn parse_result_set(body: &str, offset: u32) -> Result<ResultPage, Ad
     })
 }
 
-/// List EHRs newest-first via [`LIST_EHRS_AQL`], one page at `offset`.
+/// List EHRs newest-first via `LIST_EHRS_AQL`, one page at `offset`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -118,9 +118,12 @@ pub(crate) fn parse_result_set(body: &str, offset: u32) -> Result<ResultPage, Ad
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the result set is not valid JSON.
 #[server]
-pub async fn list_ehrs(offset: u32) -> Result<ResultPage, AdminUiError> {
+pub async fn list_ehrs(
+    /// First row of the page to return.
+    offset: u32,
+) -> Result<ResultPage, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("query/aql");
     let body = aql_request_body(LIST_EHRS_AQL, &serde_json::json!({}), offset);
     let response = state
@@ -216,7 +219,7 @@ pub(crate) fn is_uuid(value: &str) -> bool {
 /// `ehr_create_with_id`), and an id already in use is the CDR's `409`, which
 /// the caller surfaces verbatim. Both subject fields empty → the CDR mints the
 /// default `EHR_STATUS` (`PARTY_SELF` subject); both filled → a subject-bound
-/// `EHR_STATUS` body (see [`subject_ehr_status`]). Exactly one filled is a
+/// `EHR_STATUS` body (see `subject_ehr_status`). Exactly one filled is a
 /// validation error (both or neither). Sends `Prefer: return=representation`
 /// and returns the new `ehr_id`.
 ///
@@ -229,12 +232,15 @@ pub(crate) fn is_uuid(value: &str) -> bool {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn create_ehr(
+    /// The EHR id to create under; empty lets the CDR assign one.
     ehr_id: String,
+    /// The subject's external id.
     subject_id: String,
+    /// The issuing namespace the subject id belongs to.
     subject_namespace: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let ehr_id = ehr_id.trim();
     let subject_id = subject_id.trim();
     let subject_namespace = subject_namespace.trim();
@@ -311,11 +317,13 @@ pub async fn create_ehr(
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn find_ehr_by_subject(
+    /// The subject's external id to look up.
     subject_id: String,
+    /// The issuing namespace the subject id belongs to.
     subject_namespace: String,
 ) -> Result<Option<String>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let subject_id = subject_id.trim();
     let subject_namespace = subject_namespace.trim();
     if subject_id.is_empty() || subject_namespace.is_empty() {
@@ -385,7 +393,10 @@ fn find_from_url() -> String {
 /// form for the router's `<Form method="GET">` — must make this decision
 /// reactive (a `Memo` over `use_query_map()` around the `<Redirect>`, keeping
 /// the resource-free branch) instead.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn EhrsPage() -> impl IntoView {
     let find = find_from_url();
@@ -427,7 +438,10 @@ pub fn EhrsPage() -> impl IntoView {
 /// UUID shape of a supplied id are validated client-side (inline) before
 /// dispatch and re-checked server-side; a CDR validation diagnostic also
 /// surfaces inline verbatim.
-#[allow(clippy::too_many_lines)] // one erased section: the create card's inputs + validation + action wiring (rules §1)
+#[expect(
+    clippy::too_many_lines,
+    reason = "one erased section: the create card's inputs + validation + action wiring (rules §1)"
+)]
 fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     // UNCONTROLLED inputs, read at dispatch (rules §5) — a controlled input
     // resets to its empty signal at hydration, wiping pre-WASM typing (the
@@ -605,7 +619,10 @@ fn offset_from_url() -> Signal<u32> {
 /// lookup — `subject_id` + `subject_namespace` dispatched to
 /// [`find_ehr_by_subject`], navigating to the detail route when found and
 /// surfacing an inline not-found note on a `404`.
-#[allow(clippy::too_many_lines)] // two finder modes assembled as one erased section (rules §1) — splitting would separate a mode from its state
+#[expect(
+    clippy::too_many_lines,
+    reason = "two finder modes assembled as one erased section (rules §1) — splitting would separate a mode from its state"
+)]
 fn finder_section() -> AnyView {
     // ── Mode 1: jump by EHR id ──────────────────────────────────────────────
     // A PLAIN <form>, not the router's <Form>: pre-WASM the browser submits it
@@ -776,7 +793,7 @@ fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
             {move || Suspend::new(async move {
                 match resource.await {
                     Ok(page) => ehrs_table(&page),
-                    Err(e) => crate::components::format_view::inline_error(&e),
+                    Err(e) => inline_error(&e),
                 }
             })}
         </Transition>

@@ -56,16 +56,16 @@ pub(super) struct StreamPlan {
 /// versioned-object roots (a second version group), or an untyped root.
 pub(super) fn streaming_plan(ir: &QueryIr) -> Option<StreamPlan> {
     let (ehr, root_tree) = match &ir.contains {
-        ContainsTree::Operand { source, contained } => match &ir.sources[source.0] {
-            Source::Ehr(_) => match contained.as_deref() {
+        ContainsTree::Operand { source, contained } => match ir.sources.get(source.0) {
+            Some(Source::Ehr(_)) => match contained.as_deref() {
                 Some(Contained {
                     link: Link::Contains,
                     tree,
                 }) => (Some(source.0), tree),
                 _ => return None,
             },
-            Source::Rm(_) => (None, &ir.contains),
-            Source::Version(_) => return None,
+            Some(Source::Rm(_)) => (None, &ir.contains),
+            Some(Source::Version(_)) | None => return None,
         },
         _ => return None,
     };
@@ -73,7 +73,7 @@ pub(super) fn streaming_plan(ir: &QueryIr) -> Option<StreamPlan> {
         return None;
     };
     let root = source.0;
-    let Source::Rm(r) = &ir.sources[root] else {
+    let Some(Source::Rm(r)) = ir.sources.get(root) else {
         return None;
     };
     if r.rm_type.is_empty() || !r.rm_type.names().iter().all(|t| is_vo_root_type(t)) {
@@ -110,7 +110,7 @@ fn collect_contained(
         ContainsTree::Or(..) => false,
         ContainsTree::Operand { source, contained } => {
             let sid = source.0;
-            let Source::Rm(r) = &ir.sources[sid] else {
+            let Some(Source::Rm(r)) = ir.sources.get(sid) else {
                 return false;
             };
             // A nested versioned-object root would open its own version
@@ -237,7 +237,7 @@ impl Builder<'_> {
     /// mechanics — the shape selection is our own design.
     pub(super) fn build_from_streaming(&mut self, plan: &StreamPlan) -> Result<(), AqlError> {
         self.streaming = true;
-        let Source::Rm(root) = self.ir.sources[plan.root].clone() else {
+        let Some(Source::Rm(root)) = self.ir.sources.get(plan.root).cloned() else {
             return Err(SqlError::Unsupported(
                 "streaming plan root is not an RM source".to_owned(),
             )
@@ -259,7 +259,7 @@ impl Builder<'_> {
                 Alias::new(e.as_str()),
                 col(&e, "id").eq(col(&v, "ehr_id")),
             );
-            let Source::Ehr(src) = self.ir.sources[esid].clone() else {
+            let Some(Source::Ehr(src)) = self.ir.sources.get(esid).cloned() else {
                 return Err(SqlError::Unsupported(
                     "streaming plan EHR is not an EHR source".to_owned(),
                 )
@@ -290,7 +290,7 @@ impl Builder<'_> {
                 )
                 .into());
             }
-            let Source::Rm(r) = self.ir.sources[*sid].clone() else {
+            let Some(Source::Rm(r)) = self.ir.sources.get(*sid).cloned() else {
                 return Err(SqlError::Unsupported(
                     "streaming plan content is not an RM source".to_owned(),
                 )
@@ -431,8 +431,8 @@ impl Builder<'_> {
             }
             ContainsTree::Operand { source, contained } => {
                 let sid = source.0;
-                match &self.ir.sources[sid] {
-                    Source::Version(_) => {
+                match self.ir.sources.get(sid) {
+                    Some(Source::Version(_)) => {
                         let child = match contained.as_deref() {
                             Some(Contained {
                                 link: Link::Contains,
@@ -451,7 +451,7 @@ impl Builder<'_> {
                         }
                         Ok(child)
                     }
-                    Source::Ehr(e) => {
+                    Some(Source::Ehr(e)) => {
                         let alias = format!("e{sid}");
                         self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
                         self.ehr_alias.insert(sid, alias.clone());
@@ -464,7 +464,7 @@ impl Builder<'_> {
                         }
                         Ok(None)
                     }
-                    Source::Rm(r) => {
+                    Some(Source::Rm(r)) => {
                         let r = r.clone();
                         let group = self.emit_rm(sid, &r, ehr, vo.as_ref())?;
                         if let Some(c) = contained {
@@ -472,6 +472,10 @@ impl Builder<'_> {
                         }
                         Ok(Some(group))
                     }
+                    None => Err(SqlError::Unsupported(
+                        "containment operand names an unknown source".to_owned(),
+                    )
+                    .into()),
                 }
             }
         }
@@ -586,7 +590,7 @@ impl Builder<'_> {
                 .contained_exists(anchor, a)?
                 .or(self.contained_exists(anchor, b)?)),
             ContainsTree::Operand { source, contained } => {
-                let Source::Rm(r) = &self.ir.sources[source.0] else {
+                let Some(Source::Rm(r)) = self.ir.sources.get(source.0) else {
                     return Err(SqlError::Unsupported(
                         "OR/NOT CONTAINS of a non-structure operand".to_owned(),
                     )

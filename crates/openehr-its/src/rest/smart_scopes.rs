@@ -120,7 +120,10 @@ pub enum ResourceFamily {
 /// The set of CRUDS permissions a resource scope grants (master08 §Resource
 /// Scopes permission list). Parsed from the `.<permission>` tail, order-free.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-#[allow(clippy::struct_excessive_bools)] // mirrors the five CRUDS letters (c/r/u/d/s) 1:1
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the flags mirror the five SMART CRUDS letters (c/r/u/d/s) 1:1 (ITS-REST SMART API); collapsing them into bitflags would hide the spec's own field names"
+)]
 pub struct Permissions {
     /// `c` — create.
     pub create: bool,
@@ -152,8 +155,11 @@ pub enum Permission {
 
 impl Permissions {
     /// Whether this set contains a given permission.
+    // A by-value receiver: `Permissions` is a 5-byte `Copy` set, so the copy
+    // is cheaper than the reference (clippy::trivially_copy_pass_by_ref), and
+    // method-call auto-copy keeps every `&Permissions` call site unchanged.
     #[must_use]
-    pub const fn contains(&self, perm: Permission) -> bool {
+    pub const fn contains(self, perm: Permission) -> bool {
         match perm {
             Permission::Create => self.create,
             Permission::Read => self.read,
@@ -232,29 +238,33 @@ impl fmt::Display for Pattern {
 /// `*` matches any run of bytes that contains no `:` (so it never crosses the
 /// `::` namespace delimiter); all other bytes are literal.
 fn glob_match(pat: &[u8], text: &[u8]) -> bool {
-    match pat.first() {
+    match pat.split_first() {
         None => text.is_empty(),
-        Some(&b'*') => {
-            if pat.get(1) == Some(&b'*') {
+        Some((&b'*', after_star)) => {
+            if let Some(rest) = after_star.strip_prefix(b"*") {
                 // `**` — consume 0..=len bytes of anything.
-                let rest = &pat[2..];
-                (0..=text.len()).any(|i| glob_match(rest, &text[i..]))
+                (0..=text.len()).any(|i| text.get(i..).is_some_and(|tail| glob_match(rest, tail)))
             } else {
                 // `*` — consume bytes, stopping before any `:`.
-                let rest = &pat[1..];
                 let mut i = 0;
                 loop {
-                    if glob_match(rest, &text[i..]) {
+                    let Some(tail) = text.get(i..) else {
+                        return false;
+                    };
+                    if glob_match(after_star, tail) {
                         return true;
                     }
-                    if i == text.len() || text[i] == b':' {
+                    if tail.first().is_none_or(|&b| b == b':') {
                         return false;
                     }
                     i += 1;
                 }
             }
         }
-        Some(&c) => text.first() == Some(&c) && glob_match(&pat[1..], &text[1..]),
+        Some((&c, pat_rest)) => match text.split_first() {
+            Some((&t, text_rest)) if t == c => glob_match(pat_rest, text_rest),
+            _ => false,
+        },
     }
 }
 
@@ -339,12 +349,6 @@ fn parse_resource_selector(raw: &str) -> Option<ResourceSelector> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

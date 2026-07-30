@@ -214,7 +214,10 @@ pub struct Slot {
 /// field is present only on `INTERVAL_EVENT`, so the other arms are inert (the
 /// missing field skips).
 #[must_use]
-#[allow(clippy::too_many_lines)] // a flat _type → &[Slot] binding table
+#[expect(
+    clippy::too_many_lines,
+    reason = "a flat `_type` -> `&[Slot]` terminology-binding table; the length is the size of the RM type set, not logic"
+)]
 pub fn slots_for(rm_type: &str) -> &'static [Slot] {
     // Reused vocab-per-field slot vectors.
     // ENTRY subtypes + DV_TEXT family share `language` (ISO 639-1) + `encoding`

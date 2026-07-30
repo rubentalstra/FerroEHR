@@ -4,7 +4,14 @@
 //! tooling, not an openEHR spec artifact (so it lives here, not in the generated
 //! `openehr-lang` crate). It models more of the meta-model than the emitter
 //! currently consumes, hence the module-wide `dead_code` allowance.
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "the LOAD stage models the vendored P_BMM persisted form in full \
+              (its own discipline: parse the input verbatim, decide nothing); \
+              meta-model members no emitter reads yet are part of that fidelity, \
+              not leftovers, so this is a module-wide allowance rather than a \
+              per-item expectation"
+)]
 //!
 //! Loads a vendored `*.bmm.json` schema (the canonical JSON serialization of
 //! the openEHR BMM meta-model) into a typed [`BmmSchema`]: packages (the module
@@ -583,12 +590,6 @@ fn parse_generic_param(x: &Value) -> BmmType {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

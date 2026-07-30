@@ -12,15 +12,15 @@
 //!
 //! Validation itself is owned by the validation register
 //! (`src/validation/`); this file is only the SM interface adapter over the
-//! shared choke points [`EhrbaseService::web_template_for`] and
-//! [`EhrbaseService::validate_for_commit`].
+//! shared choke points `EhrbaseService::web_template_for` and
+//! `EhrbaseService::validate_for_commit`.
 //!
 //! NOTE: `definitions_valid` checks **template** identifiers only — the
 //! spec says "archetype and template identifiers", but there is no ADL2
 //! archetype store to resolve bare archetype ids against, so content that
 //! declares no template resolves `true` (nothing to look up). `content_valid`
 //! runs the same per-`Kind` structural validation every commit runs
-//! ([`EhrbaseService::validate_for_commit`]); an unrecognized root `_type` is
+//! (`EhrbaseService::validate_for_commit`); an unrecognized root `_type` is
 //! `false`.
 
 use serde_json::Value;

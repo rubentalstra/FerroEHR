@@ -256,7 +256,7 @@ impl Predicate {
     /// Whether a canonical-JSON RM node satisfies this predicate's
     /// *attribute-based* conjuncts (`archetype_node_id`, `name/value`, `uid`).
     /// The positional conjunct is orthogonal — it selects by container index
-    /// and is applied in [`step`], not here.
+    /// and is applied in `step`, not here.
     ///
     /// `archetype_node_id` matches `LOCATABLE.archetype_node_id`; `name_value`
     /// matches `LOCATABLE.name.value` (a `DV_TEXT`); `uid` matches
@@ -331,8 +331,10 @@ impl FromStr for RmPath {
         if s.is_empty() {
             return Err(PathError::Empty);
         }
-        let absolute = s.starts_with('/');
-        let body = if absolute { &s[1..] } else { s };
+        let (absolute, body) = match s.strip_prefix('/') {
+            Some(rest) => (true, rest),
+            None => (false, s),
+        };
         // Split on top-level '/' only — slashes inside [...] predicates (e.g.
         // `name/value=...`) are not separators. An *empty* raw segment marks a
         // `//` path pattern: the following real segment is a descendant match
@@ -375,8 +377,8 @@ fn split_top_level(body: &str) -> Result<Vec<&str>, usize> {
     while i <= n {
         let start = i;
         let mut depth = 0usize;
-        while i < n {
-            match bytes[i] {
+        while let Some(&b) = bytes.get(i) {
+            match b {
                 b'[' => depth += 1,
                 b']' => depth = depth.saturating_sub(1),
                 b'/' if depth == 0 => break,
@@ -387,7 +389,9 @@ fn split_top_level(body: &str) -> Result<Vec<&str>, usize> {
         if depth > 0 {
             return Err(out.len());
         }
-        out.push(&body[start..i]);
+        // `start..i` walks whole ASCII bytes of `body`, so both ends are UTF-8
+        // boundaries; `get` keeps that a fact rather than an assumption.
+        out.push(body.get(start..i).unwrap_or_default());
         if i == n {
             break;
         }
@@ -478,11 +482,14 @@ fn parse_segment(seg: &str, index: usize) -> Result<PathSegment, PathError> {
             descendant: false,
         });
     };
-    let attribute = seg[..open].to_owned();
+    let Some((attribute, bracketed)) = seg.split_at_checked(open) else {
+        return Err(PathError::UnterminatedPredicate(index));
+    };
     if attribute.is_empty() {
         return Err(PathError::MissingAttribute(index));
     }
-    let Some(inner) = seg[open..]
+    let attribute = attribute.to_owned();
+    let Some(inner) = bracketed
         .strip_prefix('[')
         .and_then(|r| r.strip_suffix(']'))
     else {
@@ -516,9 +523,12 @@ fn parse_predicate(inner: &str) -> Result<Predicate, PathError> {
     }
     // Split on ` and ` / ` AND ` conjunctions.
     let mut rest = head;
-    while let Some(pos) = rest.find(" and ").or_else(|| rest.find(" AND ")) {
-        apply_conjunct(rest[..pos].trim(), &mut predicate)?;
-        rest = rest[pos + 5..].trim();
+    while let Some((left, right)) = rest
+        .split_once(" and ")
+        .or_else(|| rest.split_once(" AND "))
+    {
+        apply_conjunct(left.trim(), &mut predicate)?;
+        rest = right.trim();
     }
     apply_conjunct(rest.trim(), &mut predicate)?;
     Ok(predicate)
@@ -532,9 +542,9 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     // A bare positive integer is the XPath positional predicate `[n]` (1-based;
     // BASE `master11-paths` §"Using Positional Parameters").
     if c.bytes().all(|b| b.is_ascii_digit()) {
-        let n: usize = c
-            .parse()
-            .map_err(|_| PathError::InvalidPosition(c.to_owned()))?;
+        let Ok(n) = c.parse::<usize>() else {
+            return Err(PathError::InvalidPosition(c.to_owned()));
+        };
         if n == 0 {
             return Err(PathError::InvalidPosition(c.to_owned()));
         }
@@ -612,8 +622,14 @@ fn parse_comparison(c: &str) -> Result<Comparison, PathError> {
         })
         .min_by_key(|(p, op)| (*p, matches!(op, CmpOp::Eq | CmpOp::Gt | CmpOp::Lt)))
         .ok_or_else(|| PathError::UnsupportedPredicate(c.to_owned()))?;
-    let lhs = c[..pos].trim();
-    let rhs = c[pos + op.token().len()..].trim();
+    let Some((lhs, with_op)) = c.split_at_checked(pos) else {
+        return Err(PathError::UnsupportedPredicate(c.to_owned()));
+    };
+    let Some(rhs) = with_op.get(op.token().len()..) else {
+        return Err(PathError::UnsupportedPredicate(c.to_owned()));
+    };
+    let lhs = lhs.trim();
+    let rhs = rhs.trim();
     let path: Vec<String> = lhs
         .strip_prefix('@')
         .unwrap_or(lhs)
@@ -1106,9 +1122,10 @@ fn parse_ehr_id(seg: &str) -> Result<Option<Uuid>, EhrUriError> {
     if seg.is_empty() {
         return Ok(None);
     }
-    Uuid::parse_str(seg)
-        .map(Some)
-        .map_err(|_| EhrUriError::BadEhrId(seg.to_owned()))
+    match Uuid::parse_str(seg) {
+        Ok(uuid) => Ok(Some(uuid)),
+        Err(_) => Err(EhrUriError::BadEhrId(seg.to_owned())),
+    }
 }
 
 /// Whether a locator segment looks like a versioned-object identifier: a bare
@@ -1120,8 +1137,9 @@ fn looks_like_version_id(seg: &str) -> bool {
 /// Parse one versioned-object locator segment.
 fn parse_version_locator(seg: &str) -> Result<VersionLocator, EhrUriError> {
     if seg.contains("::") {
-        let ovid = ObjectVersionId::from_str(seg)
-            .map_err(|_| EhrUriError::MalformedVersion(seg.to_owned()))?;
+        let Ok(ovid) = ObjectVersionId::from_str(seg) else {
+            return Err(EhrUriError::MalformedVersion(seg.to_owned()));
+        };
         Ok(VersionLocator::Version(ovid))
     } else if Uuid::parse_str(seg).is_ok() {
         Ok(VersionLocator::VersionedObject(seg.to_owned()))
@@ -1147,17 +1165,15 @@ fn parse_locator_and_path(
     if segs.is_empty() {
         return Ok((None, None));
     }
-    let first = segs[0];
-    let (attribute, rest): (Option<String>, &[&str]) = if is_ehr_locator_attribute(first) {
-        (Some(first.to_owned()), &segs[1..])
-    } else {
-        (None, &segs[..])
+    let (attribute, rest): (Option<String>, &[&str]) = match segs.split_first() {
+        Some((&first, tail)) if is_ehr_locator_attribute(first) => (Some(first.to_owned()), tail),
+        _ => (None, segs.as_slice()),
     };
-    let (object, item_segs): (Option<VersionLocator>, &[&str]) = match rest.first() {
-        Some(&head) if looks_like_version_id(head) => {
-            (Some(parse_version_locator(head)?), &rest[1..])
+    let (object, item_segs): (Option<VersionLocator>, &[&str]) = match rest.split_first() {
+        Some((&head, tail)) if looks_like_version_id(head) => {
+            (Some(parse_version_locator(head)?), tail)
         }
-        Some(&head) if attribute.is_none() => {
+        Some((&head, _)) if attribute.is_none() => {
             // No `EHR` attribute name and no version id → nothing identifies a
             // top-level structure.
             return Err(EhrUriError::UnrecognisedLocator(head.to_owned()));
@@ -1173,7 +1189,6 @@ fn parse_locator_and_path(
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions/diagnostics
 mod tests {
     use super::*;
     use serde_json::json;

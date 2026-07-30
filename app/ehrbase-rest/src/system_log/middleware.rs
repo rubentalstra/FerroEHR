@@ -28,7 +28,7 @@
 //! closed to the documented default and is still audited, never silently
 //! dropped. When the envelope carries no `ResourceMeta` (templates, stored
 //! queries, demographic parties) the participant-object id is derived from the
-//! request path ([`object_id_from_path`]).
+//! request path (`object_id_from_path`).
 //!
 //! # Authentication records
 //!
@@ -37,7 +37,7 @@
 //! deployment suppresses them
 //! (`suppress_login_events`, default on). "Genuine" is a real authentication
 //! *event*, not every authenticated request: the auth layer marks it
-//! ([`FreshAuthentication`]) only on a Basic verified-credential cache miss —
+//! (`FreshAuthentication`) only on a Basic verified-credential cache miss —
 //! where the credentials were actually checked. A cache hit continues an
 //! established session, and a Bearer request authenticated out of band at the
 //! OIDC provider, so neither mints a per-request login record. Auth rejections
@@ -311,12 +311,6 @@ fn segment_after(path: &str, marker: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

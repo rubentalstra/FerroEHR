@@ -18,6 +18,10 @@ pub struct Harness {
 }
 
 /// Environment lookup for a journey credential/URL.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "the E2E harness is configured by the environment the CI job / scripts/ui-e2e.sh exports; there is no console config tree on the test side"
+)]
 pub fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
 }

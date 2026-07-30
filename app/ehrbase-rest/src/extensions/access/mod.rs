@@ -22,7 +22,7 @@
 //!
 //! Layout:
 //! - [`authn`] — Stage-1 authentication: Basic (`argon2`) + OAuth2/OIDC bearer
-//!   (`jsonwebtoken`/`openidconnect`), producing a [`Principal`].
+//!   (`jsonwebtoken`/`openidconnect`), producing a [`authn::Principal`].
 //! - [`ehr_access`] — the **spec-grounded** access-decision layer, built on the
 //!   `EHR_ACCESS` gateway clause ("All access decisions to data in the EHR must
 //!   be made in accordance with the policies and rules in this object" — RM
@@ -47,9 +47,9 @@
 //! *and* any RBAC/ABAC policy *and* the SMART scope gate), never the reverse.
 //! The specs lead; the enterprise layers build on them.
 //!
-//! The authn↔authz seam is the [`Principal`]: authn resolves it, the `EHR_ACCESS`
+//! The authn↔authz seam is the [`authn::Principal`]: authn resolves it, the `EHR_ACCESS`
 //! gate + the RBAC gate + the ABAC/SMART PEP all consume it, and the single
-//! 401/403 decision lives in [`authn::middleware`].
+//! 401/403 decision lives in `authn::middleware`.
 
 pub mod authn;
 pub mod authz;

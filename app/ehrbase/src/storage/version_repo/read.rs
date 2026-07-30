@@ -23,6 +23,7 @@ use crate::storage::node_repo::read_version_canonical;
 /// the audit fields are flattened (versioning rebuilds the `AUDIT_DETAILS`).
 #[derive(Debug, Clone)]
 pub struct StoredVersion {
+    /// The versioned object's id.
     pub vo_id: VoId,
     /// The `vo_version.kind` discriminator text (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / …).
@@ -31,23 +32,35 @@ pub struct StoredVersion {
     pub ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal.
     pub sys_version: i32,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// `ORIGINAL_VERSION.preceding_version_uid`; `None` for a first version.
     pub preceding_version_uid: Option<String>,
+    /// The merge provenance (`other_input_version_uids`); empty when not a merge.
     pub other_input_version_uids: Vec<String>,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The CONTRIBUTION this version was committed in.
     pub contribution_id: Uuid,
     /// The version's `commit_audit` fields (master04 §Audit Details), flattened.
     pub audit_system_id: String,
+    /// The version audit's numeric `audit_change_type` group code.
     pub audit_change_type: String,
+    /// The version audit's description, when the committer supplied one.
     pub audit_description: Option<String>,
     /// Canonical `PARTY_PROXY` of the committer.
     pub audit_committer: Value,
     /// Server-computed commit time (master06 §Committal).
     pub time_committed: jiff::Timestamp,
+    /// The OPT `template_id` a COMPOSITION was committed against (else `None`).
     pub template_id: Option<String>,
+    /// `VERSION.signature` (0..1), opaque radix-64.
     pub signature: Option<String>,
     /// Whether `signature` was supplied verbatim by the client / carried by an
     /// `IMPORTED_VERSION` (foreign — never re-verified at read; master06

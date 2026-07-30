@@ -7,6 +7,10 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
 publish = false
 
 [[bin]]
@@ -27,6 +31,10 @@ jsonschema = { workspace = true }
 # `applies` spec-version ranges use the Cargo/semver requirement grammar.
 semver = { workspace = true }
 regex = { workspace = true }
+# Wall-clock time (token `iat`/`exp`, run stamps) comes from the pinned time
+# library, never `std::time::SystemTime` (clippy.toml `disallowed-methods`);
+# elapsed-time measurement stays on `std::time::Instant`.
+jiff = { workspace = true }
 # Canonical-XML response assertions (`xml_root`): the served document's root
 # element name and the namespace its prefix resolves to. A namespace-aware
 # parser is required — a regex cannot tell the root from a descendant, nor

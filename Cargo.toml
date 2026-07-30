@@ -3,12 +3,12 @@
 # Versions are current as of 2026-07 and expressed as caret ranges (Cargo pulls
 # the latest matching patch). Where a major/minor was not individually confirmed
 # it is marked "verify". Crates opt into these via `dep.workspace = true`.
-#
-# NOTE: per the port plan, crates in Phases P1-P16 are NOT required to compile.
-# Do not treat a failing `cargo build --workspace` as a problem before P17.
 
 [workspace]
-resolver = "3"                      # resolver v3 (edition 2024)
+# NOTE: `resolver` must stay explicit — a VIRTUAL workspace does not infer
+# resolver v3 from the members' edition 2024
+# (https://doc.rust-lang.org/edition-guide/rust-2024/cargo-resolver.html).
+resolver = "3"
 members = ["crates/*", "app/*", "tools/*"]
 
 [workspace.package]
@@ -18,31 +18,148 @@ rust-version = "1.96"
 license = "Apache-2.0"
 repository = "https://github.com/rubentalstra/ehrbase-rs"
 authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
+# C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
+# members inherit via `<key>.workspace = true`; `readme` resolves from this root.
+documentation = "https://rubentalstra.github.io/ehrbase-rs/"
+readme = "README.md"
+keywords = ["openehr", "cdr", "healthcare", "ehr", "aql"]
+categories = ["database-implementations", "science", "web-programming::http-server"]
 
 [workspace.lints.clippy]
 # The reliability hard-rule set (.claude/rules/reliability.md, owner
-# 2026-07-17): deny-tier = fails every local clippy; warn-tier still fails
-# CI (-D warnings). Tests keep scoped #[allow]s for unwrap/expect.
+# 2026-07-17; hardened per issue #1311, owner 2026-07-30): deny-tier = fails
+# every local clippy; warn-tier still fails CI (-D warnings). Tests keep the
+# clippy.toml `allow-*-in-tests` scoping. Groups stay at priority -1 so every
+# individual lint below (priority 0) overrides them — machine-required by
+# clippy::lint_groups_priority (correctness). Restriction lints are CHERRY-
+# PICKED individually; the group is never enabled wholesale (official Clippy
+# guidance, https://doc.rust-lang.org/clippy/lints.html).
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+
+# ── the panic family — closed completely ────────────────────────────────────
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"                      # recoverable = Result; a panic is never a designed outcome
 unimplemented = "deny"
 todo = "deny"                       # owner rule 2026-07-12: no todo!() ever
+unreachable = "deny"                # unreachable!() is a panic; a "cannot happen" state gets a typed error
+panic_in_result_fn = "warn"         # a fn returning Result must not panic/assert instead
+missing_assert_message = "warn"     # production asserts carry a message (lint ignores test fns by design)
 dbg_macro = "deny"
 print_stdout = "deny"               # libraries speak tracing; binaries/tools relax per-crate
 print_stderr = "deny"
-incompatible_msrv = "warn"
+incompatible_msrv = "deny"          # MSRV 1.96 is a hard pin
+
+# ── no panicking indexing (reliability.md; request paths must not panic) ────
+indexing_slicing = "deny"
+string_slice = "deny"               # UTF-8 boundaries panic; clinical text is multi-byte
+
+# ── determinism (canonical JSON/XML output is byte-deterministic) ───────────
+iter_over_hash_type = "deny"        # HashMap/HashSet iteration order is undefined
+
+# ── silent-discard / silent-loss ─────────────────────────────────────────────
+unused_result_ok = "deny"           # `.ok();` looks like a check but only silences #[must_use]
+map_err_ignore = "warn"             # map_err(|_| …) throws away the cause
+
+# ── numeric honesty (silent wrong answers are worse than loud failures) ─────
+float_cmp_const = "deny"            # pedantic float_cmp misses comparisons to consts
+lossy_float_literal = "deny"
+as_underscore = "deny"              # `as _` hides the target type of a cast
+fn_to_numeric_cast_any = "deny"
+precedence_bits = "deny"            # shifts mixed with masks — classic wrong-answer bug
+suspicious_xor_used_as_pow = "deny" # `2 ^ 8` meaning "2 to the 8th"
+integer_division = "warn"           # division discards the remainder — annotate intent
+
+# ── the #[allow] escape hatch, machine-enforced (reliability.md) ─────────────
+allow_attributes_without_reason = "deny"  # every suppression carries reason = "…"
+allow_attributes = "warn"                 # prefer #[expect]: stale suppressions self-report
+                                          # (unfulfilled_lint_expectations); inner #![allow] exempt
+
+# ── the SAFETY-comment convention (free under forbid(unsafe_code)) ───────────
+undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"
+unnecessary_safety_comment = "deny" # `// SAFETY:` stays reserved for unsafe code
+unnecessary_safety_doc = "deny"     # `# Safety` sections likewise
+
+# ── process / IO / container hygiene ─────────────────────────────────────────
+exit = "deny"                       # std::process::exit gives no troubleshooting path
+verbose_file_reads = "deny"         # File::read_to_* → fs::read*
+filetype_is_file = "deny"           # FileType::is_file is not a readability test
+create_dir = "deny"                 # create_dir → create_dir_all
+large_include_file = "deny"         # 1 MB cap; largest include today is the 646 KB ITS-JSON schema
+rc_buffer = "deny"                  # Rc<String>/Arc<Vec<T>> → Rc<str>/Arc<[T]>
+rc_mutex = "deny"                   # Rc<Mutex<T>> is always the wrong shape
+mem_forget = "deny"
+pointer_format = "deny"             # no address leakage into logs/Debug output
+empty_drop = "warn"
+deref_by_slicing = "warn"
+try_err = "warn"
+clone_on_ref_ptr = "warn"           # Arc::clone(&x) makes pointer-only cloning explicit
+cfg_not_test = "warn"               # code excluded from test builds is untested code
+infinite_loop = "warn"              # an intentional infinite loop returns `!`
+mixed_read_write_in_expression = "warn"
+same_name_method = "warn"
+
+# ── nursery cherry-pick (ONE lint; the group stays off — "buggy or need more work")
+debug_assert_with_mut_call = "warn" # a side-effecting debug_assert! vanishes in release
+
+# ── cargo group (not part of `all`) ──────────────────────────────────────────
+wildcard_dependencies = "deny"
+negative_feature_names = "deny"     # `no-foo` features invert additive semantics
+redundant_feature_names = "deny"    # `use-x`/`with-x` placeholder words (C-FEATURE)
 
 [workspace.lints.rust]
-unsafe_code = "forbid"              # server + spec crates should be safe; relax per-crate if ever needed
+unsafe_code = "forbid"              # NOTE: forbid cannot be relaxed by attribute — not even
+                                    # #[allow] compiles under it (rustc book, lint levels); a
+                                    # member needing unsafe would have to stop inheriting this
+                                    # table entirely, which is a design decision, not an allow.
 missing_debug_implementations = "warn"
+missing_docs = "warn"               # every public item is documented (C-CRATE-DOC/C-DOC);
+                                    # generated crates get theirs from the emitter (BMM docs)
 dead_code = "deny"                  # owner rule 2026-07-12: no dead code, ever — delete or wire it
 let_underscore_drop = "deny"        # `let _ = lock/tx;` drops the guard immediately
                                     # (must_use discards like `let _ = write!(String)` are the
                                     #  infallible-fmt idiom — NOT denied; the guard class above is)
+let_underscore_lock = "deny"        # the same guard-drop, caught at the lock site
 unreachable_pub = "warn"            # visibility is deliberate (CI-deny via -D warnings)
+non_ascii_idents = "forbid"         # ASCII-only identifiers — no homoglyphs in clinical code
+                                    # (rustc book: the security rationale for this lint)
+
+# free guards — zero findings expected; defence in depth
+unsafe_op_in_unsafe_fn = "deny"     # moot under forbid(unsafe_code); costs nothing
+ffi_unwind_calls = "deny"           # no FFI in the workspace; keeps it that way
+deprecated_safe_2024 = "deny"
+macro_use_extern_crate = "warn"
+absolute_paths_not_starting_with_crate = "warn"
+
+# real bug classes, low noise
+unit_bindings = "warn"              # `let x = f();` where f returns () — a silent mistake
+meta_variable_misuse = "warn"
+explicit_outlives_requirements = "warn"
+unused_extern_crates = "warn"
+unused_import_braces = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"      # pairs with the zero-re-export import discipline
+unused_lifetimes = "warn"
+redundant_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+ambiguous_negative_literals = "deny"  # `-x.pow(2)` reads wrong — numeric clarity
+
+[workspace.lints.rustdoc]
+# Enforced by the CI doc job (RUSTDOCFLAGS=-D warnings, cargo doc --workspace)
+# — lint levels here apply to every `cargo doc` run, local and CI
+# (https://doc.rust-lang.org/rustdoc/lints.html).
+broken_intra_doc_links = "deny"
+private_intra_doc_links = "deny"
+invalid_codeblock_attributes = "deny"   # a `should-panic` typo silently disables a doctest
+invalid_rust_codeblocks = "deny"
+invalid_html_tags = "deny"
+bare_urls = "deny"
+redundant_explicit_links = "deny"
+unescaped_backticks = "warn"
+missing_crate_level_docs = "warn"       # every crate opens with //! docs (C-CRATE-DOC)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # WORKSPACE DEPENDENCIES  (pinned; features set at the crate that enables them)
@@ -274,6 +391,20 @@ debug = false
 # carried by the benchmarks (measurements stay honest to production).
 [profile.release]
 overflow-checks = true
+# `panic = "unwind"` is the Cargo default, pinned EXPLICITLY because the whole
+# clean-500 reliability design depends on it: tower-http's CatchPanic layer is
+# std::panic::catch_unwind, which "only catches unwinding panics, not those
+# that abort the process" (https://doc.rust-lang.org/std/panic/fn.catch_unwind.html).
+# Under panic = "abort" one panicking request kills the entire server — and no
+# test would catch the regression, because "tests … ignore the panic setting"
+# (https://doc.rust-lang.org/cargo/reference/profiles.html#panic). Never change.
+panic = "unwind"
+# file:line backtraces in production panics (the overflow-checks posture is
+# worthless without a traceable panic site); "line-tables-only" is the minimal
+# debuginfo for backtraces (https://doc.rust-lang.org/cargo/reference/profiles.html#debug).
+# `strip` stays at its default "none": stripping symbols makes traces
+# "incomprehensible" (rustc book, -Cstrip) — never enable it for size.
+debug = "line-tables-only"
 
 # WASM bundle profile for the admin console (Leptos book `deployment/binary_size`):
 # size-optimized client bundle, wired via the crate's `lib-profile-release`.

@@ -37,7 +37,12 @@ pub enum OperationClass {
 /// Only the generated route surface is covered here; the non-generated surface
 /// (status/health/swagger/management) is classified by route in the REST layer.
 #[must_use]
-#[allow(clippy::match_same_arms)] // grouped by resource family; explicitness is the point
+#[expect(
+    clippy::match_same_arms,
+    reason = "the arms are grouped by resource family, so naming every operation \
+              explicitly is the point — merging equal arms would hide which \
+              family an operation classifies as"
+)]
 pub fn class_of(op: &str) -> Option<OperationClass> {
     use OperationClass::{Admin, Clinical};
     let class = match op {
@@ -182,7 +187,7 @@ pub fn kind_of(op: &str) -> Option<ResourceKind> {
 /// store, `*_tags_update` / `*_tags_delete`, and the whole `admin_*` API) is a
 /// write.
 ///
-/// The classification is derived from the op-id verb ([`write_verb`]); an op-id
+/// The classification is derived from the op-id verb (`write_verb`); an op-id
 /// with no recognized verb is treated as a **write** (fail-safe: the read-only
 /// restriction can never be bypassed by an unclassified future op). The
 /// total-coverage guard test turns any such fall-through into a build failure,
@@ -243,12 +248,6 @@ pub fn access_of(op: &str) -> Option<AccessMode> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

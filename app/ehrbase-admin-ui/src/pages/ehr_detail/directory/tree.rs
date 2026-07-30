@@ -8,16 +8,16 @@
 //!
 //! The working tree is one `RwSignal<serde_json::Value>` seeded from the
 //! loaded FOLDER, then stamped with an ephemeral, client-only `_key` identity
-//! on every folder and every item reference ([`super::edit::stamp_keys`]);
+//! on every folder and every item reference (`super::edit::stamp_keys`);
 //! every mutation goes through the pure [`super::edit`] helpers, and every
 //! rendered datum reads the tree reactively. `<For>` rows and the collapse /
 //! rename / picker UI state are keyed by that stable, data-derived `_key`
 //! (never a positional path or index — rules §4), so a node keeps its own
 //! state and row after a sibling delete shifts indices; the live position is
 //! re-derived from the `_key` for each read and mutation (a folder's path with
-//! [`super::edit::find_path_by_key`], an item's index within its folder with
-//! [`super::edit::find_item_index`]). The `_key` is stripped
-//! ([`super::edit::strip_keys`]) from every body sent to the CDR and from the
+//! `super::edit::find_path_by_key`, an item's index within its folder with
+//! `super::edit::find_item_index`). The `_key` is stripped
+//! (`super::edit::strip_keys`) from every body sent to the CDR and from the
 //! advanced-JSON view — it never leaves the console.
 
 use leptos::prelude::*;
@@ -249,7 +249,10 @@ struct TreeEditor {
 /// [`EditorState`] (seeded by [`seed`] above the Suspend) — this function
 /// creates NO signals of its own (rules §4), so it is safe to re-run on every
 /// directory refetch.
-#[allow(clippy::too_many_lines)] // the editor view + save bar + advanced mode + picker assembled as one unit
+#[expect(
+    clippy::too_many_lines,
+    reason = "the editor view + save bar + advanced mode + picker assembled as one unit"
+)]
 pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     editor: &EditorState,
     ehr_id: Signal<String>,
@@ -761,7 +764,10 @@ fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView 
 /// The "add item reference" picker: an overlay revealed when a folder's add
 /// button sets `picker_target`. Offers the EHR's compositions (first page,
 /// from the shared picker resource) and a manual `OBJECT_REF` entry form.
-#[allow(clippy::too_many_lines)] // the modal composes the composition list + the manual-entry form as one overlay
+#[expect(
+    clippy::too_many_lines,
+    reason = "the modal composes the composition list + the manual-entry form as one overlay"
+)]
 fn picker_modal(ed: TreeEditor) -> AnyView {
     // The manual-entry form signals are long-lived (on [`EditorState`]) — this
     // overlay is an always-mounted hidden `<div>`, so its `prop:value` closures

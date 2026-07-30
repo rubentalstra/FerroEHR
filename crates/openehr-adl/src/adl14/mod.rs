@@ -12,7 +12,7 @@
 //!
 //! Pipeline:
 //! 1. **Front end** — [`crate::assemble::parse_artefact_adl14`] parses a 1.4
-//!    `.adl` into a *1.4-shaped* `openehr_am::am24` [`Archetype`] (at-code node
+//!    `.adl` into a *1.4-shaped* `openehr_am::am24` [`Archetype`](openehr_am::am24::aom2::archetype::archetype::Archetype) (at-code node
 //!    ids; qualified/listed terminology constraints preserved verbatim in the
 //!    `C_TERMINOLOGY_CODE.constraint` string; inline dADL `C_DV_QUANTITY`/
 //!    `C_DV_ORDINAL` lowered to `DV_QUANTITY`/`DV_ORDINAL` with an attribute

@@ -1,5 +1,8 @@
 //! openEHR **ITS** — Implementation Technology Specifications. This crate
-#![allow(clippy::doc_markdown)] // module docs are prose with many proper nouns
+#![allow(
+    clippy::doc_markdown,
+    reason = "module docs are prose with many proper nouns"
+)]
 //!
 //! mirrors the four `specifications-ITS-*` sub-repos (aggregated by
 //! `specifications-ITS`): how openEHR RM instances are serialized and exposed.
@@ -43,6 +46,9 @@
 //! console's scope previewer) shares the very grammar the CDR enforces instead
 //! of carrying a second parser.
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 #[cfg(feature = "full")]
 pub mod bmm;
 #[cfg(feature = "full")]

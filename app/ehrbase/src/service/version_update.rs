@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
+use openehr_rm::common::generic::party_identified::{PartyIdentified, PartyIdentifiedData};
 use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 
 /// `UPDATE_AUDIT` — "The set of attributes required to document the committal
@@ -168,10 +169,16 @@ impl UpdateVersion {
                 // (`overview::committal::committal_audit`).
                 change_type: code("openehr", "249"),
                 description: None,
-                committer: openehr_its::json::from_canonical_value(
-                    &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
-                )
-                .unwrap_or_else(|_| unreachable!("static PARTY_IDENTIFIED shape deserializes")),
+                // Built with the generated constructor rather than decoded
+                // from a JSON literal: the value is a compile-time constant of
+                // the RM model, so there is no fallible step to handle.
+                committer: PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(
+                    PartyIdentifiedData {
+                        external_ref: None,
+                        name: Some("EHRbase".to_owned()),
+                        identifiers: Vec::new(),
+                    },
+                )),
                 system_id: None,
             },
             signature: None,
@@ -207,12 +214,6 @@ pub struct Committal {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

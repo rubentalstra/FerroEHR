@@ -221,12 +221,6 @@ fn read(role: MaterialRole, path: &Path) -> Result<Vec<u8>, TlsMaterialError> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::service::terminology::config::test_provider_config;

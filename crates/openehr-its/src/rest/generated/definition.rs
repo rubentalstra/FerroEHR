@@ -7,377 +7,624 @@
     clippy::pedantic,
     clippy::nursery,
     dead_code,
-    unused_variables
+    unused_variables,
+    reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
 use serde::{Deserialize, Serialize};
 
+/// The `TemplateMetadata` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateMetadata {
+    /// The `template_id` property of `TemplateMetadata`.
     pub template_id: String,
+    /// The `version` property of `TemplateMetadata`.
     pub version: Option<String>,
+    /// The `concept` property of `TemplateMetadata`.
     pub concept: String,
+    /// The `archetype_id` property of `TemplateMetadata`.
     pub archetype_id: String,
+    /// The `created_timestamp` property of `TemplateMetadata`.
     pub created_timestamp: String,
 }
 
+/// The `TemplateList` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type TemplateList = Vec<serde_json::Value>;
 
+/// The `OperationalTemplate` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type OperationalTemplate = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `LocalizedNames` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalizedNames {
+    /// The `en` property of `LocalizedNames`.
     pub en: String,
 }
 
+/// The `LocalizedDescriptions` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalizedDescriptions {
+    /// The `sl` property of `LocalizedDescriptions`.
     pub sl: String,
 }
 
+/// The `LocalizedNames1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalizedNames1 {
+    /// The `sl` property of `LocalizedNames1`.
     pub sl: String,
 }
 
+/// The `LocalizedNames2` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalizedNames2 {
+    /// The `sl` property of `LocalizedNames2`.
     pub sl: String,
+    /// The `en` property of `LocalizedNames2`.
     pub en: Option<String>,
 }
 
+/// The `Annotations` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Annotations {
+    /// The `comment` property of `Annotations`.
     pub comment: Option<String>,
+    /// The `default` property of `Annotations`.
     pub default: Option<String>,
 }
 
+/// The `Precision` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Precision {
+    /// The `minOp` property of `Precision`.
     #[serde(rename = "minOp")]
     pub min_op: String,
+    /// The `min` property of `Precision`.
     pub min: i64,
+    /// The `maxOp` property of `Precision`.
     #[serde(rename = "maxOp")]
     pub max_op: String,
+    /// The `max` property of `Precision`.
     pub max: i64,
 }
 
+/// The `Range` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Range {
+    /// The `minOp` property of `Range`.
     #[serde(rename = "minOp")]
     pub min_op: String,
+    /// The `min` property of `Range`.
     pub min: i64,
+    /// The `maxOp` property of `Range`.
     #[serde(rename = "maxOp")]
     pub max_op: Option<String>,
+    /// The `max` property of `Range`.
     pub max: Option<i64>,
 }
 
+/// The `Validation` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Validation {
+    /// The `precision` property of `Validation`.
     pub precision: Option<Precision>,
+    /// The `range` property of `Validation`.
     pub range: Option<Range>,
 }
 
+/// The `LocalizedLabels` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalizedLabels {
+    /// The `sl` property of `LocalizedLabels`.
     pub sl: String,
 }
 
+/// The `List` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List {
+    /// The `value` property of `List`.
     pub value: String,
+    /// The `label` property of `List`.
     pub label: String,
+    /// The `validation` property of `List`.
     pub validation: Option<Validation>,
+    /// The `localizedLabels` property of `List`.
     #[serde(rename = "localizedLabels")]
     pub localized_labels: Option<LocalizedLabels>,
+    /// The `localizedDescriptions` property of `List`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
 }
 
+/// The `Validation1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Validation1 {
+    /// The `range` property of `Validation1`.
     pub range: Range,
+    /// The `precision` property of `Validation1`.
     pub precision: Option<Precision>,
 }
 
+/// The `Input` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input {
+    /// The `type` property of `Input`.
     pub r#type: String,
+    /// The `suffix` property of `Input`.
     pub suffix: Option<String>,
+    /// The `list` property of `Input`.
     pub list: Option<Vec<serde_json::Value>>,
+    /// The `defaultValue` property of `Input`.
     #[serde(rename = "defaultValue")]
     pub default_value: Option<String>,
+    /// The `validation` property of `Input`.
     pub validation: Option<Validation1>,
 }
 
+/// The `SNOMEDCT` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snomedct {
+    /// The `value` property of `SNOMEDCT`.
     pub value: String,
+    /// The `terminologyId` property of `SNOMEDCT`.
     #[serde(rename = "terminologyId")]
     pub terminology_id: String,
 }
 
+/// The `TermBindings` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TermBindings {
+    /// The `SNOMED-CT` property of `TermBindings`.
     #[serde(rename = "SNOMED-CT")]
     pub snomed_ct: Snomedct,
 }
 
+/// The `Input1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input1 {
+    /// The `type` property of `Input1`.
     pub r#type: String,
+    /// The `suffix` property of `Input1`.
     pub suffix: Option<String>,
 }
 
+/// The `Child3` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Child3 {
+    /// The `id` property of `Child3`.
     pub id: String,
+    /// The `localizedName` property of `Child3`.
     #[serde(rename = "localizedName")]
     pub localized_name: String,
+    /// The `rmType` property of `Child3`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The `nodeId` property of `Child3`.
     #[serde(rename = "nodeId")]
     pub node_id: String,
+    /// The `min` property of `Child3`.
     pub min: i64,
+    /// The `max` property of `Child3`.
     pub max: i64,
+    /// The `localizedNames` property of `Child3`.
     #[serde(rename = "localizedNames")]
     pub localized_names: LocalizedNames1,
+    /// The `localizedDescriptions` property of `Child3`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: LocalizedDescriptions,
+    /// The `aqlPath` property of `Child3`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The `inputs` property of `Child3`.
     pub inputs: Vec<serde_json::Value>,
+    /// The `name` property of `Child3`.
     pub name: Option<String>,
 }
 
+/// The `Child2` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Child2 {
+    /// The `id` property of `Child2`.
     pub id: String,
+    /// The `name` property of `Child2`.
     pub name: String,
+    /// The `localizedName` property of `Child2`.
     #[serde(rename = "localizedName")]
     pub localized_name: String,
+    /// The `rmType` property of `Child2`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The `nodeId` property of `Child2`.
     #[serde(rename = "nodeId")]
     pub node_id: String,
+    /// The `min` property of `Child2`.
     pub min: i64,
+    /// The `max` property of `Child2`.
     pub max: i64,
+    /// The `localizedNames` property of `Child2`.
     #[serde(rename = "localizedNames")]
     pub localized_names: LocalizedNames2,
+    /// The `localizedDescriptions` property of `Child2`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: LocalizedDescriptions,
+    /// The `annotations` property of `Child2`.
     pub annotations: Option<Annotations>,
+    /// The `aqlPath` property of `Child2`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The `inputs` property of `Child2`.
     pub inputs: Vec<serde_json::Value>,
+    /// The `dependsOn` property of `Child2`.
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
+    /// The `inContext` property of `Child2`.
     #[serde(rename = "inContext")]
     pub in_context: Option<bool>,
+    /// The `termBindings` property of `Child2`.
     #[serde(rename = "termBindings")]
     pub term_bindings: Option<TermBindings>,
+    /// The `children` property of `Child2`.
     pub children: Option<Vec<serde_json::Value>>,
 }
 
+/// The `List1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List1 {
+    /// The `value` property of `List1`.
     pub value: String,
+    /// The `label` property of `List1`.
     pub label: String,
+    /// The `localizedLabels` property of `List1`.
     #[serde(rename = "localizedLabels")]
     pub localized_labels: LocalizedLabels,
+    /// The `localizedDescriptions` property of `List1`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: LocalizedDescriptions,
 }
 
+/// The `Input2` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input2 {
+    /// The `type` property of `Input2`.
     pub r#type: String,
+    /// The `suffix` property of `Input2`.
     pub suffix: Option<String>,
+    /// The `list` property of `Input2`.
     pub list: Option<Vec<serde_json::Value>>,
 }
 
+/// The `Annotations1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Annotations1 {
+    /// The `comment` property of `Annotations1`.
     pub comment: Option<String>,
+    /// The `view:pass_through` property of `Annotations1`.
     #[serde(rename = "view:pass_through")]
     pub view_pass_through: Option<String>,
 }
 
+/// The `Child1` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Child1 {
+    /// The `id` property of `Child1`.
     pub id: String,
+    /// The `name` property of `Child1`.
     pub name: String,
+    /// The `localizedName` property of `Child1`.
     #[serde(rename = "localizedName")]
     pub localized_name: Option<String>,
+    /// The `rmType` property of `Child1`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The `nodeId` property of `Child1`.
     #[serde(rename = "nodeId")]
     pub node_id: Option<String>,
+    /// The `min` property of `Child1`.
     pub min: i64,
+    /// The `max` property of `Child1`.
     pub max: i64,
+    /// The `localizedNames` property of `Child1`.
     #[serde(rename = "localizedNames")]
     pub localized_names: Option<LocalizedNames1>,
+    /// The `localizedDescriptions` property of `Child1`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
+    /// The `aqlPath` property of `Child1`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The `children` property of `Child1`.
     pub children: Option<Vec<serde_json::Value>>,
+    /// The `inputs` property of `Child1`.
     pub inputs: Option<Vec<serde_json::Value>>,
+    /// The `inContext` property of `Child1`.
     #[serde(rename = "inContext")]
     pub in_context: Option<bool>,
+    /// The `dependsOn` property of `Child1`.
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<String>>,
+    /// The `annotations` property of `Child1`.
     pub annotations: Option<Annotations1>,
+    /// The `termBindings` property of `Child1`.
     #[serde(rename = "termBindings")]
     pub term_bindings: Option<TermBindings>,
+    /// The `proportionTypes` property of `Child1`.
     #[serde(rename = "proportionTypes")]
     pub proportion_types: Option<Vec<String>>,
 }
 
+/// The `List2` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct List2 {
+    /// The `value` property of `List2`.
     pub value: String,
+    /// The `label` property of `List2`.
     pub label: String,
+    /// The `localizedLabels` property of `List2`.
     #[serde(rename = "localizedLabels")]
     pub localized_labels: LocalizedLabels,
 }
 
+/// The `Input3` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input3 {
+    /// The `suffix` property of `Input3`.
     pub suffix: String,
+    /// The `type` property of `Input3`.
     pub r#type: String,
+    /// The `list` property of `Input3`.
     pub list: Option<Vec<serde_json::Value>>,
+    /// The `terminology` property of `Input3`.
     pub terminology: Option<String>,
 }
 
+/// The `Child` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Child {
+    /// The `id` property of `Child`.
     pub id: String,
+    /// The `rmType` property of `Child`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The `nodeId` property of `Child`.
     #[serde(rename = "nodeId")]
     pub node_id: Option<String>,
+    /// The `min` property of `Child`.
     pub min: i64,
+    /// The `max` property of `Child`.
     pub max: i64,
+    /// The `aqlPath` property of `Child`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The `children` property of `Child`.
     pub children: Option<Vec<serde_json::Value>>,
+    /// The `name` property of `Child`.
     pub name: Option<String>,
+    /// The `localizedName` property of `Child`.
     #[serde(rename = "localizedName")]
     pub localized_name: Option<String>,
+    /// The `localizedNames` property of `Child`.
     #[serde(rename = "localizedNames")]
     pub localized_names: Option<LocalizedNames1>,
+    /// The `localizedDescriptions` property of `Child`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: Option<LocalizedDescriptions>,
+    /// The `termBindings` property of `Child`.
     #[serde(rename = "termBindings")]
     pub term_bindings: Option<TermBindings>,
+    /// The `inputs` property of `Child`.
     pub inputs: Option<Vec<serde_json::Value>>,
+    /// The `inContext` property of `Child`.
     #[serde(rename = "inContext")]
     pub in_context: Option<bool>,
 }
 
+/// The `Tree` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tree {
+    /// The `id` property of `Tree`.
     pub id: String,
+    /// The `name` property of `Tree`.
     pub name: String,
+    /// The `localizedName` property of `Tree`.
     #[serde(rename = "localizedName")]
     pub localized_name: String,
+    /// The `rmType` property of `Tree`.
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The `nodeId` property of `Tree`.
     #[serde(rename = "nodeId")]
     pub node_id: String,
+    /// The `min` property of `Tree`.
     pub min: i64,
+    /// The `max` property of `Tree`.
     pub max: i64,
+    /// The `localizedNames` property of `Tree`.
     #[serde(rename = "localizedNames")]
     pub localized_names: LocalizedNames,
+    /// The `localizedDescriptions` property of `Tree`.
     #[serde(rename = "localizedDescriptions")]
     pub localized_descriptions: LocalizedDescriptions,
+    /// The `aqlPath` property of `Tree`.
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The `children` property of `Tree`.
     pub children: Vec<serde_json::Value>,
 }
 
+/// The `WebTemplate` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WebTemplate {
+    /// The `templateId` property of `WebTemplate`.
     #[serde(rename = "templateId")]
     pub template_id: String,
+    /// The `version` property of `WebTemplate`.
     pub version: String,
+    /// The `defaultLanguage` property of `WebTemplate`.
     #[serde(rename = "defaultLanguage")]
     pub default_language: String,
+    /// The `languages` property of `WebTemplate`.
     pub languages: Vec<String>,
+    /// The `tree` property of `WebTemplate`.
     pub tree: Tree,
 }
 
+/// The `TemplateIdentifier` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateIdentifier {
+    /// The `template_id` property of `TemplateIdentifier`.
     pub template_id: String,
 }
 
+/// The `Error` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Error {
+    /// The `message` property of `Error`.
     pub message: String,
+    /// The `validationErrors` property of `Error`.
     #[serde(rename = "validationErrors")]
     pub validation_errors: Vec<String>,
 }
 
+/// The `Clstr` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Clstr {
+    /// The `_type` property of `Clstr`.
     pub _type: Option<String>,
+    /// The `items` property of `Clstr`.
     pub items: Vec<serde_json::Value>,
 }
 
+/// The `Versionable` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `DvIntervalOfDateTime` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDateTime {
+    /// The `_type` property of `DvIntervalOfDateTime`.
     pub _type: Option<String>,
+    /// The `lower` property of `DvIntervalOfDateTime`.
     pub lower: Option<serde_json::Value>,
+    /// The `upper` property of `DvIntervalOfDateTime`.
     pub upper: Option<serde_json::Value>,
 }
 
+/// The `AbstractEntry` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AbstractEntry {
+    /// The `language` property of `AbstractEntry`.
     pub language: serde_json::Value,
+    /// The `encoding` property of `AbstractEntry`.
     pub encoding: serde_json::Value,
+    /// The `other_participations` property of `AbstractEntry`.
     pub other_participations: Option<Vec<serde_json::Value>>,
+    /// The `workflow_id` property of `AbstractEntry`.
     pub workflow_id: Option<serde_json::Value>,
+    /// The `subject` property of `AbstractEntry`.
     pub subject: serde_json::Value,
+    /// The `provider` property of `AbstractEntry`.
     pub provider: Option<serde_json::Value>,
 }
 
+/// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ListOfPartyIdentity = Vec<serde_json::Value>;
 
+/// The `DvIntervalOfDate` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDate {
+    /// The `_type` property of `DvIntervalOfDate`.
     pub _type: Option<String>,
+    /// The `lower` property of `DvIntervalOfDate`.
     pub lower: Option<serde_json::Value>,
+    /// The `upper` property of `DvIntervalOfDate`.
     pub upper: Option<serde_json::Value>,
 }
 
+/// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ListOfContact = Vec<serde_json::Value>;
 
+/// The `ListOfPartyRelationship` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ListOfPartyRelationship = Vec<serde_json::Value>;
 
+/// The `ListOfCapability` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type ListOfCapability = Vec<serde_json::Value>;
 
+/// The `OperationalTemplateV2` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type OperationalTemplateV2 = std::collections::BTreeMap<String, serde_json::Value>;
 
+/// The `QueryName` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryName = String;
 
+/// The `QueryType` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryType = String;
 
+/// The `QueryVersion` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryVersion = String;
 
+/// The `AQL` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type Aql = String;
 
+/// The `StoredQuery` transport DTO of this API group (an ITS-REST OAS
+/// component schema).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredQuery {
+    /// The `name` property of `StoredQuery`.
     pub name: QueryName,
+    /// The `type` property of `StoredQuery`.
     pub r#type: QueryType,
+    /// The `version` property of `StoredQuery`.
     pub version: QueryVersion,
+    /// The `saved` property of `StoredQuery`.
     pub saved: String,
+    /// The `q` property of `StoredQuery`.
     pub q: Aql,
 }
 
+/// The `QueryList` ITS-REST OAS component schema (a non-object shape, so
+/// it is an alias rather than a struct).
 pub type QueryList = Vec<serde_json::Value>;
 
 /// Parameters for `definition_template_adl1.4_list` (path/query/header).

@@ -1,15 +1,15 @@
 //! Content negotiation core (ITS-REST `Resources.md §Data representation` +
 //! §Simplified Formats).
 //!
-//! One [`WireFormat`] enum names every representation the server negotiates —
+//! One `WireFormat` enum names every representation the server negotiates —
 //! canonical JSON/XML plus the Simplified Formats (FLAT, STRUCTURED, and the
 //! Web Template document). Two resolvers, both parameterized by the set of
 //! formats an endpoint allows, are the single negotiation seam every endpoint
 //! dispatches through:
 //!
-//! - [`content_type_format`] classifies a request `Content-Type` (unknown →
+//! - `content_type_format` classifies a request `Content-Type` (unknown →
 //!   `None` → the caller answers `415`, Resources.md §Simplified Formats MUST).
-//! - [`resolve_accept`] parses `Accept` with RFC 9110 §12.5.1 quality values
+//! - `resolve_accept` parses `Accept` with RFC 9110 §12.5.1 quality values
 //!   and returns the highest-q allowed format (`None` → the caller answers
 //!   `406`, same MUST rule).
 //!
@@ -26,9 +26,9 @@
 //! `to_canonical_xml`/`from_canonical_xml`). The generated server traits
 //! exchange `serde_json::Value` at the boundary, so an XML body is decoded into
 //! its concrete `openehr-rm` type and re-emitted as the canonical JSON `Value`
-//! the trait expects (see [`rm_value`]), and an XML response re-types the
+//! the trait expects (see `rm_value`), and an XML response re-types the
 //! canonical JSON into its `openehr-rm` type so the generated `ToXml` runs (see
-//! [`respond_rm`]). The Simplified-Formats payload conversion is the sibling
+//! `respond_rm`). The Simplified-Formats payload conversion is the sibling
 //! `crate::formats` adapter.
 //!
 //! ## The `version` media-type parameter (ITS-XML lineage selection)
@@ -1142,12 +1142,6 @@ impl IntoErrorResponse for ApiError {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

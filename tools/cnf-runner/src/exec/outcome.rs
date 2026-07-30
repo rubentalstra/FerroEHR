@@ -14,7 +14,10 @@ pub enum Observation {
     Kind(OutcomeKind),
     /// No mapped outcome (and no universal outcome) matches the response —
     /// inconclusive, not a conformance finding.
-    Unmapped { status: u16 },
+    Unmapped {
+        /// The status code that matched no mapped outcome.
+        status: u16,
+    },
     /// Transport/connection fault or timeout — inconclusive.
     Transport(String),
 }
@@ -83,7 +86,9 @@ pub enum StepJudgement {
     Continue,
     /// Mapped but unexpected — the row FAILS and remaining steps abort.
     Failed {
+        /// The outcome the step declared.
         expected: OutcomeKind,
+        /// The outcome the wire actually classified as.
         observed: OutcomeKind,
     },
     /// Inconclusive — the row ERRORS and remaining steps abort.
@@ -109,7 +114,6 @@ pub fn judge(expected: OutcomeKind, observation: &Observation) -> StepJudgement 
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

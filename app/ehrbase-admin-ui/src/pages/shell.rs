@@ -86,14 +86,16 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 /// Loads the current session with a [`Resource`]; under `<Suspense>` a missing
 /// session renders a [`Redirect`] to `/login`, and a present session renders
 /// the full chrome + `<Outlet/>`. The topbar status chip reads a second
-/// resource over `fetch_status`, re-polled every [`HEALTH_POLL_MS`] via
+/// resource over `fetch_status`, re-polled every `HEALTH_POLL_MS` via
 /// [`use_interval_fn`] (a no-op on the server; the effect-safe browser timer
-/// pattern). Dark mode is applied through [`apply_dark`] (the `dark` root
+/// pattern). Dark mode is applied through `apply_dark` (the `dark` root
 /// class + the thaw theme together) and persists to `localStorage`; the
 /// persisted choice is re-applied after hydration inside an [`Effect`],
 /// keeping the initial render deterministic (rules §8).
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
-#[allow(clippy::too_many_lines)] // resource/effect setup plus the guarded view — one cohesive component
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
@@ -252,8 +254,14 @@ fn nav_entry(
 /// the routed `<Outlet/>`. Split out of the component body so each section is a
 /// `.into_any()`-erased local (the section-boundary erasure rule, §1) and so
 /// the identity/scopes from the resolved session flow in as owned data.
-#[allow(clippy::too_many_arguments)] // one flat call carrying the shell's shared reactive state; a wrapper struct would not aid clarity
-#[allow(clippy::too_many_lines)] // one screen assembled from `.into_any()`-erased section locals (rules §1) — deliberately one function
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one flat call carrying the shell's shared reactive state; a wrapper struct would not aid clarity"
+)]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one screen assembled from `.into_any()`-erased section locals (rules §1) — deliberately one function"
+)]
 fn authed_shell(
     session: Resource<Result<Option<SessionInfo>, crate::error::AdminUiError>>,
     status: Resource<Result<String, crate::error::AdminUiError>>,

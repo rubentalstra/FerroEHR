@@ -1018,7 +1018,11 @@ pub(crate) async fn party_relationship_version_get_by_id(
 /// `PARTY_RELATIONSHIP` operations — same envelope/header rules as the party
 /// routes, one fixed `party_relationship` segment (our own wire; no ITS-REST
 /// operation governs it — see the module docs).
-#[allow(clippy::too_many_lines)] // one arm per relationship op, like party::run
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per PARTY_RELATIONSHIP operation, like `party::run`: a flat \
+              match keeps every operation's wire behaviour readable in one place"
+)]
 pub(super) async fn run(
     state: AppState,
     op: &'static str,

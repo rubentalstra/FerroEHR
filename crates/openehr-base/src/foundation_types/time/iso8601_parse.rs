@@ -197,7 +197,10 @@ pub(crate) fn days_in_month(year: u32, month: u32) -> Option<u32> {
 /// to place date/times on a common absolute-seconds axis, both for timezone
 /// normalisation and for the definite computational functions. Inputs are
 /// validated dates, so the result is well-defined.
-#[allow(clippy::cast_possible_wrap)] // year/month/day are small validated ranges
+#[expect(
+    clippy::integer_division,
+    reason = "days_from_civil is defined in terms of truncating integer division (era/leap-cycle counting); the discarded remainders are the algorithm"
+)]
 pub(crate) fn days_from_civil(year: u32, month: u32, day: u32) -> i64 {
     let y = i64::from(year) - i64::from(month <= 2);
     let m = i64::from(month);
@@ -481,7 +484,10 @@ fn parse_timezone(tz: &str) -> Option<i32> {
     if hh > 14 || mm > 59 {
         return None;
     }
-    #[allow(clippy::cast_possible_wrap)] // hh<=14, mm<=59 — far inside i32
+    #[expect(
+        clippy::cast_possible_wrap,
+        reason = "hh <= 14 and mm <= 59 by the checks above — far inside i32"
+    )]
     let minutes = sign * (hh as i32 * 60 + mm as i32);
     Some(minutes)
 }
@@ -613,7 +619,10 @@ impl ParsedDuration {
     /// Total seconds equivalent, sign applied
     /// (`Iso8601_duration.to_seconds`): non-definite years/months reduce via
     /// the `Time_definitions` average-length constants.
-    #[allow(clippy::cast_precision_loss)] // duration counts are small; f64 is exact for them
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "ISO 8601 duration counts are small integers; f64 represents them exactly"
+    )]
     pub(crate) fn to_seconds(self) -> f64 {
         let magnitude = self.years as f64 * AVERAGE_DAYS_IN_YEAR * SECONDS_IN_DAY
             + self.months as f64 * AVERAGE_DAYS_IN_MONTH * SECONDS_IN_DAY
@@ -659,7 +668,6 @@ pub(crate) fn range_before(x: &CompletionRange, y: &CompletionRange) -> bool {
 /// to UTC when the value is zoned (a uniform shift preserves ordering; a bare
 /// zoned time may land outside `[0, 86400)`, which is fine as a comparison
 /// key). See `iso8601_time_impl.rs` for the timezone-compatibility rule.
-#[allow(clippy::cast_precision_loss)] // hour/minute/second are small; f64 is exact
 pub(crate) fn time_completion_range(t: &ParsedTime) -> CompletionRange {
     let base = f64::from(t.hour) * SECONDS_IN_HOUR;
     let (lo, hi, upper_open) = match (t.minute, t.second) {
@@ -697,7 +705,10 @@ pub(crate) fn time_completion_range(t: &ParsedTime) -> CompletionRange {
 /// NOTE: representing a zoned date/time on a single absolute-seconds axis so a
 /// timezone offset can roll the calendar date is our own design/extension — no
 /// openEHR spec governs partial-temporal ordering or timezone normalisation.
-#[allow(clippy::cast_precision_loss)] // day counts + components are small; f64 is exact
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "day counts and clock components are bounded by the representable calendar; f64 represents them exactly"
+)]
 pub(crate) fn date_time_completion_range(dt: &ParsedDateTime) -> CompletionRange {
     let d = &dt.date;
     let (lo, hi, upper_open) = match (d.month, d.day) {
@@ -738,20 +749,25 @@ pub(crate) fn date_time_completion_range(dt: &ParsedDateTime) -> CompletionRange
 }
 
 /// Absolute seconds at `year`-01-01 00:00:00.
-#[allow(clippy::cast_precision_loss)] // day count is small; f64 is exact
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the day count is bounded by the representable calendar; f64 represents it exactly"
+)]
 fn year_start_seconds(year: u32) -> f64 {
     days_from_civil(year, 1, 1) as f64 * SECONDS_IN_DAY
 }
 
 /// Absolute seconds at `year`-`month`-01 00:00:00.
-#[allow(clippy::cast_precision_loss)] // day count is small; f64 is exact
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the day count is bounded by the representable calendar; f64 represents it exactly"
+)]
 fn month_start_seconds(year: u32, month: u32) -> f64 {
     days_from_civil(year, month, 1) as f64 * SECONDS_IN_DAY
 }
 
 /// The intraday completion range (relative to `day_start`) for a known-day
 /// date/time's time part, mirroring [`time_completion_range`]'s partial widths.
-#[allow(clippy::cast_precision_loss)] // hour/minute/second are small; f64 is exact
 fn intraday_range(day_start: f64, t: &ParsedTime) -> (f64, f64, bool) {
     let base = day_start + f64::from(t.hour) * SECONDS_IN_HOUR;
     match (t.minute, t.second) {
@@ -833,7 +849,10 @@ impl ExactSeconds {
 
     /// The quantity as an `f64` total (for `multiply`/`divide`, whose factor is
     /// a spec `Real`).
-    #[allow(clippy::cast_precision_loss)] // second counts of interest are far inside 2^53
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "second counts over the representable calendar stay far inside 2^53, where f64 is exact on integers"
+    )]
     pub(crate) fn as_f64(self) -> f64 {
         self.whole as f64 + self.frac
     }
@@ -848,7 +867,10 @@ impl ExactSeconds {
             return None;
         }
         let floor = total.floor();
-        #[allow(clippy::cast_possible_truncation)] // guarded above: |floor| < 2^53 < i64::MAX
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "guarded immediately above: |floor| < 2^53, which is inside i64::MAX"
+        )]
         let whole = floor as i64;
         Self::new(whole, total - floor)
     }
@@ -955,6 +977,10 @@ impl ParsedDuration {
 /// 1970-01-01 (Howard Hinnant's `civil_from_days`, the inverse of
 /// [`days_from_civil`]). `None` when the result falls outside the representable
 /// 0000–9999 year range.
+#[expect(
+    clippy::integer_division,
+    reason = "civil_from_days is defined in terms of truncating integer division (era/leap-cycle counting); the discarded remainders are the algorithm"
+)]
 pub(crate) fn civil_from_days(days: i64) -> Option<(u32, u32, u32)> {
     // Bound the input to the era arithmetic's safe domain before computing: the
     // representable calendar spans roughly -719_468..=2_932_896 days.
@@ -1008,6 +1034,10 @@ pub(crate) fn shift_months(
 
 /// Decompose a seconds-of-day count into `(hour, minute, second)`. `None` when
 /// the count is outside `[0, 86400)`.
+#[expect(
+    clippy::integer_division,
+    reason = "whole hours/minutes are exactly the truncated quotients; the remainders are taken separately by the `%` terms"
+)]
 pub(crate) fn hms_from_seconds_of_day(seconds: i64) -> Option<(u32, u32, u32)> {
     if !(0..EXACT_SECONDS_IN_DAY).contains(&seconds) {
         return None;
@@ -1056,6 +1086,10 @@ pub(crate) fn render_time_extended(
 
 /// Render a timezone offset in signed minutes as an extended-form designator:
 /// `Z` for UTC, `±hh:mm` otherwise, `""` when unzoned.
+#[expect(
+    clippy::integer_division,
+    reason = "whole offset hours are the truncated quotient; the leftover minutes are taken by the paired `%`"
+)]
 fn render_timezone_extended(timezone: Option<i32>) -> String {
     match timezone {
         None => String::new(),
@@ -1078,7 +1112,11 @@ fn fraction_lexeme_of(frac: f64) -> String {
     if nanos <= 0.0 {
         return String::new();
     }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 0 < nanos < 1e9
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "the value is a nanosecond count in 0..1e9 by construction — non-negative and inside u32"
+    )]
     let nanos = (nanos as u64).min(999_999_999);
     format!(".{}", format!("{nanos:09}").trim_end_matches('0'))
 }
@@ -1094,6 +1132,10 @@ fn fraction_lexeme_of(frac: f64) -> String {
 /// leading `-` is the openEHR negative-duration deviation (`master06`
 /// §Primitive Time Types). No openEHR spec prescribes the output spelling —
 /// our own design/extension.
+#[expect(
+    clippy::integer_division,
+    reason = "whole days/hours/minutes are the truncated quotients; each leftover is taken by the paired `%`"
+)]
 pub(crate) fn render_duration(total: ExactSeconds) -> Option<String> {
     let total = total.rounded_to_nanos()?;
     // Split into sign and magnitude, undoing the floor representation.
@@ -1206,7 +1248,6 @@ fn insert_timezone_colon(tz: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)] // test assertions
 mod tests {
     use super::*;
 

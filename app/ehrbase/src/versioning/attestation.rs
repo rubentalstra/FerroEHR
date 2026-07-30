@@ -46,7 +46,11 @@ pub(crate) struct PendingAttest {
 /// [`ServiceError::NotFound`] when the target `(vo_id, tree, kind)` does not
 /// exist or does not belong to `ehr_id`; the storage errors of the target
 /// lookup / attestation insert.
-#[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the parts of an attestation act plus its commit instant; a \
+              parameter struct would not read clearer at the one call site"
+)]
 pub(crate) async fn attest(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,
@@ -105,7 +109,11 @@ pub(crate) async fn attest(
 /// # Errors
 /// The [`complete_attestation`] `Unprocessable` rejections; the storage error
 /// of the attestation insert.
-#[allow(clippy::too_many_arguments)] // the parts of an ATTESTATION + its target version
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the parts of an ATTESTATION plus its target version; a parameter \
+              struct would not read clearer at the one call site"
+)]
 pub(crate) async fn insert_accompanying_attestations(
     tx: &mut PgConnection,
     vo_id: VoId,

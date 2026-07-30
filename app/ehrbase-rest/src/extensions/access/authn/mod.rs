@@ -9,7 +9,7 @@
 //! service MUST** use `WWW-Authenticate`/`Proxy-Authenticate` and return
 //! `401`/`403`/`407` as applicable — the normative bar this middleware meets:
 //! missing/invalid credentials → `401` with a `WWW-Authenticate` challenge
-//! ([`Authenticator::challenge`]); authenticated-but-refused → `403`, no
+//! (`Authenticator::challenge`); authenticated-but-refused → `403`, no
 //! challenge. (We serve no proxy, so `407`/`Proxy-Authenticate` do not apply.)
 //! The CNF security suites
 //! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`) are the
@@ -81,7 +81,9 @@ pub struct Principal {
 /// The mechanism that authenticated a [`Principal`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuthMethod {
+    /// HTTP Basic: a username/password pair verified against the Argon2 store.
     Basic,
+    /// OAuth2/OIDC Bearer: a JWT validated against the issuer's JWKS.
     Bearer,
 }
 
@@ -111,22 +113,37 @@ pub(crate) struct FreshAuthentication;
 /// An authentication failure.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AuthError {
+    /// The request carried no credential for any enabled mechanism.
     #[error("no credentials supplied")]
     MissingCredentials,
+    /// A malformed `Authorization` header, an unknown user, or a password that
+    /// does not match the stored Argon2 hash.
     #[error("invalid credentials")]
     InvalidCredentials,
+    /// A bearer token that failed structural, signature, or claim validation.
     #[error("invalid bearer token: {0}")]
     InvalidToken(String),
+    /// The issuer's signing keys (JWKS) could not be fetched or parsed, so no
+    /// bearer token can be validated.
     #[error("could not resolve signing keys: {0}")]
     KeyResolution(String),
+    /// The caller authenticated but is not permitted the request — the 403
+    /// branch of the ITS-REST 401-vs-403 split.
     #[error("forbidden: {0}")]
     Forbidden(String),
+    /// The server could not RUN credential verification at all (e.g. the
+    /// blocking Argon2 task panicked or was cancelled). A server fault, never
+    /// a statement about the credentials — maps to 500, not 401, so an
+    /// operator failure is never misreported as a client error.
+    #[error("credential verification unavailable: {0}")]
+    VerificationUnavailable(String),
 }
 
 impl AuthError {
     fn to_api_error(&self) -> ApiError {
         match self {
             AuthError::Forbidden(m) => ApiError::Forbidden(m.clone()),
+            AuthError::VerificationUnavailable(m) => ApiError::Internal(m.clone()),
             other => ApiError::Unauthorized(other.to_string()),
         }
     }
@@ -228,6 +245,12 @@ impl Authenticator {
             .unwrap_or_else(|_| HeaderValue::from_static("Basic"))
     }
 
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "every failure on the credential path collapses to one opaque \
+                  outcome deliberately: a caller must not learn from the 401 which \
+                  part of the credential was rejected"
+    )]
     pub(crate) async fn authenticate(
         &self,
         headers: &http::HeaderMap,
@@ -275,7 +298,11 @@ impl Authenticator {
                     let cfg = cfg.clone();
                     tokio::task::spawn_blocking(move || basic::verify(&auth, &cfg))
                         .await
-                        .map_err(|_| AuthError::InvalidCredentials)??
+                        .map_err(|join_error| {
+                            AuthError::VerificationUnavailable(format!(
+                                "password-verification task failed: {join_error}"
+                            ))
+                        })??
                 };
                 if let Some(cache) = &self.verified {
                     cache.insert(key, principal.clone()).await;
@@ -315,7 +342,7 @@ tokio::task_local! {
 
 /// The authenticated principal for the current request, if any.
 ///
-/// Set by [`middleware`] for the duration of request handling; downstream layers
+/// Set by `middleware` for the duration of request handling; downstream layers
 /// (notably the service layer, when attributing a CONTRIBUTION's committer) read
 /// it without the principal having to be threaded through the generated trait
 /// signatures. Returns `None` when unauthenticated or called outside a request.
@@ -469,12 +496,6 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use argon2::password_hash::{PasswordHasher, SaltString};
@@ -623,6 +644,29 @@ mod tests {
             .await
             .expect_err("reject");
         assert!(matches!(err, AuthError::InvalidCredentials));
+    }
+
+    #[tokio::test]
+    async fn wrong_password_is_401_not_500() {
+        let err = basic_only()
+            .authenticate(&headers("Basic YWxpY2U6d3Jvbmc=")) // "alice:wrong"
+            .await
+            .expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+        assert_eq!(err.to_api_error().status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[test]
+    fn verification_unavailable_is_500_not_401() {
+        // A JoinError from the blocking Argon2 task is a SERVER fault: it must
+        // surface as 500 Internal, never as 401 InvalidCredentials — a server
+        // failure misreported as a client error is the silent-wrong-answer
+        // class this crate's error mapping exists to prevent.
+        let err = AuthError::VerificationUnavailable("task panicked".to_owned());
+        assert_eq!(
+            err.to_api_error().status(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[test]

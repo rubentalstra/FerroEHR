@@ -287,14 +287,14 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 self.pos += 1;
                 let v = s
                     .parse::<i64>()
-                    .map_err(|_| self.parse_err(format!("invalid integer {s:?}")))?;
+                    .map_err(|e| self.parse_err(format!("invalid integer {s:?}: {e}")))?;
                 Ok(self.builder.literal(BelLiteral::Integer(v)))
             }
             Some(Token::Real(s)) => {
                 self.pos += 1;
                 let v = s
                     .parse::<f64>()
-                    .map_err(|_| self.parse_err(format!("invalid real {s:?}")))?;
+                    .map_err(|e| self.parse_err(format!("invalid real {s:?}: {e}")))?;
                 Ok(self.builder.literal(BelLiteral::Real(v)))
             }
             Some(Token::String(s)) => {

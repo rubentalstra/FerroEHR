@@ -16,7 +16,7 @@
 //!
 //! - [`types`] — the SM extract data model (`Terminology_description`,
 //!   `Terminology_extract`, `Term_code`/`Defined_term`, relationships).
-//! - [`bundle`] — the in-process `openehr-term` bundle provider (TERM 3.1.0):
+//! - `bundle` — the in-process `openehr-term` bundle provider (TERM 3.1.0):
 //!   the enumerable local default.
 //! - [`fhir`] — [`FhirTerminologyProvider`](fhir::FhirTerminologyProvider), a
 //!   remote FHIR R4 TS client (opt-in via
@@ -28,11 +28,11 @@
 //!   with (no openEHR spec governs transport security — our own design).
 //! - [`router`] — [`TerminologyRouter`](router::TerminologyRouter): every
 //!   configured server, materialised, with the terminology → provider routing.
-//! - [`routing`] — the 9 SM calls on `EhrbaseService`, routing between the
+//! - `routing` — the 9 SM calls on `EhrbaseService`, routing between the
 //!   bundle and the routed remote provider (the routing rule below).
-//! - [`binding`] — commit-time resolution of archetype **constraint bindings**
+//! - `binding` — commit-time resolution of archetype **constraint bindings**
 //!   (ac-code value sets) against the routed terminology service.
-//! - [`expander`] — the AQL `TERMINOLOGY()` seam
+//! - `expander` — the AQL `TERMINOLOGY()` seam
 //!   ([`crate::aql::terminology::TerminologyExpander`] on `EhrbaseService`).
 //! - [`config`] — the `[terminology]` config section (no openEHR spec governs
 //!   configuration — our own design).

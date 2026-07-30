@@ -59,7 +59,7 @@ pub struct ContributionPage {
 
 /// List an EHR's contributions, one page at `offset`
 /// (`GET /ehr/{ehr_id}/contribution?offset&fetch`). `fetch` is fixed at
-/// [`CONTRIBUTION_FETCH`].
+/// `CONTRIBUTION_FETCH`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -70,11 +70,13 @@ pub struct ContributionPage {
 /// [`AdminUiError::Internal`] when the page is not valid JSON.
 #[server]
 pub async fn list_contributions(
+    /// The EHR whose contributions to list.
     ehr_id: String,
+    /// First row of the page to return.
     offset: u32,
 ) -> Result<ContributionPage, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/contribution?offset={offset}&fetch={CONTRIBUTION_FETCH}",
         urlencoding::encode(&ehr_id),
@@ -135,7 +137,7 @@ fn contribution_field(value: &Value, key: &str) -> String {
 
 /// The EHR's contribution activity, one [`ActivityPoint`] per calendar day
 /// ascending (`GET /ehr/{ehr_id}/contribution?offset=0&fetch` over
-/// [`ACTIVITY_FETCH`], bucketed BFF-side by
+/// `ACTIVITY_FETCH`, bucketed BFF-side by
 /// [`bucket_by_day`](crate::activity::bucket_by_day) on each contribution's
 /// `AUDIT_DETAILS.time_committed`).
 ///
@@ -145,9 +147,12 @@ fn contribution_field(value: &Value, key: &str) -> String {
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the page is not valid JSON.
 #[server]
-pub async fn contribution_activity(ehr_id: String) -> Result<Vec<ActivityPoint>, AdminUiError> {
+pub async fn contribution_activity(
+    /// The EHR whose contribution instants feed the timeline.
+    ehr_id: String,
+) -> Result<Vec<ActivityPoint>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/contribution?offset=0&fetch={ACTIVITY_FETCH}",
         urlencoding::encode(&ehr_id),
@@ -169,7 +174,7 @@ pub async fn contribution_activity(ehr_id: String) -> Result<Vec<ActivityPoint>,
 /// Look up a single CONTRIBUTION by uid
 /// (`GET /ehr/{ehr_id}/contribution/{contribution_uid}`) — the by-uid lookup
 /// box the Contributions tab keeps below its list (see
-/// [`contributions_section`]). Returns the raw canonical JSON.
+/// `contributions_section`). Returns the raw canonical JSON.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -178,11 +183,13 @@ pub async fn contribution_activity(ehr_id: String) -> Result<Vec<ActivityPoint>,
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn fetch_contribution(
+    /// The EHR holding the contribution.
     ehr_id: String,
+    /// The CONTRIBUTION uid to read.
     contribution_uid: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "ehr/{}/contribution/{}",
         urlencoding::encode(&ehr_id),

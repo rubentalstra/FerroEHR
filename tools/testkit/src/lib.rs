@@ -35,7 +35,10 @@
 //! runs, which matters: thousands of databases inflate the server's
 //! cumulative-statistics area until dynamic shared memory is exhausted.
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
+use std::time::{Duration, Instant};
 
 use sqlx::{Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
@@ -252,12 +255,12 @@ async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, Testk
     // dropped before PostgreSQL answered the negotiation). That is server
     // load, not a test defect: retry the ESTABLISHMENT briefly and loudly
     // surface the last error at the deadline. Never a per-test retry.
-    let start = SystemTime::now();
+    let start = Instant::now();
     let pool = loop {
         match db::connect(&config).await {
             Ok(pool) => break pool,
             Err(error) => {
-                if start.elapsed().unwrap_or(POOL_DEADLINE) >= POOL_DEADLINE {
+                if start.elapsed() >= POOL_DEADLINE {
                     return Err(TestkitError::from(error));
                 }
             }
@@ -306,6 +309,12 @@ async fn server() -> Result<&'static str, TestkitError> {
 
 /// The admin DSN of the externally provided server, or of the reusable
 /// container (started or adopted).
+#[expect(
+    clippy::disallowed_methods,
+    reason = "`EHRBASE_TEST_PG_URL` is the harness's OWN environment contract (CI \
+              hands it the workflow server); testkit is test tooling and must not \
+              depend on the server's config tree, which is what that ban protects"
+)]
 async fn resolve_server_url() -> Result<String, TestkitError> {
     if let Ok(url) = std::env::var(ENV_URL) {
         return Ok(url);
@@ -372,12 +381,12 @@ async fn start_container() -> Result<ContainerAsync<Postgres>, TestkitError> {
 /// (an adopted reused container may still be initializing).
 async fn connect_ready(admin_url: &str) -> Result<PgConnection, TestkitError> {
     const DEADLINE: Duration = Duration::from_mins(1);
-    let start = SystemTime::now();
+    let start = Instant::now();
     loop {
         match PgConnection::connect(admin_url).await {
             Ok(conn) => return Ok(conn),
             Err(error) => {
-                if start.elapsed().unwrap_or(DEADLINE) >= DEADLINE {
+                if start.elapsed() >= DEADLINE {
                     return Err(TestkitError::NotReady {
                         url: redacted(admin_url),
                         seconds: DEADLINE.as_secs(),
@@ -496,6 +505,12 @@ async fn build_template(
 
 /// A unique clone name embedding its creation time (hex seconds) for the
 /// sweep: `ehrbase_tk_<secs-hex>_<rand>`.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "non-key randomness: a v4 suffix that makes a clone's database name \
+              unique across concurrent test processes — no index locality to gain, \
+              so the uuidv7 key rule does not apply"
+)]
 fn fresh_name() -> String {
     let secs = now_secs();
     let rand = uuid::Uuid::new_v4().simple().to_string();
@@ -511,7 +526,7 @@ async fn create_clone(
     template: &str,
 ) -> Result<(), TestkitError> {
     const DEADLINE: Duration = Duration::from_mins(1);
-    let start = SystemTime::now();
+    let start = Instant::now();
     loop {
         // Default WAL_LOG strategy: no forced checkpoints per clone
         // (PostgreSQL docs § CREATE DATABASE, `STRATEGY`).
@@ -522,7 +537,7 @@ async fn create_clone(
         {
             Ok(_) => return Ok(()),
             Err(error) => {
-                if start.elapsed().unwrap_or(DEADLINE) >= DEADLINE {
+                if start.elapsed() >= DEADLINE {
                     return Err(TestkitError::Sqlx(error));
                 }
             }
@@ -549,11 +564,14 @@ fn redacted(url: &str) -> String {
 
 /// Wall-clock seconds since the Unix epoch — the time base embedded in every
 /// clone name and read back by the sweep.
+///
+/// Wall-clock time comes from `jiff`, the pinned time library
+/// (`docs/VERSIONS.md`); the monotonic deadlines above use
+/// [`std::time::Instant`] instead, which is what they actually measure.
+/// Negative timestamps (a clock set before 1970) floor at 0 so a clone name
+/// always parses back.
 fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_secs()
+    u64::try_from(jiff::Timestamp::now().as_second()).unwrap_or(0)
 }
 
 // ---------------------------------------------------------------------------

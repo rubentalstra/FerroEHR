@@ -1,9 +1,16 @@
 #![allow(
     clippy::panic,
     clippy::expect_used,
+    reason = "a browser journey asserts by panicking, and the shared harness panics when a configured stack cannot be driven"
+)]
+#![allow(
     clippy::print_stdout,
+    reason = "the skip-with-reason and progress lines ARE this suite's report"
+)]
+#![allow(
     unreachable_pub,
-    dead_code // each test binary uses a subset of the shared harness methods
+    dead_code,
+    reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
@@ -51,12 +58,10 @@ fn cdr_url() -> Option<String> {
 /// a client-supplied `ehr_id`.
 ///
 /// # Panics
-/// When the system clock predates the Unix epoch.
+/// When the system clock sits outside the range `jiff` supports.
 fn generated_uuid() -> String {
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("the clock is after the Unix epoch")
-        .as_nanos();
+    // Wall-clock time comes from jiff, the workspace's one time library.
+    let nanos = jiff::Timestamp::now().as_nanosecond().unsigned_abs();
     let low = u32::try_from(nanos & 0xffff_ffff).unwrap_or(1);
     let mid = u16::try_from((nanos >> 32) & 0xffff).unwrap_or(1);
     let node = u64::try_from((nanos >> 16) & 0xffff_ffff_ffff).unwrap_or(1);

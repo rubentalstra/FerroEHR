@@ -37,7 +37,11 @@ use crate::versioning::wire::build_original_version;
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
 /// `OpenPGP` signer fails (digest signing is infallible).
-#[allow(clippy::too_many_arguments)] // the parts of an ORIGINAL_VERSION + signing context
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the parts of an ORIGINAL_VERSION plus the signing context; a \
+              parameter struct would not read clearer at the call sites"
+)]
 pub(crate) fn sign_version(
     ctx: &SigningCtx<'_>,
     audit: &AuditInput,

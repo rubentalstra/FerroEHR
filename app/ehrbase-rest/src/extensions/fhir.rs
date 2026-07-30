@@ -1,5 +1,5 @@
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
-//! over the [`FhirConnectorAdapter`](ehrbase::service::FhirConnectorAdapter) seam.
+//! over the `ehrbase::service::FhirConnectorAdapter` seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (E3, FHIR
 //! connectors + read façade).** A persistence-boundary connector, distinct from
@@ -17,7 +17,7 @@
 //!   resource is accepted, its mapping resolved by type + `meta.profile`, a
 //!   COMPOSITION built and committed through the NORMAL validated path with
 //!   `FEEDER_AUDIT` provenance. Only the starter resource
-//!   set ([`STARTER_RESOURCES`]) is supported; anything else is a typed
+//!   set (`STARTER_RESOURCES`) is supported; anything else is a typed
 //!   `501 OperationOutcome`.
 //! * `GET /fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` — the
 //!   read façade. Resolves the enabled mappings for the
@@ -401,7 +401,11 @@ async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response
 /// Resolve the `{resource_type}` path param + enforce the starter-scope gate
 ///: a missing param is a routing bug (`500`), an out-of-scope type
 /// is a typed `501` before the backend is touched. Shared by inbound + façade.
-#[allow(clippy::result_large_err)] // the Err is a ready axum Response (large by nature)
+#[expect(
+    clippy::result_large_err,
+    reason = "the Err variant is a ready-to-return axum `Response`, which is large \
+              by nature; boxing it would only move the allocation"
+)]
 fn scoped_resource_type(parts: &RequestParts) -> Result<String, Response> {
     let Some(resource_type) = parts.path.get("resource_type").cloned() else {
         return Err(operation_outcome(
@@ -648,6 +652,11 @@ fn ingest_created(state: &AppState, resp: &ServiceResponse) -> Response {
 
 /// Parse the `{mapping_id}` path parameter as a UUID → `400` when malformed (a
 /// missing param is a routing bug → `500`).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`uuid::Error` carries only \"this is not a UUID\", which the 400 body \
+              already states"
+)]
 fn mapping_id(parts: &RequestParts) -> Result<Uuid, RestError> {
     let raw = parts.path.get("mapping_id").ok_or_else(|| {
         RestError(ApiError::Internal(

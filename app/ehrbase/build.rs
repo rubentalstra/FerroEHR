@@ -6,6 +6,14 @@
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[expect(
+    clippy::disallowed_methods,
+    reason = "a build script's ONLY input channel is the process environment \
+              Cargo populates for it (Cargo book, build-scripts §Inputs), so the \
+              config tree cannot apply here; `SystemTime` is likewise the right \
+              clock for a build-time epoch — jiff is a runtime dependency, not a \
+              build-dependency"
+)]
 fn main() {
     // Git short SHA: the OCI-standard REVISION value (the same one that fills
     // org.opencontainers.image.revision) wins; otherwise ask git. Degrades to

@@ -58,8 +58,8 @@ pub(super) fn feeder_audit(
         "system_id": ORIGINATING_SYSTEM,
         "time": { "_type": "DV_DATE_TIME", "value": time_iso },
     });
-    if let Some(v) = version_id {
-        details["version_id"] = json!(v);
+    if let (Some(v), Some(obj)) = (version_id, details.as_object_mut()) {
+        obj.insert("version_id".to_owned(), json!(v));
     }
     json!({
         "_type": "FEEDER_AUDIT",
@@ -78,12 +78,6 @@ pub(super) fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

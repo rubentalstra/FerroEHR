@@ -25,11 +25,16 @@ pub enum AuthMode {
     /// HTTP Basic; user/password resolved from the named environment-variable
     /// pair at run time.
     Basic {
+        /// Name of the environment variable holding the user name.
         user_env: String,
+        /// Name of the environment variable holding the password.
         password_env: String,
     },
     /// `OAuth2` bearer token resolved from the named environment variable.
-    Bearer { token_env: String },
+    Bearer {
+        /// Name of the environment variable holding the bearer token.
+        token_env: String,
+    },
     /// A SMART *Application* principal: the runner MINTS a fresh RS256 access
     /// token per step against the party's declared test issuer
     /// ([`Ixit::smart`]), carrying exactly the scopes that step declares.
@@ -227,6 +232,7 @@ pub struct Instance {
     /// The openEHR REST base (up to and including the API version segment,
     /// e.g. `http://localhost:8080/ehrbase/rest/openehr/v1`).
     pub base_url: String,
+    /// How requests to this instance are authenticated.
     pub auth: AuthMode,
     /// Extra headers stamped on every request to this instance.
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
@@ -269,10 +275,15 @@ pub struct Environment {
     /// instance N/As those cases.
     #[serde(default)]
     pub exclusive_server: bool,
+    /// The host class the SUT ran on, as the party describes it.
     pub hardware_class: String,
+    /// CPU cores available to the deployment.
     pub cores: u32,
+    /// Memory available to the deployment, gibibytes.
     pub memory_gb: u32,
+    /// The storage the database ran on, as the party describes it.
     pub storage_class: String,
+    /// The deployment topology (single node, clustered, …).
     pub topology: String,
 }
 
@@ -297,6 +308,7 @@ pub struct Ixit {
     /// `on:` selector is present.
     #[serde(deserialize_with = "crate::model::de::ordered_map")]
     pub instances: Vec<(InstanceName, Instance)>,
+    /// The deployment the run was measured in; mandatory for measured runs.
     #[serde(default)]
     pub environment: Option<Environment>,
     /// The composed SUT's container identities (optional by capability —
@@ -413,7 +425,6 @@ impl Ixit {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

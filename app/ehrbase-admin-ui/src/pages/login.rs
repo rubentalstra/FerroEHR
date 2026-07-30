@@ -22,8 +22,14 @@ use crate::components::surface::CARD_PAD;
 /// and/or the OIDC button, gated on the CDR's enabled auth modes (read once via
 /// a `Resource` under `<Suspense>`). The action's error value renders in a
 /// MessageBar; the submit button reflects the action's pending state.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
-#[allow(clippy::too_many_lines)] // action/resource setup plus the Basic + OIDC view — one cohesive component
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
+#[expect(
+    clippy::too_many_lines,
+    reason = "action/resource setup plus the Basic + OIDC view — one cohesive component"
+)]
 #[component]
 pub fn LoginPage() -> impl IntoView {
     let action = ServerAction::<LoginBasic>::new();

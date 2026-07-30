@@ -40,22 +40,47 @@ use state::VarStore;
 /// records, each with a mandatory citation).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RowOutcome {
+    /// Every step and assertion of the row held.
     Passed,
-    Failed { step: u32, reason: String },
-    Errored { step: u32, reason: String },
-    NotApplicable { citation: String },
-    Skipped { citation: String },
+    /// An assertion or expectation did not hold.
+    Failed {
+        /// The flow step that failed.
+        step: u32,
+        /// What did not hold, in one line.
+        reason: String,
+    },
+    /// The exchange itself broke, so the row proves nothing.
+    Errored {
+        /// The flow step that errored.
+        step: u32,
+        /// What went wrong, in one line.
+        reason: String,
+    },
+    /// Selection excluded the row before it was driven.
+    NotApplicable {
+        /// The spec/register citation grounding the exclusion.
+        citation: String,
+    },
+    /// The row was deliberately not driven.
+    Skipped {
+        /// The spec/register citation grounding the skip.
+        citation: String,
+    },
 }
 
 /// The record one case×format execution produces — the direct input to the
 /// party-artifact emission (`results.json` outcomes[]).
 #[derive(Debug, Clone)]
 pub struct CaseRecord {
+    /// The case this record is for.
     pub case: CaseId,
+    /// The format axis the case was executed on, when parameterized.
     pub format: Option<FormatName>,
+    /// One outcome per executed row, in row order.
     pub rows: Vec<RowOutcome>,
     /// rows driven / rows selected (the printed coverage bound).
     pub rows_driven: usize,
+    /// How many rows selection admitted in total.
     pub rows_total: usize,
 }
 
@@ -74,6 +99,7 @@ impl CaseRecord {
 /// What a driver observed for one step, plus the captures it bound.
 #[derive(Debug)]
 pub struct StepObservation {
+    /// What the driver saw on the wire, classified.
     pub observation: Observation,
     /// Post-step assertion failures (empty when all held). Only meaningful
     /// when the observation matched the expectation.
@@ -332,7 +358,6 @@ pub fn run_case<D: StepDriver>(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test drivers/fixtures
 mod tests {
     use super::*;
     use crate::vocab::OutcomeKind;

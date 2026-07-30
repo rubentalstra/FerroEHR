@@ -115,14 +115,6 @@ pub(in crate::service) fn parse_time_range_bound(raw: &str) -> Result<jiff::Time
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::{parse_at_time, parse_time_range_bound, resolve};
 

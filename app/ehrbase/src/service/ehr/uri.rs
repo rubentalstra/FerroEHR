@@ -193,6 +193,12 @@ impl EhrbaseService {
 /// Decode a versioned-object reference into the storage key pair (`vo_id`,
 /// optional exact version). A bare uid → latest trunk (version `None`); an
 /// exact `OBJECT_VERSION_ID` → its [`TreeId`].
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already names the resource and echoes the \
+              rejected token; the discarded `uuid::Error` adds only its own \
+              wording, which is not part of the wire contract"
+)]
 fn resolve_object_ref(object: &VersionLocator) -> Result<(VoId, Option<TreeId>), ServiceError> {
     match object {
         VersionLocator::VersionedObject(uid) => {

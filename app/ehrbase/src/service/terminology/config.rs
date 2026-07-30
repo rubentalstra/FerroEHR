@@ -16,7 +16,7 @@
 //! Provider selection is **openEHR-bundle-by-default, FHIR opt-in**: with
 //! [`ExternalTerminologyConfig::enabled`] `false` (the default) no remote
 //! provider is built and composition validation stays on the in-process
-//! `openehr-term` bundle ([`super::bundle`]); FHIR providers are materialised
+//! `openehr-term` bundle (`super::bundle`); FHIR providers are materialised
 //! only when a deployment opts in.
 //!
 //! **Several servers at once.** `BASE/docs/architecture_overview/
@@ -307,12 +307,6 @@ pub(super) fn test_provider_config(url: &str) -> FhirProviderConfig {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

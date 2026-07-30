@@ -9,7 +9,7 @@
 //! response body is returned, the service SHOULD use `204 No Content`").
 //! Anything else observed counts as an error arrival.
 //!
-//! Dependent stages resolve prerequisites from [`CaptureStore`] — the
+//! Dependent stages resolve prerequisites from the module's `CaptureStore` — the
 //! journey-instance state earlier stages captured (a fresh EHR's id, a
 //! commit's version uid) — falling back to the standing ward's seeded
 //! state ([`crate::perf_run::corpus::WardPatient`]). NOTHING BLOCKS: a
@@ -53,7 +53,10 @@ struct JourneyState {
 /// known `OBJECT_VERSION_ID` per ward document, advanced by each versioned
 /// update so successive corrections chain `If-Match` correctly.
 #[derive(Debug, Default)]
-#[allow(clippy::struct_field_names)] // each field IS an ovid of a distinct document
+#[expect(
+    clippy::struct_field_names,
+    reason = "each field IS an ovid of a distinct document"
+)]
 struct PatientState {
     gp_ovid: Option<String>,
     medlist_ovid: Option<String>,
@@ -136,7 +139,10 @@ fn stride(arrival: u64) -> u64 {
 /// # Errors
 /// A transport fault or an unresolvable prerequisite — both count as error
 /// observations at the call site, never run failures.
-#[allow(clippy::too_many_lines)] // one match arm per closed-vocabulary operation
+#[expect(
+    clippy::too_many_lines,
+    reason = "one match arm per closed-vocabulary operation"
+)]
 pub(crate) fn perform(
     principals: &PerfPrincipals,
     arrival_index: u64,
@@ -1003,7 +1009,6 @@ fn current_doc_object_uid(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

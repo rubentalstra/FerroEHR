@@ -6,15 +6,15 @@
 //!
 //! Layout, one file per concern:
 //!
-//! - [`service`] — the public `I_SUBJECT_PROXY_SERVICE` operations
+//! - `service` — the public `I_SUBJECT_PROXY_SERVICE` operations
 //!   (registration, data sets, variable/data-set reads, bindings, reset,
 //!   manual-sample notification) + the sample-resolution glue.
-//! - [`frames`] — `I_DATA_BINDING.get_frame`: frame dispatch with the
+//! - `frames` — `I_DATA_BINDING.get_frame`: frame dispatch with the
 //!   primary→fallback pipeline (`data_frame.adoc`).
-//! - [`extract`] — `frame_path` extraction: `DATA_FRAME_SAMPLE` → typed
+//! - `extract` — `frame_path` extraction: `DATA_FRAME_SAMPLE` → typed
 //!   `VARIABLE_VALUE`.
-//! - [`freshness`] — currency/freshness semantics (master10 §Samples).
-//! - [`store`] — the `sp_*` row mapping (master10 §Persistence).
+//! - `freshness` — currency/freshness semantics (master10 §Samples).
+//! - `store` — the `sp_*` row mapping (master10 §Persistence).
 //! - [`config`] — the `[subject_proxy]` FHIR-frame executor configuration.
 //! - [`binding`] / [`data_set`] / [`sample`] / [`value`] / [`variable`] — the
 //!   SM information structures (`ENV_BINDING`/`DATA_FRAME`/`SYSTEM_CALL`,

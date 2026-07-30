@@ -2,6 +2,6 @@
 //! [`openehr_codegen::run`]; all pipeline logic lives in the library so the
 //! emitter invariants are testable (`tests/emitter_invariants.rs`).
 
-fn main() {
-    openehr_codegen::run();
+fn main() -> std::process::ExitCode {
+    openehr_codegen::run()
 }

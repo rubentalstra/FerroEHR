@@ -154,7 +154,7 @@ impl EhrbaseService {
         // when set, the DB execution is bounded so an over-long query is
         // reported as `408 Request Timeout` rather than hanging until the
         // global request timeout. Default off → zero drift.
-        let exec = crate::aql::exec::execute(&self.pool, &ir, &params, &ctx);
+        let exec = aql::exec::execute(&self.pool, &ir, &params, &ctx);
         let result = match self.query_timeout {
             Some(budget) => tokio::time::timeout(budget, exec)
                 .await
@@ -211,7 +211,7 @@ impl EhrbaseService {
         // used in a `matches` operand through the terminology-service seam
         // and merge the codes into the value list, before planning
         // (QUERY master03 lines 756–759).
-        let expanded = crate::aql::terminology::expand_matches(&mut ast, self)
+        let expanded = aql::terminology::expand_matches(&mut ast, self)
             .await
             .map_err(Failure::plan)?;
         let ir = Arc::new(aql::lower_query(&ast).map_err(Failure::plan)?);
@@ -243,6 +243,12 @@ impl EhrbaseService {
         }
         let mut ids = Vec::with_capacity(ehr_ids.len());
         for id in ehr_ids {
+            #[expect(
+                clippy::map_err_ignore,
+                reason = "the mapped error already echoes the rejected token; the \
+                          discarded `uuid::Error` adds only its own wording, which \
+                          is not part of the wire contract"
+            )]
             let uuid = Uuid::parse_str(id).map_err(|_| {
                 Failure::analysis(SmError::precondition(format!("invalid ehr_id `{id}`")))
             })?;
@@ -413,6 +419,9 @@ fn map_exec_error(e: AqlError) -> SmError {
         AqlError::Exec(ExecError::Database(db)) => SmError::exception(db.to_string()),
         AqlError::Exec(ExecError::Assembly(a)) => SmError::exception(a.to_string()),
         AqlError::Exec(ExecError::Terminology(msg)) => SmError::exception(msg),
+        AqlError::Exec(e @ ExecError::MissingColumnAlias { .. }) => {
+            SmError::exception(e.to_string())
+        }
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
             SmError::precondition(e.to_string())
         }

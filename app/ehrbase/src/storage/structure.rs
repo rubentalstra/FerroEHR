@@ -62,12 +62,6 @@ pub fn archetype_parts(node_id: &str) -> Option<(String, String, i32)> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

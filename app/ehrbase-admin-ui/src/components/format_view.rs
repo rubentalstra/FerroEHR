@@ -43,7 +43,10 @@ const RENDERED_PANE: &str =
 /// format, driving the shared `selected` signal. The buttons keep their plain
 /// visible labels (JSON/XML/FLAT/STRUCTURED) so the E2E suite can click them
 /// by text.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn FormatSelector(
     /// The formats this surface offers, in display order.
@@ -105,7 +108,10 @@ impl PaneView {
 /// nothing to highlight), and Rendered only for a canonical openEHR JSON
 /// document. Every one of those decisions is a pure function of the body, so
 /// the server and the browser always render the same tabs.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn DocumentPane(
     /// The document text to display.

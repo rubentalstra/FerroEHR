@@ -1,0 +1,214 @@
+//! The ADL 1.4 phase-1 validation subset
+//! ([`openehr_adl::validate::validate_source_phase1_adl14`]).
+//!
+//! A 1.4 source is judged **as 1.4** (never post-conversion): the checks that
+//! correspond to an ADL 1.4 / AOM 1.4 standalone rule run; the AOM2-only rules
+//! that would false-reject a valid 1.4 archetype (VARAV/VARRV/VCOID-strict/
+//! VATCV-form/VCOSU-archetype-wide/WOUC) are suppressed. Oracle:
+//! `docs/specs/openehr/AM/docs/ADL1.4/master08-adl.adoc` §Validity Rules +
+//! `docs/specs/openehr/AM/docs/AOM1.4/` class invariants.
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
+)]
+
+use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
+
+/// A minimal, valid standalone ADL 1.4 archetype (`adl_version=1.4`, no
+/// `rm_release`, at-code node ids, `ontology` keyword) — the exact shape a 1.4
+/// upload carries.
+const VALID_14: &str = "\u{feff}archetype (adl_version=1.4)
+\topenEHR-EHR-OBSERVATION.test14.v1
+
+concept
+\t[at0000]\t-- Test 14
+language
+\toriginal_language = <[ISO_639-1::en]>
+description
+\tlifecycle_state = <\"Initial\">
+\tdetails = <
+\t\t[\"en\"] = <
+\t\t\tlanguage = <[ISO_639-1::en]>
+\t\t\tpurpose = <\"testing\">
+\t\t>
+\t>
+definition
+\tOBSERVATION[at0000] matches {
+\t\tdata matches {
+\t\t\tHISTORY matches {*}
+\t\t}
+\t}
+ontology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\titems = <
+\t\t\t\t[\"at0000\"] = <
+\t\t\t\t\ttext = <\"Test 14\">
+\t\t\t\t\tdescription = <\"A test archetype.\">
+\t\t\t\t>
+\t\t\t>
+\t\t>
+\t>
+";
+
+fn errors(src: &str) -> Vec<String> {
+    let issues = validate_source_phase1_adl14(src).expect("1.4 source parses");
+    issues
+        .iter()
+        .filter(|i| i.severity == Severity::Error)
+        .map(|i| i.code.mnemonic().to_owned())
+        .collect()
+}
+
+#[test]
+fn valid_14_archetype_is_clean() {
+    // A well-formed 1.4 archetype validates clean — and specifically does NOT
+    // raise VARAV (adl_version=1.4) or VARRV (no rm_release), the AOM2-only
+    // rules the 1.4 subset suppresses.
+    let errs = errors(VALID_14);
+    assert!(errs.is_empty(), "expected clean, got {errs:?}");
+    assert!(
+        !errs.contains(&"VARAV".to_owned()) && !errs.contains(&"VARRV".to_owned()),
+        "the adl_version/rm_release 3-part rules must not apply to 1.4"
+    );
+}
+
+#[test]
+fn definition_type_mismatch_raises_vardt() {
+    // ADL1.4 master08 §Validity Rules VARDT: the topmost definition typename
+    // must match the RM class of the archetype id. Corresponds to the engine's
+    // VARDT (a shared ADL 1.4 / AOM2 rule) — it still fires in the 1.4 subset.
+    let bad = VALID_14.replace("OBSERVATION[at0000] matches", "CLUSTER[at0000] matches");
+    assert!(
+        errors(&bad).contains(&"VARDT".to_owned()),
+        "a definition type not matching the id class must raise VARDT"
+    );
+}
+
+#[test]
+fn undefined_node_code_raises_vatdf() {
+    // ADL1.4 master08 §Validity Rules VATDF: every at-code used as a node
+    // identifier must be defined in the ontology. Add a data node with an
+    // at-code the ontology does not define.
+    let bad = VALID_14.replace(
+        "HISTORY matches {*}",
+        "HISTORY[at0001] matches {*}", // at0001 is not in term_definitions
+    );
+    assert!(
+        errors(&bad).contains(&"VATDF".to_owned()),
+        "an undefined node-id at-code must raise VATDF, got {:?}",
+        errors(&bad)
+    );
+}
+
+#[test]
+fn unparseable_source_is_a_parse_error() {
+    assert!(validate_source_phase1_adl14("this is not an archetype").is_err());
+}
+
+// ── the one 1.4 rule that needs a reference model: VUNT ──────────────────────
+
+/// A 1.4 archetype whose `use_node` names `rm_type` and points at an
+/// `ELEMENT[at0002]` node. `master05-cadl.adoc` §Internal References L510-513:
+/// the type named must be the same as, or a super-type of, the referenced
+/// node's type.
+fn use_node_archetype(rm_type: &str) -> String {
+    format!(
+        "archetype (adl_version=1.4)
+\topenEHR-EHR-CLUSTER.use_node14.v1
+
+concept
+\t[at0000]\t-- Use node 14
+language
+\toriginal_language = <[ISO_639-1::en]>
+description
+\tlifecycle_state = <\"Initial\">
+definition
+\tCLUSTER[at0000] matches {{
+\t\titems cardinality matches {{0..*}} matches {{
+\t\t\tCLUSTER[at0001] occurrences matches {{0..1}} matches {{
+\t\t\t\titems cardinality matches {{0..*}} matches {{
+\t\t\t\t\tELEMENT[at0002] occurrences matches {{0..1}} matches {{
+\t\t\t\t\t\tvalue matches {{
+\t\t\t\t\t\t\tDV_TEXT matches {{*}}
+\t\t\t\t\t\t}}
+\t\t\t\t\t}}
+\t\t\t\t}}
+\t\t\t}}
+\t\t\tuse_node {rm_type}[at0003] occurrences matches {{0..1}} /items[at0001]/items[at0002]
+\t\t}}
+\t}}
+ontology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\titems = <
+\t\t\t\t[\"at0000\"] = <
+\t\t\t\t\ttext = <\"Use node 14\">
+\t\t\t\t\tdescription = <\"A 1.4 archetype with an internal reference.\">
+\t\t\t\t>
+\t\t\t\t[\"at0001\"] = <
+\t\t\t\t\ttext = <\"Group\">
+\t\t\t\t\tdescription = <\"A group of items.\">
+\t\t\t\t>
+\t\t\t\t[\"at0002\"] = <
+\t\t\t\t\ttext = <\"Item\">
+\t\t\t\t\tdescription = <\"The referenced item.\">
+\t\t\t\t>
+\t\t\t\t[\"at0003\"] = <
+\t\t\t\t\ttext = <\"Re-used item\">
+\t\t\t\t\tdescription = <\"The internal reference.\">
+\t\t\t\t>
+\t\t\t>
+\t\t>
+\t>
+"
+    )
+}
+
+fn adl14_codes(src: &str) -> Vec<String> {
+    let issues = openehr_adl::validate::validate_source_adl14(
+        src,
+        &openehr_adl::validate::rm::ProductionRmModel,
+    )
+    .expect("1.4 source parses");
+    issues
+        .iter()
+        .filter(|i| i.severity == Severity::Error)
+        .map(|i| i.code.mnemonic().to_owned())
+        .collect()
+}
+
+#[test]
+fn use_node_type_conformance_is_reachable_for_a_14_source() {
+    // VUNT is a rule of the ADL 1.4 formalism itself (`master05-cadl.adoc`
+    // §Internal References L512-513), so a 1.4 source must be able to fail it —
+    // which the phase-1-only entry point can never report, because deciding
+    // super-type-hood is "according to the reference model".
+    let bad = use_node_archetype("CLUSTER"); // CLUSTER is not a super-type of ELEMENT
+    assert!(
+        adl14_codes(&bad).contains(&"VUNT".to_owned()),
+        "a use_node naming a non-super-type must raise VUNT, got {:?}",
+        adl14_codes(&bad)
+    );
+    // The phase-1-only entry point is the contrast: it cannot see the rule.
+    assert!(
+        !errors(&bad).contains(&"VUNT".to_owned()),
+        "phase 1 has no reference model and must not claim VUNT"
+    );
+}
+
+#[test]
+fn use_node_naming_the_same_or_a_super_type_is_clean() {
+    // The same type, and the super-type the chapter's own example relies on
+    // ("a use_node reference to such a node can legally mention the parent
+    // type", L510) — `ITEM` is the RM parent of `ELEMENT`.
+    for ty in ["ELEMENT", "ITEM"] {
+        let codes = adl14_codes(&use_node_archetype(ty));
+        assert!(
+            codes.is_empty(),
+            "use_node {ty} must validate clean, got {codes:?}"
+        );
+    }
+}

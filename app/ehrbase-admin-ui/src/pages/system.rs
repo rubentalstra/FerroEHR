@@ -44,7 +44,7 @@ use crate::error::AdminUiError;
 #[server]
 pub async fn fetch_smart_config() -> Result<Option<String>, AdminUiError> {
     crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     // Served relative to the platform base URL, not the ITS-REST base
     // (master04-service_discovery.adoc §"the configuration endpoint").
     let url = state.cdr.origin_url(".well-known/smart-configuration");
@@ -102,9 +102,12 @@ fn openapi_family_slug(value: &str) -> String {
 /// transport errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
-pub async fn fetch_openapi(family: String) -> Result<String, AdminUiError> {
+pub async fn fetch_openapi(
+    /// Which served OpenAPI document to read, as an API-family slug.
+    family: String,
+) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     // A server fn is a public endpoint (rules §0): the family must be one of
     // the documents we know the CDR serves, never a caller-shaped path segment.
     let family = family.trim();
@@ -153,7 +156,7 @@ pub async fn fetch_openapi(family: String) -> Result<String, AdminUiError> {
 #[server]
 pub async fn fetch_admin_config() -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("admin/config");
     let response = state
         .cdr
@@ -175,7 +178,7 @@ pub async fn fetch_admin_config() -> Result<String, AdminUiError> {
 #[server]
 pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let templates = crate::pages::templates::list_templates().await?;
     let mut usage = Vec::new();
     for row in templates.into_iter().take(25) {
@@ -215,7 +218,14 @@ pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
     Ok(usage)
 }
 
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+/// The `/system` screen: the CDR's status document, the conformance-manifest
+/// card (product identity, claimed profile, mounted API groups), the SMART
+/// discovery card, and the served-OpenAPI viewer for the family named by
+/// `?openapi=`.
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn SystemPage() -> impl IntoView {
     // Which OpenAPI document the card shows lives in the URL (`?openapi=`,

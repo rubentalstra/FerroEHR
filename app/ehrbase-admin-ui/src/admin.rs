@@ -189,12 +189,15 @@ pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
 /// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
-pub async fn admin_delete_template(template_id: String) -> Result<(), AdminUiError> {
+pub async fn admin_delete_template(
+    /// The `template_id` of the OPT to delete.
+    template_id: String,
+) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
     if template_id.trim().is_empty() {
         return Err(AdminUiError::Invalid("no template id to delete".to_owned()));
     }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "admin/template/{}",
         urlencoding::encode(&template_id)
@@ -216,14 +219,19 @@ pub async fn admin_delete_template(template_id: String) -> Result<(), AdminUiErr
 /// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
-pub async fn admin_delete_stored_query(name: String, version: String) -> Result<(), AdminUiError> {
+pub async fn admin_delete_stored_query(
+    /// The qualified stored-query name (`[{namespace}::]{query-name}`).
+    name: String,
+    /// The concrete `major.minor.patch` version to delete.
+    version: String,
+) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
     if name.trim().is_empty() || version.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "a stored-query delete needs both a qualified name and a version".to_owned(),
         ));
     }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "admin/query/{}/{}",
         urlencoding::encode(&name),
@@ -247,12 +255,15 @@ pub async fn admin_delete_stored_query(name: String, version: String) -> Result<
 /// [`AdminUiError::Cdr`] / [`AdminUiError::Forbidden`] /
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
-pub async fn admin_delete_ehr(ehr_id: String) -> Result<(), AdminUiError> {
+pub async fn admin_delete_ehr(
+    /// The EHR to delete, with everything committed under it.
+    ehr_id: String,
+) -> Result<(), AdminUiError> {
     let session = crate::session::require_session().await?;
     if ehr_id.trim().is_empty() {
         return Err(AdminUiError::Invalid("no EHR id to delete".to_owned()));
     }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state
         .cdr
         .rest_v1(&format!("admin/ehr/{}", urlencoding::encode(&ehr_id)));

@@ -18,7 +18,7 @@
 //! `http::Request<Vec<u8>>` and parses the `http::Response<Vec<u8>>` through
 //! its `AsyncHttpClient` trait (docs.rs `oauth2::AsyncHttpClient`). Its own
 //! `reqwest` impl targets a different major version of that crate than the
-//! workspace pins, so [`Oauth2HttpClient`] supplies the pinned one — the token
+//! workspace pins, so `Oauth2HttpClient` supplies the pinned one — the token
 //! endpoint is then reached with the same TLS stack as the terminology
 //! operations themselves.
 //!
@@ -234,12 +234,6 @@ enum TokenTransportError {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

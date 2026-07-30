@@ -22,18 +22,31 @@ use crate::storage::error::StorageError;
 /// enumeration, where reassembling every body would be wasted work.
 #[derive(Debug, Clone)]
 pub struct VersionMeta {
+    /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
+    /// The `vo_version.kind` discriminator text.
     pub kind: String,
+    /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
+    /// The version audit's `system_id`.
     pub audit_system_id: String,
+    /// The version audit's numeric `audit_change_type` group code.
     pub audit_change_type: String,
+    /// The version audit's description, when the committer supplied one.
     pub audit_description: Option<String>,
+    /// The canonical `PARTY_PROXY` JSON of the committer.
     pub audit_committer: Value,
+    /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
 
@@ -290,9 +303,13 @@ pub async fn version_exists(
 /// such object. Mapping the ints to a `TreeId` is the caller's.
 #[derive(Debug, Clone)]
 pub struct CurrentVoRow {
+    /// The versioned object's id.
     pub vo_id: VoId,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
 }
 
@@ -333,11 +350,17 @@ pub async fn current_vo(
 /// master06 §Version Identification; the commit instant is master06 §Committal.
 #[derive(Debug, Clone)]
 pub struct CurrentMeta {
+    /// The versioned object's id.
     pub vo_id: VoId,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
 
@@ -429,12 +452,19 @@ pub async fn current_version_meta_scoped(
 /// is no current trunk demographic version.
 #[derive(Debug, Clone)]
 pub struct CurrentDemographicMeta {
+    /// The `vo_version.kind` discriminator text.
     pub kind: String,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
 }
 
@@ -497,14 +527,24 @@ pub async fn current_demographic_meta(
 /// spec governs the SQL — our own design.
 #[derive(Debug, Clone)]
 pub struct CurrentCompositionMeta {
+    /// The owning EHR — the ownership gate.
     pub ehr_id: Option<EhrId>,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The audit's server-computed commit instant.
     pub time_committed: jiff::Timestamp,
+    /// The EHR's promoted `is_modifiable` flag — the content-write guard.
     pub is_modifiable: bool,
+    /// The root node's canonical JSON fragment (children pruned), or `None`
+    /// for a deleted current, which stores no node rows.
     pub root_data: Option<Value>,
 }
 

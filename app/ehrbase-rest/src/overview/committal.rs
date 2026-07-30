@@ -40,7 +40,7 @@
 //! `system_id` (Release-1.1.0): a client MAY supply it here; when it is
 //! absent "the server MUST set it to its own configured system identifier"
 //! (line 94). The header layer only carries a client-supplied value into
-//! [`UpdateAudit::system_id`]; the server default is asserted at the versioning
+//! `UpdateAudit::system_id`; the server default is asserted at the versioning
 //! seam, not here.
 //!
 //! NOTE (wire, spec-silent): the per-attribute value grammar is given only
@@ -59,6 +59,8 @@
 use http::HeaderMap;
 use indexmap::IndexMap;
 use serde_json::json;
+
+use super::params::key_value_pairs;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
@@ -151,7 +153,7 @@ fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, Str
 /// is never a default the client chose.
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
-    committer: openehr_rm::prelude::PartyProxy,
+    committer: PartyProxy,
 ) -> Option<ehrbase::service::version_update::UpdateAudit> {
     merged_committal(headers, Some(committer)).map(|c| c.audit)
 }
@@ -225,7 +227,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
         (H_DEP_SYSTEM_ID, T_SYSTEM_ID),
     ] {
         for raw in header_values(headers, name) {
-            attrs.insert(target.to_owned(), parse_attr_pairs(&raw));
+            attrs.insert(target.to_owned(), key_value_pairs(&raw));
         }
     }
 
@@ -267,7 +269,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
 /// Parse an attribute-path-in-value header (`change_type.code_string="251"`)
 /// into `target → [(subkey, value)]` entries of `map`.
 fn collect_path_pairs(raw: &str, map: &mut IndexMap<String, Vec<(String, String)>>) {
-    for (full_key, value) in parse_attr_pairs(raw) {
+    for (full_key, value) in key_value_pairs(raw) {
         let (target, subkey) = match full_key.split_once('.') {
             Some((t, k)) => (t.to_owned(), k.to_owned()),
             // No dot ⇒ the whole key is a scalar target (e.g. `system_id`).
@@ -294,19 +296,23 @@ fn build_committer(pairs: &[(String, String)]) -> Option<PartyProxy> {
     if name.is_none() && ext_id.is_none() {
         return None;
     }
-    let mut party = json!({ "_type": "PARTY_IDENTIFIED" });
+    let mut party = serde_json::Map::new();
+    party.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
     if let Some(name) = name {
-        party["name"] = json!(name);
+        party.insert("name".to_owned(), json!(name));
     }
     if let Some(id) = ext_id {
-        party["external_ref"] = json!({
-            "_type": "PARTY_REF",
-            "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
-            "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
-            "id": { "_type": "HIER_OBJECT_ID", "value": id },
-        });
+        party.insert(
+            "external_ref".to_owned(),
+            json!({
+                "_type": "PARTY_REF",
+                "namespace": pair(pairs, "external_ref.namespace").unwrap_or_else(|| "demographic".to_owned()),
+                "type": pair(pairs, "external_ref.type").unwrap_or_else(|| "PERSON".to_owned()),
+                "id": { "_type": "HIER_OBJECT_ID", "value": id },
+            }),
+        );
     }
-    openehr_its::json::from_canonical_value(&party).ok()
+    openehr_its::json::from_canonical_value(&serde_json::Value::Object(party)).ok()
 }
 
 /// The value of the first `key` in a parsed pair list.
@@ -321,66 +327,7 @@ fn scalar(pairs: &[(String, String)]) -> Option<String> {
     pair(pairs, "value").or_else(|| pair(pairs, ""))
 }
 
-/// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
-/// attribute pairs. A double-quoted value is read opaquely (may contain commas);
-/// a bare value runs to the next top-level comma. Whitespace around separators
-/// and keys is trimmed. See the module NOTE — the grammar is example-only.
-fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
-    let mut out = Vec::new();
-    let bytes = input.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        // Skip leading separators/whitespace.
-        while i < bytes.len() && (bytes[i] == b',' || bytes[i].is_ascii_whitespace()) {
-            i += 1;
-        }
-        // Read the key up to '='.
-        let key_start = i;
-        while i < bytes.len() && bytes[i] != b'=' && bytes[i] != b',' {
-            i += 1;
-        }
-        if i >= bytes.len() || bytes[i] != b'=' {
-            // No '=' — not a pair; skip to the next comma.
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            continue;
-        }
-        let key = input[key_start..i].trim().to_owned();
-        i += 1; // consume '='
-        // Read the value: quoted (opaque) or bare (to next comma).
-        let value = if i < bytes.len() && bytes[i] == b'"' {
-            i += 1; // consume opening quote
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b'"' {
-                i += 1;
-            }
-            let v = input[val_start..i].to_owned();
-            if i < bytes.len() {
-                i += 1; // consume closing quote
-            }
-            v
-        } else {
-            let val_start = i;
-            while i < bytes.len() && bytes[i] != b',' {
-                i += 1;
-            }
-            input[val_start..i].trim().to_owned()
-        };
-        if !key.is_empty() {
-            out.push((key, value));
-        }
-    }
-    out
-}
-
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use ehrbase::service::version_update::UpdateAudit;
@@ -418,19 +365,19 @@ mod tests {
 
     #[test]
     fn parses_single_code_string_pair() {
-        let pairs = parse_attr_pairs("code_string=\"532\"");
+        let pairs = key_value_pairs("code_string=\"532\"");
         assert_eq!(pairs, vec![("code_string".to_owned(), "532".to_owned())]);
     }
 
     #[test]
     fn parses_bare_value() {
-        let pairs = parse_attr_pairs("code_string=532");
+        let pairs = key_value_pairs("code_string=532");
         assert_eq!(pair(&pairs, "code_string").as_deref(), Some("532"));
     }
 
     #[test]
     fn quoted_value_may_contain_commas() {
-        let pairs = parse_attr_pairs("value=\"an updated, comma-bearing description\"");
+        let pairs = key_value_pairs("value=\"an updated, comma-bearing description\"");
         assert_eq!(
             pair(&pairs, "value").as_deref(),
             Some("an updated, comma-bearing description")

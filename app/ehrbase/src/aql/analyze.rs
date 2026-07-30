@@ -223,10 +223,9 @@ fn expand_type(name: &str) -> Vec<String> {
 }
 
 fn describe_types(types: &TypeSet) -> String {
-    if types.is_singleton() {
-        types.names()[0].clone()
-    } else {
-        format!("any of {{{}}}", types.names().join(", "))
+    match types.names() {
+        [only] => only.clone(),
+        names => format!("any of {{{}}}", names.join(", ")),
     }
 }
 
@@ -329,7 +328,11 @@ fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarge
         )
         .into());
     };
-    if op.parts[0].predicate.is_some() {
+    if op
+        .parts
+        .first()
+        .is_some_and(|part| part.predicate.is_some())
+    {
         return Err(AqlFeatureError::UnsupportedEhrStatusPath(
             "predicate on ehr_status".to_owned(),
         )

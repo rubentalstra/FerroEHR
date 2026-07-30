@@ -139,9 +139,11 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
         errors: Vec::new(),
     };
     let artefact = outer.parse_artefact(false);
-    if outer.pos < outer.toks.len() && outer.errors.is_empty() {
+    if outer.errors.is_empty()
+        && let Some(trailing) = outer.toks.get(outer.pos)
+    {
         // Trailing tokens after a complete artefact.
-        let span = outer.toks[outer.pos].span.clone();
+        let span = trailing.span.clone();
         outer.push(SyntaxErrorCode::Sunk, "unexpected trailing input", span);
     }
     match artefact {
@@ -598,10 +600,13 @@ pub fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
 
     let vpos = rest
         .rfind(".v")
-        .filter(|&i| rest[i + 2..].starts_with(|c: char| c.is_ascii_digit()))
+        .filter(|&i| {
+            rest.get(i + 2..)
+                .is_some_and(|v| v.starts_with(|c: char| c.is_ascii_digit()))
+        })
         .ok_or_else(|| format!("HRID {s:?} has no `.vN` version segment"))?;
-    let left = &rest[..vpos];
-    let version = &rest[vpos + 2..];
+    let left = rest.get(..vpos).unwrap_or_default();
+    let version = rest.get(vpos + 2..).unwrap_or_default();
 
     let (model_part, concept_id) = left
         .rsplit_once('.')
@@ -665,15 +670,12 @@ fn parse_version(version: &str) -> Result<(String, &'static str, String), String
 /// `(numeric, build)` where `build` is the `.N` count after the marker (empty
 /// if absent).
 fn split_status<'a>(version: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
-    let idx = version.find(marker)?;
-    let numeric = &version[..idx];
-    let after = &version[idx + marker.len()..];
+    let (numeric, after) = version.split_once(marker)?;
     let build = after.strip_prefix('.').unwrap_or("");
     Some((numeric, build))
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 
@@ -700,7 +702,7 @@ mod tests {
         let def = a.definition.expect("definition present");
         assert!(!def.tokens.is_empty());
         // the raw definition span covers `WHOLE[id1]`.
-        assert_eq!(&src[def.bytes.clone()], "WHOLE[id1]");
+        assert_eq!(src.get(def.bytes.clone()), Some("WHOLE[id1]"));
     }
 
     #[test]

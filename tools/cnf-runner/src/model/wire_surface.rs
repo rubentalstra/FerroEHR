@@ -1,7 +1,7 @@
 //! The wire-surface coverage register (`vocab/wire_surface.yaml`) — the
 //! authored, spec-cited record of the wire surface the CNF catalogue is
-//! measured against for TOTAL coverage (issue #271; `.claude/rules/testing.md`
-//! §CNF coverage). Three sections, one per axis the `surface-coverage` gate
+//! measured against for TOTAL coverage. Three sections, one per axis the
+//! `surface-coverage` gate
 //! (`crate::validate`) enforces:
 //!
 //! - `sm_operations` — Axis 1: SM operations of the platform interfaces that
@@ -24,8 +24,8 @@
 //!   surface exists instead of discovering it on the wire.
 //!
 //! Every enumeration source is a RELEASED spec component or the ITS-REST docs
-//! text — NEVER the vendored OAS (owner ruling 2026-07-24,
-//! `.claude/rules/spec-adherence.md`). This artifact and its gate never weaken
+//! text — NEVER the vendored OAS (owner ruling 2026-07-24). This artifact and
+//! its gate never weaken
 //! an expectation; a behaviour genuinely off the wire is recorded here with
 //! its citation, never silently omitted.
 
@@ -400,7 +400,6 @@ impl WireSurface {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

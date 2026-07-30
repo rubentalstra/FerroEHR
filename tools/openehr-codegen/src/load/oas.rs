@@ -15,7 +15,10 @@ pub(crate) struct Oas {
 }
 
 /// One HTTP operation (a method on a path).
-#[allow(clippy::struct_field_names)] // `operation_id` mirrors the OAS field name
+#[expect(
+    clippy::struct_field_names,
+    reason = "`operation_id` mirrors the OAS `operationId` field name"
+)]
 pub(crate) struct Operation<'a> {
     pub method: &'a str,
     pub path: &'a str,

@@ -146,8 +146,8 @@ fn base_name(node: &WebTemplateNode, parent_rm_type: Option<&str>) -> String {
 }
 
 fn last_path_segment(path: &str) -> String {
-    match path.rfind('/') {
-        Some(i) => path[i + 1..].to_owned(),
+    match path.rsplit_once('/') {
+        Some((_, last)) => last.to_owned(),
         None => path.to_owned(),
     }
 }
@@ -271,12 +271,6 @@ fn resolve_depends_on(node: &mut WebTemplateNode) {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

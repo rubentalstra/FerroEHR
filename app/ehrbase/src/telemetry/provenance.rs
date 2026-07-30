@@ -40,7 +40,6 @@ pub const PG_TARGET: &str = "18.4+";
 pub const CONFORMANCE_PROFILE: &str = "STANDARD";
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions
 mod tests {
     use super::*;
 

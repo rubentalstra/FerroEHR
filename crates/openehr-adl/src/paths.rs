@@ -327,7 +327,6 @@ pub fn complex_rm_type(cco: &CComplexObject) -> &str {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions panic/unwrap by design
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;

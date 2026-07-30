@@ -195,8 +195,19 @@ impl Builder<'_> {
         func: ScalarFn,
         args: &[Operand],
     ) -> Result<Expr, AqlError> {
-        let text = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Text);
-        let num = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Magnitude);
+        // Arity was validated at lowering, but the argument is still fetched
+        // rather than indexed: a lowering defect must surface as a typed reject,
+        // never a panic on a request path.
+        let arg = |i: usize| -> Result<&Operand, AqlError> {
+            args.get(i).ok_or_else(|| {
+                AqlError::from(SqlError::Unsupported(format!(
+                    "{func:?} called with {} argument(s); argument {i} is missing",
+                    args.len()
+                )))
+            })
+        };
+        let text = |this: &mut Self, i: usize| this.operand_value(arg(i)?, Coercion::Text);
+        let num = |this: &mut Self, i: usize| this.operand_value(arg(i)?, Coercion::Magnitude);
         Ok(match func {
             ScalarFn::Length => Expr::cust_with_exprs("length($1)", [text(self, 0)?]),
             // SUBSTRING(expression, position[, length]) — 1-based positions,

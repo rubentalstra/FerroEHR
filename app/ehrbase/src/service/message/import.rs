@@ -287,6 +287,12 @@ fn source_ehr_id(extract: &Extract) -> Result<EhrId, SmError> {
                  name the source EHR id (specification.manifest.entities[0].ehr_id)",
             )
         })?;
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the \
+                  discarded `uuid::Error` adds only its own wording, which \
+                  is not part of the wire contract"
+    )]
     raw.parse()
         .map_err(|_| SmError::precondition(format!("source ehr_id {raw:?} is not a UUID")))
 }
@@ -315,7 +321,11 @@ fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Resu
 /// item's `X_VERSIONED_*` wrapper contributes its `ORIGINAL_VERSION`s to one
 /// [`ImportContainer`]; branch / multi-system version trees are first-class
 /// (master06 §Distributed Versioning).
-#[allow(clippy::too_many_lines)] // the X_VERSIONED_* chapter walk in one pass
+#[expect(
+    clippy::too_many_lines,
+    reason = "the X_VERSIONED_* chapter walk in one pass, mirroring the \
+              container order of the extract"
+)]
 fn parse_import_containers(
     extract: &Extract,
 ) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
@@ -466,7 +476,11 @@ fn parse_import_containers(
 /// attestations verbatim (master06 §Copying: "the `ORIGINAL_VERSION` instance
 /// is never modified"; `ehr_extract` master05
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
-#[allow(clippy::too_many_lines)] // the ORIGINAL_VERSION field-by-field parse
+#[expect(
+    clippy::too_many_lines,
+    reason = "the ORIGINAL_VERSION field-by-field parse; each field is one \
+              short block and splitting them would scatter the shape"
+)]
 fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
     // A member typed anything other than ORIGINAL_VERSION (e.g. an
     // already-wrapped IMPORTED_VERSION) is invalid — the received instance "is
@@ -541,6 +555,12 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
         .pointer("/time_committed/value")
         .and_then(Value::as_str)
         .ok_or_else(|| SmError::precondition("imported commit_audit.time_committed is required"))?;
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the \
+                  discarded parse error adds only its own wording, which is \
+                  not part of the wire contract"
+    )]
     let commit_time: jiff::Timestamp = time_str.parse().map_err(|_| {
         SmError::precondition(format!(
             "imported commit_audit.time_committed {time_str:?} is not an ISO 8601 instant"
@@ -611,13 +631,6 @@ fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> 
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used)]
 mod tests {
     use serde_json::json;
 

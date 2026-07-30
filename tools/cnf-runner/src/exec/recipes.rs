@@ -11,7 +11,9 @@ use crate::model::case::MatrixCell;
 /// A matrix row bound to its column names.
 #[derive(Debug, Clone, Copy)]
 pub struct BoundRow<'a> {
+    /// The matrix column names, in order.
     pub columns: &'a [String],
+    /// This row's cells, positional against `columns`.
     pub cells: &'a [MatrixCell],
 }
 
@@ -721,7 +723,10 @@ fn min_event(slot_type: &str, with_data: bool, with_state: bool) -> Value {
 
 /// OBSERVATION openEHR-EHR-OBSERVATION.minimal.v1 with an explicit events list
 /// and optional OBSERVATION-level state (HISTORY at0005) / protocol (at0006).
-#[allow(clippy::needless_pass_by_value)] // args are serialized into the JSON tree
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "args are serialized into the JSON tree"
+)]
 fn min_observation(events: Vec<Value>, state: Option<Value>, protocol: Option<Value>) -> Value {
     let mut obs = serde_json::Map::new();
     obs.insert("_type".to_owned(), Value::String("OBSERVATION".to_owned()));
@@ -810,7 +815,10 @@ fn min_item_structure(rm_type: &str) -> Value {
 }
 
 /// An EVALUATION openEHR-EHR-EVALUATION.minimal.v1 carrying the given data.
-#[allow(clippy::needless_pass_by_value)] // `data` is serialized into the JSON tree
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "`data` is serialized into the JSON tree"
+)]
 fn min_evaluation(data: Value) -> Value {
     json!({
         "_type": "EVALUATION",
@@ -952,7 +960,6 @@ fn base_carrier_composition() -> Value {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, clippy::indexing_slicing)] // test fixtures
 mod tests {
     use super::*;
 
