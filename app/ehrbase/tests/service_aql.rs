@@ -1435,3 +1435,58 @@ async fn ehr_scope_binds_the_bare_ehr_source() {
         "and it is the scoped EHR"
     );
 }
+
+/// The two first-execution 500s from the #967 wire batch, reproduced at the
+/// service seam and pinned green (QUERY master03 §DISTINCT/§LIMIT and
+/// §Date/time functions): SELECT DISTINCT with ORDER BY + LIMIT, and a
+/// temporal comparison against NOW().
+#[tokio::test]
+async fn distinct_order_by_limit_and_now_comparison() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 80.0).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+    create_comp(&svc, &ehr_id, "HR", 100.0).await;
+
+    // DISTINCT + ORDER BY + LIMIT: duplicates filter BEFORE the limit
+    // (master03 §LIMIT: "applies to remaining rows, after duplicates were
+    // filtered out"), and PG's DISTINCT/ORDER BY compatibility rule must be
+    // honoured by the generated SQL.
+    let aql = "SELECT DISTINCT c/name/value AS name \
+               FROM EHR e CONTAINS COMPOSITION c \
+               ORDER BY c/name/value ASC LIMIT 3";
+    let r = run_aql(&svc, aql, ehr_scope(&ehr_id)).await;
+    let names: Vec<&str> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("name"))
+        .collect();
+    assert_eq!(names, vec!["BP", "HR"], "2 distinct names, ordered");
+
+    // DISTINCT ordered by an UNSELECTED expression is a typed reject (no
+    // spec semantics; the DBMS forbids it) — never a 500.
+    let err = svc
+        .execute_ad_hoc_query(
+            format!(
+                "SELECT DISTINCT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+                 CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] ORDER BY o/{MAG_PATH}"
+            ),
+            ehr_scope(&ehr_id),
+        )
+        .await
+        .expect_err("DISTINCT + unselected sort key must be a typed reject");
+    assert!(
+        err.to_string().contains("must sort by a selected column"),
+        "typed reject, not a DB error: {err}"
+    );
+
+    // Temporal comparison against NOW(): every committed context start_time
+    // precedes the query instant (master03 §CURRENT_DATE_TIME or NOW).
+    let aql = "SELECT c/uid/value AS uid \
+               FROM EHR e CONTAINS COMPOSITION c \
+               WHERE c/context/start_time/value < NOW()";
+    let r = run_aql(&svc, aql, ehr_scope(&ehr_id)).await;
+    assert_eq!(rows(&r).len(), 3, "all compositions precede NOW()");
+}

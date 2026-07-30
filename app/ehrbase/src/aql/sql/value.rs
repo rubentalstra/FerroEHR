@@ -14,7 +14,7 @@ use std::fmt::Write as _;
 
 use sea_query::{Alias, Expr, ExprTrait as _, Order, Query};
 
-use crate::aql::error::{AqlError, SqlError};
+use crate::aql::error::{AnalysisError, AqlError, SqlError};
 use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, Source, VersionField};
 use crate::db::iden::Node;
 use crate::storage::promoted::{PROMOTED_LEAVES, PromotedKind};
@@ -313,6 +313,27 @@ impl Builder<'_> {
         for key in self.ir.order_by.clone() {
             let OrderKey { path, ascending } = key;
             let order = if ascending { Order::Asc } else { Order::Desc };
+            // SELECT DISTINCT: PostgreSQL requires every ORDER BY expression
+            // to appear in the select list, so a sort key that IS a selected
+            // column orders by that output column (jsonb ordering of the
+            // projected cell — numbers numeric, strings lexical), and an
+            // unselected sort key is a typed reject: QUERY master03 §DISTINCT
+            // defines no semantics for sorting a de-duplicated projection by
+            // an expression outside it.
+            if self.ir.distinct {
+                let selected = self.ir.select.iter().position(
+                    |c| matches!(&c.value, crate::aql::ir::SelectValue::Path(p) if *p == path),
+                );
+                match selected {
+                    Some(i) => {
+                        self.q.order_by(Alias::new(format!("col{i}")), order);
+                        continue;
+                    }
+                    None => {
+                        return Err(AnalysisError::DistinctOrderByUnselected.into());
+                    }
+                }
+            }
             // ORDER BY `e/ehr_id[/value]` sorts by the raw `ehr.id` uuid column,
             // not the `CAST(id AS text)` the projection reads: a UUID's canonical
             // text form is fixed-length lowercase hex (BASE base_types master05
@@ -371,8 +392,15 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
         // NOTE: temporal comparison casts the ISO-8601 leaf text to
         // timestamptz — precise for full timestamps; partial-precision temporals
         // (`2019`, `12:00`) are a documented gap (QUERY master03 §Built-in
-        // Types/Dates and Times).
-        ValueMode::Value(Coercion::Temporal) => cast(as_text(base), "timestamptz"),
+        // Types/Dates and Times). ISO 8601 permits a COMMA decimal sign on the
+        // fractional second (BASE foundation_types master06 — canonical
+        // DV_DATE_TIME values may carry it); PostgreSQL's timestamptz input
+        // does not, and a comma cannot occur elsewhere in a valid ISO
+        // timestamp, so it normalizes to the dot before the cast.
+        ValueMode::Value(Coercion::Temporal) => cast(
+            Expr::cust_with_exprs("replace($1, ',', '.')", [as_text(base)]),
+            "timestamptz",
+        ),
         ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
         // a mixed-type (`Raw`) leaf being compared/matched against a
         // numeric literal — extract numerically, but guard on the stored jsonb
@@ -389,7 +417,12 @@ pub(super) fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Expr {
     match coercion {
         Coercion::Magnitude => cast(Expr::val(value), "numeric"),
         Coercion::Boolean => cast(Expr::val(value), "boolean"),
-        Coercion::Temporal => cast(Expr::val(value), "timestamptz"),
+        // Comma-fraction normalization as on the leaf side (ISO 8601 permits
+        // the comma decimal sign; PostgreSQL's timestamptz input does not).
+        Coercion::Temporal => cast(
+            Expr::cust_with_exprs("replace($1, ',', '.')", [cast(Expr::val(value), "text")]),
+            "timestamptz",
+        ),
         Coercion::Text | Coercion::Raw => cast(Expr::val(value), "text"),
     }
 }
