@@ -578,6 +578,11 @@ fn page(query: Option<&str>) -> Result<Page, RestError> {
 }
 
 /// One optional non-negative cursor parameter.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`ParseIntError` adds only \"invalid digit\"/\"out of range\" to a 400 \
+              body that already names the parameter and echoes the rejected value"
+)]
 fn cursor_param(query: Option<&str>, key: &str) -> Result<Option<u64>, RestError> {
     match params::query_param(query, key) {
         None => Ok(None),

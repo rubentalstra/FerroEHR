@@ -155,13 +155,11 @@ pub fn assemble<S: std::hash::BuildHasher>(
     // The canonical (uniform-grammar) `EHRBASE__…` variables. Allowlisted
     // infra names never carry the double prefix, so the prefix check alone
     // selects the canonical set.
-    let mut real_map: HashMap<String, String> = HashMap::new();
-    for (key, value) in env {
-        if !key.starts_with("EHRBASE__") {
-            continue;
-        }
-        real_map.insert(key.clone(), value.clone());
-    }
+    let real_map: HashMap<String, String> = env
+        .iter()
+        .filter(|(key, _)| key.starts_with("EHRBASE__"))
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect();
 
     let mut builder = Config::builder();
     if let Some(content) = &file_content {

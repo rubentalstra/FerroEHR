@@ -21,16 +21,16 @@
 //!
 //! | module | concern |
 //! |---|---|
-//! | [`object_version_id`] | `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding (BASE master05) |
-//! | [`lifecycle`] | `version_lifecycle_state` codes + the transition state machine |
-//! | [`audit`] | `AUDIT_DETAILS` values, the `audit_change_type` group, committer invariants |
+//! | `object_version_id` | `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding (BASE master05) |
+//! | `lifecycle` | `version_lifecycle_state` codes + the transition state machine |
+//! | `audit` | `AUDIT_DETAILS` values, the `audit_change_type` group, committer invariants |
 //! | [`change`] | the change-set unit, version-tree placement, the shared commit engine |
-//! | [`contribution`] | CONTRIBUTION classify + commit orchestration + retrieval |
-//! | [`attestation`] | attaching `ATTESTATION`s at or after committal |
-//! | [`read`] | loading stored versions ([`read::VersionRead`] and friends) |
-//! | [`wire`] | the served canonical-JSON builders (`ORIGINAL_VERSION`, `VERSIONED_*`, `REVISION_HISTORY`) |
-//! | [`integrity`] | signing policy at commit + verification policy at read |
-//! | [`import`] | replaying received originals as `IMPORTED_VERSION`s |
+//! | `contribution` | CONTRIBUTION classify + commit orchestration + retrieval |
+//! | `attestation` | attaching `ATTESTATION`s at or after committal |
+//! | `read` | loading stored versions (`read::VersionRead` and friends) |
+//! | `wire` | the served canonical-JSON builders (`ORIGINAL_VERSION`, `VERSIONED_*`, `REVISION_HISTORY`) |
+//! | `integrity` | signing policy at commit + verification policy at read |
+//! | `import` | replaying received originals as `IMPORTED_VERSION`s |
 //! | [`signature`] | the digest / `OpenPGP` signature primitives + configuration |
 //!
 //! # Seam with storage (`crate::storage`)
@@ -79,19 +79,28 @@ pub(crate) mod wire;
 /// scope, RM demographic).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
+    /// A COMPOSITION — the clinical content of an EHR.
     Composition,
+    /// The EHR's `EHR_STATUS` (subject, queryable/modifiable flags).
     EhrStatus,
     /// The EHR-wide access-control object created with the EHR (RM ehr §"EHR
     /// Creation") and versioned "via the normal mechanism" (RM ehr §"EHR
     /// Access").
     EhrAccess,
+    /// A FOLDER hierarchy — a member of `EHR.folders` (the lowest-ranked one
+    /// being `EHR.directory`).
     Folder,
     // Demographic party roots: versioned objects with no EHR scope; the same
     // machinery with a NULL `ehr_id`.
+    /// A demographic AGENT.
     Agent,
+    /// A demographic GROUP.
     Group,
+    /// A demographic ORGANISATION.
     Organisation,
+    /// A demographic PERSON.
     Person,
+    /// A demographic ROLE.
     Role,
     /// A demographic `PARTY_RELATIONSHIP` (RM demographic): a versioned object
     /// with no EHR scope, like the party roots, but *not* a PARTY.

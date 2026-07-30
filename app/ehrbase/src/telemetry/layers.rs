@@ -11,7 +11,7 @@
 use std::io::IsTerminal;
 use std::sync::Arc;
 
-use crate::telemetry::log_reload::LogReload;
+use crate::telemetry::log_reload::{ApplyFilter, LogReload, ReadFilter};
 use opentelemetry_sdk::trace::SdkTracer;
 use tracing_subscriber::layer::{Layered, SubscriberExt};
 use tracing_subscriber::util::SubscriberInitExt;
@@ -57,17 +57,17 @@ pub(super) fn init_subscriber(
 
     // Type-erase the reload handle (its `S` is `Registry`) behind read/apply
     // closures for `/management/loggers`.
-    let read_handle = reload_handle.clone();
-    let read = Arc::new(move || {
+    let read_handle = reload::Handle::clone(&reload_handle);
+    let read: ReadFilter = Arc::new(move || {
         read_handle
-            .with_current(std::string::ToString::to_string)
+            .with_current(ToString::to_string)
             .unwrap_or_default()
-    }) as Arc<dyn Fn() -> String + Send + Sync>;
+    });
 
-    let apply = Arc::new(move |directives: &str| -> Result<(), String> {
+    let apply: ApplyFilter = Arc::new(move |directives: &str| -> Result<(), String> {
         let new_filter = EnvFilter::try_new(directives).map_err(|e| e.to_string())?;
         reload_handle.reload(new_filter).map_err(|e| e.to_string())
-    }) as Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync>;
+    });
 
     Ok(LogReload::new(boot_filter, read, apply))
 }

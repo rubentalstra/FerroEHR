@@ -14,10 +14,15 @@ use crate::refgrammar::{RefError, Template, ValueRef};
 /// A JSON-shaped value whose strings are reference templates.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TemplatedValue {
+    /// JSON `null`.
     Null,
+    /// A JSON boolean.
     Bool(bool),
+    /// A JSON number, kept in its authored lexical form.
     Number(serde_json::Number),
+    /// A string carrying `${…}` references, resolved per row.
     Text(Template),
+    /// A JSON array of templated values.
     Seq(Vec<TemplatedValue>),
     /// Key order preserved as authored.
     Map(Vec<(String, TemplatedValue)>),

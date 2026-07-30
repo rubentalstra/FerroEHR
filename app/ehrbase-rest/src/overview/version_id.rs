@@ -1,6 +1,6 @@
 //! Wire-string decoding for the EHR-core routes: path/header identifiers into
 //! the SM catalog's native argument types (`uuid::Uuid`,
-//! [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId)).
+//! [`openehr_base::prelude::ObjectVersionId`]).
 //!
 //! The SM native API is protocol-free: the catalog takes RM/BASE
 //! identifier types, not raw wire strings. Turning a path parameter such as
@@ -25,6 +25,12 @@ use uuid::Uuid;
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] if `raw` is not a UUID.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`uuid::Error` carries only \"this is not a UUID\", which the wire \
+              message already states; the body text is pinned by the conformance \
+              catalogue and must not gain parser detail"
+)]
 pub(crate) fn parse_ehr_id(raw: &str) -> Result<EhrId, ApiError> {
     Uuid::parse_str(raw)
         .map(EhrId)
@@ -36,12 +42,18 @@ pub(crate) fn parse_ehr_id(raw: &str) -> Result<EhrId, ApiError> {
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] if `raw` is not a UUID.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "`uuid::Error` carries only \"this is not a UUID\", which the wire \
+              message already states; the body text is pinned by the conformance \
+              catalogue and must not gain parser detail"
+)]
 pub(crate) fn parse_uuid(raw: &str, what: &str) -> Result<Uuid, ApiError> {
     Uuid::parse_str(raw).map_err(|_| ApiError::BadRequest(format!("invalid {what}: {raw}")))
 }
 
 /// Parse a full `{version_uid}` path parameter into a BASE
-/// [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId).
+/// [`openehr_base::prelude::ObjectVersionId`].
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] if `raw` is not a well-formed `OBJECT_VERSION_ID`.
@@ -141,12 +153,6 @@ pub(crate) fn strip_etag(raw: &str) -> &str {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

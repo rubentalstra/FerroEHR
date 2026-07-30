@@ -73,7 +73,11 @@ async fn decode_composition_body(
     }
 }
 
-#[allow(clippy::too_many_lines)] // one arm per COMPOSITION operation; a flat match is clearest
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per COMPOSITION operation: a flat match keeps every \
+              operation's wire behaviour readable in one place"
+)]
 pub(super) async fn run(
     state: AppState,
     op: &'static str,

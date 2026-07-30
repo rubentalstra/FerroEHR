@@ -8,7 +8,7 @@
 //! attributes in the binary, so the build facts are captured once.
 //!
 //! The spec-version fields are **not** local literals: they read the single
-//! [`provenance`](crate::telemetry::provenance) source shared with the System
+//! [`crate::telemetry::provenance`] source shared with the System
 //! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
 //! quote one fact — and provenance itself derives every pin from the owning
 //! `openehr-*` crate's `SPEC_VERSION`. See that module for the derivation.
@@ -93,12 +93,6 @@ fn build_date() -> String {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

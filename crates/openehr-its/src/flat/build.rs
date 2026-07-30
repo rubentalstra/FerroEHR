@@ -2,12 +2,12 @@
 //!
 //! The reverse of [`crate::flat::flatten`]: the [`WebTemplate`] tree is walked
 //! against the parsed [`SimDocument`], each leaf's datum parts rebuild its
-//! DATA_VALUE per the `master05-rm_mapping.adoc` tables ([`crate::flat::map`]),
+//! DATA_VALUE per the `master05-rm_mapping.adoc` tables (`crate::flat::map`),
 //! and the RM structural nodes the simplified form omits (ITS-REST
 //! `simplified_formats/master04` §Level Removal: `HISTORY`, a collapsed
 //! `EVENT`, the `ITEM_STRUCTURE` family, the `ELEMENT` wrapper) are
 //! re-materialised from the relative RM path between a node and its
-//! parent. The `ctx/` vocabulary ([`crate::flat::ctx`],
+//! parent. The `ctx/` vocabulary (`crate::flat::ctx`,
 //! `master06-context_information.adoc`) supplies the composition context
 //! and per-entry defaults. A final structural pass fills the RM-mandatory
 //! fields the simplified form never surfaces, so the result deserialises
@@ -48,7 +48,7 @@ pub(crate) const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 ///
 /// # Errors
 /// [`FlatError::UnknownPath`] for a field identifier matching no
-/// web-template node; the [`crate::flat::map`]/[`crate::flat::ctx`] errors for datum
+/// web-template node; the `crate::flat::map`/`crate::flat::ctx` errors for datum
 /// and context violations; [`FlatError::Conversion`] when the document
 /// carries nothing buildable.
 pub fn build_composition(
@@ -259,7 +259,7 @@ fn wrapper_types(
     let base = child_abs.len() - rel_len;
     (0..rel_len)
         .map(|i| {
-            let abs = &child_abs[..=base + i];
+            let abs = child_abs.get(..=base + i)?;
             slots
                 .iter()
                 .find(|(segs, _)| segments_match(segs, abs))
@@ -603,7 +603,7 @@ fn apply_container_datum_attrs(
     node: &WebTemplateNode,
     sim: &SimNode,
     path: &str,
-    obj: &mut serde_json::Map<String, Value>,
+    obj: &mut Map<String, Value>,
 ) -> Result<(), FlatError> {
     let host = base_type(&node.rm_type);
     for (chain, datum) in &sim.attrs {
@@ -821,9 +821,15 @@ fn place(
     )
 }
 
-// a recursive placement cursor, not an API: many arguments thread the cursor
-// state, and the structural-case body runs just over the line limit.
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+#[expect(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    reason = "a recursive placement cursor, not an API: the arguments thread the cursor state through the recursion, and the structural-case body runs just over the line limit"
+)]
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`i` is a cursor into `rel` that the recursion only advances while `i + 1 < rel.len()` (the `last` guard), so `rel[i]` and `rel[i + 1..]` are in bounds at every call"
+)]
 fn place_rec(
     cur: &mut Map<String, Value>,
     rel: &[PathSegment],
@@ -1409,7 +1415,10 @@ fn apply_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     walk_entry_defaults(value, defaults);
 }
 
-#[allow(clippy::too_many_lines)] // one recursive walk over the ENTRY-default families
+#[expect(
+    clippy::too_many_lines,
+    reason = "one recursive walk over the ENTRY-default families; the length is the size of that family set"
+)]
 fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     match value {
         Value::Array(items) => {

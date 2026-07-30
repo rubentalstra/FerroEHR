@@ -19,7 +19,7 @@
 //!
 //! **Poison rows are parked, never allowed to block the stream:** a row whose
 //! reverse-mapping fails deterministically (a defective stored mapping or
-//! template) is retried [`PARK_AFTER_FAILED_PASSES`] times and then
+//! template) is retried `PARK_AFTER_FAILED_PASSES` times and then
 //! dead-lettered to the log — an `error`-level record naming the row — and the
 //! cursor advances past it, so one bad row cannot head-of-line-block every
 //! later commit. Broker (publish) and DB failures are transient and never
@@ -66,7 +66,7 @@ impl FhirOutboundHandle {
     /// A shared flag reporting whether outbound delivery is currently healthy.
     #[must_use]
     pub fn healthy(&self) -> Arc<AtomicBool> {
-        self.healthy.clone()
+        Arc::clone(&self.healthy)
     }
 
     /// Signal the emitter to stop and await it, bounded by `timeout`. Unprocessed
@@ -116,7 +116,7 @@ pub fn start_with_publisher(
         service,
         publisher,
         shutdown_rx,
-        healthy.clone(),
+        Arc::clone(&healthy),
     ));
     FhirOutboundHandle {
         shutdown: shutdown_tx,
@@ -380,10 +380,7 @@ async fn read_cursor(pool: &PgPool) -> Result<i64, sqlx::Error> {
 /// Serialize one mapped FHIR resource for publishing. A serialization failure
 /// is a mapping fault for the row (surfaced, and poison-parked after its retry
 /// budget) — never published as an empty message.
-fn resource_payload(
-    resource_type: &str,
-    resource: &serde_json::Value,
-) -> Result<Vec<u8>, ProcessError> {
+fn resource_payload(resource_type: &str, resource: &Value) -> Result<Vec<u8>, ProcessError> {
     serde_json::to_vec(resource)
         .map_err(|e| ProcessError::Map(format!("serialize {resource_type}: {e}")))
 }
@@ -434,12 +431,6 @@ async fn publish_with_retry(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -15,25 +15,25 @@
 //! MAY. Status below is *descriptive* of what this layer does today:
 //!
 //! - **`ETag` weakness indicator — DONE.** Every resource-identifier `ETag`
-//!   is emitted as the weak `W/"{uid}"` form ([`negotiate::resource_etag`],
-//!   used by [`negotiate::set_versioning_headers`] and the template path).
+//!   is emitted as the weak `W/"{uid}"` form (`negotiate::resource_etag`,
+//!   used by `negotiate::set_versioning_headers` and the template path).
 //!   Inbound `If-Match` accepts both the weak and the deprecated bare quoted
-//!   forms ([`version_id::strip_etag`]).
+//!   forms (`version_id::strip_etag`).
 //! - **Committal headers — DONE.** The development-edition value forms
 //!   `openehr-version: lifecycle_state.code_string="…"` and
 //!   `openehr-audit-details: change_type.code_string="…"` / `description.value`
 //!   / `committer.*` / `system_id` are parsed and merged
-//!   ([`committal::merge_committal_headers`]), repeated headers included; the
+//!   (`committal::merge_committal_headers`), repeated headers included; the
 //!   deprecated dotted-*name* forms still work, and the new form wins on
 //!   conflict. A client-supplied `system_id` is carried into
 //!   `UpdateAudit.system_id`; when absent "the server MUST set it to its own
 //!   configured system identifier" — asserted at the versioning seam.
 //! - **Location — DONE.** `Location` is set only on create/update writes
-//!   ([`negotiate::set_resource_headers`]); reads, deletes, and the `409`/`412`
+//!   (`negotiate::set_resource_headers`); reads, deletes, and the `409`/`412`
 //!   error path emit versioning headers without `Location`
-//!   ([`negotiate::set_versioning_headers`]).
-//! - **`return=identifier` — DONE.** [`negotiate::write_rm`] /
-//!   [`negotiate::write_json`] honour `return=identifier` with a
+//!   (`negotiate::set_versioning_headers`).
+//! - **`return=identifier` — DONE.** `negotiate::write_rm` /
+//!   `negotiate::write_json` honour `return=identifier` with a
 //!   `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
 //!   overview §"Prefer only identifier" shape ("a single JSON object with a
 //!   single `uid` attribute"). That generic `{uid}` body is the realization for
@@ -45,35 +45,35 @@
 //!   in that group's handlers.
 //! - **`Preference-Applied` — DONE.** Every write path declares the preference
 //!   it actually applied through the one seam
-//!   ([`negotiate::set_preference_applied`], a MAY): the canonical/JSON writes
-//!   via [`negotiate::write_negotiated`], plus the demographic writes, the
+//!   (`negotiate::set_preference_applied`, a MAY): the canonical/JSON writes
+//!   via `negotiate::write_negotiated`, plus the demographic writes, the
 //!   template uploads, the `ITEM_TAG` collection writes, and the
 //!   Simplified-Formats commit. A request with no `Prefer` gets the applied
 //!   default, `return=minimal`.
 //! - **Item-tag headers — DONE (EHR group).** The parse/emit helpers
-//!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
+//!   (`params::parse_item_tag_header` / `params::emit_item_tag_header`) are
 //!   consumed by the EHR/COMPOSITION dispatch:
-//!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
+//!   `api::ehr::apply_item_tag_headers` folds
 //!   the request wrapper headers onto the `ITEM_TAG` service on change-controlled
 //!   writes (empty value ⇒ delete all) and
-//!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes each stored
+//!   `api::ehr::echo_item_tags` echoes each stored
 //!   collection under ITS OWN header — `openehr-item-tag` confirms the
 //!   `VERSIONED_OBJECT`'s tags, `openehr-version-item-tag` the VERSION's, never
 //!   merged. The demographic group emits both headers from the same set by
 //!   design (its tags are `VERSIONED_OBJECT`-scoped only — see
 //!   `crate::api::demographic`).
-//! - **Method status — DONE.** [`error::method_not_allowed_handler`]
+//! - **Method status — DONE.** `error::method_not_allowed_handler`
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
 //!   (`crate::router::router`), so a known path called with a disallowed method renders
 //!   the openEHR `{ error, message }` body, and axum decorates it with the
 //!   matched route's `Allow` (RFC 9110 §15.5.6). A `405` raised from a
 //!   **matched** handler — the config-gated admin group — carries its own
-//!   `Allow` via [`error::method_not_allowed_response`]. The paired `501` for a
+//!   `Allow` via `error::method_not_allowed_response`. The paired `501` for a
 //!   recognised-but-unimplemented operation rides
 //!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
 //!   dispatch level; there is no `501` handler, and the overview's
 //!   SHOULD-`501` for an *unrecognized method* is answered `405` instead — a
-//!   registered deviation (`AMB-60`, rationale in [`crate::router`]).
+//!   registered deviation (`AMB-60`, rationale in [`crate::router::router`]).
 //! - **Version identity / `openehr-uri`** are out of this change's
 //!   scope; `/status` reports the tested
 //!   development-edition contract identity (shared provenance,
@@ -83,7 +83,7 @@
 //! item-tag dispatch (the EHR group's `apply_item_tag_headers` / `echo_item_tags`),
 //! the `405` router-fallback mount + the `501` `ApiError` seam, the per-API
 //! identifier bodies, and the `UpdateAudit.system_id` field (set by
-//! [`mk_update_version`](crate::api::ehr::mk_update_version) and merged from the
+//! `api::ehr::mk_update_version` and merged from the
 //! committal request headers).
 //!
 //! ## Module map (file ↦ governing sections)

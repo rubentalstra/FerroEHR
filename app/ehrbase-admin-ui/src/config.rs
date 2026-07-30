@@ -152,6 +152,13 @@ pub struct ConfigError(String);
 pub fn load() -> Result<AdminUiConfig, ConfigError> {
     let mut builder = config::Config::builder();
 
+    // The one env read that cannot flow through the config tree: it is the
+    // pointer AT the file the tree is assembled from, resolved before any
+    // source exists.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "this IS the console's config-tree loader; the config-file pointer is its bootstrap input and has no earlier source to come from"
+    )]
     if let Ok(explicit) = std::env::var("EHRBASE_ADMIN_CONFIG") {
         builder = builder.add_source(config::File::new(&explicit, config::FileFormat::Toml));
     } else {

@@ -299,8 +299,8 @@ fn quantity_inputs(co: &CObject, labels: &dyn Labels) -> Vec<WebTemplateInput> {
             units.list.push(value);
         }
         // A single allowed unit promotes its range/precision onto the magnitude.
-        if units.list.len() == 1 {
-            magnitude.validation.clone_from(&units.list[0].validation);
+        if let [only] = units.list.as_slice() {
+            magnitude.validation.clone_from(&only.validation);
         }
         vec![magnitude, units]
     } else {
@@ -698,12 +698,6 @@ iv_bounds!(iv_bounds_datetime, crate::opt14::Intervalofdatetime);
 iv_bounds!(iv_bounds_time, crate::opt14::Intervaloftime);
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::openehr_group;
 

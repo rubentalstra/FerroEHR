@@ -1,9 +1,16 @@
 #![allow(
     clippy::panic,
     clippy::expect_used,
+    reason = "a browser journey asserts by panicking, and the shared harness panics when a configured stack cannot be driven"
+)]
+#![allow(
     clippy::print_stdout,
+    reason = "the skip-with-reason and progress lines ARE this suite's report"
+)]
+#![allow(
     unreachable_pub,
-    dead_code // each test binary uses a subset of the shared harness methods
+    dead_code,
+    reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)

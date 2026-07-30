@@ -30,7 +30,7 @@ c/archetype_details/template_id/value, c/context/start_time/value \
 FROM EHR e CONTAINS COMPOSITION c WHERE e/ehr_id/value = $ehr_id \
 ORDER BY c/context/start_time/value DESC";
 
-/// List an EHR's compositions via [`LIST_COMPOSITIONS_AQL`], one page at
+/// List an EHR's compositions via `LIST_COMPOSITIONS_AQL`, one page at
 /// `offset`.
 ///
 /// # Errors
@@ -39,9 +39,14 @@ ORDER BY c/context/start_time/value DESC";
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
 /// [`AdminUiError::Internal`] when the result set is not valid JSON.
 #[server]
-pub async fn list_compositions(ehr_id: String, offset: u32) -> Result<ResultPage, AdminUiError> {
+pub async fn list_compositions(
+    /// The EHR whose compositions to list.
+    ehr_id: String,
+    /// First row of the page to return.
+    offset: u32,
+) -> Result<ResultPage, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1("query/aql");
     let body = aql_request_body(
         LIST_COMPOSITIONS_AQL,
@@ -80,13 +85,17 @@ pub async fn list_compositions(ehr_id: String, offset: u32) -> Result<ResultPage
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn commit_composition(
+    /// The EHR to commit into.
     ehr_id: String,
+    /// Which representation the body is written in.
     format: ReprFormat,
+    /// The template the composition is built from (required by the simplified formats).
     template_id: String,
+    /// The composition document to commit, as text.
     body: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     if body.trim().is_empty() {
         return Err(AdminUiError::Invalid(
             "the composition body is empty".to_owned(),

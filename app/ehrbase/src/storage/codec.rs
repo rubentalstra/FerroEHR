@@ -5,7 +5,7 @@
 //! (`docs/architecture.md` §Storage). [`decompose`] turns a versioned object's
 //! canonical JSON into nested-set-numbered [`NodeRow`]s (structure children
 //! pruned out of their parents' fragments, everything else kept verbatim);
-//! [`reassemble`] is its lossless inverse over the lean [`ReadRow`] the
+//! [`reassemble`] is its lossless inverse over the lean [`crate::storage::row::ReadRow`] the
 //! repository fetches back. The codec never re-formats a leaf value — a leaf's
 //! lexical form (ISO-8601 partial precision, decimal-comma, timezone suffix,
 //! duration form; BASE `foundation_types` master06) survives verbatim inside its
@@ -34,14 +34,29 @@ pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     let mut rows = Vec::new();
     walk(root, "", -1, None, &mut rows)?;
 
-    // num_cap: children always follow their parents — one reverse pass.
+    // num_cap: children always follow their parents — one reverse pass. `walk`
+    // pushes rows in pre-order with `num == index`, so a row's `parent_num` is
+    // always the index of an EARLIER row; every access below is fetched rather
+    // than indexed, and a violation of that invariant is reported as malformed
+    // rows instead of panicking on a write path.
     let mut caps: Vec<i32> = rows.iter().map(|r| r.num).collect();
     for i in (1..rows.len()).rev() {
-        let parent = usize::try_from(rows[i].parent_num).unwrap_or_default();
-        if caps[i] > caps[parent] {
-            caps[parent] = caps[i];
+        let (Some(cap), Some(parent)) = (
+            caps.get(i).copied(),
+            rows.get(i)
+                .and_then(|r| usize::try_from(r.parent_num).ok())
+                .filter(|parent| *parent < i),
+        ) else {
+            return Err(StorageError::InvalidRows(format!(
+                "node row {i} does not reference an earlier parent row"
+            )));
+        };
+        if let Some(parent_cap) = caps.get_mut(parent) {
+            *parent_cap = (*parent_cap).max(cap);
         }
-        rows[i].num_cap = caps[i];
+        if let Some(row) = rows.get_mut(i) {
+            row.num_cap = cap;
+        }
     }
     if let (Some(row), Some(cap)) = (rows.first_mut(), caps.first()) {
         row.num_cap = *cap;
@@ -122,7 +137,14 @@ fn walk(
     if let Value::Object(map) = &mut json {
         prune_children(map, path, num, child_citem, rows)?;
     }
-    rows[index].data = json;
+    // `index` is the slot this call pushed above, so it exists; fetched rather
+    // than indexed so a future restructuring of `walk` cannot panic here.
+    let Some(row) = rows.get_mut(index) else {
+        return Err(StorageError::InvalidRows(format!(
+            "node row {index} vanished while decomposing {path}"
+        )));
+    };
+    row.data = json;
     Ok(())
 }
 
@@ -172,7 +194,7 @@ fn is_structure(v: &Value) -> bool {
 /// ordered by `num` internally). Lossless inverse of [`decompose`]. Generic over
 /// [`NodeContent`], so it accepts either the write [`NodeRow`] (from
 /// [`decompose`], e.g. to reassemble the served form for signing) or the lean
-/// [`ReadRow`] the repository fetches back.
+/// [`crate::storage::row::ReadRow`] the repository fetches back.
 ///
 /// # Errors
 ///
@@ -200,7 +222,7 @@ pub fn reassemble<R: NodeContent>(rows: &[R]) -> Result<Value, StorageError> {
         )));
     }
     let mut root = root_row.data().clone();
-    for row in &ordered[1..] {
+    for row in ordered.iter().skip(1) {
         attach(&mut root, row.path(), row.data().clone())?;
     }
     Ok(root)
@@ -238,7 +260,10 @@ fn attach(root: &mut Value, path: &str, fragment: Value) -> Result<(), StorageEr
                     if array.len() <= index {
                         array.resize(index + 1, Value::Null);
                     }
-                    array[index] = fragment;
+                    // Resized to cover `index` above; fetched rather than
+                    // indexed so the resize stays the only thing to get right.
+                    let slot = array.get_mut(index).ok_or_else(|| missing(step))?;
+                    *slot = fragment;
                     return Ok(());
                 }
                 current = array.get_mut(index).ok_or_else(|| missing(step))?;
@@ -261,12 +286,6 @@ fn split_step(step: &str) -> (&str, Option<usize>) {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

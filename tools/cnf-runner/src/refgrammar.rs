@@ -41,8 +41,11 @@ pub enum RefError {
 /// bindings (`data_set`, `expected`, `defect`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FixtureField {
+    /// The entry's corpus key.
     DataSet,
+    /// The entry's expected outcome kind.
     Expected,
+    /// The entry's defect phrase (invalid fixtures).
     Defect,
 }
 
@@ -105,8 +108,11 @@ impl IxitField {
 /// between = midpoint) so two runners query identical instants.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimeExpr {
+    /// One millisecond before the named capture's commit instant.
     Before(CaptureName),
+    /// One millisecond after the named capture's commit instant.
     After(CaptureName),
+    /// The midpoint between two captured commit instants.
     Between(CaptureName, CaptureName),
 }
 
@@ -119,11 +125,18 @@ pub enum ValueRef {
     Fixture(FixtureField),
     /// `${<capture>}` — a case-scoped capture or `requires` handle.
     /// `optional` is the binding-template `${name?}` marker.
-    Capture { name: CaptureName, optional: bool },
+    Capture {
+        /// The capture (or `requires` handle) the reference addresses.
+        name: CaptureName,
+        /// The `${name?}` marker: unresolved means "omit", not "fail".
+        optional: bool,
+    },
     /// `${ds:<key>}` / `${ds:<key>#<view>}` — a corpus data set or a named
     /// projection over it.
     DataSet {
+        /// The corpus manifest key.
         key: CorpusKey,
+        /// The named projection over the set, when one is addressed.
         view: Option<ViewName>,
     },
     /// `${ds:fixture}` — the current fixture-set entry's payload (legal only
@@ -356,7 +369,12 @@ pub enum CaptureField {
     /// temporal at-time cases).
     CommitTime,
     /// `<outcome>.<field>` (`list` for the `<field>[]` list-capture form).
-    Field { name: CaptureName, list: bool },
+    Field {
+        /// The field of the outcome's capture mapping.
+        name: CaptureName,
+        /// The `<field>[]` form: capture every match as a list.
+        list: bool,
+    },
 }
 
 /// A case-level capture source: `<outcome kind>.<capture field>`.

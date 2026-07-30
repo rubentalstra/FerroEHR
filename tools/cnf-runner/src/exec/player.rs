@@ -22,9 +22,11 @@ use crate::vocab::{FormatName, OutcomeKind};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecordedResponse {
+    /// The HTTP status code the recorded server answered with.
     pub status: u16,
-    #[serde(default)]
+    /// The recorded response headers, lower-cased names.
     pub headers: BTreeMap<String, String>,
+    /// The recorded response body, when it carried one.
     #[serde(default)]
     pub body: Option<Value>,
 }
@@ -33,8 +35,11 @@ pub struct RecordedResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RecordedRequest {
+    /// The HTTP method of the recorded request.
     pub method: String,
+    /// The request path as recorded (matching is by suffix).
     pub path: String,
+    /// Digest of the request body, so a replay can tell two shapes apart.
     #[serde(default)]
     pub body_digest: Option<String>,
 }
@@ -43,8 +48,11 @@ pub struct RecordedRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TranscriptStep {
+    /// The flow step this exchange belongs to.
     pub step: u32,
+    /// The request the step is expected to issue.
     pub request: RecordedRequest,
+    /// The response the player answers it with.
     pub response: RecordedResponse,
 }
 
@@ -52,10 +60,14 @@ pub struct TranscriptStep {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TranscriptEntry {
+    /// The case this sequence belongs to.
     pub case: CaseId,
+    /// The format axis the sequence was recorded on, when parameterized.
     #[serde(default)]
     pub format: Option<FormatName>,
+    /// The 0-based parameter row the sequence belongs to.
     pub row: usize,
+    /// The recorded exchanges, in step order.
     pub steps: Vec<TranscriptStep>,
     /// The adjudicated per-row verdict the runner MUST reproduce.
     pub expected_verdict: ExpectedVerdict,
@@ -67,10 +79,15 @@ pub struct TranscriptEntry {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ExpectedVerdict {
+    /// Every assertion of the row must hold.
     Passed,
+    /// The row must fail an assertion (ISO/IEC 9646 fail).
     Failed,
+    /// The row must be inconclusive — the exchange itself broke.
     Errored,
+    /// The row must be excluded by selection, with a citation.
     NotApplicable,
+    /// The row must be skipped, with a citation.
     Skipped,
 }
 
@@ -80,6 +97,7 @@ pub enum ExpectedVerdict {
 pub struct Transcript {
     /// The schedule release the adjudications were made against.
     pub schedule_release: String,
+    /// Every recorded sequence of the document.
     pub entries: Vec<TranscriptEntry>,
 }
 

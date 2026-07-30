@@ -1,5 +1,5 @@
 //! Read-time verification. We do not persist a signature's provenance (the
-//! schema stores only `signature text`), so [`verify`] classifies by
+//! schema stores only `signature text`), so `verify` classifies by
 //! **format**:
 //!
 //! - a `sha256:` digest is recomputed and compared;

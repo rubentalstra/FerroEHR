@@ -20,7 +20,12 @@ pub(super) fn strict_env<S: std::hash::BuildHasher>(
     env: &HashMap<String, String, S>,
 ) -> Vec<ConfigError> {
     let mut errors = Vec::new();
-    for key in env.keys() {
+    // Sorted: these errors are reported to the operator as a list, and
+    // `HashMap` iteration order is unspecified — an unsorted sweep would
+    // reorder the boot report run to run.
+    let mut keys: Vec<&String> = env.keys().collect();
+    keys.sort();
+    for key in keys {
         if !key.starts_with("EHRBASE_") || ALLOWLIST.contains(&key.as_str()) {
             continue;
         }
@@ -87,6 +92,13 @@ pub(super) fn did_you_mean(unknown: &str, candidates: &[&str]) -> Option<String>
 /// insert/delete/substitute + adjacent transposition. ~byte-level; the config
 /// keys are ASCII.
 #[must_use]
+#[expect(
+    clippy::indexing_slicing,
+    reason = "every index is bounded by the loop headers against vectors sized \
+              from the same bounds: `i` runs 1..=n over `a` (len n) and `prev`/\
+              `cur`/`prev2` (len m+1), `j` runs 1..=m over `b` (len m), and the \
+              i-2/j-2 reads are guarded by the `i > 1 && j > 1` test"
+)]
 pub(super) fn damerau_levenshtein(a: &str, b: &str) -> usize {
     let a: Vec<u8> = a.bytes().collect();
     let b: Vec<u8> = b.bytes().collect();
@@ -117,13 +129,6 @@ pub(super) fn damerau_levenshtein(a: &str, b: &str) -> usize {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::expect_used,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::path::{Path, PathBuf};
 

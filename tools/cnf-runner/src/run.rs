@@ -36,7 +36,9 @@ pub enum Exception {
 /// One run's execution report.
 #[derive(Debug, Default)]
 pub struct RunReport {
+    /// One record per executed case×format, in execution order.
     pub records: Vec<CaseRecord>,
+    /// Cases the interpreter could not drive, each with its reason.
     pub exceptions: Vec<(crate::ids::CaseId, Exception)>,
     /// Cases the interpreter drove end-to-end.
     pub interpreter_run: usize,
@@ -57,7 +59,7 @@ impl RunReport {
         if self.considered == 0 {
             return 1.0;
         }
-        #[allow(clippy::cast_precision_loss)] // case counts << 2^52
+        #[expect(clippy::cast_precision_loss, reason = "case counts << 2^52")]
         {
             self.interpreter_run as f64 / self.considered as f64
         }
@@ -377,7 +379,7 @@ fn needs_smart_lane(case: &CaseCore) -> bool {
             .is_some_and(|op| op.interface() == SMART_PSEUDO_INTERFACE)
 }
 
-fn not_applicable_record(case: &crate::model::case::CaseCore, citation: &str) -> CaseRecord {
+fn not_applicable_record(case: &CaseCore, citation: &str) -> CaseRecord {
     CaseRecord {
         case: case.id.clone(),
         format: None,
@@ -398,7 +400,7 @@ fn selection_exception(
     set: &ArtifactSet,
     ixit: &Ixit,
     statement: Option<&crate::party::Statement>,
-    case: &crate::model::case::CaseCore,
+    case: &CaseCore,
 ) -> Option<Exception> {
     if let Some(citation) = fully_unrealized(set, case) {
         return Some(Exception::Unrealized(citation));
@@ -561,8 +563,7 @@ pub fn execute(
     // Exclusive-server cases (global-state grounds like an empty template
     // list) run FIRST: on a freshly reset, exclusively-owned SUT their
     // ground holds only before other cases provision templates/queries.
-    let mut ordered: Vec<&crate::model::case::CaseCore> =
-        set.cases.iter().map(|(_, c)| c).collect();
+    let mut ordered: Vec<&CaseCore> = set.cases.iter().map(|(_, c)| c).collect();
     ordered.sort_by_key(|c| {
         !matches!(
             c.requires.server,
@@ -616,8 +617,7 @@ pub fn coverage_accounting(set: &ArtifactSet) -> RunReport {
     // Exclusive-server cases (global-state grounds like an empty template
     // list) run FIRST: on a freshly reset, exclusively-owned SUT their
     // ground holds only before other cases provision templates/queries.
-    let mut ordered: Vec<&crate::model::case::CaseCore> =
-        set.cases.iter().map(|(_, c)| c).collect();
+    let mut ordered: Vec<&CaseCore> = set.cases.iter().map(|(_, c)| c).collect();
     ordered.sort_by_key(|c| {
         !matches!(
             c.requires.server,
@@ -712,8 +712,7 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
             commits: crate::model::case::CommitState::None,
         });
     }
-    synthesized.sm_operation =
-        crate::ids::SmOperationRef::parse("I_EHR_COMPOSITION.create_composition").ok();
+    synthesized.sm_operation = SmOperationRef::parse("I_EHR_COMPOSITION.create_composition").ok();
     synthesized.flow = serde_json::from_value(serde_json::json!([
         {
             "step": 1,
@@ -730,7 +729,6 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 
@@ -1050,7 +1048,10 @@ mod tests {
                 .iter()
                 .filter(|(_, e)| matches!(e, Exception::Unrealized(_)))
                 .count();
-        #[allow(clippy::cast_precision_loss)]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "case counts << 2^52, so the coverage ratio is exact enough"
+        )]
         let coverage = governed as f64 / report.considered as f64;
         assert!(
             coverage >= 0.80,

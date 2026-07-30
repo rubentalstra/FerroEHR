@@ -43,7 +43,9 @@ Non-negotiables (violations are rejected at review):
   (`<Form method="GET">` + typed `use_query`), not private signals.
 - Workspace discipline unchanged: pinned workspace deps
   (`dep.workspace = true`), `thiserror` (a `FromServerFnError` domain enum,
-  not stringified errors), no `unwrap`/`expect` outside tests, never weaken
+  not stringified errors), every public item documented (`missing_docs`),
+  suppressions as `#[expect(lint, reason = "…")]`
+  (`.claude/rules/reliability.md`), no `unwrap`/`expect` outside tests, never weaken
   or delete a test, deferred work always `// TODO: <what>` (never prose
   deferrals or phase/tracker markers in comments), no AI attribution
   anywhere, conventional-type branches

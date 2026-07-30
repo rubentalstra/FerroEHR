@@ -1,4 +1,4 @@
-//! The change-set unit: [`Change`], the version-tree placement **decision**,
+//! The change-set unit: `Change`, the version-tree placement **decision**,
 //! and the shared commit engine `apply_change`.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Version and its
@@ -28,8 +28,13 @@ use crate::versioning::{Kind, SigningCtx, integrity};
 /// The outcome of a versioned-object write: the object id, the new version's
 /// tree id, and the provenance carried into the event-outbox envelope.
 #[derive(Debug, Clone)]
-#[allow(clippy::struct_field_names)] // `time_committed` is the master06 domain term, not a suffix echo
+#[expect(
+    clippy::struct_field_names,
+    reason = "`time_committed` is the master06 domain term, not a suffix echo of \
+              the struct name"
+)]
 pub struct Committed {
+    /// The written object's id.
     pub vo_id: VoId,
     /// The per-vo storage commit ordinal of the written row (the node /
     /// attestation key) — NOT the wire version number.
@@ -38,6 +43,7 @@ pub struct Committed {
     pub tree: TreeId,
     /// The `creating_system_id` recorded for the new version.
     pub creating_system_id: String,
+    /// Which kind of versioned object was written.
     pub kind: Kind,
     /// The numeric `audit_change_type` group code recorded for this version.
     pub change_type: String,
@@ -427,8 +433,17 @@ fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
     }
 }
 
-#[allow(clippy::too_many_lines)] // the three change arms building the resolved write
-#[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
+#[expect(
+    clippy::too_many_lines,
+    reason = "the three change arms build one resolved write; splitting them \
+              would hide that they are alternatives on the same transaction"
+)]
+// TODO: group the commit-scope parameters into one struct — the parameter list
+// is the whole commit scope threaded through a single private helper.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the parameter list is the whole commit scope, not yet grouped"
+)]
 async fn apply_change(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,
@@ -771,7 +786,11 @@ async fn write_single_outbox(
 /// [`ServiceError::Unprocessable`] for an out-of-group / non-first lifecycle
 /// state; the [`commit_resolved`] storage/signing errors; a multimedia offload
 /// failure as [`ServiceError::Internal`].
-#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the write parameters, named individually; a parameter struct \
+              would not read clearer at the service call sites"
+)]
 pub(crate) async fn create(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,
@@ -811,7 +830,11 @@ pub(crate) async fn create(
 /// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
 /// open lineage tip; [`ServiceError::Unprocessable`] for an illegal lifecycle
 /// transition; plus the [`commit_resolved`] storage/signing errors.
-#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the write parameters, named individually; a parameter struct \
+              would not read clearer at the service call sites"
+)]
 pub(crate) async fn update(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,
@@ -856,7 +879,11 @@ pub(crate) async fn update(
 /// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
 /// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
 /// open lineage tip; plus the [`commit_resolved`] storage/signing errors.
-#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the write parameters, named individually; a parameter struct \
+              would not read clearer at the service call sites"
+)]
 pub(crate) async fn delete(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,

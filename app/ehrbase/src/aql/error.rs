@@ -94,7 +94,7 @@ pub enum AqlFeatureError {
     /// A `TERMINOLOGY()` `service_api` that names no configured terminology
     /// service: an unrecognised flavour, or a FHIR flavour with no provider
     /// configured. A query-side/config problem (→ 400), distinct from an
-    /// upstream server fault ([`super::ExecError::Terminology`], → 500). QUERY
+    /// upstream server fault ([`ExecError::Terminology`], → 500). QUERY
     /// §Functions/Other functions/TERMINOLOGY.
     #[error(
         "TERMINOLOGY() service_api `{0}` is not a configured terminology service \
@@ -286,4 +286,17 @@ pub enum ExecError {
     /// query (400). QUERY §Functions/Other functions/TERMINOLOGY.
     #[error("terminology expansion failed: {0}")]
     Terminology(String),
+
+    /// A `RESULT_SET` column spec reached the executor without one of the
+    /// generated SQL aliases its [`super::sql::CellKind`] declares (a
+    /// defensive guard on a lowering defect, like
+    /// [`SqlError::UnboundParameter`] — the executor rejects rather than
+    /// panicking on a request path).
+    #[error("result column `{column}` is missing generated SQL alias {index}")]
+    MissingColumnAlias {
+        /// The `RESULT_SET` column's name.
+        column: String,
+        /// The alias position the executor needed.
+        index: usize,
+    },
 }

@@ -48,9 +48,14 @@
 //!
 //! Exit codes: `0` clean · `1` findings · `2` runner error.
 // Verification CLI: progress/diagnostics on the console ARE this tool's user
-// interface — the reliability deny-tier for shipped code deliberately relaxes
-// stdio here (.claude/rules/reliability.md §tools).
-#![allow(clippy::print_stdout, clippy::print_stderr)]
+// interface, so stdio is the right channel here; only library crates are
+// restricted to `tracing`.
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "this IS the CLI: stdout carries the run report and stderr the \
+              diagnostics; only library crates are restricted to `tracing`"
+)]
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -463,7 +468,7 @@ fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> 
     }
 }
 
-#[allow(clippy::too_many_lines)] // the one-shot orchestration seam
+#[expect(clippy::too_many_lines, reason = "the one-shot orchestration seam")]
 fn run_verdicts(
     statement_path: &std::path::Path,
     results_path: &std::path::Path,
@@ -678,7 +683,7 @@ fn conformance_assets_command(
 
 /// The asset renderer (`perf-assets`): deterministic SVGs FROM the committed
 /// measurement records (regenerate-and-diff guarded in CI).
-#[allow(clippy::too_many_lines)] // one-shot orchestration seam
+#[expect(clippy::too_many_lines, reason = "one-shot orchestration seam")]
 fn perf_assets_command(
     root: &std::path::Path,
     results_path: &std::path::Path,
@@ -893,7 +898,11 @@ fn seed_corpus(
 
 /// The stress handler: the step-load ladder to the maximum sustainable
 /// throughput (exploration only — writes stress.json, never results.json).
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)] // one-shot orchestration seam
+#[expect(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    reason = "one-shot orchestration seam"
+)]
 fn stress_command(
     root: &std::path::Path,
     ixit_path: &std::path::Path,
@@ -998,7 +1007,7 @@ fn stress_command(
         max_rate,
         ..cnf_runner::stress::StressOptions::default()
     };
-    let workload = cnf_runner::perf_run::schedule::JourneyWorkload {
+    let workload = perf_run::schedule::JourneyWorkload {
         catalogue: &catalogue,
         shares: &case.workload.journeys,
         pack: &journey_pack,
@@ -1100,7 +1109,7 @@ fn stress_compare_command(
 /// The AQL-probe handler (`aql-probe`): seed the class corpus fresh, run
 /// the probe set, write the report (exploration only — never touches
 /// results.json).
-#[allow(clippy::too_many_lines)] // one-shot orchestration seam
+#[expect(clippy::too_many_lines, reason = "one-shot orchestration seam")]
 fn probe_command(
     root: &std::path::Path,
     ixit_path: &std::path::Path,
@@ -1235,7 +1244,7 @@ fn probe_command(
 
 /// The measured-run handler (`perf`): seed the scale corpus, drive the
 /// open-loop workload, merge the measurement record into results.json.
-#[allow(clippy::too_many_lines)] // one-shot orchestration seam
+#[expect(clippy::too_many_lines, reason = "one-shot orchestration seam")]
 fn perf_command(
     root: &std::path::Path,
     ixit_path: &std::path::Path,
@@ -1511,7 +1520,7 @@ fn perf_command(
 }
 
 /// The live-run handler: load, execute, emit results.json + summary.
-#[allow(clippy::too_many_lines)] // the one-shot orchestration seam
+#[expect(clippy::too_many_lines, reason = "the one-shot orchestration seam")]
 fn run_command(
     root: &std::path::Path,
     ixit_path: &std::path::Path,
@@ -1555,7 +1564,7 @@ fn run_command(
     if let Some(needle) = filter {
         set.cases.retain(|(_, c)| c.id.as_str().contains(needle));
     }
-    let statement: Option<cnf_runner::party::Statement> = match statement_path {
+    let statement: Option<Statement> = match statement_path {
         None => None,
         Some(path) => match std::fs::read_to_string(path)
             .map_err(|e| format!("cannot read {}: {e}", path.display()))
@@ -1603,7 +1612,7 @@ fn run_command(
         let prior_path = out.join("results.json");
         std::fs::read_to_string(&prior_path)
             .ok()
-            .and_then(|text| serde_json::from_str::<cnf_runner::party::Results>(&text).ok())
+            .and_then(|text| serde_json::from_str::<Results>(&text).ok())
             .filter(|prior| prior.sut.name == sut_name)
             .map(|prior| {
                 if prior.sut.version != sut_version && !prior.measurements.is_empty() {
@@ -1617,7 +1626,7 @@ fn run_command(
             })
             .unwrap_or_default()
     };
-    let results = cnf_runner::party::Results {
+    let results = Results {
         sut: cnf_runner::party::Sut {
             name: sut_name.to_owned(),
             version: sut_version.to_owned(),

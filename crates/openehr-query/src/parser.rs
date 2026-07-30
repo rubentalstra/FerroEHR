@@ -24,6 +24,13 @@ use crate::ast::{
 use crate::lexer::Token;
 use chumsky::prelude::*;
 
+// The chumsky extra-parameter alias. `chumsky::extra::Err` stays fully
+// qualified deliberately: shortening it to `Err<..>` would make this alias
+// refer to itself.
+#[expect(
+    unused_qualifications,
+    reason = "the local alias shadows the name being qualified — dropping the path makes the definition self-referential"
+)]
 type Err<'a> = chumsky::extra::Err<Simple<'a, Token>>;
 
 /// Parse a token slice into a [`SelectQuery`].
@@ -42,7 +49,7 @@ pub fn parse_str(src: &str) -> Result<SelectQuery, String> {
     let tokens = crate::lexer::lex(src).map_err(|e| e.to_string())?;
     parse(&tokens).map_err(|errs| {
         errs.iter()
-            .map(std::string::ToString::to_string)
+            .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join("; ")
     })
@@ -59,7 +66,14 @@ fn ident<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 /// carries the decoded value that predicate matching / `LIKE` / `terminology()`
 /// operands compare against — not the raw escaped source text.
 fn unquote(s: &str) -> String {
-    let inner = if s.len() >= 2 { &s[1..s.len() - 1] } else { s };
+    // Strip one leading and one trailing byte (the ASCII quotes). A value too
+    // short to be quoted, or a range that is not a UTF-8 boundary, is passed
+    // through unchanged rather than panicking.
+    let inner = s
+        .len()
+        .checked_sub(1)
+        .and_then(|end| s.get(1..end))
+        .unwrap_or(s);
     unescape(inner)
 }
 
@@ -170,7 +184,11 @@ fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
             if !r.is_finite() {
                 return None;
             }
-            #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_precision_loss,
+                reason = "the guard on this very line proves r is integral and inside the i64 range; the i64::MIN/MAX casts are the bound check itself"
+            )]
             if r.fract() == 0.0 && r >= i64::MIN as f64 && r <= i64::MAX as f64 {
                 Some(Primitive::Integer(r as i64))
             } else {
@@ -220,7 +238,10 @@ fn parameter<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 /// contains `pathPart`s that may themselves carry a `pathPredicate`. The bare
 /// `standardPredicate` parser is also handed back so the caller can wire it into
 /// `versionPredicate` (`AqlParser.g4` `versionPredicate` third alternative).
-#[allow(clippy::type_complexity)]
+#[expect(
+    clippy::type_complexity,
+    reason = "the tuple of three mutually-recursive chumsky parsers is the return type; naming it would need an unnameable opaque-type alias per element"
+)]
 fn path_parsers<'a>() -> (
     impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone,
     impl Parser<'a, &'a [Token], PathPredicate, Err<'a>> + Clone,
@@ -366,7 +387,6 @@ fn terminology_fn<'a>() -> impl Parser<'a, &'a [Token], TerminologyFunction, Err
 
 /// `functionCall` and `aggregateFunctionCall`, given the `identified_path` and
 /// `terminal` parsers.
-#[allow(clippy::type_complexity)]
 fn function_parsers<'a>(
     identified: impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone + 'a,
     terminal: impl Parser<'a, &'a [Token], Terminal, Err<'a>> + Clone + 'a,
@@ -423,7 +443,10 @@ fn function_parsers<'a>(
 
 // ── top-level query ──────────────────────────────────────────────────────────
 
-#[allow(clippy::too_many_lines)] // one combinator builder for the whole grammar
+#[expect(
+    clippy::too_many_lines,
+    reason = "one combinator builder for the whole AqlParser.g4 grammar; the sub-parsers are mutually referential, so splitting it would only move the wiring"
+)]
 fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     // The whole path grammar (identified paths, the path predicate, and the
     // bare standard predicate) is built once here and shared by both the
@@ -455,8 +478,9 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .then(just(Token::As).ignore_then(ident()).or_not())
         .map(|(column, alias)| SelectExpr { column, alias });
     // top (deprecated). Overflow is a parse error, not a silent `0`.
+    // `Simple` carries no cause payload, so the span IS the whole diagnostic.
     let top_count = select! { Token::Integer(s) => s }
-        .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
+        .try_map(|s: String, span| s.parse::<i64>().ok().ok_or_else(|| Simple::new(None, span)));
     let top = just(Token::Top)
         .ignore_then(top_count)
         .then(
@@ -624,8 +648,9 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .map(|(path, order)| OrderByExpr { path, order });
     // LIMIT/OFFSET counts; overflow is a parse error, not a silent `0`
     //.
+    // `Simple` carries no cause payload, so the span IS the whole diagnostic.
     let int = select! { Token::Integer(s) => s }
-        .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
+        .try_map(|s: String, span| s.parse::<i64>().ok().ok_or_else(|| Simple::new(None, span)));
     let limit = just(Token::Limit)
         .ignore_then(int)
         .then(just(Token::Offset).ignore_then(int).or_not())
@@ -665,7 +690,6 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

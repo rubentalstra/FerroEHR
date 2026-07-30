@@ -5,7 +5,10 @@
 use leptos::prelude::*;
 
 /// The console wordmark (mark + name), sized for the topbar.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn Wordmark() -> impl IntoView {
     view! {

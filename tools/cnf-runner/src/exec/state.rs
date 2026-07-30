@@ -24,7 +24,12 @@ pub enum Captured {
     /// lies inside it — so `before` resolves from `lo` and `after` from
     /// `hi`, keeping both sound on the wire. A point instant (the
     /// transcript player's recorded ordinals) has `lo == hi`.
-    InstantMs { lo: i64, hi: i64 },
+    InstantMs {
+        /// Earliest millisecond the commit can have happened at.
+        lo: i64,
+        /// Latest millisecond the commit can have happened at.
+        hi: i64,
+    },
 }
 
 /// The per-row variable store. Reset around every row under
@@ -95,6 +100,11 @@ impl VarStore {
             TimeExpr::Between(t1, t2) => {
                 // midpoint of the gap between the two commit windows
                 let (a, b) = (instant(t1)?.1, instant(t2)?.0);
+                #[expect(
+                    clippy::integer_division,
+                    reason = "midpoint of a millisecond gap: the truncated half is \
+                              deliberate, an instant is a whole millisecond"
+                )]
                 b.checked_sub(a)
                     .and_then(|d| a.checked_add(d / 2))
                     .ok_or_else(|| "instant arithmetic overflow".to_owned())
@@ -104,7 +114,6 @@ impl VarStore {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
 

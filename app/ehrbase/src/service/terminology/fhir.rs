@@ -3,8 +3,8 @@
 //! over `reqwest` (rustls).
 //!
 //! The remote provider is one of the two the routing layer
-//! ([`super::routing`]) selects among; the in-process `openehr-term` bundle
-//! ([`super::bundle`]) is the enumerable local default. `arch-overview
+//! (`super::routing`) selects among; the in-process `openehr-term` bundle
+//! (`super::bundle`) is the enumerable local default. `arch-overview
 //! master12-terminology.adoc` models this concrete backend as an external
 //! "terminology query server", so it belongs with the interface realization.
 //!
@@ -38,20 +38,20 @@
 //! members under `contains`. We keep the flat `Terminology_extract._terms_`
 //! (the membership view) **and** preserve the tree in
 //! `Terminology_extract._relationships_` as `Term_relationship`s under the
-//! [`CHILD_RELATION`] name (`terminology_extract.adoc` §Structured value
+//! `CHILD_RELATION` name (`terminology_extract.adoc` §Structured value
 //! set), defined in `_relations_` by the FHIR `child` concept property URI
-//! ([`FHIR_CHILD_PROPERTY`]) — an `external_code` relation
+//! (`FHIR_CHILD_PROPERTY`) — an `external_code` relation
 //! (`terminology_relation.adoc` `Inv_valid_definition`).
 //!
 //! NOTE (errors): a value set / terminology / code the server does not
 //! know (HTTP `404`, or `$validate-code result=false` with no membership) is
 //! a `Pre_has_*` precondition failure →
 //! [`CallStatusType::VersionedObjectDoesNotExist`] (the `404` reading,
-//! matching the bundle provider in [`super::bundle`]). A transport fault
+//! matching the bundle provider in `super::bundle`). A transport fault
 //! (connect/read timeout, `5xx`, malformed body) → [`SmError::exception`]
 //! (`500`); the fail-open vs fail-closed decision belongs to the caller (the
 //! composition-validation walker,
-//! [`super::ExternalTerminologyConfig::fail_on_error`]), never to the raw
+//! [`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)), never to the raw
 //! provider.
 
 use std::collections::BTreeMap;
@@ -494,6 +494,12 @@ impl FhirTerminologyProvider {
     /// # Errors
     ///
     /// Always [`CallStatusType::NotImplemented`].
+    #[expect(
+        clippy::unused_self,
+        reason = "the SM interface declares this call on the service; the \
+                  protocol adapter invokes every SM call uniformly, so the \
+                  receiver stays even where this realization ignores it"
+    )]
     pub fn get_terminology_description(
         &self,
         _terminology_id: &str,
@@ -662,12 +668,6 @@ impl FhirContains {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

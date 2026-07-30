@@ -7,6 +7,10 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
 publish = false
 
 [dependencies]
@@ -59,6 +63,7 @@ tracing-opentelemetry = { workspace = true }
 # See src/auth for the resource-server scope decision.
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
+base64 = { workspace = true }       # RFC 7617 Basic-credential decode (never hand-rolled)
 openidconnect = { workspace = true }
 moka = { workspace = true }
 sha2 = { workspace = true }

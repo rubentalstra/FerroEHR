@@ -48,7 +48,7 @@ pub(super) async fn run(
             // named outright; the instant is the version spine's, never
             // scraped from the container body, which exposes no commit
             // audit — the EHR-side container reads' pattern).
-            let mut out = crate::overview::negotiate::respond(h, ok, &resp.body);
+            let mut out = negotiate::respond(h, ok, &resp.body);
             super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }

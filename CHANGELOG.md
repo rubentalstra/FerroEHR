@@ -15,8 +15,33 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Release binaries are hardened for diagnosability**: production panics now
+  carry file:line backtraces (`debug = "line-tables-only"`), and the unwind
+  panic strategy the clean-500 error contract depends on is pinned explicitly
+  in the release profile so it can never silently regress to `abort`.
+  Runtime behaviour is otherwise unchanged.
+- **The workspace now enforces the official Rust best-practice baseline as
+  compile-time policy** (Rust API Guidelines, Clippy/rustdoc/Cargo books):
+  every public item is documented (including the generated openEHR spec
+  crates, whose docs now come from the BMM meta-model), panicking indexing
+  and string slicing are compile errors outside tests, wall-clock/env/UUIDv4
+  API bans are machine-enforced, lint suppressions must carry a machine-read
+  `reason`, and doc links are verified by a new rustdoc CI gate. No wire or
+  storage behaviour changes.
+
 ### Fixed
 
+- **A server-side failure of the password-verification task no longer
+  masquerades as `401 Invalid credentials`**: if the blocking Argon2
+  verification task itself fails (panic/cancellation), the API now returns
+  `500 Internal Server Error`. A wrong password still returns 401.
+- **Basic-authentication credentials are now decoded by the pinned RFC 4648
+  `base64` crate** instead of a hand-rolled decoder. Canonical (padded) and
+  unpadded credentials are accepted as before; malformed base64 with excess
+  or interior padding is now rejected outright (it previously decoded to
+  garbage and failed the user lookup — the response stays 401 either way).
 - **ADL 1.4 archetypes carrying a `revision_history` section now parse and
   upload.** The section is defined by the ADL 1.4 specification (master08
   §Revision History Section) but was not recognised, so an entire spec-valid

@@ -239,12 +239,6 @@ fn sqlx_conflict_api_error(sm: SmError) -> ApiError {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use openehr_its::rest::runtime::ApiError;
 

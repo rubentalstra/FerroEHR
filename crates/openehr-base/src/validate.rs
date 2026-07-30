@@ -17,7 +17,11 @@
 /// value itself). The composition validator prefixes the absolute RM path.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvariantViolation {
+    /// The RM sub-path the violation applies to, relative to the value being
+    /// checked (empty = the value itself).
     pub path: String,
+    /// The human-readable violation message (the archie-style
+    /// `Invariant <Name> failed on type <RM_TYPE>` form for invariant cores).
     pub message: String,
 }
 

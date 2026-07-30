@@ -89,8 +89,12 @@ fn sample(pool: &PgPool) -> Sample {
 }
 
 /// Publish the snapshot through the `metrics` facade (→ Prometheus).
-// Gauge values are small counts; the `u64` → `f64` widening is exact in range.
-#[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the gauge values are small counts (pool size, worker count, \
+              queue depth, alive tasks), so the u64 → f64 widening is exact \
+              over their whole range"
+)]
 fn record_prometheus(s: &Sample) {
     metrics::gauge!(DB_POOL_CONNECTIONS, "state" => "idle").set(s.idle as f64);
     metrics::gauge!(DB_POOL_CONNECTIONS, "state" => "in_use").set(s.in_use as f64);

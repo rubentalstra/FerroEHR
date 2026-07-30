@@ -39,9 +39,12 @@ use crate::format::ReprFormat;
 /// [`AdminUiError::Cdr`] (e.g. `404` for an unknown template) /
 /// [`AdminUiError::Forbidden`] / [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
-pub async fn fetch_template_opt(template_id: String) -> Result<String, AdminUiError> {
+pub async fn fetch_template_opt(
+    /// The template whose OPT source to read.
+    template_id: String,
+) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "definition/template/adl1.4/{}",
         urlencoding::encode(&template_id)
@@ -68,9 +71,12 @@ pub async fn fetch_template_opt(template_id: String) -> Result<String, AdminUiEr
 /// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
 /// Template fails to build (the diagnostic named, never a panic).
 #[server]
-pub async fn fetch_template_catalog(template_id: String) -> Result<CatalogNode, AdminUiError> {
+pub async fn fetch_template_catalog(
+    /// The template to build the path catalog from.
+    template_id: String,
+) -> Result<CatalogNode, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "definition/template/adl1.4/{}",
         urlencoding::encode(&template_id)
@@ -114,9 +120,12 @@ pub struct TemplateMeta {
 /// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
 /// Template fails to build.
 #[server]
-pub async fn fetch_template_meta(template_id: String) -> Result<TemplateMeta, AdminUiError> {
+pub async fn fetch_template_meta(
+    /// The template whose metadata to read.
+    template_id: String,
+) -> Result<TemplateMeta, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "definition/template/adl1.4/{}",
         urlencoding::encode(&template_id)
@@ -155,11 +164,13 @@ pub async fn fetch_template_meta(template_id: String) -> Result<TemplateMeta, Ad
 /// [`AdminUiError::CdrUnreachable`] from the CDR.
 #[server]
 pub async fn fetch_example(
+    /// The template to generate an example composition for.
     template_id: String,
+    /// Which representation to negotiate for the example.
     format: ReprFormat,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let state: crate::state::AppState = expect_context();
     let url = state.cdr.rest_v1(&format!(
         "definition/template/adl1.4/{}/example",
         urlencoding::encode(&template_id)
@@ -192,7 +203,10 @@ fn tab_href(template_id: &str, tab: &str) -> String {
 /// The template detail screen: a header with a back link + tab bar, then the
 /// WT / OPT / Example panes (all mounted, toggled by visibility so switching a
 /// tab preserves each pane's loaded state).
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn TemplateDetailPage() -> impl IntoView {
     // NOTE: the route param arrives ALREADY percent-decoded on both targets —

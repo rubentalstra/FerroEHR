@@ -3,7 +3,7 @@
 //! No openEHR spec governs an OAS-serving endpoint; this is our own surface. The
 //! Swagger UI's spec selector shows **only documents this server generates
 //! itself** — never a vendored OAS. Its entries are one filtered document per
-//! API family ([`FAMILIES`], each served at
+//! API family (`FAMILIES`, each served at
 //! `{api-docs}/ehrbase-{family}.openapi.json`) plus, last, the **complete
 //! server surface** — and every one of them is derived from that single
 //! composed document, which is built natively from every `#[utoipa::path]`
@@ -12,7 +12,7 @@
 //!
 //! - the standardised **ITS-REST API groups** — EHR / COMPOSITION / CONTRIBUTION
 //!   / DIRECTORY / DEMOGRAPHIC / DEFINITION / QUERY / ADMIN
-//!   ([`crate::api::api_doc`]);
+//!   (`crate::api::api_doc`);
 //! - the own-design extension groups (terminology, `PARTY_RELATIONSHIP`,
 //!   event-subscription, multi-tenancy, FHIR connector);
 //! - the always-on public health family (`/health`, `/health/liveness`,
@@ -187,13 +187,13 @@ struct ExtensionsInfo;
 /// API-nested extension groups + the management surface) get the single
 /// `openehr_auth` requirement (a per-endpoint padlock) whenever authentication
 /// is enabled. The scheme kind
-/// (bearer JWT vs HTTP Basic) is chosen by [`advertised_scheme`].
+/// (bearer JWT vs HTTP Basic) is chosen by `advertised_scheme`.
 ///
 /// Every path in the result is the one the LIVE router mounts under this
 /// configuration: the API groups are nested at `server.base_path`, and the
 /// endpoints whose `#[utoipa::path]` literal can only spell the default
 /// deployment (status, the OAS meta-endpoints, the System `OPTIONS` manifest,
-/// SMART discovery) are re-homed with [`rehome_path`].
+/// SMART discovery) are re-homed with `rehome_path`.
 #[must_use]
 pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     let mut doc = ExtensionsInfo::openapi();
@@ -405,7 +405,12 @@ async fn swagger_ui_index(State(state): State<AppState>) -> Response {
         (status = 404, description = "Not a known family slug (no such route), or the Swagger UI is disabled.")
     )
 )]
-#[allow(dead_code)] // the documented twin — the live routes are the twelve static per-family routes built in `swagger_router`
+#[expect(
+    dead_code,
+    reason = "the documentation twin of a live route: the served routes are the \
+              twelve static per-family routes built in `swagger_router`, so only \
+              the `#[utoipa::path]` attribute on this stub is consumed"
+)]
 fn family_openapi_json() {}
 
 /// The OAS meta-endpoints' `OpenAPI`, with every path re-homed to the one the

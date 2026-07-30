@@ -9,21 +9,21 @@
 //! `EhrbaseService` methods (parse ids/time bounds at the boundary) and the
 //! machinery behind them:
 //!
-//! - [`delete`] — `I_ADMIN_SERVICE.physical_ehr_delete` / `physical_party_delete`
+//! - `delete` — `I_ADMIN_SERVICE.physical_ehr_delete` / `physical_party_delete`
 //!   (+ the `admin_ehr_delete_all` extension): cascade + orphan-audit sweep.
-//! - [`statistics`] — `I_ADMIN_SERVICE.list_contributions` / `contribution_count`
+//! - `statistics` — `I_ADMIN_SERVICE.list_contributions` / `contribution_count`
 //!   / `versioned_composition_count` / `composition_version_count`.
-//! - [`archive`] — `I_ADMIN_ARCHIVE.archive_ehrs` / `archive_parties`.
-//! - [`dump_load`] — `I_ADMIN_DUMP_LOAD.export_ehrs` / `load_ehrs`.
+//! - `archive` — `I_ADMIN_ARCHIVE.archive_ehrs` / `archive_parties`.
+//! - `dump_load` — `I_ADMIN_DUMP_LOAD.export_ehrs` / `load_ehrs`.
 //! - [`types`] — the SM information classes of the ADMIN group
 //!   (`EXPORT_SPEC`, `DUMP_LOAD_FAIL_REPORT`, the format enumerations).
 //!
 //! # Cross-module wiring
 //!
-//! - **`crate::storage`** — [`dump_load`] reassembles/decomposes version bodies
+//! - **`crate::storage`** — `dump_load` reassembles/decomposes version bodies
 //!   through the storage codec (`node_repo::read_version_canonical` /
 //!   `decompose` + `write_nodes`).
-//! - **[`archive`]** marks EHR/party versioned objects archived; the physical
+//! - **`archive`** marks EHR/party versioned objects archived; the physical
 //!   cold-tier storage movement is a spec-silent `TODO(perf)` carried at the
 //!   top of that module.
 
@@ -48,6 +48,12 @@ pub(super) fn is_party_kind(kind: &str) -> bool {
 
 /// Parse a `UUID` id, mapping a malformed value to a `precondition_violation`
 /// (`400`). `label` names the resource for the error text (`EHR` / `party`).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already names the resource and echoes the \
+              rejected token; the discarded `uuid::Error` adds only its own \
+              wording, which is not part of the wire contract"
+)]
 fn parse_uuid(raw: &str, label: &str) -> Result<Uuid, SmError> {
     Uuid::parse_str(raw).map_err(|_| SmError::precondition(format!("invalid {label} id: {raw}")))
 }
@@ -97,6 +103,12 @@ fn parse_range(range: types::StatTimeRange) -> Result<(Option<String>, Option<St
 
 /// Validate one optional ISO 8601 date-time bound (or `None` for an open
 /// bound). Invalid → `400`.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already echoes the rejected token; the discarded \
+              parse error adds only its own wording, which is not part of the \
+              wire contract"
+)]
 fn parse_bound(bound: Option<String>) -> Result<Option<jiff::Timestamp>, SmError> {
     match bound {
         None => Ok(None),

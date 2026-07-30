@@ -17,7 +17,10 @@
 //! Doc prose here is dense with openEHR spec class names (`COMPOSITION`,
 //! `DV_QUANTITY`, `PARTY_IDENTIFIED`, …); backticking every occurrence is
 //! noise, so `clippy::doc_markdown` is allowed module-wide.
-#![allow(clippy::doc_markdown)]
+#![allow(
+    clippy::doc_markdown,
+    reason = "the module docs name openEHR RM classes and Simplified-Formats key names throughout as prose; backticking every occurrence would drown the text"
+)]
 
 pub mod build;
 pub mod cache;

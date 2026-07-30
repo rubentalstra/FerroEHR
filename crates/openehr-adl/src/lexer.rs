@@ -470,8 +470,8 @@ fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
     let bytes = raw.as_bytes();
     let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'\\' {
+    while let Some(&byte) = bytes.get(i) {
+        if byte == b'\\' {
             let Some(&next) = bytes.get(i + 1) else {
                 return Err(());
             };
@@ -480,7 +480,9 @@ fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
                 b'u' => {
                     // \uHHHH (4) or \uHHHHHHHH (8) hex digits.
                     let hex_start = i + 2;
-                    let count = raw[hex_start.min(raw.len())..]
+                    let count = raw
+                        .get(hex_start..)
+                        .unwrap_or_default()
                         .chars()
                         .take_while(char::is_ascii_hexdigit)
                         .count();
@@ -504,7 +506,7 @@ fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
 /// Lex `src` into a spanned token vector.
 ///
 /// # Errors
-/// Returns a [`SyntaxError`] ([`SyntaxErrorCode::Sunk`]) at the byte span of
+/// Returns a [`SyntaxError`](crate::error::SyntaxError) ([`SyntaxErrorCode::Sunk`](crate::error::SyntaxErrorCode::Sunk)) at the byte span of
 /// the first token that fails to lex (an unrecognised character or an illegal
 /// string escape).
 pub fn lex(src: &str) -> Result<Vec<Spanned>, crate::error::SyntaxError> {
@@ -530,7 +532,6 @@ pub fn lex(src: &str) -> Result<Vec<Spanned>, crate::error::SyntaxError> {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

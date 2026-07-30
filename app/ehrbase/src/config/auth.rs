@@ -6,7 +6,7 @@
 //! loader of its own** — the whole tree is assembled once by `ehrbase::config`
 //! and this struct is deserialized as a field of it.
 //!
-//! Secrets use the shared [`ehrbase::config::secret::Secret`] newtype (P-6): a password hash
+//! Secrets use the shared [`crate::config::secret::Secret`] newtype (P-6): a password hash
 //! or HMAC secret deserializes from a plain string but never renders itself
 //! (`Debug`, `/management/env`, `ehrbase config check` all show `***`). Each
 //! secret key has a `*_file` sibling for file-based indirection
@@ -86,6 +86,7 @@ pub struct BasicConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BasicUser {
+    /// The login name presented in the `Authorization: Basic` header.
     pub username: String,
     /// Argon2 PHC hash string (`$argon2id$v=19$...`). Never a plaintext password.
     pub password_hash: Secret,

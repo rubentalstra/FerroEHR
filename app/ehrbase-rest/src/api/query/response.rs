@@ -210,6 +210,11 @@ pub(super) fn merge_body_and_url_i64(
     query: Option<&str>,
     key: &str,
 ) -> Result<Option<i64>, RestError> {
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "`ParseIntError` adds only \"invalid digit\"/\"out of range\" to a 400 \
+                  body that already names the parameter and echoes the rejected value"
+    )]
     let url = crate::params::query_param(query, key)
         .map(|raw| {
             raw.parse::<i64>().map_err(|_| {
@@ -259,13 +264,6 @@ pub(super) fn merge_body_and_url_parameters(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
     use bytes::Bytes;

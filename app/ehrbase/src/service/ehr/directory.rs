@@ -355,7 +355,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_meta(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<crate::service::response::ResourceMeta>, ServiceError> {
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
         Ok(self
             .directory_meta_with_vo(ehr_id)
             .await?
@@ -378,7 +378,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_meta_with_vo(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<(VoId, bool, crate::service::response::ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(VoId, bool, ResourceMeta)>, ServiceError> {
         let Some((m, is_modifiable)) =
             crate::storage::ehr_repo::directory_current_meta(&self.pool, ehr_id).await?
         else {

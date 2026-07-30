@@ -19,6 +19,12 @@
 //!   (bool, i32, Vec, …) and never emitted (see
 //!   [`crate::plan::overrides::PRIMITIVES`] and
 //!   [`crate::plan::overrides::MAPPED_CLASSES`]).
+//! - **Every emitted public item carries documentation**: the BMM
+//!   `documentation` where the vendored schema has it, else a deterministic
+//!   synthesized line ([`synth_class_doc`], [`synth_field_doc`]) — `missing_docs`
+//!   covers modules, structs, fields, enums and variants alike
+//!   (<https://doc.rust-lang.org/rustc/lints/listing/allowed-by-default.html>).
+//!   Verbatim spec prose is sanitized for rustdoc ([`sanitize_doc_prose`]).
 //!
 //! Stage 4 — RENDER. The only stage that produces text: the per-shape emit
 //! functions turn a planned class into deterministic, byte-stable Rust source.
@@ -55,13 +61,44 @@ struct Version {
     top: BTreeSet<String>,
 }
 
+/// The emission shapes that produce a file: [`Emission`] minus its `Skip`
+/// variant. Narrowing at the planning step makes "a skipped class reached the
+/// render loop" unrepresentable instead of a runtime check.
+enum Shape<'a> {
+    /// [`Emission::Struct`].
+    Struct,
+    /// [`Emission::Enum`].
+    Enum(Vec<String>),
+    /// [`Emission::PolyEnum`].
+    PolyEnum(Vec<String>),
+    /// [`Emission::EnumLiterals`].
+    EnumLiterals(&'a BmmEnumeration),
+    /// [`Emission::Newtype`].
+    Newtype(&'a str),
+}
+
+impl<'a> Shape<'a> {
+    /// The file-producing shape of an emission decision, or `None` for
+    /// [`Emission::Skip`] (a mapped/primitive class emits no file).
+    fn new(emission: Emission<'a>) -> Option<Self> {
+        match emission {
+            Emission::Struct => Some(Self::Struct),
+            Emission::Enum(variants) => Some(Self::Enum(variants)),
+            Emission::PolyEnum(variants) => Some(Self::PolyEnum(variants)),
+            Emission::EnumLiterals(enumeration) => Some(Self::EnumLiterals(enumeration)),
+            Emission::Newtype(prim) => Some(Self::Newtype(prim)),
+            Emission::Skip => None,
+        }
+    }
+}
+
 /// Emit one schema version under `prefix` (empty for a single-version crate).
 /// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
 /// assembles `lib.rs`.
 fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &External) -> Version {
     struct Planned<'a> {
         class: &'a BmmClass,
-        emission: Emission<'a>,
+        shape: Shape<'a>,
         chain: Vec<String>,
     }
 
@@ -86,10 +123,9 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
     let mut planned = Vec::new();
     let mut index: BTreeMap<String, Vec<String>> = BTreeMap::new(); // ident → chain
     for (name, class) in &schema.classes {
-        let emission = decide(model, class, &used);
-        if matches!(emission, Emission::Skip) {
+        let Some(shape) = Shape::new(decide(model, class, &used)) else {
             continue;
-        }
+        };
         let pkg = class_pkg.get(name).cloned().unwrap_or_default();
         let mut chain: Vec<String> = Vec::new();
         if !prefix.is_empty() {
@@ -101,29 +137,28 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         // A polymorphic-concrete class emits a sibling `{Name}Data` struct in the
         // same file (the enum owns `{Name}`); export it from the prelude too so
         // downstream code (e.g. the generated XML impls) can name it.
-        if matches!(emission, Emission::PolyEnum(_)) {
+        if matches!(shape, Shape::PolyEnum(_)) {
             index.insert(format!("{}Data", naming::type_name(name)), chain.clone());
         }
         planned.push(Planned {
             class,
-            emission,
+            shape,
             chain,
         });
     }
 
     let mut files = Vec::new();
     for p in &planned {
-        let body = match &p.emission {
-            Emission::Struct => emit_struct(model, p.class, &index, &local, external),
-            Emission::Enum(variants) => {
+        let body = match &p.shape {
+            Shape::Struct => emit_struct(model, p.class, &index, &local, external),
+            Shape::Enum(variants) => {
                 emit_enum(model, p.class, variants, false, &index, &local, external)
             }
-            Emission::PolyEnum(variants) => {
+            Shape::PolyEnum(variants) => {
                 emit_enum(model, p.class, variants, true, &index, &local, external)
             }
-            Emission::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
-            Emission::Newtype(prim) => emit_newtype(p.class, prim),
-            Emission::Skip => unreachable!(),
+            Shape::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
+            Shape::Newtype(prim) => emit_newtype(p.class, prim),
         };
         files.push(GenFile {
             path: format!("{}.rs", p.chain.join("/")),
@@ -213,14 +248,25 @@ fn emit_module_tree(chains: &[Vec<String>]) -> Vec<GenFile> {
     // dir path ("" = root is handled by lib.rs) → set of child module idents.
     let mut dirs: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for chain in chains {
-        for i in 1..chain.len() {
-            let dir = chain[..i].join("/");
-            dirs.entry(dir).or_default().insert(chain[i].clone());
+        // Walk the chain left to right, growing `dir` to the join of every
+        // segment already passed — the index-free form of `chain[..i]`/`chain[i]`.
+        let mut dir = String::new();
+        for (i, segment) in chain.iter().enumerate() {
+            if i > 0 {
+                dirs.entry(dir.clone()).or_default().insert(segment.clone());
+                dir.push('/');
+            }
+            dir.push_str(segment);
         }
     }
     dirs.into_iter()
         .map(|(dir, children)| {
             let mut b = String::from("// @generated by openehr-codegen — DO NOT EDIT.\n\n");
+            // A module is a public item too, so it needs its own docs
+            // (`missing_docs`, rustc lint listing).
+            b.push_str(&format!(
+                "//! The openEHR spec package `{dir}` — generated module tree.\n\n"
+            ));
             for c in &children {
                 b.push_str(&format!("pub mod {c};\n"));
             }
@@ -246,19 +292,36 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
     b.push_str("//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.\n\n");
     // Lint exceptions inherent to faithful spec generation:
     //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked
-    //    terms, tabs, quote-style links, loose list continuation);
+    //    terms, tabs, quote-style links, loose/overindented list continuation);
     //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds);
     //  - the package tree can nest a module of the same name (module_inception);
-    //  - closed-slot enums can have size-disparate variants.
+    //  - closed-slot enums can have size-disparate variants;
+    //  - the spec owns the subtype names, so a closed set can share a prefix or
+    //    postfix (`OBJECT_ID` ⊇ `TEMPLATE_ID`, `TERMINOLOGY_ID`, …) — renaming
+    //    a variant would fork the spec model;
+    //  - the spec likewise owns the ATTRIBUTE names, so a class's fields can
+    //    share the class's own stem (`EHR.ehr_id`/`ehr_status`/`ehr_access`,
+    //    `ARCHETYPE.archetype_id`, `C_TEMPORAL.valid_*`) — the BMM attribute
+    //    name is the wire name, so `struct_field_names` cannot be satisfied
+    //    without forking the model.
+    // `reason` is mandatory (`clippy::allow_attributes_without_reason` is deny
+    // workspace-wide); `expect` is wrong here because a given crate need not
+    // trigger every listed lint.
     b.push_str(
         "#![allow(\n    \
          clippy::doc_markdown,\n    \
          clippy::doc_link_with_quotes,\n    \
          clippy::tabs_in_doc_comments,\n    \
          clippy::doc_lazy_continuation,\n    \
+         clippy::doc_overindented_list_items,\n    \
          clippy::struct_excessive_bools,\n    \
+         clippy::struct_field_names,\n    \
          clippy::module_inception,\n    \
-         clippy::large_enum_variant\n\
+         clippy::large_enum_variant,\n    \
+         clippy::enum_variant_names,\n    \
+         reason = \"inherent to faithful openEHR spec generation: verbatim spec \
+         prose in doc comments, and spec-owned class/variant/field names (a field \
+         name IS the normative BMM attribute name)\"\n\
          )]\n\n",
     );
     for m in top {
@@ -350,7 +413,13 @@ fn render_struct_def(
         format!("<{}>", generics.join(", "))
     };
     let mut b = String::new();
-    doc_block(&mut b, class.documentation.as_deref(), "");
+    doc_block_or(
+        &mut b,
+        class.documentation.as_deref(),
+        "",
+        &synth_class_doc(&class.name),
+    );
+    push_spec_alias(&mut b, &class.name, struct_ty, "");
     // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
     // the emitted `ToJson`/`FromJson` impls in `openehr-its` (`emit-json`), not by
     // a per-struct derive. The type is a plain data record.
@@ -387,7 +456,12 @@ fn render_struct_def(
         }
         prev_owner = Some(rp.owner.as_str());
         first = false;
-        doc_block(&mut b, p.documentation.as_deref(), "    ");
+        doc_block_or(
+            &mut b,
+            p.documentation.as_deref(),
+            "    ",
+            &synth_field_doc(&rp.owner, &p.name),
+        );
 
         // The wire name (rename) and literal default are consumed by the JSON
         // codec emitter (`emit-json`, which reads them from the BMM), not from a
@@ -625,7 +699,10 @@ fn emit_enum(
     let no_subst = BTreeMap::new();
 
     // Compute payloads first (so imports can be derived from what they touch).
-    let payloads: Vec<(String, String)> = variants
+    // Each entry is `(variant ident, payload type, doc line)` — a variant is a
+    // public item `missing_docs` checks, and the BMM has no per-subtype text for
+    // a closed slot, so the line is synthesized from the subtype's spec name.
+    let payloads: Vec<(String, String, String)> = variants
         .iter()
         .map(|d| {
             let variant = naming::type_name(d);
@@ -663,7 +740,8 @@ fn emit_enum(
             } else {
                 payload
             };
-            (variant, payload)
+            let doc = format!("The `{d}` subtype of `{}`.", class.name);
+            (variant, payload, doc)
         })
         .collect();
 
@@ -680,7 +758,14 @@ fn emit_enum(
         } else {
             format!("{data_ty}<{}>", data_generics.join(", "))
         };
-        payloads.push((ty.clone(), data_payload));
+        payloads.push((
+            ty.clone(),
+            data_payload,
+            format!(
+                "An instance of `{}` itself (its own, least-rich form).",
+                class.name
+            ),
+        ));
     }
 
     // Imports: every emittable spec type each payload embeds. For a variant
@@ -728,14 +813,7 @@ fn emit_enum(
     // base type) is emitted as a native `FromJson` impl in `openehr-its`
     // (`emit-json`), and serialization as a native `ToJson` impl there. This
     // enum is a plain closed subtype set with no derive/serde attributes.
-    b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n",
-        class.name
-    ));
-    if self_data {
-        b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n");
-    }
-    b.push('\n');
+    file_header(&mut b, &class.name, self_data);
     write_uses(&mut b, &[], &imports);
 
     // The `{Name}Data` struct (the class's own instances) precedes the enum.
@@ -753,19 +831,25 @@ fn emit_enum(
         b.push('\n');
     }
 
-    doc_block(&mut b, class.documentation.as_deref(), "");
     let slot = if self_data {
         "Polymorphic slot"
     } else {
         "Closed subtype set"
     };
-    b.push_str(&format!(
-        "/// {slot} of `{}`: a closed subtype set dispatched on each payload's `_type`.\n",
-        class.name
-    ));
+    doc_summary_then(
+        &mut b,
+        &format!(
+            "{slot} of `{}`, dispatched on each payload's `_type`.",
+            class.name
+        ),
+        class.documentation.as_deref(),
+        "",
+    );
+    push_spec_alias(&mut b, &class.name, &ty, "");
     b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
     b.push_str(&format!("pub enum {ty}{gen_decl} {{\n"));
-    for (variant, payload) in &payloads {
+    for (variant, payload, doc) in &payloads {
+        b.push_str(&format!("    /// {doc}\n"));
         b.push_str(&format!("    {variant}({payload}),\n"));
     }
     b.push_str("}\n");
@@ -775,11 +859,14 @@ fn emit_enum(
 fn emit_newtype(class: &BmmClass, prim: &str) -> String {
     let ty = naming::type_name(&class.name);
     let mut b = String::new();
-    b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n\n",
-        class.name
-    ));
-    doc_block(&mut b, class.documentation.as_deref(), "");
+    file_header(&mut b, &class.name, false);
+    doc_block_or(
+        &mut b,
+        class.documentation.as_deref(),
+        "",
+        &synth_class_doc(&class.name),
+    );
+    push_spec_alias(&mut b, &class.name, &ty, "");
     // A transparent primitive newtype; canonical-JSON (de)serialization is the
     // emitted `ToJson`/`FromJson` impl in `openehr-its` (`emit-json`), which
     // delegates through the inner primitive.
@@ -856,10 +943,14 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration) -> String 
     };
 
     let mut b = String::new();
-    b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{spec}`) — DO NOT EDIT.\n\n"
-    ));
-    doc_block(&mut b, class.documentation.as_deref(), "");
+    file_header(&mut b, spec, false);
+    doc_block_or(
+        &mut b,
+        class.documentation.as_deref(),
+        "",
+        &synth_class_doc(spec),
+    );
+    push_spec_alias(&mut b, spec, &ty, "");
     let derive = if is_int {
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n"
     } else {
@@ -1037,11 +1128,52 @@ fn add_import(
 }
 
 fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
-    b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\
-         // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n\n"
-    ));
+    file_header(b, class, true);
     write_uses(b, &[], imports);
+}
+
+/// The generated file's banner + its module documentation. Every generated type
+/// file IS a module, and `missing_docs` checks modules, so the file carries an
+/// inner `//!` summary naming the spec class it realizes (an out-of-line
+/// module's inner docs satisfy the lint at the `pub mod` declaration site).
+/// `impl_note` adds the sibling-`*_impl.rs` banner line.
+fn file_header(b: &mut String, class: &str, impl_note: bool) {
+    b.push_str(&format!(
+        "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n"
+    ));
+    if impl_note {
+        b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n");
+    }
+    b.push_str(&format!(
+        "\n//! The openEHR `{class}` spec class, generated from the vendored BMM\n\
+         //! meta-model.\n\n"
+    ));
+}
+
+/// A rustdoc search alias carrying the verbatim openEHR spelling, so
+/// `EHR_STATUS` finds `EhrStatus`. Skipped when the Rust name already equals the
+/// spec name — rustc rejects an alias identical to the item name.
+fn push_spec_alias(b: &mut String, spec: &str, rust_ty: &str, indent: &str) {
+    if spec != rust_ty {
+        b.push_str(&format!("{indent}#[doc(alias = \"{spec}\")]\n"));
+    }
+}
+
+/// The synthesized class-doc line for a BMM class the vendored schema carries no
+/// `documentation` for (10 such classes across the pinned schemas as of the
+/// current pins) — `missing_docs` admits no exceptions, and an honest
+/// synthesized line beats a silent gap.
+fn synth_class_doc(spec: &str) -> String {
+    format!("The openEHR `{spec}` class (the vendored BMM carries no documentation for it).")
+}
+
+/// The synthesized attribute-doc line for a BMM property with no
+/// `documentation`, naming the attribute and the class that declares it.
+fn synth_field_doc(owner: &str, prop: &str) -> String {
+    format!(
+        "The `{prop}` attribute of openEHR `{owner}` (the vendored BMM carries no \
+         documentation for it)."
+    )
 }
 
 /// Emit a crate's `use` block as a single lexicographically-sorted list (so the
@@ -1061,6 +1193,29 @@ fn write_uses(b: &mut String, fixed: &[&str], imports: &BTreeSet<String>) {
     b.push('\n');
 }
 
+/// Emit `doc` as `///` lines, falling back to `fallback` when the vendored BMM
+/// carries no documentation for the item. Every public item needs docs
+/// (`missing_docs`), so there is no "no docs" branch.
+fn doc_block_or(b: &mut String, doc: Option<&str>, indent: &str, fallback: &str) {
+    if doc.is_some_and(|d| !d.trim().is_empty()) {
+        doc_block(b, doc, indent);
+    } else {
+        b.push_str(&format!("{indent}/// {fallback}\n"));
+    }
+}
+
+/// Emit a one-sentence `summary` line, then the BMM prose as the detail
+/// paragraph after a blank `///` — the documented rustdoc shape (the first
+/// paragraph is what search results and module indexes show:
+/// <https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html>).
+fn doc_summary_then(b: &mut String, summary: &str, doc: Option<&str>, indent: &str) {
+    b.push_str(&format!("{indent}/// {summary}\n"));
+    if doc.is_some_and(|d| !d.trim().is_empty()) {
+        b.push_str(&format!("{indent}///\n"));
+        doc_block(b, doc, indent);
+    }
+}
+
 fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
     let Some(doc) = doc else { return };
     // Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS`
@@ -1068,13 +1223,21 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
     // Neutralize both forms it recognizes so the docs render as text, never run:
     //   - a bare ``` fence → tag the opening as ```text (closing stays bare);
     //   - a run of 4-space-indented lines → wrap it in a ```text fence.
-    let mut push = |line: &str| {
-        if line.is_empty() {
-            b.push_str(&format!("{indent}///\n"));
-        } else {
-            b.push_str(&format!("{indent}/// {line}\n"));
+    // Prose OUTSIDE those blocks additionally goes through `sanitize_doc_prose`
+    // (bare URLs, stray brackets/angle brackets — the rustdoc deny-lints).
+    let mut out: Vec<String> = Vec::new();
+    // Pending prose lines, sanitized as one segment so a code span may span
+    // lines (the BMM has such spans, e.g. `BMM_SCHEMA_DESCRIPTOR.schema_id`).
+    let mut prose: Vec<&str> = Vec::new();
+    let flush = |prose: &mut Vec<&str>, out: &mut Vec<String>| {
+        if prose.is_empty() {
+            return;
         }
+        let sanitized = sanitize_doc_prose(&prose.join("\n"));
+        out.extend(sanitized.split('\n').map(str::to_string));
+        prose.clear();
     };
+
     let mut in_fence = false; // inside an explicit ``` fence
     let mut in_indent = false; // inside an auto-wrapped indented block
     for line in doc.lines() {
@@ -1083,12 +1246,13 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
         let lead = line.len() - stripped.len();
 
         if stripped.starts_with("```") && !in_indent {
+            flush(&mut prose, &mut out);
             if in_fence {
                 in_fence = false;
-                push(line);
+                out.push(line.to_string());
             } else {
                 in_fence = true;
-                push(&if stripped == "```" {
+                out.push(if stripped == "```" {
                     line.replacen("```", "```text", 1)
                 } else {
                     line.to_string()
@@ -1097,29 +1261,229 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
             continue;
         }
         if in_fence {
-            push(line);
+            out.push(line.to_string());
             continue;
         }
 
         let is_indent_line = lead >= 4 && !stripped.is_empty();
         if is_indent_line && !in_indent {
-            push("```text");
+            flush(&mut prose, &mut out);
+            out.push("```text".to_string());
             in_indent = true;
         } else if in_indent && !is_indent_line && !stripped.is_empty() {
-            push("```");
+            out.push("```".to_string());
             in_indent = false;
         }
-        push(line);
+        if in_indent {
+            out.push(line.to_string());
+        } else {
+            prose.push(line);
+        }
     }
+    flush(&mut prose, &mut out);
     if in_indent {
-        push("```");
+        out.push("```".to_string());
     }
     if in_fence {
-        push("```");
+        out.push("```".to_string());
     }
+
+    for line in &out {
+        if line.is_empty() {
+            b.push_str(&format!("{indent}///\n"));
+        } else {
+            b.push_str(&format!("{indent}/// {line}\n"));
+        }
+    }
+}
+
+/// Make verbatim openEHR spec prose safe for the workspace's deny-level rustdoc
+/// lints, leaving code spans untouched (rustdoc never lints inside them):
+///
+/// - a bare URL becomes an autolink `<url>`, and the asciidoc `url[label]` form
+///   becomes a Markdown link (`rustdoc::bare_urls`);
+/// - a literal `[…]` is escaped `\[…\]`, so prose is not read as a broken
+///   intra-doc link (`rustdoc::broken_intra_doc_links`);
+/// - a literal `<…>` is escaped `\<…\>`, so `"name <email>"` / `VERSION<T>` in
+///   prose is not read as an HTML tag (`rustdoc::invalid_html_tags`);
+/// - an unpaired backtick run is escaped, so it opens no dangling code span
+///   (`rustdoc::unescaped_backticks`).
+fn sanitize_doc_prose(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(c) = rest.chars().next() {
+        match c {
+            '`' => {
+                let open = backtick_run(rest);
+                // A matched pair delimits a code span: copy it verbatim, closing
+                // run included. An unmatched run is escaped instead.
+                if let Some(offset) = find_backtick_run(after(rest, open), open) {
+                    let end = open + offset + open;
+                    out.push_str(upto(rest, end));
+                    rest = after(rest, end);
+                } else {
+                    for _ in 0..open {
+                        out.push_str("\\`");
+                    }
+                    rest = after(rest, open);
+                }
+            }
+            'h' if rest.starts_with("http://") || rest.starts_with("https://") => {
+                let url = read_url(rest);
+                let tail = after(rest, url.len());
+                // asciidoc link form `https://host/path[label]`. A parenthesis in
+                // the URL would end the Markdown destination early, so such a
+                // link stays an autolink with escaped brackets.
+                let plain_dest = !url.contains(['(', ')']);
+                if let Some((consumed, label)) = read_link_label(tail).filter(|_| plain_dest) {
+                    out.push_str(&format!("[{label}]({url})"));
+                    rest = after(tail, consumed);
+                } else {
+                    out.push_str(&format!("<{url}>"));
+                    rest = tail;
+                }
+            }
+            '[' | ']' | '<' | '>' => {
+                out.push('\\');
+                out.push(c);
+                rest = after(rest, c.len_utf8());
+            }
+            c => {
+                out.push(c);
+                rest = after(rest, c.len_utf8());
+            }
+        }
+    }
+    out
+}
+
+/// `s` after its first `n` bytes — total (empty when `n` is out of range or not
+/// on a char boundary), so no slicing can panic.
+fn after(s: &str, n: usize) -> &str {
+    s.get(n..).unwrap_or_default()
+}
+
+/// The first `n` bytes of `s` — total, like [`after`].
+fn upto(s: &str, n: usize) -> &str {
+    s.get(..n).unwrap_or_default()
+}
+
+/// The length of the backtick run at the start of `s`.
+fn backtick_run(s: &str) -> usize {
+    s.chars().take_while(|&c| c == '`').count()
+}
+
+/// The byte offset in `s` of the next backtick run of exactly `n`, if any.
+fn find_backtick_run(s: &str, n: usize) -> Option<usize> {
+    let mut rest = s;
+    let mut base = 0;
+    while let Some(idx) = rest.find('`') {
+        let run = backtick_run(after(rest, idx));
+        if run == n {
+            return Some(base + idx);
+        }
+        base += idx + run;
+        rest = after(rest, idx + run);
+    }
+    None
+}
+
+/// The URL at the start of `s`: up to whitespace or a delimiter, with trailing
+/// sentence punctuation left outside the link.
+fn read_url(s: &str) -> &str {
+    let len = s
+        .chars()
+        .take_while(|&c| {
+            !c.is_whitespace() && !matches!(c, '`' | '[' | ']' | '<' | '>' | '"' | '\'')
+        })
+        .map(char::len_utf8)
+        .sum();
+    let mut url = upto(s, len);
+    while let Some(trimmed) = url.strip_suffix(['.', ',', ';', ':', ')']) {
+        url = trimmed;
+    }
+    url
+}
+
+/// An asciidoc link label `[label]` at the start of `s`, if it is usable as
+/// Markdown link text (no nested bracket or code span). Returns
+/// `(bytes consumed incl. both brackets, label)`.
+fn read_link_label(s: &str) -> Option<(usize, &str)> {
+    let body = s.strip_prefix('[')?;
+    let close = body.find(']')?;
+    let label = upto(body, close);
+    if label.is_empty() || label.contains(['[', '`']) {
+        return None;
+    }
+    Some((close + 2, label))
 }
 
 /// `DV_QUANTITY` → `dv_quantity`, `Iso8601_date` → `iso8601_date`.
 fn to_snake(spec: &str) -> String {
     spec.to_lowercase()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{doc_block, sanitize_doc_prose};
+
+    #[test]
+    fn bare_url_becomes_an_autolink() {
+        assert_eq!(
+            sanitize_doc_prose("specified by https://www.rfc-editor.org/rfc/rfc1034."),
+            "specified by <https://www.rfc-editor.org/rfc/rfc1034>.",
+        );
+    }
+
+    #[test]
+    fn asciidoc_link_becomes_a_markdown_link() {
+        assert_eq!(
+            sanitize_doc_prose("Coded using https://example.org/t.xml[openEHR vocabulary]."),
+            "Coded using [openEHR vocabulary](https://example.org/t.xml).",
+        );
+    }
+
+    #[test]
+    fn prose_brackets_and_angle_brackets_are_escaped() {
+        assert_eq!(
+            sanitize_doc_prose(r#"in "name <email>" form, table [ [ String ] ]"#),
+            r#"in "name \<email\>" form, table \[ \[ String \] \]"#,
+        );
+    }
+
+    #[test]
+    fn code_spans_are_copied_verbatim() {
+        // rustdoc lints nothing inside a code span, so `Interval<T>` and a URL in
+        // backticks must survive untouched — including a span crossing lines.
+        assert_eq!(
+            sanitize_doc_prose("substitutable for `Interval<T>` where needed"),
+            "substitutable for `Interval<T>` where needed",
+        );
+        assert_eq!(
+            sanitize_doc_prose("formed by\n\n`create_schema_id(\n  publisher)`\n\ne.g. x"),
+            "formed by\n\n`create_schema_id(\n  publisher)`\n\ne.g. x",
+        );
+    }
+
+    #[test]
+    fn an_unpaired_backtick_is_escaped() {
+        assert_eq!(
+            sanitize_doc_prose("the property `tuple_constraint', and comes"),
+            "the property \\`tuple_constraint', and comes",
+        );
+    }
+
+    #[test]
+    fn fenced_and_indented_blocks_are_left_alone() {
+        let mut out = String::new();
+        doc_block(
+            &mut out,
+            Some("Values:\n\n```\n\"YYYY-MM-DD\" -- [full]\n```"),
+            "",
+        );
+        assert_eq!(
+            out,
+            "/// Values:\n///\n/// ```text\n/// \"YYYY-MM-DD\" -- [full]\n/// ```\n",
+        );
+    }
 }

@@ -31,14 +31,20 @@ pub enum SigningMode {
     /// Plain digest (no PKI): the wire form is `<prefix><encoding(hash(bytes))>`,
     /// self-described by the SUT's declared algorithm/encoding/prefix.
     Digest {
+        /// The hash algorithm the SUT applies to the canonical bytes.
         algorithm: String,
+        /// How the digest is encoded on the wire (e.g. `hex`, `base64`).
         encoding: String,
+        /// A fixed prefix the wire form carries before the encoded digest.
         #[serde(default)]
         prefix: String,
     },
     /// openPGP (RFC 4880): a detached armored signature over the canonical
     /// bytes, verified against the declared public key.
-    Pgp { public_key: String },
+    Pgp {
+        /// The armored public key the detached signature is verified against.
+        public_key: String,
+    },
 }
 
 /// Reconstruct the agreed signed canonical form from a read-back
@@ -111,7 +117,6 @@ fn verify_pgp(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions
 mod tests {
     use super::*;
     use serde_json::json;

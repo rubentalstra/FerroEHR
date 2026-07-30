@@ -89,14 +89,20 @@ impl ParsedCode {
 /// admit the zero-padded openEHR at-code convention (see the module NOTE).
 static VALID_CODE_RE: LazyLock<Regex> = LazyLock::new(|| {
     // leader + first numeric segment + `.`-separated further segments.
-    #[allow(clippy::unwrap_used)] // a compile-time-constant pattern
+    #[expect(
+        clippy::unwrap_used,
+        reason = "the pattern is a compile-time string constant proven to compile by this module's own tests, so an Err is unreachable"
+    )]
     Regex::new(r"^(id|at|ac)[0-9]+(\.[0-9]+)*$").unwrap()
 });
 
 /// `Root_code_regex_pattern` verbatim: `^(id1|at0000)(\.1)*$`
 /// (`org.openehr.am.aom2.adl_code_definitions` §Constants).
 static ROOT_CODE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    #[allow(clippy::unwrap_used)] // a compile-time-constant pattern
+    #[expect(
+        clippy::unwrap_used,
+        reason = "the pattern is a compile-time string constant proven to compile by this module's own tests, so an Err is unreachable"
+    )]
     Regex::new(r"^(id1|at0000)(\.1)*$").unwrap()
 });
 
@@ -208,7 +214,7 @@ pub fn specialisation_parent_from_code(code: &str) -> Option<String> {
     }
     let keep = parsed.segments.len() - 1;
     let mut out = String::from(parsed.prefix.leader());
-    out.push_str(&parsed.segments[..keep].join("."));
+    out.push_str(&parsed.segments.get(..keep)?.join("."));
     Some(out)
 }
 
@@ -240,7 +246,9 @@ pub fn is_redefined_code(code: &str) -> bool {
     if parsed.segments.len() <= 1 {
         return false;
     }
-    let above_last = &parsed.segments[..parsed.segments.len() - 1];
+    let Some((_, above_last)) = parsed.segments.split_last() else {
+        return false;
+    };
     above_last.iter().any(|seg| seg.bytes().any(|b| b != b'0'))
 }
 
@@ -270,7 +278,6 @@ pub fn is_new_at_level(code: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions panic/unwrap by design
 mod tests {
     use super::*;
 

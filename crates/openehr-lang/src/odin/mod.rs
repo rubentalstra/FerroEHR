@@ -215,7 +215,6 @@ fn line_col(src: &str, offset: usize) -> (usize, usize) {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

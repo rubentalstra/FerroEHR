@@ -62,30 +62,23 @@ fn is_secret_key(key: &str) -> bool {
 /// If `s` looks like a URL with `user:password@host` userinfo, return a copy
 /// with the userinfo masked (`scheme://***@host/...`). Otherwise `None`.
 fn mask_dsn(s: &str) -> Option<String> {
-    let scheme_end = s.find("://")?;
-    let after_scheme = scheme_end + 3;
-    let rest = &s[after_scheme..];
+    let (scheme, rest) = s.split_once("://")?;
     // The authority ends at the first '/', '?' or '#'.
-    let authority_end = rest.find(['/', '?', '#']).map_or(rest.len(), |i| i);
-    let authority = &rest[..authority_end];
+    let authority = rest
+        .find(['/', '?', '#'])
+        .and_then(|end| rest.get(..end))
+        .unwrap_or(rest);
     let at = authority.find('@')?;
     // Only mask when there is userinfo containing a credential separator or any
     // non-empty userinfo (a bare `host@` is not a DSN we care about).
-    let userinfo = &authority[..at];
-    if userinfo.is_empty() {
+    if authority.get(..at)?.is_empty() {
         return None;
     }
-    let host_and_after = &rest[at + 1..];
-    Some(format!("{}{MASK}@{host_and_after}", &s[..after_scheme]))
+    let host_and_after = rest.get(at + 1..)?;
+    Some(format!("{scheme}://{MASK}@{host_and_after}"))
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

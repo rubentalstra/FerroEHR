@@ -218,7 +218,11 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 /// Spec: `VERSION.commit_audit` 1..1; `VERSION.Preceding_version_uid_validity`;
 /// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
 /// (RM common master06 §Version subtypes).
-#[allow(clippy::too_many_arguments)] // the ORIGINAL_VERSION's attributes; a struct would not read clearer
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the ORIGINAL_VERSION's own attributes; a parameter struct would \
+              not read clearer than naming them"
+)]
 pub(crate) fn build_original_version(
     creating_system_id: &str,
     vo_id: VoId,

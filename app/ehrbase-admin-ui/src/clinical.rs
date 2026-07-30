@@ -67,7 +67,7 @@ pub struct RenderedRow {
     /// The leaf's label: `name.value` for an `ELEMENT`, otherwise the humanized
     /// RM attribute name.
     pub label: String,
-    /// The rendered value (see [`format_value`] for the per-type shapes).
+    /// The rendered value (see `format_value` for the per-type shapes).
     pub value: String,
     /// `terminology::code` for a coded value, so the code is visible without
     /// leaving the rendered view.

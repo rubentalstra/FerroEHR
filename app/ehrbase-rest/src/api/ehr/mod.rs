@@ -19,7 +19,7 @@
 //!
 //! Each arm rebuilds the operation's `*Params`, decodes wire strings into the
 //! SM catalog's native argument types (`uuid::Uuid`,
-//! [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId),
+//! [`openehr_base::prelude::ObjectVersionId`],
 //! [`UpdateVersion`]) via [`crate::overview::version_id`], decodes any body
 //! (RM-typed bodies accept JSON or canonical XML), calls the EHR-core SM catalog
 //! methods on the platform service `S`, and rebuilds a [`ServiceResponse`] (RM
@@ -101,8 +101,10 @@ fn resource_meta_from(ehr_id: &str, body: &Value) -> Option<ResourceMeta> {
 /// §Audit Details; the `Last-Modified` source named by ITS-REST overview
 /// §"`ETag` and Last-Modified"). `None` for a body that is not a VERSION.
 fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
-    body["commit_audit"]["time_committed"]["value"]
-        .as_str()?
+    body.get("commit_audit")
+        .and_then(|a| a.get("time_committed"))
+        .and_then(|t| t.get("value"))
+        .and_then(Value::as_str)?
         .parse::<jiff::Timestamp>()
         .ok()
 }
@@ -201,11 +203,12 @@ pub(super) fn mk_update_version(
 /// A tree-only fetch would satisfy a fabricated `creating_system_id`; that
 /// names no VERSION in this repository → 404. A body without a served uid
 /// (nothing to verify against) passes.
-pub(super) fn ensure_served_version(
-    addressed: &str,
-    body: &serde_json::Value,
-) -> Result<(), RestError> {
-    match body["uid"]["value"].as_str() {
+pub(super) fn ensure_served_version(addressed: &str, body: &Value) -> Result<(), RestError> {
+    match body
+        .get("uid")
+        .and_then(|u| u.get("value"))
+        .and_then(Value::as_str)
+    {
         Some(served) if !served.eq_ignore_ascii_case(addressed) => Err(RestError(
             ApiError::NotFound(format!("version {addressed}")),
         )),
@@ -306,14 +309,15 @@ pub(super) struct StoredItemTags {
 /// "value /= Void implies not `value.is_empty`" — value is optional but, if set,
 /// non-empty).
 fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
-    let mut t = json!({ "key": entry.key });
+    let mut t = serde_json::Map::new();
+    t.insert("key".to_owned(), json!(entry.key));
     if !entry.value.is_empty() {
-        t["value"] = json!(entry.value);
+        t.insert("value".to_owned(), json!(entry.value));
     }
     if let Some(path) = &entry.target_path {
-        t["target_path"] = json!(path);
+        t.insert("target_path".to_owned(), json!(path));
     }
-    t
+    Value::Object(t)
 }
 
 /// Echo the stored `ITEM_TAG` lists onto a create/update response — MAY-level

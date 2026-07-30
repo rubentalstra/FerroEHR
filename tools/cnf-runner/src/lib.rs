@@ -9,6 +9,9 @@
 //! capability matrix, corpus manifest, ambiguity register). Every closed
 //! vocabulary is a Rust enum/newtype so illegal states are unrepresentable.
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 pub mod artifacts;
 pub mod conf_assets;
 pub mod exec;

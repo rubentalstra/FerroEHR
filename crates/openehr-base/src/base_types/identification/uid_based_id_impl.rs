@@ -10,7 +10,7 @@
 //!
 //! Invariant `Has_extension_valid` (`extension.is_empty xor has_extension`) is
 //! definitionally satisfied because `has_extension()` is computed from
-//! `extension()`; it is therefore not surfaced as a runnable [`Validate`] check
+//! `extension()`; it is therefore not surfaced as a runnable `Validate` check
 //! (mirrors archie, which computes rather than stores it). `OBJECT_VERSION_ID`
 //! well-formedness is checked by its own sibling (`object_version_id_impl`).
 
@@ -132,12 +132,6 @@ impl UidBasedId {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

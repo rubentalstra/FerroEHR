@@ -71,7 +71,10 @@ fn emit_quantified_extras(dv: &Value, out: &mut SimNode, with_accuracy: bool) {
 }
 
 /// RM leaf value → datum attrs on `out` (see [`super::emit_leaf`]).
-#[allow(clippy::too_many_lines, clippy::match_same_arms)] // one dispatch over the DATA_VALUE leaf set
+#[expect(
+    clippy::match_same_arms,
+    reason = "the arms are kept explicit per RM type so each mapping stays readable next to its type name"
+)]
 pub(super) fn emit_leaf(rm: &Value, rm_type: &str, list_open: Option<bool>, out: &mut SimNode) {
     let ty = rm
         .get("_type")
@@ -482,7 +485,10 @@ fn infer_type(node: &SimNode) -> Option<&'static str> {
     }
 }
 
-#[allow(clippy::match_same_arms)] // arms kept explicit per RM type
+#[expect(
+    clippy::match_same_arms,
+    reason = "arms are kept explicit per RM type so each mapping stays readable next to its type name"
+)]
 fn build_core(
     base: &str,
     rm_type: &str,
@@ -525,7 +531,10 @@ fn build_core(
 fn generic_arg(rm_type: &str) -> Option<&str> {
     let start = rm_type.find('<')? + 1;
     let end = rm_type.rfind('>')?;
-    (start < end).then(|| rm_type[start..end].trim())
+    if start >= end {
+        return None;
+    }
+    Some(rm_type.get(start..end)?.trim())
 }
 
 fn attr<'a>(node: &'a SimNode, key: &str) -> Option<&'a Value> {
@@ -839,7 +848,6 @@ pub(super) fn build_reference_range(node: &SimNode, t: &str) -> Value {
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
     use serde_json::json;

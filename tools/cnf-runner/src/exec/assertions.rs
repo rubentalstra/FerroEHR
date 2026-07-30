@@ -328,8 +328,8 @@ fn flat_equivalent(
 /// The `equivalent` comparison: structural equality after stripping the
 /// resolved ignore paths from BOTH sides (numeric leaves by value, via the
 /// result-set cell rule — canonical JSON carries RM numbers), with canonical
-/// `_type` self-tag PRESENCE normalized (see [`rm_cells_equal`]). FLAT bodies
-/// take the master06-aware round-trip rule ([`flat_equivalent`]).
+/// `_type` self-tag PRESENCE normalized (see this module's `rm_cells_equal`). FLAT bodies
+/// take the master06-aware round-trip rule (`flat_equivalent`).
 #[must_use]
 pub fn equivalent(actual: &Value, expected: &Value, ignored_paths: &[String]) -> bool {
     if let (Some(a), Some(e)) = (simplified_as_flat(actual), simplified_as_flat(expected)) {
@@ -654,7 +654,6 @@ pub fn is_wire_dependent(assertion: &Assertion) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use super::*;
     use serde_json::json;

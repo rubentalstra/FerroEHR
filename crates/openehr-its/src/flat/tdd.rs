@@ -54,12 +54,12 @@
 //! * **Compacted-wrapper instance data is not carried.** Where the TDD spells out
 //!   a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`/`name`),
 //!   the re-materialised node takes the RM-mandatory default
-//!   ([`DEFAULT_TIME`]-equivalent), matching the FLAT reverse
+//!   (`DEFAULT_TIME`-equivalent), matching the FLAT reverse
 //!   converter — the *leaf data values* and the full composition/entry context
 //!   are faithful. Driving from the (uncompacted) OPT definition tree to recover
 //!   them is future work (the same BMM-RM-model dependency `from_flat` carries).
 //! * The multi-valued RM-attribute set used to re-materialise arrays is derived
-//!   from the generated BMM RM attribute model ([`is_multiple_attr`]) — the same
+//!   from the generated BMM RM attribute model (`is_multiple_attr`) — the same
 //!   single source of truth the FLAT builder
 //!   ([`composition_from_flat`](crate::flat::convert::composition_from_flat)) delegates
 //!   to; no hard-coded list.
@@ -324,10 +324,6 @@ enum Simple {
     Text,
 }
 
-// A lookup table keyed on the RM attribute name, gated by the owning rm type;
-// distinct attributes legitimately share a parse type (e.g. several map to
-// CODE_PHRASE), which is not a merge candidate.
-#[allow(clippy::match_same_arms)]
 fn simple_attr(rm_type: &str, attr: &str) -> Option<Simple> {
     use Simple::{Text, Typed};
     let comp = rm_type == "COMPOSITION";
@@ -433,6 +429,10 @@ pub fn from_tdd(tdd_xml: &str, wt: &WebTemplate) -> Result<Value, FlatError> {
 /// the build. Everything else is content the TDS does not define.
 const WRAPPER_METADATA: [&str; 6] = ["name", "uid", "links", "feeder_audit", "origin", "time"];
 
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`simple`, `matched` and `wrapper` are all sized `el.children.len()` and every index into them is either a `match_indices(el, ..)` position over those same children or the `enumerate()` index of the same iteration, so all are in bounds by construction"
+)]
 fn check_conformance(el: &El, wt: &WebTemplateNode, rm_type: &str) -> Result<(), FlatError> {
     // Direct children consumed as simple in-context attributes.
     let simple: Vec<bool> = el
@@ -535,8 +535,7 @@ fn build_node(
 
     // Simple in-context RM attributes — read directly from the TDD (faithful).
     let mut i = 0;
-    while i < el.children.len() {
-        let child = &el.children[i];
+    while let Some(child) = el.children.get(i) {
         i += 1;
         let Some(hint) = simple_attr(rm_type, &child.name) else {
             continue;
@@ -695,6 +694,10 @@ fn place(
     place_rec(parent, rel, 0, id_idx, child_value, wc);
 }
 
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`i` is a cursor into `rel` that the recursion only advances while `i + 1 < rel.len()` (the `last` guard), so `rel[i]` and `rel[i + 1..]` are in bounds at every call"
+)]
 fn place_rec(
     cur: &mut Map<String, Value>,
     rel: &[PathSegment],
@@ -979,8 +982,8 @@ fn concrete_type(rm_type: &str) -> &str {
 /// an aqlPath (`…/items[at0004]/value` → `at0004`).
 fn last_node_id_str(path: &str) -> Option<&str> {
     let close = path.rfind(']')?;
-    let open = path[..close].rfind('[')?;
-    Some(&path[open + 1..close])
+    let open = path.get(..close)?.rfind('[')?;
+    path.get(open + 1..close)
 }
 
 fn is_archetype_root(node_id: &str) -> bool {
@@ -988,12 +991,6 @@ fn is_archetype_root(node_id: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod multiplicity_tests {
     use super::is_multiple_attr;
 

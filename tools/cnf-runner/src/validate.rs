@@ -133,9 +133,11 @@ impl CheckId {
 /// One violation.
 #[derive(Debug, Clone)]
 pub struct Finding {
+    /// Which gate produced the finding.
     pub check: CheckId,
     /// The offending artifact (file path or case id).
     pub artifact: String,
+    /// What is wrong, in one line.
     pub message: String,
 }
 
@@ -155,8 +157,11 @@ impl std::fmt::Display for Finding {
 /// (`docs/specs/openehr`) enabling the two resolution checks.
 #[derive(Debug)]
 pub struct Context<'a> {
+    /// The typed artifacts every gate reads.
     pub set: &'a ArtifactSet,
+    /// The files that failed to load, reported as findings of their own.
     pub load_errors: &'a [LoadError],
+    /// The vendored spec tree, enabling the citation-resolution gates.
     pub spec_root: Option<&'a Path>,
 }
 
@@ -1563,7 +1568,7 @@ fn path_contains_token(root: &Path, token: &str) -> bool {
 
 /// Kinds a step may observe: the fixed expectation, every fixture-set
 /// `expected` kind when per-fixture, plus any matrix `expected` column kinds.
-fn step_observable_kinds(case: &CaseCore, step: &crate::model::case::FlowStep) -> Vec<OutcomeKind> {
+fn step_observable_kinds(case: &CaseCore, step: &FlowStep) -> Vec<OutcomeKind> {
     let mut kinds: Vec<OutcomeKind> = Vec::new();
     match step.expect {
         ExpectSpec::Kind(kind) => kinds.push(kind),
@@ -1735,7 +1740,6 @@ fn check_binding_filename(path: &Path, binding: &OperationBinding, findings: &mu
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod binding_filename_tests {
     use super::*;
 
@@ -1923,8 +1927,8 @@ fn check_vocab_drift(set: &ArtifactSet, findings: &mut Vec<Finding>) {
 /// enumeration domain. The set is the openEHR SM Platform Service Model's
 /// platform interfaces (`docs/specs/openehr/SM/docs/UML/classes/`), which
 /// anchor the operation identities the case cores use; it is NOT derived from
-/// the vendored OAS (owner ruling 2026-07-24, `.claude/rules/spec-adherence.md`
-/// — the OAS is `emit-rest` codegen input, never a surface source). Every
+/// the vendored OAS (owner ruling 2026-07-24: the OAS is `emit-rest` codegen
+/// input, never a surface source). Every
 /// listed interface has a vendored `i_*.adoc` class export (a missing file is
 /// itself a `surface-coverage` finding).
 ///
@@ -2218,9 +2222,9 @@ fn non_sm_operation_source(op: &SmOperationRef) -> Option<&'static str> {
 /// Returns a message when the interface has no vendored class export.
 fn sm_interface_operations(spec_root: &Path, interface: &str) -> Result<Vec<String>, String> {
     let file = sm_class_file(spec_root, interface);
-    let text = std::fs::read_to_string(&file).map_err(|_| {
+    let text = std::fs::read_to_string(&file).map_err(|error| {
         format!(
-            "interface {interface} has no vendored SM class export ({})",
+            "interface {interface} has no vendored SM class export ({}): {error}",
             file.display()
         )
     })?;
@@ -2872,7 +2876,10 @@ fn check_axis3_section_derivation(
 /// Axis 1 (the per-interface section) and the Axis-3 section derivation render
 /// only when `spec_root` is supplied (they read the vendored spec tree).
 #[must_use]
-#[allow(clippy::too_many_lines)] // one deterministic report-rendering seam
+#[expect(
+    clippy::too_many_lines,
+    reason = "one deterministic report-rendering seam"
+)]
 pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> String {
     use std::fmt::Write;
 
@@ -3055,7 +3062,6 @@ pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> St
     out
 }
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic, clippy::expect_used)] // test assertions/fixtures
 mod surface_tests {
     use super::*;
 

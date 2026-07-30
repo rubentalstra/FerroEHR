@@ -100,9 +100,8 @@ pub async fn execute(
         for (ci, spec) in prepared.columns.iter().enumerate() {
             match spec.kind {
                 CellKind::Scalar => {
-                    let v: Option<Value> = row
-                        .try_get(spec.sql_cols[0].as_str())
-                        .map_err(ExecError::from)?;
+                    let v: Option<Value> =
+                        row.try_get(sql_col(spec, 0)?).map_err(ExecError::from)?;
                     cells.push(v.unwrap_or(Value::Null));
                 }
                 CellKind::WholeObject => {
@@ -126,8 +125,14 @@ pub async fn execute(
             .await
             .map_err(ExecError::from)?;
         for (ri, ci, anchor) in pending {
-            if let Some(value) = subtrees.get(&anchor) {
-                out_rows[ri][ci] = value.clone();
+            // `(ri, ci)` was recorded while building `out_rows`, so the cell
+            // exists; fetched rather than indexed so a future refactor cannot
+            // turn a bookkeeping slip into a panic on a request path.
+            if let (Some(value), Some(cell)) = (
+                subtrees.get(&anchor),
+                out_rows.get_mut(ri).and_then(|row| row.get_mut(ci)),
+            ) {
+                *cell = value.clone();
             }
         }
     }
@@ -190,6 +195,22 @@ pub async fn collect_scope(
     })
 }
 
+/// The `index`-th generated SQL alias of a `RESULT_SET` column, as a typed
+/// reject rather than a panic when the lowering did not emit it.
+///
+/// # Errors
+/// [`ExecError::MissingColumnAlias`] when `spec.sql_cols` is shorter than the
+/// column's [`CellKind`] declares.
+fn sql_col(spec: &ColumnSpec, index: usize) -> Result<&str, AqlError> {
+    spec.sql_cols.get(index).map(String::as_str).ok_or_else(|| {
+        ExecError::MissingColumnAlias {
+            column: spec.name.clone(),
+            index,
+        }
+        .into()
+    })
+}
+
 /// Extract the [`SubtreeAnchor`] for a [`CellKind::WholeObject`] cell from its
 /// four locator columns (`vo_id`, `sys_version`, `num`, `num_cap`). Returns
 /// `None` when the `vo_id` locator is SQL NULL (an outer-joined absent object) —
@@ -198,21 +219,13 @@ fn whole_object_anchor(
     row: &sqlx::postgres::PgRow,
     spec: &ColumnSpec,
 ) -> Result<Option<SubtreeAnchor>, AqlError> {
-    let vo_id: Option<VoId> = row
-        .try_get(spec.sql_cols[0].as_str())
-        .map_err(ExecError::from)?;
+    let vo_id: Option<VoId> = row.try_get(sql_col(spec, 0)?).map_err(ExecError::from)?;
     let Some(vo_id) = vo_id else {
         return Ok(None);
     };
-    let sys_version: i32 = row
-        .try_get(spec.sql_cols[1].as_str())
-        .map_err(ExecError::from)?;
-    let num: i32 = row
-        .try_get(spec.sql_cols[2].as_str())
-        .map_err(ExecError::from)?;
-    let num_cap: i32 = row
-        .try_get(spec.sql_cols[3].as_str())
-        .map_err(ExecError::from)?;
+    let sys_version: i32 = row.try_get(sql_col(spec, 1)?).map_err(ExecError::from)?;
+    let num: i32 = row.try_get(sql_col(spec, 2)?).map_err(ExecError::from)?;
+    let num_cap: i32 = row.try_get(sql_col(spec, 3)?).map_err(ExecError::from)?;
     Ok(Some(SubtreeAnchor {
         vo_id,
         sys_version,

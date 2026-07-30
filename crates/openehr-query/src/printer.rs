@@ -51,7 +51,7 @@ pub fn to_aql(query: &SelectQuery) -> String {
 
 /// Escape a raw string for embedding in an AQL single-quoted literal
 /// (backslash escapes per the AQL lexer): use this when CONSTRUCTING
-/// [`Primitive::String`] from user input — the printer emits stored string
+/// [`Primitive::String`](crate::ast::Primitive::String) from user input — the printer emits stored string
 /// content verbatim (parser round-trip keeps source escapes intact).
 #[must_use]
 pub fn escape_string(raw: &str) -> String {
@@ -376,7 +376,6 @@ fn terminal(out: &mut String, term: &Terminal) {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic)] // round-trip diagnostics carry the offending AQL text
 mod tests {
     use crate::parser::parse_str;
     use crate::printer::{escape_string, to_aql};

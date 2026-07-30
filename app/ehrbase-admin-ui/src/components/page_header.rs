@@ -30,7 +30,10 @@ impl Crumb {
 /// `crumbs` are the ANCESTORS only — the component renders `title` as the
 /// terminal crumb itself. `children` (optional) land right-aligned on the
 /// title row: the screen's primary actions.
-#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[expect(
+    clippy::must_use_candidate,
+    reason = "#[component] rewrites the fn; view!/mount always consumes the value"
+)]
 #[component]
 pub fn PageHeader(
     /// The page title (also the terminal breadcrumb).

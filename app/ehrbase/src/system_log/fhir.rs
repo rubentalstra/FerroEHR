@@ -3,7 +3,7 @@
 //!
 //! This is the modern half of the dual ATNA rendering (the classic half is
 //! the DICOM PS3.15 §A.5 XML in [`super::message`]): the same resolved
-//! [`AuditEvent`](super::event::AuditEvent) renders to one FHIR R4 (4.0.1)
+//! [`super::event::AuditEvent`] renders to one FHIR R4 (4.0.1)
 //! `AuditEvent` JSON document. The BALP profiles pin the codings this module
 //! emits (IHE BALP v1.1.4, `IHE.BasicAudit.*` StructureDefinitions):
 //!
@@ -506,12 +506,6 @@ fn nonempty_opt(value: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use jiff::Timestamp;

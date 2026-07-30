@@ -4,19 +4,19 @@
 //! One file per SM interface, each carrying its domain logic **and** its
 //! concrete `EhrbaseService` catalog methods:
 //!
-//! - [`adl14`] — `I_DEFINITION_ADL14` (`i_definition_adl14.adoc`): ADL 1.4
+//! - `adl14` — `I_DEFINITION_ADL14` (`i_definition_adl14.adoc`): ADL 1.4
 //!   source archetypes (keyed by `ARCHETYPE_ID`) + OPTs (keyed by `UUID`).
-//! - [`adl2`]  — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
+//! - `adl2`  — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
 //!   (keyed by `ARCHETYPE_HRID`).
-//! - [`opt14_convert`] — the OPT-1.4 → ADL2 decomposition front end (a
+//! - `opt14_convert` — the OPT-1.4 → ADL2 decomposition front end (a
 //!   service-only capability, no wire): reads a stored OPT's `opt14` model,
 //!   decomposes it into one 1.4-shaped `am24` source per embedded archetype
 //!   root, and runs each through the `openehr_adl::adl14` converter.
-//! - [`query`] — `I_DEFINITION_QUERY` (`i_definition_query.adoc`) +
+//! - `query` — `I_DEFINITION_QUERY` (`i_definition_query.adoc`) +
 //!   `QUERY_DESCRIPTOR` + the stored-query CRUD. DEFINITION *owns* query
 //!   registration (`master04` §Registered Queries); the Query service only
 //!   resolves + executes it, so the stored-query store folds in here.
-//! - [`wire`]  — the ITS-REST wire-shaped extension methods (rich
+//! - `wire`  — the ITS-REST wire-shaped extension methods (rich
 //!   template/query shapes the SM interfaces do not express). Their route
 //!   wiring is the ITS-REST layer's concern; behaviour rides on the SM logic
 //!   in the sibling files.

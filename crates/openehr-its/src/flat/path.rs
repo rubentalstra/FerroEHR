@@ -149,10 +149,14 @@ fn split_index<'a>(raw: &'a str, whole_key: &str) -> Result<(&'a str, Option<u32
                     reason: "empty name before ':'".to_owned(),
                 });
             }
-            let parsed = idx.parse::<u32>().map_err(|_| FlatError::MalformedPath {
-                path: whole_key.to_owned(),
-                reason: format!("non-numeric instance index {idx:?}"),
-            })?;
+            // The offending lexeme is already in the error message; a
+            // `ParseIntError` adds nothing to it.
+            let Ok(parsed) = idx.parse::<u32>() else {
+                return Err(FlatError::MalformedPath {
+                    path: whole_key.to_owned(),
+                    reason: format!("non-numeric instance index {idx:?}"),
+                });
+            };
             if parsed > MAX_INSTANCE_INDEX {
                 return Err(FlatError::MalformedPath {
                     path: whole_key.to_owned(),

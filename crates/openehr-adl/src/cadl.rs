@@ -126,7 +126,7 @@ pub fn parse_definition(src: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
 /// (`C_DV_QUANTITY <…>`, `(C_DV_ORDINAL) <…>`) — and REMOVES the constructs ADL
 /// 2 introduced, because a 1.4 source is judged as 1.4 rather than as a
 /// permissive superset. The removed set (each refused with a typed
-/// [`SyntaxError`] naming the construct, see [`Parser::adl2_only`]):
+/// [`SyntaxError`] naming the construct, see `Parser::adl2_only`):
 /// `use_archetype`, the slot `closed` marker, the `_default` pseudo-attribute,
 /// second-order attribute tuples, term-constraint strengths, and `@terminology`
 /// operational bindings. `before`/`after` sibling order stays accepted —
@@ -467,13 +467,17 @@ impl Parser<'_> {
         match self.peek().cloned() {
             Some(Token::Integer(s)) => {
                 self.pos += 1;
-                s.parse::<i32>().map_err(|_| {
+                // The lexeme and span are already in the pushed diagnostic; a
+                // `ParseIntError` adds nothing to it.
+                let Ok(v) = s.parse::<i32>() else {
                     self.push(
                         code,
                         format!("invalid integer {s:?}"),
                         self.span_at(self.pos - 1),
                     );
-                })
+                    return Err(());
+                };
+                Ok(v)
             }
             _ => self.err(code, "expected an integer"),
         }
@@ -482,7 +486,10 @@ impl Parser<'_> {
     /// A type-headed object: `c_complex_object` or `c_regular_primitive_object`
     /// (`cadl2.g4`). Distinguished by whether the `matches { … }` body (or the
     /// bare, body-less form) holds attribute defs or a single inline primitive.
-    #[allow(clippy::too_many_lines)] // one linear parse: node bracket, optional OPT ref, body
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear parse of a type-headed object — node bracket, optional OPT ref, body; the steps are sequential, not extractable units"
+    )]
     fn parse_type_object(&mut self) -> PResult<CObject> {
         let type_span = self.cur_span();
         let rm_type = self.parse_rm_type_id()?;
@@ -622,7 +629,6 @@ impl Parser<'_> {
 
     /// The body of a complex object: `c_attribute_def+ default_value?`.
     /// Returns `(attributes, attribute_tuples, default_value)`.
-    #[allow(clippy::type_complexity)]
     fn parse_object_body(
         &mut self,
     ) -> PResult<(
@@ -1229,7 +1235,10 @@ impl Parser<'_> {
     /// The list form additionally carries the two catalogue rules on the code
     /// list itself — STCDC (duplicates) and STCAC (an assumed code outside the
     /// list), both raised at position below.
-    #[allow(clippy::too_many_lines)] // one linear parse: bracket, codes, assumed, the two list rules
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one linear parse: bracket, codes, assumed, the two list rules"
+    )]
     fn parse_adl14_term_object(&mut self) -> PResult<CObject> {
         let constraint = if let Some(Token::TermCodeRef(raw)) = self.peek().cloned() {
             self.pos += 1;
@@ -1454,7 +1463,10 @@ impl Parser<'_> {
             );
             return Err(());
         }
-        let block = &self.src[self.span_at(open).start..self.span_at(close).end];
+        let block = self
+            .src
+            .get(self.span_at(open).start..self.span_at(close).end)
+            .unwrap_or_default();
         let Ok(odin) = openehr_lang::odin::parse(block) else {
             self.push(SyntaxErrorCode::Sdinv, "invalid dADL in domain block", span);
             return Err(());
@@ -2585,21 +2597,26 @@ impl Parser<'_> {
         match self.peek().cloned() {
             Some(Token::Integer(s)) => {
                 self.pos += 1;
-                let v = s.parse::<i64>().map_err(|_| {
+                // The lexeme and span are already in the pushed diagnostic; a
+                // `ParseIntError`/`TryFromIntError` adds nothing to it.
+                let Ok(v) = s.parse::<i64>() else {
                     self.push(
                         code,
                         format!("invalid integer {s:?}"),
                         self.span_at(self.pos - 1),
                     );
-                })?;
+                    return Err(());
+                };
                 let v = if neg { -v } else { v };
-                i32::try_from(v).map_err(|_| {
+                let Ok(narrowed) = i32::try_from(v) else {
                     self.push(
                         code,
                         format!("integer {v} out of range"),
                         self.span_at(self.pos - 1),
                     );
-                })
+                    return Err(());
+                };
+                Ok(narrowed)
             }
             _ => self.err(code, "expecting an integer value"),
         }
@@ -2613,7 +2630,9 @@ impl Parser<'_> {
         match self.peek().cloned() {
             Some(Token::Real(s)) => {
                 self.pos += 1;
-                let v = s.parse::<f64>().map_err(|_| {
+                // The lexeme and span are already in the pushed diagnostic; a
+                // `ParseFloatError` adds nothing to it.
+                let v = s.parse::<f64>().ok().ok_or_else(|| {
                     self.push(
                         code,
                         format!("invalid real {s:?}"),
@@ -2670,18 +2689,24 @@ impl Parser<'_> {
         // modifier — `master05` §Patterns L896 admits one on "any of the time or
         // date/time (but not date) patterns".
         let fields: Vec<&str> = p.split('-').collect();
-        if fields.len() != 3 || !is_year_field(fields[0]) {
+        let [year, month, day] = fields.as_slice() else {
+            return self.pattern_err(code, p);
+        };
+        if !is_year_field(year) {
             return self.pattern_err(code, p);
         }
-        self.validate_pattern_degradation(&fields[1..], code, p)
+        self.validate_pattern_degradation(&[month, day], code, p)
     }
 
     fn validate_time_pattern(&mut self, p: &str, code: SyntaxErrorCode) -> PResult<()> {
         let fields: Vec<&str> = pattern_time_core(p).split(':').collect();
-        if fields.len() != 3 || !is_present_field(fields[0], "hh") {
+        let [hour, minute, second] = fields.as_slice() else {
+            return self.pattern_err(code, p);
+        };
+        if !is_present_field(hour, "hh") {
             return self.pattern_err(code, p);
         }
-        self.validate_pattern_degradation(&fields[1..], code, p)
+        self.validate_pattern_degradation(&[minute, second], code, p)
     }
 
     fn validate_date_time_pattern(&mut self, p: &str, code: SyntaxErrorCode) -> PResult<()> {
@@ -2695,22 +2720,18 @@ impl Parser<'_> {
         };
         let date_fields: Vec<&str> = date.split('-').collect();
         let time_fields: Vec<&str> = pattern_time_core(time).split(':').collect();
-        if date_fields.len() != 3 || time_fields.len() != 3 || !is_year_field(date_fields[0]) {
+        let [year, date_month, date_day] = date_fields.as_slice() else {
+            return self.pattern_err(code, p);
+        };
+        let [hour, minute, second] = time_fields.as_slice() else {
+            return self.pattern_err(code, p);
+        };
+        if !is_year_field(year) {
             return self.pattern_err(code, p);
         }
         // Degradation flows date → time as one chain (`master04.5`): the hour
         // field may itself be `??`/`XX` once the date has degraded.
-        self.validate_pattern_degradation(
-            &[
-                date_fields[1],
-                date_fields[2],
-                time_fields[0],
-                time_fields[1],
-                time_fields[2],
-            ],
-            code,
-            p,
-        )
+        self.validate_pattern_degradation(&[date_month, date_day, hour, minute, second], code, p)
     }
 
     /// Duration designator-order check: `P[Y][M][W][D][T[H][M][S]]`
@@ -2760,7 +2781,10 @@ impl Parser<'_> {
     /// fixed set of ADL primitive RM type names (`master04.5`) and build an
     /// unconstrained primitive; non-primitive names fall through to a complex
     /// object.
-    #[allow(clippy::too_many_lines)] // one arm per primitive C_* struct literal
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one match arm per ADL primitive C_* struct literal (master04.5); the length is the size of the primitive set"
+    )]
     fn primitive_any(rm_type: &str, node_id: &str) -> Option<CObject> {
         let nid = node_id.to_owned();
         let obj = match rm_type {
@@ -3049,7 +3073,10 @@ fn point_interval<T: Clone>(v: T) -> Interval<T> {
 
 /// A proper interval with explicit bounds/inclusivity.
 // The four flags mirror `ProperIntervalData`'s own boolean fields 1:1.
-#[allow(clippy::fn_params_excessive_bools)]
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "the four flags mirror `ProperIntervalData`'s own boolean fields 1:1 — collapsing them into a struct would just restate that type"
+)]
 fn proper_interval<T>(
     lower: Option<T>,
     upper: Option<T>,
@@ -3070,7 +3097,6 @@ fn proper_interval<T>(
 
 /// Mutable references to the four `C_OBJECT` common fields (`rm_type_name`,
 /// `node_id`, `occurrences`, `sibling_order`) across every [`CObject`] variant.
-#[allow(clippy::type_complexity)]
 fn common_mut(
     o: &mut CObject,
 ) -> (
@@ -3946,7 +3972,6 @@ fn proper_or_point_real(
 /// non-numeric centre or half-width (a date ± duration, which cannot be
 /// reduced without type context) yields an unbounded interval rather than a
 /// fabricated endpoint.
-#[allow(clippy::type_complexity)]
 fn odin_range_bounds<T>(
     iv: &openehr_lang::odin::OdinInterval,
     conv: impl Fn(&OdinValue) -> Option<T>,
@@ -3973,7 +3998,10 @@ fn odin_range_bounds<T>(
     }
 }
 
-#[allow(clippy::cast_precision_loss)] // small domain-constraint magnitudes
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "archetype domain-constraint magnitudes are small integers; f64 represents them exactly"
+)]
 fn odin_as_real(v: &OdinValue) -> Option<f64> {
     match v {
         OdinValue::Real(r) => Some(*r),
@@ -3982,7 +4010,10 @@ fn odin_as_real(v: &OdinValue) -> Option<f64> {
     }
 }
 
-#[allow(clippy::cast_possible_truncation)] // small clinical integer bounds
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the value is clamped to the i32 range on the very next line, so the cast cannot truncate"
+)]
 fn real_to_i32(r: f64) -> i32 {
     r.clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32
 }
@@ -4097,12 +4128,8 @@ pub(crate) fn parse_contained_regexp_text(raw: &str) -> Result<CString, Vec<Synt
 
 /// Split a differential ADL path into `(parent_path, last_attribute_name)`.
 fn split_diff_path(p: &str) -> (String, String) {
-    match p.rfind('/') {
-        Some(idx) => {
-            let parent = &p[..idx];
-            let name = &p[idx + 1..];
-            (parent.to_owned(), name.to_owned())
-        }
+    match p.rsplit_once('/') {
+        Some((parent, name)) => (parent.to_owned(), name.to_owned()),
         None => (String::new(), p.to_owned()),
     }
 }
@@ -4110,13 +4137,15 @@ fn split_diff_path(p: &str) -> (String, String) {
 /// The inner regex of a `/re/` or `^re^` delimited pattern.
 fn regex_inner(delimited: &str) -> &str {
     let d = delimited.trim();
-    if (d.starts_with('/') && d.ends_with('/') && d.len() >= 2)
-        || (d.starts_with('^') && d.ends_with('^') && d.len() >= 2)
-    {
-        &d[1..d.len() - 1]
-    } else {
-        d
+    for delimiter in ['/', '^'] {
+        if let Some(inner) = d
+            .strip_prefix(delimiter)
+            .and_then(|rest| rest.strip_suffix(delimiter))
+        {
+            return inner;
+        }
     }
+    d
 }
 
 /// Backslash-escape every UNESCAPED `/` in a regex body.
@@ -4281,8 +4310,7 @@ fn decode_string_inner(inner: &str) -> String {
 /// a `_default` carrying one is refused outright rather than silently reduced
 /// to `null` — the loss would turn "this default is an interval" into "this
 /// node has a null default", which no reader can tell from a real absence.
-fn odin_contains_interval(v: &openehr_lang::odin::OdinValue) -> bool {
-    use openehr_lang::odin::OdinValue;
+fn odin_contains_interval(v: &OdinValue) -> bool {
     match v {
         OdinValue::Interval(_) => true,
         OdinValue::List(items) => items.iter().any(odin_contains_interval),
@@ -4305,8 +4333,7 @@ fn odin_contains_interval(v: &openehr_lang::odin::OdinValue) -> bool {
 // TODO: encode ODIN interval values (`|0..5|`) as a typed default instead of
 // `null` — [`odin_contains_interval`] refuses them at the parse for now, so a
 // `_default = <|0..5|>` is an error rather than a silent null.
-fn odin_to_json(v: &openehr_lang::odin::OdinValue) -> serde_json::Value {
-    use openehr_lang::odin::OdinValue;
+fn odin_to_json(v: &OdinValue) -> serde_json::Value {
     match v {
         OdinValue::String(s)
         | OdinValue::Date(s)
@@ -4365,7 +4392,6 @@ fn odin_key_str(k: &openehr_lang::odin::OdinKey) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic, clippy::too_many_lines)] // test assertions panic by design
 mod tests {
     use super::*;
 

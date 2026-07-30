@@ -41,7 +41,7 @@ impl EhrbaseService {
     /// audit (RM common master06 §Committal m4). This raw-body seam carries
     /// the full-fidelity EHR CONTRIBUTION commit; all RM `change_control`
     /// semantics stay in `crate::versioning::contribution::commit_version_set` (over the
-    /// [`crate::versioning::CommitEnv`] impl `EhrbaseService` provides).
+    /// `crate::versioning::CommitEnv` impl `EhrbaseService` provides).
     ///
     /// # Errors
     /// [`SmError`] if the CONTRIBUTION fails classification, content

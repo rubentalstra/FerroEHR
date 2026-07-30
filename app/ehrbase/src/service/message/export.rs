@@ -49,7 +49,11 @@ const LOCAL_NS: &str = "local";
 /// `EXTRACT_VERSION_SPEC` (`extract_version_spec.adoc`). The default (no spec)
 /// is latest-only with data and no revision history.
 #[derive(Debug, Clone, Copy)]
-#[allow(clippy::struct_excessive_bools)] // mirrors the four EXTRACT_VERSION_SPEC boolean flags 1:1
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "mirrors the four EXTRACT_VERSION_SPEC boolean flags 1:1; \
+              collapsing them would diverge from the spec shape"
+)]
 struct VersionSelection {
     /// `EXTRACT_SPEC.include_multimedia` — when false, inline `DV_MULTIMEDIA`
     /// content (`data`) is stripped from exported version bodies
@@ -186,6 +190,13 @@ impl EhrbaseService {
                         .ok_or_else(|| {
                             SmError::precondition("item_list OBJECT_REF has no id.value")
                         })?;
+                    #[expect(
+                        clippy::map_err_ignore,
+                        reason = "the mapped error already echoes the rejected \
+                                  token; the discarded `uuid::Error` adds only \
+                                  its own wording, which is not part of the wire \
+                                  contract"
+                    )]
                     let vo_id: VoId = raw.parse().map_err(|_| {
                         SmError::precondition(format!(
                             "item_list id {raw:?} is not a version-container UUID"
@@ -371,11 +382,12 @@ impl EhrbaseService {
         // uid / owner_id / time_created are the VERSIONED_OBJECT's own — reuse
         // the shared read builder so they match the /versioned_* surface.
         let (vo, _) = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
+        let field = |name: &str| vo.get(name).cloned().unwrap_or(Value::Null);
         let mut x = json!({
             "_type": x_versioned_type(kind),
-            "uid": vo["uid"].clone(),
-            "owner_id": vo["owner_id"].clone(),
-            "time_created": vo["time_created"].clone(),
+            "uid": field("uid"),
+            "owner_id": field("owner_id"),
+            "time_created": field("time_created"),
             "total_version_count": total,
             "extract_version_count": extract_version_count,
             "versions": versions,
@@ -471,7 +483,11 @@ impl EhrbaseService {
                         "type": "SYSTEM",
                         "id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() }
                     },
-                    "time_created": version["commit_audit"]["time_committed"].clone(),
+                    "time_created": version
+                        .get("commit_audit")
+                        .and_then(|audit| audit.get("time_committed"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
                     "total_version_count": i32::try_from(total).unwrap_or(i32::MAX),
                     "extract_version_count": 1,
                     "versions": [version],
@@ -509,13 +525,23 @@ impl EhrbaseService {
             "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
             "sequence_nr": sequence_nr,
         });
-        extract["chapters"][0]["items"] = Value::Array(content_items);
+        // The literal above created `chapters` with exactly one EXTRACT_CHAPTER
+        // (the openEHR content chapter); fill its `items` through the map rather
+        // than a panicking index-assign.
+        if let Some(chapter) = extract
+            .get_mut("chapters")
+            .and_then(Value::as_array_mut)
+            .and_then(|chapters| chapters.first_mut())
+            .and_then(Value::as_object_mut)
+        {
+            chapter.insert("items".to_owned(), Value::Array(content_items));
+        }
         // A demographics chapter carries the locally-held PARTYs referenced by
         // the content (`master09-semantics.adoc` §Creation Semantics: "Create a
         // demographics `EXTRACT_CHAPTER` and write the `PARTYs` in"); omitted
         // when nothing local is referenced.
         if !demographic_items.is_empty()
-            && let Some(chapters) = extract["chapters"].as_array_mut()
+            && let Some(chapters) = extract.get_mut("chapters").and_then(Value::as_array_mut)
         {
             chapters.push(json!({
                 "_type": "EXTRACT_CHAPTER",
@@ -524,7 +550,9 @@ impl EhrbaseService {
                 "items": demographic_items,
             }));
         }
-        extract["specification"] = specification;
+        if let Some(obj) = extract.as_object_mut() {
+            obj.insert("specification".to_owned(), specification);
+        }
         extract
     }
 
@@ -788,6 +816,12 @@ fn validate_extract_type(spec: &ExtractSpec) -> Result<(), SmError> {
 /// Resolve an `EXTRACT_ENTITY_MANIFEST` to a concrete EHR id: prefer `ehr_id`,
 /// else look the EHR up by `subject_id` (`master04-common_package.adoc`
 /// `EXTRACT_ENTITY_MANIFEST`).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already names the resource and echoes the \
+              rejected token; the discarded `uuid::Error` adds only its own \
+              wording, which is not part of the wire contract"
+)]
 async fn resolve_entity_ehr(
     svc: &EhrbaseService,
     ehr_id: Option<&str>,

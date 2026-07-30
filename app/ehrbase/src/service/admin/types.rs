@@ -92,7 +92,7 @@ impl std::str::FromStr for CompressionFormat {
     type Err = ();
 
     /// Parse an SM enumeration literal ASCII-case-insensitively (see
-    /// [`ExportFormat::from_str`] for the case rule and the spec-silence flag).
+    /// `ExportFormat::from_str` for the case rule and the spec-silence flag).
     ///
     /// # Errors
     /// `Err(())` when the text is neither vendored member.
@@ -148,7 +148,7 @@ impl ExportSpec {
     /// `segment_split_size_kb` segments: the archive skeleton stays JSON and
     /// each version's payload is externalized as an `ORIGINAL_VERSION`
     /// document under the published ITS-XML `<version>` root (the derivation
-    /// is in [`crate::service::admin::dump_load`]'s module docs).
+    /// is in `crate::service::admin::dump_load`'s module docs).
     #[must_use]
     pub fn canonical_xml(segment_split_size_kb: i32) -> Self {
         Self {
@@ -176,12 +176,6 @@ pub struct DumpLoadFailReport {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -142,6 +142,11 @@ fn matched_route(req: &Request) -> String {
 }
 
 /// The HTTP status class label value (`2xx`…`5xx`).
+#[expect(
+    clippy::integer_division,
+    reason = "the fold IS the truncating divide: 100..=199 → 1, 200..=299 → 2, … is \
+              exactly the HTTP status-class label"
+)]
 fn status_class(status: StatusCode) -> &'static str {
     match status.as_u16() / 100 {
         1 => "1xx",
@@ -154,7 +159,11 @@ fn status_class(status: StatusCode) -> &'static str {
 
 /// The `Content-Length` of a message, in bytes, if declared. Body sizes fit a
 /// histogram sample exactly (well under `2^53`), so the widening is lossless.
-#[allow(clippy::cast_precision_loss)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "a Content-Length is observed into an f64 histogram; f64 is exact to \
+              2^53 bytes, far past any request or response this server accepts"
+)]
 fn content_length(headers: &HeaderMap) -> Option<f64> {
     headers
         .get(header::CONTENT_LENGTH)
@@ -203,12 +212,6 @@ impl Extractor for HeaderExtractor<'_> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

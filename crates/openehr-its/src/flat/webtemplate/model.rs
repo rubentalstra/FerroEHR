@@ -38,17 +38,24 @@ use serde::{Serialize, Serializer};
 /// openEHR spec governs it; our own design/extension).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplate {
+    /// The template id this document describes (wire member `templateId`).
     #[serde(rename = "templateId")]
     pub template_id: String,
+    /// The template's semantic version, when the definition carries one (wire member `semVer`).
     #[serde(rename = "semVer", skip_serializing_if = "Option::is_none")]
     pub sem_ver: Option<String>,
+    /// The Web Template **format** version string — not the template version.
     pub version: String,
+    /// The template's default language code (wire member `defaultLanguage`).
     #[serde(rename = "defaultLanguage")]
     pub default_language: String,
+    /// Every language the template carries translations for.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub languages: Vec<String>,
+    /// The root node of the template tree.
     #[serde(serialize_with = "serialize_root")]
     pub tree: WebTemplateNode,
+    /// Additive template metadata — no openEHR spec governs this member; our own design/extension (wire member `otherDetails`).
     #[serde(rename = "otherDetails", skip_serializing_if = "IndexMap::is_empty")]
     pub other_details: IndexMap<String, String>,
 }
@@ -125,12 +132,16 @@ pub struct WebTemplateNode {
     /// The local json-id segment, serialized as `id` (master04 §"Node ID
     /// Generation Rules").
     pub id: String,
+    /// The node's runtime `name` constraint, when the template fixes one.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// The node name in the document's default language (wire member `localizedName`).
     #[serde(rename = "localizedName", skip_serializing_if = "Option::is_none")]
     pub localized_name: Option<String>,
+    /// The constrained RM type name (wire member `rmType`).
     #[serde(rename = "rmType")]
     pub rm_type: String,
+    /// The archetype node id (`atNNNN`, or an archetype id at a root; wire member `nodeId`).
     #[serde(rename = "nodeId", skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
     /// Occurrences lower bound (master04 §"Web Template Metadata": `min`).
@@ -139,29 +150,40 @@ pub struct WebTemplateNode {
     /// Occurrences upper bound; `-1` = unbounded (master04 §"Web Template
     /// Metadata": `max`, where `max = -1` marks an unbounded occurrence).
     pub max: i32,
+    /// Whether the node is filled from the composition context rather than from user input (wire member `inContext`).
     #[serde(rename = "inContext", skip_serializing_if = "Option::is_none")]
     pub in_context: Option<bool>,
+    /// The archetype path root -> node (wire member `aqlPath`).
     #[serde(rename = "aqlPath")]
     pub aql_path: String,
+    /// The node name per language (wire member `localizedNames`).
     #[serde(rename = "localizedNames", skip_serializing_if = "IndexMap::is_empty")]
     pub localized_names: IndexMap<String, String>,
+    /// The node description per language (wire member `localizedDescriptions`).
     #[serde(
         rename = "localizedDescriptions",
         skip_serializing_if = "IndexMap::is_empty"
     )]
     pub localized_descriptions: IndexMap<String, String>,
+    /// Archetype annotations carried on this node.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     pub annotations: IndexMap<String, String>,
+    /// Terminology bindings on this node, keyed by terminology id (wire member `termBindings`).
     #[serde(rename = "termBindings", skip_serializing_if = "IndexMap::is_empty")]
     pub term_bindings: IndexMap<String, WebTemplateBindingCodedValue>,
+    /// The `DV_PROPORTION` types this node admits — an additive member; no openEHR spec governs it (wire member `proportionTypes`).
     #[serde(rename = "proportionTypes", skip_serializing_if = "Vec::is_empty")]
     pub proportion_types: Vec<String>,
+    /// The leaf input descriptors of this node.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<WebTemplateInput>,
+    /// Sibling json-ids this node's presence depends on — an additive member; no openEHR spec governs it (wire member `dependsOn`).
     #[serde(rename = "dependsOn", skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<Vec<String>>,
+    /// Container cardinalities surfaced in the metadata document.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub cardinalities: Vec<WebTemplateCardinality>,
+    /// The node's child nodes.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<WebTemplateNode>,
 
@@ -380,17 +402,29 @@ impl WebTemplateNode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WebTemplateInputType {
+    /// The `TEXT` input type.
     Text,
+    /// The `CODED_TEXT` input type.
     CodedText,
+    /// The `DATE` input type.
     Date,
+    /// The `TIME` input type.
     Time,
+    /// The `DATETIME` input type.
     Datetime,
+    /// The `BOOLEAN` input type.
     Boolean,
+    /// The `INTEGER` input type.
     Integer,
+    /// The `DECIMAL` input type.
     Decimal,
+    /// The `DURATION` input type.
     Duration,
+    /// The `QUANTITY` input type.
     Quantity,
+    /// The `COUNT` input type.
     Count,
+    /// The `PROPORTION` input type.
     Proportion,
 }
 
@@ -401,23 +435,31 @@ pub enum WebTemplateInputType {
 /// the master04 §"Open Value-Sets and the `|other` Suffix" behaviour).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateInput {
+    /// The FLAT key suffix this input fills (`magnitude`, `unit`, `code`, …), or `None` for the node's bare value.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
+    /// The input's value type (wire member `type`).
     #[serde(rename = "type")]
     pub input_type: WebTemplateInputType,
+    /// The closed list of coded options, when the constraint enumerates one.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub list: Vec<WebTemplateCodedValue>,
+    /// Whether the list admits an unlisted value via the `|other` suffix — an additive member; no openEHR spec governs it (wire member `listOpen`).
     #[serde(rename = "listOpen", skip_serializing_if = "Option::is_none")]
     pub list_open: Option<bool>,
+    /// Value-level validation (pattern / range / precision) on this input.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation: Option<WebTemplateValidation>,
+    /// The constraint's default value, when it fixes one — an additive member; no openEHR spec governs it (wire member `defaultValue`).
     #[serde(rename = "defaultValue", skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
+    /// The constrained terminology id, when the constraint names one — an additive member; no openEHR spec governs it.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub terminology: Option<String>,
 }
 
 impl WebTemplateInput {
+    /// A fresh input of the given type and FLAT key suffix, with no list, validation, or default.
     #[must_use]
     pub fn new(input_type: WebTemplateInputType, suffix: Option<&str>) -> Self {
         Self {
@@ -439,27 +481,36 @@ impl WebTemplateInput {
 /// when absent — no openEHR spec governs them here; our own design/extension.
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateCodedValue {
+    /// The option's code string.
     pub value: String,
+    /// The option's display label in the default language.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    /// The option's label per language (wire member `localizedLabels`).
     #[serde(rename = "localizedLabels", skip_serializing_if = "IndexMap::is_empty")]
     pub localized_labels: IndexMap<String, String>,
+    /// The option's description per language (wire member `localizedDescriptions`).
     #[serde(
         rename = "localizedDescriptions",
         skip_serializing_if = "IndexMap::is_empty"
     )]
     pub localized_descriptions: IndexMap<String, String>,
+    /// Terminology bindings on this option, keyed by terminology id (wire member `termBindings`).
     #[serde(rename = "termBindings", skip_serializing_if = "IndexMap::is_empty")]
     pub term_bindings: IndexMap<String, WebTemplateBindingCodedValue>,
+    /// Value-level validation on this option.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation: Option<WebTemplateValidation>,
+    /// The `DV_ORDINAL` ordinal of this option, when the constraint is ordinal.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ordinal: Option<i32>,
+    /// The `DV_SCALE` scale value of this option, when the constraint is a scale.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scale: Option<f64>,
 }
 
 impl WebTemplateCodedValue {
+    /// A coded option with the given code and display label.
     pub fn new(value: impl Into<String>, label: Option<String>) -> Self {
         Self {
             value: value.into(),
@@ -478,7 +529,9 @@ impl WebTemplateCodedValue {
 /// entry, `{value, terminologyId}`).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateBindingCodedValue {
+    /// The bound code in the target terminology.
     pub value: String,
+    /// The target terminology id (wire member `terminologyId`).
     #[serde(rename = "terminologyId")]
     pub terminology_id: String,
 }
@@ -487,10 +540,13 @@ pub struct WebTemplateBindingCodedValue {
 /// `inputs[].validation`): `pattern`, `range`, `precision`; null members omitted.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct WebTemplateValidation {
+    /// A regular expression the value must match (wire member `pattern`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
+    /// The permitted value range.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub range: Option<WebTemplateRange>,
+    /// The permitted decimal-precision range.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub precision: Option<WebTemplateRange>,
 }
@@ -507,12 +563,16 @@ impl WebTemplateValidation {
 /// [`serde_json::Value`].
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct WebTemplateRange {
+    /// The lower-bound comparison operator (wire member `minOp`).
     #[serde(rename = "minOp", skip_serializing_if = "Option::is_none")]
     pub min_op: Option<String>,
+    /// The lower bound — a number or an ISO 8601 string.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<serde_json::Value>,
+    /// The upper-bound comparison operator (wire member `maxOp`).
     #[serde(rename = "maxOp", skip_serializing_if = "Option::is_none")]
     pub max_op: Option<String>,
+    /// The upper bound — a number or an ISO 8601 string.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<serde_json::Value>,
 }
@@ -528,8 +588,11 @@ pub struct WebTemplateRange {
 /// (`max == -1` unbounded). A mandatory attribute has `min >= 1`.
 #[derive(Debug, Clone)]
 pub struct WebTemplateExistence {
+    /// The existence lower bound; `>= 1` means the attribute is mandatory.
     pub min: i32,
+    /// The existence upper bound; `-1` means unbounded.
     pub max: i32,
+    /// Absolute archetype path of the constrained attribute (`{node aqlPath}/{rm_attribute_name}`).
     pub path: String,
 }
 
@@ -552,8 +615,11 @@ pub struct WebTemplateSlot {
 /// `local`), `codes` the allowed `code_string`s.
 #[derive(Debug, Clone)]
 pub struct WebTemplateCodeList {
+    /// The constrained RM attribute name (e.g. `media_type`).
     pub attr: String,
+    /// The constrained terminology id; `None` means the archetype-`local` terminology.
     pub terminology: Option<String>,
+    /// The allowed `code_string`s.
     pub codes: Vec<String>,
 }
 
@@ -635,10 +701,15 @@ pub struct WebTemplateClosedAttribute {
 /// permitted number of fillers (`max == -1` unbounded).
 #[derive(Debug, Clone)]
 pub struct WebTemplateArchetypeSlot {
+    /// The RM type a slot filler must conform to.
     pub rm_type: String,
+    /// The minimum number of permitted fillers.
     pub min: i32,
+    /// The maximum number of permitted fillers; `-1` means unbounded.
     pub max: i32,
+    /// Archetype-id regexes a filler must match at least one of.
     pub includes: Vec<String>,
+    /// Archetype-id regexes a filler must match none of.
     pub excludes: Vec<String>,
 }
 
@@ -646,11 +717,15 @@ pub struct WebTemplateArchetypeSlot {
 /// to resolve `ids` from the child json-ids (never serialized).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateCardinality {
+    /// The container's minimum member count.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<i32>,
+    /// The container's maximum member count; `-1` means unbounded.
     pub max: i32,
+    /// The child json-ids the cardinality applies to.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ids: Option<Vec<String>>,
+    /// Build-time scratch: the archetype path used to resolve `ids` from child json-ids (never serialized).
     #[serde(skip)]
     pub path: String,
 }

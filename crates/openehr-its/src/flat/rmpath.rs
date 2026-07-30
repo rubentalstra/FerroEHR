@@ -14,7 +14,10 @@
 //! (`/attr[predicate]`) that locates the child's RM value inside the parent's,
 //! including the structural nodes (`HISTORY`, `ITEM_TREE`, a single `EVENT`, the
 //! `ELEMENT` wrapper) the web-template compacted away.
-#![allow(dead_code)] // consumed by the RM ⇄ sim walkers landing in this same rewrite; drop this allow with their arrival
+#![allow(
+    dead_code,
+    reason = "consumed by the RM ⇄ sim walkers landing in this same rewrite; drop this allow with their arrival"
+)]
 
 use openehr_rm::paths::{PathSegment, RmPath, select_children};
 use serde_json::Value;

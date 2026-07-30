@@ -16,7 +16,7 @@
 //! The RM class invariants (in `openehr-rm`'s `*_impl.rs`) mirror openEHR's
 //! reference implementation archie; this module only routes a node to the right
 //! concrete type. A node that does not deserialize into its declared concrete RM
-//! type surfaces `does not conform to RM type …` (see [`record_type_mismatch`]).
+//! type surfaces `does not conform to RM type …` (see `record_type_mismatch`).
 
 use serde_json::Value;
 
@@ -188,7 +188,10 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// containers (`HISTORY`, `POINT_EVENT`, `INTERVAL_EVENT`) are checked with
 /// `serde_json::Value` as the element type — enough for their own (non-child)
 /// invariants.
-#[allow(clippy::too_many_lines)] // a flat _type → run::<T> dispatch table
+#[expect(
+    clippy::too_many_lines,
+    reason = "a flat `_type` -> `run::<T>` dispatch table; the length is the size of the RM type set, not logic"
+)]
 pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;

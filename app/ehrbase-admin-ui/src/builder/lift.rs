@@ -143,7 +143,13 @@ fn lift_query(query: &SelectQuery) -> Result<BuilderQuery, LiftError> {
             offset: Some(_), ..
         }) => return Err(LiftError::UnsupportedOffset),
         Some(Limit { limit, .. }) => {
-            Some(u32::try_from(*limit).map_err(|_| LiftError::LimitOutOfRange(*limit))?)
+            // `TryFromIntError` carries no detail beyond "out of range", and the
+            // rejected value is what the reader needs — it rides the variant.
+            Some(
+                u32::try_from(*limit)
+                    .ok()
+                    .ok_or(LiftError::LimitOutOfRange(*limit))?,
+            )
         }
     };
     let order_by = query
@@ -875,7 +881,6 @@ fn order_text(term: &OrderByExpr) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::panic, clippy::expect_used)] // test assertions on the lift
 mod tests {
     use crate::builder::lift::{LiftError, from_aql};
     use crate::builder::lower::to_aql;

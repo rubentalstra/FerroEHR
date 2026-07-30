@@ -3,9 +3,9 @@
 //! and the UML class `i_ehr_index.adoc`): N:M subject↔EHR associations with
 //! duplicate-management metadata.
 //!
-//! Layout: [`index`] = the SM write operations (I1–I5) + the design-filled
+//! Layout: `index` = the SM write operations (I1–I5) + the design-filled
 //! reads, each public method parsing its `ehr_id` at the boundary;
-//! [`conflicts`] = the design-filled advisory duplicate-detection read;
+//! `conflicts` = the design-filled advisory duplicate-detection read;
 //! [`types`] = the SM information structures (`RESOURCE_STATUS`,
 //! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!
@@ -95,6 +95,12 @@ impl From<IndexError> for SmError {
 /// NOTE: `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are typed
 /// `@@` (an unresolved placeholder) in the SM — a recorded spec defect
 /// (`resource_status.adoc:20,24`); implemented as ISO date-time strings.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already echoes the rejected token; the discarded \
+              parse error adds only its own wording, which is not part of the \
+              wire contract"
+)]
 fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, ServiceError> {
     use jiff_sqlx::ToSqlx;
     match raw {
@@ -171,13 +177,6 @@ fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Erro
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

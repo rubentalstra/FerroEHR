@@ -24,7 +24,11 @@ use crate::overview::version_id::{parse_ehr_id, parse_version_uid, require_if_ma
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-#[allow(clippy::too_many_lines)] // one arm per DIRECTORY operation; a flat match is clearest
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per DIRECTORY operation: a flat match keeps every \
+              operation's wire behaviour readable in one place"
+)]
 pub(super) async fn run(
     state: AppState,
     op: &'static str,

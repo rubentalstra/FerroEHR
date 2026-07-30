@@ -393,7 +393,7 @@ impl<T: PartialOrd> Interval<T> {
         }
     }
 
-    /// Three-valued containment ([`BoundaryView::has_definite`]): `Some(true)`
+    /// Three-valued containment (`BoundaryView::has_definite`): `Some(true)`
     /// definitely inside, `Some(false)` definitely outside, `None` undecidable
     /// (a comparison against a bound was incomparable). Use this instead of
     /// [`Interval::has`] over a partially-ordered value space (the `Iso8601_*`
@@ -427,12 +427,6 @@ impl<T: PartialOrd> Interval<T> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

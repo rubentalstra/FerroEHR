@@ -16,9 +16,9 @@
 //! No openEHR spec governs the execution — openEHR defines the *language*, not
 //! its lowering; the SQL shapes are our own design.
 //! The construct-by-construct mapping to QUERY master03 lives in each submodule:
-//! [`from`] (FROM/containment + scope gates), [`select`] (SELECT/aggregates),
-//! [`predicate`] (WHERE/functions), [`value`] (the path split + coercions), and
-//! [`expr`] (the typed building blocks + the `LIKE`/archetype translations).
+//! `from` (FROM/containment + scope gates), `select` (SELECT/aggregates),
+//! `predicate` (WHERE/functions), `value` (the path split + coercions), and
+//! `expr` (the typed building blocks + the `LIKE`/archetype translations).
 //!
 //! ## Coupling to the storage schema
 //!
@@ -353,7 +353,6 @@ pub fn build_scope(
 // ── test-only inline renderers ─────────────────────────────────────────────
 
 #[cfg(test)]
-#[allow(clippy::panic)] // test assertions panic by design
 mod column_vocab {
     //! Pin the builder's storage-column vocabulary to the schema. Every column
     //! name the IR→SQL lowering emits (collected here, one group per table)
@@ -430,18 +429,18 @@ mod column_vocab {
     /// text between the opening paren and the balanced closing paren).
     fn create_table_body(table: &str) -> String {
         let head = format!("CREATE TABLE {table} (");
-        let start = BASELINE
-            .find(&head)
+        let body = BASELINE
+            .split_once(&head)
             .unwrap_or_else(|| panic!("no `{head}` in the baseline migration"))
-            + head.len();
+            .1;
         let mut depth = 1usize;
-        for (i, ch) in BASELINE[start..].char_indices() {
+        for (i, ch) in body.char_indices() {
             match ch {
                 '(' => depth += 1,
                 ')' => {
                     depth -= 1;
                     if depth == 0 {
-                        return BASELINE[start..start + i].to_owned();
+                        return body.get(..i).unwrap_or_default().to_owned();
                     }
                 }
                 _ => {}

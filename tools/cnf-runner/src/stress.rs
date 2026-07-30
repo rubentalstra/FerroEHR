@@ -131,7 +131,7 @@ fn step_breaches(
         // Re-derive from the decoded histogram — the same discipline as the
         // measured-run verdicts (the summary fields are never load-bearing).
         let histogram = op.decode_histogram()?;
-        #[allow(clippy::cast_precision_loss)] // latencies << 2^52 µs
+        #[expect(clippy::cast_precision_loss, reason = "latencies << 2^52 µs")]
         let p99_ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
         if p99_ms > options.p99_budget_ms {
             breaches.push(format!(
@@ -140,7 +140,7 @@ fn step_breaches(
             ));
         }
     }
-    #[allow(clippy::cast_precision_loss)] // request counts << 2^52
+    #[expect(clippy::cast_precision_loss, reason = "request counts << 2^52")]
     let error_rate = if requests == 0 {
         1.0
     } else {
@@ -161,7 +161,10 @@ fn step_breaches(
 /// # Errors
 /// A message on schedule construction or aggregation failure (an unstable
 /// step is a finding, never an error).
-#[allow(clippy::too_many_lines)] // one linear procedure: climb → bisect → report
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear procedure: climb → bisect → report"
+)]
 pub fn run_stress(
     principals: &PerfPrincipals,
     corpus: &SeededCorpus,
@@ -358,7 +361,6 @@ pub fn run_stress(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
     use hdrhistogram::Histogram;
 

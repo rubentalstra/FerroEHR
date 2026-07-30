@@ -20,6 +20,9 @@
 //! structured placeholder.
 //! TODO: model rule/slot assertion expressions as full BEL/beom trees.
 
+// Doctests are copy-paste templates: they must use `?`, never unwrap
+// (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
+#![doc(test(attr(deny(warnings))))]
 pub mod adl14;
 pub mod assemble;
 pub mod cadl;

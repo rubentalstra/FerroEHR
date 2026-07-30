@@ -63,13 +63,6 @@ pub fn canonical_form_of_json(value: &Value) -> Result<String, CanonicalFormErro
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

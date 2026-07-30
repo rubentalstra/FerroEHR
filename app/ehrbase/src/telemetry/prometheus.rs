@@ -69,7 +69,7 @@ pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
 /// Committed-composition counter (`change_type` = the numeric openEHR
 /// `audit_change_type` group code — `249`/`251`/`523`/…), incremented by
-/// [`crate::versioning::change::meter_committed`] once per COMPOSITION version
+/// `crate::versioning::change::meter_committed` once per COMPOSITION version
 /// that a commit route actually committed (the direct create/update/delete
 /// routes and the CONTRIBUTION commit).
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";
@@ -323,19 +323,15 @@ fn emit_static_gauges(build: &BuildInfo) {
     )
     .set(1.0);
 
-    let start = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0.0, |d| d.as_secs_f64());
+    // Wall clock comes from jiff (the pinned time library, docs/VERSIONS.md);
+    // `as_duration` is the signed span since the Unix epoch, so no fallible
+    // `duration_since` and no lossy cast
+    // (https://docs.rs/jiff/latest/jiff/struct.Timestamp.html#method.as_duration).
+    let start = jiff::Timestamp::now().as_duration().as_secs_f64();
     metrics::gauge!(PROCESS_START_TIME).set(start);
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

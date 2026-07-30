@@ -81,6 +81,12 @@ impl TreeId {
     }
 
     /// Decode a BASE [`VersionTreeId`]'s lexical parts into the typed form.
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the discarded \
+                  parse error adds only its own wording, which is not part of the \
+                  wire contract"
+    )]
     fn from_version_tree(tree: &VersionTreeId, raw: &str) -> Result<Self, VersionIdError> {
         let out_of_range = || VersionIdError::OutOfRange(raw.to_owned());
         let trunk: i32 = tree.trunk_version().parse().map_err(|_| out_of_range())?;
@@ -186,6 +192,12 @@ impl From<VersionIdError> for crate::service::status::SmError {
 
 /// Parse a bare `VERSION_TREE_ID` lexical value (`N` or `N.B.V`) into a
 /// [`TreeId`] — the SM catalog's version argument form.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already echoes the rejected token; the discarded \
+              parse error adds only its own wording, which is not part of the \
+              wire contract"
+)]
 pub(crate) fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
     let tree =
         VersionTreeId::from_str(raw).map_err(|_| VersionIdError::OutOfRange(raw.to_owned()))?;
@@ -253,6 +265,12 @@ pub(crate) fn parse_version_tail(tail: &str) -> Result<TreeId, VersionIdError> {
 /// Parse a `uid_based_id`/`versioned_object_uid` path parameter: either a bare
 /// `HIER_OBJECT_ID` (a UUID, → no version) or a full `OBJECT_VERSION_ID`
 /// (strict three-part, → its [`TreeId`]).
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already names the resource and echoes the \
+              rejected token; the discarded `uuid::Error` adds only its own \
+              wording, which is not part of the wire contract"
+)]
 pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(VoId, Option<TreeId>), VersionIdError> {
     if raw.contains("::") {
         let (vo_id, tree) = parse_version_uid(raw)?;
@@ -326,13 +344,6 @@ pub(crate) fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, V
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

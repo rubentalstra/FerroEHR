@@ -881,7 +881,10 @@ fn proportion_range_limit(num_range: Option<&str>, den_range: Option<&str>) -> S
     c_complex("DV_PROPORTION", &attrs)
 }
 
-#[allow(clippy::too_many_lines)] // one match arm per DV_INTERVAL inner type
+#[expect(
+    clippy::too_many_lines,
+    reason = "one match arm per DV_INTERVAL inner type"
+)]
 fn build_interval(case_id: &str, row: &Row<'_>) -> (String, Vec<(String, String, String)>) {
     let inner = interval_inner(case_id);
     let mut terms = Vec::new();
@@ -1210,12 +1213,10 @@ fn value_template(
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::unwrap_used,
-    clippy::panic,
-    clippy::indexing_slicing,
-    clippy::needless_pass_by_value
-)] // test fixtures
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "test fixtures take owned values so each case reads as a literal"
+)]
 mod tests {
     use super::*;
     use serde_json::json;

@@ -8,9 +8,13 @@
     clippy::doc_link_with_quotes,
     clippy::tabs_in_doc_comments,
     clippy::doc_lazy_continuation,
+    clippy::doc_overindented_list_items,
     clippy::struct_excessive_bools,
+    clippy::struct_field_names,
     clippy::module_inception,
-    clippy::large_enum_variant
+    clippy::large_enum_variant,
+    clippy::enum_variant_names,
+    reason = "inherent to faithful openEHR spec generation: verbatim spec prose in doc comments, and spec-owned class/variant/field names (a field name IS the normative BMM attribute name)"
 )]
 
 pub mod am14;

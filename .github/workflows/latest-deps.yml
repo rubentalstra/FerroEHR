@@ -1,0 +1,36 @@
+# .github/workflows/latest-deps.yml — scheduled latest-dependencies check.
+#
+# Cargo.toml pins caret ranges; Cargo.lock freezes CI to known-good versions
+# (every regular job runs --locked). This job is the Cargo book's named
+# mitigation for that split: periodically verify the WORKSPACE still builds
+# against the newest in-range dependency set, so a breaking upstream patch is
+# discovered on schedule instead of during an unrelated PR's lockfile bump
+# (https://doc.rust-lang.org/cargo/guide/continuous-integration.html#verifying-latest-dependencies).
+# Check-only by design: DB-backed tests need the composed stack; a resolution
+# or compile break is the signal this job exists to catch.
+name: latest-deps
+
+on:
+  schedule:
+    - cron: "17 5 * * 1" # Mondays 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest-deps:
+    name: build against latest in-range deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Update to the latest in-range dependency set
+        run: cargo update
+      - name: Check the workspace against it
+        # The console is excluded from --all-features lanes (mutually
+        # exclusive hydrate/ssr, compile_error!-guarded) and checked
+        # per-feature instead — the same split as ci.yml.
+        run: |
+          cargo check --workspace --exclude ehrbase-admin-ui --all-targets --all-features
+          cargo check -p ehrbase-admin-ui --all-targets --features ssr

@@ -29,7 +29,12 @@ Non-negotiables (violations are rejected at review):
   RM or re-serialize. Use the pinned workspace crates (`dep.workspace =
   true`); never hand-roll what axum/sqlx/sea-query/oauth2/etc. provide.
 - `thiserror` in libs, `anyhow` only in the binary; no `unwrap`/`expect`
-  outside tests; `std::sync::LazyLock`, edition-2024 idioms.
+  outside tests; `std::sync::LazyLock`, edition-2024 idioms. Every public
+  item is documented (`missing_docs` is enforced); no panicking indexing
+  (`indexing_slicing`/`string_slice` are deny outside tests); lint
+  suppressions are `#[expect(lint, reason = "…")]` scoped to the smallest
+  item (`#[allow]` only for cfg-conditional fire, also with a reason) —
+  the full register is `.claude/rules/reliability.md`.
 - **Never weaken, skip, or delete a test**; every DB-backed test takes its
   database from the shared harness `testkit::db()` (`tools/testkit`) — never
   a per-test PostgreSQL container, never migrations in a test

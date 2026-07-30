@@ -37,15 +37,15 @@
 //! - [`message`] — the own-design MESSAGE group (`I_EHR_EXTRACT_SERVICE` +
 //!   `I_TDD_SERVICE`); the release publishes no message API at all, so the whole
 //!   group is an extension under its own `/message/` resource root.
-//! - [`system`] — the System API manifest ([`system::SystemManifest`],
-//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router::router`].
+//! - [`system`] — the System API manifest ([`system::options::SystemManifest`],
+//!   `ehrbase::config::server::SystemOptionsConfig`), assembled and mounted by [`crate::router::router`].
 //!
 //! Every group — the standardised ITS-REST groups above and the own-design
 //! extension surfaces ([`crate::extensions`]: terminology, event subscription,
 //! multi-tenancy admin, FHIR connector) — is built as a native `utoipa-axum`
 //! router ([`OpenApiRouter`] + `routes!`), so each operation's route and its
 //! `OpenAPI` path metadata come from ONE `#[utoipa::path]` handler. They are
-//! composed by [`api_openapi_router`]; the extension groups are config-gated
+//! composed by `api_openapi_router`; the extension groups are config-gated
 //! inside each handler (a disabled group answers `404`), so a stock server
 //! exposes only the standardised ITS-REST surface.
 
@@ -211,36 +211,30 @@ pub(crate) async fn guarded_dispatch(
 /// ([`crate::extensions::access::authz`]), which keys its route→class map by the
 /// same normalized templates so an axum `MatchedPath` resolves exactly.
 pub(crate) fn normalize_path(path: &str) -> String {
-    let bytes = path.as_bytes();
     let mut out = String::with_capacity(path.len());
-    let mut i = 0;
-    while i < bytes.len() {
+    let mut chars = path.chars().peekable();
+    while let Some(c) = chars.next() {
         // A `{` immediately followed by an RFC 6570 operator opens a
         // query/path-style expansion that is not part of the resource path.
-        if bytes[i] == b'{'
-            && i + 1 < bytes.len()
-            && matches!(bytes[i + 1], b'?' | b'&' | b'#' | b'.' | b';' | b'/' | b'+')
+        if c == '{'
+            && chars
+                .peek()
+                .is_some_and(|n| matches!(n, '?' | '&' | '#' | '.' | ';' | '/' | '+'))
         {
-            // Skip to the matching `}`.
-            while i < bytes.len() && bytes[i] != b'}' {
-                i += 1;
+            // Skip to and including the matching `}`.
+            for skipped in chars.by_ref() {
+                if skipped == '}' {
+                    break;
+                }
             }
-            i += 1; // consume `}`
             continue;
         }
-        out.push(bytes[i] as char);
-        i += 1;
+        out.push(c);
     }
     out
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -23,6 +23,10 @@ async fn main() -> anyhow::Result<()> {
     // (exit 0 on 2xx/3xx). The bind address comes from LEPTOS_SITE_ADDR,
     // matching the serving path below.
     if std::env::args().nth(1).as_deref() == Some("healthcheck") {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "LEPTOS_SITE_ADDR is cargo-leptos's own variable, read here for the same reason leptos::config::get_configuration reads it below — the probe must hit the address this process serves on"
+        )]
         let addr =
             std::env::var("LEPTOS_SITE_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned());
         let addr = addr.replace("0.0.0.0", "127.0.0.1");
@@ -50,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
         None
     };
     let app_state = ehrbase_admin_ui::state::AppState {
-        config: config.clone(),
+        config: std::sync::Arc::clone(&config),
         cdr,
         oidc,
     };

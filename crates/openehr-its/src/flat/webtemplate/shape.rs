@@ -98,9 +98,9 @@ pub(super) fn post_process(node: &mut WebTemplateNode) {
 }
 
 fn post_process_element(node: &mut WebTemplateNode) {
-    if node.children.len() == 2 {
-        let first = node.children[0].first_input_type();
-        let second = node.children[1].first_input_type();
+    if let [first_child, second_child] = node.children.as_slice() {
+        let first = first_child.first_input_type();
+        let second = second_child.first_input_type();
         if first == Some(WebTemplateInputType::CodedText)
             && second == Some(WebTemplateInputType::Text)
         {
@@ -119,12 +119,15 @@ fn post_process_element(node: &mut WebTemplateNode) {
 }
 
 fn compact_to_coded_with_other(node: &mut WebTemplateNode, coded: usize, text: usize) {
-    if let Some(input) = node.children[coded].inputs.first_mut() {
+    let Some(coded_child) = node.children.get_mut(coded) else {
+        return;
+    };
+    if let Some(input) = coded_child.inputs.first_mut() {
         input.list_open = Some(true);
     }
     let mut other = WebTemplateInput::new(WebTemplateInputType::Text, Some("other"));
     other.list_open = Some(true);
-    node.children[coded].inputs.push(other);
+    coded_child.inputs.push(other);
     node.children.remove(text);
 }
 
@@ -254,7 +257,9 @@ fn ensure_context(node: &mut WebTemplateNode) {
         node.children.insert(0, ctx);
         0
     };
-    let ctx = &mut node.children[idx];
+    let Some(ctx) = node.children.get_mut(idx) else {
+        return;
+    };
     ensure_child(
         ctx,
         "/context/start_time",
@@ -527,23 +532,26 @@ fn is_skippable(rm_type: &str) -> bool {
 /// §"Open Value-Sets and the `|other` Suffix" (`listOpen: true` plus an `other`
 /// free-text input).
 fn compact_coded_text_with_other(children: &mut Vec<WebTemplateNode>) {
-    if children.len() != 2 {
+    let [first, second] = children.as_slice() else {
         return;
-    }
-    let rms = [children[0].rm_type.as_str(), children[1].rm_type.as_str()];
+    };
+    let rms = [first.rm_type.as_str(), second.rm_type.as_str()];
     let is_pair = rms.contains(&"DV_TEXT") && rms.contains(&"DV_CODED_TEXT");
-    if is_pair && children[0].aql_path == children[1].aql_path {
-        let (coded, text) = if children[0].rm_type == "DV_CODED_TEXT" {
+    if is_pair && first.aql_path == second.aql_path {
+        let (coded, text) = if first.rm_type == "DV_CODED_TEXT" {
             (0, 1)
         } else {
             (1, 0)
         };
-        if let Some(input) = children[coded].inputs.first_mut() {
+        let Some(coded_child) = children.get_mut(coded) else {
+            return;
+        };
+        if let Some(input) = coded_child.inputs.first_mut() {
             input.list_open = Some(true);
         }
         let mut other = WebTemplateInput::new(WebTemplateInputType::Text, Some("other"));
         other.list_open = Some(true);
-        children[coded].inputs.push(other);
+        coded_child.inputs.push(other);
         children.remove(text);
     }
 }
@@ -564,6 +572,10 @@ fn compact_coded_text_with_other(children: &mut Vec<WebTemplateNode>) {
 /// Our coded-text nodes fold `defining_code` into the node's `inputs`, so the
 /// qualifying pair is two same-path `DV_CODED_TEXT`/`CODE_PHRASE` siblings and the
 /// coded lists are unioned directly.
+#[expect(
+    clippy::indexing_slicing,
+    reason = "`groups` holds `enumerate()` indices into `children` and nothing is removed before the indexed accesses (the `to_remove` list is applied after), so every index is in bounds by construction"
+)]
 fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
     // Group child indices by aql path, in first-seen order.
     let mut groups: IndexMap<String, Vec<usize>> = IndexMap::new();

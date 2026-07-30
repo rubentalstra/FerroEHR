@@ -16,22 +16,31 @@ use crate::storage::error::StorageError;
 /// One `item_tag` row.
 #[derive(Debug, Clone)]
 pub struct TagRow {
+    /// The tagged versioned object.
     pub target_vo_id: VoId,
     /// The `{creating_system_id}::{version_tree_id}` tail of a
     /// VERSION-addressed target; `None` = the container.
     pub target_version: Option<String>,
+    /// The RM type of the tagged object.
     pub target_type: String,
+    /// The tag key.
     pub key: String,
+    /// The tag value, absent when the tag is a bare marker.
     pub value: Option<String>,
+    /// The path within the target the tag applies to, if it is not whole-object.
     pub target_path: Option<String>,
 }
 
 /// One tag to write (`replace_tags`).
 #[derive(Debug, Clone)]
 pub struct NewTag<'a> {
+    /// The RM type of the tagged object.
     pub target_type: &'a str,
+    /// The tag key.
     pub key: &'a str,
+    /// The tag value, or `None` for a bare marker.
     pub value: Option<&'a str>,
+    /// The path within the target the tag applies to, if it is not whole-object.
     pub target_path: Option<&'a str>,
 }
 
