@@ -548,3 +548,281 @@ fn occurrences_of(
         _ => None,
     }
 }
+
+// ── App.B extended meta-data (`description/other_details`) ───────────────────
+
+/// The archetype data of a converted plain authored archetype.
+fn authored(
+    a: &Archetype,
+) -> &openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetypeData {
+    match a {
+        Archetype::AuthoredArchetype(b) => match b.as_ref() {
+            AuthoredArchetype::AuthoredArchetype(d) => d,
+            _ => panic!("not a plain authored archetype"),
+        },
+        Archetype::TemplateOverlay(_) => panic!("template overlay"),
+    }
+}
+
+/// A minimal 1.4 archetype carrying `other_details_block` verbatim.
+fn meta_data_source(other_details_block: &str) -> String {
+    format!(
+        "\
+archetype (adl_version=1.4)
+    openEHR-EHR-CLUSTER.app_b_meta_data.v1
+
+concept
+    [at0000]
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <\"AuthorDraft\">
+{other_details_block}
+
+definition
+    CLUSTER[at0000] matches {{
+        items cardinality matches {{0..*; unordered}} matches {{
+            ELEMENT[at0001] matches {{*}}
+        }}
+    }}
+
+ontology
+    term_definitions = <
+        [\"en\"] = <
+            items = <
+                [\"at0000\"] = <text=<\"root\"> description=<\"root\">>
+                [\"at0001\"] = <text=<\"item\"> description=<\"item\">>
+            >
+        >
+    >
+"
+    )
+}
+
+fn convert_source(src: &str) -> Archetype {
+    let mut log = ConversionLog::new();
+    parse_and_convert(src, &ConvertConfig::default(), &mut log).expect("converts")
+}
+
+/// A 1.4 source carrying the appendix's §Standardised Items example block
+/// verbatim (`ADL1.4/masterAppB-extended_metadata.adoc`).
+fn app_b_standardised_items_source() -> String {
+    meta_data_source(
+        r#"    other_details = <
+        ["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+        ["original_namespace"] = <"au.gov.nehta">
+        ["original_publisher"] = <"NEHTA CTI Team, National E-Health Transition Authority <clinicalinfo@nehta.gov.au>">
+        ["custodian_organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+        ["custodian_namespace"] = <"org.openehr">
+        ["build_uid"] = <"3076af96-e1dd-4f9b-abf2-23913fcf52b1">
+        ["revision"] = <"0.0.1-alpha">
+        ["references"] = <"
+            O'Brien E, Asmar R, Beilin L, et al. European Society of Hypertension recommendations for conventional, ambulatory and home blood pressure measurement. Journal of Hypertension. 2003; 21(5):821-848. Available from: http://www.ncbi.nlm.nih.gov/pubmed/12714851
+            Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation. 1993; 88(5):2460. Available from: http://circ.ahajournals.org/cgi/reprint/88/5/2460
+        ">
+        ["ip_acknowledgements"] = <"
+            Content from LOINC® is copyright © 1995 Regenstrief Institute, Inc. and the LOINC Committee, and available at no cost under the license at http://loinc.org/terms-of-use.
+            Content from SNOMED CT® is copyright © 2007 IHTSDO <ihtsdo.org>.
+        ">
+    >"#,
+    )
+}
+
+/// The appendix's §Standardised Items example block converts to its AOM2
+/// homes: the five governance strings transfer verbatim, `build_uid` parses
+/// into the archetype's `build_uid`, and `revision` still sets the release
+/// version.
+#[test]
+fn app_b_standardised_items_convert_to_their_aom2_homes() {
+    let converted = convert_source(&app_b_standardised_items_source());
+    let archetype = authored(&converted);
+    let desc = archetype.description.as_ref().expect("a description");
+
+    // The five governance strings transfer VERBATIM — the "name <URN>" shapes
+    // are display conventions, never decomposed.
+    assert_eq!(desc.original_namespace.as_deref(), Some("au.gov.nehta"));
+    assert_eq!(
+        desc.original_publisher.as_deref(),
+        Some("NEHTA CTI Team, National E-Health Transition Authority <clinicalinfo@nehta.gov.au>")
+    );
+    assert_eq!(desc.custodian_namespace.as_deref(), Some("org.openehr"));
+    assert_eq!(
+        desc.custodian_organisation.as_deref(),
+        Some("openEHR Foundation <http://www.openEHR.org>")
+    );
+    assert_eq!(
+        desc.licence.as_deref(),
+        Some(
+            "This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/."
+        )
+    );
+
+    // `build_uid` is a GUID string → the archetype's typed `build_uid`.
+    assert_eq!(
+        archetype.build_uid.value,
+        uuid::Uuid::parse_str("3076af96-e1dd-4f9b-abf2-23913fcf52b1").expect("a valid GUID")
+    );
+
+    // `revision` still drives the release version (unchanged behaviour).
+    assert_eq!(archetype.archetype_id.release_version, "0.0.1");
+}
+
+/// `references` and `ip_acknowledgements` are "string with one LF (`\n`)
+/// terminated line for each reference … Intervening LFs and leading and
+/// trailing whitespace may be added for clarity, to be stripped on conversion
+/// to ADL2" (`ADL1.4/masterAppB-extended_metadata.adoc` §Standardised Items):
+/// one keyed entry per non-blank line, trimmed. Every converted key is
+/// consumed from `other_details`, and the result prints + re-parses as ADL2.
+#[test]
+fn app_b_reference_lists_split_on_lf_into_keyed_entries() {
+    let converted = convert_source(&app_b_standardised_items_source());
+    let desc = authored(&converted)
+        .description
+        .as_ref()
+        .expect("a description");
+
+    let references = desc.references.as_ref().expect("references");
+    assert_eq!(
+        references.keys().collect::<Vec<_>>(),
+        vec!["1", "2"],
+        "1-based ordinals in source line order"
+    );
+    assert_eq!(
+        references.get("1").map(String::as_str),
+        Some(
+            "O'Brien E, Asmar R, Beilin L, et al. European Society of Hypertension recommendations for conventional, ambulatory and home blood pressure measurement. Journal of Hypertension. 2003; 21(5):821-848. Available from: http://www.ncbi.nlm.nih.gov/pubmed/12714851"
+        )
+    );
+    assert_eq!(
+        references.get("2").map(String::as_str),
+        Some(
+            "Perloff D, Grim C, Flack J, Frohlich ED, Hill M, McDonald M, Morgenstern BZ. Human blood pressure determination by sphygmomanometry. Circulation. 1993; 88(5):2460. Available from: http://circ.ahajournals.org/cgi/reprint/88/5/2460"
+        )
+    );
+    let ip = desc
+        .ip_acknowledgements
+        .as_ref()
+        .expect("ip_acknowledgements");
+    assert_eq!(ip.keys().collect::<Vec<_>>(), vec!["1", "2"]);
+    assert_eq!(
+        ip.get("1").map(String::as_str),
+        Some(
+            "Content from LOINC® is copyright © 1995 Regenstrief Institute, Inc. and the LOINC Committee, and available at no cost under the license at http://loinc.org/terms-of-use."
+        )
+    );
+    assert_eq!(
+        ip.get("2").map(String::as_str),
+        Some("Content from SNOMED CT® is copyright © 2007 IHTSDO <ihtsdo.org>.")
+    );
+
+    // Every converted key is consumed.
+    let left: Vec<&String> = desc
+        .other_details
+        .as_ref()
+        .map(|o| o.keys().collect())
+        .unwrap_or_default();
+    assert!(
+        left.is_empty(),
+        "every standardised item is consumed from other_details: {left:?}"
+    );
+
+    // The converted homes are visible in the printed ADL2, which re-parses.
+    let printed = openehr_adl::printer::print(&converted);
+    for token in [
+        "build_uid=3076af96-e1dd-4f9b-abf2-23913fcf52b1",
+        "original_namespace = <\"au.gov.nehta\">",
+        "custodian_namespace = <\"org.openehr\">",
+        "references = <",
+        "ip_acknowledgements = <",
+    ] {
+        assert!(
+            printed.contains(token),
+            "printed ADL2 is missing {token:?}:\n{printed}"
+        );
+    }
+    assert!(
+        !printed.contains("other_details"),
+        "no other_details section survives:\n{printed}"
+    );
+    parse_artefact(&printed)
+        .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
+}
+
+/// The appendix's §Other Items example block passes through untouched: those
+/// names are reserved/display-only ("CKM does nothing with this, except
+/// display") and no conversion is mandated for them.
+#[test]
+fn app_b_other_items_pass_through_other_details_unchanged() {
+    let src = meta_data_source(
+        r#"    other_details = <
+        ["review_date"] = <"2014-06-10">
+        ["current_contact"] = <"Ian McNicoll, freshEHR Clinical Informatics Ltd <ian.mcnicoll@freshehr.com>">
+        ["responsible_organisation"] = <"Nehta">
+        ["MD5-CAM-1.0.1"] = <"C5016B71B55DBDCBCAA8531CC1A982E3">
+    >"#,
+    );
+    let converted = convert_source(&src);
+    let desc = authored(&converted)
+        .description
+        .as_ref()
+        .expect("a description");
+    let other = desc.other_details.as_ref().expect("other_details");
+    assert_eq!(
+        other.get("review_date").map(String::as_str),
+        Some("2014-06-10")
+    );
+    assert_eq!(
+        other.get("current_contact").map(String::as_str),
+        Some("Ian McNicoll, freshEHR Clinical Informatics Ltd <ian.mcnicoll@freshehr.com>")
+    );
+    assert_eq!(
+        other.get("responsible_organisation").map(String::as_str),
+        Some("Nehta")
+    );
+    assert_eq!(
+        other.get("MD5-CAM-1.0.1").map(String::as_str),
+        Some("C5016B71B55DBDCBCAA8531CC1A982E3")
+    );
+    assert_eq!(other.len(), 4, "nothing added, nothing removed");
+}
+
+/// A `build_uid` that violates the table's "Guid string" syntax is never
+/// guessed at: it stays in `other_details` verbatim, the archetype keeps its
+/// nil `build_uid`, and the remaining standardised items still convert.
+#[test]
+fn malformed_build_uid_stays_in_other_details() {
+    let src = meta_data_source(
+        r#"    other_details = <
+        ["build_uid"] = <"not-a-guid">
+        ["custodian_namespace"] = <"org.openehr">
+    >"#,
+    );
+    let converted = convert_source(&src);
+    let archetype = authored(&converted);
+    assert!(
+        archetype.build_uid.value.is_nil(),
+        "a non-GUID build_uid is not converted"
+    );
+    let other = archetype
+        .description
+        .as_ref()
+        .expect("a description")
+        .other_details
+        .as_ref()
+        .expect("other_details");
+    assert_eq!(
+        other.get("build_uid").map(String::as_str),
+        Some("not-a-guid")
+    );
+    assert_eq!(other.len(), 1, "only the unconvertible value is left");
+    assert_eq!(
+        archetype
+            .description
+            .as_ref()
+            .and_then(|d| d.custodian_namespace.as_deref()),
+        Some("org.openehr"),
+        "the other standardised items still convert"
+    );
+}
