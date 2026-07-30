@@ -28,8 +28,8 @@ types carry NO serde derive (the `#[derive(OpenEhrType)]` proc-macro is deleted)
 `json::to_canonical_json`/`from_canonical_json`/`from_canonical_value` ARE the
 codec entry points, and `rm_validate::validate_rm_value` is the wire-boundary
 RM class-invariant dispatcher that drives the reader. Proven by
-`tests/json_codec_parity.rs` (byte hazards + `FromJson` tolerance) +
-`tests/canonical_contract.rs` (the R0 determinism manifest).
+`tests/it/json_codec_parity.rs` (byte hazards + `FromJson` tolerance) +
+`tests/it/canonical_contract.rs` (the R0 determinism manifest).
 
 - **NEVER hand-edit anything under a `generated/` directory** — the
   `codegen-drift` CI job regenerates and fails on any diff
@@ -47,7 +47,7 @@ RM class-invariant dispatcher that drives the reader. Proven by
   (canonical-JSON corpus round-trips, C14N, schema validation, the R0
   determinism manifest) — never weaken or skip one to get green; a gate failure
   means the emitter or runtime is wrong.
-- `tests/opt14_corpus.rs` carries TWO parse gates: (1) every vendored `.opt`
+- `tests/it/opt14_corpus.rs` carries TWO parse gates: (1) every vendored `.opt`
   under `app/ehrbase/tests/resources/service` parses + round-trips through the
   generated `opt14::OperationalTemplate`; (2) every official CNF robot
   VALID-template fixture (`docs/specs/openehr/CNF/tests/platform/robot/

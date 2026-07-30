@@ -18,9 +18,7 @@
 //! gate proves *readability*; a stricter lossless re-serialize round-trip is a
 //! follow-up once the 1.1↔1.2 field drift is characterized.
 
-mod common;
-
-use common::{corpus_files, excluded};
+use crate::common::{corpus_files, excluded};
 use openehr_its::json::{
     from_canonical_json, to_canonical_json, to_canonical_value, validate_canonical,
 };

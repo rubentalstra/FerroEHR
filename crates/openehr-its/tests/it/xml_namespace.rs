@@ -24,7 +24,7 @@ const V2_NS: &str = "xmlns=\"http://schemas.openehr.org/v2\"";
 
 fn fixture() -> Composition {
     let json =
-        include_str!("vendor/openehr_sdk/composition/canonical_json/minimal_evaluation.json");
+        include_str!("../vendor/openehr_sdk/composition/canonical_json/minimal_evaluation.json");
     openehr_its::json::from_canonical_json(json).expect("deserialize composition JSON")
 }
 

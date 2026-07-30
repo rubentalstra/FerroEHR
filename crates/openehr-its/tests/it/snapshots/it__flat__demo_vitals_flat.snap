@@ -1,5 +1,5 @@
 ---
-source: crates/openehr-its/tests/flat.rs
+source: crates/openehr-its/tests/it/flat.rs
 expression: map
 ---
 {

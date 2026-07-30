@@ -27,7 +27,7 @@ use serde_json::json;
 /// An `ORIGINAL_VERSION<COMPOSITION>` over a corpus composition.
 fn fixture() -> OriginalVersion<Composition> {
     let data: Composition = openehr_its::json::from_canonical_json(include_str!(
-        "vendor/openehr_sdk/composition/canonical_json/minimal_evaluation.json"
+        "../vendor/openehr_sdk/composition/canonical_json/minimal_evaluation.json"
     ))
     .expect("typed composition");
     openehr_its::json::from_canonical_value(&json!({
