@@ -33,9 +33,6 @@
 //! - `store` — the content-addressed [`BlobStore`] over `object_store`.
 //! - `offload` — the pure canonical-JSON transforms (externalize / expand).
 
-// openEHR/product identifiers (DV_MULTIMEDIA, SeaweedFS, …) read as prose in docs.
-#![allow(clippy::doc_markdown)]
-
 use std::collections::HashMap;
 
 use serde_json::Value;

@@ -1,15 +1,7 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Telemetry tests: the metric-name + bucket registry snapshot
 //! (renames become deliberate), the OTLP export smokes for traces AND metrics
 //! push (against in-memory exporters — the export pipeline is exercised without
 //! a live collector), and readiness reflecting a DOWN database.
-
-#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use ehrbase::telemetry::health::{Health, HealthIndicator, HealthStatus};
 use ehrbase::telemetry::prometheus::{MetricKind, catalog};

@@ -1,20 +1,17 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end SM-3 tests against a real PostgreSQL 18 (shared testkit harness): the
 //! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision
 //! history + error cases (driven through the `PartyRelationshipService` seam),
 //! and the EHR Index N:M / duplicate-management lifecycle (through the
 //! `EhrIndexService` seam). Verifies the 0007 migration applies cleanly (the
 //! harness runs migrations).
-#![allow(
+
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::too_many_lines,
-    clippy::doc_markdown
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
 use serde_json::{Value, json};

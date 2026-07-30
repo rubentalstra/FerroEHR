@@ -79,19 +79,28 @@ pub(crate) mod wire;
 /// scope, RM demographic).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
+    /// A COMPOSITION — the clinical content of an EHR.
     Composition,
+    /// The EHR's `EHR_STATUS` (subject, queryable/modifiable flags).
     EhrStatus,
     /// The EHR-wide access-control object created with the EHR (RM ehr §"EHR
     /// Creation") and versioned "via the normal mechanism" (RM ehr §"EHR
     /// Access").
     EhrAccess,
+    /// A FOLDER hierarchy — a member of `EHR.folders` (the lowest-ranked one
+    /// being `EHR.directory`).
     Folder,
     // Demographic party roots: versioned objects with no EHR scope; the same
     // machinery with a NULL `ehr_id`.
+    /// A demographic AGENT.
     Agent,
+    /// A demographic GROUP.
     Group,
+    /// A demographic ORGANISATION.
     Organisation,
+    /// A demographic PERSON.
     Person,
+    /// A demographic ROLE.
     Role,
     /// A demographic `PARTY_RELATIONSHIP` (RM demographic): a versioned object
     /// with no EHR scope, like the party roots, but *not* a PARTY.

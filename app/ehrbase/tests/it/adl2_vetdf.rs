@@ -1,10 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#![allow(clippy::expect_used, clippy::unwrap_used)]
 //! ADL2 VETDF validation over the terminology-service resolver seam, end to
 //! end (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).
 //!
@@ -13,6 +6,14 @@
 //! rejected `422` with the VETDF rule code; one the server knows (`200`) is
 //! accepted. The terminology backend is a hermetic `wiremock` FHIR R4 server —
 //! no live network. Real `PostgreSQL` 18 via the shared testkit harness.
+
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::sync::Arc;
 

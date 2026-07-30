@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end AQL `TERMINOLOGY('expand', …)` tests (B4 stage (a)) against a real
 //! PostgreSQL 18 (shared testkit harness): seed COMPOSITIONs with a coded ELEMENT leaf,
 //! then run `matches TERMINOLOGY('expand', …)` / `matches {…, TERMINOLOGY(…)}`
@@ -18,11 +12,15 @@
 //!
 //! Spec: master03 §TERMINOLOGY (lines 748–767) + the matches-merge note (lines
 //! 756–759).
-#![allow(
+
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::doc_markdown,
-    clippy::too_many_lines
+    clippy::panic,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
 use std::sync::Arc;
@@ -43,7 +41,7 @@ use ehrbase::service::terminology::fhir::FhirTerminologyProvider;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
-/// The coded leaf path (mirrors the DV_QUANTITY leaf in `service_aql.rs`, but at
+/// The coded leaf path (mirrors the `DV_QUANTITY` leaf in `service_aql.rs`, but at
 /// `.../value/defining_code/code_string` — the master03 example path).
 const CODE_PATH: &str =
     "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/defining_code/code_string";

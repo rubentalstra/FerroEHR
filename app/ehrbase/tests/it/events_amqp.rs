@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end contribution-outbox eventing against a **real broker**
 //! (testcontainers `RabbitMQ`) + a real `PostgreSQL` 18 — the broker half of
 //! Our own extension (task 3/5b).
@@ -14,7 +8,13 @@
 //! while the broker is unreachable the outbox rows stay pending, and once a
 //! publisher can reach the broker every row is delivered.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::time::Duration;
 

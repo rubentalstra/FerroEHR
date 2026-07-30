@@ -54,7 +54,7 @@ impl EventsHandle {
     /// for the `events` health indicator.
     #[must_use]
     pub fn healthy(&self) -> Arc<AtomicBool> {
-        self.healthy.clone()
+        Arc::clone(&self.healthy)
     }
 
     /// Signal the drainer to stop and await it, bounded by `timeout`. Pending
@@ -92,7 +92,13 @@ pub fn start_with_publisher(
 ) -> EventsHandle {
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
     let healthy = Arc::new(AtomicBool::new(true));
-    let join = tokio::spawn(run(config, pool, publisher, shutdown_rx, healthy.clone()));
+    let join = tokio::spawn(run(
+        config,
+        pool,
+        publisher,
+        shutdown_rx,
+        Arc::clone(&healthy),
+    ));
     EventsHandle {
         shutdown: shutdown_tx,
         join,

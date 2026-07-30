@@ -494,6 +494,12 @@ impl FhirTerminologyProvider {
     /// # Errors
     ///
     /// Always [`CallStatusType::NotImplemented`].
+    #[expect(
+        clippy::unused_self,
+        reason = "the SM interface declares this call on the service; the \
+                  protocol adapter invokes every SM call uniformly, so the \
+                  receiver stays even where this realization ignores it"
+    )]
     pub fn get_terminology_description(
         &self,
         _terminology_id: &str,
@@ -662,12 +668,6 @@ impl FhirContains {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

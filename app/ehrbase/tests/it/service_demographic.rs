@@ -1,20 +1,17 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end DEMOGRAPHIC service tests against a real PostgreSQL 18
-//! (shared testkit harness): the party CRUD + versioning + VERSIONED_PARTY +
+//! (shared testkit harness): the party CRUD + versioning + `VERSIONED_PARTY` +
 //! contribution + tags lifecycle, driven through the `DemographicService`
 //! envelope seam exactly as the REST layer calls it. Verifies the 0003 party
 //! migration applies cleanly (the harness runs migrations) and that parties
 //! version with no EHR scope.
-#![allow(
+
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::too_many_lines,
-    clippy::doc_markdown
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
 use serde_json::{Value, json};

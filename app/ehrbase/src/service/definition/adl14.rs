@@ -61,6 +61,14 @@ impl EhrbaseService {
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn valid_archetype(&self, adl: &str) -> Result<bool, SmError> {
         Ok(matches!(
             validate_source_adl14(adl, &ProductionRmModel),
@@ -248,6 +256,14 @@ impl EhrbaseService {
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn valid_opt(&self, opt_xml: &str) -> Result<bool, SmError> {
         Ok(valid_opt_xml(opt_xml))
     }
@@ -676,6 +692,12 @@ fn valid_opt_xml(opt_xml: &str) -> bool {
 }
 
 /// Parse an OPT id UUID string; an unparseable value is a `400`.
+#[expect(
+    clippy::map_err_ignore,
+    reason = "the mapped error already names the resource and echoes the \
+              rejected token; the discarded `uuid::Error` adds only its own \
+              wording, which is not part of the wire contract"
+)]
 fn parse_opt_uuid(an_opt_id: &str) -> Result<Uuid, ServiceError> {
     Uuid::parse_str(an_opt_id)
         .map_err(|_| ServiceError::BadRequest(format!("OPT id is not a UUID: {an_opt_id}")))
@@ -701,12 +723,6 @@ fn extract_archetype_id(adl: &str) -> Option<ArchetypeId> {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

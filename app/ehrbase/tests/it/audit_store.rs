@@ -1,11 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Integration tests for the local IHE ATNA Audit Record Repository
 //! (`ehrbase::system_log::store`) against a real `PostgreSQL` 18
 //! (shared testkit harness): the `audit` schema migrates cleanly alongside

@@ -27,6 +27,14 @@ impl EhrbaseService {
     ///
     /// Infallible in practice (the bundle is compile-time-embedded); the
     /// `Result` is the SM call shape.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
         Ok(bundle::terminology_ids())
     }
@@ -37,6 +45,14 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// Infallible in practice; the `Result` is the SM call shape.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn has_terminology(&self, terminology_id: &str) -> Result<bool, SmError> {
         Ok(bundle::has_terminology(terminology_id))
     }
@@ -48,6 +64,12 @@ impl EhrbaseService {
     ///
     /// `VersionedObjectDoesNotExist` when the bundle does not know
     /// `terminology_id` (`Pre_has_terminology`).
+    #[expect(
+        clippy::unused_self,
+        reason = "the SM interface declares this call on the service; the \
+                  protocol adapter invokes every SM call uniformly, so the \
+                  receiver stays even where this realization ignores it"
+    )]
     pub fn get_terminology_description(
         &self,
         terminology_id: &str,

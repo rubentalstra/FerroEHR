@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! E2 multi-tenancy isolation integration tests, against a real
 //! `PostgreSQL` 18 via the shared testkit harness.
 //!
@@ -24,7 +18,18 @@
 //!
 //! Requires Docker (the shared testkit `PostgreSQL` server).
 
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+#![expect(
+    clippy::too_many_lines,
+    reason = "an end-to-end suite drives one long lifecycle per test on purpose: \
+              splitting a case would hide the order its assertions depend on"
+)]
 
 use ehrbase::db::{self, DbConfig};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, Row};

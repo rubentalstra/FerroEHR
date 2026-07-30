@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! The configured openEHR **system identifier** reaches every wire value that
 //! carries it, against a real `PostgreSQL` 18 (shared testkit harness).
 //!
@@ -26,7 +20,14 @@
 //! `DEFAULT_SYSTEM_ID`, so an unset config key is byte-identical to previous
 //! behaviour.
 
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![expect(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use ehrbase::ids::EhrId;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};

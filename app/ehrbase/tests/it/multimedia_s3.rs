@@ -1,11 +1,5 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-//! End-to-end tests for DV_MULTIMEDIA externalization against a real
-//! S3 backend — a SeaweedFS S3 gateway in a testcontainer — plus a real
+//! End-to-end tests for `DV_MULTIMEDIA` externalization against a real
+//! S3 backend — a `SeaweedFS` S3 gateway in a testcontainer — plus a real
 //! `PostgreSQL` 18.
 //!
 //! Spec basis: RM 1.2.0 `DV_MULTIMEDIA`
@@ -17,20 +11,22 @@
 //! is our design, and these tests are its acceptance instrument.
 //!
 //! Each test owns its S3 container (Drop removes it); the PostgreSQL database
-//! comes from the shared testkit harness. Requires Docker. SeaweedFS with no credentials runs in unauthenticated
+//! comes from the shared testkit harness. Requires Docker. `SeaweedFS` with no credentials runs in unauthenticated
 //! "allow-all" mode (dev/test only).
-#![allow(
+
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::too_many_lines,
-    clippy::doc_markdown,
-    clippy::needless_pass_by_value,
-    clippy::items_after_statements
+    let_underscore_drop,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
 use std::sync::Arc;
 use std::time::Duration;
 
+use base64::Engine as _;
 use serde_json::{Value, json};
 use testcontainers::core::IntoContainerPort;
 use testcontainers::runners::AsyncRunner;
@@ -44,7 +40,7 @@ use ehrbase::service::EhrbaseService;
 use ehrbase::service::admin::types::ExportSpec;
 
 const BUCKET: &str = "openehr-multimedia";
-/// S3-gateway port SeaweedFS listens on.
+/// S3-gateway port `SeaweedFS` listens on.
 const S3_PORT: u16 = 8333;
 
 // ── containers ───────────────────────────────────────────────────────────────
@@ -112,7 +108,7 @@ impl Seaweed {
     }
 }
 
-/// Create the bucket via an anonymous S3 CreateBucket (PUT /<bucket>), retrying
+/// Create the bucket via an anonymous S3 `CreateBucket` (PUT /<bucket>), retrying
 /// briefly while the filer finishes coming up.
 async fn create_bucket(endpoint: &str, bucket: &str) {
     let client = reqwest::Client::new();
@@ -154,9 +150,8 @@ async fn probe_object_write(endpoint: &str, bucket: &str) {
 
 // ── fixtures ───────────────────────────────────────────────────────────────
 
-/// A canonical DV_MULTIMEDIA node with `n` bytes of inline data.
+/// A canonical `DV_MULTIMEDIA` node with `n` bytes of inline data.
 fn multimedia(n: usize) -> Value {
-    use base64::Engine as _;
     let payload = vec![0x42u8; n];
     json!({
         "_type": "DV_MULTIMEDIA",
@@ -170,7 +165,12 @@ fn multimedia(n: usize) -> Value {
     })
 }
 
-/// A valid EHR_STATUS carrying `media` inside `other_details` (an ELEMENT value).
+/// A valid `EHR_STATUS` carrying `media` inside `other_details` (an ELEMENT value).
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "the helper takes an owned Value so call sites can pass a json! \
+              literal directly"
+)]
 fn status_with_media(media: Value) -> Value {
     json!({
         "_type": "EHR_STATUS",
@@ -200,14 +200,14 @@ fn status_with_media(media: Value) -> Value {
     })
 }
 
-/// The DV_MULTIMEDIA node inside an EHR_STATUS's `other_details`.
+/// The `DV_MULTIMEDIA` node inside an `EHR_STATUS`'s `other_details`.
 fn media_node(status: &Value) -> &Value {
     status
         .pointer("/other_details/items/0/value")
         .expect("multimedia node in other_details")
 }
 
-/// The blob key (hex) referenced by an externalized DV_MULTIMEDIA node.
+/// The blob key (hex) referenced by an externalized `DV_MULTIMEDIA` node.
 fn blob_key(status: &Value) -> String {
     let uri = media_node(status)
         .pointer("/uri/value")
@@ -226,7 +226,7 @@ async fn blob_store_round_trips_against_seaweedfs() {
     assert!(!store.exists("k1").await.unwrap());
     store.put_if_absent("k1", b"hello".to_vec()).await.unwrap();
     assert!(store.exists("k1").await.unwrap());
-    assert_eq!(&store.get("k1").await.unwrap()[..], b"hello");
+    assert_eq!(&*store.get("k1").await.unwrap(), b"hello");
     // put_if_absent on an existing key is a no-op (content-addressed dedup).
     store.put_if_absent("k1", b"hello".to_vec()).await.unwrap();
     store.delete("k1").await.unwrap();
@@ -285,7 +285,6 @@ async fn commit_offloads_large_multimedia_and_expands() {
         .get("data")
         .and_then(Value::as_str)
         .expect("inline data");
-    use base64::Engine as _;
     assert_eq!(
         base64::engine::general_purpose::STANDARD
             .decode(data)

@@ -44,6 +44,12 @@ pub mod spec_opt {
 
     /// # Errors
     /// Propagates the serde serializer's error.
+    #[expect(
+        clippy::ref_option,
+        reason = "serde's `#[serde(with = ...)]` contract fixes this signature: \
+                  the generated code calls `serialize(&self.field, serializer)` \
+                  with a reference to the whole `Option`"
+    )]
     pub fn serialize<T: ToJson, S: Serializer>(value: &Option<T>, s: S) -> Result<S::Ok, S::Error> {
         match value {
             Some(v) => json::to_canonical_value(v).serialize(s),

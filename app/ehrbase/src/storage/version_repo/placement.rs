@@ -19,13 +19,21 @@ use crate::storage::error::StorageError;
 /// them onto its `PrecedingTip` (tree id + kind + lifecycle).
 #[derive(Debug, Clone)]
 pub struct TipRow {
+    /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
+    /// The `vo_version.kind` discriminator text.
     pub kind: String,
+    /// The per-object storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
+    /// `VERSION_TREE_ID` first part.
     pub trunk_version: i32,
+    /// `VERSION_TREE_ID` second part; `0` on a trunk row.
     pub branch_number: i32,
+    /// `VERSION_TREE_ID` third part; `0` on a trunk row.
     pub branch_version: i32,
+    /// The version's immutable `creating_system_id`.
     pub creating_system_id: String,
+    /// The `version_lifecycle_state` numeric code.
     pub lifecycle_state: String,
     /// Whether the tip is still open (`upper_inf(sys_period)`).
     pub open: bool,

@@ -213,7 +213,7 @@ impl Builder<'_> {
         // The source must be a versioned-object root: only there does the server
         // assign the OBJECT_VERSION_ID (a contained OBSERVATION's `uid` is its
         // own stored value, if any).
-        let Source::Rm(r) = &self.ir.sources[leaf.source.0] else {
+        let Some(Source::Rm(r)) = self.ir.sources.get(leaf.source.0) else {
             return None;
         };
         if r.rm_type.is_empty() || !r.rm_type.names().iter().all(|t| is_vo_root_type(t)) {
@@ -263,7 +263,7 @@ impl Builder<'_> {
         // The source must be an RM versioned-object root bound to a single
         // rm_type, so its node rows are exactly the `num = 0` root the column
         // is populated on.
-        let Source::Rm(r) = &self.ir.sources[leaf.source.0] else {
+        let Some(Source::Rm(r)) = self.ir.sources.get(leaf.source.0) else {
             return None;
         };
         if !r.rm_type.is_singleton() {

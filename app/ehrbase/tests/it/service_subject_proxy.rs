@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the SM-6 Subject Proxy Service
 //! (`I_SUBJECT_PROXY_SERVICE` + `I_DATA_BINDING`) against a real `PostgreSQL` 18
 //! (shared testkit harness).
@@ -16,7 +10,15 @@
 //! against committed data; the `has_subject`/`has_binding`/`not has_*`
 //! precondition rejections; the FHIR/HL7v2 stubbed-seam typed rejection; and
 //! `reset()`.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use serde_json::{Value, json};
 use sqlx::PgPool;

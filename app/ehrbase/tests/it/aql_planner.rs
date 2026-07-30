@@ -6,14 +6,16 @@
 //! envelope. Several queries are taken verbatim from the QUERY 1.1 worked
 //! examples (`docs/specs/openehr/QUERY/docs/AQL/`).
 
-#![allow(
-    clippy::panic,
+#![expect(
     clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
+    clippy::panic,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+
 use openehr_query::lexer::CompOp;
 use openehr_query::parser::parse_str;
 
@@ -51,6 +53,13 @@ fn build_sql(q: &str) -> String {
         .sql
 }
 
+#[expect(
+    clippy::panic_in_result_fn,
+    reason = "the parse step is fixture setup, not the behaviour under test: an \
+              unparseable query in this suite is a broken fixture and must fail \
+              loudly, while the returned Result carries the PLANNING outcome the \
+              test asserts on"
+)]
 fn plan_with(q: &str, params: &Params) -> Result<QueryIr, AqlError> {
     let ast = parse_str(q).unwrap_or_else(|e| panic!("parse failed for {q:?}: {e}"));
     plan(&ast, params)

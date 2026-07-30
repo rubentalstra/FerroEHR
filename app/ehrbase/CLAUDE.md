@@ -41,6 +41,13 @@ module.**
   (`tools/testkit`; template-clone per test). Never start a per-test PG container
   or run migrations in a test. Cluster-global objects a test must create (login
   roles) are named off the clone db name so the testkit sweep reaps them.
+- **One integration-test binary:** `tests/it/main.rs` + one `mod` per topic
+  file; `tests/resources/` holds the shared fixtures (paths are anchored at
+  `CARGO_MANIFEST_DIR`). A new suite is a module registered in `main.rs`, never
+  a new top-level `tests/*.rs`. The three container suites (`events_amqp`,
+  `fhir_outbound_amqp`, `multimedia_s3`) are serialized by the nextest
+  `containers` group, which matches them by module prefix — renaming one of
+  those modules means updating `.config/nextest.toml`.
 - Gates: `cargo clippy -p ehrbase --all-targets` +
   `cargo nextest run -p ehrbase` green before commit; the CNF pipeline
   (`bash scripts/conformance.sh`) must show zero drift vs the committed baseline

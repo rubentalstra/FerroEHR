@@ -223,11 +223,15 @@ fn party_tag_json(system_id: &str, row: &tag_repo::TagRow) -> Value {
             "id": { "_type": "HIER_OBJECT_ID", "value": system_id }
         },
     });
-    if let Some(value) = &row.value {
-        tag["value"] = json!(value.as_str());
-    }
-    if let Some(path) = &row.target_path {
-        tag["target_path"] = json!(path.as_str());
+    // `tag` is the object literal above, so the optional fields go in through
+    // its own map rather than a panicking index-assign.
+    if let Some(obj) = tag.as_object_mut() {
+        if let Some(value) = &row.value {
+            obj.insert("value".to_owned(), json!(value.as_str()));
+        }
+        if let Some(path) = &row.target_path {
+            obj.insert("target_path".to_owned(), json!(path.as_str()));
+        }
     }
     tag
 }

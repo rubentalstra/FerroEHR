@@ -192,7 +192,11 @@ pub(crate) async fn commit_demographic_import(
 /// 1 µs steps) **per lineage** with only each lineage's highest version open.
 /// The true source chronology is preserved in each version's
 /// `commit_audit.time_committed`.
-#[allow(clippy::too_many_lines)] // one linear import transaction; splitting would obscure the replay order
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear import transaction; splitting it would obscure the \
+              replay order the version chain depends on"
+)]
 async fn commit_import_scoped(
     tx: &mut PgConnection,
     ehr_id: Option<EhrId>,
@@ -228,12 +232,11 @@ async fn commit_import_scoped(
             .versions
             .sort_by_key(|v| (v.lineage(), v.tree.columns()));
         for pair in container.versions.windows(2) {
-            if pair[0].creating_system_id == pair[1].creating_system_id
-                && pair[0].tree == pair[1].tree
-            {
+            let [first, second] = pair else { continue };
+            if first.creating_system_id == second.creating_system_id && first.tree == second.tree {
                 return Err(ServiceError::Conflict(format!(
                     "version {}::{}::{} appears more than once in the import",
-                    container.vo_id, pair[0].creating_system_id, pair[0].tree
+                    container.vo_id, first.creating_system_id, first.tree
                 )));
             }
         }
@@ -314,8 +317,9 @@ async fn commit_import_scoped(
             // Synthetic strictly-increasing local period; the next version ON
             // THE SAME LINEAGE (if any) closes this one.
             let lower = base + jiff::SignedDuration::from_micros(i64::try_from(i).unwrap_or(0));
-            let upper = versions[i + 1..]
+            let upper = versions
                 .iter()
+                .skip(i + 1)
                 .position(|later| later.lineage() == version.lineage())
                 .map(|offset| {
                     base + jiff::SignedDuration::from_micros(

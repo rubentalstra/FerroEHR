@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! SM-2 end-to-end tests for the Definitions native API against a real
 //! `PostgreSQL` 18 (shared testkit harness): ADL 1.4 source archetypes
 //! (`I_DEFINITION_ADL14`), OPTs (delegated to `template_store`), and registered
@@ -12,7 +6,17 @@
 //! assertions.
 //!
 //! Requires Docker. Each test owns its container (`Drop` removes it).
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::panic,
+    clippy::string_slice,
+    let_underscore_drop,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
@@ -790,7 +794,6 @@ const ADL2_ARCH_HRID: &str = "openEHR-EHR-OBSERVATION.bp.v1.0.0";
 const ADL2_TMPL_HRID: &str = "openEHR-EHR-COMPOSITION.t_vitals.v2.0.0";
 
 #[tokio::test]
-#[allow(clippy::too_many_lines)] // one full I_DEFINITION_ADL2 lifecycle on one container
 async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
@@ -975,7 +978,11 @@ async fn adl2_errors() {
 // ── registered queries (I_DEFINITION_QUERY) ──────────────────────────────────
 
 #[tokio::test]
-#[allow(clippy::too_many_lines)] // one full I_DEFINITION_QUERY lifecycle on one container
+#[expect(
+    clippy::too_many_lines,
+    reason = "one full I_DEFINITION_QUERY lifecycle exercised end to end on a \
+              single container"
+)]
 async fn query_valid_store_list_match_delete() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
@@ -1311,10 +1318,10 @@ async fn adl2_template_with_filler_projects_the_filled_web_template() {
         }
     }
     const ARCH: &str = include_str!(
-        "../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/archetype/cnf_count_a.adls"
+        "../../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/archetype/cnf_count_a.adls"
     );
     const TMPL: &str = include_str!(
-        "../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/flat_parity_a.adls"
+        "../../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/flat_parity_a.adls"
     );
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());

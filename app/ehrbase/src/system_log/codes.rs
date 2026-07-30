@@ -6,6 +6,12 @@
 
 /// A coded value: `csd-code` + `codeSystemName` + `originalText`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "`csd_code` and `code_system` are the DICOM PS3.15 attribute names \
+              (`csd-code`, `codeSystemName`) this type serializes 1:1; renaming \
+              them would diverge from the audited vocabulary"
+)]
 pub struct Code {
     /// The `csd-code` attribute (the numeric code within the system).
     pub csd_code: &'static str,

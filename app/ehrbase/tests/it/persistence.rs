@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! Persistence integration tests: the greenfield schema applies
 //! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow
 //! the spec formulas, the temporal versioning model behaves, and the node
@@ -12,7 +6,13 @@
 //! Each test takes a fresh, fully-migrated database from the shared `testkit`
 //! harness (`tools/testkit`); the returned guard releases the clone on drop.
 
-#![allow(clippy::expect_used, clippy::unwrap_used)]
+#![expect(
+    clippy::expect_used,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use std::path::Path;
 

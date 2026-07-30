@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end AQL engine tests against a real PostgreSQL 18 (shared testkit harness):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the
 //! `QueryService` seam and assert on the assembled ITS-REST 1.1.0 `RESULT_SET`.
@@ -20,16 +14,31 @@
 //! CONTAINS chains, WHERE magnitude comparison + ORDER BY magnitude, DISTINCT,
 //! aggregates, LIMIT/OFFSET + REST fetch/offset, `$parameters`, `ehr_id` scoping,
 //! NOT CONTAINS, VERSION uid/time selection, whole-COMPOSITION reassembly
-//! equality, and LATEST_VERSION vs ALL_VERSIONS over a twice-updated object.
+//! equality, and `LATEST_VERSION` vs `ALL_VERSIONS` over a twice-updated object.
+
+#![expect(
+    clippy::expect_used,
+    clippy::panic,
+    clippy::indexing_slicing,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
+#![expect(
+    clippy::float_cmp,
+    reason = "the asserted magnitudes are integral DV_QUANTITY values, exactly \
+              representable in f64 and returned verbatim by the query, so exact \
+              equality is the assertion the test intends"
+)]
+#![expect(
+    clippy::too_many_lines,
+    reason = "an end-to-end suite drives one long lifecycle per test on purpose: \
+              splitting a case would hide the order its assertions depend on"
+)]
+
 // `float_cmp`: the magnitudes are exact whole numbers seeded by the test and
 // round-tripped losslessly, so exact comparison is intended.
-#![allow(
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::doc_markdown,
-    clippy::float_cmp,
-    clippy::too_many_lines
-)]
 
 use std::collections::BTreeMap;
 
@@ -532,7 +541,7 @@ async fn whole_object_projection_batches_over_a_multi_row_page() {
 /// archetype matches data created with any **specialisation child**, bounded to
 /// the same qualified RM entity and major version.
 ///
-/// Spec: BASE architecture_overview master10 §Design-time Relationships — "the
+/// Spec: BASE `architecture_overview` master10 §Design-time Relationships — "the
 /// data created with any specialised archetype will always be matched by queries
 /// based on the parent archetype - in other words, a query for 'laboratory'
 /// Observations will correctly retrieve 'glucose' Observations as well"; AM
@@ -723,7 +732,7 @@ async fn latest_versus_all_versions() {
 /// > `is_queryable` flag set to `True`.
 ///
 /// So an ad-hoc population query (no `ehr_id` scope) must include EHRs whose
-/// current EHR_STATUS is queryable and exclude those whose current EHR_STATUS
+/// current `EHR_STATUS` is queryable and exclude those whose current `EHR_STATUS`
 /// has `is_queryable = False`.
 #[tokio::test]
 async fn population_query_excludes_not_queryable_ehrs() {
@@ -928,7 +937,7 @@ async fn executed_aql_substitutes_bound_parameters() {
 ///   `schemas/query/ResultSetColumn.yaml`.
 /// * each row is an array whose length equals the number of columns —
 ///   `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
-///   RESULT_SET row, one cell for each column."
+///   `RESULT_SET` row, one cell for each column."
 #[tokio::test]
 async fn result_set_carries_the_its_rest_shape() {
     let db = testkit::db().await.expect("testkit database");
@@ -1196,7 +1205,7 @@ async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name:
 /// by the promoted `node.context_start` column (verified byte-equal to the
 /// pre-promotion correlated-subquery ordering in both directions, including the
 /// NULL-context row), and `c/uid/value` returns the exact server-assigned
-/// OBJECT_VERSION_ID (uid synthesis) — never null.
+/// `OBJECT_VERSION_ID` (uid synthesis) — never null.
 #[tokio::test]
 async fn dashboard_context_start_ordering_and_uid() {
     let db = testkit::db().await.expect("testkit database");
@@ -1439,7 +1448,7 @@ async fn ehr_scope_binds_the_bare_ehr_source() {
 /// The two first-execution 500s from the #967 wire batch, reproduced at the
 /// service seam and pinned green (QUERY master03 §DISTINCT/§LIMIT and
 /// §Date/time functions): SELECT DISTINCT with ORDER BY + LIMIT, and a
-/// temporal comparison against NOW().
+/// temporal comparison against `NOW()`.
 #[tokio::test]
 async fn distinct_order_by_limit_and_now_comparison() {
     let db = testkit::db().await.expect("testkit database");

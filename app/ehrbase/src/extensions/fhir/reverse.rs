@@ -191,19 +191,18 @@ fn place(cur: &mut Value, segments: &[(&str, Option<usize>)], value: Value) {
             while arr.len() <= *i {
                 arr.push(Value::Null);
             }
-            place(&mut arr[*i], rest, value);
+            // The loop above null-padded up to `*i`, so the element exists;
+            // fetched rather than indexed so the padding logic is the only
+            // thing that has to stay correct.
+            if let Some(elem) = arr.get_mut(*i) {
+                place(elem, rest, value);
+            }
         }
         None => place(slot, rest, value),
     }
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::path::PathBuf;
 

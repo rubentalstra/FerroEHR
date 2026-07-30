@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end composition-validation tests against a real PostgreSQL 18
 //! (shared testkit harness): a COMPOSITION committed via the ITS-REST create/update
 //! path is validated against its operational template *before* persistence.
@@ -23,7 +17,15 @@
 //! validating the supplied COMPOSITION" → `422`). CNF cross-check:
 //! `docs/specs/openehr/CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`
 //! (`create_composition-event_bad_opt` → 422).
-#![allow(clippy::expect_used, clippy::unwrap_used, clippy::doc_markdown)]
+
+#![expect(
+    clippy::expect_used,
+    clippy::panic,
+    reason = "clippy's in-test lint scoping (clippy.toml `allow-*-in-tests`) only \
+              reaches `#[test]`-annotated functions, so it misses this integration \
+              module's helpers and async bodies; panicking assertions and direct \
+              fixture indexing are the intended shape here (the Rust Book ch11)"
+)]
 
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -491,7 +493,7 @@ fn strip_first_element_value(v: &mut Value, path: &str) -> Option<String> {
 }
 
 /// An ELEMENT carrying neither `value` nor `null_flavour` violates RM
-/// data_structures §ELEMENT:
+/// `data_structures` §ELEMENT:
 ///
 /// > `Inv_null_flavour_indicated`: `is_null() xor null_flavour = Void`
 /// > (`RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)

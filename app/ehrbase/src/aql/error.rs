@@ -286,4 +286,17 @@ pub enum ExecError {
     /// query (400). QUERY §Functions/Other functions/TERMINOLOGY.
     #[error("terminology expansion failed: {0}")]
     Terminology(String),
+
+    /// A `RESULT_SET` column spec reached the executor without one of the
+    /// generated SQL aliases its [`super::sql::CellKind`] declares (a
+    /// defensive guard on a lowering defect, like
+    /// [`SqlError::UnboundParameter`] — the executor rejects rather than
+    /// panicking on a request path).
+    #[error("result column `{column}` is missing generated SQL alias {index}")]
+    MissingColumnAlias {
+        /// The `RESULT_SET` column's name.
+        column: String,
+        /// The alias position the executor needed.
+        index: usize,
+    },
 }

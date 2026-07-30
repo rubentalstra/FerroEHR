@@ -1,9 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! `EHR_ACCESS` scheme-settings round trip end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
@@ -17,7 +11,6 @@
 //! parses them, and the commit invalidated the per-EHR cache.
 //!
 //! The concrete scheme is our own design — no openEHR spec governs it.
-#![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use ehrbase::service::ehr::access_types::DefaultAccess;
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};

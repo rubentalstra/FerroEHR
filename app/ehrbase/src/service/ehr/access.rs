@@ -34,6 +34,13 @@ impl EhrbaseService {
     /// after any `EHR_ACCESS` commit so the next access decision reflects the
     /// new version (the settings are change-controlled — RM ehr master04 §EHR
     /// Access).
+    #[expect(
+        clippy::same_name_method,
+        reason = "the `CommitEnv` seam (service/commit_env.rs) deliberately \
+                  mirrors these chapter method names so the versioning layer \
+                  calls them by their own vocabulary; that impl disambiguates \
+                  explicitly with `EhrbaseService::<name>(self, …)`"
+    )]
     pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: EhrId) {
         self.ehr_access.invalidate(ehr_id).await;
     }
@@ -209,7 +216,7 @@ impl EhrAccessCache {
         init: Fut,
     ) -> Result<Arc<Option<EhrAccessSettings>>, Arc<SmError>>
     where
-        Fut: std::future::Future<Output = Result<Option<EhrAccessSettings>, SmError>>,
+        Fut: Future<Output = Result<Option<EhrAccessSettings>, SmError>>,
     {
         self.inner
             .try_get_with(ehr_id, async move { init.await.map(Arc::new) })

@@ -1,11 +1,3 @@
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 //! End-to-end test of the RESTful-ATNA feed (IHE ITI-20 **ATX: FHIR Feed**):
 //! events emitted through the sender land in the local store, and the outbox
 //! worker POSTs each stored FHIR R4 `AuditEvent` to the ARR

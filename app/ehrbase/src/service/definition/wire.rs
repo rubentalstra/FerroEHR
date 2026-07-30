@@ -372,12 +372,19 @@ fn collapse_to_latest(rows: Vec<Value>) -> Vec<Value> {
         match best.iter_mut().find(|(b, _, _)| *b == base) {
             None => best.push((base, idx, axis)),
             Some((_, held_idx, held_axis)) => {
-                if version_axis_gt(&axis, held_axis) {
-                    keep[*held_idx] = None;
+                // Both indices come from the `enumerate` above, so they address
+                // slots this loop already pushed; fetched rather than indexed so
+                // the bookkeeping is the only thing that has to stay correct.
+                let drop_idx = if version_axis_gt(&axis, held_axis) {
+                    let superseded = *held_idx;
                     *held_idx = idx;
                     *held_axis = axis;
+                    superseded
                 } else {
-                    keep[idx] = None;
+                    idx
+                };
+                if let Some(slot) = keep.get_mut(drop_idx) {
+                    *slot = None;
                 }
             }
         }
@@ -422,19 +429,16 @@ fn glob_to_regex(pattern: &str) -> Regex {
         .map(regex::escape)
         .collect::<Vec<_>>()
         .join(".*");
-    // The pattern is escaped except for `*` → `.*`, so compilation cannot fail —
-    // a build-time invariant, not a runtime condition.
-    #[allow(clippy::expect_used)]
-    Regex::new(&format!("^{escaped}$")).expect("glob-derived regex is always valid")
+    #[expect(
+        clippy::expect_used,
+        reason = "every segment went through regex::escape and the only \
+                  unescaped metacharacters are the `.*` this function itself \
+                  inserts, so the Err arm is unreachable"
+    )]
+    Regex::new(&format!("^{escaped}$")).expect("a glob-derived pattern should always compile")
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -279,12 +279,6 @@ pub struct CallStatus {
 pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

@@ -55,18 +55,16 @@ pub fn render(version: &str) -> String {
 
 /// Print the banner to stdout. Called from the binary before telemetry/log
 /// initialisation so the structured formatter never mangles the art.
-#[allow(clippy::print_stdout)] // the boot banner IS console output; no subscriber exists yet
+#[expect(
+    clippy::print_stdout,
+    reason = "the boot banner IS console output, and it prints before any \
+              tracing subscriber exists"
+)]
 pub fn print() {
     println!("{}", render(env!("CARGO_PKG_VERSION")));
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

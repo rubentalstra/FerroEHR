@@ -138,16 +138,22 @@ impl SecretUrl {
 /// owner's "URL codec only via `urlencoding`" rule does not apply — this only
 /// redacts a substring.)
 fn redact_userinfo(url: &str) -> String {
-    let Some(scheme_end) = url.find("://") else {
+    let Some((scheme, rest)) = url.split_once("://") else {
         return url.to_owned();
     };
-    let authority_start = scheme_end + "://".len();
-    let rest = &url[authority_start..];
-    let path_start = rest.find('/').unwrap_or(rest.len());
-    match rest[..path_start].find('@') {
-        Some(at) => format!("{}{REDACTED}@{}", &url[..authority_start], &rest[at + 1..]),
-        None => url.to_owned(),
+    // `userinfo` can only precede the path, so a `@` inside the path is not one.
+    let authority = rest
+        .split_once('/')
+        .map_or(rest, |(authority, _)| authority);
+    if !authority.contains('@') {
+        return url.to_owned();
     }
+    // The authority is a prefix of `rest`, so this is the same `@`, and
+    // everything after it (host, port, path) is kept verbatim.
+    let Some((_userinfo, after_at)) = rest.split_once('@') else {
+        return url.to_owned();
+    };
+    format!("{scheme}://{REDACTED}@{after_at}")
 }
 
 impl fmt::Debug for SecretUrl {
@@ -181,12 +187,6 @@ impl Serialize for SecretUrl {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

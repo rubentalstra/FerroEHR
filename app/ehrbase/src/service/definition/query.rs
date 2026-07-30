@@ -65,6 +65,14 @@ impl EhrbaseService {
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
+    #[expect(
+        clippy::unused_self,
+        clippy::unnecessary_wraps,
+        reason = "the SM interface declares this call on the service and in the \
+                  SM call-status `Result` shape; the protocol adapter invokes \
+                  every SM call uniformly, so neither is dropped because this \
+                  particular realization happens to be stateless and infallible"
+    )]
     pub fn valid_query(&self, a_query_text: &str, a_type: &str) -> Result<bool, SmError> {
         Ok(valid_query_text(a_query_text, a_type))
     }
@@ -100,6 +108,12 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// Always — `not_implemented` (`501`), unconditionally.
+    #[expect(
+        clippy::unused_self,
+        reason = "the SM interface declares this call on the service; the \
+                  protocol adapter invokes every SM call uniformly, so the \
+                  receiver stays even where this realization ignores it"
+    )]
     pub fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
         Err(SmError::new(
             CallStatusType::NotImplemented,
@@ -824,12 +838,6 @@ fn is_exact_semver(version: &str) -> bool {
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

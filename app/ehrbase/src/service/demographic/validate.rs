@@ -30,10 +30,14 @@ use crate::versioning::Kind;
 /// themselves matched by the regex) — BASE `base_types`
 /// `object_ref.adoc §namespace`.
 static NAMESPACE_RE: LazyLock<Regex> = LazyLock::new(|| {
-    // The pattern is a fixed literal, valid by construction — a build-time
-    // invariant, not a runtime condition.
-    #[allow(clippy::expect_used)]
-    Regex::new(r"^[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*$").expect("static namespace regex")
+    #[expect(
+        clippy::expect_used,
+        reason = "the pattern is a fixed literal in this file; inspecting it \
+                  proves it compiles, so the Err arm is unreachable and a \
+                  typed error would have no caller"
+    )]
+    Regex::new(r"^[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*$")
+        .expect("the static namespace pattern should always compile")
 });
 
 /// The legal `PARTY_REF.type` set — BASE `base_types` `party_ref.adoc`
@@ -293,13 +297,6 @@ pub(crate) fn validate_relationship_for_commit(data: &Value) -> Result<(), Servi
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
-#[allow(clippy::expect_used)]
 mod tests {
     use serde_json::json;
 

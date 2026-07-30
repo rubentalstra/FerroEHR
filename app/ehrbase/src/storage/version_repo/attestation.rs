@@ -45,8 +45,12 @@ pub async fn insert_attestation(
 /// version's owner, ordinal and `creating_system_id`.
 #[derive(Debug, Clone)]
 pub struct AttestTargetRow {
+    /// The owning EHR, or `None` for a demographic versioned object.
     pub ehr_id: Option<EhrId>,
+    /// The addressed version's storage commit ordinal — the attestation's
+    /// foreign key.
     pub sys_version: i32,
+    /// The addressed version's stored `creating_system_id`.
     pub creating_system_id: String,
 }
 

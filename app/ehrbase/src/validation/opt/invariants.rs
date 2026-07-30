@@ -111,10 +111,7 @@ pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Vio
     // qualified_rm_entity = rm_originator '-' rm_name '-' rm_entity; the
     // rm_entity is everything after the second '-'.
     let qualified = id.split('.').next().unwrap_or("");
-    let entity = qualified
-        .match_indices('-')
-        .nth(1)
-        .map_or("", |(i, _)| &qualified[i + 1..]);
+    let entity = qualified.splitn(3, '-').nth(2).unwrap_or_default();
     let bare_rm = rm_type_name.split('<').next().unwrap_or(rm_type_name);
     if !entity.eq_ignore_ascii_case(bare_rm) {
         return Err(Violation::new(
