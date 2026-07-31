@@ -9,6 +9,12 @@
 //! `CLAIMED` is the union of the fixture tables in `vendor_odin.rs`
 //! (`ODIN_FIXTURES`, 17 files) and `vendor_bmm_odin.rs` (`BMM_FIXTURES`, 38
 //! files) — every claimed path is genuinely parsed and asserted there.
+//!
+//! `vendor_bmm_schema.rs` carries a SECOND, independent table over the same
+//! files: it claims every `.bmm` schema (the 38 above plus the five under
+//! `odin/odin/`) with an adjudicated `P_BMM` read → resolve → `BMM_MODEL` outcome,
+//! and gates its own completeness against the filesystem. It adds no paths, so
+//! `CLAIMED` is unaffected.
 
 #![allow(
     clippy::unwrap_used,

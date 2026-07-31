@@ -34,6 +34,23 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
     `tests/it/lexer_equivalence.rs` against fixtures captured from the three
     pre-unification lexers. **Editing a fixture line changes an accepted or
     refused lexical surface** and needs an adjudicated, spec-cited reason.
+- **`src/bmm_persistence/` is generated types + a hand-written P_BMM SCHEMA
+  READER.** The `P_BMM_*` type files are generated; beside them live the
+  hand-written pipeline `master02-overview.adoc` §Conceptual Approach
+  prescribes — `reader.rs` (ODIN text → `P_BMM_SCHEMA`, a STRICT read: an
+  attribute the class docs do not declare is a typed error, with two
+  spec-cited tolerance lists), `include_resolution.rs` (transitive inclusion
+  merge, includer wins, collisions marked `is_override`), `create_model.rs`
+  (`P_BMM` → `BMM_MODEL`, all name references resolved to object references),
+  `loader.rs` (the composed `load_model`), `error.rs` (the one typed
+  `PBmmReadError`), plus `p_bmm_*_impl.rs` spec functions. Class-name
+  resolution is case-insensitive (`master04-syntax.adoc` §Non-primitive
+  Classes: `name` — "any capitalisation can be used"); embedding depth and
+  every other cycle/boundary decision is adjudicated in the module docs, with
+  the honest boundaries (`value_constraint` has no `BMM_*` destination; a
+  persisted `P_BMM_INTERFACE` has no `P_BMM_SCHEMA` slot) written out. This
+  reader is NOT the codegen path either — codegen still consumes only the
+  `.bmm.json` serialisation via `openehr-codegen`.
 - **`src/odin/` is the real ODIN reader** (a `chumsky` parser over
   `lexer::lex_odin` + an `OdinValue` tree; `openehr_lang::odin::parse`), NOT
   part of the generated/`bmm*`/`beom` model — never route it through codegen.
