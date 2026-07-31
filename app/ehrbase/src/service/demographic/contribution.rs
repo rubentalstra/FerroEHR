@@ -36,9 +36,10 @@ impl EhrbaseService {
         &self,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
-        let contribution_id = commit_version_set(self, None, &body, true).await?;
-        let body = self.demographic_contribution(contribution_id).await?;
-        let meta = ResourceMeta::new(String::new(), contribution_id.to_string());
+        let committed = commit_version_set(self, None, &body, true).await?;
+        let body = self.demographic_contribution(committed.id).await?;
+        let meta = ResourceMeta::new(String::new(), committed.id.to_string())
+            .with_last_modified(committed.time_committed);
         Ok(ServiceResponse::new(body, meta))
     }
 
