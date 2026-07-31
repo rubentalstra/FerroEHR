@@ -349,6 +349,15 @@ pub enum Token {
     /// their passes split the token back into `'['`, the inner code and `']'`.
     #[regex(r"\[[a-zA-Z][a-zA-Z0-9._\-]*\]", |lex| lex.slice().to_owned())]
     LocalTermCodeRef(String),
+    /// A plug-in-syntax object block `<# … #>`, captured verbatim including
+    /// the delimiters (`LANG/docs/odin/master09-plug_in_syntaxes`: "the `<>`
+    /// delimiters are modified to `<# #>`, to allow for easier parser design";
+    /// the delimiters are reserved by `master03-basics` §Reserved
+    /// Characters). ODIN-only — the vendored ADL/BEL grammars have no `#`
+    /// production at all, so the other readings refuse the token. The body is
+    /// raw foreign text ("expressed in some other syntax"), never lexed.
+    #[regex(r"<#([^#]|#[^>])*#*#>", |lex| lex.slice().to_owned())]
+    PlugInBlock(String),
     /// An embedded URI `<scheme:…>` (`EMBEDDED_URI`).
     ///
     /// NOTE: captured VERBATIM — the token pins only the `scheme:` shape.

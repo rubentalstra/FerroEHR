@@ -690,15 +690,55 @@ fn ch8_typical_path_shape() {
     assert!(parse(r#"r = </term_definitions["en"]/items["at0001"]/text>"#).is_ok());
 }
 
-/// `master09-plug_in_syntaxes`: plug-in blocks `attr = (syntax) <# … #>` are
-/// NOT supported — the chapter itself waives the obligation ("there is no
-/// guarantee that every ODIN parser will support them"), so the refusal is a
-/// conforming, adjudicated boundary (#859; the optional capability is
-/// tracked as a backlog enhancement). Pinned so the boundary never silently
-/// shifts.
+/// `master09-plug_in_syntaxes` (#1387): plug-in blocks
+/// `attr = (syntax) <# … #>` parse to [`OdinValue::PlugIn`] with the tag from
+/// the parentheses and the body carried verbatim ("expressed in some other
+/// syntax" — the body is for a plug-in parser, never interpreted here). The
+/// chapter's own cADL example is the pinned acceptance twin; a tag-less
+/// `<# … #>` stays refused (the general form makes the syntax tag part of
+/// the construct), as does a plug-in block under every non-ODIN reading.
 #[test]
-fn ch9_plug_in_blocks_are_refused() {
-    let err = parse("definition = (cadl) <#\n    ENTRY[at0000]\n#>")
-        .expect_err("plug-in blocks are an unsupported (spec-waived) capability");
-    assert_eq!(err.kind, OdinErrorKind::UnrecognisedToken);
+fn ch9_plug_in_blocks_parse() {
+    // the chapter's example: a cADL plug-in section in an archetype.
+    let src = "definition = (cadl) <#
+    ENTRY[at0000] \u{2208} { -- blood pressure measurement
+        name \u{2208} { -- any synonym of BP
+            CODED_TEXT \u{2208} {
+                code \u{2208} {
+                    CODE_PHRASE \u{2208} {[ac0001]}
+                }
+            }
+        }
+    }
+#>";
+    let parsed = parse(src).unwrap_or_else(|e| panic!("the master09 example should parse: {e}"));
+    let OdinValue::Object(top) = parsed else {
+        panic!("expected a top-level attribute object");
+    };
+    let Some(OdinValue::PlugIn { syntax, text }) = top.get("definition") else {
+        panic!("expected a plug-in block, got {:?}", top.get("definition"));
+    };
+    assert_eq!(syntax, "cadl");
+    assert!(
+        text.contains("ENTRY[at0000]") && text.contains("[ac0001]"),
+        "the body is carried verbatim: {text}"
+    );
+
+    // `#` inside the body does not close the block; only `#>` does.
+    let parsed = parse("a = (xml) <# a # b ## c #>").unwrap_or_else(|e| panic!("{e}"));
+    let OdinValue::Object(top) = parsed else {
+        panic!("expected object");
+    };
+    assert_eq!(
+        top.get("a"),
+        Some(&OdinValue::PlugIn {
+            syntax: "xml".to_owned(),
+            text: " a # b ## c ".to_owned(),
+        })
+    );
+
+    // the refusal twins: a tag-less block, and a tagged block whose body
+    // never closes.
+    assert!(parse("a = <# no tag #>").is_err());
+    assert!(parse("a = (cadl) <# never closed").is_err());
 }

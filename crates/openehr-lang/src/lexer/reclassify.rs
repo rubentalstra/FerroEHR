@@ -172,6 +172,13 @@ pub(super) fn reclassify(
             Language::Odin => Some(token.clone()),
             Language::Adl | Language::Bel => None,
         },
+        // `<# … #>` is the ODIN plug-in-syntax block
+        // (`LANG/docs/odin/master09-plug_in_syntaxes`); neither the ADL nor
+        // the BEL grammar has any `#` production, so both refuse it.
+        Token::PlugInBlock(_) => match language {
+            Language::Odin => Some(token.clone()),
+            Language::Adl | Language::Bel => None,
+        },
         Token::AdlPath(text) => path(language, text).then(|| token.clone()),
 
         // ── atomic primitives ──

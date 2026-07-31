@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **ODIN plug-in syntax blocks parse.** `attr = (syntax) <# … #>`
+  (`master09-plug_in_syntaxes`) is accepted, with the tag and the verbatim
+  foreign-text body exposed as `OdinValue::PlugIn`; the body is handed to
+  consumers uninterpreted, and a plug-in block is refused as an archetype
+  `default_value` (it denotes no RM instance).
+
 - **ODIN document artefacts parse in all three `master04` forms.** The ODIN
   reader now accepts Identified Object Documents (top-level
   `["id"] = <…>` keyed objects) and the optional leading
