@@ -16,7 +16,7 @@
 use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::printer::print;
+use openehr_adl::print::print;
 
 /// Files excluded from the round-trip gate, each with a reason. These mirror the
 /// definition-parse exclusions (intentional cADL-syntax FAIL fixtures) plus the

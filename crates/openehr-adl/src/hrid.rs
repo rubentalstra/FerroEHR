@@ -5,7 +5,7 @@
 //! Archetype Identifier — the physical form
 //! `[ns::]publisher-package-class.concept.vMAJOR[.MINOR[.PATCH]][-status[.build]]`.
 //! [`parse_hrid`] reads that form into the generated
-//! `openehr_am::am24::aom2` [`ArchetypeHrid`] and [`hrid_to_string`] writes it
+//! `openehr_am::am24::aom2` [`ArchetypeHrid`] and `hrid_to_string` writes it
 //! back; the two are inverses over a normalised (3-part-version) id.
 //!
 //! Two further, deliberately *looser* readings of the same grammar live here so
@@ -115,7 +115,7 @@ fn split_status<'a>(version: &'a str, marker: &str) -> Option<(&'a str, &'a str)
 /// (`[ns::]publisher-package-class.concept.vMAJOR.MINOR.PATCH[-status.build]`;
 /// `master07.05`).
 #[must_use]
-pub fn hrid_to_string(h: &ArchetypeHrid) -> String {
+pub(crate) fn hrid_to_string(h: &ArchetypeHrid) -> String {
     let mut s = String::new();
     if let Some(ns) = &h.namespace {
         let _ = write!(s, "{ns}::");

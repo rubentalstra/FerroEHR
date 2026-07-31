@@ -23,7 +23,7 @@
 //! Reference-model type-name matching is case-insensitive and whitespace-
 //! ignored, with generic type names composed from RM class names
 //! (`docs/specs/openehr/AM/docs/ADL2/master04.3-cadl_complex_types.adoc`
-//! §Reference Model Type Matching); [`base_type_name`]/[`normalise_type_name`]
+//! §Reference Model Type Matching); [`base_type_name`]/`normalise_type_name`
 //! implement that lexical layer, shared by every [`RmModel`].
 
 use std::collections::BTreeSet;
@@ -141,7 +141,7 @@ pub fn base_type_name(rm_type: &str) -> &str {
 /// The generic argument type names of a generic RM type name, in order
 /// (`"HISTORY<ITEM_LIST>"` → `["ITEM_LIST"]`; a non-generic name → empty).
 #[must_use]
-pub fn generic_arguments(rm_type: &str) -> Vec<String> {
+pub(crate) fn generic_arguments(rm_type: &str) -> Vec<String> {
     let Some(open) = rm_type.find('<') else {
         return Vec::new();
     };
@@ -188,7 +188,7 @@ fn split_top_level_commas(inner: &str) -> Vec<String> {
 /// (`master04.3` §Reference Model Type Matching: case-insensitive, whitespace
 /// ignored).
 #[must_use]
-pub fn normalise_type_name(rm_type: &str) -> String {
+pub(crate) fn normalise_type_name(rm_type: &str) -> String {
     rm_type
         .chars()
         .filter(|c| !c.is_whitespace())
@@ -210,7 +210,7 @@ pub fn normalise_type_name(rm_type: &str) -> String {
 /// child that states no arguments or a differing argument arity — none of those
 /// is a positive non-conformance.
 #[must_use]
-pub fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bool> {
+pub(crate) fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bool> {
     match rm.conforms(child, declared) {
         Some(true) => {}
         other => return other,
@@ -440,7 +440,7 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
 /// 1.4 upload is judged AS 1.4). So the walk runs once and only VUNT is
 /// reported.
 #[must_use]
-pub fn validate_adl14_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
+pub(super) fn validate_adl14_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
     validate_phase2_rm(archetype, rm)
         .into_iter()
         .filter(|i| i.code == ValidationCode::Vunt)

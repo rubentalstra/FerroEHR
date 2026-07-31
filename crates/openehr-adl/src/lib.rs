@@ -18,7 +18,7 @@
 //! `master03` lexical decoding). Above it:
 //! [`codes`]/[`paths`] (code math + ADL paths), [`validate`] (the AOM2
 //! validation catalogue), [`flatten`] + [`opt`] (specialisation flattening +
-//! OPT2), the [`printer`], and [`adl14`] (ADL 1.4→2 conversion — our own
+//! OPT2), the ADL2 serializer [`mod@print`], and [`adl14`] (ADL 1.4→2 conversion — our own
 //! design, no openEHR spec). ODIN sections are parsed by the
 //! `openehr_lang::odin` reader (ODIN is a LANG-component spec); the `rules`
 //! body and slot assertion expressions are captured as raw text alongside a
@@ -42,7 +42,7 @@ pub mod odin;
 pub mod opt;
 pub mod parse;
 pub mod paths;
-pub mod printer;
+pub mod print;
 pub mod rules;
 pub mod source;
 pub mod validate;

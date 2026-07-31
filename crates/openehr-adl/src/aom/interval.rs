@@ -55,7 +55,7 @@ impl Bounds {
 /// [`Bounds`] view of a [`MultiplicityInterval`] (existence / occurrences /
 /// cardinality bound), with `upper == None` denoting an unbounded (`*`) limit.
 #[must_use]
-pub fn bounds(mi: &MultiplicityInterval) -> Bounds {
+pub(crate) fn bounds(mi: &MultiplicityInterval) -> Bounds {
     Bounds {
         lower: if mi.lower_unbounded {
             0

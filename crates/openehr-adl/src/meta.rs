@@ -8,8 +8,14 @@
 //! the storage `kind` (`archetype` / `template` / `operational_template` /
 //! `template_overlay`; `AOM2/master07.04`), the `specialize` parent reference,
 //! and the specialisation depth (VACSD; `AOM2/master08-validation.adoc` Phase 1).
+//!
+//! [`regression_tag`] lives here for the same reason: it is a read-only
+//! summary accessor over the assembled artefact's resource description, not a
+//! part of assembly itself.
 
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::am24::resource::resource_description::ResourceDescription;
 
 use crate::artefact::view;
 use crate::hrid::hrid_to_string;
@@ -20,7 +26,7 @@ use crate::source::ArtefactKind;
 pub struct ArtefactSummary {
     /// The full physical `ARCHETYPE_HRID`
     /// (`[ns::]publisher-package-class.concept.vMAJOR.MINOR.PATCH[-status.build]`;
-    /// `AOM2/master07.05`), rendered by [`hrid_to_string`].
+    /// `AOM2/master07.05`), rendered by `hrid_to_string`.
     pub archetype_id: String,
     /// The concept identifier — the `concept` segment of the HRID
     /// (`AOM2/master07.05` §Physical Archetype Identifier).
@@ -57,5 +63,31 @@ pub fn summarize(archetype: &Archetype) -> ArtefactSummary {
         kind: kind_keyword(v.kind),
         parent_archetype_id: v.parent_archetype_id.map(str::to_owned),
         specialisation_depth: v.specialisation_level(),
+    }
+}
+
+/// The `regression` tag of an assembled [`Archetype`], read from the resource
+/// description's `other_details["regression"]`. The corpus uses this tag as the
+/// authoritative expected-outcome oracle (INVENTORY.md); validation-phase
+/// harnesses read it through this helper.
+#[must_use]
+pub fn regression_tag(archetype: &Archetype) -> Option<String> {
+    description_of(archetype)?
+        .other_details
+        .as_ref()?
+        .get("regression")
+        .cloned()
+}
+
+/// The [`ResourceDescription`] of an archetype, if it carries one (a
+/// `TEMPLATE_OVERLAY` inherits its owner's description and has none).
+fn description_of(archetype: &Archetype) -> Option<&ResourceDescription> {
+    match archetype {
+        Archetype::AuthoredArchetype(a) => match a.as_ref() {
+            AuthoredArchetype::AuthoredArchetype(d) => d.description.as_deref(),
+            AuthoredArchetype::Template(t) => t.description.as_ref(),
+            AuthoredArchetype::OperationalTemplate(o) => o.description.as_ref(),
+        },
+        Archetype::TemplateOverlay(_) => None,
     }
 }

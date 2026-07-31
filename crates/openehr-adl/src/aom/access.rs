@@ -18,7 +18,7 @@ use openehr_base::prelude::MultiplicityInterval;
 /// The AOM meta-type (node class) of a [`CObject`], for the VSONT meta-type
 /// conformance rule (`master04.5` §Validity Rules: `C_OBJECT`, VSONT L342).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AomType {
+pub(crate) enum AomType {
     /// `ARCHETYPE_SLOT`.
     Slot,
     /// `C_COMPLEX_OBJECT`.
@@ -51,7 +51,7 @@ impl AomType {
     /// True if this is a `C_PRIMITIVE_OBJECT` descendant (`master04.5`
     /// §`C_PRIMITIVE_OBJECT`).
     #[must_use]
-    pub fn is_primitive(self) -> bool {
+    pub(crate) fn is_primitive(self) -> bool {
         matches!(
             self,
             Self::Boolean
@@ -69,7 +69,7 @@ impl AomType {
 
 /// The [`AomType`] of any [`CObject`].
 #[must_use]
-pub fn aom_type(obj: &CObject) -> AomType {
+pub(crate) fn aom_type(obj: &CObject) -> AomType {
     match obj {
         CObject::ArchetypeSlot(_) => AomType::Slot,
         CObject::CComplexObject(c) => match c {
@@ -115,7 +115,7 @@ pub fn child_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
 /// (`master04.5` §Class Definitions; the `before[…]`/`after[…]` anchor of
 /// `ADL2/master09.04` §Ordering of Sibling Nodes).
 #[must_use]
-pub fn sibling_order(obj: &CObject) -> Option<&SiblingOrder> {
+pub(crate) fn sibling_order(obj: &CObject) -> Option<&SiblingOrder> {
     match obj {
         CObject::ArchetypeSlot(s) => s.sibling_order.as_ref(),
         CObject::CComplexObject(c) => match c {
@@ -286,7 +286,7 @@ pub fn object_rm_type(obj: &CObject) -> &str {
 
 /// The node id of a [`CComplexObject`] (either concrete subtype).
 #[must_use]
-pub fn complex_node_id(cco: &CComplexObject) -> &str {
+pub(crate) fn complex_node_id(cco: &CComplexObject) -> &str {
     match cco {
         CComplexObject::CComplexObject(d) => &d.node_id,
         CComplexObject::CArchetypeRoot(r) => &r.node_id,
@@ -295,7 +295,7 @@ pub fn complex_node_id(cco: &CComplexObject) -> &str {
 
 /// The RM type name of a [`CComplexObject`] (either concrete subtype).
 #[must_use]
-pub fn complex_rm_type(cco: &CComplexObject) -> &str {
+pub(crate) fn complex_rm_type(cco: &CComplexObject) -> &str {
     match cco {
         CComplexObject::CComplexObject(d) => &d.rm_type_name,
         CComplexObject::CArchetypeRoot(r) => &r.rm_type_name,

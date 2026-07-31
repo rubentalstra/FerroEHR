@@ -529,7 +529,7 @@ fn flat_form_reprints_and_reparses() {
         SX,
         "openEHR-EHR-CLUSTER.cardinality_specialized.v1.0.0.adls",
     );
-    let text = openehr_adl::printer::print(&flat);
+    let text = openehr_adl::print::print(&flat);
     assert!(
         text.starts_with("flat archetype"),
         "flat header:\n{}",

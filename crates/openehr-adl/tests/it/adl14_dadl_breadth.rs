@@ -25,8 +25,9 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_adl::assemble::{parse_artefact_adl14, regression_tag};
+use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::SyntaxErrorCode;
+use openehr_adl::meta::regression_tag;
 use openehr_adl::source::parse_source;
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::validate_source_phase1_adl14;

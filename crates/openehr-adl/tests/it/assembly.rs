@@ -15,8 +15,9 @@
     reason = "the assertions match one artefact variant and treat every other as the failure case; naming the single remaining variant would silently stop covering a newly added one"
 )]
 
-use openehr_adl::assemble::{parse_artefact, regression_tag};
-use openehr_adl::printer::print;
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::meta::regression_tag;
+use openehr_adl::print::print;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
