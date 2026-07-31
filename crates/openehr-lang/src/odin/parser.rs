@@ -555,11 +555,8 @@ fn integer_lexeme(s: &str) -> Option<i64> {
     reason = "`Token::String` only exists when the lexer's validate_string ran crate::escape::validate over the same body and it succeeded, so this decode of that body cannot fail"
 )]
 fn decode_string(raw: &str) -> String {
-    let inner = raw
-        .strip_prefix('"')
-        .and_then(|s| s.strip_suffix('"'))
-        .unwrap_or(raw);
-    crate::escape::decode(inner).expect("a lexer-validated string literal should decode")
+    crate::escape::decode_string_literal(raw)
+        .expect("a lexer-validated string literal should decode")
 }
 
 /// Decode a single-quoted `CHARACTER` literal to its `char`.
@@ -571,11 +568,9 @@ fn decode_string(raw: &str) -> String {
     reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
 )]
 fn decode_char(raw: &str) -> char {
-    let inner = raw
-        .strip_prefix('\'')
-        .and_then(|s| s.strip_suffix('\''))
-        .unwrap_or(raw);
-    let decoded =
-        crate::escape::decode(inner).expect("a lexer-validated character literal should decode");
-    decoded.chars().next().unwrap_or('\u{fffd}')
+    crate::escape::decode_character_literal(raw)
+        .expect("a lexer-validated character literal should decode")
+        .chars()
+        .next()
+        .unwrap_or('\u{fffd}')
 }

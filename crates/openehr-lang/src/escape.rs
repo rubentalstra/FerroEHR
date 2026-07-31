@@ -201,6 +201,42 @@ pub fn validate(inner: &str) -> Result<(), EscapeError> {
     decode(inner).map(|_| ())
 }
 
+/// Decode a double-quoted `STRING` literal — strip the `"` delimiters, then
+/// decode the body with [`decode`].
+///
+/// The delimiters are `master03`'s (`LANG/docs/odin/master03-basics` §Special
+/// Character Sequences: `\"` is the escape *because* `"` delimits), and every
+/// reader of a `master03` string literal — the ODIN parser, the BEL parser and
+/// the cADL parser — strips them the same way, so the rule lives here once. A
+/// slice that is not delimited is decoded as-is rather than losing a
+/// character.
+///
+/// # Errors
+/// As [`decode`].
+pub fn decode_string_literal(raw: &str) -> Result<String, EscapeError> {
+    decode(strip_delimiters(raw, '"'))
+}
+
+/// Decode a single-quoted `CHARACTER` literal — strip the `'` delimiters, then
+/// decode the body with [`decode`].
+///
+/// Returns a `String` rather than a `char` because the caller decides what an
+/// empty literal means; the grammars admit exactly one character, so a
+/// well-formed literal yields exactly one.
+///
+/// # Errors
+/// As [`decode`].
+pub fn decode_character_literal(raw: &str) -> Result<String, EscapeError> {
+    decode(strip_delimiters(raw, '\''))
+}
+
+/// The body of a `delimiter`-quoted literal, or the whole slice when it is not
+/// delimited.
+fn strip_delimiters(raw: &str, delimiter: char) -> &str {
+    raw.strip_prefix(delimiter)
+        .and_then(|s| s.strip_suffix(delimiter))
+        .unwrap_or(raw)
+}
 /// Decode one `\u…` escape, whose `\u` prefix `chars` has already yielded, and
 /// report how many bytes of hex digits it consumed (4 or 8 — every digit is
 /// ASCII, so the byte and character counts coincide).
