@@ -4,7 +4,7 @@
 //! [`Archetype`].
 //!
 //! The lower-level entry points ([`crate::source::parse_source`],
-//! [`crate::cadl::parse_definition_body`], [`crate::rules::parse_rules_body`])
+//! [`crate::parse::parse_definition_body`], [`crate::rules::parse_rules_body`])
 //! stay available; this module composes them and maps each ODIN section
 //! (`language`/`description`/`terminology`/`annotations`/`rm_overlay`/
 //! `component_terminologies`) into its typed model class.
@@ -45,20 +45,20 @@ use openehr_base::prelude::{
 };
 use openehr_lang::odin::OdinValue;
 
-use crate::cadl::parse_definition_body;
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::odin::{
     as_keyed, as_object, key_str, nil_uuid, parse_term_code, parse_uuid, string_list, string_map,
     string_map_of, string_of, term_code, term_code_of, term_other_items, untyped, unwrap_items,
     uri_string,
 };
+use crate::parse::parse_definition_body;
 use crate::rules::parse_artefact_rules;
 use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source, parse_source_adl14};
 
 /// Parse an ADL2 source into a fully-assembled [`Archetype`].
 ///
 /// This is the high-level entry point of the ADL2 front end: it outer-parses
-/// (`crate::source`), cADL-parses the `definition` (`crate::cadl`), parses the
+/// (`crate::source`), cADL-parses the `definition` (`crate::parse`), parses the
 /// `rules` (`crate::rules`), and maps every ODIN section into the generated
 /// `openehr_am::am24::aom2` model, returning the artefact-kind-appropriate
 /// `Archetype` enum variant.
@@ -75,7 +75,7 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// converter front end): identical to [`parse_artefact`] except that the outer
 /// structure is read by [`crate::source::parse_source_adl14`] (case-insensitive
 /// section keywords, the old-form language tolerance) and the cADL
-/// `definition` is parsed with [`crate::cadl::parse_definition_body_adl14`],
+/// `definition` is parsed with [`crate::parse::parse_definition_body_adl14`],
 /// which tolerates the 1.4-only object forms. The result is a *1.4-shaped*
 /// `Archetype` (at-code node ids, qualified/listed terminology constraints in
 /// the `C_TERMINOLOGY_CODE.constraint` string, domain blocks lowered to
@@ -88,7 +88,7 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// definition, the rules, and the ODIN-section-to-model mapping.
 pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
     let art = parse_source_adl14(src)?;
-    assemble_with(&art, src, crate::cadl::Dialect::Adl14)
+    assemble_with(&art, src, crate::parse::Dialect::Adl14)
 }
 
 /// Assemble an already-outer-parsed [`SourceArtefact`] into an [`Archetype`],
@@ -99,7 +99,7 @@ pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
 pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    assemble_with(art, src, crate::cadl::Dialect::Adl2)
+    assemble_with(art, src, crate::parse::Dialect::Adl2)
 }
 
 /// Assemble an already-outer-parsed [`SourceArtefact`] into a *1.4-shaped*
@@ -112,13 +112,13 @@ pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<Syntax
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
 pub fn assemble_adl14(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    assemble_with(art, src, crate::cadl::Dialect::Adl14)
+    assemble_with(art, src, crate::parse::Dialect::Adl14)
 }
 
 fn assemble_with(
     art: &SourceArtefact,
     src: &str,
-    dialect: crate::cadl::Dialect,
+    dialect: crate::parse::Dialect,
 ) -> Result<Archetype, Vec<SyntaxError>> {
     let mut errors: Vec<SyntaxError> = Vec::new();
 
@@ -138,7 +138,7 @@ fn assemble_with(
     // VARCN requires "an archetype term value in the concept section". ADL2
     // derives the concept from the HRID (`ADL2/master07.09`), so the section is
     // obsolete there and its absence is not an error.
-    if dialect == crate::cadl::Dialect::Adl14
+    if dialect == crate::parse::Dialect::Adl14
         && art.kind != ArtefactKind::TemplateOverlay
         && art.concept.is_none()
     {
@@ -220,15 +220,15 @@ fn assemble_with(
 fn assemble_definition(
     art: &SourceArtefact,
     src: &str,
-    dialect: crate::cadl::Dialect,
+    dialect: crate::parse::Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> Option<CComplexObject> {
     let def = art.definition.as_ref()?;
     let body = src.get(def.bytes.clone()).unwrap_or_default();
     let offset = def.bytes.start;
     let parsed = match dialect {
-        crate::cadl::Dialect::Adl2 => parse_definition_body(body),
-        crate::cadl::Dialect::Adl14 => crate::cadl::parse_definition_body_adl14(body),
+        crate::parse::Dialect::Adl2 => parse_definition_body(body),
+        crate::parse::Dialect::Adl14 => crate::parse::parse_definition_body_adl14(body),
     };
     match parsed {
         Ok(cco) => Some(cco),
@@ -264,11 +264,11 @@ fn root_node_id(def: &CComplexObject) -> String {
 /// a hard error here (the outer parser already raised `SALAN` where required).
 fn assemble_original_language(
     art: &SourceArtefact,
-    dialect: crate::cadl::Dialect,
+    dialect: crate::parse::Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> TerminologyCode {
     let Some(map) = art.language.as_ref().and_then(as_object) else {
-        if dialect == crate::cadl::Dialect::Adl14
+        if dialect == crate::parse::Dialect::Adl14
             && let Some(code) = old_form_primary_language(art)
         {
             return code;
@@ -296,11 +296,11 @@ fn assemble_original_language(
 /// [`old_form_primary_language`]).
 fn assemble_translations_of(
     art: &SourceArtefact,
-    dialect: crate::cadl::Dialect,
+    dialect: crate::parse::Dialect,
 ) -> Option<BTreeMap<String, TranslationDetails>> {
     match art.language.as_ref() {
         Some(language) => assemble_translations(language),
-        None if dialect == crate::cadl::Dialect::Adl14 => old_form_translations(art),
+        None if dialect == crate::parse::Dialect::Adl14 => old_form_translations(art),
         None => None,
     }
 }

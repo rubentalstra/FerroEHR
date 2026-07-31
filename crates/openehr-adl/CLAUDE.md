@@ -1,13 +1,25 @@
 # `openehr-adl` — ADL 2.4.0 engine (hand-written)
 
 The ADL2 text + semantics engine: ADL2/cADL/ODIN parser (`logos` + `chumsky`,
-like `openehr-query`; `lexer`, `cadl`, `source`), the AOM2 validation catalogue
+like `openehr-query`; `lexer`, `parse/`, `source`), the AOM2 validation catalogue
 (`validate/` phases 1–3 + RM + terminology + flat), the `master04.5` conformance
 functions (`validate/conformance.rs`), specialisation flattening (`flatten.rs`),
 OPT2 generation (`opt.rs` — raw via `create_opt`, profiled via `profile_opt`),
 the ADL printer (`printer`), and ADL 1.4→2 conversion (`adl14/`). Builds directly
 into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
 
+- **The cADL parser is `parse/`, one module per production family** — `mod`
+  (the `Dialect` selector, the `Parser` state, the entry points
+  `parse_definition_body`/`parse_definition_body_adl14`, the re-entrant
+  sub-parsers `crate::rules` drives, and the cursor/error helpers), `parser`
+  (structure / attribute / tuple productions), `refs` (archetype slots,
+  `use_archetype` roots, `use_node` proxies), `primitives` (the inline
+  `C_PRIMITIVE` family), `values` (value lists, `|…|` intervals, endpoints,
+  the `CadlValue` kind trait), `patterns` (the date/time constraint-pattern
+  validators). **The ADL 1.4-only productions do NOT live here**: they are
+  `adl14/lower.rs` (with the inline dADL domain lowering in
+  `adl14/domain.rs`), and the three dialect-gated dispatch points in
+  `parse::parser` are the only coupling — keep it that way.
 - **The shared substrate has ONE home each — never re-inline a copy.** `aom/`
   (`access` = the 13-arm `C_OBJECT` field accessors + `AomType`, `build` = the
   AOM2 constructors, `interval` = `Bounds`/multiplicity + `INTERVAL<T>` maths),
@@ -27,7 +39,7 @@ into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
   `openEHR/adl-antlr` are vendored under `vendor/grammar/` (with PROVENANCE.md)
   as reference input only.
 - **A 1.4 upload is judged AS 1.4, never as an ADL2 superset.**
-  `cadl::Dialect::Adl14` both ADDS the 1.4-only forms (qualified/listed term
+  `parse::Dialect::Adl14` both ADDS the 1.4-only forms (qualified/listed term
   constraints, inline dADL domain blocks) and REMOVES the constructs ADL 2
   introduced — the cADL 1.4 keyword set is closed (`ADL1.4/master05-cadl.adoc`
   §Keywords). The dialect reaches the OUTER structure too

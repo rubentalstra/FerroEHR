@@ -10,7 +10,7 @@
 //!
 //! Components: the [`lexer`], the outer artefact parser ([`source`]), the
 //! shared typed [`error`] catalogue, and the cADL definition-section parser
-//! ([`cadl`]) that builds the generated `openehr_am::am24::aom2` constraint
+//! ([`parse`]) that builds the generated `openehr_am::am24::aom2` constraint
 //! model. Under all of it sits the shared substrate every component reads
 //! through: [`aom`] (AOM2 field accessors, constructors, interval arithmetic),
 //! [`artefact`] (artefact views + the parent/supplier repository), [`hrid`]
@@ -32,7 +32,6 @@ pub mod adl14;
 pub mod aom;
 pub mod artefact;
 pub mod assemble;
-pub mod cadl;
 pub mod codes;
 pub mod error;
 pub mod flatten;
@@ -41,6 +40,7 @@ pub mod lexer;
 pub mod meta;
 pub mod odin;
 pub mod opt;
+pub mod parse;
 pub mod paths;
 pub mod printer;
 pub mod rules;

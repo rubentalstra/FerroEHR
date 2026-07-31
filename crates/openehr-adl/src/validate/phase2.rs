@@ -651,7 +651,7 @@ impl<'a> Phase2<'a> {
                 // VDSSC: a specialised slot may be closed OR narrowed, not both.
                 //
                 // NOTE: the ADL2 slot production admits `closed` XOR a `matches`
-                // body (`cadl.rs::parse_archetype_slot`, mirroring the vendored
+                // body (`parse::refs::Parser::parse_archetype_slot`, mirroring the vendored
                 // `masterAppB` slot grammar), so a parsed slot is never both
                 // closed and narrowing — this stays as a defensive guard for any
                 // future non-source-parsed AOM input.

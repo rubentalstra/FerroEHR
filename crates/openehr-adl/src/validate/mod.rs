@@ -525,7 +525,7 @@ pub fn validate_phase1(
         &view(archetype),
         repo,
         None,
-        crate::cadl::Dialect::Adl2,
+        crate::parse::Dialect::Adl2,
         &mut issues,
     );
     issues
@@ -549,7 +549,7 @@ pub fn validate_source_phase1(
         &view(&archetype),
         repo,
         Some((&source, src)),
-        crate::cadl::Dialect::Adl2,
+        crate::parse::Dialect::Adl2,
         &mut issues,
     );
     Ok(issues)
@@ -608,7 +608,7 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
         &view(&archetype),
         None,
         Some((&source, src)),
-        crate::cadl::Dialect::Adl14,
+        crate::parse::Dialect::Adl14,
         &mut issues,
     );
     issues.extend(phase3::validate_definition_paths_adl14(&archetype));
@@ -642,7 +642,7 @@ pub fn validate_source_adl14(
         &view(&archetype),
         None,
         Some((&source, src)),
-        crate::cadl::Dialect::Adl14,
+        crate::parse::Dialect::Adl14,
         &mut issues,
     );
     issues.extend(phase3::validate_definition_paths_adl14(&archetype));
@@ -778,7 +778,7 @@ pub fn validate_source(
         &view(&archetype),
         repo,
         Some((&source, src)),
-        crate::cadl::Dialect::Adl2,
+        crate::parse::Dialect::Adl2,
         &mut issues,
     );
     if issues.iter().all(|i| i.severity != Severity::Error) {
