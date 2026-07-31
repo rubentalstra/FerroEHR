@@ -82,6 +82,54 @@ pub enum OdinValue {
     ListContinue,
 }
 
+impl OdinValue {
+    /// The set of paths of this structure, in document order — one entry per
+    /// attribute node and per keyed container item.
+    ///
+    /// `LANG/docs/odin/master05-content` §Paths: "For any ODIN structure, a
+    /// set of paths can be extracted that correspond to the tree structure of
+    /// the data" — with the keyed forms of §Container Objects
+    /// (`/school_schedule/locations[1]`) and §Nested Container Objects
+    /// (`/list_of_string_lists[1]/[1]`). A key attaches to its attribute
+    /// segment; a key nested directly under another key opens a new bare-key
+    /// segment; typed casts are transparent; leaf values add no path beyond
+    /// their attribute's. Path SEMANTICS (Xpath mapping) are `master08`'s
+    /// subject and live with consumers.
+    #[must_use]
+    pub fn paths(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        collect_paths(self, "", &mut out);
+        out
+    }
+}
+
+/// Walk `value` under `prefix`, appending every attribute and keyed-item path
+/// (see [`OdinValue::paths`]).
+fn collect_paths(value: &OdinValue, prefix: &str, out: &mut Vec<String>) {
+    match value {
+        OdinValue::Object(members) => {
+            for (name, child) in members {
+                let path = format!("{prefix}/{name}");
+                out.push(path.clone());
+                collect_paths(child, &path, out);
+            }
+        }
+        OdinValue::KeyedList(entries) => {
+            for (key, child) in entries {
+                let path = if prefix.is_empty() || prefix.ends_with(']') {
+                    format!("{prefix}/[{}]", key.path_text())
+                } else {
+                    format!("{prefix}[{}]", key.path_text())
+                };
+                out.push(path.clone());
+                collect_paths(child, &path, out);
+            }
+        }
+        OdinValue::Typed { value: inner, .. } => collect_paths(inner, prefix, out),
+        _ => {}
+    }
+}
+
 /// A keyed-list key (`key_id` in `odin.g4`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum OdinKey {
@@ -95,6 +143,20 @@ pub enum OdinKey {
     Time(String),
     /// An ISO8601 date/time key.
     DateTime(String),
+}
+
+impl OdinKey {
+    /// The key as written inside a path predicate — integers, dates and
+    /// times bare, strings double-quoted (`LANG/docs/odin/master05-content`
+    /// §Container Objects: `locations[1]`, `subjects["philosophy:kant"]`).
+    #[must_use]
+    pub fn path_text(&self) -> String {
+        match self {
+            Self::String(text) => format!("\"{text}\""),
+            Self::Integer(value) => value.to_string(),
+            Self::Date(text) | Self::Time(text) | Self::DateTime(text) => text.clone(),
+        }
+    }
 }
 
 /// An ODIN interval value (`odin_values.g4` `*_interval_value`).
@@ -140,6 +202,13 @@ pub enum OdinErrorKind {
     /// unique" of `AM/docs/ADL1.4/master04-dadl` §General Form. Carries the
     /// repeated name.
     DuplicateAttribute(String),
+    /// Two sibling objects of one container attribute share a key — rule
+    /// *VDOBU* of `LANG/docs/odin/master05-content` §Container Objects
+    /// ("sibling objects occurring within a container attribute must be
+    /// uniquely identified with respect to each other"). Keys compare as
+    /// their typed values, so `[01]` duplicates `[1]`. Carries the repeated
+    /// key in its path-predicate rendering.
+    DuplicateKey(String),
 }
 
 /// An ODIN parse or lex failure, with a 1-based line/column and a byte span.
@@ -228,6 +297,10 @@ pub fn parse_document(src: &str) -> Result<OdinDocument, OdinError> {
             parser::Failure::DuplicateAttribute { name, .. } => (
                 OdinErrorKind::DuplicateAttribute(name.clone()),
                 format!("duplicate sibling attribute {name:?} (VDATU)"),
+            ),
+            parser::Failure::DuplicateKey { key, .. } => (
+                OdinErrorKind::DuplicateKey(key.clone()),
+                format!("duplicate sibling container key [{key}] (VDOBU)"),
             ),
         };
         OdinError {
@@ -551,6 +624,28 @@ mod tests {
             panic!("expected keyed list");
         };
         assert_eq!(entries[0].0, OdinKey::Integer(1));
+    }
+
+    /// Rule *VDOBU* (`LANG/docs/odin/master05-content` §Container Objects):
+    /// sibling container keys must be unique; keys compare as their typed
+    /// values, so `[01]` duplicates `[1]`.
+    #[test]
+    fn duplicate_sibling_container_keys_are_refused() {
+        for src in [
+            "k = <[1] = <1> [1] = <2>>",
+            r#"k = <["a"] = <1> ["a"] = <2>>"#,
+            "k = <[1] = <1> [01] = <2>>",
+            "[1] = <1>\n[1] = <2>",
+        ] {
+            let err = parse(src).expect_err("duplicate keys must be refused (VDOBU)");
+            assert!(
+                matches!(err.kind, OdinErrorKind::DuplicateKey(_)),
+                "{src}: {err:?}"
+            );
+        }
+        // distinct keys, and the same key under different parents, are fine.
+        assert!(parse("k = <[1] = <1> [2] = <2>>").is_ok());
+        assert!(parse("p = <[1] = <1>>\nq = <[1] = <2>>").is_ok());
     }
 
     /// Rule *VDATU* (`LANG/docs/odin/master05-content` §General Structure) /

@@ -58,6 +58,20 @@ fn adjudicated_skip(name: &str) -> Option<&'static str> {
         // a documented tag/spec inconsistency (INVENTORY §3). Adjudicated in
         // both harnesses rather than weakening VARDT.
         Some("VARDT fires (ENTRY != ENTRY_WRONG, master03 L238); corpus PASS tag inconsistent")
+    } else if name.ends_with("VOKU_ac_code_duplicated_in_terminology.v1.0.0.adls")
+        || name.ends_with("VOKU_at_code_duplicated_in_terminology.v1.0.0.adls")
+    {
+        // Duplicate sibling container keys are invalid ODIN — rule VDOBU
+        // (`LANG/docs/odin/master05-content` §Container Objects), enforced at
+        // the ODIN parse since #1376 — so the terminology section is refused
+        // (SDINV) before the AOM-level VOKU check these tags name can run.
+        // Through ADL2 TEXT a terminology key duplicate is therefore
+        // structurally unreachable past the parser; the VOKU source-level
+        // check stays for programmatically-built sources and its own unit
+        // coverage.
+        Some(
+            "duplicate ODIN container keys refused at parse (VDOBU, master05) before VOKU is reachable",
+        )
     } else if name.ends_with("FAIL_dadl_spurious_delimiter.v1.0.0.adls") {
         // The file carries a spurious ODIN delimiter that the ADL2 lexer/parser
         // rejects at parse time (SDINV, `ADL2/master04.6`), before the VOTM
