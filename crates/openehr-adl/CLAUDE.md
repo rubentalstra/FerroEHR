@@ -8,6 +8,17 @@ OPT2 generation (`opt.rs` — raw via `create_opt`, profiled via `profile_opt`),
 the ADL printer (`printer`), and ADL 1.4→2 conversion (`adl14/`). Builds directly
 into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
 
+- **The shared substrate has ONE home each — never re-inline a copy.** `aom/`
+  (`access` = the 13-arm `C_OBJECT` field accessors + `AomType`, `build` = the
+  AOM2 constructors, `interval` = `Bounds`/multiplicity + `INTERVAL<T>` maths),
+  `artefact` (`ArchetypeView`/`view` + `ArchetypeRepository`/`FlatParent`),
+  `hrid` (parse/print/lookup-key of `ARCHETYPE_HRID`), `odin` (the ODIN reading
+  bridge + the `master03` escape decoding + delimited-regex handling), and
+  `paths::child_path`. They sit BELOW `validate`/`flatten`/`opt`/`printer`, which
+  all read through them. Two pairs are deliberately kept divergent and
+  co-located with `// TODO:`s naming their issues: the interval point-of
+  extractors (`aom::interval`, #1339) and the escape decoding's 4-digit-only
+  `\uHHHH` handling (`odin`, #1340).
 - **Spec oracle:** `docs/specs/openehr/AM/docs/{ADL2,AOM2,OPT2}/` +
   `LANG/docs/odin/` (`/spec-lookup`). Every validation rule cites its code + spec
   file/section; master08-only codes and all other spec-silences carry the

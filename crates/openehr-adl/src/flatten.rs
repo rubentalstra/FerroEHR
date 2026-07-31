@@ -44,9 +44,13 @@ use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_base::prelude::MultiplicityInterval;
 
+use crate::aom::access::{
+    child_occurrences, complex_attributes, complex_node_id, object_node_id, sibling_order,
+    strip_sibling_order,
+};
+use crate::artefact::{ArchetypeRepository, view};
 use crate::codes::codes_conformant;
-use crate::paths::{PathSegment, complex_attributes, complex_node_id, object_node_id, parse_path};
-use crate::validate::{ArchetypeRepository, view};
+use crate::paths::{PathSegment, parse_path};
 
 /// A failure while flattening a specialised archetype against its parent.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -247,7 +251,7 @@ fn overlay_children(base_attr: &mut CAttribute, child_attr: &CAttribute, _level:
     // explicitly-marked node onward.
     let mut classified: Vec<(Overlaid, Option<SiblingOrder>)> = Vec::new();
     for child in &child_attr.children {
-        let marker = sibling_order_of(child).cloned();
+        let marker = sibling_order(child).cloned();
         let overlaid =
             if let Some(base_idx) = find_congruent_idx(&base_nodes, object_node_id(child)) {
                 let node = overlay_node(&base_nodes[base_idx], child);
@@ -436,7 +440,7 @@ fn clone_not_needed(base_node: &CObject, base_attr: &CAttribute, redefs: &[&CObj
     // Case 2: the child node is the sole redefinition of this parent and has an
     // explicit max occurrences of 1.
     if let [only] = redefs
-        && child_occurrences_of(only).is_some_and(|o| !o.upper_unbounded && o.upper == Some(1))
+        && child_occurrences(only).is_some_and(|o| !o.upper_unbounded && o.upper == Some(1))
     {
         return true;
     }
@@ -448,7 +452,7 @@ fn clone_not_needed(base_node: &CObject, base_attr: &CAttribute, redefs: &[&CObj
 /// else the owning attribute's cardinality upper for a container, else 1 for a
 /// single-valued attribute. `None` = unbounded (`*`).
 fn max_effective_occurrences(node: &CObject, attr: &CAttribute) -> Option<i32> {
-    if let Some(occ) = child_occurrences_of(node) {
+    if let Some(occ) = child_occurrences(node) {
         return if occ.upper_unbounded { None } else { occ.upper };
     }
     if attr.is_multiple {
@@ -743,44 +747,4 @@ fn find_congruent_idx(base: &[CObject], child_id: &str) -> Option<usize> {
     base.iter().position(|b| {
         !object_node_id(b).is_empty() && codes_conformant(child_id, object_node_id(b))
     })
-}
-
-fn child_occurrences_of(obj: &CObject) -> Option<&MultiplicityInterval> {
-    crate::validate::conformance::child_occurrences(obj)
-}
-
-fn sibling_order_of(obj: &CObject) -> Option<&SiblingOrder> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.sibling_order.as_ref(),
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.sibling_order.as_ref(),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.sibling_order.as_ref(),
-        CObject::CComplexObjectProxy(p) => p.sibling_order.as_ref(),
-        CObject::CBoolean(o) => o.sibling_order.as_ref(),
-        CObject::CInteger(o) => o.sibling_order.as_ref(),
-        CObject::CReal(o) => o.sibling_order.as_ref(),
-        CObject::CString(o) => o.sibling_order.as_ref(),
-        CObject::CTerminologyCode(o) => o.sibling_order.as_ref(),
-        CObject::CDate(o) => o.sibling_order.as_ref(),
-        CObject::CTime(o) => o.sibling_order.as_ref(),
-        CObject::CDateTime(o) => o.sibling_order.as_ref(),
-        CObject::CDuration(o) => o.sibling_order.as_ref(),
-    }
-}
-
-fn strip_sibling_order(obj: &mut CObject) {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.sibling_order = None,
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.sibling_order = None,
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.sibling_order = None,
-        CObject::CComplexObjectProxy(p) => p.sibling_order = None,
-        CObject::CBoolean(o) => o.sibling_order = None,
-        CObject::CInteger(o) => o.sibling_order = None,
-        CObject::CReal(o) => o.sibling_order = None,
-        CObject::CString(o) => o.sibling_order = None,
-        CObject::CTerminologyCode(o) => o.sibling_order = None,
-        CObject::CDate(o) => o.sibling_order = None,
-        CObject::CTime(o) => o.sibling_order = None,
-        CObject::CDateTime(o) => o.sibling_order = None,
-        CObject::CDuration(o) => o.sibling_order = None,
-    }
 }

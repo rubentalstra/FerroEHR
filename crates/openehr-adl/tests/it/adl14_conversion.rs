@@ -519,7 +519,7 @@ ontology
     let mut log = ConversionLog::new();
     let converted = parse_and_convert(src, &ConvertConfig::default(), &mut log).expect("converts");
     let (definition, _) = data(&converted);
-    let items = openehr_adl::paths::complex_attributes(definition)
+    let items = openehr_adl::aom::access::complex_attributes(definition)
         .iter()
         .find(|a| a.rm_attribute_name == "items")
         .expect("the items attribute")

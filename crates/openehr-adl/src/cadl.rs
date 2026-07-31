@@ -29,9 +29,7 @@ use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
 use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
-    CComplexObject, CComplexObjectData,
-};
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
@@ -48,15 +46,28 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{
     Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
-    MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode,
+    MultiplicityInterval, ProperInterval, ProperIntervalData,
 };
 use openehr_lang::odin::OdinValue;
 
+use crate::aom::access::common_mut;
+use crate::aom::build::{
+    cattr_empty, cattr_single, cinteger_values, cobject_to_primitive, complex_object, creal_values,
+    cstring_regex, cstring_values, into_archetype_root, local_term_code, mult, point_int,
+    point_interval, point_real, primitive_to_cobject, proper_interval, tuple_member,
+};
+use crate::aom::interval::{
+    int_interval_contains, point_interval_value_f64, point_interval_value_i32,
+    real_interval_contains,
+};
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::lexer::{Spanned, Token};
+use crate::odin::{
+    decode_character, decode_string, decode_string_inner, escape_regex_delimiter,
+    odin_contains_interval, odin_kind, odin_to_json, regex_inner, untyped,
+};
 
 /// Internal parse result: `Err(())` signals a bail-out; the concrete
 /// [`SyntaxError`] is already recorded in [`Parser::errors`].
@@ -1034,7 +1045,7 @@ impl Parser<'_> {
                     SyntaxErrorCode::Scoat,
                     "expecting '}' closing a tuple item",
                 )?;
-                let prim = cobject_to_primitive(obj).ok_or(())?;
+                let prim = cobject_to_primitive(&obj).ok_or(())?;
                 items.push(prim);
             }
             if !self.eat(|t| matches!(t, Token::SymComma)) {
@@ -1477,7 +1488,7 @@ impl Parser<'_> {
                 "expecting a terminology code as the ordinal symbol",
             );
         };
-        cobject_to_primitive(obj).map_or_else(
+        cobject_to_primitive(&obj).map_or_else(
             || {
                 self.err(
                     SyntaxErrorCode::Stccp,
@@ -3256,240 +3267,6 @@ impl CadlValue for Iso8601Duration {
 
 // ── free helpers ──────────────────────────────────────────────────────────
 
-/// Build a [`MultiplicityInterval`].
-fn mult(
-    lower: Option<i32>,
-    upper: Option<i32>,
-    lower_unbounded: bool,
-    upper_unbounded: bool,
-) -> MultiplicityInterval {
-    MultiplicityInterval {
-        lower,
-        upper,
-        lower_unbounded,
-        upper_unbounded,
-        lower_included: !lower_unbounded,
-        upper_included: !upper_unbounded,
-    }
-}
-
-/// A closed point interval `{v}`.
-fn point_interval<T: Clone>(v: T) -> Interval<T> {
-    Interval::PointInterval(PointInterval {
-        lower: Some(v.clone()),
-        upper: Some(v),
-        lower_unbounded: false,
-        upper_unbounded: false,
-        lower_included: true,
-        upper_included: true,
-    })
-}
-
-/// A proper interval with explicit bounds/inclusivity.
-// The four flags mirror `ProperIntervalData`'s own boolean fields 1:1.
-#[expect(
-    clippy::fn_params_excessive_bools,
-    reason = "the four flags mirror `ProperIntervalData`'s own boolean fields 1:1 — collapsing them into a struct would just restate that type"
-)]
-fn proper_interval<T>(
-    lower: Option<T>,
-    upper: Option<T>,
-    lower_included: bool,
-    upper_included: bool,
-    lower_unbounded: bool,
-    upper_unbounded: bool,
-) -> Interval<T> {
-    Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
-        lower,
-        upper,
-        lower_unbounded,
-        upper_unbounded,
-        lower_included,
-        upper_included,
-    }))
-}
-
-/// Mutable references to the four `C_OBJECT` common fields (`rm_type_name`,
-/// `node_id`, `occurrences`, `sibling_order`) across every [`CObject`] variant.
-fn common_mut(
-    o: &mut CObject,
-) -> (
-    &mut String,
-    &mut String,
-    &mut Option<MultiplicityInterval>,
-    &mut Option<SiblingOrder>,
-) {
-    match o {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => (
-            &mut d.rm_type_name,
-            &mut d.node_id,
-            &mut d.occurrences,
-            &mut d.sibling_order,
-        ),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(b)) => (
-            &mut b.rm_type_name,
-            &mut b.node_id,
-            &mut b.occurrences,
-            &mut b.sibling_order,
-        ),
-        CObject::ArchetypeSlot(s) => (
-            &mut s.rm_type_name,
-            &mut s.node_id,
-            &mut s.occurrences,
-            &mut s.sibling_order,
-        ),
-        CObject::CComplexObjectProxy(p) => (
-            &mut p.rm_type_name,
-            &mut p.node_id,
-            &mut p.occurrences,
-            &mut p.sibling_order,
-        ),
-        CObject::CBoolean(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CDate(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CDateTime(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CDuration(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CInteger(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CReal(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CString(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CTerminologyCode(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-        CObject::CTime(c) => (
-            &mut c.rm_type_name,
-            &mut c.node_id,
-            &mut c.occurrences,
-            &mut c.sibling_order,
-        ),
-    }
-}
-
-/// Build a [`CComplexObjectData`] wrapped as a [`CObject`].
-fn complex_object(
-    rm_type_name: String,
-    node_id: String,
-    attributes: Vec<CAttribute>,
-    attribute_tuples: Vec<CAttributeTuple>,
-    default_value: Option<serde_json::Value>,
-) -> CObject {
-    CObject::CComplexObject(CComplexObject::CComplexObject(CComplexObjectData {
-        parent: None,
-        soc_parent: None,
-        rm_type_name,
-        occurrences: None,
-        node_id,
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value,
-        attributes,
-        attribute_tuples,
-    }))
-}
-
-/// Convert a parsed complex object into a [`CArchetypeRoot`] carrying
-/// `archetype_ref` (the OPT-inlined slot-filler / external-reference form,
-/// OPT2 master03). A non-complex `obj` (a primitive) cannot bear an archetype
-/// ref; it is returned unchanged (validation flags the misuse).
-fn into_archetype_root(obj: CObject, archetype_ref: String) -> CObject {
-    let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = obj else {
-        return obj;
-    };
-    CObject::CComplexObject(CComplexObject::CArchetypeRoot(Box::new(CArchetypeRoot {
-        parent: None,
-        soc_parent: None,
-        rm_type_name: d.rm_type_name,
-        occurrences: d.occurrences,
-        node_id: d.node_id,
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value: d.default_value,
-        attributes: d.attributes,
-        attribute_tuples: d.attribute_tuples,
-        archetype_ref,
-    })))
-}
-
-/// A tuple member `C_ATTRIBUTE` (name only; the values live in the tuples).
-fn tuple_member(rm_attribute_name: String) -> CAttribute {
-    CAttribute {
-        parent: None,
-        soc_parent: None,
-        rm_attribute_name,
-        existence: None,
-        children: Vec::new(),
-        differential_path: None,
-        cardinality: None,
-        is_multiple: false,
-    }
-}
-
-/// A `C_STRING` carrying a single regex constraint (`/re/`, delimiters kept).
-fn cstring_regex(regex: String, assumed: Option<String>) -> CString {
-    CString {
-        parent: None,
-        soc_parent: None,
-        rm_type_name: "String".to_owned(),
-        occurrences: None,
-        node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value: None,
-        assumed_value: assumed,
-        is_enumerated_type_constraint: None,
-        constraint: vec![regex],
-    }
-}
-
-/// A local (archetype-internal) at-code terminology value.
-fn local_term_code(code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: LOCAL_TERMINOLOGY_ID.to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
 /// The single ordinal value a lowered `[value, symbol]` tuple row constrains,
 /// as `f64` for the assumed-value lookup. `None` for any other constraint kind.
 fn ordinal_point_value(member: &CPrimitiveObject) -> Option<f64> {
@@ -3497,9 +3274,9 @@ fn ordinal_point_value(member: &CPrimitiveObject) -> Option<f64> {
         CPrimitiveObject::CInteger(c) => c
             .constraint
             .first()
-            .and_then(interval_point_i32)
+            .and_then(point_interval_value_i32)
             .map(f64::from),
-        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(interval_point_f64),
+        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(point_interval_value_f64),
         _ => None,
     }
 }
@@ -3674,32 +3451,6 @@ fn code_phrase_instance(v: &OdinValue) -> Result<(String, String), String> {
         return Err("'assumed_value' has no 'code_string'".to_owned());
     };
     Ok((terminology, code.clone()))
-}
-
-/// A one-word name for an ODIN value's kind, for defect messages.
-fn odin_kind(v: &OdinValue) -> &'static str {
-    match v {
-        OdinValue::Object(_) => "an object",
-        OdinValue::KeyedList(_) => "a keyed list",
-        OdinValue::List(_) => "a list",
-        OdinValue::Typed { .. } => "a typed block",
-        OdinValue::PathList(_) => "a path list",
-        OdinValue::Empty => "an empty block",
-        _ => "a leaf value",
-    }
-}
-
-/// Peel any `(TYPE)` casts off an ODIN value: the cast of
-/// `LANG/docs/odin/master05-content` §Adding Type Information is a
-/// dynamic-binding hint for the parser, not part of the datum, so the domain
-/// lowering reads straight through it (the cast stays on the tree for a caller
-/// that wants it).
-fn untyped(v: &OdinValue) -> &OdinValue {
-    let mut cur = v;
-    while let OdinValue::Typed { value, .. } = cur {
-        cur = value;
-    }
-    cur
 }
 
 /// Why an inline dADL domain block could not be lowered (each maps to `SDINV`).
@@ -3939,14 +3690,14 @@ fn primitive_admits(constraint: &CPrimitiveObject, value: &CPrimitiveObject) -> 
             c.constraint.is_empty()
                 || v.constraint
                     .iter()
-                    .filter_map(interval_point_f64)
+                    .filter_map(point_interval_value_f64)
                     .all(|p| c.constraint.iter().any(|iv| real_interval_contains(iv, p)))
         }
         (CPrimitiveObject::CInteger(c), CPrimitiveObject::CInteger(v)) => {
             c.constraint.is_empty()
                 || v.constraint
                     .iter()
-                    .filter_map(interval_point_i32)
+                    .filter_map(point_interval_value_i32)
                     .all(|p| c.constraint.iter().any(|iv| int_interval_contains(iv, p)))
         }
         _ => true,
@@ -3960,13 +3711,13 @@ fn set_assumed_on_primitive(target: &mut CPrimitiveObject, leaf: &CPrimitiveObje
             t.assumed_value = l.constraint.first().cloned();
         }
         (CPrimitiveObject::CReal(t), CPrimitiveObject::CReal(l)) => {
-            t.assumed_value = l.constraint.first().and_then(interval_point_f64);
+            t.assumed_value = l.constraint.first().and_then(point_interval_value_f64);
         }
         (CPrimitiveObject::CInteger(t), CPrimitiveObject::CInteger(l)) => {
             t.assumed_value = l
                 .constraint
                 .first()
-                .and_then(interval_point_i32)
+                .and_then(point_interval_value_i32)
                 .map(f64::from);
         }
         (CPrimitiveObject::CBoolean(t), CPrimitiveObject::CBoolean(l)) => {
@@ -3989,7 +3740,7 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
         }
         CObject::CReal(t) => {
             if let CPrimitiveObject::CReal(l) = leaf {
-                t.assumed_value = l.constraint.first().and_then(interval_point_f64);
+                t.assumed_value = l.constraint.first().and_then(point_interval_value_f64);
             }
         }
         CObject::CInteger(t) => {
@@ -3997,7 +3748,7 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
                 t.assumed_value = l
                     .constraint
                     .first()
-                    .and_then(interval_point_i32)
+                    .and_then(point_interval_value_i32)
                     .map(f64::from);
             }
         }
@@ -4008,94 +3759,6 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
         }
         _ => {}
     }
-}
-
-/// The single point value of a real interval (`{v}` / `{v..v}`), else `None`.
-fn interval_point_f64(iv: &Interval<f64>) -> Option<f64> {
-    match iv {
-        Interval::PointInterval(p) => p.lower,
-        Interval::ProperInterval(_) => None,
-    }
-}
-
-/// The single point value of an integer interval (`{v}` / `{v..v}`), else `None`.
-fn interval_point_i32(iv: &Interval<i32>) -> Option<i32> {
-    match iv {
-        Interval::PointInterval(p) => p.lower,
-        Interval::ProperInterval(_) => None,
-    }
-}
-
-/// The `(lower, upper)` bounds of an interval as `f64`, each `None` when open or
-/// unbounded, plus the two inclusivity flags. A `MultiplicityInterval` variant
-/// (structurally possible on the generic enum but never produced for a domain
-/// leaf constraint) yields fully-open bounds, so membership is undecided and the
-/// conservative `true` answer stands.
-fn interval_bounds_f64<T: Copy + Into<f64>>(
-    iv: &Interval<T>,
-) -> (Option<f64>, Option<f64>, bool, bool) {
-    let (lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included) = match iv
-    {
-        Interval::PointInterval(p) => (
-            p.lower,
-            p.upper,
-            p.lower_unbounded,
-            p.upper_unbounded,
-            p.lower_included,
-            p.upper_included,
-        ),
-        Interval::ProperInterval(ProperInterval::ProperInterval(p)) => (
-            p.lower,
-            p.upper,
-            p.lower_unbounded,
-            p.upper_unbounded,
-            p.lower_included,
-            p.upper_included,
-        ),
-        Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => {
-            return (None, None, true, true);
-        }
-    };
-    (
-        if lower_unbounded {
-            None
-        } else {
-            lower.map(Into::into)
-        },
-        if upper_unbounded {
-            None
-        } else {
-            upper.map(Into::into)
-        },
-        lower_included,
-        upper_included,
-    )
-}
-
-/// True if the real interval `iv` contains `v` (honouring open/closed bounds).
-fn real_interval_contains(iv: &Interval<f64>, v: f64) -> bool {
-    bounds_admit(v, interval_bounds_f64(iv))
-}
-
-/// True if the integer interval `iv` contains `v` (honouring open/closed bounds).
-fn int_interval_contains(iv: &Interval<i32>, v: i32) -> bool {
-    bounds_admit(f64::from(v), interval_bounds_f64(iv))
-}
-
-/// Interval membership over `f64` bounds, shared by the real/integer tests.
-fn bounds_admit(v: f64, bounds: (Option<f64>, Option<f64>, bool, bool)) -> bool {
-    let (lower, upper, lower_included, upper_included) = bounds;
-    if let Some(lo) = lower
-        && (v < lo || (!lower_included && (v - lo).abs() < f64::EPSILON))
-    {
-        return false;
-    }
-    if let Some(hi) = upper
-        && (v > hi || (!upper_included && (v - hi).abs() < f64::EPSILON))
-    {
-        return false;
-    }
-    true
 }
 
 /// The `["1"] = <…> …` rows of a domain `list`, each an ordered
@@ -4201,122 +3864,6 @@ fn merge_primitives(mut items: Vec<CPrimitiveObject>) -> Option<CPrimitiveObject
     })
 }
 
-fn primitive_to_cobject(p: CPrimitiveObject) -> CObject {
-    match p {
-        CPrimitiveObject::CString(c) => CObject::CString(c),
-        CPrimitiveObject::CReal(c) => CObject::CReal(c),
-        CPrimitiveObject::CInteger(c) => CObject::CInteger(c),
-        CPrimitiveObject::CBoolean(c) => CObject::CBoolean(c),
-        CPrimitiveObject::CDate(c) => CObject::CDate(c),
-        CPrimitiveObject::CDateTime(c) => CObject::CDateTime(c),
-        CPrimitiveObject::CDuration(c) => CObject::CDuration(c),
-        CPrimitiveObject::CTerminologyCode(c) => CObject::CTerminologyCode(c),
-        CPrimitiveObject::CTime(c) => CObject::CTime(c),
-    }
-}
-
-fn cattr_single(name: &str, child: CObject) -> CAttribute {
-    CAttribute {
-        parent: None,
-        soc_parent: None,
-        rm_attribute_name: name.to_owned(),
-        existence: None,
-        children: vec![child],
-        differential_path: None,
-        cardinality: None,
-        is_multiple: false,
-    }
-}
-
-fn cattr_empty(name: &str) -> CAttribute {
-    CAttribute {
-        parent: None,
-        soc_parent: None,
-        rm_attribute_name: name.to_owned(),
-        existence: None,
-        children: Vec::new(),
-        differential_path: None,
-        cardinality: None,
-        is_multiple: false,
-    }
-}
-
-fn cstring_values(values: &[String]) -> CString {
-    CString {
-        parent: None,
-        soc_parent: None,
-        rm_type_name: "String".to_owned(),
-        occurrences: None,
-        node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value: None,
-        assumed_value: None,
-        is_enumerated_type_constraint: None,
-        constraint: values.to_vec(),
-    }
-}
-
-fn creal_values(constraint: Vec<Interval<f64>>) -> CReal {
-    CReal {
-        parent: None,
-        soc_parent: None,
-        rm_type_name: "Real".to_owned(),
-        occurrences: None,
-        node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value: None,
-        assumed_value: None,
-        is_enumerated_type_constraint: None,
-        constraint,
-    }
-}
-
-fn cinteger_values(constraint: Vec<Interval<i32>>) -> CInteger {
-    CInteger {
-        parent: None,
-        soc_parent: None,
-        rm_type_name: "Integer".to_owned(),
-        occurrences: None,
-        node_id: "Primitive_node_id".to_owned(),
-        alternative_ids: Vec::new(),
-        is_deprecated: None,
-        sibling_order: None,
-        default_value: None,
-        assumed_value: None,
-        is_enumerated_type_constraint: None,
-        constraint,
-    }
-}
-
-fn point_real(v: f64) -> Interval<f64> {
-    Interval::PointInterval(PointInterval {
-        lower: Some(v),
-        upper: Some(v),
-        lower_unbounded: false,
-        upper_unbounded: false,
-        lower_included: true,
-        upper_included: true,
-    })
-}
-
-fn point_int(v: i64) -> Interval<i32> {
-    // Domain-list integer constraints (precision, counts) are small clinical
-    // values; saturate defensively into `i32` (AOM2 uses `Integer` = `i32`).
-    let v = i32::try_from(v).unwrap_or(if v.is_negative() { i32::MIN } else { i32::MAX });
-    Interval::PointInterval(PointInterval {
-        lower: Some(v),
-        upper: Some(v),
-        lower_unbounded: false,
-        upper_unbounded: false,
-        lower_included: true,
-        upper_included: true,
-    })
-}
-
 fn odin_interval_to_real(iv: &openehr_lang::odin::OdinInterval) -> Interval<f64> {
     let (lower, li, upper, ui) = odin_range_bounds(iv, odin_as_real, |r| r);
     proper_or_point_real(lower, li, upper, ui)
@@ -4416,22 +3963,6 @@ fn real_to_i32(r: f64) -> i32 {
     r.clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32
 }
 
-/// Convert a parsed inline primitive [`CObject`] to a [`CPrimitiveObject`].
-fn cobject_to_primitive(o: CObject) -> Option<CPrimitiveObject> {
-    Some(match o {
-        CObject::CBoolean(c) => CPrimitiveObject::CBoolean(c),
-        CObject::CDate(c) => CPrimitiveObject::CDate(c),
-        CObject::CDateTime(c) => CPrimitiveObject::CDateTime(c),
-        CObject::CDuration(c) => CPrimitiveObject::CDuration(c),
-        CObject::CInteger(c) => CPrimitiveObject::CInteger(c),
-        CObject::CReal(c) => CPrimitiveObject::CReal(c),
-        CObject::CString(c) => CPrimitiveObject::CString(c),
-        CObject::CTerminologyCode(c) => CPrimitiveObject::CTerminologyCode(c),
-        CObject::CTime(c) => CPrimitiveObject::CTime(c),
-        _ => return None,
-    })
-}
-
 /// Parse a `matches { … }` primitive-constraint right-hand side (the verbatim
 /// `{ c_primitive_object }` text, braces included) into a [`CPrimitiveObject`].
 ///
@@ -4466,7 +3997,7 @@ pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject,
         Ok(obj)
     })();
     match parsed {
-        Ok(obj) if parser.errors.is_empty() => cobject_to_primitive(obj).ok_or_else(|| {
+        Ok(obj) if parser.errors.is_empty() => cobject_to_primitive(&obj).ok_or_else(|| {
             vec![SyntaxError::at(
                 SyntaxErrorCode::Sccog,
                 "constraint body is not a primitive constraint",
@@ -4532,55 +4063,6 @@ fn split_diff_path(p: &str) -> (String, String) {
     }
 }
 
-/// The inner regex of a `/re/` or `^re^` delimited pattern.
-fn regex_inner(delimited: &str) -> &str {
-    let d = delimited.trim();
-    for delimiter in ['/', '^'] {
-        if let Some(inner) = d
-            .strip_prefix(delimiter)
-            .and_then(|rest| rest.strip_suffix(delimiter))
-        {
-            return inner;
-        }
-    }
-    d
-}
-
-/// Backslash-escape every UNESCAPED `/` in a regex body.
-///
-/// `AOM2/master04.5` §`C_STRING` types `constraint` as "a list of literal
-/// strings and / or regular expression strings **delimited by the '/'
-/// character**", so the AOM carrier is always the `/…/` form — which makes the
-/// `^…^` delimiter a purely lexical alternative that has to be normalised on
-/// the way in. The chapter states the two forms' equivalence with its own
-/// worked pair (`ADL1.4/master05-cadl.adoc` §Regular Expression L696-702:
-/// "If the delimiter character is required in the pattern, it must be quoted
-/// with the backslash ('\\') character, or else alternative delimiters can be
-/// used … The following two patterns are equivalent: `{/km\\/h|mi\\/h/}` …
-/// `{^km/h|mi/h^}`"), so escaping on normalisation is the spec's own mapping
-/// and keeps parse → print → parse lossless. An already-escaped `\/` (a
-/// slash-delimited source) is left alone, so the transform is idempotent.
-fn escape_regex_delimiter(inner: &str) -> String {
-    let mut out = String::with_capacity(inner.len());
-    let mut escaped = false;
-    for ch in inner.chars() {
-        if escaped {
-            out.push(ch);
-            escaped = false;
-            continue;
-        }
-        match ch {
-            '\\' => {
-                escaped = true;
-                out.push(ch);
-            }
-            '/' => out.push_str("\\/"),
-            _ => out.push(ch),
-        }
-    }
-    out
-}
-
 /// Whether a date/time pattern field is the "present" placeholder (e.g. `hh`)
 /// or a literal date/time number substituted for it.
 ///
@@ -4643,155 +4125,10 @@ fn strength_status(s: &str) -> ConstraintStatus {
     }
 }
 
-/// Decode a double-quoted `master03` string literal (delimiters included).
-fn decode_string(raw: &str) -> String {
-    let inner = raw
-        .strip_prefix('"')
-        .and_then(|s| s.strip_suffix('"'))
-        .unwrap_or(raw);
-    decode_string_inner(inner)
-}
-
-/// Decode a single-quoted `CHARACTER` literal (delimiters included) into the
-/// one-character string that carries it (`base_lexer.g4` `CHARACTER`).
-fn decode_character(raw: &str) -> String {
-    let inner = raw
-        .strip_prefix('\'')
-        .and_then(|s| s.strip_suffix('\''))
-        .unwrap_or(raw);
-    decode_string_inner(inner)
-}
-
-/// Decode `master03` escape sequences in the (undelimited) string body.
-fn decode_string_inner(inner: &str) -> String {
-    let mut out = String::with_capacity(inner.len());
-    let mut chars = inner.chars();
-    while let Some(c) = chars.next() {
-        if c != '\\' {
-            out.push(c);
-            continue;
-        }
-        match chars.next() {
-            Some('r') => out.push('\r'),
-            Some('n') => out.push('\n'),
-            Some('t') => out.push('\t'),
-            Some('\\') | None => out.push('\\'),
-            Some('"') => out.push('"'),
-            Some('\'') => out.push('\''),
-            Some('u') => {
-                let hex: String = chars.clone().take(4).collect();
-                if hex.len() == 4
-                    && let Ok(cp) = u32::from_str_radix(&hex, 16)
-                    && let Some(ch) = char::from_u32(cp)
-                {
-                    out.push(ch);
-                    for _ in 0..4 {
-                        chars.next();
-                    }
-                } else {
-                    out.push('\\');
-                    out.push('u');
-                }
-            }
-            Some(other) => {
-                out.push('\\');
-                out.push(other);
-            }
-        }
-    }
-    out
-}
-
-/// Whether an ODIN value tree contains an interval anywhere.
-///
-/// An interval has no canonical-JSON encoding here (see [`odin_to_json`]), so
-/// a `_default` carrying one is refused outright rather than silently reduced
-/// to `null` — the loss would turn "this default is an interval" into "this
-/// node has a null default", which no reader can tell from a real absence.
-fn odin_contains_interval(v: &OdinValue) -> bool {
-    match v {
-        OdinValue::Interval(_) => true,
-        OdinValue::List(items) => items.iter().any(odin_contains_interval),
-        OdinValue::Object(map) => map.values().any(odin_contains_interval),
-        OdinValue::KeyedList(items) => items.iter().any(|(_, val)| odin_contains_interval(val)),
-        OdinValue::Typed { value, .. } => odin_contains_interval(value),
-        _ => false,
-    }
-}
-
-/// Convert an [`openehr_lang::odin::OdinValue`] to canonical JSON for a
-/// `C_DEFINED_OBJECT.default_value`.
-///
-/// NOTE: `AOM2/master04` types `C_DEFINED_OBJECT.default_value` as an instance
-/// of the constrained RM type, and no openEHR spec mandates an intermediate
-/// JSON shape for it — the canonical-JSON encoding used here is our own
-/// design/extension. An `<>` / `<...>` empty block is a genuine "no value" and
-/// maps to `null`.
-///
-// TODO: encode ODIN interval values (`|0..5|`) as a typed default instead of
-// `null` — [`odin_contains_interval`] refuses them at the parse for now, so a
-// `_default = <|0..5|>` is an error rather than a silent null.
-fn odin_to_json(v: &OdinValue) -> serde_json::Value {
-    match v {
-        OdinValue::String(s)
-        | OdinValue::Date(s)
-        | OdinValue::Time(s)
-        | OdinValue::DateTime(s)
-        | OdinValue::Duration(s)
-        | OdinValue::TermCode(s)
-        | OdinValue::Uri(s)
-        | OdinValue::Path(s) => serde_json::Value::String(s.clone()),
-        OdinValue::Integer(i) => serde_json::Value::from(*i),
-        OdinValue::Real(r) => serde_json::Value::from(*r),
-        OdinValue::Boolean(b) => serde_json::Value::from(*b),
-        OdinValue::Character(c) => serde_json::Value::String(c.to_string()),
-        OdinValue::Empty | OdinValue::Interval(_) => serde_json::Value::Null,
-        OdinValue::ListContinue => serde_json::Value::String("...".to_owned()),
-        OdinValue::List(items) => {
-            serde_json::Value::Array(items.iter().map(odin_to_json).collect())
-        }
-        OdinValue::PathList(ps) => serde_json::Value::Array(
-            ps.iter()
-                .map(|p| serde_json::Value::String(p.clone()))
-                .collect(),
-        ),
-        OdinValue::Object(map) => serde_json::Value::Object(
-            map.iter()
-                .map(|(k, v)| (k.clone(), odin_to_json(v)))
-                .collect(),
-        ),
-        OdinValue::KeyedList(items) => serde_json::Value::Object(
-            items
-                .iter()
-                .map(|(k, v)| (odin_key_str(k), odin_to_json(v)))
-                .collect(),
-        ),
-        OdinValue::Typed { rm_type, value } => {
-            let mut inner = odin_to_json(value);
-            if let serde_json::Value::Object(m) = &mut inner {
-                m.insert(
-                    "_type".to_owned(),
-                    serde_json::Value::String(rm_type.clone()),
-                );
-            }
-            inner
-        }
-    }
-}
-
-fn odin_key_str(k: &openehr_lang::odin::OdinKey) -> String {
-    use openehr_lang::odin::OdinKey;
-    match k {
-        OdinKey::String(s) | OdinKey::Date(s) | OdinKey::Time(s) | OdinKey::DateTime(s) => {
-            s.clone()
-        }
-        OdinKey::Integer(i) => i.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObjectData;
 
     fn parse(body: &str) -> CComplexObject {
         parse_definition_body(body).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
@@ -5671,7 +5008,7 @@ mod tests {
     /// interval an integer constraint carries; an unbounded endpoint is `None`.
     fn int_bounds(o: &CObject) -> (Option<f64>, Option<f64>, bool, bool) {
         match o {
-            CObject::CInteger(ci) => interval_bounds_f64(&ci.constraint[0]),
+            CObject::CInteger(ci) => crate::aom::interval::interval_bounds_f64(&ci.constraint[0]),
             other => panic!("expected CInteger, got {other:?}"),
         }
     }

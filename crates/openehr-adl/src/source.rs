@@ -16,10 +16,10 @@
 //! quoted value can never read as a header either.
 
 use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
-use openehr_base::prelude::VersionStatus;
 
 use crate::cadl::Dialect;
 use crate::error::{SyntaxError, SyntaxErrorCode};
+use crate::hrid::parse_hrid;
 use crate::lexer::{Spanned, Token};
 
 /// The artefact kind (first keyword of an ADL2 source).
@@ -742,97 +742,6 @@ fn token_text(t: &Token) -> Option<String> {
     }
 }
 
-/// Parse an archetype HRID (or a version-partial specialise reference) into an
-/// [`ArchetypeHrid`], normalising a partial version per `master07.05`.
-///
-/// Form: `[ns::]publisher-package-class.concept.vMAJOR[.MINOR[.PATCH]]
-/// [-rc|-alpha|-beta[.build]]`.
-///
-/// # Errors
-/// Returns a message describing the first structural problem.
-pub fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
-    let (namespace, rest) = match s.split_once("::") {
-        Some((ns, rest)) => (Some(ns.to_owned()), rest),
-        None => (None, s),
-    };
-
-    let vpos = rest
-        .rfind(".v")
-        .filter(|&i| {
-            rest.get(i + 2..)
-                .is_some_and(|v| v.starts_with(|c: char| c.is_ascii_digit()))
-        })
-        .ok_or_else(|| format!("HRID {s:?} has no `.vN` version segment"))?;
-    let left = rest.get(..vpos).unwrap_or_default();
-    let version = rest.get(vpos + 2..).unwrap_or_default();
-
-    let (model_part, concept_id) = left
-        .rsplit_once('.')
-        .ok_or_else(|| format!("HRID {s:?} has no `.concept` segment"))?;
-
-    let segments: Vec<&str> = model_part.split('-').collect();
-    let [publisher, package, class] = segments.as_slice() else {
-        return Err(format!(
-            "HRID {s:?} model part must be `publisher-package-class`, found {model_part:?}"
-        ));
-    };
-    if publisher.is_empty() || package.is_empty() || class.is_empty() || concept_id.is_empty() {
-        return Err(format!("HRID {s:?} has an empty identifier segment"));
-    }
-
-    let (release_version, version_status, build_count) = parse_version(version)?;
-
-    Ok(ArchetypeHrid {
-        namespace,
-        rm_publisher: (*publisher).to_owned(),
-        rm_package: (*package).to_owned(),
-        rm_class: (*class).to_owned(),
-        concept_id: concept_id.to_owned(),
-        release_version,
-        version_status: VersionStatus::from_wire(version_status),
-        build_count,
-    })
-}
-
-/// Parse the version tail into `(release_version, status, build_count)`,
-/// normalising a 1- or 2-part numeric version to 3 parts (`master07.05`;
-/// 1.4 `v1` ⇒ `1.0.0`).
-fn parse_version(version: &str) -> Result<(String, &'static str, String), String> {
-    let (status, numeric, build) = if let Some((numeric, build)) = split_status(version, "-rc") {
-        ("rc", numeric, build)
-    } else if let Some((numeric, build)) = split_status(version, "-alpha") {
-        ("alpha", numeric, build)
-    } else if let Some((numeric, build)) = split_status(version, "-beta") {
-        ("beta", numeric, build)
-    } else {
-        ("", version, "")
-    };
-
-    let mut parts = numeric.split('.');
-    let major = parts.next().unwrap_or("0");
-    let minor = parts.next().unwrap_or("0");
-    let patch = parts.next().unwrap_or("0");
-    if major.is_empty() || !major.bytes().all(|b| b.is_ascii_digit()) {
-        return Err(format!("invalid version {version:?}"));
-    }
-    let release_version = format!(
-        "{}.{}.{}",
-        major,
-        if minor.is_empty() { "0" } else { minor },
-        if patch.is_empty() { "0" } else { patch }
-    );
-    Ok((release_version, status, build.to_owned()))
-}
-
-/// If `version` carries the `marker` pre-release suffix, split into
-/// `(numeric, build)` where `build` is the `.N` count after the marker (empty
-/// if absent).
-fn split_status<'a>(version: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
-    let (numeric, after) = version.split_once(marker)?;
-    let build = after.strip_prefix('.').unwrap_or("");
-    Some((numeric, build))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -875,36 +784,5 @@ mod tests {
             errs.iter().any(|e| e.code == SyntaxErrorCode::Sadf),
             "{errs:?}"
         );
-    }
-
-    #[test]
-    fn hrid_forms() {
-        let h = parse_hrid("openEHR-EHR-OBSERVATION.blood_pressure.v1.2.3").expect("full");
-        assert_eq!(h.namespace, None);
-        assert_eq!(h.rm_publisher, "openEHR");
-        assert_eq!(h.rm_class, "OBSERVATION");
-        assert_eq!(h.release_version, "1.2.3");
-        // An empty status token is outside the `VERSION_STATUS` constant set, so
-        // `from_wire` preserves it verbatim as `Other` (HRID tolerance).
-        assert_eq!(h.version_status, VersionStatus::Other(String::new()));
-
-        // 1.4 single-number version normalises to 3 parts.
-        let h = parse_hrid("openehr-TASK_PLANNING-TASK_PLAN.good_include.v0").expect("partial");
-        assert_eq!(h.release_version, "0.0.0");
-
-        // namespaced + release-candidate with a build count.
-        let h = parse_hrid("uk.gov::openEHR-EHR-CLUSTER.device.v1.0.0-rc.2").expect("ns+rc");
-        assert_eq!(h.namespace.as_deref(), Some("uk.gov"));
-        // `rc` is not a `VERSION_STATUS` constant (`release_candidate` is), so the
-        // out-of-set token is preserved as `Other`.
-        assert_eq!(h.version_status, VersionStatus::Other("rc".to_owned()));
-        assert_eq!(h.build_count, "2");
-
-        // alpha with no build count.
-        let h = parse_hrid("openEHR-EHR-OBSERVATION.x.v0.0.1-alpha").expect("alpha");
-        assert_eq!(h.version_status, VersionStatus::Alpha);
-        assert_eq!(h.build_count, "");
-
-        assert!(parse_hrid("not-an-hrid").is_err());
     }
 }

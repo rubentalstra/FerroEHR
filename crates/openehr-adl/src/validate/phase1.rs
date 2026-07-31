@@ -31,18 +31,23 @@ use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_lang::odin::{OdinKey, OdinValue};
+use openehr_lang::odin::OdinValue;
 
 use super::conformance::effective_occurrences_adl14;
-use super::{ArchetypeRepository, ArchetypeView, ValidationCode, ValidationIssue, view};
+use super::{ValidationCode, ValidationIssue};
+use crate::aom::access::{
+    aom_type, child_occurrences, complex_attributes, complex_node_id, complex_rm_type,
+    object_node_id,
+};
+use crate::aom::interval::finite_upper;
+use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
 use crate::cadl::Dialect;
 use crate::codes::{
     self, is_ac_code, is_at_code, is_id_code, is_root_code_at_depth, is_valid_code,
 };
-use crate::paths::{
-    Resolution, complex_attributes, complex_node_id, complex_rm_type, has_node_id_predicate,
-    object_node_id, resolve,
-};
+use crate::hrid::{hrid_lookup_key, is_archetype_id, raw_id_lookup_key};
+use crate::odin::key_str;
+use crate::paths::{Resolution, child_path, has_node_id_predicate, resolve};
 use crate::source::SourceArtefact;
 
 /// Run the phase-1 catalogue over `v`, appending issues to `issues`.
@@ -302,8 +307,8 @@ fn check_specialisation_depth(
         ));
     }
     // VASID: the stated parent id must be the immediate parent's id.
-    let stated = super::raw_id_lookup_key(parent_id);
-    let actual = super::hrid_lookup_key(parent_view.archetype_id);
+    let stated = raw_id_lookup_key(parent_id);
+    let actual = hrid_lookup_key(parent_view.archetype_id);
     if stated != actual {
         out.push(ValidationIssue::new(
             ValidationCode::Vasid,
@@ -388,18 +393,7 @@ impl Scan<'_> {
 
     fn walk_object(&mut self, path: &str, obj: &CObject, require_node_id: bool) {
         let nid = object_node_id(obj);
-        let is_identified = !matches!(
-            obj,
-            CObject::CBoolean(_)
-                | CObject::CInteger(_)
-                | CObject::CReal(_)
-                | CObject::CString(_)
-                | CObject::CTerminologyCode(_)
-                | CObject::CDate(_)
-                | CObject::CTime(_)
-                | CObject::CDateTime(_)
-                | CObject::CDuration(_)
-        );
+        let is_identified = !aom_type(obj).is_primitive();
 
         // VCOID: every (non-primitive) object node must have a node id
         // (master04.5 §`C_OBJECT`). In the ADL 1.4 dialect this is relaxed to
@@ -618,16 +612,16 @@ impl Scan<'_> {
         let Some(card) = attr.cardinality.as_ref() else {
             return;
         };
-        let Some(card_upper) = occurrences_upper_finite(Some(&card.interval)) else {
+        let Some(card_upper) = finite_upper(&card.interval) else {
             return; // open cardinality upper — nothing to bound
         };
         let mut sum_lower = 0i64;
         for child in &attr.children {
-            let Some(occ) = object_occurrences(child) else {
+            let Some(occ) = child_occurrences(child) else {
                 continue;
             };
             // VACMCU: a finite child occurrences upper must be <= cardinality upper.
-            if let Some(u) = occurrences_upper_finite(Some(occ))
+            if let Some(u) = finite_upper(occ)
                 && i64::from(u) > i64::from(card_upper)
             {
                 self.push(
@@ -687,7 +681,7 @@ impl Scan<'_> {
             return;
         }
         let card_lower = occurrences_lower(&card.interval);
-        let card_upper = occurrences_upper_finite(Some(&card.interval));
+        let card_upper = finite_upper(&card.interval);
 
         // Σ of the children's effective occurrences maxima; `None` = unbounded
         // (any child with an open upper makes the sum open).
@@ -1446,7 +1440,7 @@ fn check_odin_key_unique(value: &OdinValue, issues: &mut Vec<ValidationIssue>) {
         OdinValue::KeyedList(items) => {
             let mut seen = BTreeSet::new();
             for (k, val) in items {
-                let key = odin_key_string(k);
+                let key = key_str(k);
                 if !seen.insert(key.clone()) {
                     issues.push(ValidationIssue::new(
                         ValidationCode::Voku,
@@ -1528,50 +1522,8 @@ fn is_three_part_version(s: &str) -> bool {
             .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
 }
 
-/// True if `id` conforms to the archetype-id form
-/// `[ns::]publisher-package-class.concept.vN…` (the slot/root meta-pattern
-/// `^.+-.+-.+\..*\..+$`, master04.3).
-fn is_archetype_id(id: &str) -> bool {
-    let body = id.rsplit("::").next().unwrap_or(id);
-    let Some((prefix, rest)) = body.split_once('.') else {
-        return false;
-    };
-    // publisher-package-class (three hyphen-separated non-empty parts)
-    let hyphen_parts: Vec<&str> = prefix.split('-').collect();
-    if hyphen_parts.len() < 3 || hyphen_parts.iter().any(|p| p.is_empty()) {
-        return false;
-    }
-    // concept.version — must have a version segment starting with a digit or 'v'
-    rest.contains('.') && rest.split('.').next_back().is_some_and(|_| true)
-}
-
-pub(super) fn occurrences_upper_finite(mi: Option<&MultiplicityInterval>) -> Option<i32> {
-    let mi = mi?;
-    if mi.upper_unbounded { None } else { mi.upper }
-}
-
 pub(super) fn occurrences_lower(mi: &MultiplicityInterval) -> i32 {
     mi.lower.unwrap_or(0)
-}
-
-pub(super) fn object_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.occurrences.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.occurrences.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::CBoolean(o) => o.occurrences.as_ref(),
-        CObject::CInteger(o) => o.occurrences.as_ref(),
-        CObject::CReal(o) => o.occurrences.as_ref(),
-        CObject::CString(o) => o.occurrences.as_ref(),
-        CObject::CTerminologyCode(o) => o.occurrences.as_ref(),
-        CObject::CDate(o) => o.occurrences.as_ref(),
-        CObject::CTime(o) => o.occurrences.as_ref(),
-        CObject::CDateTime(o) => o.occurrences.as_ref(),
-        CObject::CDuration(o) => o.occurrences.as_ref(),
-    }
 }
 
 /// True if a slot assertion expresses "any archetype" (its regex constraint is
@@ -1673,23 +1625,6 @@ fn scan_predicated_paths(text: &str) -> Vec<String> {
     out
 }
 
-fn odin_key_string(k: &OdinKey) -> String {
-    match k {
-        OdinKey::String(s) | OdinKey::Date(s) | OdinKey::Time(s) | OdinKey::DateTime(s) => {
-            s.clone()
-        }
-        OdinKey::Integer(i) => i.to_string(),
-    }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
-    }
-}
-
 /// The second-order attribute tuples of a [`CComplexObject`] (either subtype).
 fn complex_attribute_tuples(cco: &CComplexObject) -> &[CAttributeTuple] {
     match cco {
@@ -1713,22 +1648,8 @@ pub(super) fn collect_usage(obj: &CObject, usage: &mut CodeUsage) {
 
 fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
     let nid = object_node_id(obj);
-    if !nid.is_empty() && (is_id_code(nid) || is_at_code(nid)) {
-        let is_primitive = matches!(
-            obj,
-            CObject::CBoolean(_)
-                | CObject::CInteger(_)
-                | CObject::CReal(_)
-                | CObject::CString(_)
-                | CObject::CTerminologyCode(_)
-                | CObject::CDate(_)
-                | CObject::CTime(_)
-                | CObject::CDateTime(_)
-                | CObject::CDuration(_)
-        );
-        if !is_primitive {
-            usage.node_codes.insert(nid.to_owned());
-        }
+    if !nid.is_empty() && (is_id_code(nid) || is_at_code(nid)) && !aom_type(obj).is_primitive() {
+        usage.node_codes.insert(nid.to_owned());
     }
     match obj {
         CObject::CComplexObject(cco) => {

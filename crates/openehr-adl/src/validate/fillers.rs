@@ -24,7 +24,8 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
-use super::{ArchetypeRepository, ArchetypeView, ValidationCode, ValidationIssue, view};
+use super::{ValidationCode, ValidationIssue};
+use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
 use crate::flatten::flat_form;
 use crate::source::ArtefactKind;
 

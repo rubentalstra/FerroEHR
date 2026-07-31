@@ -13,14 +13,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::{ArtefactSummary, summarize};
 use openehr_adl::opt::create_opt;
 use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
 use openehr_adl::validate::terminology::{TerminologyResolver, external_term_bindings};
-use openehr_adl::validate::{
-    ArchetypeRepository, Severity, validate_source, validate_source_phase1,
-};
+use openehr_adl::validate::{Severity, validate_source, validate_source_phase1};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;

@@ -42,16 +42,19 @@ use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::MultiplicityInterval;
 
 use super::conformance::{
-    self, ValueConformance, aom_type, cardinality_conforms_to, child_occurrences,
-    collective_occurrences_of, effective_occurrences, existence_conforms_to, meta_type_conforms,
-    node_id_conforms_to,
+    self, ValueConformance, cardinality_conforms_to, collective_occurrences_of,
+    effective_occurrences, existence_conforms_to, meta_type_conforms, node_id_conforms_to,
 };
-use super::rm::{Bounds, RmModel};
-use super::{ArchetypeRepository, ValidationCode, ValidationIssue, view};
+use super::rm::RmModel;
+use super::{ValidationCode, ValidationIssue};
+use crate::aom::access::{
+    aom_type, child_occurrences, complex_attributes, complex_rm_type, object_node_id,
+    object_rm_type, sibling_order,
+};
+use crate::aom::interval::{Bounds, display_bounds_always_range, finite_cardinality_upper};
+use crate::artefact::{ArchetypeRepository, view};
 use crate::codes::{codes_conformant, is_ac_code, is_new_at_level, specialisation_depth};
-use crate::paths::{
-    PathSegment, complex_attributes, complex_rm_type, object_node_id, object_rm_type, parse_path,
-};
+use crate::paths::{PathSegment, child_path, parse_path};
 
 /// Validate the differential child `child` against its flat parent `flat_parent`
 /// (the phase-2 specialisation catalogue). `repo` resolves external references
@@ -356,7 +359,7 @@ impl<'a> Phase2<'a> {
             effective_occurrences(child_occurrences(parent), owning_attr, owner_rm, self.rm);
         if parent_occ.upper == Some(1)
             && let Some(child_occ) = child_occurrences(child)
-            && !parent_occ.contains(conformance::bounds(child_occ))
+            && !parent_occ.contains(crate::aom::interval::bounds(child_occ))
         {
             self.push(
                 ValidationCode::Vsonco,
@@ -538,7 +541,7 @@ impl<'a> Phase2<'a> {
         // The flattened cardinality upper = the child's restated cardinality if
         // present, else the parent's.
         let flat_card_upper =
-            finite_card_upper(child_attr).or_else(|| finite_card_upper(parent_attr));
+            finite_cardinality_upper(child_attr).or_else(|| finite_cardinality_upper(parent_attr));
 
         for parent_obj in &parent_attr.children {
             let parent_id = object_node_id(parent_obj);
@@ -567,8 +570,8 @@ impl<'a> Phase2<'a> {
                     ValidationCode::Vsonco,
                     format!(
                         "collective occurrences {} of the specialised node set do not intersect the parent occurrences {}",
-                        show_bounds(coll),
-                        show_bounds(parent_occ)
+                        display_bounds_always_range(coll),
+                        display_bounds_always_range(parent_occ)
                     ),
                     path,
                 );
@@ -892,38 +895,6 @@ fn is_prohibited(occ: Option<&MultiplicityInterval>) -> bool {
     occ.is_some_and(MultiplicityInterval::is_prohibited)
 }
 
-/// The sibling-order marker of any [`CObject`], if it carries one.
-fn sibling_order(
-    obj: &CObject,
-) -> Option<&openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.sibling_order.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.sibling_order.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.sibling_order.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.sibling_order.as_ref(),
-        CObject::CBoolean(o) => o.sibling_order.as_ref(),
-        CObject::CInteger(o) => o.sibling_order.as_ref(),
-        CObject::CReal(o) => o.sibling_order.as_ref(),
-        CObject::CString(o) => o.sibling_order.as_ref(),
-        CObject::CTerminologyCode(o) => o.sibling_order.as_ref(),
-        CObject::CDate(o) => o.sibling_order.as_ref(),
-        CObject::CTime(o) => o.sibling_order.as_ref(),
-        CObject::CDateTime(o) => o.sibling_order.as_ref(),
-        CObject::CDuration(o) => o.sibling_order.as_ref(),
-    }
-}
-
-/// The finite cardinality upper bound of an attribute, `None` if unbounded / no
-/// cardinality.
-fn finite_card_upper(attr: &CAttribute) -> Option<i32> {
-    attr.cardinality
-        .as_ref()
-        .filter(|c| !c.interval.upper_unbounded)
-        .and_then(|c| c.interval.upper)
-}
-
 /// True if two [`Bounds`] intervals intersect (share at least one integer).
 fn bounds_intersect(a: Bounds, b: Bounds) -> bool {
     let a_ok = a.upper.is_none_or(|au| au >= b.lower);
@@ -1024,21 +995,6 @@ fn full_attr_path(diff: &str, name: &str) -> String {
         format!("/{name}")
     } else {
         format!("{diff}/{name}")
-    }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
-    }
-}
-
-fn show_bounds(b: Bounds) -> String {
-    match b.upper {
-        Some(u) => format!("{{{}..{u}}}", b.lower),
-        None => format!("{{{}..*}}", b.lower),
     }
 }
 

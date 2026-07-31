@@ -21,8 +21,10 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
-use super::{ValidationCode, ValidationIssue, view};
-use crate::paths::{Resolution, complex_attributes, locate, object_node_id, parse_path, resolve};
+use super::{ValidationCode, ValidationIssue};
+use crate::aom::access::{child_occurrences, complex_attributes, object_node_id};
+use crate::artefact::view;
+use crate::paths::{Resolution, child_path, locate, parse_path, resolve};
 
 /// Validate the FLAT form `flat` against the phase-3 catalogue (VUNP, VACMCO).
 #[must_use]
@@ -172,7 +174,7 @@ impl Phase3<'_> {
         let mut mandatory_floor: i64 = 0;
         let mut has_optional = false;
         for child in &attr.children {
-            let Some(occ) = crate::validate::conformance::child_occurrences(child) else {
+            let Some(occ) = child_occurrences(child) else {
                 continue;
             };
             let lower = if occ.lower_unbounded {
@@ -198,14 +200,6 @@ impl Phase3<'_> {
                 .at_path(path.to_owned()),
             );
         }
-    }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
     }
 }
 

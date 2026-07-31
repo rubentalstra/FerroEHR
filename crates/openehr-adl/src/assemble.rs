@@ -40,14 +40,18 @@ use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::am24::aom2::terminology::value_set::ValueSet;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
-use openehr_lang::odin::{OdinKey, OdinValue};
+use openehr_lang::odin::OdinValue;
 
 use crate::cadl::parse_definition_body;
 use crate::error::{SyntaxError, SyntaxErrorCode};
+use crate::odin::{
+    as_keyed, as_object, key_str, nil_uuid, parse_term_code, parse_uuid, string_list, string_map,
+    string_map_of, string_of, term_code, term_code_of, term_other_items, untyped, unwrap_items,
+    uri_string,
+};
 use crate::rules::parse_artefact_rules;
 use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source, parse_source_adl14};
 
@@ -706,11 +710,7 @@ struct BuildInputs<'a> {
 /// assembled parts and the identification meta (`master07.05`).
 fn build_archetype(i: BuildInputs<'_>) -> Archetype {
     let meta = Meta::from(&i.art.meta);
-    let parent_archetype_id = i
-        .art
-        .parent_ref
-        .as_ref()
-        .map(crate::printer::hrid_to_string);
+    let parent_archetype_id = i.art.parent_ref.as_ref().map(crate::hrid::hrid_to_string);
 
     match i.art.kind {
         ArtefactKind::TemplateOverlay => Archetype::TemplateOverlay(Box::new(TemplateOverlay {
@@ -842,205 +842,6 @@ impl From<&ArtefactMeta> for Meta {
             is_generated: m.generated,
             other,
         }
-    }
-}
-
-// ── ODIN accessors ────────────────────────────────────────────────────────
-
-/// Peel any `(TYPE)` casts off an ODIN value.
-///
-/// `master07.08`/`master07.13` section data carries the optional ODIN type
-/// cast of `LANG/docs/odin/master05-content` §Adding Type Information — a
-/// *dynamic-binding hint for the parser* ("Where dynamic binding occurs in the
-/// data, it must be indicated in an ODIN document"), never part of the datum.
-/// Every accessor below therefore reads straight through it: a section written
-/// `details = (Hash<RESOURCE_DESCRIPTION_ITEM,String>) <…>` assembles exactly
-/// like the uncast form, instead of silently yielding nothing. The cast itself
-/// stays on the tree in [`OdinValue::Typed`] for any caller that wants it.
-fn untyped(v: &OdinValue) -> &OdinValue {
-    let mut cur = v;
-    while let OdinValue::Typed { value, .. } = cur {
-        cur = value;
-    }
-    cur
-}
-
-fn as_object(v: &OdinValue) -> Option<&indexmap::IndexMap<String, OdinValue>> {
-    match untyped(v) {
-        OdinValue::Object(m) => Some(m),
-        _ => None,
-    }
-}
-
-fn as_keyed(v: &OdinValue) -> Option<&[(OdinKey, OdinValue)]> {
-    match untyped(v) {
-        OdinValue::KeyedList(items) => Some(items),
-        _ => None,
-    }
-}
-
-fn key_str(k: &OdinKey) -> String {
-    match k {
-        OdinKey::String(s) | OdinKey::Date(s) | OdinKey::Time(s) | OdinKey::DateTime(s) => {
-            s.clone()
-        }
-        OdinKey::Integer(i) => i.to_string(),
-    }
-}
-
-/// The scalar string an ODIN leaf carries (or a single-element list's leaf).
-fn string_of(v: Option<&OdinValue>) -> Option<String> {
-    match untyped(v?) {
-        OdinValue::String(s)
-        | OdinValue::Date(s)
-        | OdinValue::Time(s)
-        | OdinValue::DateTime(s)
-        | OdinValue::Duration(s)
-        | OdinValue::Path(s) => Some(s.clone()),
-        OdinValue::Integer(i) => Some(i.to_string()),
-        OdinValue::Real(r) => Some(r.to_string()),
-        OdinValue::Boolean(b) => Some(b.to_string()),
-        OdinValue::Character(c) => Some(c.to_string()),
-        OdinValue::Uri(u) => Some(strip_uri_delims(u)),
-        OdinValue::List(items) if items.len() == 1 => string_of(items.first()),
-        _ => None,
-    }
-}
-
-/// A list of strings from an ODIN `List` (or a single scalar as a one-element
-/// list), dropping the trailing open-list marker.
-fn string_list(v: &OdinValue) -> Vec<String> {
-    match untyped(v) {
-        OdinValue::List(items) => items
-            .iter()
-            .filter(|x| !matches!(x, OdinValue::ListContinue))
-            .filter_map(|x| string_of(Some(x)))
-            .collect(),
-        other => string_of(Some(other)).into_iter().collect(),
-    }
-}
-
-/// A `key → String` map from an ODIN keyed list or object of string leaves.
-fn string_map(v: &OdinValue) -> BTreeMap<String, String> {
-    let mut out = BTreeMap::new();
-    match untyped(v) {
-        OdinValue::KeyedList(items) => {
-            for (k, val) in items {
-                if let Some(s) = string_of(Some(val)) {
-                    out.insert(key_str(k), s);
-                }
-            }
-        }
-        OdinValue::Object(map) => {
-            for (k, val) in map {
-                if let Some(s) = string_of(Some(val)) {
-                    out.insert(k.clone(), s);
-                }
-            }
-        }
-        _ => {}
-    }
-    out
-}
-
-/// The `key → String` map at `field` of `obj` (empty if absent).
-fn string_map_of(
-    obj: &indexmap::IndexMap<String, OdinValue>,
-    field: &str,
-) -> BTreeMap<String, String> {
-    obj.get(field).map(string_map).unwrap_or_default()
-}
-
-/// Every string leaf of an object as `key → String` (used to gather an
-/// `ARCHETYPE_TERM`'s `other_items` before removing `text`/`description`).
-fn term_other_items(obj: &indexmap::IndexMap<String, OdinValue>) -> BTreeMap<String, String> {
-    let mut out = BTreeMap::new();
-    for (k, v) in obj {
-        if let Some(s) = string_of(Some(v)) {
-            out.insert(k.clone(), s);
-        }
-    }
-    out
-}
-
-/// Unwrap the deprecated `items = <…>` wrapper around a term/binding block
-/// (`master07.13` §Deprecated Terminology Section Features); returns the inner
-/// value, or `v` unchanged if there is no wrapper.
-fn unwrap_items(v: &OdinValue) -> &OdinValue {
-    let v = untyped(v);
-    if let OdinValue::Object(map) = v
-        && map.len() == 1
-        && let Some(inner) = map.get("items")
-    {
-        return untyped(inner);
-    }
-    v
-}
-
-/// The URI string a binding value carries, stripped of ODIN `<>` delimiters.
-fn uri_string(v: &OdinValue) -> String {
-    match untyped(v) {
-        OdinValue::Uri(u) => strip_uri_delims(u),
-        OdinValue::TermCode(t) => t.clone(),
-        OdinValue::PathList(ps) => ps.first().cloned().unwrap_or_default(),
-        other => string_of(Some(other)).unwrap_or_default(),
-    }
-}
-
-fn strip_uri_delims(u: &str) -> String {
-    u.trim_start_matches('<').trim_end_matches('>').to_owned()
-}
-
-/// A `TerminologyCode` from an ODIN term-code leaf (`[ISO_639-1::en]`).
-fn term_code_of(v: &OdinValue) -> TerminologyCode {
-    match untyped(v) {
-        OdinValue::TermCode(code) => parse_term_code(code),
-        other => string_of(Some(other)).map_or_else(
-            || term_code(LOCAL_TERMINOLOGY_ID, ""),
-            |s| parse_term_code(&s),
-        ),
-    }
-}
-
-/// Parse `[terminology::code]` (or `[terminology(version)::code]`) into a
-/// [`TerminologyCode`].
-fn parse_term_code(raw: &str) -> TerminologyCode {
-    let inner = raw.trim().trim_start_matches('[').trim_end_matches(']');
-    let (terminology_part, code_string) = match inner.split_once("::") {
-        Some((t, c)) => (t.to_owned(), c.to_owned()),
-        None => (LOCAL_TERMINOLOGY_ID.to_owned(), inner.to_owned()),
-    };
-    // Optional `(version)` suffix on the terminology id.
-    let (terminology_id, terminology_version) = match terminology_part.split_once('(') {
-        Some((id, ver)) => (id.to_owned(), Some(ver.trim_end_matches(')').to_owned())),
-        None => (terminology_part, None),
-    };
-    TerminologyCode {
-        terminology_id,
-        terminology_version,
-        code_string,
-        uri: None,
-    }
-}
-
-fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: terminology_id.to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn parse_uuid(s: &str) -> Option<Uuid> {
-    uuid::Uuid::parse_str(s.trim())
-        .ok()
-        .map(|value| Uuid { value })
-}
-
-fn nil_uuid() -> Uuid {
-    Uuid {
-        value: uuid::Uuid::nil(),
     }
 }
 

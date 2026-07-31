@@ -31,12 +31,13 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
-use super::phase1::{
-    CodeUsage, collect_usage, object_occurrences, occurrences_lower, occurrences_upper_finite,
-};
-use super::{ValidationCode, ValidationIssue, view};
+use super::phase1::{CodeUsage, collect_usage, occurrences_lower};
+use super::{ValidationCode, ValidationIssue};
+use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object_node_id};
+use crate::aom::interval::finite_upper;
+use crate::artefact::view;
 use crate::codes::{is_at_code, is_id_code};
-use crate::paths::{complex_attributes, object_node_id};
+use crate::paths::child_path;
 
 /// Run the deferred flat-form checks (VATDF / VTVSMD / VACMCU / WACMCL / VCOSU)
 /// against the flattened archetype `flat`.
@@ -127,19 +128,7 @@ fn check_node_id_unique(
     if nid.is_empty() || !(is_id_code(nid) || is_at_code(nid)) {
         return;
     }
-    let is_primitive = matches!(
-        obj,
-        CObject::CBoolean(_)
-            | CObject::CInteger(_)
-            | CObject::CReal(_)
-            | CObject::CString(_)
-            | CObject::CTerminologyCode(_)
-            | CObject::CDate(_)
-            | CObject::CTime(_)
-            | CObject::CDateTime(_)
-            | CObject::CDuration(_)
-    );
-    if is_primitive {
+    if aom_type(obj).is_primitive() {
         return;
     }
     if let Some(first) = seen.get(nid) {
@@ -165,15 +154,15 @@ fn check_container_cardinality(
     let Some(card) = attr.cardinality.as_ref() else {
         return;
     };
-    let Some(card_upper) = occurrences_upper_finite(Some(&card.interval)) else {
+    let Some(card_upper) = finite_upper(&card.interval) else {
         return;
     };
     let mut sum_lower = 0i64;
     for child in &attr.children {
-        let Some(occ) = object_occurrences(child) else {
+        let Some(occ) = child_occurrences(child) else {
             continue;
         };
-        if let Some(u) = occurrences_upper_finite(Some(occ))
+        if let Some(u) = finite_upper(occ)
             && i64::from(u) > i64::from(card_upper)
         {
             issues.push(
@@ -196,14 +185,6 @@ fn check_container_cardinality(
             )
             .at_path(attr_path.to_owned()),
         );
-    }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
     }
 }
 

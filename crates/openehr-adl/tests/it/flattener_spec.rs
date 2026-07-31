@@ -19,10 +19,10 @@
 
 use std::path::PathBuf;
 
+use openehr_adl::aom::access::{complex_attributes, object_node_id, object_rm_type};
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::flatten::flat_form;
-use openehr_adl::paths::{complex_attributes, object_node_id, object_rm_type};
-use openehr_adl::validate::ArchetypeRepository;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
@@ -133,7 +133,7 @@ fn child<'a>(a: &'a Archetype, obj_path: &str, attr: &str, nid: &str) -> &'a COb
 }
 
 fn occurrences_prohibited(obj: &CObject) -> bool {
-    openehr_adl::validate::conformance::child_occurrences(obj)
+    openehr_adl::aom::access::child_occurrences(obj)
         .is_some_and(openehr_base::prelude::MultiplicityInterval::is_prohibited)
 }
 
