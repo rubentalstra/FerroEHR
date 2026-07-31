@@ -33,3 +33,14 @@ pub mod p_bmm_single_function_parameter_open;
 pub mod p_bmm_single_property;
 pub mod p_bmm_single_property_open;
 pub mod p_bmm_type;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod create_model;
+pub mod error;
+pub mod include_resolution;
+pub mod loader;
+pub mod p_bmm_class_impl;
+pub mod p_bmm_enumeration_impl;
+pub mod p_bmm_schema_impl;
+pub mod p_bmm_type_impl;
+pub mod reader;
