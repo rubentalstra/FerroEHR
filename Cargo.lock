@@ -1318,7 +1318,7 @@ dependencies = [
 
 [[package]]
 name = "cnf-runner"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "assert_fs",
  "base64 0.22.1",
@@ -2305,7 +2305,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "assert_fs",
  "async-trait",
@@ -2372,7 +2372,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-admin-ui"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -2412,7 +2412,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-rest"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "arc-swap",
  "argon2",
@@ -2464,7 +2464,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-server"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -5224,7 +5224,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-codegen"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "roxmltree",
  "serde_json",
@@ -8277,7 +8277,7 @@ dependencies = [
 
 [[package]]
 name = "testkit"
-version = "3.14.0"
+version = "3.15.0"
 dependencies = [
  "ehrbase",
  "jiff",
