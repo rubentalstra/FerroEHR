@@ -1,0 +1,13 @@
+/* FerroEHR brand palette — "Oxide & Iron" (owner-approved 2026-07-31, issue #1353).
+ * The single source for brand colours; the admin console and website book
+ * consume these custom properties during the rename programme.
+ * Semantic colours (success / warning / error) are deliberately NOT brand
+ * colours — define them per surface, never from this file. */
+:root {
+  --ferroehr-ferro: #b7431b;     /* signature / accent — the one loud voice */
+  --ferroehr-ember: #d97742;     /* hover states, gradients, accents on dark */
+  --ferroehr-iron: #21262b;      /* ink, dark ground */
+  --ferroehr-steel: #4e7382;     /* links, secondary UI */
+  --ferroehr-porcelain: #f2f1ef; /* light ground */
+  --ferroehr-graphite: #6b7178;  /* muted text */
+}

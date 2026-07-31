@@ -21,10 +21,14 @@ Standing constraints (from the decision comments on #1353):
 
 ## Phase 0 — brand assets (blocks everything visual)
 
-- [ ] Owner picks the logo option + palette (proposals reviewed on #1353)
-- [ ] Production SVG set under `assets/brand/`: icon, icon+wordmark lockup,
+- [x] Owner picks the logo option + palette (2026-07-31: the "Fe element
+      tile" logo with the "Oxide & Iron" palette)
+- [x] Production SVG set under `assets/brand/`: icon, icon+wordmark lockup,
       light + dark variants, monochrome variant
-- [ ] Favicon set (SVG + 32/16 px PNG + .ico) and README banner
+- [ ] Convert the SVG `<text>` elements to outlined paths (rendering must not
+      depend on viewer-installed fonts) and settle the final wordmark typeface
+- [ ] Favicon set (32/16 px PNG + .ico from the committed `favicon.svg`) and
+      README banner
 - [ ] Palette committed as design tokens (admin-ui CSS custom properties +
       website book theme)
 - [ ] Admin console logo/title swap (`app/ehrbase-admin-ui`; screenshot-guard

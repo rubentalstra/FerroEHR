@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FerroEHR">
+  <!-- FerroEHR favicon: tile + Fe only. The heartbeat tick is deliberately dropped —
+       it turns to noise below 32 px. -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#B7431B"/>
+  <text x="30" y="45" font-family="'Avenir Next',Avenir,Futura,'Helvetica Neue',Arial,sans-serif" font-size="32" font-weight="600" fill="#FFF6F0" text-anchor="middle">Fe</text>
+</svg>
