@@ -84,11 +84,18 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 Some(Token::SymColon) => self.parse_variable_declaration(),
                 _ => self.parse_assertion(),
             },
-            // `tag :` — a tagged assertion (constant declarations, which share
-            // the `NAME : Type` shape, do not appear in archetype rules).
-            Some(Token::AlphaLcId(_) | Token::AlphaUcId(_))
-                if self.peek_at(1) == Some(&Token::SymColon) =>
-            {
+            // `Name : Type [= primitive_object]` — a constant declaration
+            // (`base_expressions.g4` `constant_declaration`), tried first by
+            // backtracking; a UC-tagged assertion resumes when the shape
+            // does not complete as a constant.
+            Some(Token::AlphaUcId(_)) if self.peek_at(1) == Some(&Token::SymColon) => {
+                if let Some(result) = self.try_parse_constant_declaration() {
+                    return result;
+                }
+                self.parse_assertion()
+            }
+            // `tag :` — a tagged assertion.
+            Some(Token::AlphaLcId(_)) if self.peek_at(1) == Some(&Token::SymColon) => {
                 self.parse_assertion()
             }
             _ => self.parse_assertion(),
@@ -111,15 +118,120 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         if !self.eat(&Token::SymColon) {
             return self.err("expected ':' in variable declaration");
         }
-        let Some(Token::AlphaUcId(type_id)) = self.bump() else {
-            return self.err("expected a type name after ':' in a declaration");
-        };
+        let type_id = self.parse_type_id()?;
         let init = if self.eat(&Token::SymAssignment) {
             Some(self.parse_expr()?)
         } else {
             None
         };
         Ok(self.builder.variable_declaration(&name, &type_id, init))
+    }
+
+    /// `type_id : ALPHA_UC_ID ( '<' type_id ( ',' type_id )* '>' )?`
+    /// (`base_expressions.g4`), reconstructed flat (`List<Real>`,
+    /// `Interval<Integer>`, `Hash<String,Integer>`) — the declaration types
+    /// of `LANG/docs/BEL/master03-language.adoc` §Typing.
+    fn parse_type_id(&mut self) -> Result<String, BelError> {
+        let Some(Token::AlphaUcId(root)) = self.peek().cloned() else {
+            return self.err("expected a type name after ':' in a declaration");
+        };
+        self.pos += 1;
+        if !self.eat(&Token::SymLt) {
+            return Ok(root);
+        }
+        let mut parameters = vec![self.parse_type_id()?];
+        while self.eat(&Token::SymComma) {
+            parameters.push(self.parse_type_id()?);
+        }
+        if !self.eat(&Token::SymGt) {
+            return self.err("expected '>' closing the generic type parameters");
+        }
+        Ok(format!("{root}<{}>", parameters.join(",")))
+    }
+
+    /// `constant_declaration : constant_name ':' type_id ( '=' primitive_object )?`
+    /// (`base_expressions.g4`; `LANG/docs/BEL/master03-language.adoc`
+    /// §Constants). Dispatched by backtracking from the shared
+    /// `NAME ':' …` shape: a tagged assertion resumes if what follows the
+    /// `':'` is not `type_id ( '=' … | <end> )` — the grammar leaves the two
+    /// productions ambiguous and the §Constants examples settle the reading.
+    fn try_parse_constant_declaration(&mut self) -> Option<Result<B::Stmt, BelError>> {
+        let start = self.pos;
+        let Some(Token::AlphaUcId(name)) = self.peek().cloned() else {
+            return None;
+        };
+        self.pos += 1;
+        if !self.eat(&Token::SymColon) {
+            self.pos = start;
+            return None;
+        }
+        let Ok(type_id) = self.parse_type_id() else {
+            self.pos = start;
+            return None;
+        };
+        match self.peek() {
+            // `Name : Type = primitive_object` — the valued constant. The RHS
+            // is the odin_values `primitive_object`: an interval value is
+            // carried verbatim ([`BelLiteral::Interval`]), everything else
+            // parses as the expression the scalar literals already are. (The
+            // `primitive_list_value` form is unreachable here — a comma ends
+            // the statement read — an honest boundary recorded on the audit.)
+            Some(Token::SymEq) => {
+                self.pos += 1;
+                let value = if self.peek() == Some(&Token::SymIvlDelim) {
+                    match self.parse_interval_literal() {
+                        Ok(v) => v,
+                        Err(e) => return Some(Err(e)),
+                    }
+                } else {
+                    match self.parse_expr() {
+                        Ok(v) => v,
+                        Err(e) => return Some(Err(e)),
+                    }
+                };
+                Some(Ok(self.builder.constant_declaration(
+                    &name,
+                    &type_id,
+                    Some(value),
+                )))
+            }
+            // `Name : Type` at end of input — a bare constant declaration.
+            None => Some(Ok(self.builder.constant_declaration(&name, &type_id, None))),
+            // anything else: not a constant — backtrack to the assertion read.
+            _ => {
+                self.pos = start;
+                None
+            }
+        }
+    }
+
+    /// An interval `primitive_object` value (`| … |`), captured VERBATIM from
+    /// the source between (and including) its two `|` delimiters — see the
+    /// [`BelLiteral::Interval`] adjudication.
+    fn parse_interval_literal(&mut self) -> Result<B::Expr, BelError> {
+        let open = self.pos;
+        let Some(open_span) = self.toks.get(open).map(|s| s.span.clone()) else {
+            return self.err("expected '|' opening an interval value");
+        };
+        self.pos += 1; // the opening '|'
+        while let Some(token) = self.peek() {
+            if *token == Token::SymIvlDelim {
+                let close_span = self
+                    .toks
+                    .get(self.pos)
+                    .map(|s| s.span.clone())
+                    .unwrap_or_else(|| open_span.clone());
+                self.pos += 1;
+                let text = self
+                    .src
+                    .get(open_span.start..close_span.end)
+                    .unwrap_or_default()
+                    .to_owned();
+                return Ok(self.builder.literal(BelLiteral::Interval(text)));
+            }
+            self.pos += 1;
+        }
+        self.err("expected '|' closing an interval value")
     }
 
     /// `assertion : ( ( ALPHA_LC_ID | ALPHA_UC_ID ) ':' )? boolean_expr`.
@@ -140,6 +252,20 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         match self.bump() {
             Some(Token::VariableId(v)) => Ok(v.trim_start_matches('$').to_owned()),
             _ => self.err("expected a $variable"),
+        }
+    }
+
+    /// A quantifier BINDING variable: the grammar writes `VARIABLE_ID`
+    /// (`$v`), but `LANG/docs/BEL/master03-language.adoc` §Container
+    /// Operators states the textual syntax with a bare identifier
+    /// (`for_all v : container_var | …`) — the docs text wins the conflict,
+    /// so both spellings are accepted here (binding position only; the two
+    /// forms denote the same bound name).
+    fn expect_binding_name(&mut self) -> Result<String, BelError> {
+        match self.bump() {
+            Some(Token::VariableId(v)) => Ok(v.trim_start_matches('$').to_owned()),
+            Some(Token::AlphaLcId(v)) => Ok(v),
+            _ => self.err("expected a binding variable ($name or bare name)"),
         }
     }
 
@@ -322,6 +448,17 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Duration(s)))
             }
+            // `[terminology::code]` — a Terminology_code literal
+            // (`LANG/docs/BEL/master03-language.adoc` §Literals; the grammar
+            // reaches TERM_CODE_REF via its odin_values import). NOTE: the
+            // grammar's arithmetic_leaf omits the token — the BEOM-normative
+            // reading (`TYPE_DEF_TERMINOLOGY_CODE` exists precisely for these
+            // values) plus §Literals ground the leaf position, for equality
+            // use.
+            Some(Token::TermCodeRef(code)) => {
+                self.pos += 1;
+                Ok(self.builder.literal(BelLiteral::TermCode(code)))
+            }
             Some(Token::AlphaLcId(name)) if self.peek_at(1) == Some(&Token::LParen) => {
                 self.parse_function_call(&name)
             }
@@ -362,7 +499,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `for_all_expr : SYM_FOR_ALL VARIABLE_ID ( ':' | 'in' ) value_ref '|'? boolean_expr`.
     fn parse_for_all(&mut self) -> Result<B::Expr, BelError> {
         self.pos += 1; // for_all
-        let var = self.expect_variable_name()?;
+        let var = self.expect_binding_name()?;
         if !self.eat(&Token::SymColon) && !self.eat(&Token::SymIn) {
             return self.err("expected ':' or 'in' after the for_all variable");
         }
@@ -382,11 +519,14 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// same unary the `exists` keyword builds.
     fn parse_there_exists(&mut self) -> Result<B::Expr, BelError> {
         self.pos += 1; // there_exists
-        if !matches!(self.peek(), Some(Token::VariableId(_))) {
+        let is_binding = matches!(self.peek(), Some(Token::VariableId(_)))
+            || (matches!(self.peek(), Some(Token::AlphaLcId(_)))
+                && matches!(self.peek_at(1), Some(Token::SymColon | Token::SymIn)));
+        if !is_binding {
             let operand = self.parse_ref_leaf()?;
             return Ok(self.builder.unary(kind("exists"), "exists", operand));
         }
-        let var = self.expect_variable_name()?;
+        let var = self.expect_binding_name()?;
         if !self.eat(&Token::SymColon) && !self.eat(&Token::SymIn) {
             return self.err("expected ':' or 'in' after the there_exists variable");
         }

@@ -75,10 +75,10 @@
 74|Real("0.0")@0..3
 75|SymMinus@0..1 Real("3.5")@1..4
 76|Integer("5")@0..1
-77|LBracket@0..1 AlphaUcId("ISO_639")@1..8 SymMinus@8..9 Integer("1")@9..10 SymColon@10..11 SymColon@11..12 AlphaLcId("en")@12..14 RBracket@14..15
-78|LBracket@0..1 AlphaUcId("SNOMED")@1..7 SymMinus@7..8 AlphaUcId("CT")@8..10 LParen@10..11 Integer("2020")@11..15 RParen@15..16 SymColon@16..17 SymColon@17..18 Integer("123456")@18..24 RBracket@24..25
+77|TermCodeRef("[ISO_639-1::en]")@0..15
+78|TermCodeRef("[SNOMED-CT(2020)::123456]")@0..25
 79|SymLt@0..1 AlphaLcId("http")@1..5 SymColon@5..6 AdlPath("//loinc")@6..13 SymDot@13..14 AdlPath("org/id")@14..20 SymSlash@20..21 Integer("9272")@21..25 SymMinus@25..26 Integer("6")@26..27 SymGt@27..28
-80|SymLt@0..1 LBracket@1..2 AlphaUcId("ISO_639")@2..9 SymMinus@9..10 Integer("1")@10..11 SymColon@11..12 SymColon@12..13 AlphaLcId("en")@13..15 RBracket@15..16 SymGt@16..17
+80|SymLt@0..1 TermCodeRef("[ISO_639-1::en]")@1..16 SymGt@16..17
 81|LBracket@0..1 AlphaLcId("id2")@1..4 RBracket@4..5
 82|LBracket@0..1 AlphaLcId("ac1")@1..4 RBracket@4..5
 83|LBracket@0..1 AlphaLcId("at0200")@1..7 RBracket@7..8
@@ -87,7 +87,7 @@
 86|LBracket@0..1 Integer("01234")@1..6 RBracket@6..7
 87|LBracket@0..1 Iso8601Date("2004-06-11")@1..11 RBracket@11..12
 88|LBracket@0..1 AlphaLcId("ac1")@1..4 SymAt@4..5 AlphaLcId("openehr")@5..12 RBracket@12..13
-89|LBracket@0..1 AlphaLcId("local")@1..6 SymColon@6..7 SymColon@7..8 AlphaLcId("at0001")@8..14 RBracket@14..15
+89|TermCodeRef("[local::at0001]")@0..15
 90|LBracket@0..1 AlphaLcId("at0010")@1..7 SymDot@7..8 Integer("2")@8..9 RBracket@9..10
 91|SymMatches@0..3
 92|SymAnd@0..3
@@ -208,7 +208,7 @@
 207|AdlPath("/items[at0001]/value")@0..20
 208|AlphaUcId("Foo")@0..3 AdlPath("/bar")@3..7
 209|AlphaLcId("lifecycle_state")@0..15 SymEq@16..17 SymLt@18..19 String("\"published\"")@19..30 SymGt@30..31
-210|AlphaLcId("details")@0..7 SymEq@8..9 SymLt@10..11 LBracket@16..17 String("\"en\"")@17..21 RBracket@21..22 SymEq@23..24 SymLt@25..26 AlphaLcId("language")@35..43 SymEq@44..45 SymLt@46..47 LBracket@47..48 AlphaUcId("ISO_639")@48..55 SymMinus@55..56 Integer("1")@56..57 SymColon@57..58 SymColon@58..59 AlphaLcId("en")@59..61 RBracket@61..62 SymGt@62..63 AlphaLcId("keywords")@72..80 SymEq@81..82 SymLt@83..84 String("\"ADL\"")@84..89 SymComma@89..90 String("\"test\"")@91..97 SymGt@97..98 SymGt@103..104 SymGt@105..106
+210|AlphaLcId("details")@0..7 SymEq@8..9 SymLt@10..11 LBracket@16..17 String("\"en\"")@17..21 RBracket@21..22 SymEq@23..24 SymLt@25..26 AlphaLcId("language")@35..43 SymEq@44..45 SymLt@46..47 TermCodeRef("[ISO_639-1::en]")@47..62 SymGt@62..63 AlphaLcId("keywords")@72..80 SymEq@81..82 SymLt@83..84 String("\"ADL\"")@84..89 SymComma@89..90 String("\"test\"")@91..97 SymGt@97..98 SymGt@103..104 SymGt@105..106
 211|AlphaLcId("a")@0..1 SymEq@2..3 LParen@4..5 AlphaUcId("Interval")@5..13 SymLt@13..14 AlphaUcId("Quantity")@14..22 SymGt@22..23 RParen@23..24 SymLt@25..26 SymIvlDelim@26..27 Integer("0")@27..28 SymIvlSep@28..30 Integer("1")@30..31 SymIvlDelim@31..32 SymGt@32..33
 212|AlphaLcId("ref")@0..3 SymEq@4..5 SymLt@6..7 AdlPath("/data[id2]/items")@7..23 SymGt@23..24
 213|AlphaLcId("time_committed")@0..14 SymEq@15..16 SymLt@17..18 Iso8601Date("2004-11-02")@18..28 Iso8601Time("09:31:04+1000")@29..42 SymGt@42..43
