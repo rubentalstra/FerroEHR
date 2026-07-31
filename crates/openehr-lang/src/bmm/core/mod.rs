@@ -7,3 +7,8 @@ pub mod bmm_generic_parameter;
 pub mod bmm_open_type;
 pub mod bmm_schema_core;
 pub mod bmm_type_element;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_classifier_impl;
+pub mod bmm_generic_parameter_impl;
+pub mod bmm_open_type_impl;

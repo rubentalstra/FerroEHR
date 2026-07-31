@@ -6,3 +6,7 @@ pub mod bmm_model;
 pub mod bmm_model_metadata;
 pub mod bmm_package;
 pub mod bmm_package_container;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_model_impl;
+pub mod bmm_package_impl;
