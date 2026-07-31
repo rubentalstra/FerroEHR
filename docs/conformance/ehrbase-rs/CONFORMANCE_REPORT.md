@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.14.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.14.0 · verification pack: passed
+SUT: ehrbase-rs 3.15.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.15.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 824 |
+| passed | 826 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 37 |
-| total | 861 |
+| total | 863 |
 
 ## By chapter
 
@@ -20,12 +20,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 313 | 0 | 0 | 18 |
+| **EHR** | 315 | 0 | 0 | 18 |
 | — EHR resource | 24 | 0 | 0 | 2 |
 | — EHR_STATUS | 42 | 0 | 0 | 5 |
 | — COMPOSITION | 95 | 0 | 0 | 0 |
 | — DIRECTORY | 61 | 0 | 0 | 6 |
-| — CONTRIBUTION | 55 | 0 | 0 | 5 |
+| — CONTRIBUTION | 57 | 0 | 0 | 5 |
 | — Item tags | 30 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 91 | 0 | 0 | 10 |
@@ -86,7 +86,7 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | EhrStatus | pass | 41 | 0 | 0 | 5 |
 | CompositionOps | pass | 29 | 0 | 0 | 0 |
 | DirectoryOps | pass | 61 | 0 | 0 | 8 |
-| ChangeSets | pass | 48 | 0 | 0 | 5 |
+| ChangeSets | pass | 50 | 0 | 0 | 5 |
 | Versioning | pass | 59 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
 | PartyOperations | pass | 48 | 0 | 0 | 4 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 824 of 861 selected cases driven.
+Coverage: 826 of 863 selected cases driven.
 
 Not-executed verdicts (each cited):
 

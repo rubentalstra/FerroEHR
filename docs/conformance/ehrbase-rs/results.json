@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ehrbase-rs",
-    "version": "3.14.0"
+    "version": "3.15.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.14.0",
+    "version": "3.15.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -1811,6 +1811,20 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-last_modified",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-last_modified_minimal",
+      "format": "canonical-json",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
