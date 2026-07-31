@@ -34,7 +34,7 @@ applies to every crate — generated and hand-written alike.
   parser stability, and AQL parse/print round-trips.
 - **Database:** every DB-backed test takes its database from the shared
   harness — `testkit::db()` (`tools/testkit`): one PostgreSQL 18 server
-  (`EHRBASE_TEST_PG_URL` in CI, a reusable `ehrbase-testkit-pg18`
+  (`FERROEHR_TEST_PG_URL` in CI, a reusable `ferroehr-testkit-pg18`
   testcontainer locally), one migrated template database per migration
   fingerprint, one `CREATE DATABASE … TEMPLATE` clone per call. **Never
   start a per-test PostgreSQL container or run migrations in a test** —
@@ -51,7 +51,7 @@ applies to every crate — generated and hand-written alike.
   `scripts/conformance.sh`) — the data-driven interpreter over the committed
   machine-readable catalogue, with pure-function verdicts. Phase-close runs
   must show **zero drift** vs the committed baseline
-  (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`); the
+  (`docs/conformance/ferroehr/results.json` + `verdicts.json`); the
   baseline only ratchets upward. (The ECC harness retired 2026-07-22; the
   reviewed cutover comparison lives in git history.)
 - **The vendored CNF text is the STALLED structural GUIDE the instrument's
@@ -98,7 +98,7 @@ different harness) stated in a comment.
 
 **A binary-only crate is untestable by construction** (Book ch11.3): its
 `main.rs` cannot be imported from `tests/`. The wiring binary
-(`app/ehrbase-server`) therefore keeps a thin `main.rs` over a testable
+(`app/ferroehr-server`) therefore keeps a thin `main.rs` over a testable
 `lib.rs` run path (Book ch12.3), and its integration tests import the lib.
 Never park tests for crate X under crate Y's `tests/` directory.
 

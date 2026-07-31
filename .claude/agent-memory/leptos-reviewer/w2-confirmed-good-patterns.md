@@ -19,7 +19,7 @@ do not re-litigate:
   trees blow rustc layout recursion). Do not suggest collapsing them.
 - **Theme Effect** in `shell.rs` reads localStorage (outside world) and writes
   `is_dark`/`theme` — a legitimate outside-world sync, NOT a forbidden
-  signal-writes-signal effect (§2). Fixed `theme_id="ehrbase-admin"` keeps the
+  signal-writes-signal effect (§2). Fixed `theme_id="ferroehr-admin"` keeps the
   thaw style selector hydration-deterministic (§8).
 - **No `usize` in serialized/server-fn types** (u16 for CDR status); **no
   unwrap/expect in production** (only `#[cfg(test)]`); **zero re-exports**, no

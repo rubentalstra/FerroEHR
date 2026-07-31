@@ -1085,7 +1085,7 @@ elements:
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/tests/{headers,demographic_http,flat_http,definition_adl2_http}.rs): every write path — canonical/JSON RM writes, demographic party/relationship/contribution writes, both template uploads, the ITEM_TAG collection writes, and the Simplified-Formats COMPOSITION commit — declares the preference it applied through one seam, and never claims an unapplied preference. The presence is DECLARED as `Preference-Applied: present?` on the create_composition / update_composition / create_composition#return_identifier binding outcomes, and those declarations now EXECUTE (#403, tools/cnf-runner/src/exec/headers.rs). What is still not assertable is the header itself: the released text makes it a MAY (\"The service MAY include a `Preference-Applied` header\"), and the closed matcher vocabulary offers no if-present-then-equals form — `present?` never fails and a literal/pattern fails on absence, so asserting either the presence or the value would over-claim the MAY. Closes when the matcher vocabulary gains a conditional-value form (extension only by schedule release) — the same closed-vocabulary precedent as method-501-unrecognized-method-deviation."
+      note: "server behaviour fixed + DB-tested (#398, app/ferroehr-rest/tests/{headers,demographic_http,flat_http,definition_adl2_http}.rs): every write path — canonical/JSON RM writes, demographic party/relationship/contribution writes, both template uploads, the ITEM_TAG collection writes, and the Simplified-Formats COMPOSITION commit — declares the preference it applied through one seam, and never claims an unapplied preference. The presence is DECLARED as `Preference-Applied: present?` on the create_composition / update_composition / create_composition#return_identifier binding outcomes, and those declarations now EXECUTE (#403, tools/cnf-runner/src/exec/headers.rs). What is still not assertable is the header itself: the released text makes it a MAY (\"The service MAY include a `Preference-Applied` header\"), and the closed matcher vocabulary offers no if-present-then-equals form — `present?` never fails and a literal/pattern fails on absence, so asserting either the presence or the value would over-claim the MAY. Closes when the matcher vocabulary gains a conditional-value form (extension only by schedule release) — the same closed-vocabulary precedent as method-501-unrecognized-method-deviation."
   - id: header-if-match-412
     description: "If-Match precondition on a state-changing method evaluates false → 412 Precondition Failed, latest version_uid echoed in ETag; absent when required → 400."
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (412 on false condition; 400 when the service expects If-Match and it is absent)"
@@ -1357,7 +1357,7 @@ elements:
     source: "ITS-REST Resources.md §Datetime format (\"HTTP query parameters and path segments that are dates, datetimes, or times, MUST always use the _extended_ ISO 8601 format. The general form of a datetime is `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`\"; \"Timezone SHOULD be only supplied when needed, otherwise the local timezone is assumed\") + specifications/parameters/query/version_at_time.yaml (\"A given time in the extended ISO 8601 format\" — a time, so a date-only value is not one)"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + tested (#401): one shared decoder (app/ehrbase/src/service/datetime.rs, with its unit matrix) now backs every at-time read of the EHR and DEMOGRAPHIC groups, so an offset-less extended datetime resolves against the server's system timezone instead of 400-ing on jiff::Timestamp's offset-requiring grammar; HTTP-tested end to end in app/ehrbase-rest/tests/directory_http.rs and tests/demographic_http.rs (`version_at_time_without_offset_resolves_in_the_local_timezone`). Not authorable as a case today: a case can only name an instant through the CLOSED reference grammar's temporal vocabulary (${time:before|after|between}, tools/cnf-runner/src/refgrammar.rs), every member of which renders a UTC `…Z` string (format_instant_ms, tools/cnf-runner/src/exec/resolve.rs) — there is no offset-less rendering form, and the three members' ±1 ms / midpoint margins would not survive reinterpretation in an unknown SUT-local zone (the runner has no way to learn the SUT's system timezone, and ITS-REST exposes none). A literal offset-less string cannot stand in either: the instants a case must address are its own commit times, known only at run time. Closes when the temporal vocabulary gains an offset-less rendering member whose margin exceeds the ±14 h UTC-offset range (extension only by schedule release) — the same closed-vocabulary precedent as method-501-unrecognized-method-deviation."
+      note: "server behaviour fixed + tested (#401): one shared decoder (app/ferroehr/src/service/datetime.rs, with its unit matrix) now backs every at-time read of the EHR and DEMOGRAPHIC groups, so an offset-less extended datetime resolves against the server's system timezone instead of 400-ing on jiff::Timestamp's offset-requiring grammar; HTTP-tested end to end in app/ferroehr-rest/tests/directory_http.rs and tests/demographic_http.rs (`version_at_time_without_offset_resolves_in_the_local_timezone`). Not authorable as a case today: a case can only name an instant through the CLOSED reference grammar's temporal vocabulary (${time:before|after|between}, tools/cnf-runner/src/refgrammar.rs), every member of which renders a UTC `…Z` string (format_instant_ms, tools/cnf-runner/src/exec/resolve.rs) — there is no offset-less rendering form, and the three members' ±1 ms / midpoint margins would not survive reinterpretation in an unknown SUT-local zone (the runner has no way to learn the SUT's system timezone, and ITS-REST exposes none). A literal offset-less string cannot stand in either: the instants a case must address are its own commit times, known only at run time. Closes when the temporal vocabulary gains an offset-less rendering member whose margin exceeds the ±14 h UTC-offset range (extension only by schedule release) — the same closed-vocabulary precedent as method-501-unrecognized-method-deviation."
   # The System API (ITS-REST system, STABLE) — one operation, no SM anchor.
   - id: system-options-conformance-manifest
     description: "OPTIONS on the API base path answers 200 and carries the Allow header, describing the communication options for that resource — the docs-text half. The RESOURCE the operation is served on (`/`), the negotiated `Content-Type: application/json` and the JSON manifest body are grounded in the RELEASED OAS, which fills the docs text's silence here (owner ruling 2026-07-28). No MEMBER of the manifest is asserted: the Options schema declares none required, and an optional schema member is not a presence requirement."
@@ -1374,7 +1374,7 @@ elements:
     exception:
       reason: coverage_gap
       register: AMB-60
-      note: "the deviation is registered, not silent, and the 405-with-Allow answer it shares with the recognized-method branch IS now gated (I_EHR_SERVICE.create_ehr-wrong_method, the method-405-allow-header element). What stays uncased is this element's own subject — an UNRECOGNIZED method — and the reason is the one closed-vocabulary blocker that survives the 2026-07-28 schedule release (#544): the binding request model's method vocabulary is the six-method subset the overview §HTTP Methods tabulates (tools/cnf-runner/src/vocab.rs `HttpMethod`), which by construction admits no token outside it, so a request the service cannot recognize cannot be authored. Its server behaviour is HTTP-tested (app/ehrbase-rest/tests/http.rs `unrecognized_method_is_405_with_allow`). The 501 half that IS realized — a recognized but unimplemented operation — has no ITS-REST 1.1.0 operation on this SUT that reaches it, since every mounted operation is implemented. Closes when the method vocabulary gains an unrecognized-token form (extension only by schedule release)."
+      note: "the deviation is registered, not silent, and the 405-with-Allow answer it shares with the recognized-method branch IS now gated (I_EHR_SERVICE.create_ehr-wrong_method, the method-405-allow-header element). What stays uncased is this element's own subject — an UNRECOGNIZED method — and the reason is the one closed-vocabulary blocker that survives the 2026-07-28 schedule release (#544): the binding request model's method vocabulary is the six-method subset the overview §HTTP Methods tabulates (tools/cnf-runner/src/vocab.rs `HttpMethod`), which by construction admits no token outside it, so a request the service cannot recognize cannot be authored. Its server behaviour is HTTP-tested (app/ferroehr-rest/tests/http.rs `unrecognized_method_is_405_with_allow`). The 501 half that IS realized — a recognized but unimplemented operation — has no ITS-REST 1.1.0 operation on this SUT that reaches it, since every mounted operation is implemented. Closes when the method vocabulary gains an unrecognized-token form (extension only by schedule release)."
   # Authentication challenge (ITS-REST Requests_and_responses.md §Authentication
   # and authorization).
   - id: header-www-authenticate-401
@@ -1841,7 +1841,7 @@ elements:
     source: "ITS-REST specifications/operations/admin_ehr_delete_all.yaml (\"> NOTE: This functionality is intended primarily for **development** or **testing** purposes and may be disabled in **production** environments, in which case server may respond with `405 Method Not Allowed`.\") + responses/405.yaml (\"`405 Method Not Allowed` is returned when the service knows the request method, but the target resource doesn't support this method (e.g. due to security concerns)\") + docs/overview/Requests_and_responses.md §\"HTTP status codes\" (405 is a predefined row) and §\"HTTP Methods\" (\"If a method is recognized but not allowed for the target resource, the response SHOULD be `405 Method Not Allowed` status code\") over RFC 9110 §15.5.6 (the Allow header MUST) and §10.2.1 (\"An empty Allow field value indicates that the resource allows no methods, which might occur in a 405 response if the resource has been temporarily disabled by configuration\")"
     exception:
       reason: coverage_gap
-      note: "Server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/admin_http.rs `disabled_admin_is_405_and_never_deletes`, which asserts the 405, the empty Allow, the openEHR error body AND that the EHR survives; `disabled_admin_config_is_405` for the group gate). Not authorable as a case — of the two former reasons ONE is gone. The outcome-taxonomy blocker is LIFTED since the 2026-07-28 schedule release (#544): `method_not_allowed` now exists. The TOPOLOGY reason remains and is decisive: a case cannot ask the SUT to be reconfigured mid-run — the branch exists only under a deployment setting the ixit does not model. NOTE the released asymmetry: this sentence appears on the BULK operation only; admin_ehr_delete carries no such NOTE and declares no 405, although the same configuration gate necessarily covers both routes, so the single-EHR route's 405 rests on the overview §HTTP Methods SHOULD rather than on its own operation. Closes when the outcome taxonomy gains the kind and the ixit models a disabled-admin instance (extension only by schedule release). SCOPE (2026-07-29): the very same configuration gate and the very same handler answer cover the THREE admin extension families declared in the served_extensions axis (admin-activity-report, admin-archive, admin-dump-load) plus the admin-extension routes of the released group — the gate is written once (the group dispatcher) and every /admin/ route inherits it — so the topology exclusion recorded here is the whole admin surface's, not the bulk delete's alone. That wider reach is HTTP-tested in-process by app/ehrbase-rest/tests/admin_extension_http.rs `the_admin_gate_covers_the_extension_groups`, which drives one route of each extension family against a disabled deployment and asserts the 405."
+      note: "Server behaviour fixed + HTTP-tested (app/ferroehr-rest/tests/admin_http.rs `disabled_admin_is_405_and_never_deletes`, which asserts the 405, the empty Allow, the openEHR error body AND that the EHR survives; `disabled_admin_config_is_405` for the group gate). Not authorable as a case — of the two former reasons ONE is gone. The outcome-taxonomy blocker is LIFTED since the 2026-07-28 schedule release (#544): `method_not_allowed` now exists. The TOPOLOGY reason remains and is decisive: a case cannot ask the SUT to be reconfigured mid-run — the branch exists only under a deployment setting the ixit does not model. NOTE the released asymmetry: this sentence appears on the BULK operation only; admin_ehr_delete carries no such NOTE and declares no 405, although the same configuration gate necessarily covers both routes, so the single-EHR route's 405 rests on the overview §HTTP Methods SHOULD rather than on its own operation. Closes when the outcome taxonomy gains the kind and the ixit models a disabled-admin instance (extension only by schedule release). SCOPE (2026-07-29): the very same configuration gate and the very same handler answer cover the THREE admin extension families declared in the served_extensions axis (admin-activity-report, admin-archive, admin-dump-load) plus the admin-extension routes of the released group — the gate is written once (the group dispatcher) and every /admin/ route inherits it — so the topology exclusion recorded here is the whole admin surface's, not the bulk delete's alone. That wider reach is HTTP-tested in-process by app/ferroehr-rest/tests/admin_extension_http.rs `the_admin_gate_covers_the_extension_groups`, which drives one route of each extension family against a disabled deployment and asserts the 405."
   - id: admin-physical-delete-owned-resource-cascade
     description: "A physical delete — on the single-EHR route and the bulk route alike — destroys everything the targeted EHR owned, not merely the EHR row: its COMPOSITIONs, EHR_STATUS, ITEM_TAGs, CONTRIBUTIONs and all their historical versions become unreachable."
     source: "ITS-REST specifications/operations/admin_ehr_delete.yaml and admin_ehr_delete_all.yaml, both verbatim: \"All resources associated with or owned by the specified EHR (such as COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also be **permanently** and physically deleted, in compliance with applicable data protection regulations (e.g., the GDPR in the European Union).\" + responses/204_deleted_hard.yaml (\"physically deleted (i.e. hard-delete)\") + RM UML/classes/org.openehr.rm.ehr.ehr.adoc §Attributes (the owned aggregate: compositions, ehr_status, directory, contributions, tags, ehr_access) — the list in the ITS sentence is exemplary (\"such as\"), and no released sentence states a postcondition at all; register AMB-143 adjudicates the closure as total, AMB-10 why the delete is physical in the first place"
@@ -1889,7 +1889,7 @@ elements:
     exception:
       reason: statement_declared
       register: AMB-151
-      note: "The ABSENCE of a surface has no wire to drive: a case asserting a 404 would be asserting the router's fallback, not a released behaviour, and no released clause assigns the disabled state a status. Proven instead by app/ehrbase-rest/tests/smart_http.rs — `discovery_absent_when_disabled` and `smart_disabled_leaves_families_ungated` (the zero-drift disabled state, both halves). The positive direction IS executed: SMART-DISCOVERY-document_shape drives the document in the SMART lane, and it is not-applicable — never failed — on the default lane, so the two lanes together are the honest statement."
+      note: "The ABSENCE of a surface has no wire to drive: a case asserting a 404 would be asserting the router's fallback, not a released behaviour, and no released clause assigns the disabled state a status. Proven instead by app/ferroehr-rest/tests/smart_http.rs — `discovery_absent_when_disabled` and `smart_disabled_leaves_families_ungated` (the zero-drift disabled state, both halves). The positive direction IS executed: SMART-DISCOVERY-document_shape drives the document in the SMART lane, and it is not-applicable — never failed — on the default lane, so the two lanes together are the honest statement."
   - id: smart-resource-scope-grammar
     description: "A token's `scope` claim is parsed by the master08 resource-scope grammar — <compartment>/<resource>.<permission> — and a granted scope narrows access to exactly what it names: the operation the scope grants succeeds, and one whose permission letters do not cover the operation is refused. An identity scope (`openid`) presented alongside neither widens nor narrows the resource decision."
     source: "ITS-REST docs/smart_app_launch/master08-scopes.adoc §Resource Scopes (the syntax line `<compartment>/<resource>.<permission>`; the three compartments and their meanings; \"The following openEHR REST APIs `<resource>` types are supported for use in scopes\" with its closed three-noun list; the five-row `<templateId>`/`<queryName>` pattern table; the permission letters `c`/`r`/`u`/`d`/`s`; the eight-row maximal table) + §Scopes (\"The _Platform_ must validate requested scopes …\"; the three scope purposes, of which `openid` is an Identity Claim). The discovery example advertises two forms this grammar cannot parse — register AMB-145; `**` is named twice and never defined — AMB-147; the placeholder and validation sentences are defective — AMB-148; no scope-to-operation mapping, no tail well-formedness rule, no composition rule and no compartment-matching rule exist anywhere — AMB-150"
@@ -1935,7 +1935,7 @@ elements:
 # records the silence, never a permission the text does not grant.
 #
 # ROUTES are written as the server mounts them under the DEFAULT deployment
-# (absolute from the server root, `server.base_path` = /ehrbase/rest/openehr/v1
+# (absolute from the server root, `server.base_path` = /ferroehr/rest/openehr/v1
 # included) — the same convention the served OpenAPI document uses. A
 # non-default `server.base_path` moves the base-path-relative ones; the served
 # document follows it.
@@ -1946,32 +1946,32 @@ served_extensions:
       - "GET /health"
       - "GET /health/liveness"
       - "GET /health/readiness"
-    config_gate: "always on — no toggle; mounted outside the API base path and outside authentication (app/ehrbase-rest/src/extensions/health.rs)"
+    config_gate: "always on — no toggle; mounted outside the API base path and outside authentication (app/ferroehr-rest/src/extensions/health.rs)"
     spec_silence: "ITS-REST defines no health/liveness/readiness resource anywhere (grep of specifications/docs/**: zero hits) and no released clause governs the URI space beyond the resource set — Resources.md §Resources defines resources, never a route-space constraint. Our own design/extension: a container-orchestration probe surface."
     never_gates: true
   - family: server-status
     routes:
-      - "GET /ehrbase/rest/status"
-    config_gate: "always on — no toggle; mounted at the REST root (the base path minus /openehr/v1), outside authentication (app/ehrbase-rest/src/overview/status.rs)"
+      - "GET /ferroehr/rest/status"
+    config_gate: "always on — no toggle; mounted at the REST root (the base path minus /openehr/v1), outside authentication (app/ferroehr-rest/src/overview/status.rs)"
     spec_silence: "No released clause defines an operational status resource; the one released self-description operation is the System API's OPTIONS on the API root (docs/system/Description.md), which this endpoint neither replaces nor duplicates. No released clause governs the URI space beyond the resource set. Our own design/extension."
     never_gates: true
   - family: openapi-meta
     routes:
-      - "GET /ehrbase/rest/api-docs/openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-ehr.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-query.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-definition.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-demographic.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-admin.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-management.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-terminology.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-relationships.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-events.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-tenancy.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-fhir.openapi.json"
-      - "GET /ehrbase/rest/api-docs/ehrbase-smart.openapi.json"
-      - "GET /ehrbase/rest/swagger-ui"
-      - "GET /ehrbase/rest/swagger-ui/{*file}"
+      - "GET /ferroehr/rest/api-docs/openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-ehr.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-query.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-definition.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-demographic.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-admin.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-management.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-terminology.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-relationships.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-events.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-tenancy.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-fhir.openapi.json"
+      - "GET /ferroehr/rest/api-docs/ferroehr-smart.openapi.json"
+      - "GET /ferroehr/rest/swagger-ui"
+      - "GET /ferroehr/rest/swagger-ui/{*file}"
     config_gate: "server.swagger_ui (default on) for the whole family; the document paths follow server.openapi_json_path()/swagger_ui_path(), which derive from server.base_path"
     spec_silence: "No released clause defines an OAS-serving or API-console endpoint; the release publishes its own OpenAPI artifacts as downloads, not as a service obligation (docs/system/Description.md §Status links the bundles for validation/code generation). No released clause governs the URI space beyond the resource set. Our own design/extension: the twelve per-family documents plus the composed document are all generated from this server's own handlers — a vendored openEHR OAS is never served. The trailing `{*file}` is the embedded Swagger asset route (UI packaging, no API contract)."
     never_gates: true
@@ -1990,56 +1990,56 @@ served_extensions:
     never_gates: true
   - family: terminology
     routes:
-      - "GET /ehrbase/rest/openehr/v1/terminology"
-      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}"
-      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/term/{code}"
-      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/subsumes"
-      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}"
-      - "GET /ehrbase/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}/validate"
+      - "GET /ferroehr/rest/openehr/v1/terminology"
+      - "GET /ferroehr/rest/openehr/v1/terminology/{terminology_id}"
+      - "GET /ferroehr/rest/openehr/v1/terminology/{terminology_id}/term/{code}"
+      - "GET /ferroehr/rest/openehr/v1/terminology/{terminology_id}/subsumes"
+      - "GET /ferroehr/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}"
+      - "GET /ferroehr/rest/openehr/v1/terminology/{terminology_id}/value_set/{value_set_id}/validate"
     config_gate: "[terminology].api_enabled (default off); the gate sits in-handler behind authentication, so a disabled group answers 401 to an unauthenticated caller and 404 to an authenticated one"
     spec_silence: "SM i_terminology_service.adoc declares the nine terminology operations and released ITS-REST 1.1.0 surfaces NO terminology resource for any of them (the Axis-1 I_TERMINOLOGY_SERVICE off_wire rows above record that boundary). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set. These routes are our own design/extension over the TERM component, and no conformance claim rests on them."
     never_gates: true
   - family: event-subscription
     routes:
-      - "GET /ehrbase/rest/openehr/v1/admin/event_subscription"
-      - "POST /ehrbase/rest/openehr/v1/admin/event_subscription"
-      - "GET /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
-      - "PUT /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+      - "GET /ferroehr/rest/openehr/v1/admin/event_subscription"
+      - "POST /ferroehr/rest/openehr/v1/admin/event_subscription"
+      - "GET /ferroehr/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+      - "PUT /ferroehr/rest/openehr/v1/admin/event_subscription/{subscription_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/admin/event_subscription/{subscription_id}"
     config_gate: "[events].admin_api (default off); the gate sits in-handler behind authentication (401 unauthenticated, 404 authenticated when off)"
     spec_silence: "ITS-REST defines no subscription/notification resource and the released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml). No released clause governs the URI space beyond the resource set. Our own design/extension: change-event subscriptions administered under the /admin prefix."
     never_gates: true
   - family: tenancy
     routes:
-      - "GET /ehrbase/rest/openehr/v1/admin/tenant"
-      - "POST /ehrbase/rest/openehr/v1/admin/tenant"
-      - "GET /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
-      - "PUT /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/admin/tenant/{tenant_id}"
+      - "GET /ferroehr/rest/openehr/v1/admin/tenant"
+      - "POST /ferroehr/rest/openehr/v1/admin/tenant"
+      - "GET /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"
+      - "PUT /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/admin/tenant/{tenant_id}"
     config_gate: "[tenancy].enabled (default off); the routes stay mounted and answer 404 in-handler when off (401 first for an unauthenticated caller)"
     spec_silence: "openEHR has no multi-tenancy concept in any released component — ITS-REST names no tenant resource, header or parameter (grep of specifications/**: zero hits) — and no released clause governs the URI space beyond the resource set. Our own design/extension."
     never_gates: true
   - family: fhir-r4-connector
     routes:
-      - "POST /ehrbase/rest/openehr/v1/fhir/r4/{resource_type}"
-      - "GET /ehrbase/rest/openehr/v1/fhir/r4/{resource_type}"
+      - "POST /ferroehr/rest/openehr/v1/fhir/r4/{resource_type}"
+      - "GET /ferroehr/rest/openehr/v1/fhir/r4/{resource_type}"
     config_gate: "[fhir].api_enabled (default off); the gate sits in-handler behind authentication and refuses with a FHIR OperationOutcome"
     spec_silence: "FHIR interoperability is outside every released openEHR component: ITS-REST defines no FHIR resource, media type or route, and no released clause governs the URI space beyond the resource set. Our own design/extension — the inbound HL7 FHIR R4 façade, whose contract is HL7's, not openEHR's."
     never_gates: true
   - family: fhir-mapping-store
     routes:
-      - "GET /ehrbase/rest/openehr/v1/admin/fhir_mapping"
-      - "POST /ehrbase/rest/openehr/v1/admin/fhir_mapping"
-      - "GET /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
-      - "PUT /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+      - "GET /ferroehr/rest/openehr/v1/admin/fhir_mapping"
+      - "POST /ferroehr/rest/openehr/v1/admin/fhir_mapping"
+      - "GET /ferroehr/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+      - "PUT /ferroehr/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/admin/fhir_mapping/{mapping_id}"
     config_gate: "[fhir].api_enabled (default off) — the same gate as the connector, same in-handler posture"
     spec_silence: "The administration of FHIR↔openEHR mappings has no counterpart in any released component, and the released Admin API is exactly two EHR-deletion operations. No released clause governs the URI space beyond the resource set. Our own design/extension."
     never_gates: true
   - family: iti-81-audit-record-repository
     routes:
-      - "GET /ehrbase/rest/openehr/v1/fhir/r4/AuditEvent"
-    config_gate: "the local Audit Record Repository (ehrbase::system_log, on by default); answers 404 when the repository is disabled"
+      - "GET /ferroehr/rest/openehr/v1/fhir/r4/AuditEvent"
+    config_gate: "the local Audit Record Repository (ferroehr::system_log, on by default); answers 404 when the repository is disabled"
     spec_silence: "The SM platform overview's component table carries the row \"System Log | IHE ATNA-compliant system log.\" while UML/classes/i_system_log.adoc is an EMPTY interface table (no description, no functions) — so the service model names the obligation and defines no operation, and released ITS-REST surfaces no audit resource (the same gap register AMB-144 reports upstream). No released clause governs the URI space beyond the resource set. Our own design/extension: the IHE ITI-81 Retrieve ATNA Audit Event read side, whose contract is IHE's, not openEHR's."
     never_gates: true
   # ── (2) the extension families earlier audits already adjudicated ─────────
@@ -2047,28 +2047,28 @@ served_extensions:
   # already carrying a register entry is no less served than a new one.
   - family: party-relationship
     routes:
-      - "POST /ehrbase/rest/openehr/v1/demographic/party_relationship"
-      - "GET /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
-      - "PUT /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
-      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}"
-      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history"
-      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version"
-      - "GET /ehrbase/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}"
+      - "POST /ferroehr/rest/openehr/v1/demographic/party_relationship"
+      - "GET /ferroehr/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "PUT /ferroehr/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/demographic/party_relationship/{uid_based_id}"
+      - "GET /ferroehr/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}"
+      - "GET /ferroehr/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history"
+      - "GET /ferroehr/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version"
+      - "GET /ferroehr/rest/openehr/v1/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}"
     config_gate: "always on with the DEMOGRAPHIC group (no separate toggle)"
     spec_silence: "SM i_party_relationship.adoc declares the operations and released ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — register AMB-32. These routes are the honest boundary realization: no released clause governs the URI space beyond the resource set, so serving them breaches nothing. UPDATED 2026-07-28 (#623): the six SM relationship operations now carry EXTENSION bindings onto these routes (`extension:` blocks naming this family), so the PartyRelationshipOperations battery is EXECUTED rather than excused — but the scoping is unchanged and machine-enforced: an extension binding is fenced off from every released-wire judgement (`realization-scope` gate), the capability row is `realization: extension` and therefore may never be `required`, and NO openEHR profile tier or ITS-REST wire-conformance claim rests on these routes."
     never_gates: true
   - family: stored-query-bare-list
     routes:
-      - "GET /ehrbase/rest/openehr/v1/definition/query"
+      - "GET /ferroehr/rest/openehr/v1/definition/query"
     config_gate: "always on with the DEFINITION group (no separate toggle)"
     spec_silence: "The release defines exactly one stored-query list operation, GET /definition/query/{qualified_query_name} (specifications/operations/definition_query_list.yaml), whose path parameter is required (parameters/path/qualified_query_name.yaml) — so its own \"when is empty, it will be treated as 'wildcard' in the search\" clause has no addressable released form. No released clause governs the URI space beyond the resource set. Our own design/extension: the bare form serves exactly what the released list serves for the empty prefix; the released route stays the gated one (register AMB-121 records the SM-vs-wire listing gap)."
     never_gates: true
   - family: admin-extension-routes
     routes:
-      - "DELETE /ehrbase/rest/openehr/v1/admin/template/{template_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/admin/query/{qualified_query_name}/{version}"
-      - "GET /ehrbase/rest/openehr/v1/admin/config"
+      - "DELETE /ferroehr/rest/openehr/v1/admin/template/{template_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/admin/query/{qualified_query_name}/{version}"
+      - "GET /ferroehr/rest/openehr/v1/admin/config"
     config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 when off, RBAC Admin class by the /admin/ path"
     spec_silence: "The released Admin API is exactly two operations (specifications/operations/admin_ehr_delete.yaml + admin_ehr_delete_all.yaml); nothing released deletes a template, deletes one stored-query version, or exposes a configuration tree. The query delete deliberately does NOT claim SM I_DEFINITION_QUERY.delete_query, which is keyed by name alone and removes every version (register AMB-127 keeps that operation unrealized). No released clause governs the URI space beyond the resource set. Our own design/extension, excluded from every conformance-profile claim."
     never_gates: true
@@ -2081,60 +2081,60 @@ served_extensions:
   # tier or ITS-REST wire-conformance claim rests on any route below.
   - family: adl14-archetype
     routes:
-      - "POST /ehrbase/rest/openehr/v1/definition/archetype/adl1.4"
-      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl1.4"
-      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
-      - "DELETE /ehrbase/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
+      - "POST /ferroehr/rest/openehr/v1/definition/archetype/adl1.4"
+      - "GET /ferroehr/rest/openehr/v1/definition/archetype/adl1.4"
+      - "GET /ferroehr/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
+      - "DELETE /ferroehr/rest/openehr/v1/definition/archetype/adl1.4/{archetype_id}"
     config_gate: "always on with the DEFINITION group (no separate toggle) — the same posture as the released template routes"
     spec_silence: "SM i_definition_adl14.adoc declares upload_archetype / get_archetype / list_archetypes / delete_archetype (plus has_archetype, list_matching_archetypes, archetypes_count, valid_archetype) and released ITS-REST 1.1.0 surfaces NO archetype resource for any of them — its ADL 1.4 group is /definition/template/adl1.4* alone (the Axis-1 rows above record that boundary; register AMB-41). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set. Our own design/extension over the ADL 1.4 archetype store, and no ITS-REST wire-conformance claim rests on it."
     never_gates: true
   - family: adl2-archetype
     routes:
-      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl2"
-      - "GET /ehrbase/rest/openehr/v1/definition/archetype/adl2/count"
-      - "GET /ehrbase/rest/openehr/v1/definition/artefact/adl2"
-      - "GET /ehrbase/rest/openehr/v1/definition/artefact/adl2/count"
-      - "DELETE /ehrbase/rest/openehr/v1/definition/artefact/adl2/{artefact_id}"
+      - "GET /ferroehr/rest/openehr/v1/definition/archetype/adl2"
+      - "GET /ferroehr/rest/openehr/v1/definition/archetype/adl2/count"
+      - "GET /ferroehr/rest/openehr/v1/definition/artefact/adl2"
+      - "GET /ferroehr/rest/openehr/v1/definition/artefact/adl2/count"
+      - "DELETE /ferroehr/rest/openehr/v1/definition/artefact/adl2/{artefact_id}"
     config_gate: "always on with the DEFINITION group (no separate toggle)"
     spec_silence: "SM i_definition_adl2.adoc declares list_archetypes / archetypes_count / list_artefacts / artefacts_count / delete_artefact and released ITS-REST 1.1.0 surfaces none of them: its ADL 2 group is /definition/template/adl2* alone — no archetype path, no generic artefact path, no count, no DELETE (register AMB-37). No released clause governs the URI space beyond the resource set. Our own design/extension over the ADL 2 artefact store; the released template routes stay the gated ones."
     never_gates: true
   - family: admin-activity-report
     routes:
-      - "GET /ehrbase/rest/openehr/v1/admin/report/contribution"
-      - "GET /ehrbase/rest/openehr/v1/admin/report/contribution/count"
-      - "GET /ehrbase/rest/openehr/v1/admin/report/versioned_composition/count"
-      - "GET /ehrbase/rest/openehr/v1/admin/report/composition_version/count"
-    config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 with an empty Allow when off, RBAC Admin class by the /admin/ path (401 unauthenticated, 403 non-admin). BOTH RBAC branches are CASED (I_ADMIN_SERVICE.contribution_count-unauthenticated / -forbidden sweep all four routes). The gate-OFF 405 branch is NOT cased and the reason is topology, not vocabulary: a case cannot ask the SUT to be reconfigured mid-run, and the ixit models no disabled-admin deployment (the same adjudication the released admin-bulk-delete-disabled-405 element records, which this family's gate is literally the same code path as). Composing a second, admin-disabled deployment purely for this branch would double the stack for one status code that carries no clinical semantics, so the honest exclusion stands; the branch is HTTP-tested in-process (app/ehrbase-rest/tests/admin_extension_http.rs the_admin_gate_covers_the_extension_groups, which drives all four extension groups)."
+      - "GET /ferroehr/rest/openehr/v1/admin/report/contribution"
+      - "GET /ferroehr/rest/openehr/v1/admin/report/contribution/count"
+      - "GET /ferroehr/rest/openehr/v1/admin/report/versioned_composition/count"
+      - "GET /ferroehr/rest/openehr/v1/admin/report/composition_version/count"
+    config_gate: "[admin].enabled (default off) — the same gate as the released admin deletes; 405 with an empty Allow when off, RBAC Admin class by the /admin/ path (401 unauthenticated, 403 non-admin). BOTH RBAC branches are CASED (I_ADMIN_SERVICE.contribution_count-unauthenticated / -forbidden sweep all four routes). The gate-OFF 405 branch is NOT cased and the reason is topology, not vocabulary: a case cannot ask the SUT to be reconfigured mid-run, and the ixit models no disabled-admin deployment (the same adjudication the released admin-bulk-delete-disabled-405 element records, which this family's gate is literally the same code path as). Composing a second, admin-disabled deployment purely for this branch would double the stack for one status code that carries no clinical semantics, so the honest exclusion stands; the branch is HTTP-tested in-process (app/ferroehr-rest/tests/admin_extension_http.rs the_admin_gate_covers_the_extension_groups, which drives all four extension groups)."
     spec_silence: "SM i_admin_service.adoc declares list_contributions / contribution_count / versioned_composition_count / composition_version_count, each over a PLATFORM_SERVICE and an optional Interval<Iso8601_date_time>; the released Admin API is exactly two operations, both EHR deletes (specifications/admin.openapi.yaml), and no reporting resource exists anywhere in the release (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension. The ARGUMENT boundaries are not spec-silent even though the route is: a_service is typed PLATFORM_SERVICE (platform_service.adoc, a closed member set) and time_interval is an Interval<Iso8601_date_time>, so an out-of-member service, a non-ISO bound, a value that is not a lower/upper pair, and a both-bounded pair violating the BASE Interval invariant Limits_consistent (org.openehr.base.foundation_types.interval.adoc: \"(not upper_unbounded and not lower_unbounded) implies lower <= upper\") are all argument-type violations the operation cannot carry out — each cased against one of the four routes."
     never_gates: true
   - family: admin-archive
     routes:
-      - "POST /ehrbase/rest/openehr/v1/admin/archive/ehrs"
-      - "POST /ehrbase/rest/openehr/v1/admin/archive/parties"
+      - "POST /ferroehr/rest/openehr/v1/admin/archive/ehrs"
+      - "POST /ferroehr/rest/openehr/v1/admin/archive/parties"
     config_gate: "[admin].enabled (default off) — the same gate and RBAC class as the released admin deletes. Both RBAC branches are CASED per half (I_ADMIN_ARCHIVE.archive_ehrs-unauthenticated / -forbidden and the archive_parties siblings); the gate-OFF 405 branch is excluded for the same topology reason the admin-activity-report family records."
-    spec_silence: "SM i_admin_archive.adoc declares archive_ehrs (\"Move selected EHRs to archival storage\") and archive_parties (\"Move selected Parties and relationships to archival storage\"); the released Admin API is exactly two EHR deletes and nothing in it moves a resource to archival storage (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension; the archival tier itself is spec-silent storage mechanics. WHAT ARCHIVED MEANS ON THE READ WIRE is settled, not silent: archival is read-neutral here — the archived object stays addressable — and the wire proof inside the extension surface is that re-archiving an already-archived object is FULFILLED rather than raising the operation's only declared error, ehr_id_does_not_exist / party_id_does_not_exist (the -archive_twice cases). The fuller proof — reading the archived EHR back through a RELEASED operation — is deliberately NOT authored here: the realization-scope law forbids an extension-only battery from driving released wire, so it is HTTP-tested in-process instead (app/ehrbase-rest/tests/admin_extension_http.rs archiving_an_ehr_is_read_neutral_and_idempotent). Corollary: because archival is read-neutral, the all-or-nothing no-write effect of a refused archive is by construction not observable on any wire, so the refusal cases carry a linked-case state postcondition rather than a driven state proof."
+    spec_silence: "SM i_admin_archive.adoc declares archive_ehrs (\"Move selected EHRs to archival storage\") and archive_parties (\"Move selected Parties and relationships to archival storage\"); the released Admin API is exactly two EHR deletes and nothing in it moves a resource to archival storage (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension; the archival tier itself is spec-silent storage mechanics. WHAT ARCHIVED MEANS ON THE READ WIRE is settled, not silent: archival is read-neutral here — the archived object stays addressable — and the wire proof inside the extension surface is that re-archiving an already-archived object is FULFILLED rather than raising the operation's only declared error, ehr_id_does_not_exist / party_id_does_not_exist (the -archive_twice cases). The fuller proof — reading the archived EHR back through a RELEASED operation — is deliberately NOT authored here: the realization-scope law forbids an extension-only battery from driving released wire, so it is HTTP-tested in-process instead (app/ferroehr-rest/tests/admin_extension_http.rs archiving_an_ehr_is_read_neutral_and_idempotent). Corollary: because archival is read-neutral, the all-or-nothing no-write effect of a refused archive is by construction not observable on any wire, so the refusal cases carry a linked-case state postcondition rather than a driven state proof."
     never_gates: true
   # ── (4) the three families the #659 re-claim wave added ───────────────────
   - family: admin-dump-load
     routes:
-      - "POST /ehrbase/rest/openehr/v1/admin/dump"
-      - "POST /ehrbase/rest/openehr/v1/admin/load"
+      - "POST /ferroehr/rest/openehr/v1/admin/dump"
+      - "POST /ferroehr/rest/openehr/v1/admin/load"
     config_gate: "[admin].enabled (default off) — the same gate and RBAC class as the released admin deletes. Both RBAC branches are CASED over BOTH halves (I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated / -forbidden each drive export_ehrs and load_ehrs); the gate-OFF 405 branch is excluded for the same topology reason the admin-activity-report family records."
-    spec_silence: "SM i_admin_dump_load.adoc declares export_ehrs (\"Export all EHRs to a file-system location in a specified format\") and load_ehrs (\"Populate EHR repository from export archive on file system\"), with EXPORT_SPEC / EXPORT_FORMAT / COMPRESSION_FORMAT / ENCODING_FORMAT / DUMP_LOAD_FAIL_REPORT as their parameter and report types; the released Admin API is exactly two EHR deletes (specifications/admin.openapi.yaml) and nothing in it reads or writes a file-system archive (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension — and so is the on-disk archive format itself, which no openEHR spec defines. This product realizes BOTH declared enumerations in FULL: the COMPRESSION_FORMAT members zip and 7z (plus the uncompressed loose-entry form), each with its own detected-container LOAD case since load_ehrs is passed no format, and BOTH EXPORT_FORMAT members. openehr_canonical_json keeps each version's payload inline as canonical JSON; openehr_canonical_xml externalizes it as a versions/<version_uid>.xml entry holding a complete ORIGINAL_VERSION document under the ITS-XML published <version> root (its-xml-1.0.2-nsv1/ALL/Version.xsd), always in the released-STABLE nsv1 lineage, while the archive's own manifest/segment envelope stays JSON in BOTH members — no published global element exists for EHR, CONTRIBUTION or a standalone AUDIT_DETAILS in either vendored lineage, so an XML envelope could only be invented (register AMB-33 carries the whole derivation). The XML member has its own export case and its own payload-form-detection LOAD case, so no member is unrealized and nothing here answers 501 any more. THE 5xx BRANCH IS NOT CASEABLE, by construction and not by omission: i_admin_dump_load.adoc declares exactly ONE error for both operations, file_not_writable, which this product renders 5xx, and the CNF outcome-kind taxonomy (vocab/outcomes.yaml) deliberately contains no server-fault kind — cases speak outcome kinds only, so no case can require a 5xx. That covers every way an archive is unusable AS A WHOLE: a location holding no container, a container or manifest/segment that is corrupt (mangled or truncated), and a manifest naming no EXPORT_FORMAT member — all mapped to the SAME file_not_writable rather than to an exception, since from the operation's point of view file_sys_loc simply does not hold a readable archive. Corrupt-archive causes are additionally not producible over the served wire at all — no operation writes arbitrary bytes to the SUT file system — so they are proved in-process (app/ehrbase/tests/service_dump_load.rs: load_from_a_location_with_no_archive_is_file_not_writable, load_from_an_archive_with_a_mangled_manifest_is_file_not_writable, load_from_a_truncated_container_is_file_not_writable, each asserting the status AND that nothing was loaded). A corrupt PER-VERSION payload entry is deliberately NOT in that family and is not a 5xx at all: a versions/*.xml entry belongs to exactly one EHR, so an unreadable one is the per-entity DUMP_LOAD_FAIL_REPORT shape (dump_load_fail_report.adoc: \"Dump or Load fail report for a single entity\") — the record is reported with dump_status false and skipped whole while the rest of the archive loads, proved in-process by a_corrupt_version_document_reports_that_record_and_commits_nothing. The PER-ENTITY duplicate path is a 200 and IS cased: loading a repository's own archive back reports every duplicate in the List<DUMP_LOAD_FAIL_REPORT> (I_ADMIN_DUMP_LOAD.load_ehrs-load_archive asserts entity_type/entity_id/dump_status:false), because the SM makes duplicate-id failure per-entity — \"Repository need not be empty, but import EHRs with duplicate EHR ids will fail\" — never an operation failure."
+    spec_silence: "SM i_admin_dump_load.adoc declares export_ehrs (\"Export all EHRs to a file-system location in a specified format\") and load_ehrs (\"Populate EHR repository from export archive on file system\"), with EXPORT_SPEC / EXPORT_FORMAT / COMPRESSION_FORMAT / ENCODING_FORMAT / DUMP_LOAD_FAIL_REPORT as their parameter and report types; the released Admin API is exactly two EHR deletes (specifications/admin.openapi.yaml) and nothing in it reads or writes a file-system archive (register AMB-33). No released clause governs the URI space beyond the resource set. Our own design/extension — and so is the on-disk archive format itself, which no openEHR spec defines. This product realizes BOTH declared enumerations in FULL: the COMPRESSION_FORMAT members zip and 7z (plus the uncompressed loose-entry form), each with its own detected-container LOAD case since load_ehrs is passed no format, and BOTH EXPORT_FORMAT members. openehr_canonical_json keeps each version's payload inline as canonical JSON; openehr_canonical_xml externalizes it as a versions/<version_uid>.xml entry holding a complete ORIGINAL_VERSION document under the ITS-XML published <version> root (its-xml-1.0.2-nsv1/ALL/Version.xsd), always in the released-STABLE nsv1 lineage, while the archive's own manifest/segment envelope stays JSON in BOTH members — no published global element exists for EHR, CONTRIBUTION or a standalone AUDIT_DETAILS in either vendored lineage, so an XML envelope could only be invented (register AMB-33 carries the whole derivation). The XML member has its own export case and its own payload-form-detection LOAD case, so no member is unrealized and nothing here answers 501 any more. THE 5xx BRANCH IS NOT CASEABLE, by construction and not by omission: i_admin_dump_load.adoc declares exactly ONE error for both operations, file_not_writable, which this product renders 5xx, and the CNF outcome-kind taxonomy (vocab/outcomes.yaml) deliberately contains no server-fault kind — cases speak outcome kinds only, so no case can require a 5xx. That covers every way an archive is unusable AS A WHOLE: a location holding no container, a container or manifest/segment that is corrupt (mangled or truncated), and a manifest naming no EXPORT_FORMAT member — all mapped to the SAME file_not_writable rather than to an exception, since from the operation's point of view file_sys_loc simply does not hold a readable archive. Corrupt-archive causes are additionally not producible over the served wire at all — no operation writes arbitrary bytes to the SUT file system — so they are proved in-process (app/ferroehr/tests/service_dump_load.rs: load_from_a_location_with_no_archive_is_file_not_writable, load_from_an_archive_with_a_mangled_manifest_is_file_not_writable, load_from_a_truncated_container_is_file_not_writable, each asserting the status AND that nothing was loaded). A corrupt PER-VERSION payload entry is deliberately NOT in that family and is not a 5xx at all: a versions/*.xml entry belongs to exactly one EHR, so an unreadable one is the per-entity DUMP_LOAD_FAIL_REPORT shape (dump_load_fail_report.adoc: \"Dump or Load fail report for a single entity\") — the record is reported with dump_status false and skipped whole while the rest of the archive loads, proved in-process by a_corrupt_version_document_reports_that_record_and_commits_nothing. The PER-ENTITY duplicate path is a 200 and IS cased: loading a repository's own archive back reports every duplicate in the List<DUMP_LOAD_FAIL_REPORT> (I_ADMIN_DUMP_LOAD.load_ehrs-load_archive asserts entity_type/entity_id/dump_status:false), because the SM makes duplicate-id failure per-entity — \"Repository need not be empty, but import EHRs with duplicate EHR ids will fail\" — never an operation failure."
     never_gates: true
   - family: message-extract
     routes:
-      - "GET /ehrbase/rest/openehr/v1/message/export/{ehr_id}"
-      - "POST /ehrbase/rest/openehr/v1/message/export"
-      - "POST /ehrbase/rest/openehr/v1/message/import"
-      - "POST /ehrbase/rest/openehr/v1/message/import/{ehr_id}"
+      - "GET /ferroehr/rest/openehr/v1/message/export/{ehr_id}"
+      - "POST /ferroehr/rest/openehr/v1/message/export"
+      - "POST /ferroehr/rest/openehr/v1/message/import"
+      - "POST /ferroehr/rest/openehr/v1/message/import/{ehr_id}"
     config_gate: "always on with the API surface (no separate toggle); the ordinary clinical authentication class, NOT the /admin/ gate — SM places these operations in the MESSAGE component, not ADMIN, and the content they move is the same EHR content the released clinical routes serve. No openEHR spec governs the privilege level of an unspecified route: our own design/extension."
     spec_silence: "SM master09-message_service.adoc + i_ehr_extract_service.adoc declare export_ehrs / export_ehr_extracts / import_ehr / import_ehr_extract, and released ITS-REST 1.1.0 publishes SEVEN API groups (overview, system, ehr, demographic, query, definition, admin) with no message / EHR-Extract group in either the docs text or the OAS (register AMB-34). The absence of a wire is not a prohibition on one: no released clause governs the URI space beyond the resource set, and `/message` is a resource root the release does not define. Our own design/extension over the RM EHR-Extract IM (RM ehr_extract master05/master09); no ITS-REST wire-conformance claim rests on it."
     never_gates: true
   - family: message-tdd
     routes:
-      - "POST /ehrbase/rest/openehr/v1/message/tdd/{ehr_id}"
-      - "POST /ehrbase/rest/openehr/v1/message/tdd/{ehr_id}/batch"
+      - "POST /ferroehr/rest/openehr/v1/message/tdd/{ehr_id}"
+      - "POST /ferroehr/rest/openehr/v1/message/tdd/{ehr_id}/batch"
     config_gate: "always on with the API surface (no separate toggle); the ordinary clinical authentication class — a TDD import commits a COMPOSITION through the same validated path the released composition_create uses."
     spec_silence: "SM i_tdd_service.adoc declares import_tdd (and names import_tdds without a signature — the batch form is this product's flagged extension of the interface), and released ITS-REST 1.1.0 publishes no TDD API in either the docs text or the OAS (register AMB-34). No released clause governs the URI space beyond the resource set. Our own design/extension; the TDD document format itself is the template-derived TDS the OPT implies (AM OPT2 master02-overview.adoc §Purpose of the OPT), not a released wire schema. BATCH BOUND, stated so it is not a silent omission: the batch carries NO cardinality bound of its own — the only bound is the server-wide request-body limit the transport layer enforces as 413 before routing, so an absurd batch is refused by SIZE, never by COUNT. That branch is deliberately uncased: it is a transport-layer refusal of a multi-megabyte payload, the closed outcome taxonomy has no kind for 413, and committing a corpus fixture large enough to trip it would buy a transport assertion at the cost of the corpus. The batch behaviours the catalogue DOES gate are the ones the operation itself owns: all-or-nothing atomicity with a post-refusal state proof, the empty batch, and the media-type and target-EHR preconditions."
     never_gates: true

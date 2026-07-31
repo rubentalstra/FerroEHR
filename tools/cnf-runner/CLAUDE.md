@@ -9,7 +9,7 @@ language, ever.
 
 | Command | Purpose |
 |---|---|
-| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). For `ehrbase-rs` it composes TWO deployments of the one built image — the standard SMART/digest stack plus the openPGP-posture stack (`-p ehrbase-rs-cnf-pgp`, host port 8081) — so both claimed signing modes land in the one record. Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). For `ferroehr` it composes TWO deployments of the one built image — the standard SMART/digest stack plus the openPGP-posture stack (`-p ferroehr-cnf-pgp`, host port 8081) — so both claimed signing modes land in the one record. Env: `CONF_SUT=ferroehr\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
 | `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
@@ -104,7 +104,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   §Supported Authentication Flows, so the runner takes the Authorization-Server
   role for that lane only). Undeclared => not-applicable with the citation,
   never a driven guess. The SMART resource-server posture IS the standard
-  ehrbase-rs conformance posture (owner ruling 2026-07-28): the pipeline
+  ferroehr conformance posture (owner ruling 2026-07-28): the pipeline
   always overlays `docker/sut-smart.yml`, the ixit's principals mint scoped
   Bearer tokens (per-instance standing grants; a step-level `scopes:`
   overrides for the boundary cases), and the ONE committed record covers the
@@ -132,7 +132,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   and a deployment realizes exactly one, so the pipeline composes a SECOND
   deployment of the same built image in the pgp posture
   (`docker/sut-signing-pgp.yml` + `docker/sut-pgp-parallel.yml`, project
-  `ehrbase-rs-cnf-pgp`, host port 8081) and the ixit declares it as the
+  `ferroehr-cnf-pgp`, host port 8081) and the ixit declares it as the
   `sut_pgp` **instance** carrying its OWN `signing` block. `signing` is
   therefore per-instance-first with the top-level block as the party default,
   and the `-pgp` SIG-VERSION siblings address that instance with `on:`. One

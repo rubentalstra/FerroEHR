@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-query/**", "app/ehrbase/src/aql/**"]
+paths: ["crates/openehr-query/**", "app/ferroehr/src/aql/**"]
 ---
 
 # AQL engine rules
@@ -10,7 +10,7 @@ governs maintenance and extension. It spans two locations:
 - `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**
   (`logos` + `chumsky`, corpus-validated). Semantic path analysis consumes
   this AST inside the engine.
-- `app/ehrbase/src/aql/` — the **execution engine**: AST → **our own typed
+- `app/ferroehr/src/aql/` — the **execution engine**: AST → **our own typed
   query IR** → PostgreSQL, designed fresh over the node model,
   with path analysis driven by the **BMM-generated RM attribute model** (no
   reflection, no hand tables). The AQL terminology family
@@ -56,7 +56,7 @@ shapes. Use `/spec-lookup` and cite the section (spec-adherence.md).
 ## Boundary
 
 `openehr-query` produces a parsed, semantically-analysable AST; everything after
-(the IR, SQL generation via `sea-query`, execution via `sqlx`) lives in `ehrbase`.
+(the IR, SQL generation via `sea-query`, execution via `sqlx`) lives in `ferroehr`.
 Keep it clean: no SQL in the spec crate, no grammar/parsing in the server crate.
 Behaviour is verified by the AQL corpus + the CNF pipeline — every engine
 change ends with a `scripts/conformance.sh` run showing zero drift vs the

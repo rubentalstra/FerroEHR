@@ -10,7 +10,7 @@
 # exactly ONE of the two.
 #
 # Both branches are therefore tested against the deployments that realize them,
-# in the ONE record: this case addresses the SECOND deployment the ehrbase-rs
+# in the ONE record: this case addresses the SECOND deployment the ferroehr
 # pipeline composes (`on: sut_pgp`), whose ixit instance declares
 # `terminology.posture: fail_closed` alongside its own signing posture —
 # postures are independent properties of a deployment. A party that runs only

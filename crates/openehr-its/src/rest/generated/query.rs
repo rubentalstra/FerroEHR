@@ -261,7 +261,7 @@ pub trait QueryApi {
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for
-/// wiring an axum router in `ehrbase-rest`.
+/// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[
     ("GET", "/query/aql", "query_execute_adhoc_query"),
     ("POST", "/query/aql", "query_execute_adhoc_query_body"),

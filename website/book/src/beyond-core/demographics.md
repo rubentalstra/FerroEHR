@@ -2,7 +2,7 @@
 
 Alongside clinical records, a CDR often needs to store the people and
 organisations they refer to — patients, clinicians, care teams, institutions.
-EHRbase-rs provides a versioned demographic store for openEHR party types and
+FerroEHR provides a versioned demographic store for openEHR party types and
 the relationships between them, served over a REST surface that mirrors the EHR
 APIs.
 
@@ -25,7 +25,7 @@ way clinical writes are.
 
 ## Party endpoints
 
-All paths are relative to the API base path (`/ehrbase/rest/openehr/v1`), and
+All paths are relative to the API base path (`/ferroehr/rest/openehr/v1`), and
 `{kind}` is one of `agent`, `group`, `organisation`, `person`, or `role`.
 
 | Method | Path | Purpose |
@@ -47,7 +47,7 @@ tags (`/demographic/tags`, `/demographic/{kind}/{uid_based_id}/tags`, and
 
 ## Relationships
 
-Party relationships are managed through a parallel set of routes (an EHRbase-rs
+Party relationships are managed through a parallel set of routes (an FerroEHR
 extension), with the same versioned shape as parties:
 
 | Method | Path | Purpose |

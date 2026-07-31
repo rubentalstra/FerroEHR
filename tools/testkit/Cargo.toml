@@ -21,7 +21,7 @@ publish = false
 # dev-dependency cycle, which cargo explicitly permits (dev-dependencies are
 # not part of the release dependency graph; see the Cargo book, "Specifying
 # Dependencies § Development dependencies").
-ehrbase = { path = "../../app/ehrbase" }
+ferroehr = { path = "../../app/ferroehr" }
 
 # Wall-clock time (the clone-name time base + the sweep's grace window) comes
 # from the pinned time library, never `std::time::SystemTime`

@@ -1,0 +1,82 @@
+---
+source: app/ferroehr/src/system_log/fhir.rs
+assertion_line: 688
+expression: v
+---
+{
+  "resourceType": "AuditEvent",
+  "type": {
+    "system": "http://dicom.nema.org/resources/ontology/DCM",
+    "code": "110114",
+    "display": "User Authentication"
+  },
+  "subtype": [
+    {
+      "system": "http://dicom.nema.org/resources/ontology/DCM",
+      "code": "110122",
+      "display": "Login"
+    }
+  ],
+  "action": "E",
+  "recorded": "2026-07-06T12:00:00Z",
+  "outcome": "0",
+  "agent": [
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://dicom.nema.org/resources/ontology/DCM",
+            "code": "110153",
+            "display": "Source Role ID"
+          }
+        ]
+      },
+      "who": {
+        "identifier": {
+          "value": "john doe"
+        }
+      },
+      "requestor": true,
+      "network": {
+        "address": "10.216.24.150",
+        "type": "2"
+      }
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://dicom.nema.org/resources/ontology/DCM",
+            "code": "110152",
+            "display": "Destination Role ID"
+          }
+        ]
+      },
+      "who": {
+        "identifier": {
+          "value": "ferroehr"
+        }
+      },
+      "requestor": false,
+      "network": {
+        "address": "10.42.23.77",
+        "type": "2"
+      }
+    }
+  ],
+  "source": {
+    "site": "1f332a66-0000-0000-0000-000000000001",
+    "observer": {
+      "identifier": {
+        "value": "ferroehr"
+      }
+    },
+    "type": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/security-source-type",
+        "code": "4",
+        "display": "Application Server"
+      }
+    ]
+  }
+}

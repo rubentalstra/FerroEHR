@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ferroehr.fullname" . }}
+  labels:
+    {{- include "ferroehr.labels" . | nindent 4 }}
+data:
+  # The whole server configuration as one ferroehr.toml, mounted at
+  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered from
+  # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
+  # here — they are injected as FERROEHR_* env from the Secret and override the file.
+  ferroehr.toml: |
+{{ omit .Values.config "files" | toToml | indent 4 }}

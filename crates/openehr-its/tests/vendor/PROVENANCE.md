@@ -11,13 +11,13 @@ re-vendor from upstream and update the pin below.
 
 | Item     | Value                                                                                               |
 |----------|-----------------------------------------------------------------------------------------------------|
-| Upstream | `ehrbase/openEHR_SDK`                                                                               |
+| Upstream | `ferroehr/openEHR_SDK`                                                                               |
 | Ref      | branch `develop`, commit `22b01e0c99b53669394e56da29c2410838b5cf7e`                                 |
 | Path     | `test-data/src/main/resources/{composition,contribution,ehr,folder,item_structure}/canonical_json/` |
 | License  | Apache-2.0 (see the upstream `LICENSE.md`)                                                          |
 | Fetched  | 2026-07-03                                                                                          |
 
-`ehrbase/openEHR_SDK` is the serialization library EHRbase itself uses, so its
+`ferroehr/openEHR_SDK` is the serialization library EHRbase itself uses, so its
 `canonical_json` corpus is the closest available match to our parity baseline
 (EHRbase v2.33.0). Files were downloaded verbatim from the pinned commit via
 the GitHub contents API (raw), preserving the upstream sub-directory layout.

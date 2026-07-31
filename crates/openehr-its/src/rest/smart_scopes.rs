@@ -5,7 +5,7 @@
 //!
 //! Hand-written (like the `flat` module, SMART App Launch is an ITS-REST
 //! sub-specification with no machine-readable model): ONE grammar, consumed by
-//! the CDR's scope gate (`ehrbase-rest::smart`) and by any REST client that
+//! the CDR's scope gate (`ferroehr-rest::smart`) and by any REST client that
 //! previews what a scope string grants (the admin console) — the two can never
 //! drift because they parse with the same code.
 //!
@@ -105,7 +105,7 @@ impl ResourceSelector {
 }
 
 /// The resource family axis, used by the enforcement layer to map an operation's
-/// resource kind (`ehrbase-rest`'s `access::authz::request::ResourceKind`) onto
+/// resource kind (`ferroehr-rest`'s `access::authz::request::ResourceKind`) onto
 /// the SMART grammar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceFamily {

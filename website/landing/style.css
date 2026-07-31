@@ -1,4 +1,4 @@
-/* EHRbase-rs landing page — design tokens + layout.
+/* FerroEHR landing page — design tokens + layout.
    docs/plans/w1-docs-website.md §3a (tokens) + §3b (sections).
    Self-contained: system font stack, no external assets, light/dark via
    prefers-color-scheme. Relative URLs only. */

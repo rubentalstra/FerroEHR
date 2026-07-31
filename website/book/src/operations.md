@@ -12,7 +12,7 @@ drawn from how the container image and Helm chart are built to run.
 
 ## Database roles and least privilege
 
-EHRbase-rs connects to an **external** PostgreSQL 18 — a managed service or an
+FerroEHR connects to an **external** PostgreSQL 18 — a managed service or an
 operator-run cluster, never a chart-side sidecar, because a database holding
 PHI must be independently backed up and recoverable. The server carries only a
 connection string, ideally sourced from a secret.
@@ -22,13 +22,13 @@ The database uses a four-role model — never a superuser at runtime:
 | Role | Purpose | Used by |
 |---|---|---|
 | owner | owns the database | provisioning only |
-| `ehrbase_migrator` | runs the schema migrations; owns the helper functions | the migration step |
-| `ehrbase_app` | reads and writes clinical data | the running server |
-| `ehrbase_reader` | read-only | replicas and reporting |
+| `ferroehr_migrator` | runs the schema migrations; owns the helper functions | the migration step |
+| `ferroehr_app` | reads and writes clinical data | the running server |
+| `ferroehr_reader` | read-only | replicas and reporting |
 
 The migrations create these roles idempotently, apply the per-schema grants,
 and revoke the ability to create objects in the public schema. **The running
-server connects as `ehrbase_app`** — its DSN should authenticate as that role,
+server connects as `ferroehr_app`** — its DSN should authenticate as that role,
 not the migrator or the owner.
 
 ## Applying migrations
@@ -39,7 +39,7 @@ migrations run:
 - **Grant the runtime DSN the migrator role** — simplest, for single-tenant or
   small deployments; the server migrates itself at startup. Least isolation.
 - **Run migrations out of band** with a migrator DSN, then start the server
-  with the lower-privileged `ehrbase_app` DSN — recommended for
+  with the lower-privileged `ferroehr_app` DSN — recommended for
   least-privilege production. Run the migration as a CI/CD step or a one-shot
   job with the migrator credential _before_ rolling the deployment, and gate
   the rollout so two versions never race the schema.
@@ -117,12 +117,12 @@ patient is possible only through the
 
 - **Logs** go to stdout — JSON when not attached to a terminal, pretty on a
   TTY — each line stamped with the trace and span id. Shipping and rotation
-  are the platform's job. `EHRBASE__LOG__FORMAT` (`auto`/`json`/`pretty`) and
-  `EHRBASE__LOG__FILTER` (or `RUST_LOG`, default `info,ehrbase=info`) control
+  are the platform's job. `FERROEHR__LOG__FORMAT` (`auto`/`json`/`pretty`) and
+  `FERROEHR__LOG__FILTER` (or `RUST_LOG`, default `info,ferroehr=info`) control
   them, and the level can be changed at runtime through the `loggers` endpoint
   below. On boot the server prints a one-time ASCII banner (version, maintainer,
   project URL, and spec pins) to stdout ahead of the logs; it is suppressed
-  under `EHRBASE__LOG__FORMAT=json` so machine log consumers see only structured
+  under `FERROEHR__LOG__FORMAT=json` so machine log consumers see only structured
   lines.
 - **Traces** export to any OpenTelemetry collector (Tempo, Jaeger, and so on)
   over OTLP — but only when you configure an endpoint; with none set, the
@@ -139,11 +139,11 @@ The telemetry environment variables:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__TELEMETRY__OTLP_ENDPOINT` | unset (layer not installed) | OTLP collector endpoint |
-| `EHRBASE__TELEMETRY__SERVICE_NAME` | `ehrbase` | reported service name |
-| `EHRBASE__TELEMETRY__ENVIRONMENT` | `dev` | reported deployment environment |
-| `EHRBASE__TELEMETRY__TRACES_SAMPLE_RATIO` | `1.0` | head sampling ratio (start at `0.1` in production) |
-| `EHRBASE__TELEMETRY__METRICS_PUSH` | `false` | also push metrics over OTLP |
+| `FERROEHR__TELEMETRY__OTLP_ENDPOINT` | unset (layer not installed) | OTLP collector endpoint |
+| `FERROEHR__TELEMETRY__SERVICE_NAME` | `ferroehr` | reported service name |
+| `FERROEHR__TELEMETRY__ENVIRONMENT` | `dev` | reported deployment environment |
+| `FERROEHR__TELEMETRY__TRACES_SAMPLE_RATIO` | `1.0` | head sampling ratio (start at `0.1` in production) |
+| `FERROEHR__TELEMETRY__METRICS_PUSH` | `false` | also push metrics over OTLP |
 
 > [!TIP]
 > A single-container dev stack (`grafana/otel-lgtm`, bundling an OTLP
@@ -157,7 +157,7 @@ The telemetry environment variables:
 Normal openEHR deletes are *logical* — history is retained. The admin API is
 the exception: **physical, irreversible** removal, for legal erasure requests
 and test-data cleanup. It is enabled only by
-`EHRBASE__ADMIN__ENABLED=true` and is classed under admin authorization (the
+`FERROEHR__ADMIN__ENABLED=true` and is classed under admin authorization (the
 `ADMIN` role). While it is disabled every admin route answers
 **405 Method Not Allowed** with an empty `Allow` header — the resource exists
 but currently serves no method (see
@@ -178,7 +178,7 @@ but currently serves no method (see
   delete one stored-query version (a single `name`/`version` row). **204** on
   success, **404** for an unknown name or version.
 - `GET {base}/admin/config` — the **effective configuration** as a JSON tree
-  (the merged result of the config file, `EHRBASE_*` environment, and
+  (the merged result of the config file, `FERROEHR_*` environment, and
   `--set` overrides). Every secret-bearing value is **redacted**: passwords
   and password hashes, HMAC and signing-key secrets, and S3 secret keys
   render as `***`, and connection URLs (database, AMQP) keep their host and
@@ -189,14 +189,14 @@ but currently serves no method (see
   reach this response.
 
 > [!NOTE]
-> The template and stored-query deletes and the config view are ehrbase-rs
+> The template and stored-query deletes and the config view are ferroehr
 > extensions — the openEHR admin API defines only EHR deletes. They share the
 > same admin gate and authorization as the EHR deletes.
 
 ## The admin API: activity report
 
 Four **read-only** counters over the repository's change history, behind the
-same `EHRBASE__ADMIN__ENABLED` gate and `ADMIN` role as the deletes above.
+same `FERROEHR__ADMIN__ENABLED` gate and `ADMIN` role as the deletes above.
 Every route takes `a_service` — the service whose versioned content to report
 on, one of `Admin`, `Definitions`, `Ehr`, `Ehr_index`, `Demographic`,
 `Message`, `Query`, `System_log` (case-insensitive) — and an optional
@@ -241,7 +241,7 @@ succeeds and archives nothing.
 ## The admin API: dump and load
 
 Two routes that move the whole repository to and from an archive on the
-**server's** file system, behind the same `EHRBASE__ADMIN__ENABLED` gate and
+**server's** file system, behind the same `FERROEHR__ADMIN__ENABLED` gate and
 `ADMIN` role. Both answer **200** with a JSON array of per-entity failure
 reports — an **empty** array means everything succeeded.
 
@@ -306,7 +306,7 @@ while the rest of the archive loads.
 
 > [!NOTE]
 > The activity report, the archive routes, and the dump/load pair are
-> ehrbase-rs extensions too — the openEHR *service model* defines these
+> ferroehr extensions too — the openEHR *service model* defines these
 > operations, but the released REST API surfaces no endpoint for them, so their
 > URLs are our own. They gate no openEHR conformance claim; see
 > [Conformance](conformance.md).
@@ -369,7 +369,7 @@ clinical content.
   limit, which answers **413** when exceeded.
 
 > [!NOTE]
-> The whole `/message` group is an ehrbase-rs extension: the openEHR service
+> The whole `/message` group is an ferroehr extension: the openEHR service
 > model defines a Message component, but the released REST API publishes no
 > message, extract, or TDD endpoints at all. These URLs are our own and gate no
 > openEHR conformance claim; see [Conformance](conformance.md).
@@ -390,13 +390,13 @@ its own probes.
 | `GET /health` | constant `200 OK` (plain text `OK`), touches nothing | load balancers, `docker` `HEALTHCHECK`, anything that must never be auth-gated |
 | `GET /health/liveness` | identical to `/health` — the same constant answer under the orchestrator-conventional path | Kubernetes `livenessProbe` and `startupProbe` |
 | `GET /health/readiness` | `200` when the aggregate is up or degraded, `503` when a required component is down; JSON body with every indicator (database ping, migrations applied, audit sender, events), each bounded to one second | Kubernetes `readinessProbe`, ops dashboards |
-| `GET /ehrbase/rest/status` | product status document: server version, ITS-REST version, timestamp | version/identity checks; the URL the container's `ehrbase healthcheck` subcommand probes |
+| `GET /ferroehr/rest/status` | product status document: server version, ITS-REST version, timestamp | version/identity checks; the URL the container's `ferroehr healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection — see below | operators, off by default, enable deliberately |
 
 There is exactly one health surface — the `/health` family above. `/health` and
 `/health/liveness` are two conventional names for the same constant answer (a
 load balancer wants the bare path, an orchestrator wants the `liveness`/
-`readiness` pair); `/ehrbase/rest/status` is a different contract, and no health
+`readiness` pair); `/ferroehr/rest/status` is a different contract, and no health
 endpoint exists under the REST root.
 
 > [!IMPORTANT]
@@ -406,7 +406,7 @@ endpoint exists under the REST root.
 > loop. Wire `livenessProbe` and `startupProbe` to `/health/liveness` and
 > `readinessProbe` to `/health/readiness`. The Helm chart does exactly this out
 > of the box; `probes.exec.enabled=true` switches to the container's
-> `ehrbase healthcheck` subcommand if the kubelet cannot reach the HTTP port.
+> `ferroehr healthcheck` subcommand if the kubelet cannot reach the HTTP port.
 
 ## The management surface
 
@@ -420,10 +420,10 @@ depend on it.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__MANAGEMENT__ENABLED` | `false` | enable the management surface |
-| `EHRBASE__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
-| `EHRBASE__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
-| `EHRBASE__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
+| `FERROEHR__MANAGEMENT__ENABLED` | `false` | enable the management surface |
+| `FERROEHR__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
+| `FERROEHR__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
+| `FERROEHR__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
 
 The ops endpoints:
 
@@ -446,5 +446,5 @@ control — which appears only while the CDR serves `{base}/info`. See
 
 For the full list of configuration keys across every subsystem, see
 [Installation → Configuration reference](installation/configuration.md); to
-explore the API itself, open the API reference at `/ehrbase-rs/api/` (also
+explore the API itself, open the API reference at `/ferroehr/api/` (also
 linked from the toolbar on every page).

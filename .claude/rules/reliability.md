@@ -186,9 +186,11 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   canonical JSON is the emitted native `ToJson`/`FromJson` codec
   (root `CLAUDE.md` §Code generation). The wire contract is pinned by the
   canonical-output gates instead.
-- **C-PERMISSIVE — Apache-2.0 only** (the guideline recommends dual
-  `MIT OR Apache-2.0` and calls Apache-only "not recommended"): owner
-  decision; dependencies are still license-gated by `deny.toml`.
+- **C-PERMISSIVE — MIT for the project's own code** (owner decision
+  2026-07-31, superseding the earlier Apache-2.0-only ruling): the project
+  relicensed to MIT with the rename; vendored openEHR machine-readable
+  artifacts and CKM-derived data keep their upstream Apache-2.0 terms
+  (`LICENSE-APACHE-2.0`). Dependencies stay license-gated by `deny.toml`.
 - **C-STABLE — latent, neutralized by `publish = false`**: the `openehr-*`
   crates carry ≥1.0 spec versions while exposing pre-1.0 public deps
   (`jiff 0.2`, `sqlx 0.9`, `chumsky 0.13`, `leptos 0.8`). Harmless while

@@ -5,14 +5,14 @@
 # CI regenerate-and-diff guarded, light+dark, numbers rendered never
 # hand-typed.
 #
-#   CONF_SUT=ehrbase-rs  (default)  → website/book/src/conformance-assets/
+#   CONF_SUT=ferroehr  (default)  → website/book/src/conformance-assets/
 #                                     + the landing page's committed copy
 #   CONF_SUT=ehrbase-java           → website/book/src/comparison-assets/
 #                                     (file stems suffixed -java)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SUT="${CONF_SUT:-ehrbase-rs}"
+SUT="${CONF_SUT:-ferroehr}"
 ART="docs/conformance/$SUT"
 for f in "$ART/results.json" "$ART/verdicts.json"; do
   [ -f "$f" ] || {
@@ -22,7 +22,7 @@ for f in "$ART/results.json" "$ART/verdicts.json"; do
 done
 
 case "$SUT" in
-ehrbase-rs)
+ferroehr)
   OUT="website/book/src/conformance-assets"
   SUFFIX=""
   ;;
@@ -43,10 +43,6 @@ cargo run -q -p cnf-runner -- conformance-assets \
   --out "$OUT" \
   --suffix="$SUFFIX"
 
-# The landing page embeds the product's heat grid (a committed copy of the
-# same generated output; the stale-numbers guard exempts *.svg because its
-# labels are rendered, never hand-typed).
-if [ "$SUT" = "ehrbase-rs" ]; then
-  cp "$OUT/conformance-heat-grid.svg" website/landing/assets/conformance-heat-grid.svg
-  echo "wrote website/landing/assets/conformance-heat-grid.svg"
-fi
+# The landing page embeds the product's heat grid straight from the book's
+# committed conformance-assets copy (served at /docs/latest/) — no second
+# committed copy exists.

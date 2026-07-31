@@ -29,7 +29,7 @@ fn manifest_dir() -> PathBuf {
 }
 
 fn corpus_dir() -> PathBuf {
-    manifest_dir().join("../../app/ehrbase/tests/resources/service")
+    manifest_dir().join("../../app/ferroehr/tests/resources/service")
 }
 
 fn better_fixtures_dir() -> PathBuf {

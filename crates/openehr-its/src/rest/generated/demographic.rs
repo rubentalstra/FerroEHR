@@ -1127,7 +1127,7 @@ pub trait DemographicApi {
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for
-/// wiring an axum router in `ehrbase-rest`.
+/// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[
     ("POST", "/demographic/agent", "agent_create"),
     ("GET", "/demographic/agent/{uid_based_id}", "agent_get"),

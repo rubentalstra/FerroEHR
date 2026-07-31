@@ -1,6 +1,6 @@
 # Security Policy
 
-EHRbase-rs is a clinical data repository; security reports are taken seriously
+FerroEHR is a clinical data repository; security reports are taken seriously
 and handled with priority.
 
 ## Supported versions
@@ -13,7 +13,7 @@ tagged release; there are no maintenance branches yet.
 **Please do not open a public issue for suspected vulnerabilities.**
 
 Report privately via
-[GitHub private vulnerability reporting](https://github.com/rubentalstra/ehrbase-rs/security/advisories/new)
+[GitHub private vulnerability reporting](https://github.com/rubentalstra/FerroEHR/security/advisories/new)
 ("Report a vulnerability" on the repository's Security tab).
 
 Include what you can: affected component/endpoint, reproduction steps or a proof

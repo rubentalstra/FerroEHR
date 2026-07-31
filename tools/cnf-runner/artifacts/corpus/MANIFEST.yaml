@@ -1626,7 +1626,7 @@ cnf.archetype.adl14.medication:
   format: adl14-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "openEHR CKM lineage ADL 1.4 archetype openEHR-EHR-INSTRUCTION.medication.v1 (the same source vendored with the OPT test corpus at app/ehrbase/tests/resources/service/knowledge/archetypes), adopted 2026-07-29 for the ADL 1.4 archetype-provisioning battery"
+  provenance: "openEHR CKM lineage ADL 1.4 archetype openEHR-EHR-INSTRUCTION.medication.v1 (the same source vendored with the OPT test corpus at app/ferroehr/tests/resources/service/knowledge/archetypes), adopted 2026-07-29 for the ADL 1.4 archetype-provisioning battery"
 cnf.archetype.adl14.revised:
   source: fixtures/archetypes/adl14.medication.v1.revised.adl
   format: adl14-text

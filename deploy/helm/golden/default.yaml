@@ -1,25 +1,25 @@
 ---
-# Source: ehrbase-rs/templates/networkpolicy.yaml
-# Default-deny ingress for the ehrbase-rs pods, admitting traffic ONLY to the
+# Source: ferroehr/templates/networkpolicy.yaml
+# Default-deny ingress for the ferroehr pods, admitting traffic ONLY to the
 # API port (and the management port when it runs on its own listener). Every
 # other inbound port is denied. A PHI workload should never be reachable on
 # anything but its serving port.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: ehrbase-rs
-      app.kubernetes.io/instance: ehrbase-rs
+      app.kubernetes.io/name: ferroehr
+      app.kubernetes.io/instance: ferroehr
   policyTypes:
     - Ingress
   ingress:
@@ -27,57 +27,57 @@ spec:
         - port: http
           protocol: TCP
 ---
-# Source: ehrbase-rs/templates/poddisruptionbudget.yaml
+# Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: ehrbase-rs
-      app.kubernetes.io/instance: ehrbase-rs
+      app.kubernetes.io/name: ferroehr
+      app.kubernetes.io/instance: ferroehr
 ---
-# Source: ehrbase-rs/templates/serviceaccount.yaml
+# Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
 ---
-# Source: ehrbase-rs/templates/configmap.yaml
+# Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 data:
-  # The whole server configuration as one ehrbase.toml, mounted at
-  # /etc/ehrbase/ehrbase.toml (config search-order position 4). Rendered from
+  # The whole server configuration as one ferroehr.toml, mounted at
+  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered from
   # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
-  # here — they are injected as EHRBASE_* env from the Secret and override the file.
-  ehrbase.toml: |
+  # here — they are injected as FERROEHR_* env from the Secret and override the file.
+  ferroehr.toml: |
     [admin]
       enabled = false
     
@@ -106,14 +106,14 @@ data:
     
     [events]
       enabled = false
-      exchange = "ehrbase.events"
+      exchange = "ferroehr.events"
       tls = false
     
     [fhir]
       api_enabled = false
       [fhir.outbound]
         enabled = false
-        exchange = "ehrbase.fhir"
+        exchange = "ferroehr.fhir"
         tls = false
     
     [log]
@@ -137,7 +137,7 @@ data:
       region = "us-east-1"
     
     [server]
-      base_path = "/ehrbase/rest/openehr/v1"
+      base_path = "/ferroehr/rest/openehr/v1"
       bind = "0.0.0.0:8080"
       cors_permissive = false
       swagger_ui = true
@@ -157,18 +157,18 @@ data:
         enabled = false
         fail_on_error = false
 ---
-# Source: ehrbase-rs/templates/service.yaml
+# Source: ferroehr/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 spec:
   type: ClusterIP
   ports:
@@ -177,37 +177,37 @@ spec:
       targetPort: http
       protocol: TCP
   selector:
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
 ---
-# Source: ehrbase-rs/templates/deployment.yaml
+# Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ehrbase-rs
+  name: ferroehr
   labels:
-    helm.sh/chart: ehrbase-rs-3.2.0
-    app.kubernetes.io/name: ehrbase-rs
-    app.kubernetes.io/instance: ehrbase-rs
+    helm.sh/chart: ferroehr-3.2.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.15.1"
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: ehrbase-rs
+    app.kubernetes.io/part-of: ferroehr
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: ehrbase-rs
-      app.kubernetes.io/instance: ehrbase-rs
+      app.kubernetes.io/name: ferroehr
+      app.kubernetes.io/instance: ferroehr
   template:
     metadata:
       annotations:
-        # Roll pods when the rendered ehrbase.toml changes.
-        checksum/config: bbc64f1544396ab71591c1c5ee58cf1a45015c85da11a28e5c158714626cf8e2
+        # Roll pods when the rendered ferroehr.toml changes.
+        checksum/config: ebb712f1ed73bbfc67a0338663d936dbf7b9f62efc5ed94880ae7e930538cfe5
       labels:
-        app.kubernetes.io/name: ehrbase-rs
-        app.kubernetes.io/instance: ehrbase-rs
+        app.kubernetes.io/name: ferroehr
+        app.kubernetes.io/instance: ferroehr
     spec:
-      serviceAccountName: ehrbase-rs
+      serviceAccountName: ferroehr
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext:
@@ -219,8 +219,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: ehrbase
-          image: "ghcr.io/rubentalstra/ehrbase-rs:3.15.1"
+        - name: ferroehr
+          image: "ghcr.io/rubentalstra/ferroehr:3.15.1"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -237,16 +237,16 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # Only SECRET config is env; the rest is the mounted ehrbase.toml.
+          # Only SECRET config is env; the rest is the mounted ferroehr.toml.
           # The DSN comes from an existing Secret (preferred) or the chart Secret;
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
           env:
-            - name: EHRBASE__DB__URL
+            - name: FERROEHR__DB__URL
               valueFrom:
                 secretKeyRef:
-                  name: ehrbase-db
-                  key: EHRBASE__DB__URL
+                  name: ferroehr-db
+                  key: FERROEHR__DB__URL
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -282,9 +282,9 @@ spec:
             # readOnlyRootFilesystem=true → give the process a writable scratch dir.
             - name: tmp
               mountPath: /tmp
-            # ehrbase.toml (+ any config.files) mounted read-only at /etc/ehrbase.
+            # ferroehr.toml (+ any config.files) mounted read-only at /etc/ferroehr.
             - name: config
-              mountPath: /etc/ehrbase
+              mountPath: /etc/ferroehr
               readOnly: true
       volumes:
         - name: tmp
@@ -293,7 +293,7 @@ spec:
           projected:
             sources:
               - configMap:
-                  name: ehrbase-rs
+                  name: ferroehr
                   items:
-                    - key: ehrbase.toml
-                      path: ehrbase.toml
+                    - key: ferroehr.toml
+                      path: ferroehr.toml

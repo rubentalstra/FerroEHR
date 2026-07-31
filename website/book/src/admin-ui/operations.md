@@ -37,7 +37,7 @@ If the CDR serves management on its own internal listener
 the console at it with one setting — the full prefix, including the path:
 
 ```bash
-EHRBASE_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9464/management
+FERROEHR_ADMIN__CDR__MANAGEMENT_BASE_URL=http://cdr.internal:9464/management
 ```
 
 Unset, the console derives `{cdr.base_url}/management`.
@@ -57,7 +57,7 @@ migrations probe, and the optional component flags — with the CDR's own detail
 text where it gave one.
 
 This is deliberately a different question from the **status pill** in the
-topbar, which polls the product status document (`GET /ehrbase/rest/status`):
+topbar, which polls the product status document (`GET /ferroehr/rest/status`):
 
 | Reader | Question it answers |
 |---|---|
@@ -107,7 +107,7 @@ restores, and lets an operator change the live filter without a restart
 
 ![Operations panel — log filter confirmation](img/operations/operations-log-filter.png)
 
-Type `tracing`-style directives (`ehrbase=debug,sqlx=warn`), press **Apply
+Type `tracing`-style directives (`ferroehr=debug,sqlx=warn`), press **Apply
 filter**, and confirm: the dialog spells out that logging changes immediately
 for every request the instance serves. **Reset to boot filter** puts the startup
 value back. Both outcomes are reported as a toast, and the card re-reads the

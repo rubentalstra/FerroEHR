@@ -1,13 +1,13 @@
 ---
-paths: ["app/ehrbase-rest/**", "app/ehrbase/src/config/**", "app/ehrbase/src/**/security/**"]
+paths: ["app/ferroehr-rest/**", "app/ferroehr/src/config/**", "app/ferroehr/src/**/security/**"]
 ---
 
 # Authentication & authorization (rewritten 2026-07-13 — authn + access module are SHIPPED)
 
 **State:** Basic + OAuth2/OIDC authentication is shipped and live.
-Authorization lives in the **`ehrbase-rest::access` module** (the RBAC/ABAC
-policy-enforcement point; the old `ehrbase-authz` crate was dissolved into
-it), with **SMART resource-scope enforcement** (`ehrbase-rest::smart`)
+Authorization lives in the **`ferroehr-rest::access` module** (the RBAC/ABAC
+policy-enforcement point; the old `ferroehr-authz` crate was dissolved into
+it), with **SMART resource-scope enforcement** (`ferroehr-rest::smart`)
 AND-composed onto that PEP — config-gated, off by default. This rule governs
 maintenance and extension, not initial build.
 
@@ -25,8 +25,8 @@ maintenance and extension, not initial build.
 - SMART scope grammar/enforcement: the vendored
   `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` text (master08 is the
   load-bearing scope grammar). EHR-level access: the
-  `ehrbase.access_control.v1` scheme implemented in
-  `app/ehrbase/src/service/ehr/access_types.rs` (no openEHR spec defines a
+  `ferroehr.access_control.v1` scheme implemented in
+  `app/ferroehr/src/service/ehr/access_types.rs` (no openEHR spec defines a
   concrete ACCESS_CONTROL_SETTINGS scheme — our own design).
 
 ## Rules
@@ -39,7 +39,7 @@ maintenance and extension, not initial build.
 - **Auth is a `tower`/axum middleware + extractor** on the generated router
   — one place, never per-handler. The authenticated principal goes into
   request extensions; the `access` PEP consumes it.
-- **Config-driven** (one TOML file, `ehrbase.toml`, with environment-variable
+- **Config-driven** (one TOML file, `ferroehr.toml`, with environment-variable
   overrides): enabled modes, OIDC issuer/JWKS, audience, the Basic user store.
   Config changes are user-visible → same-PR website-book + changelog entries.
 - **Layer order is load-bearing:** authn → `access` (RBAC/ABAC) → SMART

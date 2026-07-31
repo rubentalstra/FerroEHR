@@ -40,4 +40,4 @@ SF-MAP-interval_reference_range). ORDINAL/SCALE hit BOTH (row1 = bound-presence,
 rows4/5 = coded symbol value=code). Verify the two code paths still exist before
 re-attributing (an implementer may have reverted). Reproduction recipe in
 [[sut-reproduction-setup]]; the credential note there is correct
-(ehrbase-admin:ehrbase works — POST /ehr → 201).
+(ferroehr-admin:ferroehr works — POST /ehr → 201).

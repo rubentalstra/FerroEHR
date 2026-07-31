@@ -90,7 +90,7 @@ referenced by only 3 ops (the two example_gets + adl1.4 template get).
 **There is NO Better-quirks feature flag** — `docs/architecture.md:131` claims one;
 `.claude/rules/serialization.md` correctly says "there is no quirks feature flag".
 
-Wire seam: `app/ehrbase-rest/src/formats/dispatch.rs` (+ `crate::overview::negotiate`);
+Wire seam: `app/ferroehr-rest/src/formats/dispatch.rs` (+ `crate::overview::negotiate`);
 `guard_non_templated()` rejects simplified on EHR/EHR_STATUS/FOLDER/parties (415 in / 406 out),
 called from `api/{ehr/ehr_resource,ehr/ehr_status,ehr/directory,demographic/party,demographic/relationship}.rs`.
 

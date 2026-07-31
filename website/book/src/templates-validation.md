@@ -1,6 +1,6 @@
 # Templates & validation
 
-A template is what tells EHRbase-rs what clinical data to accept. Before you can
+A template is what tells FerroEHR what clinical data to accept. Before you can
 commit a composition, you upload the **Operational Template (OPT)** it conforms
 to; from that template the server derives everything it needs to validate
 incoming data and to describe the data's shape to client applications. This
@@ -11,14 +11,14 @@ on commit. If templates and archetypes are new to you, read the
 
 ## Uploading a template
 
-EHRbase-rs ingests templates in the **OPT 1.4** XML format. Upload one with
+FerroEHR ingests templates in the **OPT 1.4** XML format. Upload one with
 `Content-Type: application/xml`:
 
 ```shell
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/xml' \
   --data-binary @vital_signs.opt \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4
 ```
 
 The upload takes OPT XML and nothing else: a request declaring another
@@ -71,28 +71,28 @@ by `Accept`: the stored ADL2 **source** (`text/plain`, the default) or the
 
 ```shell
 # The ADL2 source, verbatim
-curl -u ehrbase:ehrbase -H 'Accept: text/plain' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1.0.0
+curl -u ferroehr:ferroehr -H 'Accept: text/plain' \
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1.0.0
 
 # The operational template as JSON
-curl -u ehrbase:ehrbase -H 'Accept: application/json' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1
+curl -u ferroehr:ferroehr -H 'Accept: application/json' \
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1
 ```
 
 List and retrieve loaded templates:
 
 ```shell
 # List all templates
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4
 
 # Filter and page the list
-curl -u ehrbase:ehrbase \
-  'http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4?template_id=vital*&offset=0&fetch=20'
+curl -u ferroehr:ferroehr \
+  'http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4?template_id=vital*&offset=0&fetch=20'
 
 # Get the canonical OPT XML for one template
-curl -u ehrbase:ehrbase -H 'Accept: application/xml' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4/vital_signs
+curl -u ferroehr:ferroehr -H 'Accept: application/xml' \
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4/vital_signs
 ```
 
 The ADL 1.4 list accepts three filters — `template_id`, `concept`, and
@@ -115,12 +115,12 @@ path, type, cardinality, allowed values, and labels, which is exactly what you
 need to render a form or map data. Request it with the WebTemplate media type:
 
 ```shell
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Accept: application/openehr.wt+json' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4/vital_signs
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4/vital_signs
 ```
 
-EHRbase-rs follows the widely used Better `web-template` semantics (format
+FerroEHR follows the widely used Better `web-template` semantics (format
 version `2.3`), so tooling built for that model works unchanged.
 
 `Accept: application/json` on the same URL returns that identical WebTemplate

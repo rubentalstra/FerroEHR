@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 #
-# The single Dockerfile for the `ehrbase` server image (issue #282 D1/D5).
+# The single Dockerfile for the `ferroehr` server image (issue #282 D1/D5).
 # ONE runtime stage feeds TWO final targets so a compose-built image and a
 # CI-published image can never drift (docs.docker.com/build/building/multi-stage):
 #
 #   runtime-from-source  the LOCAL/compose path — cargo-chef + cache mounts
 #                         compile the binary in-image.
 #   runtime-prebuilt     the CI path — COPY-only packaging of a context-provided
-#                         native binary (bin/${TARGETARCH}/ehrbase); no RUN, so a
+#                         native binary (bin/${TARGETARCH}/ferroehr); no RUN, so a
 #                         multi-arch buildx needs no QEMU and finishes in seconds.
 #
 # Caching (D1, the F2/F3 fix): cargo-chef splits the dependency compile into its
@@ -55,7 +55,7 @@ COPY --from=planner /app/recipe.json recipe.json
 # The registry cache mount is safe: it holds downloaded crate sources, never
 # shadows /app/target, and only speeds a cache-missed cook.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo chef cook --release --locked -p ehrbase-server --recipe-path recipe.json
+    cargo chef cook --release --locked -p ferroehr-server --recipe-path recipe.json
 COPY . .
 # Build provenance: the OCI-standard REVISION build-arg (the git SHA CI's
 # metadata-action already sets for org.opencontainers.image.revision) is the
@@ -71,9 +71,9 @@ ENV REVISION=${REVISION}
 # system libraries. Deps are already compiled by `chef cook`, so this step only
 # builds the workspace's own crates.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo build --release --locked -p ehrbase-server \
-    && cp target/release/ehrbase /usr/local/bin/ehrbase \
-    && strip /usr/local/bin/ehrbase
+    cargo build --release --locked -p ferroehr-server \
+    && cp target/release/ferroehr /usr/local/bin/ferroehr \
+    && strip /usr/local/bin/ferroehr
 
 # ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
 # gcr.io/distroless/cc-debian13:nonroot (glibc + libgcc_s + CA certs; non-root
@@ -90,30 +90,30 @@ EXPOSE 8080
 # Shell-less image: the healthcheck is the binary's own subcommand, which probes
 # /rest/status and exits 0 (2xx) / 1 otherwise.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["/usr/local/bin/ehrbase", "healthcheck"]
-ENTRYPOINT ["/usr/local/bin/ehrbase"]
+    CMD ["/usr/local/bin/ferroehr", "healthcheck"]
+ENTRYPOINT ["/usr/local/bin/ferroehr"]
 # OCI image labels. CI (docker/metadata-action) overrides source/revision/
 # version/created at build time; these are sensible static defaults.
 ARG VERSION="0.1.0"
 ARG REVISION=""
-LABEL org.opencontainers.image.title="ehrbase-rs" \
+LABEL org.opencontainers.image.title="ferroehr" \
       org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)" \
-      org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
+      org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
 # ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
 FROM runtime-base AS runtime-from-source
-COPY --from=builder /usr/local/bin/ehrbase /usr/local/bin/ehrbase
+COPY --from=builder /usr/local/bin/ferroehr /usr/local/bin/ferroehr
 
 # ── runtime-prebuilt: CI (COPY the context-provided native binary; no compile) ─
-# The `ehrbase` binaries are built natively per architecture on the CI runners
+# The `ferroehr` binaries are built natively per architecture on the CI runners
 # (inside rust:*-slim-trixie, so they target Debian 13 glibc 2.41 — exactly what
 # this distroless base ships) and land in the build context as
-# bin/amd64/ehrbase and bin/arm64/ehrbase. Because no RUN executes, a multi-arch
+# bin/amd64/ferroehr and bin/arm64/ferroehr. Because no RUN executes, a multi-arch
 # buildx of this target needs no QEMU.
 FROM runtime-base AS runtime-prebuilt
 # amd64 | arm64 — supplied by buildx per platform.
 ARG TARGETARCH
-COPY --chmod=0755 bin/${TARGETARCH}/ehrbase /usr/local/bin/ehrbase
+COPY --chmod=0755 bin/${TARGETARCH}/ferroehr /usr/local/bin/ferroehr

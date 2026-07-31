@@ -1,0 +1,686 @@
+//! EHR-Extract import (SM `I_EHR_EXTRACT_SERVICE.import_ehr` /
+//! `import_ehr_extract`) — the inverse of export: each received
+//! `X_VERSIONED_*`'s `ORIGINAL_VERSION`s are replayed into the local store as
+//! `IMPORTED_VERSION`s.
+//!
+//! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_ehr_extract_service.adoc`
+//! (`import_ehr` / `import_ehr_extract`); RM common
+//! `master06-change_control_package.adoc` §Copying / §Distributed Versioning
+//! (`IMPORTED_VERSION`, Cases 1/2/3, `creating_system_id`, local commit-time
+//! rule) and its `org.openehr.rm.common.imported_version.adoc` class table; the
+//! demographics-chapter routing follows
+//! `docs/specs/openehr/RM/docs/ehr_extract/master09-semantics.adoc` §Creation
+//! Semantics.
+//!
+//! This module owns only the **parse + dispatch**: turning a received `EXTRACT`
+//! into the [`ImportContainer`] sets and choosing clone-vs-append. The
+//! `IMPORTED_VERSION` replay (a fresh local import CONTRIBUTION recording the
+//! local act of committal at `249|creation|`, while each wrapped original's
+//! identity / `commit_audit` / lifecycle / data / signature / attestations are
+//! preserved verbatim — master06 §Copying "the `ORIGINAL_VERSION` instance is
+//! never modified") lives in the change-control engine
+//! ([`crate::versioning::import::commit_import`] / [`crate::versioning::import::commit_demographic_import`]).
+//!
+//! `import_ehr` clones a whole EHR into an empty target (a caller-fixed id, else
+//! the source EHR id reused — master06 §Copying Case 1; RM ehr §"EHR Identifier
+//! Allocation"); `import_ehr_extract` lands versioned objects into an existing
+//! EHR (Cases 2/3).
+//!
+//! NOTE (re-verify — import scope): imported COMPOSITION content is
+//! stored verbatim without re-linking its operational template
+//! (`vo_version.template_id` stays NULL) or re-running WebTemplate/RM validation
+//! — the OPT must already be provisioned in the target through the DEFINITION
+//! API. Re-validation on import is deferred (it would require the source's
+//! exact OPT); this matches the admin dump/load path, which master06 §Copying
+//! permits: "the `ORIGINAL_VERSION` instance is never modified".
+//!
+//! An imported EHR is a FULL local EHR, not a second-class one: the promoted
+//! `ehr` columns are re-derived from the landed `EHR_STATUS`
+//! ([`crate::service::FerroEhrService::resync_promoted_columns`]), so the clone
+//! is found by the subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`,
+//! `operations/ehr_get_by_subject.yaml`) and bound by the one-EHR-per-subject
+//! rule (RM ehr master04 §EHR Status) exactly like a created EHR — importing a
+//! clone of a subject the target already holds is therefore a conflict, not a
+//! silent duplicate. Where the extract carries no `EHR_ACCESS`, the whole-EHR
+//! clone completes the mandatory 1..1 `EHR.ehr_access` (RM ehr `ehr.adoc`
+//! `Ehr_access_valid`; master04 §EHR Creation) with the local default
+//! ([`crate::service::FerroEhrService::commit_default_ehr_access`]).
+
+use std::collections::BTreeMap;
+
+use serde_json::Value;
+
+use crate::ids::{EhrId, VoId};
+use crate::service::FerroEhrService;
+use crate::service::error::ServiceError;
+use crate::service::status::{CallStatusType, SmError};
+use crate::system_log::event::EventActionCode;
+use crate::versioning::Kind;
+use crate::versioning::audit::AuditInput;
+use crate::versioning::audit::{change_type, change_type_code};
+use crate::versioning::import::{
+    ImportContainer, ImportVersion, commit_demographic_import, commit_import,
+};
+use crate::versioning::lifecycle;
+use crate::versioning::lifecycle::lifecycle_state_code;
+use crate::versioning::object_version_id::parse_object_version_id;
+use openehr_rm::ehr_extract::common::extract::Extract;
+
+impl FerroEhrService {
+    /// SM `import_ehr(an_ehr_id[0..1], an_extract)` — clone a whole EHR into an
+    /// empty target (master06 §Copying Case 1). The target id is the caller's
+    /// fixed id (the SM's "same patient in other EHR services" case), else the
+    /// source EHR id reused (master06 §Copying Case 1: the newly created EHR
+    /// re-uses the source EHR identifier; RM ehr §"EHR Identifier Allocation").
+    /// A completed import is audited for non-repudiation (inbound →
+    /// `EventActionCode::Create`).
+    ///
+    /// Returns the id of the EHR the clone landed under — the caller's fixed
+    /// id, or the source id the extract carried. The SM operation itself
+    /// returns nothing, but the created EHR's identity is not otherwise
+    /// derivable by a caller that supplied none, and a creating call that
+    /// cannot name what it created is unusable over a wire.
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — the extract carries no `EHR_STATUS`
+    ///   versioned object, carries duplicate singleton containers, names no
+    ///   source EHR id when `an_ehr_id` is absent, or any content item /
+    ///   `ORIGINAL_VERSION` is malformed (see the parse errors in this module).
+    /// - `ehr_create_fail_duplicate_id` — an EHR with the target id already
+    ///   exists (`import_ehr` requires an empty target).
+    /// - `Conflict` (`409`) — the imported `EHR_STATUS` names a subject another
+    ///   EHR in this repository already holds (one EHR per subject — RM ehr
+    ///   master04 §EHR Status).
+    /// - `exception` — a database/replay fault mid-transaction (rolled back).
+    pub async fn import_ehr(
+        &self,
+        an_ehr_id: Option<EhrId>,
+        an_extract: Extract,
+    ) -> Result<EhrId, SmError> {
+        let (containers, parties) = parse_import_containers(&an_extract)?;
+        // A whole-EHR clone must carry an EHR_STATUS (EHR.ehr_status 1..1, RM
+        // ehr §"EHR Creation") — the target could not otherwise be a valid EHR.
+        if !containers.iter().any(|c| c.kind == Kind::EhrStatus) {
+            return Err(SmError::precondition(
+                "import_ehr requires the extract to carry an EHR_STATUS versioned object",
+            ));
+        }
+        reject_duplicate_singleton_containers(&containers)?;
+
+        let ehr_id = match an_ehr_id {
+            Some(id) => id,
+            None => source_ehr_id(&an_extract)?,
+        };
+
+        let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
+        // Into an *empty* target: a duplicate EHR id is
+        // `ehr_create_fail_duplicate_id`. The EHR is created locally, so its
+        // immutable `system_id` is ours (master06 §Distributed Versioning — the
+        // committing system is the local one).
+        // NOTE (clone-target EHR-row creation; no openEHR spec governs the
+        // storage SQL — our own design): the row insert is inlined here as the
+        // master06 §Copying Case-1 clone step rather than routed through the EHR
+        // service's `create_ehr`, because a clone must reuse the source EHR id
+        // (or a caller-fixed id) and skip the fresh-`EHR_STATUS` creation that
+        // `create_ehr` performs — the status arrives inside the extract.
+        let inserted =
+            sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+                .bind(ehr_id)
+                .bind(self.effective_system_id())
+                .execute(&mut *tx)
+                .await
+                .map_err(ServiceError::from)?;
+        if inserted.rows_affected() == 0 {
+            return Err(SmError::new(
+                CallStatusType::EhrCreateFailDuplicateId,
+                format!("EHR {ehr_id} already exists; import_ehr requires an empty target"),
+            ));
+        }
+        let audit = self.audit(change_type::CREATION, "EHR Extract import");
+        let outbox_enabled = self.outbox_enabled();
+        let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
+        commit_import(&mut tx, ehr_id, &audit, containers, outbox_enabled).await?;
+        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
+        // An EHR is created as "a root EHR object, an EHR Status object, and an
+        // EHR Access object" (RM ehr master04 §EHR Creation) and `EHR.ehr_access`
+        // is 1..1 (`ehr.adoc` invariant `Ehr_access_valid`). An extract that
+        // carried no EHR_ACCESS therefore leaves the clone incomplete — commit
+        // the local default in this same transaction.
+        if !touches_ehr_access {
+            self.commit_default_ehr_access(&mut tx, ehr_id, "EHR Extract import: default access")
+                .await?;
+        }
+        // The clone landed the EHR_STATUS directly (not via the service's
+        // sync_ehr_subject hook), so re-promote the `ehr` columns from the
+        // stored current status: the subject (`GET /ehr?subject_id` +
+        // one-EHR-per-subject, RM ehr master04 §EHR Status) and the
+        // `is_queryable` / `is_modifiable` flags the AQL full-population gate
+        // (SM I_QUERY_SERVICE) and the content-write guard (§EHR Active Status)
+        // read.
+        self.resync_promoted_columns(&mut tx, ehr_id).await?;
+        tx.commit().await.map_err(ServiceError::from)?;
+        // An imported EHR_ACCESS version changes the EHR's access policy — evict
+        // the cached settings the access gate consults (RM ehr master04 §EHR
+        // Access; the settings are change-controlled). A bootstrapped default
+        // carries no settings, so the clone is default-open: seed that entry
+        // instead, exactly as the create path does.
+        if touches_ehr_access {
+            self.invalidate_ehr_access(ehr_id).await;
+        } else {
+            self.prewarm_ehr_access_open(ehr_id).await;
+        }
+        self.emit_extract_audit(ehr_id, EventActionCode::Create);
+        Ok(ehr_id)
+    }
+
+    /// SM `import_ehr_extract(an_ehr_id, an_extract)` — land versioned objects
+    /// into an existing EHR (master06 §Copying Cases 2/3). A completed import
+    /// is audited for non-repudiation (inbound → `EventActionCode::Create`).
+    ///
+    /// # Errors
+    /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
+    /// - `precondition_violation` (`400`) — duplicate singleton containers, or
+    ///   any malformed content item / `ORIGINAL_VERSION` (see the parse errors
+    ///   in this module).
+    /// - `Conflict` (`409`) — the EHR already holds an `EHR_STATUS`/`EHR_ACCESS`
+    ///   under a different object id (an EHR holds at most one of each; RM ehr,
+    ///   EHR class 1..1), or an imported `EHR_STATUS` names a subject another
+    ///   EHR already holds (one EHR per subject — RM ehr master04 §EHR Status).
+    /// - `exception` — a database/replay fault mid-transaction (rolled back).
+    pub async fn import_ehr_extract(
+        &self,
+        an_ehr_id: EhrId,
+        an_extract: Extract,
+    ) -> Result<(), SmError> {
+        if !self.import_ehr_exists(an_ehr_id).await? {
+            return Err(SmError::ehr_not_found(format!(
+                "no EHR with id {an_ehr_id}"
+            )));
+        }
+        let (containers, parties) = parse_import_containers(&an_extract)?;
+        reject_duplicate_singleton_containers(&containers)?;
+
+        // A *new* singleton container cannot be added when the EHR already holds
+        // one of that kind under a different object id (EHR.ehr_status /
+        // ehr_access 1..1 — RM ehr, EHR class). A matching object id is an
+        // append (master06 §Copying Case 3), handled in `commit_import`. FOLDERs
+        // are NOT singletons: each first-received hierarchy joins `EHR.folders`
+        // (RM ehr master04 §Folders).
+        for container in &containers {
+            if matches!(container.kind, Kind::EhrStatus | Kind::EhrAccess)
+                && let Some((existing_vo, _)) = self.current_vo(an_ehr_id, container.kind).await?
+                && existing_vo != container.vo_id
+            {
+                return Err(ServiceError::Conflict(format!(
+                    "EHR {an_ehr_id} already has a {} ({existing_vo}); cannot import a \
+                     second one ({})",
+                    container.kind.as_str(),
+                    container.vo_id
+                ))
+                .into());
+            }
+        }
+
+        let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
+        let audit = self.audit(change_type::CREATION, "EHR Extract import");
+        let outbox_enabled = self.outbox_enabled();
+        let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
+        commit_import(&mut tx, an_ehr_id, &audit, containers, outbox_enabled).await?;
+        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
+        // An imported EHR_STATUS version can change the current status
+        // (Copying Case 3 append) — including its subject; re-promote the `ehr`
+        // columns from the stored current status so the subject lookup +
+        // one-EHR-per-subject rule (RM ehr master04 §EHR Status), the AQL
+        // full-population gate (SM I_QUERY_SERVICE) and the content-write guard
+        // (§EHR Active Status) all stay consistent with it.
+        self.resync_promoted_columns(&mut tx, an_ehr_id).await?;
+        tx.commit().await.map_err(ServiceError::from)?;
+        // An imported EHR_ACCESS version changes the EHR's access policy — evict
+        // the cached settings the access gate consults (RM ehr master04 §EHR
+        // Access; the settings are change-controlled).
+        if touches_ehr_access {
+            self.invalidate_ehr_access(an_ehr_id).await;
+        }
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Create);
+        Ok(())
+    }
+
+    /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of
+    /// `import_ehr_extract`; `i_ehr_extract_service.adoc`).
+    async fn import_ehr_exists(&self, ehr_id: EhrId) -> Result<bool, ServiceError> {
+        Ok(
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+                .bind(ehr_id)
+                .fetch_one(&self.pool)
+                .await?,
+        )
+    }
+}
+
+/// Reverse of the export `X_VERSIONED_*` mapping: the versioned-object [`Kind`]
+/// a wrapper carries, for the EHR-scoped kinds an import replays.
+/// (`X_VERSIONED_PARTY` demographics-chapter content is routed to the
+/// demographic repository before this dispatch; a bare `X_VERSIONED_OBJECT`
+/// wrapper is not importable — master05 class tables.)
+fn kind_from_x_versioned(xtype: &str) -> Option<Kind> {
+    match xtype {
+        "X_VERSIONED_COMPOSITION" => Some(Kind::Composition),
+        "X_VERSIONED_EHR_STATUS" => Some(Kind::EhrStatus),
+        "X_VERSIONED_EHR_ACCESS" => Some(Kind::EhrAccess),
+        "X_VERSIONED_FOLDER" => Some(Kind::Folder),
+        _ => None,
+    }
+}
+
+/// The source EHR id an `import_ehr` clone reuses when no fixed id is given —
+/// `EXTRACT_SPEC.manifest.entities[0].ehr_id` (a whole-EHR export always names
+/// it). master06 §Copying Case 1.
+fn source_ehr_id(extract: &Extract) -> Result<EhrId, SmError> {
+    let raw = extract
+        .specification
+        .as_ref()
+        .and_then(|s| s.manifest.entities.first())
+        .and_then(|e| e.ehr_id.as_deref())
+        .ok_or_else(|| {
+            SmError::precondition(
+                "import_ehr without a fixed ehr_id requires the extract's EXTRACT_SPEC to \
+                 name the source EHR id (specification.manifest.entities[0].ehr_id)",
+            )
+        })?;
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the \
+                  discarded `uuid::Error` adds only its own wording, which \
+                  is not part of the wire contract"
+    )]
+    raw.parse()
+        .map_err(|_| SmError::precondition(format!("source ehr_id {raw:?} is not a UUID")))
+}
+
+/// An EHR holds at most one of each singleton versioned object (`EHR_STATUS`,
+/// `EHR_ACCESS` — RM ehr, EHR class `ehr_status`/`ehr_access` 1..1); an extract
+/// carrying two distinct containers of one such kind cannot be imported. FOLDER
+/// hierarchies are unbounded (`EHR.folders`, RM ehr master04 §Folders), so an
+/// extract may carry several.
+fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Result<(), SmError> {
+    for singleton in [Kind::EhrStatus, Kind::EhrAccess] {
+        if containers.iter().filter(|c| c.kind == singleton).count() > 1 {
+            return Err(SmError::precondition(format!(
+                "extract carries more than one {} versioned object; an EHR holds at most one",
+                singleton.as_str()
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Parse a received `EXTRACT` into the sets of versioned objects to import,
+/// grouped by cloned `vo_id` (the received `uid.object_id()` — master06
+/// §Copying): the EHR-owned containers plus any demographics-chapter parties
+/// (`X_VERSIONED_PARTY`, landed into the demographic repository). Each content
+/// item's `X_VERSIONED_*` wrapper contributes its `ORIGINAL_VERSION`s to one
+/// [`ImportContainer`]; branch / multi-system version trees are first-class
+/// (master06 §Distributed Versioning).
+#[expect(
+    clippy::too_many_lines,
+    reason = "the X_VERSIONED_* chapter walk in one pass, mirroring the \
+              container order of the extract"
+)]
+fn parse_import_containers(
+    extract: &Extract,
+) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
+    let value = openehr_its::json::to_canonical_value(extract);
+    let empty: Vec<Value> = Vec::new();
+    let mut by_container: BTreeMap<VoId, ImportContainer> = BTreeMap::new();
+    let mut parties: BTreeMap<VoId, ImportContainer> = BTreeMap::new();
+
+    for chapter in value
+        .get("chapters")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty)
+    {
+        for item in chapter
+            .get("items")
+            .and_then(Value::as_array)
+            .unwrap_or(&empty)
+        {
+            match item.get("_type").and_then(Value::as_str) {
+                Some("OPENEHR_CONTENT_ITEM") => {}
+                // NOTE (keep — `master06-generic_extract_package.adoc`
+                // `GENERIC_CONTENT_ITEM`): ISO 13606 / CDA generic content is
+                // out of this CDR's openEHR-only import scope; a typed reject,
+                // tied to the deferred integration-IM behaviour (BASE
+                // arch-overview `master14-integration.adoc`).
+                Some("GENERIC_CONTENT_ITEM") => {
+                    return Err(SmError::precondition(
+                        "generic (ISO 13606 / CDA) content import is not supported",
+                    ));
+                }
+                // A folder structure entry carries no versioned content.
+                _ => continue,
+            }
+            // EXTRACT_CONTENT_ITEM.Item_validity: `is_masked xor item /= Void`
+            // (extract_content_item.adoc) — a masked wrapper carries no item, an
+            // unmasked one must.
+            let is_masked = item
+                .get("is_masked")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let Some(xver) = item.get("item") else {
+                if is_masked {
+                    continue; // masked-out content — nothing to import
+                }
+                return Err(SmError::precondition(
+                    "EXTRACT_CONTENT_ITEM carries no item and is not masked \
+                     (Item_validity: is_masked xor item present)",
+                ));
+            };
+            if is_masked {
+                return Err(SmError::precondition(
+                    "EXTRACT_CONTENT_ITEM is masked but carries an item \
+                     (Item_validity: is_masked xor item present)",
+                ));
+            }
+            let xtype = xver
+                .get("_type")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            // Demographics-chapter parties land in the demographic repository
+            // (master09-semantics.adoc §Creation Semantics demographics
+            // chapter); each version's PARTY subtype fixes the container kind.
+            if xtype == "X_VERSIONED_PARTY" {
+                for ov in xver
+                    .get("versions")
+                    .and_then(Value::as_array)
+                    .unwrap_or(&empty)
+                {
+                    let party_type = ov
+                        .pointer("/data/_type")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default();
+                    let Some(kind) = Kind::from_type(party_type).filter(|k| k.is_demographic())
+                    else {
+                        return Err(SmError::precondition(format!(
+                            "X_VERSIONED_PARTY version data must be a PARTY subtype, \
+                             got {party_type:?}"
+                        )));
+                    };
+                    let (vo_id, version) = parse_imported_version(ov)?;
+                    match parties.get_mut(&vo_id) {
+                        Some(existing) => existing.versions.push(version),
+                        None => {
+                            parties.insert(
+                                vo_id,
+                                ImportContainer {
+                                    vo_id,
+                                    kind,
+                                    versions: vec![version],
+                                },
+                            );
+                        }
+                    }
+                }
+                continue;
+            }
+            let kind = kind_from_x_versioned(xtype).ok_or_else(|| {
+                SmError::precondition(format!(
+                    "cannot import {xtype:?} through the EHR surface (only COMPOSITION / \
+                     EHR_STATUS / EHR_ACCESS / FOLDER / demographics-chapter PARTYs)"
+                ))
+            })?;
+
+            for ov in xver
+                .get("versions")
+                .and_then(Value::as_array)
+                .unwrap_or(&empty)
+            {
+                // creating_system_id is per VERSION (a copied tree legitimately
+                // mixes source-trunk versions with branch modifications made by
+                // other systems — master06 §Distributed Versioning).
+                let (vo_id, version) = parse_imported_version(ov)?;
+                match by_container.get_mut(&vo_id) {
+                    Some(existing) => {
+                        if existing.kind != kind {
+                            return Err(SmError::precondition(format!(
+                                "versioned object {vo_id} appears as both {} and {}",
+                                existing.kind.as_str(),
+                                kind.as_str()
+                            )));
+                        }
+                        existing.versions.push(version);
+                    }
+                    None => {
+                        by_container.insert(
+                            vo_id,
+                            ImportContainer {
+                                vo_id,
+                                kind,
+                                versions: vec![version],
+                            },
+                        );
+                    }
+                }
+            }
+        }
+    }
+    Ok((
+        by_container.into_values().collect(),
+        parties.into_values().collect(),
+    ))
+}
+
+/// Parse one received `ORIGINAL_VERSION` into its cloned `vo_id` and the
+/// [`ImportVersion`] to replay — preserving the wrapped original's full 3-part
+/// identity (incl. branch `version_tree_id`s), `preceding_version_uid`,
+/// `other_input_version_uids`, `commit_audit`, lifecycle, data, signature and
+/// attestations verbatim (master06 §Copying: "the `ORIGINAL_VERSION` instance
+/// is never modified"; `ehr_extract` master05
+/// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
+#[expect(
+    clippy::too_many_lines,
+    reason = "the ORIGINAL_VERSION field-by-field parse; each field is one \
+              short block and splitting them would scatter the shape"
+)]
+fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
+    // A member typed anything other than ORIGINAL_VERSION (e.g. an
+    // already-wrapped IMPORTED_VERSION) is invalid — the received instance "is
+    // never modified" and is re-wrapped as IMPORTED_VERSION by the importer
+    // (master06 §Copying).
+    match ov.get("_type").and_then(Value::as_str) {
+        None | Some("ORIGINAL_VERSION") => {}
+        Some(other) => {
+            return Err(SmError::precondition(format!(
+                "X_VERSIONED_OBJECT.versions members must be ORIGINAL_VERSION \
+                 (RM ehr_extract master05), got _type {other:?}"
+            )));
+        }
+    }
+    let uid = ov
+        .pointer("/uid/value")
+        .and_then(Value::as_str)
+        .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no uid.value"))?;
+    let (vo_id, creating_system_id, tree) = parse_object_version_id(uid)?;
+    // The imported `ORIGINAL_VERSION.uid.object_id` names a versioned object.
+    let vo_id = VoId(vo_id);
+    // preceding_version_uid + other_input_version_uids preserved verbatim
+    // (master06 §Copying / §Version Merging).
+    let preceding_version_uid = ov
+        .pointer("/preceding_version_uid/value")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let other_input_version_uids: Vec<String> = ov
+        .get("other_input_version_uids")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|u| {
+                    u.as_str()
+                        .or_else(|| u.pointer("/value").and_then(Value::as_str))
+                        .map(str::to_owned)
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // commit_audit (VERSION.commit_audit 1..1) preserved verbatim.
+    let audit = ov
+        .get("commit_audit")
+        .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no commit_audit"))?;
+    let system_id = audit
+        .get("system_id")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            SmError::precondition("imported commit_audit.system_id is required and non-empty")
+        })?
+        .to_owned();
+    let change_token = audit
+        .pointer("/change_type/defining_code/code_string")
+        .and_then(Value::as_str)
+        .or_else(|| audit.pointer("/change_type/value").and_then(Value::as_str))
+        .ok_or_else(|| SmError::precondition("imported commit_audit.change_type is required"))?;
+    let change_type = change_type_code(change_token).ok_or_else(|| {
+        SmError::precondition(format!(
+            "imported commit_audit.change_type {change_token:?} is not an audit_change_type code"
+        ))
+    })?;
+    let committer = audit.get("committer").cloned().ok_or_else(|| {
+        SmError::precondition("imported commit_audit.committer is required (AUDIT_DETAILS 1..1)")
+    })?;
+    let description = audit
+        .pointer("/description/value")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let time_str = audit
+        .pointer("/time_committed/value")
+        .and_then(Value::as_str)
+        .ok_or_else(|| SmError::precondition("imported commit_audit.time_committed is required"))?;
+    #[expect(
+        clippy::map_err_ignore,
+        reason = "the mapped error already echoes the rejected token; the \
+                  discarded parse error adds only its own wording, which is \
+                  not part of the wire contract"
+    )]
+    let commit_time: jiff::Timestamp = time_str.parse().map_err(|_| {
+        SmError::precondition(format!(
+            "imported commit_audit.time_committed {time_str:?} is not an ISO 8601 instant"
+        ))
+    })?;
+
+    // lifecycle_state (ORIGINAL_VERSION.lifecycle_state) resolved to its code.
+    let lifecycle_token = ov
+        .pointer("/lifecycle_state/defining_code/code_string")
+        .and_then(Value::as_str)
+        .or_else(|| ov.pointer("/lifecycle_state/value").and_then(Value::as_str))
+        .unwrap_or(lifecycle::state::COMPLETE);
+    let lifecycle_state = lifecycle_state_code(lifecycle_token).ok_or_else(|| {
+        SmError::precondition(format!(
+            "imported lifecycle_state {lifecycle_token:?} is not a version_lifecycle_state code"
+        ))
+    })?;
+
+    // data: Void (absent/null) exactly for a 523|deleted| version (master06
+    // §Logical Deletion).
+    let data = ov
+        .get("data")
+        .cloned()
+        .filter(|d| !d.is_null())
+        .unwrap_or(Value::Null);
+    let deleted = lifecycle_state == lifecycle::state::DELETED;
+    if deleted && !data.is_null() {
+        return Err(SmError::precondition(
+            "imported 523|deleted| version must not carry data (data is Void)",
+        ));
+    }
+    if !deleted && data.is_null() {
+        return Err(SmError::precondition(
+            "imported non-deleted ORIGINAL_VERSION requires data",
+        ));
+    }
+
+    let signature = ov
+        .get("signature")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let attestations = ov
+        .get("attestations")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+
+    Ok((
+        vo_id,
+        ImportVersion {
+            tree,
+            creating_system_id,
+            preceding_version_uid,
+            other_input_version_uids,
+            lifecycle_state,
+            commit_audit: AuditInput {
+                system_id,
+                change_type,
+                description,
+                committer,
+            },
+            commit_time,
+            data,
+            signature,
+            attestations,
+        },
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    /// A minimal spec-shaped `ORIGINAL_VERSION` wire value for the import parser.
+    fn original_version(type_field: Option<&str>) -> Value {
+        let mut ov = json!({
+            "uid": { "_type": "OBJECT_VERSION_ID",
+                     "value": "018f4a5e-9df1-7d1e-8b6f-2b8c00000001::sysA.example.org::1" },
+            "commit_audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "sysA.example.org",
+                "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-11T10:00:00Z" },
+                "change_type": { "_type": "DV_CODED_TEXT", "value": "creation",
+                                 "defining_code": { "_type": "CODE_PHRASE", "code_string": "249",
+                                                    "terminology_id": { "_type": "TERMINOLOGY_ID",
+                                                                        "value": "openehr" } } },
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr A" }
+            },
+            "lifecycle_state": { "_type": "DV_CODED_TEXT", "value": "complete",
+                                 "defining_code": { "_type": "CODE_PHRASE", "code_string": "532",
+                                                    "terminology_id": { "_type": "TERMINOLOGY_ID",
+                                                                        "value": "openehr" } } },
+            "data": { "_type": "EHR_STATUS" }
+        });
+        if let Some(t) = type_field {
+            ov.as_object_mut().unwrap().insert("_type".into(), json!(t));
+        }
+        ov
+    }
+
+    /// `X_VERSIONED_OBJECT.versions` members must be `ORIGINAL_VERSION` (RM
+    /// `ehr_extract` master05); a foreign `_type` — e.g. an already-wrapped
+    /// `IMPORTED_VERSION` — is rejected, while an explicit or absent
+    /// `ORIGINAL_VERSION` tag parses. Regression for
+    /// rm-common-change-control-R20.
+    #[test]
+    fn imported_versions_member_type_is_enforced() {
+        parse_imported_version(&original_version(None)).expect("absent _type defaults");
+        parse_imported_version(&original_version(Some("ORIGINAL_VERSION")))
+            .expect("explicit ORIGINAL_VERSION");
+        for foreign in ["IMPORTED_VERSION", "VERSION", "ORIGINAL_VERSION2"] {
+            let err = parse_imported_version(&original_version(Some(foreign)))
+                .expect_err("foreign _type in versions[] must be rejected");
+            assert!(
+                err.message.contains("ORIGINAL_VERSION") && err.message.contains(foreign),
+                "error should name the expected and offending types, got: {}",
+                err.message
+            );
+        }
+    }
+}

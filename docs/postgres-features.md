@@ -1,4 +1,4 @@
-# PostgreSQL 17 + 18 features EHRbase-RS leverages
+# PostgreSQL 17 + 18 features FerroEHR leverages
 
 **Pin: PostgreSQL 18, target 18.4+** (`docs/VERSIONS.md`; CI runs `postgres:18.4`).
 EHRbase (Java) targets **PG 15/16**; we target **18** to exploit two major
@@ -17,7 +17,7 @@ we run the latest patch (18.4) for the fixes.
 
 ## PG 17.0 — SQL/JSON + query performance
 
-| Feature | What it enables for EHRbase-RS |
+| Feature | What it enables for FerroEHR |
 |---|---|
 | **`JSON_TABLE()`** | Project JSONB clinical documents into relational rows in SQL — a core tool for the AQL→SQL generator (P16), removing app-side JSON walking. |
 | **SQL/JSON query fns** — `JSON_EXISTS`, `JSON_QUERY`, `JSON_VALUE` | Standards-based JSONB path extraction/validation in generated AQL SQL. |
@@ -30,7 +30,7 @@ we run the latest patch (18.4) for the fixes.
 
 ## PG 18.0 — async I/O, temporal, identifiers, generated columns, auth
 
-| Feature | What it enables for EHRbase-RS |
+| Feature | What it enables for FerroEHR |
 |---|---|
 | **`uuidv7()` (native)** | Timestamp-ordered UUIDs for `OBJECT_VERSION_ID`/row keys — index-friendly, no `uuid` crate round-trip for DB-generated ids (P09). |
 | **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity on the one temporal `vo_version` table (the greenfield storage design — `sys_period tstzrange`, no current/`_history` pairs; see `docs/architecture.md` §Storage) at the DB — a natural fit for openEHR versioning (P09/P10/P12). |

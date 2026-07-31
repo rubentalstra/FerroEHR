@@ -16,7 +16,7 @@ Runs the **CNF 2.0 pipeline** (`tools/cnf-runner`) via
 `scripts/conformance.sh` — compose up --build on FRESH volumes (the
 exclusive-server ground) → the committed catalogue → pure-function verdicts
 → artefacts under `docs/conformance/<sut>/` (our server:
-`docs/conformance/ehrbase-rs/`). Rewritten 2026-07-22 for the CNF cutover
+`docs/conformance/ferroehr/`). Rewritten 2026-07-22 for the CNF cutover
 (#202; the ECC harness is retired).
 
 ## Ground rules (before touching ANYTHING)
@@ -78,7 +78,7 @@ FORBIDDEN:
    results.json. The full canonical CLI table lives in
    `tools/cnf-runner/CLAUDE.md`.
 3. **Compare against the committed baseline**
-   (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`): the only
+   (`docs/conformance/ferroehr/results.json` + `verdicts.json`): the only
    permitted delta is newly-green cases — **zero drift**. Report:
    passed / failed / errored / not-applicable counts, the machine verdicts,
    and any drift case-by-case.

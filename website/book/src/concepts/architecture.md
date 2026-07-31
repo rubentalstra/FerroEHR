@@ -1,6 +1,6 @@
 # System architecture
 
-This chapter explains how EHRbase-rs is built and where your data lives, in
+This chapter explains how FerroEHR is built and where your data lives, in
 practical terms. You do not need any of it to use the API — but it clarifies
 why the server behaves the way it does: why compliance claims are trustworthy,
 why versioning is exact, and why AQL is fast. Two ideas run through everything:
@@ -34,7 +34,7 @@ flowchart TB
 
 **The specification layer is generated.** openEHR publishes its Reference
 Model, serialization schemas, and REST contract as machine-readable models.
-EHRbase-rs generates its Rust types, canonical JSON/XML (de)serialization, the
+FerroEHR generates its Rust types, canonical JSON/XML (de)serialization, the
 REST API contract, and the AQL front end directly from those models. The
 consequence for you: the server's data shapes and wire contract cannot silently
 drift from the standard — a continuous-integration check regenerates everything
@@ -44,7 +44,7 @@ regeneration, not a rewrite.
 **The application layer is the server** — everything the generated layer does
 not give you: storage, the query execution engine, validation, security, and
 the integration connectors. This is where design choices specific to
-EHRbase-rs live.
+FerroEHR live.
 
 ## The native service API
 
@@ -61,7 +61,7 @@ REST.
 
 A clinical composition is a deep tree. Storing each as one large JSON blob makes
 queries slow — extracting a single value forces the database to read and
-decompress the whole document every time. EHRbase-rs instead **decomposes** each
+decompress the whole document every time. FerroEHR instead **decomposes** each
 versioned object into one row per structural node, in a single unified table:
 
 - Each node carries an integer **interval index** so that AQL's `CONTAINS`
@@ -78,7 +78,7 @@ Versioning uses a single **temporal version table**. Instead of separate
 "current" and "history" tables, each version is a row with a validity period,
 and PostgreSQL 18's temporal constraints enforce that periods never overlap.
 The current version is the one whose period is still open. Because history is
-just rows in the same table, EHRbase-rs can serve both `LATEST_VERSION` and
+just rows in the same table, FerroEHR can serve both `LATEST_VERSION` and
 `ALL_VERSIONS` queries — reading the record as it is now, or across its entire
 history — from one place.
 
@@ -88,7 +88,7 @@ the change-control trail is never out of step with the data.
 
 > [!NOTE]
 > openEHR does not define a database schema — it defines *semantics*
-> (versioning, indelibility, canonical data fidelity). EHRbase-rs is free to
+> (versioning, indelibility, canonical data fidelity). FerroEHR is free to
 > choose the storage design that best serves those semantics on PostgreSQL,
 > and its versioning behaviour is verified against the specification, not
 > against any particular table layout.

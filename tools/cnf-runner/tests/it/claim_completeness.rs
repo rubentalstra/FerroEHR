@@ -263,7 +263,7 @@ fn a_claimed_capability_with_no_cases_fails_validate() {
             1,
         )
     });
-    world.edit("party/ehrbase-rs/statement.json", |text| {
+    world.edit("party/ferroehr/statement.json", |text| {
         text.replacen(
             "\"capabilities\": [\n",
             "\"capabilities\": [\n      \"SeededHollowCapability\",\n",
@@ -300,7 +300,7 @@ fn an_excused_only_capability_without_its_adjudication_fails_validate() {
             1,
         )
     });
-    world.edit("party/ehrbase-rs/statement.json", |text| {
+    world.edit("party/ferroehr/statement.json", |text| {
         text.replacen(
             "\"capabilities\": [\n",
             "\"capabilities\": [\n      \"SeededExcusedCapability\",\n",

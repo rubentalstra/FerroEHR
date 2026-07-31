@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a defect in ehrbase-rs (wrong wire behaviour, a crash, a conformance divergence)
+description: Report a defect in ferroehr (wrong wire behaviour, a crash, a conformance divergence)
 labels: ["bug"]
 body:
   - type: checkboxes
@@ -13,9 +13,9 @@ body:
   - type: textarea
     attributes:
       label: Environment
-      description: You can get most of this from `GET %baseUri%/ehrbase/rest/status`.
+      description: You can get most of this from `GET %baseUri%/ferroehr/rest/status`.
       placeholder: |
-        - ehrbase-rs version:
+        - ferroehr version:
         - PostgreSQL version:
         - Deployment (compose / Helm / binary):
         - Operating system:

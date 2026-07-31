@@ -42,7 +42,7 @@ if hits=$(grep -rInE --exclude='*.svg' "$pattern_perf" website/landing website/b
 fi
 
 if [ "$fail" -ne 0 ]; then
-  echo "::error::Hand-typed conformance/performance numbers or verdicts found in site sources (above). The website derives conformance claims from docs/conformance/ehrbase-rs/ and performance claims from the committed measurement records — use the data-cnf markers (landing), the generated includes (book), or the generated SVG assets, never literals. See scripts/render-conformance-stats.sh and scripts/render-perf-assets.sh." >&2
+  echo "::error::Hand-typed conformance/performance numbers or verdicts found in site sources (above). The website derives conformance claims from docs/conformance/ferroehr/ and performance claims from the committed measurement records — use the data-cnf markers (landing), the generated includes (book), or the generated SVG assets, never literals. See scripts/render-conformance-stats.sh and scripts/render-perf-assets.sh." >&2
   exit 1
 fi
 echo "check-conformance-numbers: no hand-typed conformance/performance claims in site sources."

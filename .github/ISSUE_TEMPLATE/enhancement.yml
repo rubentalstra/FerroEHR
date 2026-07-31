@@ -1,5 +1,5 @@
 name: Enhancement Request
-description: Request new or extended functionality in ehrbase-rs
+description: Request new or extended functionality in ferroehr
 labels: ["enhancement"]
 body:
   - type: textarea

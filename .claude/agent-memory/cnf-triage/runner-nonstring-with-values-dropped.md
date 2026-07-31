@@ -33,7 +33,7 @@ binding `url_fetch: 4` for a query slot named `fetch` sends nothing.
 **Why:** first confirmed 2026-07-27 triaging
 `I_QUERY_SERVICE.execute_ad_hoc_query-post_fetch_url_only` (row count 10 != 4) —
 attribution: runner machinery, not the app; the app's
-`merge_body_and_url_i64` (`app/ehrbase-rest/src/api/query/response.rs`) reads
+`merge_body_and_url_i64` (`app/ferroehr-rest/src/api/query/response.rs`) reads
 `?fetch=` on both POST arms correctly.
 
 **How to apply:** on any red row where the SUT "ignored" a URL/header parameter,

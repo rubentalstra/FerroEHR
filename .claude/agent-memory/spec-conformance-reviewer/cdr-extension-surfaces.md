@@ -1,11 +1,11 @@
 ---
 name: cdr-extension-surfaces
-description: Recurring verification checklist for "our own extension" ehrbase-rest REST surfaces (non-spec endpoints)
+description: Recurring verification checklist for "our own extension" ferroehr-rest REST surfaces (non-spec endpoints)
 metadata:
   type: project
 ---
 
-For `ehrbase-rest` surfaces flagged "OUR OWN EXTENSION" (admin deletes, contribution list, etc.), the house bar is: follow the vendored spec where it speaks, else mirror the sibling surface's established design. Confirmed checks that pay off:
+For `ferroehr-rest` surfaces flagged "OUR OWN EXTENSION" (admin deletes, contribution list, etc.), the house bar is: follow the vendored spec where it speaks, else mirror the sibling surface's established design. Confirmed checks that pay off:
 
 - **Flag discipline**: module/fn doc must carry the exact "no openEHR spec governs this — our own design/extension" flag. Verified present + correct on the admin template/query deletes and the contribution-list surface (2026-07-18, branch claude/admin-ui-features-2).
 - **Error mapping round-trip**: extension service methods return `SmError`; the `?` from `ServiceError` must map to the intended HTTP. `ServiceError::Conflict`→`SmError(CompositionAlreadyExists)`→409; `NotFound`→`VersionedObjectDoesNotExist`→404. NotFound collapses the concrete resource kind generically, so an extension's 404 body carries a generic SM code — acceptable for extensions.

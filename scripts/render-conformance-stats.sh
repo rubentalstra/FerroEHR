@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Derive every website conformance claim from the committed CNF artifacts
-# (docs/conformance/ehrbase-rs/: results.json + verdicts.json) at BUILD time —
+# (docs/conformance/ferroehr/: results.json + verdicts.json) at BUILD time —
 # the site sources carry no hand-typed conformance numbers (enforced by
 # scripts/check-conformance-numbers.sh in CI), so the stale-numbers failure
 # mode is impossible by construction.
@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ART="docs/conformance/ehrbase-rs"
+ART="docs/conformance/ferroehr"
 command -v jq >/dev/null 2>&1 || {
   echo "render-conformance-stats: jq is required (brew install jq / preinstalled on CI runners)" >&2
   exit 1

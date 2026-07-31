@@ -4,8 +4,8 @@ This chapter walks through the core openEHR resources — **EHR**, **EHR_STATUS*
 **COMPOSITION**, **DIRECTORY**, and **CONTRIBUTION** — with real `curl` examples
 you can adapt. For each resource it shows the operations, the headers they need,
 and the status codes they return. Paths are relative to the base
-`/ehrbase/rest/openehr/v1` (see [Using the API](index.md)); examples use Basic
-auth (`-u ehrbase:ehrbase`) and JSON. Content negotiation, the `Prefer` header,
+`/ferroehr/rest/openehr/v1` (see [Using the API](index.md)); examples use Basic
+auth (`-u ferroehr:ferroehr`) and JSON. Content negotiation, the `Prefer` header,
 and `ETag`/`If-Match` versioning are cross-cutting and get their own chapter,
 [Content negotiation & errors](content-negotiation.md); this chapter uses them
 in context.
@@ -29,8 +29,8 @@ An **EHR** is the top-level container for one subject's health record.
 ### Create an EHR
 
 ```shell
-curl -u ehrbase:ehrbase -X POST -i \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+curl -u ferroehr:ferroehr -X POST -i \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 ```
 
 `POST /ehr` — the body is optional; you may supply an `EHR_STATUS` to set the
@@ -45,8 +45,8 @@ is already used).
 ### Retrieve an EHR
 
 ```shell
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID
 ```
 
 `GET /ehr/{ehr_id}` returns **200** with the `EHR`, or **404** if unknown. You
@@ -68,8 +68,8 @@ unaffected.
 ### Read the current status
 
 ```shell
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/ehr_status
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/ehr_status
 ```
 
 `GET /ehr/{ehr_id}/ehr_status` returns the current `EHR_STATUS`, its version id
@@ -82,12 +82,12 @@ Updates require the current version id in an `If-Match` header (optimistic
 concurrency):
 
 ```shell
-curl -u ehrbase:ehrbase -X PUT \
+curl -u ferroehr:ferroehr -X PUT \
   -H 'Content-Type: application/json' \
   -H 'If-Match: "<current-version-uid>"' \
   -H 'Prefer: return=representation' \
   --data-binary @ehr-status.json \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/ehr_status
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/ehr_status
 ```
 
 `PUT /ehr/{ehr_id}/ehr_status` returns **200** (with representation) or **204**
@@ -111,11 +111,11 @@ template.
 ### Create a composition
 
 ```shell
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/json' \
   -H 'Prefer: return=representation' \
   --data-binary @composition.json \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition
 ```
 
 `POST /ehr/{ehr_id}/composition` returns **201 Created** with the version id in
@@ -126,8 +126,8 @@ Entity** (with the errors); a malformed request returns **400**; an unknown EHR,
 ### Retrieve a composition
 
 ```shell
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition/$UID
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$UID
 ```
 
 `GET /ehr/{ehr_id}/composition/{uid_based_id}` accepts either a full version id
@@ -140,15 +140,15 @@ composition, **204** if the composition was (logically) deleted at that time, or
 
 ```shell
 # Update — If-Match is the CURRENT version id; the URL uses the bare object uuid
-curl -u ehrbase:ehrbase -X PUT \
+curl -u ferroehr:ferroehr -X PUT \
   -H 'Content-Type: application/json' \
   -H 'If-Match: "<current-version-uid>"' \
   --data-binary @composition.json \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition/$OBJECT_UUID
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$OBJECT_UUID
 
 # Delete — the URL uses the FULL version id
-curl -u ehrbase:ehrbase -X DELETE \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition/$VERSION_UID
+curl -u ferroehr:ferroehr -X DELETE \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$VERSION_UID
 ```
 
 `PUT` returns **200**/**204** (per `Prefer`) with the new version id, **412** on
@@ -193,14 +193,14 @@ the next live hierarchy.
 
 ```shell
 # Create the directory
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/json' \
   --data-binary @folder.json \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/directory
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/directory
 
 # Read it (optionally at a time, or a sub-path)
-curl -u ehrbase:ehrbase \
-  'http://localhost:8080/ehrbase/rest/openehr/v1/ehr/'$EHR_ID'/directory?path=episodes/2024'
+curl -u ferroehr:ferroehr \
+  'http://localhost:8080/ferroehr/rest/openehr/v1/ehr/'$EHR_ID'/directory?path=episodes/2024'
 ```
 
 - `POST /ehr/{ehr_id}/directory` — create the root folder; **201**.
@@ -220,10 +220,10 @@ A **CONTRIBUTION** is an atomic change-set: a group of versioned-object changes
 it when several changes must land as a unit.
 
 ```shell
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/json' \
   --data-binary @contribution.json \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/contribution
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/contribution
 ```
 
 `POST /ehr/{ehr_id}/contribution` takes a contribution whose `versions` array
@@ -237,7 +237,7 @@ invalid input, unknown EHR, or a uid conflict.
 contribution, or **404**.
 
 `GET /ehr/{ehr_id}/contribution` (no uid) lists the EHR's contributions,
-newest first — an ehrbase-rs extension (the openEHR REST API defines only the
+newest first — an ferroehr extension (the openEHR REST API defines only the
 by-uid read). Paginate with `?offset=` (default 0) and `?fetch=` (default 20,
 capped at 100). It returns **200** with a JSON summary, or **404** for an
 unknown EHR:

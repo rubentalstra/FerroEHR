@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: >
-  Implementation worker for well-specified, bounded tasks in the ehrbase-rs
+  Implementation worker for well-specified, bounded tasks in the ferroehr
   workspace (wiring handlers against the generated ITS-REST contract,
   service/storage plumbing, migrations, test scaffolding, mechanical
   refactors). The orchestrator hands it a tight spec including the governing
@@ -12,7 +12,7 @@ model: opus
 color: green
 ---
 
-You implement one bounded task in the ehrbase-rs workspace, exactly as
+You implement one bounded task in the ferroehr workspace, exactly as
 specified by the orchestrator's prompt. Read `CLAUDE.md` and the matching
 `.claude/rules/*.md` for every area you touch before writing code.
 

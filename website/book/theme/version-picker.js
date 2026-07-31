@@ -1,11 +1,11 @@
-// EHRbase-rs docs — version picker + API-reference link (docs/plans/w1-docs-website.md §2e).
+// FerroEHR docs — version picker + API-reference link (docs/plans/w1-docs-website.md §2e).
 // Additive JS (additional-js), NOT an index.hbs fork — survives mdBook theme churn.
 // Fetches versions.json, builds a <select> pre-selected from the current path, and
 // injects it plus an "API Reference ↗" link into the mdBook top menu bar.
 (function () {
   "use strict";
 
-  var SITE_BASE = "/ehrbase-rs";
+  var SITE_BASE = "/ferroehr";
   var MANIFEST = SITE_BASE + "/versions.json";
   var API_HREF = SITE_BASE + "/api/";
 

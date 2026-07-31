@@ -15,7 +15,7 @@
 # archive" answer is the SM's `file_not_writable`, a 5xx the closed outcome
 # vocabulary has no kind for (the boundary recorded on the admin-dump-load
 # family in vocab/wire_surface.yaml). Proved in-process instead
-# (app/ehrbase-rest/tests/admin_extension_http.rs).
+# (app/ferroehr-rest/tests/admin_extension_http.rs).
 id: I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated
 kind: functional
 component: ADMIN

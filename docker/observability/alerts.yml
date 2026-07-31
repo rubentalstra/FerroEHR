@@ -6,7 +6,7 @@
 # Every rule uses only closed-label metric families the server exports, so no
 # rule can blow up cardinality.
 groups:
-  - name: ehrbase-red
+  - name: ferroehr-red
     rules:
       - alert: HighServerErrorRatio
         # >1% of requests are 5xx over 5m.
@@ -36,7 +36,7 @@ groups:
           summary: "p99 request latency above 2s (10m)"
           description: "99th-percentile HTTP request latency has exceeded 2s for 10 minutes."
 
-  - name: ehrbase-saturation
+  - name: ferroehr-saturation
     rules:
       - alert: ConnectionPoolExhaustion
         # No idle connections for 5m (pool saturated).
@@ -48,7 +48,7 @@ groups:
           summary: "DB connection pool exhausted"
           description: "The connection pool has had no idle connections for 5 minutes."
 
-  - name: ehrbase-audit
+  - name: ferroehr-audit
     rules:
       - alert: AuditRecordsDropped
         # Any increase in dropped audit records — fail-open auditing losing
@@ -61,7 +61,7 @@ groups:
           summary: "ATNA audit records dropped"
           description: "The audit pipeline dropped records in the last 5 minutes."
 
-  - name: ehrbase-security
+  - name: ferroehr-security
     rules:
       - alert: AuthFailureSpike
         # Sustained authentication-failure rate (attack detection).
@@ -73,14 +73,14 @@ groups:
           summary: "Authentication failure spike"
           description: "Authentication failures exceed 5/s over 5 minutes."
 
-  - name: ehrbase-availability
+  - name: ferroehr-availability
     rules:
       - alert: ReadinessDown
         # The readiness probe is failing.
-        expr: up{job="ehrbase"} == 0
+        expr: up{job="ferroehr"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "ehrbase readiness DOWN"
-          description: "The ehrbase target is not being scraped / is unavailable."
+          summary: "ferroehr readiness DOWN"
+          description: "The ferroehr target is not being scraped / is unavailable."

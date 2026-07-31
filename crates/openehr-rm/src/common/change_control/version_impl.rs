@@ -92,7 +92,7 @@ mod tests {
             },
             "commit_audit": {
                 "_type": "AUDIT_DETAILS",
-                "system_id": "ehrbase-rs.local",
+                "system_id": "ferroehr.local",
                 "time_committed": {
                     "_type": "DV_DATE_TIME",
                     "value": "2026-07-07T10:11:12.5Z"
@@ -106,11 +106,11 @@ mod tests {
                         "code_string": "249"
                     }
                 },
-                "committer": { "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "FerroEHR" }
             },
             "uid": {
                 "_type": "OBJECT_VERSION_ID",
-                "value": "0198f4a5-9df1-7d1e-8b6f-2b8c00000001::ehrbase-rs.local::1"
+                "value": "0198f4a5-9df1-7d1e-8b6f-2b8c00000001::ferroehr.local::1"
             },
             "lifecycle_state": {
                 "_type": "DV_CODED_TEXT",

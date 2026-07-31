@@ -1,6 +1,6 @@
 # Audit trail (IHE ATNA)
 
-EHRbase-rs keeps a full security audit trail of API access — _who_ did _what_
+FerroEHR keeps a full security audit trail of API access — _who_ did _what_
 to _which_ resource, with _what outcome_, from _where_, and _when_ — following
 the IHE **ATNA** (Audit Trail and Node Authentication) profile, the standard
 openEHR itself points at (the platform Service Model names the System Log
@@ -39,7 +39,7 @@ the caller where one authenticated.
 ## Sinks
 
 Records fan out to independently configured sinks (`[audit]` in
-`ehrbase.toml` — see the
+`ferroehr.toml` — see the
 [configuration reference](installation/configuration.md#audit)):
 
 | Sink | Default | What it does |
@@ -61,7 +61,7 @@ The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction is served
 at the FHIR façade:
 
 ```
-GET /ehrbase/rest/openehr/v1/fhir/r4/AuditEvent
+GET /ferroehr/rest/openehr/v1/fhir/r4/AuditEvent
 ```
 
 It returns a FHIR `searchset` Bundle of the stored `AuditEvent` documents,
@@ -90,10 +90,10 @@ verified client certificate:
 ```toml
 [server.tls]
 enabled = true
-cert_file = "/etc/ehrbase/server.pem"
-key_file = "/etc/ehrbase/server.key"
+cert_file = "/etc/ferroehr/server.pem"
+key_file = "/etc/ferroehr/server.key"
 client_auth = "required"          # off | optional | required
-client_ca_file = "/etc/ehrbase/client-ca.pem"
+client_ca_file = "/etc/ferroehr/client-ca.pem"
 ```
 
 With `client_auth = "required"`, only clients presenting a certificate
@@ -109,7 +109,7 @@ systems.
 
 Auditing defaults to on with the local store only; see the
 [configuration reference](installation/configuration.md#audit) for every
-`[audit]` key and its `EHRBASE__AUDIT__*` environment form. Deployments
+`[audit]` key and its `FERROEHR__AUDIT__*` environment form. Deployments
 upgrading from the previous `[atna]` section: the server refuses the old
 keys at boot with did-you-mean guidance — move the settings under
 `[audit.syslog]` (`host`/`port`/`transport`/`tls_ca_file`/

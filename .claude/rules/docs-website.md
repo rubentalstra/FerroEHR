@@ -8,7 +8,7 @@ paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scrip
      root CLAUDE.md hard rules; this file carries the detail and loads when
      website files are touched. -->
 
-The public site — https://rubentalstra.github.io/ehrbase-rs/ — is built from
+The public site — https://rubentalstra.github.io/ferroehr/ — is built from
 `website/` by `.github/workflows/docs.yml` and deployed to GitHub Pages.
 No openEHR spec governs the website — our own design; this rule is the
 authority for layout, look & feel, and content.
@@ -28,7 +28,7 @@ authority for layout, look & feel, and content.
 
 ## The same-PR docs rule (mirror of the changelog rule)
 
-**Any PR that changes the REST surface, configuration (`EHRBASE_*`), the
+**Any PR that changes the REST surface, configuration (`FERROEHR_*`), the
 CLI, deployment artifacts (compose/Helm/containers), or other user-visible
 behaviour must update the matching `website/book/src` page in the same PR.**
 The `/phase-done` checklist enforces it at phase close.

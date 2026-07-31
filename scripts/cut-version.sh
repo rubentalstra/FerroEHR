@@ -4,14 +4,14 @@
 #
 # Usage: scripts/cut-version.sh vX.Y.Z
 #
-# Builds the book once with site-url=/ehrbase-rs/docs/vX.Y.Z/, rsyncs it into a
+# Builds the book once with site-url=/ferroehr/docs/vX.Y.Z/, rsyncs it into a
 # docs-dist worktree under docs/vX.Y.Z/, prepends the version to versions.json,
 # re-points the `latest` alias, then commits + pushes docs-dist. Refuses if the
 # version already exists (frozen trees are never rebuilt).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-SITE_BASE="${SITE_BASE:-/ehrbase-rs}"
+SITE_BASE="${SITE_BASE:-/ferroehr}"
 
 VER="${1:-}"
 if [[ -z "$VER" ]]; then

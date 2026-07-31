@@ -14,7 +14,7 @@ Two measurement-integrity traps hit on 2026-07-25 during the #261 ladder:
    resource limits (2cpu/1Gi) contradicted the party ixit's declared 8-CPU/8GB
    measurement envelope, and (b) a subagent compiled Rust during the measured
    window. Compose core-service limits now default to the envelope
-   (EHRBASE_CPUS/MEM overridable); production limits are Helm's concern.
+   (FERROEHR_CPUS/MEM overridable); production limits are Helm's concern.
    **Never run agents/builds concurrently with a measured stress/perf window.**
 2. Compose project-name changes rename containers: the ixit `containers`
    blocks (tools/cnf-runner/party/*/ixit*.json) pin container names for

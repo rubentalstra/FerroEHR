@@ -48,7 +48,7 @@ RM class-invariant dispatcher that drives the reader. Proven by
   determinism manifest) — never weaken or skip one to get green; a gate failure
   means the emitter or runtime is wrong.
 - `tests/it/opt14_corpus.rs` carries TWO parse gates: (1) every vendored `.opt`
-  under `app/ehrbase/tests/resources/service` parses + round-trips through the
+  under `app/ferroehr/tests/resources/service` parses + round-trips through the
   generated `opt14::OperationalTemplate`; (2) every official CNF robot
   VALID-template fixture (`docs/specs/openehr/CNF/tests/platform/robot/
   _resources/test_data_sets/valid_templates`) parses, with exactly two fixtures

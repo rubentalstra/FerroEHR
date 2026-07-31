@@ -1,7 +1,7 @@
 ---
 name: ui-gates
 description: >
-  Runs the full admin-UI quality-gate battery for app/ehrbase-admin-ui:
+  Runs the full admin-UI quality-gate battery for app/ferroehr-admin-ui:
   clippy on native AND wasm32 targets, nextest, leptosfmt + cargo fmt,
   and a cargo-leptos build. Use before committing any admin-UI change,
   when the user asks to "check the UI", or as the done-gate a ui-implementer
@@ -17,7 +17,7 @@ failure; run the cheap gates first.
 
 ## Preconditions
 
-- `app/ehrbase-admin-ui` must exist; if it doesn't, say so and stop (it is the
+- `app/ferroehr-admin-ui` must exist; if it doesn't, say so and stop (it is the
   shipped console crate; see tracker issue #152 for the open scope).
 - Target-dir discipline from CLAUDE.md applies: shared `./target`, no
   ad-hoc `RUSTFLAGS`, no flag variation between runs.
@@ -31,16 +31,16 @@ failure; run the cheap gates first.
 
 ```bash
 # 1. Format (fast, catches drift)
-cargo fmt -p ehrbase-admin-ui --check
-leptosfmt --check app/ehrbase-admin-ui/src
+cargo fmt -p ferroehr-admin-ui --check
+leptosfmt --check app/ferroehr-admin-ui/src
 
 # 2. Clippy — BOTH compilation targets (the wasm pass catches
 #    server-only deps leaking past the ssr feature gate)
-cargo clippy -p ehrbase-admin-ui --all-targets
-cargo clippy -p ehrbase-admin-ui --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
+cargo clippy -p ferroehr-admin-ui --all-targets
+cargo clippy -p ferroehr-admin-ui --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
 
 # 3. Tests
-cargo nextest run -p ehrbase-admin-ui
+cargo nextest run -p ferroehr-admin-ui
 
 # 4. Full build (server bin + WASM + assets) — only when the change
 #    touches the build surface (Cargo.toml, styles, assets, features);

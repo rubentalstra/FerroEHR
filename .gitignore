@@ -54,7 +54,7 @@ _check/
 website/book/generated/
 website/book/src/comparison-assets/*
 # The upstream conformance visuals are COMMITTED (README + book embeds),
-# drift-guarded in the docs workflow like the ehrbase-rs set.
+# drift-guarded in the docs workflow like the ferroehr set.
 !website/book/src/comparison-assets/conformance-heat-grid-java.svg
 !website/book/src/comparison-assets/conformance-chapter-bars-java.svg
 __pycache__/

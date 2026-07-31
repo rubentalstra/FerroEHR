@@ -5,8 +5,8 @@ metadata:
   type: reference
 ---
 
-For the committed ehrbase-rs run, per-row observation is in
-`docs/conformance/ehrbase-rs/results.json` under `outcomes[]`: each entry has
+For the committed ferroehr run, per-row observation is in
+`docs/conformance/ferroehr/results.json` under `outcomes[]`: each entry has
 `case`, `status` (passed/failed/not_applicable), `failing_step`, `reason`
 (e.g. "expected `created`, observed `validation_failed`"). Long `reason`
 strings are TRUNCATED in the committed file (…), so reproduce on the wire for
@@ -20,7 +20,7 @@ the full diff. `run-exceptions.json` = the not_applicable/unrealized list only.
 - Corpus: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml` maps data-set
   aliases (`cnf.*`) → fixture files + `template_id`; fixtures under
   `corpus/fixtures/**`, templates under `corpus/templates/**`.
-- Party/statement: `tools/cnf-runner/party/ehrbase-rs/{statement.json,ixit.json}`
+- Party/statement: `tools/cnf-runner/party/ferroehr/{statement.json,ixit.json}`
   — `statement.options` holds the selected `option_select` branches.
 - Spec oracle: `docs/specs/openehr/` (index in its README). SF cases →
   `ITS-REST/docs/simplified_formats/master0{2,4,5,6}-*.adoc`. ADL14 →

@@ -1,7 +1,7 @@
 # Querying with AQL
 
 The **Archetype Query Language (AQL 1.1)** is how you read data out of
-EHRbase-rs. Instead of querying hidden database tables, you query the clinical
+FerroEHR. Instead of querying hidden database tables, you query the clinical
 model directly: you name the RM types and archetypes you want, express
 structural nesting with `CONTAINS`, and select values by their path within an
 archetype. The same query runs unchanged on any conformant openEHR system. This
@@ -58,10 +58,10 @@ The query API lives under the base path at `/query/aql`. The simplest form is a
 `POST` with a JSON body:
 
 ```shell
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/json' \
   -d '{"q":"SELECT e/ehr_id/value FROM EHR e"}' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/query/aql
+  http://localhost:8080/ferroehr/rest/openehr/v1/query/aql
 ```
 
 The body fields are:
@@ -136,10 +136,10 @@ and supply the values in `query_parameters`. This is the safe way to inject
 values — no string concatenation:
 
 ```shell
-curl -u ehrbase:ehrbase -H 'Content-Type: application/json' -d '{
+curl -u ferroehr:ferroehr -H 'Content-Type: application/json' -d '{
   "q": "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value = $name",
   "query_parameters": { "name": "Vital signs" }
-}' http://localhost:8080/ehrbase/rest/openehr/v1/query/aql
+}' http://localhost:8080/ferroehr/rest/openehr/v1/query/aql
 ```
 
 ## Stored queries
@@ -150,18 +150,18 @@ plain-text body; executing is done through the query API.
 
 ```shell
 # Store a query as org.example::bp_over, version 1.0.0
-curl -u ehrbase:ehrbase -X PUT \
+curl -u ferroehr:ferroehr -X PUT \
   -H 'Content-Type: text/plain' \
   --data-binary 'SELECT o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v2]' \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/query/org.example::bp_over/1.0.0
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/query/org.example::bp_over/1.0.0
 
 # List and fetch stored queries
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/definition/query/org.example::bp_over
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/definition/query/org.example::bp_over
 
 # Execute it
-curl -u ehrbase:ehrbase \
-  http://localhost:8080/ehrbase/rest/openehr/v1/query/org.example::bp_over/1.0.0
+curl -u ferroehr:ferroehr \
+  http://localhost:8080/ferroehr/rest/openehr/v1/query/org.example::bp_over/1.0.0
 ```
 
 - `PUT /definition/query/{name}[/{version}]` — store (version is a SemVer;
@@ -182,7 +182,7 @@ curl -u ehrbase:ehrbase \
 
 ## Version scope: LATEST_VERSION and ALL_VERSIONS
 
-By default a query sees the **latest** version of each object. EHRbase-rs also
+By default a query sees the **latest** version of each object. FerroEHR also
 supports querying the **entire version history** — a capability many CDRs lack.
 Wrap a source in `VERSION` and choose the scope:
 
@@ -222,7 +222,7 @@ parameters to page through large result sets. When you ask for more than the
 server will return in one response, page with `offset`.
 
 Operators can also cap how long any single query may run: set
-`EHRBASE__QUERY__TIMEOUT_MS` to a per-query execution budget in milliseconds
+`FERROEHR__QUERY__TIMEOUT_MS` to a per-query execution budget in milliseconds
 (unset or `0` = no per-query cap). A query that exceeds the budget returns
 **408 Request Timeout** — narrow the query (add archetype constraints, an
 `ehr_id` scope, or a `WHERE` filter) rather than retrying unchanged.
@@ -234,7 +234,7 @@ Operators can also cap how long any single query may run: set
 
 ## What is supported
 
-EHRbase-rs implements the core AQL 1.1 envelope and rejects out-of-envelope
+FerroEHR implements the core AQL 1.1 envelope and rejects out-of-envelope
 constructs with an explicit, typed error rather than silently returning wrong
 results. Supported today includes:
 

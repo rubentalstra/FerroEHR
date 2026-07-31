@@ -1,7 +1,7 @@
 # Configuration reference
 
-EHRbase-rs is configured by **one file — `ehrbase.toml`** — whose sections
-cover the entire server, with `EHRBASE_*` environment variables (and repeatable
+FerroEHR is configured by **one file — `ferroehr.toml`** — whose sections
+cover the entire server, with `FERROEHR_*` environment variables (and repeatable
 `--set` flags) as per-key overrides on top. This chapter is the complete
 reference: the quickstart, how configuration loads and how env names map onto
 the file, a subsection per configuration area, the CLI tools that validate and
@@ -15,15 +15,15 @@ variable map.
 Generate an annotated template, edit it, and run:
 
 ```bash
-# Write a fully-commented ehrbase.toml with every key at its default.
-ehrbase config default > ehrbase.toml
+# Write a fully-commented ferroehr.toml with every key at its default.
+ferroehr config default > ferroehr.toml
 
 # Edit it — at minimum set db.url and an auth mechanism (see the checklist below).
-$EDITOR ehrbase.toml
+$EDITOR ferroehr.toml
 
 # Validate without touching the database, then run.
-ehrbase config check --config ehrbase.toml
-ehrbase --config ehrbase.toml
+ferroehr config check --config ferroehr.toml
+ferroehr --config ferroehr.toml
 ```
 
 A server started with **no file and no environment** still boots (see
@@ -36,37 +36,37 @@ Configuration is assembled once at boot from four layers, lowest precedence to
 highest:
 
 1. **Built-in defaults** — the values in the tables below.
-2. **The config file** — `ehrbase.toml` (see [file discovery](#file-discovery)).
-3. **`EHRBASE_*` environment variables** — override individual keys.
+2. **The config file** — `ferroehr.toml` (see [file discovery](#file-discovery)).
+3. **`FERROEHR_*` environment variables** — override individual keys.
 4. **`--set key=value` CLI flags** (repeatable) — win over everything.
 
-Two permanent conventional aliases sit *below* their `EHRBASE_` forms within layer 3:
+Two permanent conventional aliases sit *below* their `FERROEHR_` forms within layer 3:
 `DATABASE_URL` → `db.url` and `RUST_LOG` → `log.filter`. Nothing else has a
-non-`EHRBASE_` name.
+non-`FERROEHR_` name.
 
 ### The environment-variable mapping
 
-Every key has one mechanical env spelling: **`EHRBASE` + the TOML path,
+Every key has one mechanical env spelling: **`FERROEHR` + the TOML path,
 upper-cased, with a double underscore (`__`) between every segment — including
-after the `EHRBASE` prefix.** A single underscore only ever appears *inside* a
+after the `FERROEHR` prefix.** A single underscore only ever appears *inside* a
 key word.
 
 | TOML | Environment variable |
 |---|---|
-| `[db] max_connections = 20` | `EHRBASE__DB__MAX_CONNECTIONS=20` |
-| `[auth.oidc] issuer = "…"` | `EHRBASE__AUTH__OIDC__ISSUER=…` |
-| `[management.endpoints] env = "off"` | `EHRBASE__MANAGEMENT__ENDPOINTS__ENV=off` |
-| `[terminology.external.providers.default] url = "…"` | `EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…` |
+| `[db] max_connections = 20` | `FERROEHR__DB__MAX_CONNECTIONS=20` |
+| `[auth.oidc] issuer = "…"` | `FERROEHR__AUTH__OIDC__ISSUER=…` |
+| `[management.endpoints] env = "off"` | `FERROEHR__MANAGEMENT__ENDPOINTS__ENV=off` |
+| `[terminology.external.providers.default] url = "…"` | `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…` |
 
 Scalars are typed automatically (bool / int / float, else string).
 **List-typed keys take comma-separated values**
-(`EHRBASE__AUTH__OIDC__AUDIENCES=ehrbase,other`). Arrays of tables — the
+(`FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr,other`). Arrays of tables — the
 Basic-auth user store — are **file-only**.
 
 > [!NOTE]
 > Enum values are lowercase / `snake_case` tokens, exactly as the tables show.
 > Secret-typed keys are redacted everywhere the config is rendered (the
-> `/management/env` snapshot, `ehrbase config check`, logs), and each has a
+> `/management/env` snapshot, `ferroehr config check`, logs), and each has a
 > `*_file` sibling that reads the value from a file (for Kubernetes/Docker
 > secret mounts). Setting a secret and its `*_file` sibling at once is a boot
 > error.
@@ -77,20 +77,20 @@ The first of these that exists is loaded (later layers still override its
 values):
 
 1. `--config <path>` (fatal if missing/unreadable),
-2. `EHRBASE_CONFIG=<path>` (fatal if missing/unreadable),
-3. `./ehrbase.toml` (current directory),
-4. `/etc/ehrbase/ehrbase.toml`.
+2. `FERROEHR_CONFIG=<path>` (fatal if missing/unreadable),
+3. `./ferroehr.toml` (current directory),
+4. `/etc/ferroehr/ferroehr.toml`.
 
 An explicitly pointed-at file (1–2) is fatal if absent; the search-order files
 (3–4) are simply skipped when absent (but fatal if present and unparseable).
 
 ### Strict validation
 
-Configuration is validated at boot (and by `ehrbase config check`), and the
+Configuration is validated at boot (and by `ferroehr config check`), and the
 server refuses to start on any error:
 
 - **Unknown keys are rejected** — in the file (with the offending `file:line`)
-  and in the `EHRBASE_` environment namespace — with a did-you-mean suggestion.
+  and in the `FERROEHR_` environment namespace — with a did-you-mean suggestion.
   A misspelled security key can no longer be silently ignored.
 - **Type errors are boot errors**, naming the key, the expected type, and where
   the bad value came from.
@@ -104,21 +104,21 @@ The HTTP listener and REST surface.
 ```toml
 [server]
 bind = "0.0.0.0:8080"
-base_path = "/ehrbase/rest/openehr/v1"
+base_path = "/ferroehr/rest/openehr/v1"
 max_in_flight = 256
 swagger_ui = true
 cors_permissive = false
-system_id = "ehrbase-rs.local"
+system_id = "ferroehr.local"
 ```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `bind` | string | `0.0.0.0:8080` | Socket address the API listener binds. |
-| `base_path` | string | `/ehrbase/rest/openehr/v1` | ITS-REST base path all API routes hang off. The status, health-adjacent and documentation routes hang off its parent (`/ehrbase/rest` by default), and the served OpenAPI document describes whatever paths this setting produces — never the defaults. |
+| `base_path` | string | `/ferroehr/rest/openehr/v1` | ITS-REST base path all API routes hang off. The status, health-adjacent and documentation routes hang off its parent (`/ferroehr/rest` by default), and the served OpenAPI document describes whatever paths this setting produces — never the defaults. |
 | `max_in_flight` | int | `256` | Concurrent-request admission cap (not per second). Requests beyond it are shed immediately with `503` + `Retry-After` — never queued — so offered load beyond capacity cannot exhaust memory. Status/health/discovery routes are never limited. `0` disables shedding. |
 | `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON at the REST root. Consider `false` in production. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
-| `system_id` | string | `ehrbase-rs.local` | **This deployment's own openEHR system identifier** — see below. Set a stable, deployment-unique name in production (`EHRBASE__SERVER__SYSTEM_ID`). |
+| `system_id` | string | `ferroehr.local` | **This deployment's own openEHR system identifier** — see below. Set a stable, deployment-unique name in production (`FERROEHR__SERVER__SYSTEM_ID`). |
 
 ### `system_id`: the data-authoring identity
 
@@ -180,7 +180,7 @@ The separate-port management listener always stays plain HTTP.
 ### `[server.identity]`
 
 The System-Options manifest identity (`OPTIONS` on the API base path, e.g.
-`OPTIONS /ehrbase/rest/openehr/v1` — the System API's one location). Defaults
+`OPTIONS /ferroehr/rest/openehr/v1` — the System API's one location). Defaults
 are measured, not asserted — the manifest never out-claims the last
 conformance verdict. This is the deployment's *display* identity only; the
 identifier stamped into authored data is
@@ -188,9 +188,9 @@ identifier stamped into authored data is
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `solution` | string | `EHRbase-RS` | Product name. |
+| `solution` | string | `FerroEHR` | Product name. |
 | `solution_version` | string | build version | Product version. |
-| `vendor` | string | `EHRbase-RS project` | Providing organisation. |
+| `vendor` | string | `FerroEHR project` | Providing organisation. |
 | `restapi_specs_version` | string | tested-contract identity | openEHR REST API edition the build is tested against. |
 | `conformance_profile` | string | last CNF verdict | Advertised conformance profile. |
 
@@ -200,7 +200,7 @@ PostgreSQL connection.
 
 ```toml
 [db]
-url = "postgres://ehrbase:ehrbase@localhost:5432/ehrbase"
+url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"
 max_connections = 20
 min_connections = 2
 acquire_timeout_secs = 30
@@ -208,7 +208,7 @@ acquire_timeout_secs = 30
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `url` | secret URL | `postgres://ehrbase:ehrbase@localhost:5432/ehrbase` | Connection DSN. The default matches the compose dev stack; **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
+| `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default matches the compose dev stack; **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
 | `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
@@ -218,13 +218,13 @@ acquire_timeout_secs = 30
 ```toml
 [log]
 format = "auto"
-filter = "info,ehrbase=info"
+filter = "info,ferroehr=info"
 ```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `format` | enum{auto,json,pretty} | `auto` | Stdout rendering; `auto` picks `json` when stdout is not a TTY (and suppresses the boot banner). |
-| `filter` | string | `info,ehrbase=info` | Boot `EnvFilter` directives; also the `/management/loggers` reset target. `RUST_LOG` is a recognized lower-priority alias. |
+| `filter` | string | `info,ferroehr=info` | Boot `EnvFilter` directives; also the `/management/loggers` reset target. `RUST_LOG` is a recognized lower-priority alias. |
 
 ## `[telemetry]`
 
@@ -234,7 +234,7 @@ OpenTelemetry export. Unset `otlp_endpoint` ⇒ the OTel layer is not installed
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `otlp_endpoint` | string | unset | OTLP/gRPC collector endpoint. |
-| `service_name` | string | `ehrbase` | `service.name` resource attribute. |
+| `service_name` | string | `ferroehr` | `service.name` resource attribute. |
 | `environment` | string | `dev` | `deployment.environment` resource attribute. |
 | `traces_sample_ratio` | float | `1.0` | Head-sampling ratio (`0.1` is a common prod start). |
 | `metrics_push` | bool | `false` | Also push metrics over OTLP alongside the Prometheus pull surface. |
@@ -254,8 +254,8 @@ password_hash = "$argon2id$v=19$..."   # Argon2 PHC hash, never plaintext
 roles = ["USER"]
 
 [auth.oidc]
-issuer = "https://keycloak.example.com/realms/ehrbase"
-audiences = ["ehrbase"]
+issuer = "https://keycloak.example.com/realms/ferroehr"
+audiences = ["ferroehr"]
 algorithms = ["RS256"]
 ```
 
@@ -445,7 +445,7 @@ envelopes are PHI-free by design.
 |---|---|---|---|
 | `enabled` | bool | `false` | Spawn the outbox publisher (with `fhir.outbound.enabled`, gates the per-commit outbox INSERT). |
 | `url` | secret URL | `amqp://guest:guest@localhost:5672/%2f` | AMQP broker URL; credentials redacted from every rendering. |
-| `exchange` | string | `ehrbase.events` | Topic exchange (PHI-free envelope stream). |
+| `exchange` | string | `ferroehr.events` | Topic exchange (PHI-free envelope stream). |
 | `tls` | bool | `false` | Upgrade `amqp://` to `amqps://`. |
 | `batch_size` | int | `128` | Rows drained per poll. |
 | `poll_interval_ms` | int | `1000` | Idle poll interval. |
@@ -461,7 +461,7 @@ The FHIR connector — an inbound façade and an independent outbound emitter.
 `[fhir]`: `api_enabled` (bool, `false`) — mount `/fhir/r4/*` +
 `/admin/fhir_mapping`.
 `[fhir.outbound]`: `enabled` (bool, `false`), `url` (secret URL, same AMQP
-default), `exchange` (string, `ehrbase.fhir` — deliberately distinct from the
+default), `exchange` (string, `ferroehr.fhir` — deliberately distinct from the
 events exchange for PHI isolation), `tls` (bool, `false`), `batch_size` (int,
 `128`), `poll_interval_ms` (int, `1000`), `publish_max_retries` (int, `3`).
 
@@ -544,7 +544,7 @@ renewed), `auth_method`
 ```toml
 [terminology.external.oauth2_clients.ts-client]
 token_url = "https://idp.example.org/realms/ts/protocol/openid-connect/token"
-client_id = "ehrbase-cdr"
+client_id = "ferroehr-cdr"
 client_secret_file = "/run/secrets/ts-client"
 scopes = ["system/*.read"]
 ```
@@ -596,7 +596,7 @@ An OAuth2 token endpoint (`oauth2_client`) is a different host in a different
 trust domain and keeps the default TLS stack.
 
 Kubernetes deployments mount the PEM files with the chart's `config.files` map
-(see the Helm chart values), which materialises them under `/etc/ehrbase/`.
+(see the Helm chart values), which materialises them under `/etc/ferroehr/`.
 
 ### Archetype value-set bindings at commit
 
@@ -651,7 +651,7 @@ did-you-mean guidance.)
 |---|---|---|---|
 | `enabled` | bool | `true` | Master audit switch. |
 | `enterprise_site_id` | string | unset | `AuditEnterpriseSiteID`. |
-| `source_id` | string | `ehrbase` | Audit source id. |
+| `source_id` | string | `ferroehr` | Audit source id. |
 | `value_if_missing` | string | `UNKNOWN` | Fill value for empty mandatory fields. |
 | `suppress_login_events` | bool | `true` | Skip successful-login records (rejections are always recorded). |
 | `fail_mode` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject auditable operations with 503 (`closed` — includes an unhealthy local store). |
@@ -701,24 +701,24 @@ base_url = "https://pas.example.com/fhir"
 ```
 
 The env form for a named system is
-`EHRBASE__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
+`FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
 
 ## Process / CLI
 
 | Variable | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_HEALTHCHECK_URL` | URL | `http://127.0.0.1:8080/ehrbase/rest/status` | Target URL for the binary's `healthcheck` subcommand (container `HEALTHCHECK` and Kubernetes exec probes). Not part of `ehrbase.toml`. |
+| `FERROEHR_HEALTHCHECK_URL` | URL | `http://127.0.0.1:8080/ferroehr/rest/status` | Target URL for the binary's `healthcheck` subcommand (container `HEALTHCHECK` and Kubernetes exec probes). Not part of `ferroehr.toml`. |
 
 ## The `config` subcommands
 
 ```
-ehrbase config default             # print the annotated default ehrbase.toml
-ehrbase config check [--config P]  # validate (file + env + --set), print the
+ferroehr config default             # print the annotated default ferroehr.toml
+ferroehr config check [--config P]  # validate (file + env + --set), print the
                                    #   effective config (secrets redacted) with
                                    #   a provenance column; exit 0 on success, 1 on error
 ```
 
-`ehrbase config check` runs the exact same three validation passes as boot but
+`ferroehr config check` runs the exact same three validation passes as boot but
 touches no database — use it in CI and before a rollout.
 
 ## Zero-config boot and the production checklist
@@ -732,13 +732,13 @@ a prominent warning naming the two ways out — add `[[auth.basic.users]]` /
 
 For production, set at least:
 
-- **`db.url`** — the real DSN, via `EHRBASE__DB__URL` (from a secret) or a
+- **`db.url`** — the real DSN, via `FERROEHR__DB__URL` (from a secret) or a
   `*_file`-mounted value, never inline in a world-readable file.
 - **an auth mechanism** — a Basic user store and/or `[auth.oidc]`.
 - **`log.format = "json"`** for cluster log collectors.
 - **`server.cors_permissive`** stays `false`; **`server.swagger_ui`** per posture.
 - **`server.system_id`** — this deployment's own openEHR system identifier
-  (default `ehrbase-rs.local`). Choose it before the first EHR is created: it
+  (default `ferroehr.local`). Choose it before the first EHR is created: it
   is stored with every EHR, audit entry, and version identifier.
 - **`management.*`** per posture (a dedicated `port` is recommended so
   `/management` is never reachable on the clinical listener).
@@ -753,55 +753,55 @@ Env cannot carry an array of tables, so the **Basic-auth user store**
 **PGP signing key**, **Cedar/ABAC policies**, **ATNA TLS PEMs**, a **JWKS
 blob** — is referenced by an in-TOML `*_path` / `*_file` key pointing at a
 mounted path (e.g. the Helm chart's `config.files`). Everything else is a
-plain key you can set in the file or override with an `EHRBASE_*` env var.
+plain key you can set in the file or override with an `FERROEHR_*` env var.
 
-See `docker/ehrbase.dev.toml` in the repository for a worked dev example
+See `docker/ferroehr.dev.toml` in the repository for a worked dev example
 (server section, CORS, admin, and the Basic-auth users).
 
 ## Migrating from 3.x environment variables
 
 The pre-redesign layout used ~14 independent loaders, several env-name
-grammars, and nine `EHRBASE_*_CONFIG` file pointers. Every old server variable
+grammars, and nine `FERROEHR_*_CONFIG` file pointers. Every old server variable
 now **fails at boot** with the exact uniform replacement suggested — there is
 no legacy alias layer (greenfield: nothing was deployed to migrate). The table
 below maps every old spelling to its replacement.
 
 | Old variable | New key (env form) | Fate |
 |---|---|---|
-| `EHRBASE_DB_URL` | `db.url` (`EHRBASE__DB__URL`) | **boot error** — use the new spelling |
+| `FERROEHR_DB_URL` | `db.url` (`FERROEHR__DB__URL`) | **boot error** — use the new spelling |
 | `DATABASE_URL` | `db.url` | kept permanently |
-| `EHRBASE_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`EHRBASE__DB__*`) | **boot error** — use the new spelling |
-| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.*` (`EHRBASE__LOG__*`) | **boot error** — use the new spelling |
+| `FERROEHR_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`FERROEHR__DB__*`) | **boot error** — use the new spelling |
+| `FERROEHR_LOG_FORMAT` / `FERROEHR_LOG_FILTER` | `log.*` (`FERROEHR__LOG__*`) | **boot error** — use the new spelling |
 | `RUST_LOG` | `log.filter` | kept permanently |
-| `EHRBASE_OTEL_*` | `telemetry.*` | **boot error** — use the new spelling |
-| `EHRBASE_REST_CONFIG` | `--config` / `EHRBASE_CONFIG` + `ehrbase.toml` | **removed** — merge the file into `ehrbase.toml` |
-| `EHRBASE_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`EHRBASE__SERVER__*`) | **boot error** — use the new spelling |
-| `EHRBASE_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`EHRBASE__SERVER__MAX_IN_FLIGHT`) | **boot error** — use the new spelling |
-| `EHRBASE_REST_SYSTEM__*` | `server.identity.*` | **boot error** — use the new spelling |
-| `EHRBASE_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`EHRBASE__AUTH__*`) | **boot error** — use the new spelling |
-| `EHRBASE_REST_AUTH__OIDC__*` | `auth.oidc.*` (`EHRBASE__AUTH__OIDC__*`) | **boot error** — use the new spelling |
-| `EHRBASE_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **removed** — set in the file |
-| `EHRBASE_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`) | **removed** |
-| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` | **boot error** — use the new spelling |
-| `EHRBASE_REST_TENANCY__*` | `tenancy.*` | **boot error** — use the new spelling |
-| `EHRBASE_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | **boot error** — use the new spelling |
-| `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | **boot error** — use the new spelling |
-| `EHRBASE_REST_FHIR__ENABLED` | `fhir.api_enabled` | **boot error** — use the new spelling |
-| `EHRBASE_REST_SMART__*` | `smart.*` (`EHRBASE__SMART__*`) | **boot error** — use the new spelling |
-| `EHRBASE_MANAGEMENT_*` | `management.*` (`EHRBASE__MANAGEMENT__*`) | **boot error** — use the new spelling |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`EHRBASE__MANAGEMENT__ENDPOINTS__<EP>`) | **boot error** — use the new spelling |
-| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`EHRBASE__AUTHZ__…`) | **boot error** — use the new spelling |
-| `EHRBASE_ATNA_<KEY>` | `audit.<key>` (`EHRBASE__AUDIT__<KEY>`) | **boot error** — use the new spelling |
-| `EHRBASE_SIGNING_<KEY>` | `signing.<key>` (`EHRBASE__SIGNING__<KEY>`) | **boot error** — use the new spelling |
-| `EHRBASE_EVENTS_<KEY>` | `events.<key>` (`EHRBASE__EVENTS__<KEY>`) | **boot error** — use the new spelling |
-| `EHRBASE_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`EHRBASE__FHIR__OUTBOUND__<KEY>`) | **boot error** — use the new spelling |
-| `EHRBASE_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`EHRBASE__MULTIMEDIA__<KEY>`) | **boot error** — use the new spelling |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | **boot error** — use the new spelling |
-| `EHRBASE__SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
-| `EHRBASE__QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
-| the nine `EHRBASE_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ehrbase.toml` under its `[section]` |
+| `FERROEHR_OTEL_*` | `telemetry.*` | **boot error** — use the new spelling |
+| `FERROEHR_REST_CONFIG` | `--config` / `FERROEHR_CONFIG` + `ferroehr.toml` | **removed** — merge the file into `ferroehr.toml` |
+| `FERROEHR_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`FERROEHR__SERVER__*`) | **boot error** — use the new spelling |
+| `FERROEHR_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`FERROEHR__SERVER__MAX_IN_FLIGHT`) | **boot error** — use the new spelling |
+| `FERROEHR_REST_SYSTEM__*` | `server.identity.*` | **boot error** — use the new spelling |
+| `FERROEHR_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`FERROEHR__AUTH__*`) | **boot error** — use the new spelling |
+| `FERROEHR_REST_AUTH__OIDC__*` | `auth.oidc.*` (`FERROEHR__AUTH__OIDC__*`) | **boot error** — use the new spelling |
+| `FERROEHR_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **removed** — set in the file |
+| `FERROEHR_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`) | **removed** |
+| `FERROEHR_REST_ADMIN__ENABLED` | `admin.enabled` | **boot error** — use the new spelling |
+| `FERROEHR_REST_TENANCY__*` | `tenancy.*` | **boot error** — use the new spelling |
+| `FERROEHR_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | **boot error** — use the new spelling |
+| `FERROEHR_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | **boot error** — use the new spelling |
+| `FERROEHR_REST_FHIR__ENABLED` | `fhir.api_enabled` | **boot error** — use the new spelling |
+| `FERROEHR_REST_SMART__*` | `smart.*` (`FERROEHR__SMART__*`) | **boot error** — use the new spelling |
+| `FERROEHR_MANAGEMENT_*` | `management.*` (`FERROEHR__MANAGEMENT__*`) | **boot error** — use the new spelling |
+| `FERROEHR_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`FERROEHR__MANAGEMENT__ENDPOINTS__<EP>`) | **boot error** — use the new spelling |
+| `FERROEHR_AUTHZ_RBAC__*` / `FERROEHR_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`FERROEHR__AUTHZ__…`) | **boot error** — use the new spelling |
+| `FERROEHR_ATNA_<KEY>` | `audit.<key>` (`FERROEHR__AUDIT__<KEY>`) | **boot error** — use the new spelling |
+| `FERROEHR_SIGNING_<KEY>` | `signing.<key>` (`FERROEHR__SIGNING__<KEY>`) | **boot error** — use the new spelling |
+| `FERROEHR_EVENTS_<KEY>` | `events.<key>` (`FERROEHR__EVENTS__<KEY>`) | **boot error** — use the new spelling |
+| `FERROEHR_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`FERROEHR__FHIR__OUTBOUND__<KEY>`) | **boot error** — use the new spelling |
+| `FERROEHR_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`FERROEHR__MULTIMEDIA__<KEY>`) | **boot error** — use the new spelling |
+| `FERROEHR_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | **boot error** — use the new spelling |
+| `FERROEHR__SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
+| `FERROEHR__QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
+| the nine `FERROEHR_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ferroehr.toml` under its `[section]` |
 
-The `PostgreSQL init` container variables `EHRBASE_DB_USER` / `_PASSWORD` /
+The `PostgreSQL init` container variables `FERROEHR_DB_USER` / `_PASSWORD` /
 `_NAME` were renamed to `PG_INIT_USER` / `_PASSWORD` / `_DB` — they configure
 the database container, not the server, and no longer collide with the
-server's reserved `EHRBASE_` namespace.
+server's reserved `FERROEHR_` namespace.

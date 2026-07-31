@@ -12,20 +12,20 @@
 #      for visibility);
 #   5. tears everything down.
 #
-# EHRBASE_IMAGE / EHRBASE_POSTGRES_IMAGE select the images to run.
+# FERROEHR_IMAGE / FERROEHR_POSTGRES_IMAGE select the images to run.
 set -Eeuo pipefail
 
 # Own project (docs.docker.com/compose/how-tos/project-name) so the `down -v`
-# teardown is scoped to `ehrbase-rs-smoke` and never wipes a running dev
-# (`ehrbase-rs`) stack (issue #282 D3). Only the two core services are started
+# teardown is scoped to `ferroehr-smoke` and never wipes a running dev
+# (`ferroehr`) stack (issue #282 D3). Only the two core services are started
 # (keycloak/seaweedfs are behind profiles and stay down).
-export COMPOSE_PROJECT_NAME=ehrbase-rs-smoke
-BASE="http://localhost:8080/ehrbase/rest"
-CORE_SERVICES=(ehrbase-postgres ehrbase)
+export COMPOSE_PROJECT_NAME=ferroehr-smoke
+BASE="http://localhost:8080/ferroehr/rest"
+CORE_SERVICES=(ferroehr-postgres ferroehr)
 
 cleanup() {
   echo "::group::app logs"
-  docker compose logs ehrbase || true
+  docker compose logs ferroehr || true
   echo "::endgroup::"
   docker compose down -v || true
 }
@@ -34,7 +34,7 @@ trap cleanup EXIT
 wait_healthy() {
   local cid
   for _ in $(seq 1 60); do
-    cid=$(docker compose ps -q ehrbase)
+    cid=$(docker compose ps -q ferroehr)
     if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]; then
       return 0
     fi
@@ -42,15 +42,15 @@ wait_healthy() {
   done
   echo "::error::app container did not become healthy"
   docker compose ps
-  docker compose logs ehrbase || true
+  docker compose logs ferroehr || true
   return 1
 }
 
 migration_count() {
   # Query as the bootstrap superuser (peer auth over the container's unix
   # socket maps the postgres OS user to the postgres role).
-  docker compose exec -T ehrbase-postgres \
-    psql -U postgres -d "${PG_INIT_DB:-ehrbase}" -tAc \
+  docker compose exec -T ferroehr-postgres \
+    psql -U postgres -d "${PG_INIT_DB:-ferroehr}" -tAc \
     "SELECT count(*) FROM ehr._sqlx_migrations" | tr -d '[:space:]'
 }
 
@@ -65,7 +65,7 @@ code=$(curl -fsS -o /dev/null -w '%{http_code}' "$BASE/status")
 [ "$code" = "200" ] || { echo "::error::/rest/status returned $code"; exit 1; }
 
 echo "==> POST /ehr with dev Basic creds must be 201"
-code=$(curl -sS -o /dev/null -w '%{http_code}' -u ehrbase:ehrbase \
+code=$(curl -sS -o /dev/null -w '%{http_code}' -u ferroehr:ferroehr \
   -X POST "$BASE/openehr/v1/ehr" \
   -H 'Prefer: return=minimal')
 [ "$code" = "201" ] || { echo "::error::POST /ehr returned $code (expected 201)"; exit 1; }
@@ -76,7 +76,7 @@ echo "    ehr._sqlx_migrations count = $before"
 [ "$before" -ge 1 ] || { echo "::error::migrations did not apply on first boot"; exit 1; }
 
 echo "==> Restarting app (second boot must be a migration no-op)"
-docker compose restart ehrbase
+docker compose restart ferroehr
 wait_healthy
 after=$(migration_count)
 echo "    ehr._sqlx_migrations count = $after"

@@ -90,7 +90,7 @@ fn opt_dirs() -> Vec<PathBuf> {
     vec![
         manifest_dir().join("tests/fixtures/sdk"),
         manifest_dir().join("tests/fixtures/better"),
-        manifest_dir().join("../../app/ehrbase/tests/resources/service"),
+        manifest_dir().join("../../app/ferroehr/tests/resources/service"),
     ]
 }
 

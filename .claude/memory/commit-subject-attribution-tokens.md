@@ -7,7 +7,7 @@ metadata:
   originSessionId: a2670f8c-322a-431c-b609-f598b3195b9c
 ---
 
-The tracked `.githooks/commit-msg` hook in ehrbase-rs strips whole lines matching attribution patterns, including the literal phrase "Claude Code" (case-insensitive), Co-authored-by lines, "Generated with/by", and the robot emoji. A legitimate subject like "register Claude Code hooks" gets its entire subject line deleted (observed 2026-07-02: commit landed body-only and needed `--amend`). A fully-matching single-line message strips to empty and aborts the commit.
+The tracked `.githooks/commit-msg` hook in ferroehr strips whole lines matching attribution patterns, including the literal phrase "Claude Code" (case-insensitive), Co-authored-by lines, "Generated with/by", and the robot emoji. A legitimate subject like "register Claude Code hooks" gets its entire subject line deleted (observed 2026-07-02: commit landed body-only and needed `--amend`). A fully-matching single-line message strips to empty and aborts the commit.
 
 **Why:** the hook is a hard no-attribution guarantee and cannot distinguish attribution from a technical mention of the tool name.
 

@@ -14,6 +14,7 @@ tick in the atomic-number corner — with the **"Oxide & Iron"** palette.
 | `favicon.svg` | Favicon master: tile + Fe only, no heartbeat tick (illegible below 32 px). |
 | `ferroehr-lockup-light.svg` | Icon + wordmark for light backgrounds. |
 | `ferroehr-lockup-dark.svg` | Icon + wordmark for dark backgrounds. |
+| `ferroehr-lockup-auto.svg` | Theme-adaptive lockup (`prefers-color-scheme` media query inside the SVG) — for README/website contexts that serve one file to both themes. |
 | `tokens.css` | The palette as CSS custom properties — the single source for brand colours. |
 
 ## Palette — "Oxide & Iron"

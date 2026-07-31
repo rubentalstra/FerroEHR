@@ -9,10 +9,10 @@ anything real.
 
 - `cnf-signing.sec.asc` — the armored OpenPGP **secret** key (no passphrase).
   Mounted into the pgp-posture deployment (`docker/sut-signing-pgp.yml`) as
-  `EHRBASE__SIGNING__KEY_PATH`; that deployment signs each committed VERSION
+  `FERROEHR__SIGNING__KEY_PATH`; that deployment signs each committed VERSION
   with it.
 - `cnf-signing.pub.asc` — the armored OpenPGP **public** key. Inlined into the
-  `sut_pgp` instance's own `signing` block (`party/ehrbase-rs/ixit.json`); the
+  `sut_pgp` instance's own `signing` block (`party/ferroehr/ixit.json`); the
   runner verifies `ORIGINAL_VERSION.signature` against it (RFC 4880 detached
   signature over the agreed canonical form: RFC 8785 JCS of the version minus
   `signature`).
@@ -31,10 +31,10 @@ Subkey-Type: RSA
 Subkey-Length: 3072
 Subkey-Usage: sign
 Name-Real: CNF Test Version Signing
-Name-Email: cnf-signing@test.ehrbase-rs.local
+Name-Email: cnf-signing@test.ferroehr.local
 Expire-Date: 0
 %commit
 EOF
-gpg --armor --export         cnf-signing@test.ehrbase-rs.local > cnf-signing.pub.asc
-gpg --armor --export-secret-keys cnf-signing@test.ehrbase-rs.local > cnf-signing.sec.asc
+gpg --armor --export         cnf-signing@test.ferroehr.local > cnf-signing.pub.asc
+gpg --armor --export-secret-keys cnf-signing@test.ferroehr.local > cnf-signing.sec.asc
 ```
