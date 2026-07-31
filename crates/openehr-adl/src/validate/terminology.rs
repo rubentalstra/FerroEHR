@@ -24,7 +24,8 @@
 
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 
-use super::{ArchetypeView, ValidationCode, ValidationIssue, view};
+use super::{ValidationCode, ValidationIssue};
+use crate::artefact::{ArchetypeView, view};
 
 /// The seam by which the application answers "does this code exist in this
 /// terminology?" for the ADL2 VETDF check, without `openehr-adl` holding a

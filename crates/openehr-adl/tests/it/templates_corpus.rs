@@ -30,9 +30,10 @@
 
 use std::path::{Path, PathBuf};
 
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::{parse_artefact, regression_tag};
 use openehr_adl::validate::fillers::validate_fillers;
-use openehr_adl::validate::{ArchetypeRepository, Severity, ValidationCode};
+use openehr_adl::validate::{Severity, ValidationCode};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 
 const TEMPLATES: &str = concat!(

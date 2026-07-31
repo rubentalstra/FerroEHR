@@ -29,9 +29,10 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use openehr_adl::aom::interval::Bounds;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::validate::rm::{
-    Bounds, EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
+    EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
     production_model_governs, validate_phase2_rm,
 };
 use openehr_adl::validate::terminology::NoTerminologyResolver;

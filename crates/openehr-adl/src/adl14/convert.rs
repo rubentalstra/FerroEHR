@@ -1141,7 +1141,7 @@ fn materialise_adl14_occurrences(def: &mut CComplexObject) {
         let is_container = attr.cardinality.is_some();
         for child in &mut attr.children {
             if is_container
-                && child_occurrences(child).is_none()
+                && complex_occurrences(child).is_none()
                 && !matches!(child, CObject::CComplexObjectProxy(_))
             {
                 set_occurrences(child, one_to_one());
@@ -1207,7 +1207,7 @@ fn elide_attr(attr: &mut CAttribute) {
         attr.is_multiple = false;
     }
     for child in &mut attr.children {
-        if let Some(occ) = child_occurrences(child)
+        if let Some(occ) = complex_occurrences(child)
             && is_zero_unbounded(occ)
         {
             clear_occurrences(child);
@@ -1219,7 +1219,13 @@ fn is_zero_unbounded(mi: &openehr_base::prelude::MultiplicityInterval) -> bool {
     mi.lower == Some(0) && mi.upper_unbounded
 }
 
-fn child_occurrences(obj: &CObject) -> Option<&openehr_base::prelude::MultiplicityInterval> {
+/// The `occurrences` of a NON-PRIMITIVE `C_OBJECT`, if it carries one.
+///
+/// Deliberately narrower than [`crate::aom::access::child_occurrences`]: it
+/// answers only for the four subtypes whose `occurrences` its mutable partner
+/// [`clear_occurrences`] can clear, so the read/clear pair covers exactly the
+/// same arms.
+fn complex_occurrences(obj: &CObject) -> Option<&openehr_base::prelude::MultiplicityInterval> {
     match obj {
         CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences.as_ref(),
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences.as_ref(),

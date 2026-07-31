@@ -22,10 +22,10 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
+use openehr_adl::aom::access::{complex_attributes, object_node_id, object_rm_type};
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::{BindingFilter, OptError, ProfileSpec, create_opt, profile_opt};
-use openehr_adl::paths::{complex_attributes, object_node_id, object_rm_type};
-use openehr_adl::validate::ArchetypeRepository;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;

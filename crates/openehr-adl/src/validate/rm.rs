@@ -33,46 +33,20 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
+use openehr_base::prelude::Interval;
 use openehr_rm::model;
 
-use super::{ArchetypeView, ValidationCode, ValidationIssue, view};
+use super::{ValidationCode, ValidationIssue};
+use crate::aom::access::{
+    child_occurrences, complex_attributes, complex_rm_type, object_node_id, object_rm_type,
+};
+use crate::aom::interval::{
+    Bounds, bounds, degenerate_point_value_i32, display_bounds, finite_upper,
+};
+use crate::artefact::{ArchetypeView, view};
 use crate::codes::{is_at_code, is_id_code};
-use crate::paths::{complex_attributes, complex_rm_type, locate, object_node_id, object_rm_type};
-
-/// A multiplicity bound, extracted from an RM attribute or a cADL constraint.
-/// `upper == None` denotes an unbounded (∞) upper limit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Bounds {
-    /// Inclusive lower bound.
-    pub lower: i32,
-    /// Inclusive upper bound; `None` = unbounded.
-    pub upper: Option<i32>,
-}
-
-impl Bounds {
-    /// A closed `{lower..upper}` bound.
-    #[must_use]
-    pub fn new(lower: i32, upper: Option<i32>) -> Self {
-        Self { lower, upper }
-    }
-
-    /// True if `inner` is the same as, or narrower than (wholly contained
-    /// within), `self` — the "conform, i.e. be the same or narrower" test the
-    /// existence (VCAEX) and cardinality (VCACA) rules require (`master04.5`
-    /// §Validity Rules: `C_ATTRIBUTE`).
-    #[must_use]
-    pub fn contains(self, inner: Bounds) -> bool {
-        inner.lower >= self.lower
-            && match (self.upper, inner.upper) {
-                // `self` unbounded above ⇒ any inner upper is within it.
-                (None, _) => true,
-                // `self` bounded but `inner` unbounded ⇒ inner escapes above.
-                (Some(_), None) => false,
-                (Some(outer), Some(i)) => i <= outer,
-            }
-    }
-}
+use crate::odin::is_delimited_regex_trimmed;
+use crate::paths::{child_path, locate};
 
 /// One attribute of an RM type, as reported by a [`RmModel`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -553,7 +527,7 @@ impl RmScan<'_> {
         // VCAEX: existence, if set, must conform to (be same-or-narrower than)
         // the RM existence (master04.5 §Validity Rules: `C_ATTRIBUTE`).
         if let Some(ex) = attr.existence.as_ref() {
-            let arch = bounds_of_multiplicity(ex);
+            let arch = bounds(ex);
             if !rm_attr.existence.contains(arch) {
                 self.push(
                     ValidationCode::Vcaex,
@@ -587,7 +561,7 @@ impl RmScan<'_> {
         if let (Some(card), true) = (attr.cardinality.as_ref(), rm_attr.is_multiple)
             && let Some(rm_card) = rm_attr.cardinality
         {
-            let arch = bounds_of_multiplicity(&card.interval);
+            let arch = bounds(&card.interval);
             if !rm_card.contains(arch) {
                 self.push(
                     ValidationCode::Vcaca,
@@ -608,7 +582,7 @@ impl RmScan<'_> {
         // determination is the RM's, not the parser's cardinality heuristic.
         if !rm_attr.is_multiple {
             for child in &attr.children {
-                if let Some(occ) = object_occurrences(child)
+                if let Some(occ) = child_occurrences(child)
                     && let Some(upper) = finite_upper(occ)
                     && upper > 1
                 {
@@ -853,25 +827,10 @@ impl RmScan<'_> {
 /// enumerated here (conservative — no false VCORMENV on the "equivalent range"
 /// form the spec also allows).
 fn integer_point_values(constraint: &[Interval<i32>]) -> Vec<i32> {
-    constraint.iter().filter_map(interval_point_i32).collect()
-}
-
-/// The single point value of an integer interval (`{n}` / `{n..n}`), or `None`
-/// for a range or unbounded interval.
-fn interval_point_i32(iv: &Interval<i32>) -> Option<i32> {
-    match iv {
-        Interval::PointInterval(p) if !p.lower_unbounded && !p.upper_unbounded => p.lower,
-        Interval::ProperInterval(ProperInterval::ProperInterval(d))
-            if d.lower_included
-                && d.upper_included
-                && !d.lower_unbounded
-                && !d.upper_unbounded
-                && d.lower == d.upper =>
-        {
-            d.lower
-        }
-        _ => None,
-    }
+    constraint
+        .iter()
+        .filter_map(degenerate_point_value_i32)
+        .collect()
 }
 
 /// The literal string values of a `C_STRING` enumeration constraint: the plain
@@ -881,69 +840,7 @@ fn string_literal_values(constraint: &[String]) -> impl Iterator<Item = &str> {
     constraint
         .iter()
         .map(String::as_str)
-        .filter(|s| !is_regex_entry(s))
-}
-
-/// Whether a `C_STRING` constraint entry is a delimited regex (`/re/` or `^re^`)
-/// rather than a literal string (`master04.5` §`C_STRING`).
-fn is_regex_entry(s: &str) -> bool {
-    let t = s.trim();
-    t.len() >= 2
-        && ((t.starts_with('/') && t.ends_with('/')) || (t.starts_with('^') && t.ends_with('^')))
-}
-
-/// `Bounds` from a [`MultiplicityInterval`] (existence / occurrences).
-fn bounds_of_multiplicity(mi: &MultiplicityInterval) -> Bounds {
-    Bounds {
-        lower: if mi.lower_unbounded {
-            0
-        } else {
-            mi.lower.unwrap_or(0)
-        },
-        upper: if mi.upper_unbounded { None } else { mi.upper },
-    }
-}
-
-/// The occurrences interval of any [`CObject`], if it carries one.
-fn object_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.occurrences.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.occurrences.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::CBoolean(o) => o.occurrences.as_ref(),
-        CObject::CInteger(o) => o.occurrences.as_ref(),
-        CObject::CReal(o) => o.occurrences.as_ref(),
-        CObject::CString(o) => o.occurrences.as_ref(),
-        CObject::CTerminologyCode(o) => o.occurrences.as_ref(),
-        CObject::CDate(o) => o.occurrences.as_ref(),
-        CObject::CTime(o) => o.occurrences.as_ref(),
-        CObject::CDateTime(o) => o.occurrences.as_ref(),
-        CObject::CDuration(o) => o.occurrences.as_ref(),
-    }
-}
-
-/// The finite upper bound of a multiplicity interval, or `None` if unbounded.
-fn finite_upper(mi: &MultiplicityInterval) -> Option<i32> {
-    if mi.upper_unbounded { None } else { mi.upper }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
-    }
-}
-
-fn display_bounds(b: Bounds) -> String {
-    match b.upper {
-        Some(u) if u == b.lower => format!("{{{}}}", b.lower),
-        Some(u) => format!("{{{}..{u}}}", b.lower),
-        None => format!("{{{}..*}}", b.lower),
-    }
+        .filter(|s| !is_delimited_regex_trimmed(s))
 }
 
 #[cfg(test)]
@@ -966,16 +863,6 @@ mod tests {
             normalise_type_name("Interval <Quantity>"),
             "INTERVAL<QUANTITY>"
         );
-    }
-
-    #[test]
-    fn bounds_containment_is_same_or_narrower() {
-        let one_to_one = Bounds::new(1, Some(1));
-        assert!(one_to_one.contains(Bounds::new(1, Some(1))));
-        assert!(!one_to_one.contains(Bounds::new(0, Some(0)))); // {0} not within {1..1}
-        let star = Bounds::new(0, None);
-        assert!(star.contains(Bounds::new(1, Some(5))));
-        assert!(!Bounds::new(1, Some(5)).contains(star)); // {0..*} escapes {1..5}
     }
 
     /// A `use_node` archetype built around `body`, for the VUNT pair below.

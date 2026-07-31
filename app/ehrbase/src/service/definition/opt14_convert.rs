@@ -43,7 +43,7 @@ use std::collections::BTreeMap;
 
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};
 use openehr_adl::adl14::log::ConversionLog;
-use openehr_adl::source::parse_hrid;
+use openehr_adl::hrid::parse_hrid;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,

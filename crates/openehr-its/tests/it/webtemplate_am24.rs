@@ -26,9 +26,9 @@
 
 use std::path::Path;
 
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
-use openehr_adl::validate::ArchetypeRepository;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::{
     ValidationKind, validate_archetype_conformance, validate_rm_and_terminology,

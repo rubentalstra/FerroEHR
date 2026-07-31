@@ -11,9 +11,9 @@
 
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 
-use crate::printer::hrid_to_string;
+use crate::artefact::view;
+use crate::hrid::hrid_to_string;
 use crate::source::ArtefactKind;
-use crate::validate::view;
 
 /// The identity fields of a parsed ADL2 artefact.
 #[derive(Debug, Clone, PartialEq, Eq)]

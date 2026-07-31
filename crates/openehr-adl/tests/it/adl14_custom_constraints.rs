@@ -92,7 +92,7 @@ fn value_object(src: &str) -> CObject {
     let AuthoredArchetype::AuthoredArchetype(data) = *authored else {
         panic!("not a plain authored archetype");
     };
-    let items = openehr_adl::paths::complex_attributes(&data.definition)
+    let items = openehr_adl::aom::access::complex_attributes(&data.definition)
         .iter()
         .find(|a| a.rm_attribute_name == "items")
         .expect("the items attribute");
@@ -100,7 +100,7 @@ fn value_object(src: &str) -> CObject {
     let CObject::CComplexObject(element) = element else {
         panic!("the ELEMENT child is not a complex object");
     };
-    openehr_adl::paths::complex_attributes(element)
+    openehr_adl::aom::access::complex_attributes(element)
         .iter()
         .find(|a| a.rm_attribute_name == "value")
         .expect("the value attribute")

@@ -47,6 +47,10 @@ use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
 
+use crate::aom::build::cobject_to_primitive;
+use crate::hrid::hrid_to_string;
+use crate::odin::regex_of;
+
 /// Serialize an assembled [`Archetype`] to ADL2 source text.
 ///
 /// `parse_artefact(&print(a))` reconstructs an [`Archetype`] structurally equal
@@ -56,30 +60,6 @@ pub fn print(archetype: &Archetype) -> String {
     let mut p = Printer { out: String::new() };
     p.archetype(archetype);
     p.out
-}
-
-/// Reconstruct an [`ArchetypeHrid`] string
-/// (`[ns::]publisher-package-class.concept.vMAJOR.MINOR.PATCH[-status.build]`;
-/// `master07.05`).
-#[must_use]
-pub fn hrid_to_string(h: &ArchetypeHrid) -> String {
-    let mut s = String::new();
-    if let Some(ns) = &h.namespace {
-        let _ = write!(s, "{ns}::");
-    }
-    let _ = write!(
-        s,
-        "{}-{}-{}.{}.v{}",
-        h.rm_publisher, h.rm_package, h.rm_class, h.concept_id, h.release_version
-    );
-    let status = h.version_status.as_str();
-    if !status.is_empty() {
-        let _ = write!(s, "-{status}");
-        if !h.build_count.is_empty() {
-            let _ = write!(s, ".{}", h.build_count);
-        }
-    }
-    s
 }
 
 struct Printer {
@@ -538,7 +518,7 @@ impl Printer {
 
     fn object(&mut self, obj: &CObject, depth: usize) {
         let mut head = String::new();
-        if let Some(so) = sibling_order_of(obj) {
+        if let Some(so) = crate::aom::access::sibling_order(obj) {
             head.push_str(&sibling_str(so));
             head.push(' ');
         }
@@ -572,7 +552,7 @@ impl Printer {
             CObject::ArchetypeSlot(s) => self.slot(&head, s, depth),
             // Primitives with a real node id are regular primitive objects.
             other => {
-                if let Some(prim) = cobject_as_primitive(other) {
+                if let Some(prim) = cobject_to_primitive(other) {
                     let (ty, node_id) = prim_type_and_node(other);
                     if node_id == "Primitive_node_id" {
                         // Inline primitive (only reached inside an attribute body).
@@ -626,7 +606,7 @@ impl Printer {
         }
         // A single inline primitive child prints inline; regular objects nest.
         if let [child] = a.children.as_slice()
-            && let Some(prim) = cobject_as_primitive(child)
+            && let Some(prim) = cobject_to_primitive(child)
             && prim_type_and_node(child).1 == "Primitive_node_id"
         {
             self.line(
@@ -985,24 +965,6 @@ fn card_braces(c: &Cardinality) -> String {
     s
 }
 
-fn sibling_order_of(obj: &CObject) -> Option<&SiblingOrder> {
-    match obj {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.sibling_order.as_ref(),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.sibling_order.as_ref(),
-        CObject::CComplexObjectProxy(p) => p.sibling_order.as_ref(),
-        CObject::ArchetypeSlot(s) => s.sibling_order.as_ref(),
-        CObject::CBoolean(c) => c.sibling_order.as_ref(),
-        CObject::CDate(c) => c.sibling_order.as_ref(),
-        CObject::CDateTime(c) => c.sibling_order.as_ref(),
-        CObject::CDuration(c) => c.sibling_order.as_ref(),
-        CObject::CInteger(c) => c.sibling_order.as_ref(),
-        CObject::CReal(c) => c.sibling_order.as_ref(),
-        CObject::CString(c) => c.sibling_order.as_ref(),
-        CObject::CTerminologyCode(c) => c.sibling_order.as_ref(),
-        CObject::CTime(c) => c.sibling_order.as_ref(),
-    }
-}
-
 fn sibling_str(so: &SiblingOrder) -> String {
     let kw = if so.is_before { "before" } else { "after" };
     format!("{kw}[{}]", so.sibling_node_id)
@@ -1021,38 +983,6 @@ fn prim_type_and_node(obj: &CObject) -> (String, String) {
         CObject::CTime(c) => (c.rm_type_name.clone(), c.node_id.clone()),
         _ => (String::new(), String::new()),
     }
-}
-
-fn cobject_as_primitive(obj: &CObject) -> Option<CPrimitiveObject> {
-    Some(match obj {
-        CObject::CBoolean(c) => CPrimitiveObject::CBoolean(c.clone()),
-        CObject::CDate(c) => CPrimitiveObject::CDate(c.clone()),
-        CObject::CDateTime(c) => CPrimitiveObject::CDateTime(c.clone()),
-        CObject::CDuration(c) => CPrimitiveObject::CDuration(c.clone()),
-        CObject::CInteger(c) => CPrimitiveObject::CInteger(c.clone()),
-        CObject::CReal(c) => CPrimitiveObject::CReal(c.clone()),
-        CObject::CString(c) => CPrimitiveObject::CString(c.clone()),
-        CObject::CTerminologyCode(c) => CPrimitiveObject::CTerminologyCode(c.clone()),
-        CObject::CTime(c) => CPrimitiveObject::CTime(c.clone()),
-        _ => return None,
-    })
-}
-
-/// True if a `C_STRING` constraint is a single delimited regex (`/re/` or
-/// `^re^`) — the `cadl2.g4` `CONTAINED_REGEXP` form the parser stores verbatim.
-/// A plain string *value* that merely starts with `/` (e.g. a unit `"/min"`) is
-/// not a regex — the delimiter must close, so both ends are required.
-/// The single delimited regex a `C_STRING` constraint carries, if any.
-fn regex_of(constraint: &[String]) -> Option<&str> {
-    match constraint {
-        [one] if is_delimited_regex(one) => Some(one),
-        _ => None,
-    }
-}
-
-fn is_delimited_regex(s: &str) -> bool {
-    (s.len() >= 2 && s.starts_with('/') && s.ends_with('/'))
-        || (s.len() >= 2 && s.starts_with('^') && s.ends_with('^'))
 }
 
 /// The inline value text of a primitive constraint (`55`, `|0..100|`,

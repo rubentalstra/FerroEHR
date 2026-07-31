@@ -19,97 +19,11 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
-use super::rm::{Bounds, RmModel};
+use super::rm::RmModel;
+use crate::aom::access::{AomType, aom_type, child_occurrences, object_node_id};
+use crate::aom::interval::{Bounds, bounds};
 use crate::codes::codes_conformant;
-use crate::paths::{locate, object_node_id};
-
-/// The AOM meta-type (node class) of a [`CObject`], for the VSONT meta-type
-/// conformance rule (`master04.5` §Validity Rules: `C_OBJECT`, VSONT L342).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AomType {
-    /// `ARCHETYPE_SLOT`.
-    Slot,
-    /// `C_COMPLEX_OBJECT`.
-    ComplexObject,
-    /// `C_ARCHETYPE_ROOT`.
-    ArchetypeRoot,
-    /// `C_COMPLEX_OBJECT_PROXY`.
-    Proxy,
-    /// `C_BOOLEAN`.
-    Boolean,
-    /// `C_INTEGER`.
-    Integer,
-    /// `C_REAL`.
-    Real,
-    /// `C_STRING`.
-    String,
-    /// `C_TERMINOLOGY_CODE`.
-    TerminologyCode,
-    /// `C_DATE`.
-    Date,
-    /// `C_TIME`.
-    Time,
-    /// `C_DATE_TIME`.
-    DateTime,
-    /// `C_DURATION`.
-    Duration,
-}
-
-impl AomType {
-    /// True if this is a `C_PRIMITIVE_OBJECT` descendant (`master04.5`
-    /// §`C_PRIMITIVE_OBJECT`).
-    #[must_use]
-    pub fn is_primitive(self) -> bool {
-        matches!(
-            self,
-            Self::Boolean
-                | Self::Integer
-                | Self::Real
-                | Self::String
-                | Self::TerminologyCode
-                | Self::Date
-                | Self::Time
-                | Self::DateTime
-                | Self::Duration
-        )
-    }
-}
-
-/// The [`AomType`] of any [`CObject`].
-#[must_use]
-pub fn aom_type(obj: &CObject) -> AomType {
-    match obj {
-        CObject::ArchetypeSlot(_) => AomType::Slot,
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(_) => AomType::ComplexObject,
-            CComplexObject::CArchetypeRoot(_) => AomType::ArchetypeRoot,
-        },
-        CObject::CComplexObjectProxy(_) => AomType::Proxy,
-        CObject::CBoolean(_) => AomType::Boolean,
-        CObject::CInteger(_) => AomType::Integer,
-        CObject::CReal(_) => AomType::Real,
-        CObject::CString(_) => AomType::String,
-        CObject::CTerminologyCode(_) => AomType::TerminologyCode,
-        CObject::CDate(_) => AomType::Date,
-        CObject::CTime(_) => AomType::Time,
-        CObject::CDateTime(_) => AomType::DateTime,
-        CObject::CDuration(_) => AomType::Duration,
-    }
-}
-
-/// [`Bounds`] view of a [`MultiplicityInterval`] (existence / occurrences /
-/// cardinality bound), with `upper == None` denoting an unbounded (`*`) limit.
-#[must_use]
-pub fn bounds(mi: &MultiplicityInterval) -> Bounds {
-    Bounds {
-        lower: if mi.lower_unbounded {
-            0
-        } else {
-            mi.lower.unwrap_or(0)
-        },
-        upper: if mi.upper_unbounded { None } else { mi.upper },
-    }
-}
+use crate::paths::locate;
 
 /// `existence_conforms_to` (`master04.5` §Conformance Semantics: `C_ATTRIBUTE`,
 /// L58-68): true if `child`'s existence conforms to `other`'s — i.e. both set
@@ -308,28 +222,6 @@ const BOUNDS_ONE: Bounds = Bounds {
     lower: 1,
     upper: Some(1),
 };
-
-/// The `occurrences` interval of any [`CObject`], if it carries one.
-#[must_use]
-pub fn child_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.occurrences.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.occurrences.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::CBoolean(o) => o.occurrences.as_ref(),
-        CObject::CInteger(o) => o.occurrences.as_ref(),
-        CObject::CReal(o) => o.occurrences.as_ref(),
-        CObject::CString(o) => o.occurrences.as_ref(),
-        CObject::CTerminologyCode(o) => o.occurrences.as_ref(),
-        CObject::CDate(o) => o.occurrences.as_ref(),
-        CObject::CTime(o) => o.occurrences.as_ref(),
-        CObject::CDateTime(o) => o.occurrences.as_ref(),
-        CObject::CDuration(o) => o.occurrences.as_ref(),
-    }
-}
 
 /// VSONT meta-type conformance (`master04.5` §Validity Rules: `C_OBJECT`, VSONT
 /// L342): the child meta-type must equal the parent's, with three exceptions —
@@ -615,8 +507,8 @@ fn status_value(status: Option<&ConstraintStatus>) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aom::access::complex_attributes;
     use crate::assemble::parse_artefact;
-    use crate::paths::complex_attributes;
     use openehr_am::am24::aom2::archetype::archetype::Archetype;
     use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 
