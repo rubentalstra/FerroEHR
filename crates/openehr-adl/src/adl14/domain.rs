@@ -28,8 +28,7 @@ use crate::aom::build::{
     point_int, point_real, primitive_to_cobject,
 };
 use crate::aom::interval::{
-    int_interval_contains, point_interval_value_f64, point_interval_value_i32,
-    real_interval_contains,
+    int_interval_contains, point_value_f64, point_value_i32, real_interval_contains,
 };
 use crate::odin::{odin_kind, untyped};
 
@@ -414,14 +413,14 @@ fn primitive_admits(constraint: &CPrimitiveObject, value: &CPrimitiveObject) -> 
             c.constraint.is_empty()
                 || v.constraint
                     .iter()
-                    .filter_map(point_interval_value_f64)
+                    .filter_map(point_value_f64)
                     .all(|p| c.constraint.iter().any(|iv| real_interval_contains(iv, p)))
         }
         (CPrimitiveObject::CInteger(c), CPrimitiveObject::CInteger(v)) => {
             c.constraint.is_empty()
                 || v.constraint
                     .iter()
-                    .filter_map(point_interval_value_i32)
+                    .filter_map(point_value_i32)
                     .all(|p| c.constraint.iter().any(|iv| int_interval_contains(iv, p)))
         }
         _ => true,
@@ -435,13 +434,13 @@ fn set_assumed_on_primitive(target: &mut CPrimitiveObject, leaf: &CPrimitiveObje
             t.assumed_value = l.constraint.first().cloned();
         }
         (CPrimitiveObject::CReal(t), CPrimitiveObject::CReal(l)) => {
-            t.assumed_value = l.constraint.first().and_then(point_interval_value_f64);
+            t.assumed_value = l.constraint.first().and_then(point_value_f64);
         }
         (CPrimitiveObject::CInteger(t), CPrimitiveObject::CInteger(l)) => {
             t.assumed_value = l
                 .constraint
                 .first()
-                .and_then(point_interval_value_i32)
+                .and_then(point_value_i32)
                 .map(f64::from);
         }
         (CPrimitiveObject::CBoolean(t), CPrimitiveObject::CBoolean(l)) => {
@@ -464,7 +463,7 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
         }
         CObject::CReal(t) => {
             if let CPrimitiveObject::CReal(l) = leaf {
-                t.assumed_value = l.constraint.first().and_then(point_interval_value_f64);
+                t.assumed_value = l.constraint.first().and_then(point_value_f64);
             }
         }
         CObject::CInteger(t) => {
@@ -472,7 +471,7 @@ fn set_assumed_on_cobject(target: &mut CObject, leaf: &CPrimitiveObject) {
                 t.assumed_value = l
                     .constraint
                     .first()
-                    .and_then(point_interval_value_i32)
+                    .and_then(point_value_i32)
                     .map(f64::from);
             }
         }

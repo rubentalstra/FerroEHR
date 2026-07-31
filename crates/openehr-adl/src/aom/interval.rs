@@ -8,12 +8,10 @@
 //! §`C_ATTRIBUTE`), read through the [`Bounds`] view; and the generic
 //! `INTERVAL<T>` a primitive constraint carries.
 //!
-//! Two families of near-duplicate readings are deliberately kept side by side
-//! rather than merged, because their callers depend on the difference: the
-//! point-value extractors (`point_interval_value_i32` vs
-//! `degenerate_point_value_i32`) and the bounds renderers (`display_bounds` vs
-//! `display_bounds_always_range`). Each pair's doc comment states the
-//! divergence.
+//! One family of near-duplicate readings is deliberately kept side by side
+//! rather than merged, because its callers depend on the difference: the bounds
+//! renderers (`display_bounds` vs `display_bounds_always_range`). Their doc
+//! comments state the divergence.
 
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
@@ -106,53 +104,137 @@ pub(crate) fn display_bounds_always_range(b: Bounds) -> String {
     }
 }
 
-/// The value of an integer `POINT_INTERVAL` (`{v}`), else `None`.
-///
-/// This is the STRUCTURAL reading: only the `POINT_INTERVAL` subtype answers,
-/// and its unbounded flags are not consulted. A degenerate closed
-/// `PROPER_INTERVAL` (`{n..n}`) yields `None` here but a value from
-/// [`degenerate_point_value_i32`].
-//
-// TODO: unify the divergent interval point-of semantics — tracked as issue #1339.
-pub(crate) fn point_interval_value_i32(iv: &Interval<i32>) -> Option<i32> {
-    match iv {
-        Interval::PointInterval(p) => p.lower,
-        Interval::ProperInterval(_) => None,
-    }
+/// The six `Interval<T>` boundary fields of any variant, read uniformly.
+#[derive(Debug, Clone, Copy)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the four flags mirror `Interval<T>`'s own boolean attributes 1:1 (BASE `…foundation_types.interval.adoc` §Interval Class) — collapsing them would restate the spec type"
+)]
+struct IntervalFields<T> {
+    /// Lower bound, if one is stored.
+    lower: Option<T>,
+    /// Upper bound, if one is stored.
+    upper: Option<T>,
+    /// True if the lower boundary is open (`-∞`).
+    lower_unbounded: bool,
+    /// True if the upper boundary is open (`+∞`).
+    upper_unbounded: bool,
+    /// True if the lower bound is part of the interval.
+    lower_included: bool,
+    /// True if the upper bound is part of the interval.
+    upper_included: bool,
 }
 
-/// The value of a real `POINT_INTERVAL` (`{v}`), else `None`.
-///
-/// The real counterpart of [`point_interval_value_i32`] — the same structural
-/// reading (a `PROPER_INTERVAL` never answers).
-pub(crate) fn point_interval_value_f64(iv: &Interval<f64>) -> Option<f64> {
-    match iv {
-        Interval::PointInterval(p) => p.lower,
-        Interval::ProperInterval(_) => None,
-    }
-}
-
-/// The single point value an integer interval denotes (`{n}` **or** the closed
-/// degenerate `{n..n}`), or `None` for a range or unbounded interval.
-///
-/// This is the SEMANTIC reading, and it diverges from
-/// [`point_interval_value_i32`] twice: it also answers for a closed
-/// `PROPER_INTERVAL` whose bounds coincide, and it refuses a `POINT_INTERVAL`
-/// carrying an unbounded flag.
-//
-// TODO: unify the divergent interval point-of semantics — tracked as issue #1339.
-pub(crate) fn degenerate_point_value_i32(iv: &Interval<i32>) -> Option<i32> {
-    match iv {
-        Interval::PointInterval(p) if !p.lower_unbounded && !p.upper_unbounded => p.lower,
-        Interval::ProperInterval(ProperInterval::ProperInterval(d))
-            if d.lower_included
-                && d.upper_included
-                && !d.lower_unbounded
-                && !d.upper_unbounded
-                && d.lower == d.upper =>
-        {
-            d.lower
+impl<T: Copy> IntervalFields<T> {
+    /// Read any `Interval<T>` variant's boundary fields.
+    ///
+    /// The `MULTIPLICITY_INTERVAL` variant (structurally possible on the
+    /// generic enum but never produced for a domain leaf constraint) carries
+    /// `Integer` bounds rather than `T`, so it answers fully open with both
+    /// bounds absent — every reading built on this view then declines to
+    /// decide.
+    fn read(iv: &Interval<T>) -> Self {
+        match iv {
+            Interval::PointInterval(p) => Self {
+                lower: p.lower,
+                upper: p.upper,
+                lower_unbounded: p.lower_unbounded,
+                upper_unbounded: p.upper_unbounded,
+                lower_included: p.lower_included,
+                upper_included: p.upper_included,
+            },
+            Interval::ProperInterval(ProperInterval::ProperInterval(p)) => Self {
+                lower: p.lower,
+                upper: p.upper,
+                lower_unbounded: p.lower_unbounded,
+                upper_unbounded: p.upper_unbounded,
+                lower_included: p.lower_included,
+                upper_included: p.upper_included,
+            },
+            Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => Self {
+                lower: None,
+                upper: None,
+                lower_unbounded: true,
+                upper_unbounded: true,
+                lower_included: false,
+                upper_included: false,
+            },
         }
+    }
+
+    /// True if both sides are bounded AND both bounds are included — the
+    /// precondition for "this interval denotes exactly one value".
+    ///
+    /// The unbounded flags are load-bearing, not redundant with an absent
+    /// bound: `Interval<T>`'s invariant set
+    /// (`BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
+    /// §Interval Class, Invariants) never forbids a stored bound alongside an
+    /// unbounded flag, and `has()`'s postcondition short-circuits on the flag —
+    /// so an unbounded side dominates any stored bound. `Point_interval` only
+    /// *defaults* the flags (`{default = false}` / `{default = true}`,
+    /// `…foundation_types.point_interval.adoc` §`Point_interval` Class), it
+    /// does not fix them.
+    fn is_closed_bounded(self) -> bool {
+        !self.lower_unbounded && !self.upper_unbounded && self.lower_included && self.upper_included
+    }
+}
+
+/// The single integer value an interval denotes, or `None` if it denotes a
+/// range, an open side, or nothing decidable.
+///
+/// The one spec-correct predicate, applied irrespective of the
+/// point-vs-proper tagging: both sides bounded, both bounds included, both
+/// bounds present and equal.
+///
+/// - A bounds-equal CLOSED interval IS a single value, whichever subtype
+///   carries it: `AOM2/master04.2-constraint_model-semantics.adoc` §Primitive
+///   Types (the `Ordered`/`C_ORDERED` row — "A single value (which is a point
+///   interval), a list of values (list of point intervals), a list of
+///   intervals, which may be mixed proper and point intervals"),
+///   `ADL2/master04.5-cadl_primitive_types.adoc` §Constraints on Ordered Types
+///   ("a degenerate interval of the form `{N..N}`, i.e. effectively a single
+///   value"), and `LANG/docs/expression_language/master03-basics.adoc`, which
+///   defines a point as a closed interval whose boundaries are the same.
+/// - An unbounded or bound-excluding interval is NOT a single value, even when
+///   tagged `POINT_INTERVAL` — see [`IntervalFields::is_closed_bounded`] for
+///   why the flags decide.
+///
+/// NOTE: `Proper_interval`'s `Inv_not_point` (`lower /= upper`,
+/// `BASE/docs/UML/classes/org.openehr.base.foundation_types.proper_interval.adoc`)
+/// would reject the bounds-equal proper interval this function accepts. It is
+/// adjudicated AGAINST: BASE itself relies on bounds-equal proper intervals —
+/// `Multiplicity_interval` inherits `Proper_interval` yet defines
+/// `is_mandatory()` as `{1..1}` and `is_prohibited()` as `{0..0}`
+/// (`…foundation_types.multiplicity_interval.adoc`), so the invariant cannot be
+/// read as forbidding them. The three sources above state the semantics
+/// positively, so they win.
+pub(crate) fn point_value_i32(iv: &Interval<i32>) -> Option<i32> {
+    let f = IntervalFields::read(iv);
+    if !f.is_closed_bounded() {
+        return None;
+    }
+    match (f.lower, f.upper) {
+        (Some(l), Some(u)) if l == u => Some(l),
+        _ => None,
+    }
+}
+
+/// The single real value an interval denotes, or `None` if it denotes a range,
+/// an open side, or nothing decidable.
+///
+/// The real counterpart of [`point_value_i32`], with the identical predicate
+/// and the identical spec grounds.
+#[expect(
+    clippy::float_cmp,
+    reason = "the question is whether the two stored bounds are the SAME value (`{N..N}`); a tolerance would report `|1.0..1.0000001|` as a single value"
+)]
+pub(crate) fn point_value_f64(iv: &Interval<f64>) -> Option<f64> {
+    let f = IntervalFields::read(iv);
+    if !f.is_closed_bounded() {
+        return None;
+    }
+    match (f.lower, f.upper) {
+        (Some(l), Some(u)) if l == u => Some(l),
         _ => None,
     }
 }
@@ -160,33 +242,20 @@ pub(crate) fn degenerate_point_value_i32(iv: &Interval<i32>) -> Option<i32> {
 /// The `(lower, upper)` bounds of an interval as `f64`, each `None` when open or
 /// unbounded, plus the two inclusivity flags. A `MultiplicityInterval` variant
 /// (structurally possible on the generic enum but never produced for a domain
-/// leaf constraint) yields fully-open bounds, so membership is undecided and the
-/// conservative `true` answer stands.
+/// leaf constraint) yields fully-open bounds via [`IntervalFields::read`], so
+/// membership is undecided and the conservative `true` answer stands.
 pub(crate) fn interval_bounds_f64<T: Copy + Into<f64>>(
     iv: &Interval<T>,
 ) -> (Option<f64>, Option<f64>, bool, bool) {
-    let (lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included) = match iv
-    {
-        Interval::PointInterval(p) => (
-            p.lower,
-            p.upper,
-            p.lower_unbounded,
-            p.upper_unbounded,
-            p.lower_included,
-            p.upper_included,
-        ),
-        Interval::ProperInterval(ProperInterval::ProperInterval(p)) => (
-            p.lower,
-            p.upper,
-            p.lower_unbounded,
-            p.upper_unbounded,
-            p.lower_included,
-            p.upper_included,
-        ),
-        Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => {
-            return (None, None, true, true);
-        }
-    };
+    let f = IntervalFields::read(iv);
+    let (lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included) = (
+        f.lower,
+        f.upper,
+        f.lower_unbounded,
+        f.upper_unbounded,
+        f.lower_included,
+        f.upper_included,
+    );
     (
         if lower_unbounded {
             None
@@ -258,22 +327,118 @@ mod tests {
         assert_eq!(display_bounds_always_range(open), "{2..*}");
     }
 
-    /// The two point-value extractors disagree on a degenerate closed
-    /// `PROPER_INTERVAL` — pinned so the divergence cannot be "fixed" silently
-    /// ahead of its adjudication (issue #1339).
-    #[test]
-    fn the_two_point_value_extractors_disagree_on_a_degenerate_proper_interval() {
-        let degenerate: Interval<i32> = Interval::ProperInterval(ProperInterval::ProperInterval(
+    /// A `PROPER_INTERVAL<Integer>` with explicit bounds + flags.
+    fn proper_i32(lower: Option<i32>, upper: Option<i32>, flags: [bool; 4]) -> Interval<i32> {
+        let [
+            lower_unbounded,
+            upper_unbounded,
+            lower_included,
+            upper_included,
+        ] = flags;
+        Interval::ProperInterval(ProperInterval::ProperInterval(
             openehr_base::prelude::ProperIntervalData {
-                lower: Some(4),
-                upper: Some(4),
-                lower_unbounded: false,
-                upper_unbounded: false,
-                lower_included: true,
-                upper_included: true,
+                lower,
+                upper,
+                lower_unbounded,
+                upper_unbounded,
+                lower_included,
+                upper_included,
             },
-        ));
-        assert_eq!(point_interval_value_i32(&degenerate), None);
-        assert_eq!(degenerate_point_value_i32(&degenerate), Some(4));
+        ))
+    }
+
+    /// A `POINT_INTERVAL<Integer>` with explicit flags.
+    fn point_i32(value: i32, flags: [bool; 4]) -> Interval<i32> {
+        let [
+            lower_unbounded,
+            upper_unbounded,
+            lower_included,
+            upper_included,
+        ] = flags;
+        Interval::PointInterval(openehr_base::prelude::PointInterval {
+            lower: Some(value),
+            upper: Some(value),
+            lower_unbounded,
+            upper_unbounded,
+            lower_included,
+            upper_included,
+        })
+    }
+
+    /// `[lower_unbounded, upper_unbounded, lower_included, upper_included]` for a
+    /// closed, fully bounded interval.
+    const CLOSED: [bool; 4] = [false, false, true, true];
+
+    /// A closed `{n..n}` PROPER interval denotes a single value
+    /// (`ADL2/master04.5-cadl_primitive_types.adoc` §Constraints on Ordered
+    /// Types; `AOM2/master04.2` §Primitive Types, `C_ORDERED` row) — the
+    /// point/proper tagging does not decide.
+    #[test]
+    fn a_closed_bounds_equal_proper_interval_is_a_single_value() {
+        assert_eq!(
+            point_value_i32(&proper_i32(Some(4), Some(4), CLOSED)),
+            Some(4)
+        );
+        assert_eq!(
+            point_value_f64(&crate::aom::build::proper_interval(
+                Some(4.5),
+                Some(4.5),
+                true,
+                true,
+                false,
+                false
+            )),
+            Some(4.5)
+        );
+    }
+
+    /// A plain point interval with the `Point_interval` defaults answers.
+    #[test]
+    fn a_default_flagged_point_interval_is_a_single_value() {
+        assert_eq!(point_value_i32(&point_i32(7, CLOSED)), Some(7));
+        assert_eq!(
+            point_value_f64(&crate::aom::build::point_real(2.5)),
+            Some(2.5)
+        );
+    }
+
+    /// The unbounded flags are load-bearing: `Point_interval` only DEFAULTS
+    /// them (`…foundation_types.point_interval.adoc`), and `has()`
+    /// short-circuits on the flag (`…foundation_types.interval.adoc`), so a
+    /// flagged side dominates any stored bound.
+    #[test]
+    fn an_unbounded_flag_defeats_a_stored_bound_even_on_a_point_interval() {
+        assert_eq!(
+            point_value_i32(&point_i32(7, [true, false, false, true])),
+            None
+        );
+        assert_eq!(
+            point_value_i32(&point_i32(7, [false, true, true, false])),
+            None
+        );
+    }
+
+    /// `{n..n}` with an EXCLUDED bound denotes the empty set, never a value.
+    #[test]
+    fn an_excluded_bound_is_not_a_single_value() {
+        assert_eq!(
+            point_value_i32(&proper_i32(Some(4), Some(4), [false, false, false, true])),
+            None
+        );
+        assert_eq!(
+            point_value_i32(&proper_i32(Some(4), Some(4), [false, false, true, false])),
+            None
+        );
+    }
+
+    /// A genuine range, a half-line, and an absent bound all decline.
+    #[test]
+    fn ranges_and_absent_bounds_are_not_single_values() {
+        assert_eq!(point_value_i32(&proper_i32(Some(1), Some(5), CLOSED)), None);
+        assert_eq!(
+            point_value_i32(&proper_i32(Some(1), None, [false, true, true, false])),
+            None
+        );
+        assert_eq!(point_value_i32(&proper_i32(Some(1), None, CLOSED)), None);
     }
 }

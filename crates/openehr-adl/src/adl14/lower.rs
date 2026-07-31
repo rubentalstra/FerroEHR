@@ -30,7 +30,7 @@ use crate::aom::build::{
     cattr_empty, cinteger_values, cobject_to_primitive, complex_object, creal_values, point_int,
     point_real,
 };
-use crate::aom::interval::{point_interval_value_f64, point_interval_value_i32};
+use crate::aom::interval::{point_value_f64, point_value_i32};
 use crate::error::SyntaxErrorCode;
 use crate::lexer::Token;
 use crate::parse::{PResult, Parser};
@@ -559,9 +559,9 @@ fn ordinal_point_value(member: &CPrimitiveObject) -> Option<f64> {
         CPrimitiveObject::CInteger(c) => c
             .constraint
             .first()
-            .and_then(point_interval_value_i32)
+            .and_then(point_value_i32)
             .map(f64::from),
-        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(point_interval_value_f64),
+        CPrimitiveObject::CReal(c) => c.constraint.first().and_then(point_value_f64),
         _ => None,
     }
 }
