@@ -210,7 +210,8 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 // Semantics"), so their specialisation parents are obtainable only from the
 // operational template (AM master07 §Supporting Archetype-based Querying);
 // completing this requires resolving the queried id's lineage through the
-// stored ADL2/OPT2 template family instead of the concept-prefix rule.
+// stored ADL2/OPT2 template family instead of the concept-prefix rule —
+// tracked as issue #1347.
 pub(super) fn archetype_predicate(node: &str, value: &str) -> Expr {
     if let Ok(id) = value.parse::<ArchetypeId>()
         && let Ok(major) = id.major_version().parse::<i32>()

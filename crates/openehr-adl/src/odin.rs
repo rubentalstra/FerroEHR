@@ -279,7 +279,8 @@ pub(crate) fn odin_contains_interval(v: &OdinValue) -> bool {
 ///
 // TODO: encode ODIN interval values (`|0..5|`) as a typed default instead of
 // `null` — [`odin_contains_interval`] refuses them at the parse for now, so a
-// `_default = <|0..5|>` is an error rather than a silent null.
+// `_default = <|0..5|>` is an error rather than a silent null — tracked as
+// issue #1346.
 pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
     match v {
         OdinValue::String(s)
