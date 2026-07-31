@@ -51,7 +51,7 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use crate::aom::build::{cobject_to_primitive, cstring_regex};
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::lexer::{Spanned, Token};
-use crate::odin::{decode_string_inner, regex_inner};
+use crate::odin::regex_inner;
 
 /// Internal parse result: `Err(())` signals a bail-out; the concrete
 /// [`SyntaxError`] is already recorded in [`Parser::errors`].
@@ -209,6 +209,30 @@ impl Parser<'_> {
         let span = self.cur_span();
         self.push(code, msg, span);
         Err(())
+    }
+
+    /// Take a decoded string/character literal, or report its escape defect at
+    /// `span` and bail.
+    ///
+    /// NOTE: the `S*` code space is a verbatim 1:1 mirror of the openEHR
+    /// catalogue (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
+    /// Rules) and carries no code for a lexical defect INSIDE a literal, so
+    /// this reuses `SUNK` ("Syntax error (unknown cause)") — the same bucket
+    /// every other lexical failure reports under ([`crate::lexer::lex`]) — and
+    /// names the defect in the message. Inventing a code would break the 1:1
+    /// mirror.
+    pub(crate) fn decoded_literal(
+        &mut self,
+        decoded: Result<String, openehr_lang::escape::EscapeError>,
+        span: std::ops::Range<usize>,
+    ) -> PResult<String> {
+        match decoded {
+            Ok(text) => Ok(text),
+            Err(defect) => {
+                self.push(SyntaxErrorCode::Sunk, defect.to_string(), span);
+                Err(())
+            }
+        }
     }
 
     /// Refuse an ADL 2-only cADL construct met while parsing in the
@@ -380,16 +404,26 @@ pub(crate) fn parse_contained_regexp_text(raw: &str) -> Result<CString, Vec<Synt
         .trim_start_matches('{')
         .trim_end_matches('}')
         .trim();
-    let (regex_part, assumed) = match body.split_once(';') {
-        Some((r, a)) => {
-            let assumed = a
-                .trim()
-                .strip_prefix('"')
-                .and_then(|s| s.strip_suffix('"'))
-                .map(decode_string_inner);
-            (r.trim(), assumed)
-        }
+    let quoted_assumed = match body.split_once(';') {
+        Some((r, a)) => (
+            r.trim(),
+            a.trim().strip_prefix('"').and_then(|s| s.strip_suffix('"')),
+        ),
         None => (body, None),
+    };
+    let (regex_part, quoted_assumed) = quoted_assumed;
+    // The regex body itself is NEVER escape-decoded (`master03` §Special
+    // Character Sequences, final paragraph); only the `;"assumed"` suffix is.
+    let assumed = match quoted_assumed {
+        Some(text) => Some(openehr_lang::escape::decode(text).map_err(|defect| {
+            vec![SyntaxError::at(
+                SyntaxErrorCode::Sunk,
+                defect.to_string(),
+                0..raw.len(),
+                raw,
+            )]
+        })?),
+        None => None,
     };
     let inner = regex_inner(regex_part);
     if regex::Regex::new(inner).is_err() {

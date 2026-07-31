@@ -507,76 +507,36 @@ fn integer_lexeme(s: &str) -> Option<i64> {
 }
 
 /// Strip the surrounding double quotes and decode `master03` escapes.
+///
+/// The lexer (`validate_string`) has already run
+/// [`crate::escape::validate`] over the same text, so the decode cannot fail
+/// here.
+#[expect(
+    clippy::expect_used,
+    reason = "`Token::String` only exists when the lexer's validate_string ran crate::escape::validate over the same body and it succeeded, so this decode of that body cannot fail"
+)]
 fn decode_string(raw: &str) -> String {
     let inner = raw
         .strip_prefix('"')
         .and_then(|s| s.strip_suffix('"'))
         .unwrap_or(raw);
-    decode_escapes(inner)
+    crate::escape::decode(inner).expect("a lexer-validated string literal should decode")
 }
 
 /// Decode a single-quoted `CHARACTER` literal to its `char`.
+///
+/// The lexer (`validate_char`) admits only the six quoted forms in a character
+/// literal, so the decode cannot fail here.
+#[expect(
+    clippy::expect_used,
+    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
+)]
 fn decode_char(raw: &str) -> char {
     let inner = raw
         .strip_prefix('\'')
         .and_then(|s| s.strip_suffix('\''))
         .unwrap_or(raw);
-    let decoded = decode_escapes(inner);
+    let decoded =
+        crate::escape::decode(inner).expect("a lexer-validated character literal should decode");
     decoded.chars().next().unwrap_or('\u{fffd}')
-}
-
-/// Decode the `master03` escape set (`\r \n \t \\ \" \'` + `\uHHHH`/
-/// `\uHHHHHHHH`). Unrecognised sequences are impossible here — the lexer has
-/// already rejected them — so a stray backslash is passed through verbatim.
-fn decode_escapes(inner: &str) -> String {
-    if !inner.contains('\\') {
-        return inner.to_owned();
-    }
-    let mut out = String::with_capacity(inner.len());
-    let mut chars = inner.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c != '\\' {
-            out.push(c);
-            continue;
-        }
-        match chars.next() {
-            Some('r') => out.push('\r'),
-            Some('n') => out.push('\n'),
-            Some('t') => out.push('\t'),
-            Some('"') => out.push('"'),
-            Some('\'') => out.push('\''),
-            Some('u') => {
-                let hex: String = chars
-                    .clone()
-                    .take(8)
-                    .take_while(char::is_ascii_hexdigit)
-                    .collect();
-                let take = if hex.len() >= 8 { 8 } else { 4 };
-                let code: String = hex.chars().take(take).collect();
-                if let Ok(cp) = u32::from_str_radix(&code, 16)
-                    && let Some(ch) = char::from_u32(cp)
-                {
-                    for _ in 0..code.len() {
-                        chars.next();
-                    }
-                    out.push(ch);
-                } else {
-                    out.push('\\');
-                    out.push('u');
-                }
-            }
-            // `\\` (escaped backslash) → one `\`; a lone trailing `\` (None) →
-            // one `\`; any other follower is passed through verbatim after the
-            // backslash (the lexer has already rejected illegal escapes).
-            other => {
-                out.push('\\');
-                if let Some(c) = other
-                    && c != '\\'
-                {
-                    out.push(c);
-                }
-            }
-        }
-    }
-    out
 }

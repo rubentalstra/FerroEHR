@@ -288,6 +288,9 @@ fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
             i += 1;
         }
     }
+    // The structural scan above accepts any 4/8 hex-digit `\u` run; the shared
+    // decoder is what decides whether it names a character at all.
+    crate::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
 
