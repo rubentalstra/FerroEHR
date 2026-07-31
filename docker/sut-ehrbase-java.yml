@@ -6,7 +6,7 @@
 #
 # Image + configuration mirror the benchmark harness's upstream side
 # (docker/benchmark/docker-compose.yml — the fairness-governed definition):
-# the official ehrbase/ehrbase image with its companion ferroehr-v2-postgres,
+# the official ehrbase/ehrbase image with its companion ehrbase-v2-postgres,
 # Basic auth with a clinical user and a distinct admin user, template
 # overwrite allowed for idempotent re-provisioning, and the Admin API active
 # (the catalogue's ADMIN chapter drives it).

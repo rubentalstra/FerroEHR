@@ -153,7 +153,7 @@ services:
       FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
     volumes:
       # Auto-discovered at config search-order position 4 (no pointer needed).
-      # Enables Basic auth with the ehrbase/ehrbase user.
+      # Enables Basic auth with the ferroehr/ferroehr user.
       - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
     ports:
       - "${FERROEHR_PORT:-8080}:8080"
@@ -176,7 +176,7 @@ services:
 
   # The admin console (ferroehr-admin-ui): a standalone Leptos SSR web app +
   # BFF that consumes the CDR strictly over ITS-REST — never the database.
-  # Basic login proxies the CDR's dev users (ehrbase/ehrbase); for OIDC set
+  # Basic login proxies the CDR's dev users (ferroehr/ferroehr); for OIDC set
   # the FERROEHR_ADMIN__AUTH__OIDC__* variables at the Keycloak realm below.
   ferroehr-admin-ui:
     image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}

@@ -5,7 +5,7 @@
 # for the Basic-auth path), then:
 #   1. waits for the app healthcheck to report healthy;
 #   2. asserts GET /rest/status returns 200;
-#   3. creates an EHR with the dev Basic credentials (ehrbase/ehrbase);
+#   3. creates an EHR with the dev Basic credentials (ferroehr/ferroehr);
 #   4. restarts the app and proves the second-boot migration run is a no-op
 #      (the sqlx ledger is unchanged — the library migrator is silent on no-op,
 #      so the row count is the reliable idempotency signal; app logs are dumped
