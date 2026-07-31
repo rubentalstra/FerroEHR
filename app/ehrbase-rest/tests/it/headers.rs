@@ -1132,6 +1132,129 @@ async fn contribution_get_carries_etag_and_last_modified() {
     );
 }
 
+/// A CONTRIBUTION wire body modifying the `EHR_STATUS` `preceding` version.
+fn contribution_modifying_status(status_body: &Value, preceding: &str) -> Value {
+    let committer = serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "test" });
+    let modification = serde_json::json!({
+        "_type": "DV_CODED_TEXT", "value": "modification",
+        "defining_code": { "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": "251" }
+    });
+    serde_json::json!({
+        "versions": [{
+            "data": status_body,
+            "preceding_version_uid": { "_type": "OBJECT_VERSION_ID", "value": preceding },
+            "lifecycle_state": {
+                "_type": "DV_CODED_TEXT", "value": "complete",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "532" }
+            },
+            "commit_audit": { "change_type": modification, "committer": committer }
+        }],
+        "audit": { "change_type": modification, "committer": committer }
+    })
+}
+
+/// Commit `contribution` with the given `Prefer` value, returning the response
+/// headers and body.
+async fn commit_contribution(
+    app: &Router,
+    ehr_id: &str,
+    contribution: &Value,
+    prefer: &str,
+) -> (header::HeaderMap, String) {
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/contribution"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", prefer)
+        .body(Body::from(contribution.to_string()))
+        .unwrap();
+    let (status, h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "commit ({prefer}): {body}");
+    (h, body)
+}
+
+/// The stored CONTRIBUTION audit's `time_committed`, read back over the wire.
+async fn stored_commit_instant(app: &Router, ehr_id: &str, contribution_uid: &str) -> String {
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/ehr/{ehr_id}/contribution/{contribution_uid}"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::OK, "contribution read: {body}");
+    let v: Value = serde_json::from_str(&body).expect("json CONTRIBUTION");
+    v["audit"]["time_committed"]["value"]
+        .as_str()
+        .expect("CONTRIBUTION.audit.time_committed.value")
+        .to_owned()
+}
+
+/// The CONTRIBUTION commit response carries `Last-Modified` beside its
+/// `ETag`/`Location` under BOTH `Prefer` branches, and its value is the commit
+/// audit instant the server actually stored — overview §"`ETag` and
+/// Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in
+/// responses for VERSION, `VERSIONED_OBJECT`, or other resources that have
+/// versioning or unique state identifiers", the value "derived from
+/// `VERSION.commit_audit.time_committed.value`". The released
+/// `201_CONTRIBUTION` declares neither header, so the reach of the SHOULD is
+/// the same register-documented reading the CONTRIBUTION GET applies.
+#[tokio::test]
+async fn contribution_commit_carries_last_modified_on_both_prefer_branches() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+
+    // `return=minimal` — a headers-only 201: the header is the only place the
+    // commit instant can reach the client, so it must be there.
+    let (mut status_body, v1) = current_ehr_status(&app, &ehr_id).await;
+    status_body.as_object_mut().unwrap().remove("uid");
+    let (h, _) = commit_contribution(
+        &app,
+        &ehr_id,
+        &contribution_modifying_status(&status_body, &v1),
+        "return=minimal",
+    )
+    .await;
+    let minimal_uid = etag_uid(&h);
+    let stored = stored_commit_instant(&app, &ehr_id, &minimal_uid).await;
+    assert_eq!(
+        last_modified(&h),
+        Some(imf_fixdate(&stored).as_str()),
+        "return=minimal: Last-Modified is the stored contribution audit instant"
+    );
+
+    // `return=representation` — the same header beside the served body, equal
+    // to the body's own `audit.time_committed`.
+    let (mut status_body, v2) = current_ehr_status(&app, &ehr_id).await;
+    status_body.as_object_mut().unwrap().remove("uid");
+    let (h, body) = commit_contribution(
+        &app,
+        &ehr_id,
+        &contribution_modifying_status(&status_body, &v2),
+        "return=representation",
+    )
+    .await;
+    let served: Value = serde_json::from_str(&body).expect("json CONTRIBUTION");
+    let instant = served["audit"]["time_committed"]["value"]
+        .as_str()
+        .expect("CONTRIBUTION.audit.time_committed.value");
+    assert_eq!(
+        etag(&h),
+        Some(format!("W/\"{}\"", etag_uid(&h)).as_str()),
+        "the 201 ETag is the contribution uid, weak form"
+    );
+    assert_eq!(
+        last_modified(&h),
+        Some(imf_fixdate(instant).as_str()),
+        "return=representation: Last-Modified is the served audit's commit instant"
+    );
+}
+
 /// The tag target guard runs on GET and DELETE too: the released 404 trigger
 /// ("…or when the `uid_based_id` does not exist") covers a nonexistent
 /// target, a foreign EHR's target, and a wrong-kind target on a typed route

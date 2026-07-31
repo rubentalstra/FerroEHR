@@ -15,8 +15,27 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **An archetype or template may now give an interval as a node's default
+  value.** ADL 2 lets a `_default` block hold any ODIN value, and ODIN counts
+  intervals of the ordered types (`|0..5|`, `|>=1939-02-01|`, `|<10.5|`,
+  `|5.0 +/-0.5|`, the single-value `|5|`) among those values. Such a default
+  used to be rejected outright; it is now read, stored as a proper interval
+  with its own bounds and open/closed flags, and written back out in the same
+  interval syntax. A `centre +/- delta` interval over dates, times or
+  durations is still refused — reducing it to bounds would need calendar
+  arithmetic the source does not state — with a message that says so.
+
 ### Fixed
 
+- **A CONTRIBUTION commit response now tells the client when the change set
+  was committed.** `POST /ehr/{ehr_id}/contribution` (and its demographic
+  sibling) returned only the `ETag`/`Location` identity; it now also sends
+  `Last-Modified`, carrying the commit audit's recorded time. The header is
+  present under both `Prefer: return=representation` and
+  `Prefer: return=minimal` — on the minimal branch, where the response has no
+  body, it is the only place the commit instant appears at all.
 - **A backslash sequence the ADL/ODIN escape rules do not define is now
   refused with a clear message instead of read as literal text.** The escape
   set is closed — `\r`, `\n`, `\t`, `\\`, `\"`, `\'` and the two `\u` unicode

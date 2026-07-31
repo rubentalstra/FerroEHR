@@ -55,10 +55,24 @@ format_headers:
 # weak entity-tag envelope only; the identifier INSIDE it is left unconstrained
 # because the same section makes the source a choice ("usually taken from e.g.
 # VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc.").
+#
+# `Last-Modified` rides the SAME sentence as the tag — §"ETag and
+# Last-Modified": "Both `ETag` and `Last-Modified` SHOULD be included in
+# responses for VERSION, VERSIONED_OBJECT, or other resources that have
+# versioning or unique state identifiers" — under register AMB-87's fixed
+# handling, whose scope covers the COMMIT response as well as the read: the
+# 201 already names the CONTRIBUTION's unique identifier in its entity tag, and
+# the instant it reports is the committal the same section points the value at
+# ("derived from `VERSION.commit_audit.time_committed.value`"). The released
+# 201_CONTRIBUTION declares ETag / Location / Content-Type and is SILENT on
+# this header — silence, not a conflict, so the docs-text SHOULD stands.
 outcomes:
   created:
     status: 201                           # 201_CONTRIBUTION.yaml — the whole commit is one transaction
-    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }
+    headers:
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }
+      Location: present
+      Last-Modified: present              # AMB-87 — the committal instant of the resource the 201 identifies
     body: prefer_conditional
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors (invalid version content)

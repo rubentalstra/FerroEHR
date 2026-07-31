@@ -21,7 +21,7 @@ use crate::versioning::attestation::PendingAttest;
 use crate::versioning::audit::{
     AuditInput, audit_details, change_type, change_type_code, validate_commit_audit,
 };
-use crate::versioning::change::Change;
+use crate::versioning::change::{Change, CommittedContribution};
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
 use crate::versioning::object_version_id::{self, TreeId};
 use crate::versioning::signature::signer::Signer;
@@ -199,12 +199,12 @@ struct PlannedVersion {
 }
 
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
-/// audit, returning the new contribution id. Shared by the EHR-scoped
-/// contribution path (`ehr_id = Some`, `party_only = false`) and the
-/// demographic contribution path (`ehr_id = None`, `party_only = true`). Each
-/// version's storage action and preserved audit change-type code come from
-/// [`classify`]; the object kind from the payload `_type` (create) or the
-/// stored object (modify/delete).
+/// audit, returning its id together with the commit instant its audit recorded.
+/// Shared by the EHR-scoped contribution path (`ehr_id = Some`, `party_only =
+/// false`) and the demographic contribution path (`ehr_id = None`, `party_only
+/// = true`). Each version's storage action and preserved audit change-type code
+/// come from [`classify`]; the object kind from the payload `_type` (create) or
+/// the stored object (modify/delete).
 ///
 /// SM `i_ehr_contribution.adoc` §`commit_contribution`
 /// `Pre_has_ehr`: the target EHR must exist before committing, so a create-only
@@ -228,7 +228,7 @@ pub(crate) async fn commit_version_set(
     ehr_id: Option<EhrId>,
     body: &Value,
     party_only: bool,
-) -> Result<Uuid, ServiceError> {
+) -> Result<CommittedContribution, ServiceError> {
     // `Pre_has_ehr` — the CONTRIBUTION's target EHR must exist.
     if let Some(ehr_id) = ehr_id {
         cx.ensure_ehr_exists(ehr_id).await?;
@@ -601,7 +601,7 @@ pub(crate) async fn commit_version_set(
                 .map_err(body_target_not_found_is_bad_request)?;
         }
     }
-    let (contribution_id, committed) = change::commit_contribution(
+    let outcome = change::commit_contribution(
         &mut tx,
         ehr_id,
         supplied_uid,
@@ -623,7 +623,7 @@ pub(crate) async fn commit_version_set(
 
     // Meter the COMPOSITION versions this CONTRIBUTION landed, after the commit
     // (a rolled-back contribution counts nothing).
-    for c in &committed {
+    for c in &outcome.versions {
         change::meter_committed(c);
     }
 
@@ -631,12 +631,12 @@ pub(crate) async fn commit_version_set(
     // settings are change-controlled — RM ehr master04 §EHR Access), so drop the
     // cached settings the access gate consults per request.
     if let Some(ehr_id) = ehr_id
-        && committed.iter().any(|c| c.kind == Kind::EhrAccess)
+        && outcome.versions.iter().any(|c| c.kind == Kind::EhrAccess)
     {
         cx.invalidate_ehr_access(ehr_id).await;
     }
 
-    Ok(contribution_id)
+    Ok(outcome)
 }
 
 /// Reject the *creation* of a duplicate EHR structure. An EHR holds exactly

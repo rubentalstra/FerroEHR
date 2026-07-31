@@ -51,11 +51,10 @@ impl EhrbaseService {
         ehr_id: EhrId,
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        let contribution_id = commit_version_set(self, Some(ehr_id), &body, false).await?;
-        let body = self
-            .ehr_contribution(ehr_id, contribution_id, false)
-            .await?;
-        let meta = ResourceMeta::new(ehr_id.to_string(), contribution_id.to_string());
+        let committed = commit_version_set(self, Some(ehr_id), &body, false).await?;
+        let body = self.ehr_contribution(ehr_id, committed.id, false).await?;
+        let meta = ResourceMeta::new(ehr_id.to_string(), committed.id.to_string())
+            .with_last_modified(committed.time_committed);
         Ok(ServiceResponse::new(body, meta))
     }
 
@@ -166,8 +165,8 @@ impl EhrbaseService {
         let audit_json =
             serde_json::to_value(&an_audit).map_err(|e| SmError::exception(e.to_string()))?;
         let body = json!({ "versions": versions_json, "audit": audit_json });
-        let id = commit_version_set(self, Some(an_ehr_id), &body, false).await?;
-        Ok(id.to_string())
+        let committed = commit_version_set(self, Some(an_ehr_id), &body, false).await?;
+        Ok(committed.id.to_string())
     }
 
     /// SM `I_EHR_CONTRIBUTION.list_contributions` — the EHR's CONTRIBUTION
@@ -259,12 +258,15 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] if the CONTRIBUTION fails classification, content
     /// validation, the optimistic lock, or its storage commit.
-    // TODO: carry the commit instant out of `commit_version_set` so both
-    // branches below can attach `with_last_modified` — ITS-REST
-    // `Requests_and_responses.md` §"ETag and Last-Modified" asks for the
-    // header on any resource with a unique state identifier, and a
-    // CONTRIBUTION has one; today only the `ETag`/`Location` uid is emitted —
-    // tracked as issue #1349.
+    ///
+    /// Both branches carry `Last-Modified` beside the `ETag`/`Location` uid:
+    /// ITS-REST `Requests_and_responses.md` §"`ETag` and `Last-Modified`" —
+    /// "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+    /// VERSION, `VERSIONED_OBJECT`, or other resources that have versioning or
+    /// unique state identifiers" — and a CONTRIBUTION has one. The value is
+    /// the commit audit's `time_committed` as stored (RM common master06
+    /// §Committal and Audits), carried out of the commit rather than re-read
+    /// or re-clocked.
     pub async fn ehr_contribution_commit(
         &self,
         an_ehr_id: EhrId,
@@ -282,9 +284,10 @@ impl EhrbaseService {
             // the post-commit composite re-read the representation path pays is
             // pure waste here (RM common master06 §Committal — the commit
             // itself yields the new CONTRIBUTION id).
-            let contribution_id =
+            let committed =
                 commit_version_set(self, Some(an_ehr_id), &a_contribution, false).await?;
-            let meta = ResourceMeta::new(an_ehr_id.to_string(), contribution_id.to_string());
+            let meta = ResourceMeta::new(an_ehr_id.to_string(), committed.id.to_string())
+                .with_last_modified(committed.time_committed);
             Ok(ServiceResponse::new(Value::Null, meta))
         }
     }
