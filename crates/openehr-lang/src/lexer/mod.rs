@@ -110,7 +110,46 @@ pub fn lex_adl(src: &str) -> Result<Vec<Spanned>, LexError> {
 /// Returns a [`LexError`] at the byte span of the first input that is not an
 /// ODIN token.
 pub fn lex_odin(src: &str) -> Result<Vec<Spanned>, LexError> {
-    lex_with(Language::Odin, src)
+    let mut spanned = lex_with(Language::Odin, src)?;
+    retag_odin_value_words_in_key_position(src, &mut spanned);
+    Ok(spanned)
+}
+
+/// Re-tag `true`/`false`/`infinity` to identifiers where they stand as ODIN
+/// attribute names.
+///
+/// `LANG/docs/odin/master03-basics.adoc` §Keywords: "ODIN has no keywords of
+/// its own: all identifiers are assumed to come from an information model" —
+/// yet these three words stay TOKENS under the ODIN reading because they are
+/// genuine ODIN VALUES (`master07-leaf_data` §Boolean Data; the interval
+/// endpoints of `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive
+/// Types), so the per-token [`reclassify`] pass cannot demote them. Key
+/// position is decidable with one token of lookahead instead: an attribute
+/// name is always followed by `=` (`odin.g4` `attr_val : odin_object_key '='
+/// object_block`), and no VALUE position ever is — so a value word
+/// immediately before `SYM_EQ` is re-tagged to the identifier its spelling
+/// gives, exactly as the reclassification pass demotes every other keyword.
+fn retag_odin_value_words_in_key_position(src: &str, spanned: &mut [Spanned]) {
+    let mut index = 0;
+    while index < spanned.len() {
+        let is_value_word = matches!(
+            spanned.get(index).map(|s| &s.token),
+            Some(Token::SymTrue | Token::SymFalse | Token::SymInfinity)
+        );
+        let before_eq = matches!(spanned.get(index + 1).map(|s| &s.token), Some(Token::SymEq));
+        if is_value_word
+            && before_eq
+            && let Some(entry) = spanned.get_mut(index)
+        {
+            let slice = src.get(entry.span.clone()).unwrap_or_default();
+            entry.token = if slice.starts_with(|c: char| c.is_ascii_uppercase()) {
+                Token::AlphaUcId(slice.to_owned())
+            } else {
+                Token::AlphaLcId(slice.to_owned())
+            };
+        }
+        index += 1;
+    }
 }
 
 /// Lex `src` under the BEL reading (`LANG/docs/BEL/`; `base_expressions.g4`).

@@ -506,3 +506,13 @@ c1|c2
 {[local::at0001, at0002]}
 %%
 DV_ORDINAL[id5] matches {value matches {|0|}}
+%%
+true = <1>
+%%
+True = <1>
+%%
+infinity = <1>
+%%
+x = <false>
+%%
+|0..infinity|
