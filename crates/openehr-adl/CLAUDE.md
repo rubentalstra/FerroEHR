@@ -81,12 +81,16 @@ else; each helper has exactly ONE home.
 ## Crate rules
 
 - **Single home, no re-inlined copies.** A helper lives in exactly one module
-  (the substrate table above); consumers read through it. Two pairs are
-  DELIBERATELY divergent and carry `// TODO:`s naming their issues: the
-  interval point-of extractors (`aom/interval`, #1339) and the escape
-  decoding's 4-digit-only `\uHHHH` handling (`odin`, #1340). A third
-  `// TODO:` records the driver asymmetry between the source-level and
-  assembled-archetype validation entries — the former omits `run_phase3`
+  (the substrate table above); consumers read through it. One pair stays
+  DELIBERATELY divergent, and its doc comments say why: the bounds renderers
+  (`display_bounds` vs `display_bounds_always_range`, `aom/interval`), whose
+  two spellings are load-bearing message text. The interval point-of reading
+  is a SINGLE spec-adjudicated predicate
+  (`aom/interval::point_value_{i32,f64}`): both sides bounded, both bounds
+  included, both bounds equal — irrespective of point/proper tagging. The
+  escape decoding's 4-digit-only `\uHHHH` handling (`odin`, #1340) still
+  carries a `// TODO:`, as does the driver asymmetry between the source-level
+  and assembled-archetype validation entries — the former omits `run_phase3`
   (`validate/mod`, #1341).
 - **`validate/` is grouped by TOPIC, never by phase number.** A new rule goes
   in the topic module that owns its subject, and its driver call keeps the

@@ -41,9 +41,7 @@ use super::{ValidationIssue, push_issue};
 use crate::aom::access::{
     child_occurrences, complex_attributes, complex_rm_type, object_node_id, object_rm_type,
 };
-use crate::aom::interval::{
-    Bounds, bounds, degenerate_point_value_i32, display_bounds, finite_upper,
-};
+use crate::aom::interval::{Bounds, bounds, display_bounds, finite_upper, point_value_i32};
 use crate::artefact::{ArchetypeView, view};
 use crate::codes::{is_at_code, is_id_code};
 use crate::odin::is_delimited_regex_trimmed;
@@ -839,10 +837,7 @@ impl RmScan<'_> {
 /// enumerated here (conservative — no false VCORMENV on the "equivalent range"
 /// form the spec also allows).
 fn integer_point_values(constraint: &[Interval<i32>]) -> Vec<i32> {
-    constraint
-        .iter()
-        .filter_map(degenerate_point_value_i32)
-        .collect()
+    constraint.iter().filter_map(point_value_i32).collect()
 }
 
 /// The literal string values of a `C_STRING` enumeration constraint: the plain
