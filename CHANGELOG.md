@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **An archetype or template may now give an interval as a node's default
+  value.** ADL 2 lets a `_default` block hold any ODIN value, and ODIN counts
+  intervals of the ordered types (`|0..5|`, `|>=1939-02-01|`, `|<10.5|`,
+  `|5.0 +/-0.5|`, the single-value `|5|`) among those values. Such a default
+  used to be rejected outright; it is now read, stored as a proper interval
+  with its own bounds and open/closed flags, and written back out in the same
+  interval syntax. A `centre +/- delta` interval over dates, times or
+  durations is still refused — reducing it to bounds would need calendar
+  arithmetic the source does not state — with a message that says so.
+
 ### Fixed
 
 - **A backslash sequence the ADL/ODIN escape rules do not define is now

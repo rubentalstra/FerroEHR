@@ -26,6 +26,12 @@ impl Printer {
     /// of objects re-parses as a keyed object (see the [`Self::odin_json_entry`]
     /// NOTE) — the ODIN text is the durable form either way.
     pub(super) fn default_value(&mut self, v: &serde_json::Value, depth: usize) {
+        if let serde_json::Value::Object(m) = v
+            && let Some(literal) = interval_literal(m)
+        {
+            self.line(depth, &format!("_default = <{literal}>"));
+            return;
+        }
         match v {
             serde_json::Value::Object(m) => {
                 let head = match m.get("_type").and_then(serde_json::Value::as_str) {
@@ -54,6 +60,12 @@ impl Printer {
     /// spec-mandated shape (no openEHR spec governs it — our own design,
     /// matching the parser's `odin_to_json`).
     fn odin_json_entry(&mut self, key: &str, v: &serde_json::Value, depth: usize) {
+        if let serde_json::Value::Object(m) = v
+            && let Some(literal) = interval_literal(m)
+        {
+            self.line(depth, &format!("{key} = <{literal}>"));
+            return;
+        }
         match v {
             serde_json::Value::Null => {}
             serde_json::Value::Object(m) => {
@@ -116,6 +128,78 @@ impl Printer {
             .join(", ");
         self.line(depth, &format!("{key} = <{joined}>"));
     }
+}
+
+/// The ODIN interval literal a canonical-JSON `Interval<T>` object denotes, or
+/// `None` when the object is not one.
+///
+/// The inverse of the interval arm of the cADL parser's `_default` handling
+/// (`crate::odin::odin_to_json`): the accepted shape is exactly the one that
+/// encoder produces — `_type` `Point_interval`/`Proper_interval`, the two
+/// bounds present iff their `*_unbounded` flag is false, the four boundary
+/// flags, and nothing else — and the point/proper tag must agree with the
+/// bounds. Any other object (a hand-written `(Proper_interval) <…>` block, an
+/// interval-shaped RM value) falls through to the generic block rendering, so
+/// print → parse stays exact in both directions.
+///
+/// Syntax: `LANG/docs/odin/master07-leaf_data.adoc` §Intervals of Ordered
+/// Primitive Types — the relational operators precede the bound they qualify
+/// (`|>N..<M|`, `|>=N|`), an omitted side is the `*` unbounded marker, and a
+/// single value is the bare `|N|` form.
+fn interval_literal(m: &serde_json::Map<String, serde_json::Value>) -> Option<String> {
+    let is_point = match m.get("_type").and_then(serde_json::Value::as_str)? {
+        "Point_interval" => true,
+        "Proper_interval" => false,
+        _ => return None,
+    };
+    let lower_unbounded = m.get("lower_unbounded")?.as_bool()?;
+    let upper_unbounded = m.get("upper_unbounded")?.as_bool()?;
+    let lower_included = m.get("lower_included")?.as_bool()?;
+    let upper_included = m.get("upper_included")?.as_bool()?;
+    let lower = m.get("lower");
+    let upper = m.get("upper");
+    // Exactly the encoder's field set, and bounds present iff bounded.
+    let expected_len = 5 + usize::from(lower.is_some()) + usize::from(upper.is_some());
+    if m.len() != expected_len
+        || lower.is_some() == lower_unbounded
+        || upper.is_some() == upper_unbounded
+        || (lower_unbounded && lower_included)
+        || (upper_unbounded && upper_included)
+    {
+        return None;
+    }
+    if lower.is_some_and(|v| !is_json_scalar(v)) || upper.is_some_and(|v| !is_json_scalar(v)) {
+        return None;
+    }
+    let point =
+        !lower_unbounded && !upper_unbounded && lower_included && upper_included && lower == upper;
+    if point != is_point {
+        return None;
+    }
+    let literal = match (lower, upper) {
+        (Some(l), Some(_)) if point => format!("|{}|", odin_scalar(l)),
+        (Some(l), Some(u)) => format!(
+            "|{}{}..{}{}|",
+            if lower_included { "" } else { ">" },
+            odin_scalar(l),
+            if upper_included { "" } else { "<" },
+            odin_scalar(u)
+        ),
+        (Some(l), None) => format!(
+            "|{}{}|",
+            if lower_included { ">=" } else { ">" },
+            odin_scalar(l)
+        ),
+        (None, Some(u)) => format!(
+            "|{}{}|",
+            if upper_included { "<=" } else { "<" },
+            odin_scalar(u)
+        ),
+        // Unbounded on both sides: the `*` marker is the only spelling that
+        // states an absent endpoint explicitly.
+        (None, None) => "|*..*|".to_owned(),
+    };
+    Some(literal)
 }
 
 /// Whether a canonical-JSON value renders as one ODIN scalar token.
