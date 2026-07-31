@@ -28,7 +28,7 @@ use crate::aom::build::{
 };
 use crate::error::SyntaxErrorCode;
 use crate::lexer::Token;
-use crate::odin::{odin_contains_interval, odin_to_json};
+use crate::odin::{is_interval, odin_to_json};
 use crate::parse::{Dialect, PResult, Parser};
 
 // ── productions ───────────────────────────────────────────────────────────
@@ -579,23 +579,33 @@ impl Parser<'_> {
                 "expecting ')' closing the '_default' type cast",
             )?;
         }
+        // The whole `<…>` block, delimiters included, is what the ODIN reader
+        // is handed: `odin_text` is `attr_vals | object_value_block`
+        // (`LANG/docs/odin/master05-content.adoc` §General Structure), so a
+        // block whose content is a bare leaf or interval (`<|0..5|>`, `<5>`)
+        // only parses with its delimiters in place.
+        let start_byte = self.cur_span().start;
         self.expect(
             |t| matches!(t, Token::SymLt),
             SyntaxErrorCode::Sadf,
             "expecting '<' opening the default value",
         )?;
-        // Capture the balanced `<…>` ODIN body span (tracking `<`/`>` depth).
-        let start = self.pos;
-        let start_byte = self.cur_span().start;
+        // Capture the balanced `<…>` span by `<`/`>` depth. A `<` or `>` inside
+        // an interval is a bound operator, not a block delimiter
+        // (`LANG/docs/odin/master07-leaf_data.adoc` §Intervals of Ordered
+        // Primitive Types: `|>N..<M|`), so the `|…|` pairs are tracked and
+        // their contents skipped.
         let mut depth = 1usize;
         let mut end_byte = start_byte;
+        let mut in_interval = false;
         while depth > 0 {
             match self.bump() {
-                Some(Token::SymLt) => depth += 1,
-                Some(Token::SymGt) => {
+                Some(Token::SymIvlDelim) => in_interval = !in_interval,
+                Some(Token::SymLt) if !in_interval => depth += 1,
+                Some(Token::SymGt) if !in_interval => {
                     depth -= 1;
                     if depth == 0 {
-                        end_byte = self.span_at(self.pos - 1).start;
+                        end_byte = self.span_at(self.pos - 1).end;
                     }
                 }
                 Some(_) => {}
@@ -603,19 +613,21 @@ impl Parser<'_> {
             }
         }
         let text = self.src.get(start_byte..end_byte).unwrap_or_default();
-        let _ = start;
         match openehr_lang::odin::parse(text) {
             Ok(v) => {
-                if odin_contains_interval(&v) {
-                    self.push(
-                        SyntaxErrorCode::Sdinv,
-                        "interval values are not supported in a '_default' value",
-                        start_byte..end_byte,
-                    );
-                    return Err(());
-                }
-                let mut json = odin_to_json(&v);
+                let mut json = match odin_to_json(&v) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        self.push(SyntaxErrorCode::Sdinv, e.to_string(), start_byte..end_byte);
+                        return Err(());
+                    }
+                };
+                // An interval already carries its own canonical `_type`
+                // (`Point_interval`/`Proper_interval`); the cast on one names
+                // the generic slot type (`Interval<Quantity>`), which is not a
+                // canonical-JSON class tag.
                 if let Some(t) = cast
+                    && !is_interval(&v)
                     && let serde_json::Value::Object(m) = &mut json
                 {
                     m.insert("_type".to_owned(), serde_json::Value::String(t));
@@ -1016,16 +1028,20 @@ mod tests {
         }
     }
 
-    /// An interval has no ODIN/JSON default-value encoding
-    /// (`ADL2/master06-default_values.adoc` §Default Values: a `_default` is an
-    /// object INSTANCE, and an interval is a constraint), so a `_default`
-    /// carrying one is refused rather than silently reduced to null. This is the
-    /// ADL2 dialect's own behaviour — a 1.4 text has no `_default` at all
-    /// (`ADL1.4/master05-cadl.adoc` §Keywords L48-53), and the 1.4 refusal of the
-    /// construct is `tests/corpus/adl14-cadl/…SCOAT_adl2_default_value.v1.adl`.
+    /// An ODIN interval is a legal `_default` datum, encoded as the canonical
+    /// `Interval<T>` object rather than refused.
+    ///
+    /// `ADL2/master06-default_values.adoc` §Syntax: default values "are
+    /// expressed in any regular object instance syntax, including ODIN syntax",
+    /// and `LANG/docs/odin/master07-leaf_data.adoc` §Intervals of Ordered
+    /// Primitive Types lists intervals among ODIN's leaf DATA forms — so an
+    /// interval in a `_default` is an instance value, not a constraint. The
+    /// JSON object it lands in is our own design/extension (no openEHR spec
+    /// mandates the intermediate shape), mirroring the codec's `Proper_interval`
+    /// encoding.
     #[test]
-    fn adl2_default_value_rejects_an_interval() {
-        let errs = parse_definition_body(
+    fn adl2_default_value_encodes_an_interval() {
+        let cco = parse(
             "OBSERVATION[id1] matches {\n\
              data matches {\n\
              HISTORY[id2] matches {\n\
@@ -1036,13 +1052,28 @@ mod tests {
              }\n\
              }\n\
              }",
-            Dialect::Adl2,
-        )
-        .expect_err("an interval in a `_default` must be refused");
-        assert!(
-            errs.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
-            "expected SDINV, got {:?}",
-            errs.iter().map(|e| e.code).collect::<Vec<_>>()
+        );
+        let history = &data(&cco).attributes[0].children[0];
+        let CObject::CComplexObject(CComplexObject::CComplexObject(h)) = history else {
+            panic!("expected the HISTORY complex object")
+        };
+        let default = h
+            .default_value
+            .as_ref()
+            .expect("the `_default` must be read");
+        assert_eq!(default["_type"], serde_json::json!("DV_QUANTITY"));
+        assert_eq!(default["units"], serde_json::json!("mm[Hg]"));
+        assert_eq!(
+            default["magnitude"],
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "lower": 0.0,
+                "upper": 5.0,
+                "lower_unbounded": false,
+                "upper_unbounded": false,
+                "lower_included": true,
+                "upper_included": true,
+            })
         );
     }
 
