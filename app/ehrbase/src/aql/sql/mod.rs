@@ -40,12 +40,14 @@ mod value;
 
 use crate::ids::EhrId;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use sea_query::{Alias, PostgresQueryBuilder, Query, SelectStatement, Value};
 use sea_query_sqlx::{SqlxBinder as _, SqlxValues};
 
 use super::error::{AqlError, SqlError};
 use super::ir::{Bind, Coercion, ParamValue, Params, QueryIr};
+use super::lineage::ArchetypeLineage;
 
 use expr::{col, literal_value};
 
@@ -72,6 +74,15 @@ pub struct SqlCtx {
     pub limit: Option<i64>,
     /// The effective row offset (AQL `OFFSET` or REST `offset`, pre-composed).
     pub offset: Option<i64>,
+    /// The stored archetype specialisation graph the `archetype_node_id`
+    /// predicate resolves an AOM2-era identifier's descendants through
+    /// (AM `Identification` master07 §Supporting Archetype-based Querying: for
+    /// specialised archetypes the lineage "can only be obtained from the
+    /// operational form of the archetype"). Resolved once per execution from
+    /// the ADL2/OPT2 artefact store (the query service's cached
+    /// `archetype_lineage` read); an empty index leaves the predicate at exact
+    /// + ADL 1.4 concept-prefix matching.
+    pub archetype_lineage: Arc<ArchetypeLineage>,
 }
 
 /// How one `RESULT_SET` cell is read back from the query rows.

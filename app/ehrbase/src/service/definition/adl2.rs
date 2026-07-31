@@ -360,6 +360,13 @@ impl EhrbaseService {
     /// Store a validated ADL2 artefact. With `replace`, any case-variant of the
     /// same HRID is removed first (SM `upload_artefact` replace semantics); the
     /// insert is then verbatim (BASE master05 §Composite Identifiers and Case).
+    ///
+    /// The artefact's declared `specialize` parent travels with it into
+    /// `parent_hrid`: it is the archetype-lineage edge AQL resolves a parent
+    /// query through (AM `Identification` master07 §Supporting Archetype-based
+    /// Querying — for a specialised archetype the lineage "can only be obtained
+    /// from the operational form of the archetype"), and the engine has already
+    /// extracted it into the [`ArtefactSummary`] during validation.
     async fn adl2_persist(
         &self,
         summary: &ArtefactSummary,
@@ -374,13 +381,17 @@ impl EhrbaseService {
                 .execute(&mut *tx)
                 .await?;
         }
-        sqlx::query("INSERT INTO adl2_artefact (hrid, kind, adl) VALUES ($1, $2, $3)")
-            .bind(&summary.archetype_id)
-            .bind(kind)
-            .bind(source)
-            .execute(&mut *tx)
-            .await?;
+        sqlx::query(
+            "INSERT INTO adl2_artefact (hrid, kind, adl, parent_hrid) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(&summary.archetype_id)
+        .bind(kind)
+        .bind(source)
+        .bind(summary.parent_archetype_id.as_deref())
+        .execute(&mut *tx)
+        .await?;
         tx.commit().await?;
+        self.invalidate_archetype_lineage().await;
         Ok(())
     }
 
@@ -740,6 +751,7 @@ impl EhrbaseService {
                 format!("ADL2 artefact {an_id}"),
             ));
         }
+        self.invalidate_archetype_lineage().await;
         Ok(())
     }
 

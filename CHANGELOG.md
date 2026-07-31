@@ -29,6 +29,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Querying a parent archetype now also finds data recorded under its ADL 2
+  specialisations.** An AQL archetype predicate naming a parent used to
+  recognise a specialisation child only when the child's concept extended the
+  parent's with a hyphen — the ADL 1.4 naming convention, which ADL 2 dropped.
+  The server now reads the specialisation lineage from the ADL 2 archetypes and
+  templates you have uploaded, so a query for the parent returns data committed
+  under any of its stored specialisation children (and their children in turn),
+  whatever their concept names are. Hyphenated ADL 1.4 identifiers keep their
+  existing behaviour; a hyphenated ADL 2 identifier is no longer treated as a
+  specialisation, because in ADL 2 the hyphen carries no such meaning. A
+  parent with no uploaded family still matches only itself.
 - **A CONTRIBUTION commit response now tells the client when the change set
   was committed.** `POST /ehr/{ehr_id}/contribution` (and its demographic
   sibling) returned only the `ETag`/`Location` identity; it now also sends

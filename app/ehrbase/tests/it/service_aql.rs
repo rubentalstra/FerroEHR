@@ -54,6 +54,8 @@ use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
+use crate::adl2_fixture::adl2_source;
+
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
 const MAG_PATH: &str = "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude";
@@ -614,6 +616,119 @@ async fn archetype_specialisation_subsumption() {
         count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.laboratory.v2").await,
         0,
         "major v2 does not match v1 data (interface-reference major boundary)"
+    );
+}
+
+/// Template-derived lineage matching: a query naming an **AOM2-era** parent
+/// archetype retrieves data committed under a specialisation child whose
+/// concept shares nothing with the parent's — the lineage comes solely from the
+/// stored ADL2 family.
+///
+/// Spec: AM `Identification` master07 §Supporting Archetype-based Querying —
+/// "for specialised archetypes, the specialisation lineage can only be obtained
+/// from the operational form of the archetype, found in the template used to
+/// create the data"; AM `Identification` master03 §Legacy ADL 1.4 Semantics —
+/// for AOM2-era identifiers the `-` separator "no longer has any semantic
+/// significance", so a `.vMAJOR.MINOR.PATCH` query must NOT subsume by concept
+/// prefix, while the major-only ADL 1.4 form keeps that rule (BASE
+/// `architecture_overview` master10 §Design-time Relationships).
+#[tokio::test]
+async fn archetype_lineage_from_the_stored_adl2_family() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = EhrbaseService::new(pool);
+
+    // The stored family: `hdl_result` specialises `lipid_panel`. The child's
+    // concept is NOT a `lipid_panel-…` extension, so only the declared
+    // `specialize` edge can connect them.
+    svc.upload_artefact(adl2_source(
+        "archetype",
+        "openEHR-EHR-OBSERVATION.lipid_panel.v1.0.0",
+        None,
+    ))
+    .await
+    .expect("upload the ADL2 parent archetype");
+    svc.upload_artefact(adl2_source(
+        "archetype",
+        "openEHR-EHR-OBSERVATION.hdl_result.v1.0.0",
+        Some("openEHR-EHR-OBSERVATION.lipid_panel.v1"),
+    ))
+    .await
+    .expect("upload the specialised ADL2 child archetype");
+
+    let ehr_id = create_ehr(&svc).await;
+    // Data under the CHILD archetype. The `archetype_details.archetype_id` in
+    // committed data is an RM `ARCHETYPE_ID`, whose lexical form is major-only
+    // (BASE `base_types` master05 §Syntaxes: `version_id = '0' | non-zero-digit,
+    // [number]`), so the interface form of the child id is what data carries.
+    create_comp_arch(
+        &svc,
+        &ehr_id,
+        "child",
+        90.0,
+        "openEHR-EHR-OBSERVATION.hdl_result.v1",
+    )
+    .await;
+    // Data under a `-`-extended concept with NO stored artefact — the ADL 1.4
+    // heuristic's territory, and the control for the AOM2-era case.
+    create_comp_arch(
+        &svc,
+        &ehr_id,
+        "legacy-style child",
+        95.0,
+        "openEHR-EHR-OBSERVATION.lipid_panel-extra.v1",
+    )
+    .await;
+
+    // (a) THE EXIT CRITERION — the parent query retrieves the specialisation
+    // child's data, which no string rule could have matched.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.lipid_panel.v1.0.0").await,
+        1,
+        "an AOM2-era parent query retrieves data committed under its stored \
+         specialisation child (AM master07 §Supporting Archetype-based Querying)"
+    );
+
+    // (b) the AOM2-era form does NOT subsume by concept prefix — the
+    // `lipid_panel-extra` data is matched only by the ADL 1.4 form.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.lipid_panel.v1").await,
+        2,
+        "the ADL 1.4-form query keeps its `-` prefix rule AND gains the stored \
+         lineage: both the specialisation child and the `-extra` data"
+    );
+
+    // (c) an unrelated archetype with no stored family matches nothing.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.unrelated.v1.0.0").await,
+        0,
+        "an identifier outside the stored family resolves to itself alone"
+    );
+
+    // (d) the child predicate still matches only the child.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.hdl_result.v1").await,
+        1,
+        "the specialisation child's own predicate matches only its data"
+    );
+
+    // (e) the interface-reference major boundary stays hard for the lineage
+    // path too (AM master07 §Referencing).
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.lipid_panel.v2.0.0").await,
+        0,
+        "a differing major denotes a different logical archetype"
+    );
+
+    // (f) deleting the child artefact retracts the lineage edge (the memo is
+    // invalidated on the write), leaving the parent query at exact matching.
+    svc.delete_artefact("openEHR-EHR-OBSERVATION.hdl_result.v1.0.0".to_owned())
+        .await
+        .expect("delete the specialised child artefact");
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.lipid_panel.v1.0.0").await,
+        0,
+        "with the stored family gone the parent query no longer subsumes the child"
     );
 }
 

@@ -8,6 +8,8 @@
 //!   source archetypes (keyed by `ARCHETYPE_ID`) + OPTs (keyed by `UUID`).
 //! - `adl2`  — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
 //!   (keyed by `ARCHETYPE_HRID`).
+//! - `lineage` — the archetype specialisation graph over those artefacts (their
+//!   `specialize` edges), memoised for the AQL archetype predicate.
 //! - `opt14_convert` — the OPT-1.4 → ADL2 decomposition front end (a
 //!   service-only capability, no wire): reads a stored OPT's `opt14` model,
 //!   decomposes it into one 1.4-shaped `am24` source per embedded archetype
@@ -40,6 +42,7 @@
 
 mod adl14;
 mod adl2;
+pub(super) mod lineage;
 mod opt14_convert;
 mod query;
 mod wire;
