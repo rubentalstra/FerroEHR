@@ -9,6 +9,7 @@
 mod bel_parse;
 mod escape_validation;
 mod lexer_equivalence;
+mod odin_spec_examples;
 mod vendor_bmm_odin;
 mod vendor_coverage;
 mod vendor_odin;
