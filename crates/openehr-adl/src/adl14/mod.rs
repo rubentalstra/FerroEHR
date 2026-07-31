@@ -37,8 +37,11 @@
 //!    new-at-level codes kept, missing ids synthesised in document order),
 //!    terminology-constraint conversion (local single → at-code, local list →
 //!    synthesised `ac` value set, external code(s) → synthesised at-code(s) +
-//!    term-binding URIs), terminology rebuild, description/meta transform, and
-//!    cardinality/occurrences elision.
+//!    term-binding URIs) and the terminology rebuild. Its three
+//!    converter-state-free stages are siblings: [`walk`] (the read-only
+//!    definition traversals the code planning consumes), [`multiplicity`] (the
+//!    1.4 default occurrences materialisation + RM-default elision) and
+//!    [`metadata`] (the description / meta-data / version transform).
 //! 3. **Differ** ([`differ`]) — for a specialised 1.4 source, re-differentialise
 //!    the converted child against its converted+flattened parent (strip
 //!    inherited-unchanged nodes).
@@ -50,3 +53,6 @@ pub mod differ;
 pub mod domain;
 pub mod log;
 pub mod lower;
+mod metadata;
+mod multiplicity;
+mod walk;
