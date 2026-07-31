@@ -454,8 +454,16 @@ fn path(language: Language, text: &str) -> bool {
                 && ((shape.leading_slashes == 1 && shape.segments >= 1)
                     || (shape.leading_slashes == 0 && shape.segments >= 2))
         }
-        // `odin.g4`'s object-reference path takes either case on the segment
-        // head (its `odin_path_segment` is an `attr_id`, not an `ALPHA_LC_ID`).
+        // The ODIN reading takes either case on the segment head — a
+        // docs-text-grounded widening over `base_lexer.g4`'s lower-case-only
+        // `ADL_PATH_SEGMENT`: ODIN object keys may be upper-case or
+        // `_`-initial identifiers (`odin.g4` `odin_object_key : ALPHA_UC_ID |
+        // ALPHA_UNDERSCORE_ID | rm_attribute_id`), and every node is
+        // reachable by a path (`LANG/docs/odin/master02-overview`), so a path
+        // must be able to name an upper-case-keyed attribute. (`_`-initial
+        // segment HEADS remain un-lexable in every language — a spec-internal
+        // gap between the object-key and path-segment grammars, recorded at
+        // the #858 ch.8 audit.)
         Language::Odin => {
             (shape.leading_slashes == 1 && shape.segments >= 1)
                 || (shape.leading_slashes == 0 && shape.segments >= 2)
