@@ -1802,7 +1802,8 @@ fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
 
 #[cfg(test)]
 mod tests {
-    use openehr_adl::validate::{Severity, validate_phase1};
+    use openehr_adl::validate::catalogue::Severity;
+    use openehr_adl::validate::validate_phase1;
 
     use super::*;
 

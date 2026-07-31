@@ -15,7 +15,7 @@ fn cnf_adl14_medication_fixture_parses_and_validates() {
     );
     let errors: Vec<_> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .collect();
     assert!(errors.is_empty(), "unexpected phase-1 errors: {errors:?}");
 }

@@ -36,7 +36,8 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_base::prelude::Interval;
 use openehr_rm::model;
 
-use super::{ValidationCode, ValidationIssue};
+use super::catalogue::ValidationCode;
+use super::{ValidationIssue, push_issue};
 use crate::aom::access::{
     child_occurrences, complex_attributes, complex_rm_type, object_node_id, object_rm_type,
 };
@@ -409,7 +410,8 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
     let root_type = complex_rm_type(v.definition);
     // VCORM on the root object type (master04.5 §Validity Rules: `C_OBJECT`).
     if !root_type.is_empty() && !rm.type_exists(root_type) {
-        scan.push(
+        push_issue(
+            &mut scan.issues,
             ValidationCode::Vcorm,
             format!(
                 "root object type {root_type:?} is not defined in the reference model ({})",
@@ -458,11 +460,6 @@ struct RmScan<'a> {
 }
 
 impl RmScan<'_> {
-    fn push(&mut self, code: ValidationCode, msg: impl Into<String>, path: &str) {
-        self.issues
-            .push(ValidationIssue::new(code, msg).at_path(path.to_owned()));
-    }
-
     /// Walk a complex object whose RM type is `rm_type`, checking every
     /// attribute and its child objects against the reference model.
     fn walk_complex(&mut self, path: &str, rm_type: &str, cco: &CComplexObject) {
@@ -480,7 +477,7 @@ impl RmScan<'_> {
             // parent — which was itself reference-model-validated before the child
             // could specialise it (master08 §Overview phase ordering), so the
             // resolved node's attribute is RM-valid by construction — or it does
-            // not resolve, in which case [`super::phase2::check_attribute`] raises
+            // not resolve, in which case [`super::specialisation`] raises
             // VDIFP ("does not exist in the flat parent"). No separate RM-path walk
             // of the differential path is needed here.
             if attr.differential_path.is_some() {
@@ -501,7 +498,8 @@ impl RmScan<'_> {
                     // type is itself known; an unknown enclosing type is already
                     // VCORM/VCORMT at the level above.
                     if !rm_type.is_empty() && self.rm.type_exists(rm_type) {
-                        self.push(
+                        push_issue(
+                            &mut self.issues,
                             ValidationCode::Vcarm,
                             format!(
                                 "attribute {:?} is not defined on reference-model type {rm_type:?}",
@@ -529,7 +527,8 @@ impl RmScan<'_> {
         if let Some(ex) = attr.existence.as_ref() {
             let arch = bounds(ex);
             if !rm_attr.existence.contains(arch) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcaex,
                     format!(
                         "existence {} does not conform to the reference-model existence {}",
@@ -547,7 +546,8 @@ impl RmScan<'_> {
         // the attribute a container; if the RM attribute is single-valued that
         // is a mismatch (master04.5 §Validity Rules: `C_ATTRIBUTE`, VCAM).
         if has_cardinality && !rm_attr.is_multiple {
-            self.push(
+            push_issue(
+                &mut self.issues,
                 ValidationCode::Vcam,
                 "a cardinality is stated but the reference-model attribute is single-valued",
                 attr_path,
@@ -563,7 +563,8 @@ impl RmScan<'_> {
         {
             let arch = bounds(&card.interval);
             if !rm_card.contains(arch) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcaca,
                     format!(
                         "cardinality {} does not conform to the reference-model cardinality {}",
@@ -586,7 +587,8 @@ impl RmScan<'_> {
                     && let Some(upper) = finite_upper(occ)
                     && upper > 1
                 {
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vacso,
                         format!(
                             "child of single-valued attribute has occurrences upper {upper} > 1"
@@ -608,7 +610,8 @@ impl RmScan<'_> {
             if !child_type.is_empty() {
                 if !self.rm.type_exists(child_type) {
                     // VCORM: the object type must exist in the RM.
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vcorm,
                         format!(
                             "object type {child_type:?} is not defined in the reference model ({})",
@@ -623,7 +626,8 @@ impl RmScan<'_> {
                     // covariantly on any generic arguments (master04.5 §Validity
                     // Rules: `C_OBJECT`, VCORMT; master04.2 §Rm_type_name and
                     // Reference Model Type Matching).
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vcormt,
                         format!(
                             "object type {child_type:?} does not conform to the attribute's reference-model type {:?}",
@@ -651,7 +655,8 @@ impl RmScan<'_> {
             if rm_attr.is_multiple && !self.is_specialised {
                 let nid = object_node_id(child);
                 if (is_id_code(nid) || is_at_code(nid)) && !self.defined.contains(nid) {
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vatid,
                         format!("node id {nid:?} is not defined in the terminology"),
                         &child_path,
@@ -704,7 +709,8 @@ impl RmScan<'_> {
         // one (declared is the same type or an ancestor). `None` = a type unknown
         // to the model, already reported as VCORM — undecidable here.
         if type_conforms(self.rm, target_type, &proxy.rm_type_name) == Some(false) {
-            self.push(
+            push_issue(
+                &mut self.issues,
                 ValidationCode::Vunt,
                 format!(
                     "use_node type {:?} is neither the same as nor a super-type of the referenced \
@@ -725,7 +731,8 @@ impl RmScan<'_> {
             let child_type = object_rm_type(child);
             let child_path = child_path(attr_path, object_node_id(child));
             if !child_type.is_empty() && !self.rm.type_exists(child_type) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcorm,
                     format!(
                         "object type {child_type:?} is not defined in the reference model ({})",
@@ -763,7 +770,8 @@ impl RmScan<'_> {
                 EnumUnderlying::Integer => {
                     for v in integer_point_values(&c.constraint) {
                         if !en.int_values.contains(&i64::from(v)) {
-                            self.push(
+                            push_issue(
+                                &mut self.issues,
                                 ValidationCode::Vcormenv,
                                 format!(
                                     "integer value {v} is not a declared literal of the enumeration"
@@ -773,7 +781,8 @@ impl RmScan<'_> {
                         }
                     }
                 }
-                EnumUnderlying::String => self.push(
+                EnumUnderlying::String => push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcormen,
                     "an integer constraint is stated on a string-based enumeration slot",
                     path,
@@ -783,7 +792,8 @@ impl RmScan<'_> {
                 EnumUnderlying::String => {
                     for v in string_literal_values(&c.constraint) {
                         if !en.str_values.iter().any(|lit| lit == v) {
-                            self.push(
+                            push_issue(
+                                &mut self.issues,
                                 ValidationCode::Vcormenu,
                                 format!(
                                     "string value {v:?} is not a declared literal of the enumeration"
@@ -793,7 +803,8 @@ impl RmScan<'_> {
                         }
                     }
                 }
-                EnumUnderlying::Integer => self.push(
+                EnumUnderlying::Integer => push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcormen,
                     "a string constraint is stated on an integer-based enumeration slot",
                     path,
@@ -808,7 +819,8 @@ impl RmScan<'_> {
             | CObject::CDate(_)
             | CObject::CTime(_)
             | CObject::CDateTime(_)
-            | CObject::CDuration(_) => self.push(
+            | CObject::CDuration(_) => push_issue(
+                &mut self.issues,
                 ValidationCode::Vcormen,
                 "a non-integer/string primitive constraint is stated on an enumeration slot",
                 path,

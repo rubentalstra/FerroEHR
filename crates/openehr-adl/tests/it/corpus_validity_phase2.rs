@@ -28,9 +28,10 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::{ArchetypeRepository, FlatParent, resolve_flat_parent};
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::validate::bindings::NoTerminologyResolver;
+use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::ProductionRmModel;
-use openehr_adl::validate::terminology::NoTerminologyResolver;
-use openehr_adl::validate::{Severity, validate_source};
+use openehr_adl::validate::validate_source;
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 

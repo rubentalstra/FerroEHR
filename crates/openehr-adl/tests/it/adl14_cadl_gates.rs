@@ -51,7 +51,8 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::SyntaxErrorCode;
-use openehr_adl::validate::{Severity, ValidationCode, validate_source_phase1_adl14};
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::validate_source_phase1_adl14;
 
 /// What a fixture must do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -124,7 +124,7 @@ fn assert_structural_match(adl: &str, adls: &str, parent: Option<&str>) {
     let issues = openehr_adl::validate::validate_phase1(&got, None);
     let errors: Vec<_> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(
@@ -245,7 +245,7 @@ fn adl14_meta_data_converts_and_validates() {
     let issues = openehr_adl::validate::validate_phase1(&got, None);
     let errors: Vec<_> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "adl14_meta_data validation: {errors:?}");
@@ -354,7 +354,7 @@ ontology
     let issues = openehr_adl::validate::validate_phase1(&got, None);
     let errors: Vec<&str> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
@@ -443,7 +443,7 @@ ontology
     let issues = openehr_adl::validate::validate_phase1(&got, None);
     let errors: Vec<&str> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "phase-1 errors: {errors:?}");

@@ -20,9 +20,8 @@
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::validate::{
-    ValidationCode, ValidationIssue, validate_phase1, validate_source_phase1,
-};
+use openehr_adl::validate::catalogue::ValidationCode;
+use openehr_adl::validate::{ValidationIssue, validate_phase1, validate_source_phase1};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,

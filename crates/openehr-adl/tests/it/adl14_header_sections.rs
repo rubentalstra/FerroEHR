@@ -35,7 +35,8 @@
 use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::{SyntaxError, SyntaxErrorCode};
 use openehr_adl::source::{parse_source, parse_source_adl14};
-use openehr_adl::validate::{Severity, ValidationCode, validate_source_phase1_adl14};
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::validate_source_phase1_adl14;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
