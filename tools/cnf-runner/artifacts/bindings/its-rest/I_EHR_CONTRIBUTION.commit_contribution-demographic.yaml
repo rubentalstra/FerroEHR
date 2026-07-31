@@ -54,7 +54,18 @@ formats: [canonical-json]
 outcomes:
   created:
     status: 201
-    headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }, Location: present }
+    headers:
+      ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }
+      Location: present
+      # The same pair, the same sentence — overview §"ETag and Last-Modified":
+      # "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+      # VERSION, VERSIONED_OBJECT, or other resources that have versioning or
+      # unique state identifiers", the value "derived from
+      # `VERSION.commit_audit.time_committed.value`". Register AMB-87's fixed
+      # handling, whose scope covers the demographic commit alongside the
+      # EHR-scoped one (the released 201_demographic_CONTRIBUTION.yaml declares
+      # ETag/Location and is silent on this header, not conflicting).
+      Last-Modified: present
     body: prefer_conditional
   conflict:
     status: 409

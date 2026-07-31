@@ -24,6 +24,7 @@ mod corpus_rules_parse;
 mod corpus_validity_integrity;
 mod corpus_validity_parent_conformance;
 mod corpus_validity_rm;
+mod default_value_intervals;
 mod flattener_spec;
 mod legacy14_corpus;
 mod opt_spec;

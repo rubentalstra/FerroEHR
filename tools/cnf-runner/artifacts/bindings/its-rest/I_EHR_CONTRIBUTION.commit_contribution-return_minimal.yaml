@@ -55,6 +55,15 @@ outcomes:
     headers:
       ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } }  # the weakness indicator is a MUST — overview §Deprecated headers
       Location: present                   # overview §Prefer minimal — "The response SHOULD include a `Location` header pointing to the newly created or updated resource"
+      # The header pair travels together — overview §"ETag and Last-Modified":
+      # "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+      # VERSION, VERSIONED_OBJECT, or other resources that have versioning or
+      # unique state identifiers", the value "derived from
+      # `VERSION.commit_audit.time_committed.value`". Register AMB-87 carries
+      # the fixed handling for the CONTRIBUTION's reach, and this branch is
+      # where it bites hardest: the body is empty, so the header is the ONLY
+      # channel the commit instant has.
+      Last-Modified: present
       Preference-Applied: "present?"      # MAY — overview §Representation details negotiation
 captures:
   contribution_uid:

@@ -28,7 +28,7 @@ use std::collections::BTreeMap;
 
 use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{TerminologyCode, Uuid};
-use openehr_lang::odin::{OdinKey, OdinValue};
+use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
 
 // ── ODIN tree reading ─────────────────────────────────────────────────────
 
@@ -251,21 +251,47 @@ pub(crate) fn nil_uuid() -> Uuid {
     }
 }
 
-/// Whether an ODIN value tree contains an interval anywhere.
+/// Whether an ODIN value is an interval, reading through any type cast.
 ///
-/// An interval has no canonical-JSON encoding here (see [`odin_to_json`]), so
-/// a `_default` carrying one is refused outright rather than silently reduced
-/// to `null` — the loss would turn "this default is an interval" into "this
-/// node has a null default", which no reader can tell from a real absence.
-pub(crate) fn odin_contains_interval(v: &OdinValue) -> bool {
-    match v {
-        OdinValue::Interval(_) => true,
-        OdinValue::List(items) => items.iter().any(odin_contains_interval),
-        OdinValue::Object(map) => map.values().any(odin_contains_interval),
-        OdinValue::KeyedList(items) => items.iter().any(|(_, val)| odin_contains_interval(val)),
-        OdinValue::Typed { value, .. } => odin_contains_interval(value),
-        _ => false,
-    }
+/// An interval carries its own canonical-JSON `_type`
+/// (`Point_interval`/`Proper_interval`, see [`odin_to_json`]), so the ODIN cast
+/// that heads it — which names the generic slot type, `Interval<Quantity>` and
+/// the like — must not overwrite that tag.
+pub(crate) fn is_interval(v: &OdinValue) -> bool {
+    matches!(untyped(v), OdinValue::Interval(_))
+}
+
+/// Why an ODIN value carries no canonical-JSON encoding as a
+/// `C_DEFINED_OBJECT.default_value`.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub(crate) enum OdinJsonError {
+    /// A `|centre +/- delta|` interval over endpoints that are not numeric.
+    ///
+    /// The form's meaning IS arithmetic on its endpoints —
+    /// `LANG/docs/odin/master07-leaf_data.adoc` §Intervals of Ordered Primitive
+    /// Types glosses `|5.0 +/-0.5|` as `4.5 ±5.5`, and
+    /// `AM/docs/ADL1.4/master04-dadl.adoc` §Intervals of Ordered Primitive
+    /// Types as "4.5 - 5.5" — but a `Date`/`Time`/`Date_time`/`Duration`
+    /// endpoint is carried verbatim on the ODIN tree, so reducing
+    /// `centre ± delta` to bounds would need calendar arithmetic over a typing
+    /// the tree does not record. Refused instead of guessed.
+    #[error(
+        "a '|centre +/- delta|' interval over {centre}/{delta} endpoints has no lower/upper reduction: only Integer and Real endpoints reduce without type context"
+    )]
+    PlusMinusNotNumeric {
+        /// The ODIN type of the centre endpoint.
+        centre: &'static str,
+        /// The ODIN type of the delta endpoint.
+        delta: &'static str,
+    },
+    /// A numeric `|centre +/- delta|` interval whose bounds leave the
+    /// representable range (an `Integer` sum that overflows, an `Integer`
+    /// magnitude beyond exact `Real` representation, or a non-finite `Real`
+    /// bound). Refused rather than silently rounded.
+    #[error(
+        "a '|centre +/- delta|' interval whose bounds leave the representable numeric range has no lower/upper reduction"
+    )]
+    PlusMinusOutOfRange,
 }
 
 /// Convert an [`OdinValue`] to canonical JSON for a
@@ -277,12 +303,22 @@ pub(crate) fn odin_contains_interval(v: &OdinValue) -> bool {
 /// design/extension. An `<>` / `<...>` empty block is a genuine "no value" and
 /// maps to `null`.
 ///
-// TODO: encode ODIN interval values (`|0..5|`) as a typed default instead of
-// `null` — [`odin_contains_interval`] refuses them at the parse for now, so a
-// `_default = <|0..5|>` is an error rather than a silent null — tracked as
-// issue #1346.
-pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
-    match v {
+/// NOTE: an ODIN interval (`|0..5|`) encodes as the object shape the canonical
+/// codec emits for a BASE `Interval<T>` — `_type` first, then the present
+/// bounds, then the four boundary flags (the emitted `ToJson` for
+/// `Point_interval`/`Proper_interval` in
+/// `crates/openehr-its/src/json_codec/generated/impls.rs`). The `_type` is
+/// `Point_interval` exactly when the interval denotes a single value (both
+/// sides bounded, both bounds included, both bounds equal) and
+/// `Proper_interval` otherwise — the same predicate
+/// [`crate::aom::interval::point_value_i32`] adjudicates for the constraint
+/// model.
+///
+/// # Errors
+/// [`OdinJsonError`] for an interval form the bound representation cannot
+/// carry faithfully.
+pub(crate) fn odin_to_json(v: &OdinValue) -> Result<serde_json::Value, OdinJsonError> {
+    let json = match v {
         OdinValue::String(s)
         | OdinValue::Date(s)
         | OdinValue::Time(s)
@@ -295,30 +331,39 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
         OdinValue::Real(r) => serde_json::Value::from(*r),
         OdinValue::Boolean(b) => serde_json::Value::from(*b),
         OdinValue::Character(c) => serde_json::Value::String(c.to_string()),
-        OdinValue::Empty | OdinValue::Interval(_) => serde_json::Value::Null,
+        OdinValue::Empty => serde_json::Value::Null,
+        OdinValue::Interval(iv) => interval_to_json(iv)?,
         OdinValue::ListContinue => serde_json::Value::String("...".to_owned()),
-        OdinValue::List(items) => {
-            serde_json::Value::Array(items.iter().map(odin_to_json).collect())
-        }
+        OdinValue::List(items) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(odin_to_json)
+                .collect::<Result<Vec<_>, _>>()?,
+        ),
         OdinValue::PathList(ps) => serde_json::Value::Array(
             ps.iter()
                 .map(|p| serde_json::Value::String(p.clone()))
                 .collect(),
         ),
-        OdinValue::Object(map) => serde_json::Value::Object(
-            map.iter()
-                .map(|(k, v)| (k.clone(), odin_to_json(v)))
-                .collect(),
-        ),
-        OdinValue::KeyedList(items) => serde_json::Value::Object(
-            items
-                .iter()
-                .map(|(k, v)| (key_str(k), odin_to_json(v)))
-                .collect(),
-        ),
+        OdinValue::Object(map) => {
+            let mut out = serde_json::Map::new();
+            for (k, val) in map {
+                out.insert(k.clone(), odin_to_json(val)?);
+            }
+            serde_json::Value::Object(out)
+        }
+        OdinValue::KeyedList(items) => {
+            let mut out = serde_json::Map::new();
+            for (k, val) in items {
+                out.insert(key_str(k), odin_to_json(val)?);
+            }
+            serde_json::Value::Object(out)
+        }
         OdinValue::Typed { rm_type, value } => {
-            let mut inner = odin_to_json(value);
-            if let serde_json::Value::Object(m) = &mut inner {
+            let mut inner = odin_to_json(value)?;
+            if !is_interval(value)
+                && let serde_json::Value::Object(m) = &mut inner
+            {
                 m.insert(
                     "_type".to_owned(),
                     serde_json::Value::String(class_name(rm_type).to_owned()),
@@ -326,6 +371,170 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
             }
             inner
         }
+    };
+    Ok(json)
+}
+
+/// The canonical-JSON object an ODIN interval denotes.
+fn interval_to_json(iv: &OdinInterval) -> Result<serde_json::Value, OdinJsonError> {
+    let bounds = match iv {
+        OdinInterval::Range {
+            lower,
+            lower_included,
+            upper,
+            upper_included,
+        } => IntervalBounds {
+            lower: lower.as_deref().map(odin_to_json).transpose()?,
+            upper: upper.as_deref().map(odin_to_json).transpose()?,
+            lower_included: *lower_included,
+            upper_included: *upper_included,
+        },
+        OdinInterval::PlusMinus { centre, delta } => plus_minus_bounds(centre, delta)?,
+    };
+    Ok(bounds.into_json())
+}
+
+/// The four boundary values of an interval, ready for canonical JSON.
+struct IntervalBounds {
+    /// The lower bound, `None` when the interval is unbounded below.
+    lower: Option<serde_json::Value>,
+    /// The upper bound, `None` when the interval is unbounded above.
+    upper: Option<serde_json::Value>,
+    /// Whether the lower bound is inclusive.
+    lower_included: bool,
+    /// Whether the upper bound is inclusive.
+    upper_included: bool,
+}
+
+impl IntervalBounds {
+    /// A closed interval over two computed bounds.
+    fn closed(lower: serde_json::Value, upper: serde_json::Value) -> Self {
+        Self {
+            lower: Some(lower),
+            upper: Some(upper),
+            lower_included: true,
+            upper_included: true,
+        }
+    }
+
+    /// The canonical-JSON object, in the emitted codec's field order.
+    fn into_json(self) -> serde_json::Value {
+        let lower_unbounded = self.lower.is_none();
+        let upper_unbounded = self.upper.is_none();
+        let is_point = !lower_unbounded
+            && !upper_unbounded
+            && self.lower_included
+            && self.upper_included
+            && self.lower == self.upper;
+        let mut m = serde_json::Map::new();
+        m.insert(
+            "_type".to_owned(),
+            serde_json::Value::String(
+                if is_point {
+                    "Point_interval"
+                } else {
+                    "Proper_interval"
+                }
+                .to_owned(),
+            ),
+        );
+        if let Some(lower) = self.lower {
+            m.insert("lower".to_owned(), lower);
+        }
+        if let Some(upper) = self.upper {
+            m.insert("upper".to_owned(), upper);
+        }
+        m.insert(
+            "lower_unbounded".to_owned(),
+            serde_json::Value::from(lower_unbounded),
+        );
+        m.insert(
+            "upper_unbounded".to_owned(),
+            serde_json::Value::from(upper_unbounded),
+        );
+        m.insert(
+            "lower_included".to_owned(),
+            serde_json::Value::from(self.lower_included),
+        );
+        m.insert(
+            "upper_included".to_owned(),
+            serde_json::Value::from(self.upper_included),
+        );
+        serde_json::Value::Object(m)
+    }
+}
+
+/// Reduce `|centre +/- delta|` to its two bounds.
+fn plus_minus_bounds(
+    centre: &OdinValue,
+    delta: &OdinValue,
+) -> Result<IntervalBounds, OdinJsonError> {
+    let (centre, delta) = (untyped(centre), untyped(delta));
+    if !is_numeric_leaf(centre) || !is_numeric_leaf(delta) {
+        return Err(OdinJsonError::PlusMinusNotNumeric {
+            centre: leaf_type_name(centre),
+            delta: leaf_type_name(delta),
+        });
+    }
+    if let (OdinValue::Integer(c), OdinValue::Integer(d)) = (centre, delta) {
+        let lower = c
+            .checked_sub(*d)
+            .ok_or(OdinJsonError::PlusMinusOutOfRange)?;
+        let upper = c
+            .checked_add(*d)
+            .ok_or(OdinJsonError::PlusMinusOutOfRange)?;
+        return Ok(IntervalBounds::closed(
+            serde_json::Value::from(lower),
+            serde_json::Value::from(upper),
+        ));
+    }
+    let (Some(c), Some(d)) = (exact_f64(centre), exact_f64(delta)) else {
+        return Err(OdinJsonError::PlusMinusOutOfRange);
+    };
+    let (lower, upper) = (c - d, c + d);
+    if !lower.is_finite() || !upper.is_finite() {
+        return Err(OdinJsonError::PlusMinusOutOfRange);
+    }
+    Ok(IntervalBounds::closed(
+        serde_json::Value::from(lower),
+        serde_json::Value::from(upper),
+    ))
+}
+
+/// Whether an ODIN leaf is one of the two numeric primitive types.
+fn is_numeric_leaf(v: &OdinValue) -> bool {
+    matches!(v, OdinValue::Integer(_) | OdinValue::Real(_))
+}
+
+/// The `f64` an ODIN numeric leaf denotes, or `None` when the value is not
+/// numeric or not exactly representable as one.
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the 2^53 magnitude guard proves the i64 → f64 conversion is exact; a wider magnitude returns None and is refused"
+)]
+fn exact_f64(v: &OdinValue) -> Option<f64> {
+    match v {
+        OdinValue::Real(r) => Some(*r),
+        OdinValue::Integer(i) if i.unsigned_abs() <= (1u64 << 53) => Some(*i as f64),
+        _ => None,
+    }
+}
+
+/// The ODIN type name of a leaf value, for defect messages.
+fn leaf_type_name(v: &OdinValue) -> &'static str {
+    match v {
+        OdinValue::Integer(_) => "Integer",
+        OdinValue::Real(_) => "Real",
+        OdinValue::Date(_) => "Date",
+        OdinValue::Time(_) => "Time",
+        OdinValue::DateTime(_) => "Date_time",
+        OdinValue::Duration(_) => "Duration",
+        OdinValue::String(_) => "String",
+        OdinValue::Boolean(_) => "Boolean",
+        OdinValue::Character(_) => "Character",
+        OdinValue::TermCode(_) => "TERM_CODE_REF",
+        OdinValue::Uri(_) => "URI",
+        _ => "non-primitive",
     }
 }
 
@@ -468,7 +677,7 @@ pub(crate) fn is_delimited_regex_trimmed(s: &str) -> bool {
 }
 #[cfg(test)]
 mod tests {
-    use super::{class_name, odin_to_json};
+    use super::{OdinJsonError, class_name, odin_to_json};
 
     /// A namespaced ODIN cast names the same class as its bare spelling
     /// (`LANG/docs/odin/master05-content` §Adding Type Information), so the
@@ -499,8 +708,177 @@ mod tests {
             "a = (org.openehr.rm.data_types.text.DV_TEXT) <value = <\"x\">>",
         )
         .expect("the namespaced cast should parse");
-        let json = odin_to_json(&value);
+        let json = odin_to_json(&value).expect("the cast block should encode");
         assert_eq!(json["a"]["_type"], serde_json::json!("DV_TEXT"));
         assert_eq!(json["a"]["value"], serde_json::json!("x"));
+    }
+
+    /// The canonical JSON of the interval `src` denotes, read as the sole
+    /// attribute `a` of an ODIN text.
+    fn interval_json(src: &str) -> serde_json::Value {
+        let value = openehr_lang::odin::parse(&format!("a = <{src}>"))
+            .unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let json = odin_to_json(&value).unwrap_or_else(|e| panic!("{src} should encode: {e}"));
+        json["a"].clone()
+    }
+
+    /// The `OdinJsonError` the interval `src` raises.
+    fn interval_error(src: &str) -> OdinJsonError {
+        let value = openehr_lang::odin::parse(&format!("a = <{src}>"))
+            .unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        odin_to_json(&value).expect_err("the interval should be refused")
+    }
+
+    /// Every two-sided interval form of
+    /// `LANG/docs/odin/master07-leaf_data.adoc` §Intervals of Ordered
+    /// Primitive Types encodes as the canonical `Proper_interval` object, with
+    /// the relational operators carried by the two `*_included` flags.
+    #[test]
+    fn two_sided_interval_forms_encode_their_inclusivity() {
+        let cases: &[(&str, bool, bool)] = &[
+            ("|0..5|", true, true),
+            ("|>0..5|", false, true),
+            ("|0..<5|", true, false),
+            ("|>0..<5|", false, false),
+        ];
+        for (src, lower_included, upper_included) in cases {
+            assert_eq!(
+                interval_json(src),
+                serde_json::json!({
+                    "_type": "Proper_interval",
+                    "lower": 0,
+                    "upper": 5,
+                    "lower_unbounded": false,
+                    "upper_unbounded": false,
+                    "lower_included": lower_included,
+                    "upper_included": upper_included,
+                }),
+                "{src}"
+            );
+        }
+    }
+
+    /// A one-sided form (`|>=N|`, `|<N|`) and the `infinity`/`*` endpoint
+    /// markers leave the open side unbounded, with no bound member and the
+    /// `*_included` flag false — the `Lower_included_valid`/
+    /// `Upper_included_valid` invariants of
+    /// `BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`.
+    #[test]
+    fn one_sided_and_unbounded_interval_forms_omit_the_open_bound() {
+        assert_eq!(
+            interval_json("|>=1939-02-01|"),
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "lower": "1939-02-01",
+                "lower_unbounded": false,
+                "upper_unbounded": true,
+                "lower_included": true,
+                "upper_included": false,
+            })
+        );
+        assert_eq!(
+            interval_json("|<10.5|"),
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "upper": 10.5,
+                "lower_unbounded": true,
+                "upper_unbounded": false,
+                "lower_included": false,
+                "upper_included": false,
+            })
+        );
+        assert_eq!(
+            interval_json("|0..infinity|"),
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "lower": 0,
+                "lower_unbounded": false,
+                "upper_unbounded": true,
+                "lower_included": true,
+                "upper_included": false,
+            })
+        );
+        assert_eq!(
+            interval_json("|*..*|"),
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "lower_unbounded": true,
+                "upper_unbounded": true,
+                "lower_included": false,
+                "upper_included": false,
+            })
+        );
+    }
+
+    /// A degenerate closed interval denotes a single value, so it carries the
+    /// `Point_interval` tag — the predicate
+    /// [`crate::aom::interval::point_value_i32`] adjudicates for the
+    /// constraint model (both sides bounded, both bounds included, both bounds
+    /// equal).
+    #[test]
+    fn a_degenerate_closed_interval_is_a_point_interval() {
+        let point = serde_json::json!({
+            "_type": "Point_interval",
+            "lower": 5,
+            "upper": 5,
+            "lower_unbounded": false,
+            "upper_unbounded": false,
+            "lower_included": true,
+            "upper_included": true,
+        });
+        assert_eq!(interval_json("|5|"), point);
+        assert_eq!(interval_json("|5..5|"), point);
+        // An excluded bound is not a single value, degenerate or not.
+        assert_eq!(
+            interval_json("|>5..5|")["_type"],
+            serde_json::json!("Proper_interval")
+        );
+    }
+
+    /// The `|N +/- M|` form reduces to its two bounds, which is the meaning
+    /// both chapters give it (`LANG/docs/odin/master07-leaf_data.adoc`
+    /// §Intervals of Ordered Primitive Types: `|5.0 +/-0.5|` is `4.5 ±5.5`;
+    /// `AM/docs/ADL1.4/master04-dadl.adoc` writes the same example "4.5 -
+    /// 5.5").
+    #[test]
+    fn a_plus_minus_interval_reduces_to_its_numeric_bounds() {
+        assert_eq!(
+            interval_json("|5.0 +/-0.5|"),
+            serde_json::json!({
+                "_type": "Proper_interval",
+                "lower": 4.5,
+                "upper": 5.5,
+                "lower_unbounded": false,
+                "upper_unbounded": false,
+                "lower_included": true,
+                "upper_included": true,
+            })
+        );
+        assert_eq!(interval_json("|5 +/-2|")["lower"], serde_json::json!(3));
+        assert_eq!(interval_json("|5 +/-2|")["upper"], serde_json::json!(7));
+    }
+
+    /// A `|N +/- M|` interval over temporal endpoints has no reduction without
+    /// type context, so it is a typed refusal naming the limitation, never a
+    /// guessed bound pair.
+    #[test]
+    fn a_non_numeric_plus_minus_interval_is_refused() {
+        assert_eq!(
+            interval_error("|2020-01-01 +/-P1D|"),
+            OdinJsonError::PlusMinusNotNumeric {
+                centre: "Date",
+                delta: "Duration",
+            }
+        );
+    }
+
+    /// A `|N +/- M|` interval whose bounds overflow the `Integer` range is
+    /// refused rather than wrapped.
+    #[test]
+    fn an_overflowing_plus_minus_interval_is_refused() {
+        assert_eq!(
+            interval_error(&format!("|{} +/-1|", i64::MAX)),
+            OdinJsonError::PlusMinusOutOfRange
+        );
     }
 }

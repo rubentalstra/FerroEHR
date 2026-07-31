@@ -56,6 +56,27 @@ pub struct Committed {
     pub time_committed: jiff::Timestamp,
 }
 
+/// The outcome of one CONTRIBUTION commit.
+///
+/// The commit instant is carried out with the id because the write response
+/// needs both: ITS-REST `Requests_and_responses.md` §"`ETag` and `Last-Modified`"
+/// asks for `Last-Modified` on any resource with a unique state identifier,
+/// derived from the commit audit's `time_committed` — re-reading the row (or
+/// taking a second clock reading) would risk an instant that is not the one
+/// stored.
+#[derive(Debug)]
+pub(crate) struct CommittedContribution {
+    /// The new CONTRIBUTION's `HIER_OBJECT_ID` uid (the `ETag`/`Location`
+    /// value).
+    pub id: Uuid,
+    /// The CONTRIBUTION audit's server-set `time_committed` (RM common
+    /// master06 §Committal and Audits) — one instant for the whole change set.
+    pub time_committed: jiff::Timestamp,
+    /// The versions the CONTRIBUTION landed, in commit order (attestation-only
+    /// members last).
+    pub versions: Vec<Committed>,
+}
+
 impl Committed {
     /// The committed version's full `OBJECT_VERSION_ID` (`ETag`/`Location`
     /// value — RM common master06 §Version Identification).
@@ -938,7 +959,7 @@ pub(crate) async fn commit_contribution(
     changes: Vec<(AuditInput, Change)>,
     attests: Vec<PendingAttest>,
     ctx: &SigningCtx<'_>,
-) -> Result<(Uuid, Vec<Committed>), ServiceError> {
+) -> Result<CommittedContribution, ServiceError> {
     // The CONTRIBUTION's own audit + contribution rows in one round trip (the
     // per-version `commit_audit`s are inserted per change below).
     let (contribution_id, _contribution_audit_id, contribution_time) =
@@ -1006,5 +1027,9 @@ pub(crate) async fn commit_contribution(
         )
         .await?;
     }
-    Ok((contribution_id, committed))
+    Ok(CommittedContribution {
+        id: contribution_id,
+        time_committed: contribution_time,
+        versions: committed,
+    })
 }

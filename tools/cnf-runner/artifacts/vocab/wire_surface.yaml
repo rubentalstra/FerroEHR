@@ -1046,6 +1046,15 @@ elements:
       # Resources.md classifies as non-versioned is register AMB-87, whose
       # fixed handling supplies the committal instant.
       - I_EHR_CONTRIBUTION.get_contribution-header_identity
+      # The CONTRIBUTION COMMIT, under both representation preferences —
+      # AMB-87's scope extension. The minimal branch is the pointed one: its
+      # body is empty, so the header is the only channel the commit instant
+      # has.
+      - I_EHR_CONTRIBUTION.commit_contribution-last_modified
+      - I_EHR_CONTRIBUTION.commit_contribution-last_modified_minimal
+      # The demographic sibling commit, on the same extension: its binding
+      # declares the header, so this case executes it.
+      - I_EHR_CONTRIBUTION.commit_contribution-demographic
       - SIG-VERSION-signature_present
   - id: header-prefer-return-representation
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."

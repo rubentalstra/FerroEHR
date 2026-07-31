@@ -207,7 +207,11 @@ You get it on:
 - every COMPOSITION, `EHR_STATUS`, and DIRECTORY read — including the FLAT and
   STRUCTURED representations, which describe the same version;
 - every write of those resources (create, update, and the delete `204`), and
-  the EHR create `201`.
+  the EHR create `201`;
+- every CONTRIBUTION — both the read and the commit `201`, where the value is
+  the contribution audit's commit time. On a contribution commit you get the
+  header under either `Prefer` setting; with `return=minimal` there is no
+  response body, so the header is the only place the commit time appears.
 
 Resources that are not versioned do not carry it: `GET /ehr/{ehr_id}` returns
 the weak `ETag` (built from `EHR.ehr_id.value`) but no `Last-Modified`,

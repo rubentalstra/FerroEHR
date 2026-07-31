@@ -5916,8 +5916,7 @@ pub(crate) async fn versioned_party_version_get_by_id(
                              (`Requests_and_responses.md` §\"ETag and \
                              Last-Modified\"). Shape: \
                              `W/\"0826851c-c4c2-4d61-92b9-410fb8275ff0\"`. It is \
-                             the CONTRIBUTION's own uid, not a version uid, so no \
-                             `Last-Modified` accompanies it."),
+                             the CONTRIBUTION's own uid, not a version uid."),
              ("Location" = String,
               description = "\"The `Location` response header indicates the URL of \
                              the CONTRIBUTION resource.\" (ITS-REST \
@@ -5926,6 +5925,19 @@ pub(crate) async fn versioned_party_version_get_by_id(
                              `<base_path>/demographic/contribution/<contribution_uid>` \
                              — §Location: used \"in `201 Created` responses when a \
                              new resource is successfully created\"."),
+             ("Last-Modified" = String,
+              description = "The commit instant of this CONTRIBUTION's audit, as \
+                             an HTTP-date. §\"ETag and Last-Modified\": \"Both \
+                             `ETag` and `Last-Modified` SHOULD be included in \
+                             responses for VERSION, VERSIONED_OBJECT, or other \
+                             resources that have versioning or unique state \
+                             identifiers\", the value \"derived from \
+                             `VERSION.commit_audit.time_committed.value`\" — a \
+                             CONTRIBUTION is immutable and this response already \
+                             names its unique identifier, so the committal is its \
+                             one modification instant. Emitted under every \
+                             `Prefer` setting, matching the EHR-scoped commit and \
+                             the CONTRIBUTION read."),
              ("Preference-Applied" = String,
               description = "`return=minimal` | `return=identifier` | \
                              `return=representation` — the preference the service \

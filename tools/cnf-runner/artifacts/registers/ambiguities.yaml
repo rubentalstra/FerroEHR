@@ -2412,6 +2412,17 @@ AMB-87:
     unique state identifier, and the instant of committal is its one
     modification instant. Reported upstream (UPR-51): declare the headers
     on the 200 or scope the SHOULD.
+    SCOPE EXTENDED to the COMMIT response (POST /ehr/{ehr_id}/contribution and
+    its demographic sibling): the same openness, the same fixed handling. The
+    201 already carries the contribution-uid ETag on the released
+    `responses/201_CONTRIBUTION.yaml` (headers ETag / Location / Content-Type
+    — silent on Last-Modified, not conflicting), so the resource the response
+    identifies has exactly the "unique state identifier" the §"ETag and
+    Last-Modified" sentence names, and the instant it reports is the committal
+    the same section points the value at. Last-Modified is therefore asserted
+    on the commit under BOTH representation preferences — under
+    `return=minimal` the body is empty, so the header is the only channel the
+    commit instant has at all.
   disposition: fixed_handling
   upstream_ref: "UPR-51"
 

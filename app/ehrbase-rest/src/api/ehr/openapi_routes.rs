@@ -4831,6 +4831,22 @@ pub(crate) async fn directory_get_by_version_id(
                                 §Location: used \"in `201 Created` responses \
                                 when a new resource is successfully \
                                 created\")."),
+                ("Last-Modified" = String,
+                 description = "The commit instant of this CONTRIBUTION's \
+                                audit, as an HTTP-date. §\"ETag and \
+                                Last-Modified\": \"Both `ETag` and \
+                                `Last-Modified` SHOULD be included in \
+                                responses for VERSION, VERSIONED_OBJECT, or \
+                                other resources that have versioning or unique \
+                                state identifiers\", the value \"derived from \
+                                `VERSION.commit_audit.time_committed.value`\" \
+                                — a CONTRIBUTION is immutable and the 201 \
+                                already names its unique identifier, so the \
+                                committal is its one modification instant. \
+                                Emitted under every `Prefer` setting; under \
+                                `return=minimal` it is the only channel the \
+                                instant has, since that branch returns no \
+                                body."),
                 ("Preference-Applied" = String,
                  description = "`return=minimal` | `return=identifier` | \
                                 `return=representation` — the preference the \
