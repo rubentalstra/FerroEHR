@@ -237,3 +237,8 @@
 236|LCurly@0..1 SymIvlDelim@1..2 SymGe@2..4 Integer("0")@4..5 SymIvlDelim@5..6 RCurly@6..7
 237|LCurly@0..1 LBracket@1..2 AlphaLcId("local")@2..7 SymColon@7..8 SymColon@8..9 AlphaLcId("at0001")@9..15 SymComma@15..16 AlphaLcId("at0002")@17..23 RBracket@23..24 RCurly@24..25
 238|AlphaUcId("DV_ORDINAL")@0..10 LBracket@10..11 AlphaLcId("id5")@11..14 RBracket@14..15 SymMatches@16..23 LCurly@24..25 AlphaLcId("value")@25..30 SymMatches@31..38 LCurly@39..40 SymIvlDelim@40..41 Integer("0")@41..42 SymIvlDelim@42..43 RCurly@43..44 RCurly@44..45
+239|SymTrue@0..4 SymEq@5..6 SymLt@7..8 Integer("1")@8..9 SymGt@9..10
+240|SymTrue@0..4 SymEq@5..6 SymLt@7..8 Integer("1")@8..9 SymGt@9..10
+241|AlphaLcId("infinity")@0..8 SymEq@9..10 SymLt@11..12 Integer("1")@12..13 SymGt@13..14
+242|AlphaLcId("x")@0..1 SymEq@2..3 SymLt@4..5 SymFalse@5..10 SymGt@10..11
+243|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 AlphaLcId("infinity")@4..12 SymIvlDelim@12..13

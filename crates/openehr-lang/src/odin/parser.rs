@@ -180,11 +180,19 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
             Token::Iso8601Time(s) => OdinKey::Time(s),
             Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
         };
+        // NOTE: the trailing optional `';'` is a docs-text widening over the
+        // vendored `odin.g4`, which writes the separator only on `attr_vals`:
+        // "Semi-colons can be used to separate ODIN blocks … Semi-colons make
+        // no semantic difference at all" (`LANG/docs/odin/master03-basics`
+        // §Semi-colons), and a keyed object ends in an ODIN block, so the
+        // separator is accepted (and ignored) here exactly as between
+        // attribute pairs.
         let keyed_list = just(Token::LBracket)
             .ignore_then(key_id)
             .then_ignore(just(Token::RBracket))
             .then_ignore(just(Token::SymEq))
             .then(block.clone())
+            .then_ignore(just(Token::SymSemiColon).or_not())
             .repeated()
             .at_least(1)
             .collect::<Vec<(OdinKey, OdinValue)>>()
