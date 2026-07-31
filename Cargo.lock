@@ -5194,7 +5194,6 @@ name = "openehr-adl"
 version = "2.4.0"
 dependencies = [
  "indexmap 2.14.0",
- "logos",
  "openehr-am",
  "openehr-base",
  "openehr-lang",
