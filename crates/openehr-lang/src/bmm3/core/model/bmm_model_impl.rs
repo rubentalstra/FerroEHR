@@ -140,9 +140,27 @@ impl BmmModel {
     /// because `class_definitions` is keyed by class name and "names of classes
     /// are just the root name, even if the class is generic"
     /// (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes).
+    ///
+    /// Matching is CASE-INSENSITIVE with underscores significant —
+    /// `LANG/docs/bmm3/master05-core-model.adoc` §Naming Convention: "When
+    /// used computationally within an instantiated BMM model, it is assumed
+    /// that case-insensitive matching is used. This means that the class name
+    /// `"Hashable"` refers to the same class as `"HASHABLE"`. Note however
+    /// that underscores are not removed during matching". An exact-key hit
+    /// wins without a scan; the fold never rewrites the returned class's own
+    /// name.
     #[must_use]
     pub fn class_definition(&self, a_type_name: &str) -> Option<&BmmClass> {
-        self.class_definitions.as_ref()?.get(type_root(a_type_name))
+        let definitions = self.class_definitions.as_ref()?;
+        let root = type_root(a_type_name);
+        if let Some(class) = definitions.get(root) {
+            return Some(class);
+        }
+        let folded = root.to_uppercase();
+        definitions
+            .iter()
+            .find(|(key, _)| key.to_uppercase() == folded)
+            .map(|(_, class)| class)
     }
 
     /// `BMM_MODEL.enumeration_definition`: "Retrieve the enumeration definition
@@ -192,13 +210,27 @@ impl BmmModel {
     /// ([`BmmClass::all_ancestors`]) and, for every name reached, that name's
     /// own definition in this model — a class whose embedded copies are shallow
     /// still resolves all the way up. Cycle-safe; deduped.
+    ///
+    /// The `Any` top is implicit: "The `Any` type defined by the model's
+    /// `Any` class, or else the default one … will be used as the inheritance
+    /// parent for every class in the model that doesn't have any other
+    /// inheritance parent. As a result, the inheritance graph will always
+    /// have the `Any` type as its top node"
+    /// (`LANG/docs/bmm3/master05-core-model.adoc` §The Any Class and Type) —
+    /// so a defined, parentless class (other than `Any` itself) closes its
+    /// ancestor list with `Any`.
     #[must_use]
     pub fn all_ancestor_classes(&self, a_class: &str) -> Vec<String> {
         let mut out: Vec<String> = Vec::new();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut queue: VecDeque<String> = VecDeque::new();
+        let mut rootless = false;
         if let Some(class) = self.class_definition(a_class) {
-            queue.extend(class.all_ancestors());
+            let parents = class.all_ancestors();
+            if parents.is_empty() && !class.name().eq_ignore_ascii_case(ANY_TYPE_NAME) {
+                rootless = true;
+            }
+            queue.extend(parents);
         }
         while let Some(name) = queue.pop_front() {
             if !seen.insert(name.clone()) {
@@ -206,14 +238,62 @@ impl BmmModel {
             }
             out.push(name.clone());
             if let Some(class) = self.class_definition(&name) {
-                for parent in class.all_ancestors() {
+                let parents = class.all_ancestors();
+                if parents.is_empty() && !class.name().eq_ignore_ascii_case(ANY_TYPE_NAME) {
+                    rootless = true;
+                }
+                for parent in parents {
                     if !seen.contains(&parent) {
                         queue.push_back(parent);
                     }
                 }
             }
         }
+        if rootless
+            && !seen
+                .iter()
+                .any(|name| name.eq_ignore_ascii_case(ANY_TYPE_NAME))
+        {
+            out.push(ANY_TYPE_NAME.to_owned());
+        }
         out
+    }
+
+    /// `BMM_MODEL.any_class_definition`: the model's own `Any` class where it
+    /// defines one, else the standard default — "A BMM model may define its
+    /// own `Any` class, but if it does not, the `BMM_MODEL` instance
+    /// representing the model will produce a standard 'Any' class"
+    /// (`LANG/docs/bmm3/master05-core-model.adoc` §The Any Class and Type).
+    /// The default is abstract, parentless and property-free, in a package
+    /// named after the delimiter-free model root (the section's default
+    /// package structure), and is generated fresh per call — it is never
+    /// inserted into `class_definitions`.
+    #[must_use]
+    pub fn any_class_definition(&self) -> BmmClass {
+        if let Some(own) = self.class_definition(ANY_TYPE_NAME) {
+            return own.clone();
+        }
+        BmmClass::BmmClass(crate::bmm3::core::entity::bmm_class::BmmClassData {
+            documentation: Some(
+                "Standard default Any class (LANG/docs/bmm3/master05-core-model.adoc §The Any \
+                     Class and Type)"
+                    .to_owned(),
+            ),
+            name: ANY_TYPE_NAME.to_owned(),
+            ancestors: None,
+            package: BmmPackage {
+                documentation: None,
+                packages: None,
+                name: self.schema_name.clone(),
+                classes: Vec::new(),
+            },
+            properties: None,
+            source_schema_id: self.schema_id(),
+            immediate_descendants: Vec::new(),
+            is_abstract: true,
+            is_primitive_type: false,
+            is_override: false,
+        })
     }
 
     /// `BMM_MODEL.property_definition`: "Retrieve the property definition for
@@ -603,6 +683,63 @@ mod tests {
         assert_eq!(model.class_definition("MISSING"), None);
     }
 
+    /// `LANG/docs/bmm3/master05-core-model.adoc` §Naming Convention:
+    /// case-insensitive matching, underscores significant — `"Hashable"` ≡
+    /// `"HASHABLE"`, but `"HashMap"` ≢ `"HASH_MAP"`.
+    #[test]
+    fn class_lookup_is_case_insensitive_with_significant_underscores() {
+        let model = model(
+            vec![
+                class("Hashable", &[], &[], false),
+                class("HashMap", &[], &[], false),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(
+            model.class_definition("HASHABLE").map(BmmClass::name),
+            Some("Hashable"),
+            "case folds"
+        );
+        assert_eq!(
+            model.class_definition("hashable").map(BmmClass::name),
+            Some("Hashable")
+        );
+        assert_eq!(
+            model.class_definition("HASH_MAP"),
+            None,
+            "underscores are not removed during matching"
+        );
+    }
+
+    /// `LANG/docs/bmm3/master05-core-model.adoc` §The Any Class and Type: a
+    /// model without its own `Any` gets the standard default; a defined,
+    /// parentless class closes its ancestor list with `Any`; `Any` itself
+    /// does not.
+    #[test]
+    fn any_class_semantics() {
+        let model = model(
+            vec![
+                class("ITEM", &[], &[], false),
+                class("Any", &[], &[], false),
+            ],
+            Vec::new(),
+        );
+        // the model defines its own Any → returned as-is.
+        assert_eq!(model.any_class_definition().name(), "Any");
+        assert_eq!(model.all_ancestor_classes("ITEM"), vec!["Any".to_owned()]);
+        assert!(model.all_ancestor_classes("Any").is_empty());
+
+        // no own Any → the standard default (abstract, parentless).
+        let bare = super::super::bmm_model_impl::tests::model(
+            vec![class("ITEM", &[], &[], false)],
+            Vec::new(),
+        );
+        let default_any = bare.any_class_definition();
+        assert_eq!(default_any.name(), "Any");
+        assert!(default_any.is_abstract());
+        assert_eq!(bare.all_ancestor_classes("ITEM"), vec!["Any".to_owned()]);
+    }
+
     #[test]
     fn primitive_and_enumeration_type_keys() {
         let enumeration =
@@ -650,15 +787,23 @@ mod tests {
         );
         let mut ancestors = model.all_ancestor_classes("DV_QUANTITY");
         ancestors.sort();
+        // `Any` closes the walk: the parentless DATA_VALUE takes the implicit
+        // `Any` inheritance parent (`master05-core-model.adoc` §The Any Class
+        // and Type — "the inheritance graph will always have the Any type as
+        // its top node").
         assert_eq!(
             ancestors,
             [
+                "Any".to_owned(),
                 "DATA_VALUE".to_owned(),
                 "DV_AMOUNT".to_owned(),
                 "DV_ORDERED".to_owned()
             ]
         );
-        assert!(model.all_ancestor_classes("DATA_VALUE").is_empty());
+        assert_eq!(
+            model.all_ancestor_classes("DATA_VALUE"),
+            vec!["Any".to_owned()]
+        );
         assert!(model.all_ancestor_classes("MISSING").is_empty());
     }
 
