@@ -17,6 +17,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A backslash sequence the ADL/ODIN escape rules do not define is now
+  refused with a clear message instead of read as literal text.** The escape
+  set is closed — `\r`, `\n`, `\t`, `\\`, `\"`, `\'` and the two `\u` unicode
+  forms — and anything else in a quoted string (a stray `\q`, a regex class
+  such as `\d` written outside a regex, a string ending in a lone backslash,
+  a `\u` with the wrong number of hex digits) is an authoring defect. Such a
+  string used to be carried through as-is, so the defect reached the stored
+  archetype as text; it is now reported at the offending literal. Regular
+  expressions are unaffected: the backslash patterns inside a `matches {/…/}`
+  constraint are still passed to the regex engine untouched.
+- **A type cast written with its package path now parses.** ODIN and ADL 1.4
+  dADL allow a type identifier to be qualified with dot-separated package
+  names — `(org.openehr.rm.ehr.content.ENTRY)`,
+  `(Core.Abstractions.Relationships.Relationship)`, and the same inside a
+  generic such as `(List<org.openehr.rm.ehr.content.ENTRY>)` — which is how
+  authors disambiguate same-named types from different models. Such a cast
+  used to fail the parse and reject the whole archetype. The qualified name
+  is kept exactly as authored; where the cast becomes a JSON `_type` tag, the
+  class name is used.
 - **Archetype text that carries a non-BMP character now reads correctly.**
   ADL and ODIN allow a unicode character above the base multilingual plane to
   be written as an eight-hex-digit `\uHHHHHHHH` escape (emoji, historic

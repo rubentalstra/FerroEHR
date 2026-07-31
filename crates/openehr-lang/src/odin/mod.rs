@@ -328,6 +328,68 @@ mod tests {
         );
     }
 
+    /// Qualified (namespaced) type identifiers, both spellings the chapter
+    /// exemplifies: "Namespaces are included by prepending package names,
+    /// separated by the '.' character … as in the qualified type names
+    /// `org.openehr.rm.ehr.content.ENTRY` and
+    /// `Core.Abstractions.Relationships.Relationship`"
+    /// (`LANG/docs/odin/master05-content` §Adding Type Information, verbatim
+    /// in `AM/docs/ADL1.4/master04-dadl` §Adding Type Information). The
+    /// vendored `odin.g4` admits only the bare `ALPHA_UC_ID`; the docs text
+    /// wins, and the qualified name is preserved flat.
+    #[test]
+    fn namespaced_type_casts_parse_and_keep_the_dotted_name() {
+        for qualified in [
+            "org.openehr.rm.ehr.content.ENTRY",
+            "Core.Abstractions.Relationships.Relationship",
+            "org.openehr.rm.data_types.text.DV_TEXT",
+        ] {
+            let m = obj(&format!("a = ({qualified}) <b = <1>>"));
+            let OdinValue::Typed { rm_type, value } = m.get("a").expect("a") else {
+                panic!("expected a typed cast for {qualified}");
+            };
+            assert_eq!(rm_type, qualified);
+            assert!(matches!(**value, OdinValue::Object(_)));
+        }
+    }
+
+    /// The `master04-dadl` principle box allows "Dot-separated namespace
+    /// identifiers AND template parameters" on the same identifier, and a
+    /// template parameter is itself a type identifier — so both the generic
+    /// and its parameters may be qualified, and the unqualified generic form
+    /// is unchanged.
+    #[test]
+    fn namespaced_and_plain_generic_type_casts_parse() {
+        for (src, expected) in [
+            ("Interval<Quantity>", "Interval<Quantity>"),
+            (
+                "List<org.openehr.rm.ehr.content.ENTRY>",
+                "List<org.openehr.rm.ehr.content.ENTRY>",
+            ),
+            (
+                "org.openehr.base.foundation_types.Interval<org.openehr.base.Quantity>",
+                "org.openehr.base.foundation_types.Interval<org.openehr.base.Quantity>",
+            ),
+            (
+                "Hash<org.openehr.rm.HOTEL,String>",
+                "Hash<org.openehr.rm.HOTEL,String>",
+            ),
+        ] {
+            let m = obj(&format!("a = ({src}) <...>"));
+            let OdinValue::Typed { rm_type, .. } = m.get("a").expect("a") else {
+                panic!("expected a typed cast for {src}");
+            };
+            assert_eq!(rm_type, expected);
+        }
+    }
+
+    /// The qualification names a package path, so the segment it qualifies
+    /// stays the `ALPHA_UC_ID` type identifier: a lower-case terminal segment
+    /// is an attribute path, not a type, and must not be read as a cast.
+    #[test]
+    fn a_lowercase_terminal_segment_is_not_a_type_identifier() {
+        assert!(parse("a = (org.openehr.rm.content) <b = <1>>").is_err());
+    }
     #[test]
     fn illegal_escape_is_error() {
         assert!(parse(r#"a = <"bad \d">"#).is_err());

@@ -260,18 +260,57 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
     })
 }
 
-/// `rm_type_id : ALPHA_UC_ID ( '<' rm_type_id ( ',' rm_type_id )* '>' )?`,
-/// reconstructed as a flat string (e.g. `Interval<Quantity>`).
+/// `rm_type_id : ( package_id '.' )* ALPHA_UC_ID ( '<' rm_type_id ( ','
+/// rm_type_id )* '>' )?`, reconstructed as a flat string (e.g.
+/// `Interval<Quantity>`, `org.openehr.rm.ehr.content.ENTRY`).
 ///
-// TODO: accept the dot-separated namespace form of a type identifier
-// (`org.openehr.rm.ehr.content.ENTRY`, `Core.Abstractions.Relationships.
-// Relationship`) — `AM/docs/ADL1.4/master04-dadl` §Adding Type Information and
-// `LANG/docs/odin/master05-content` §Adding Type Information both allow it,
-// but the vendored `odin.g4` `rm_type_id` rule this parser transcribes does
-// not, so such a cast currently fails the parse.
+/// NOTE: the vendored `odin.g4` writes this rule as bare
+/// `ALPHA_UC_ID ( '<' rm_type_id ( ',' rm_type_id )* '>' )?` — no namespace
+/// form. The docs text, which is the oracle where it and a grammar artefact
+/// disagree, allows the qualified spelling on any type identifier:
+/// "Type identifiers can also include namespace information, which is
+/// necessary when same-named types appear in different packages of a model.
+/// Namespaces are included by prepending package names, separated by the '.'
+/// character, in the same way as in most programming languages, as in the
+/// qualified type names `org.openehr.rm.ehr.content.ENTRY` and
+/// `Core.Abstractions.Relationships.Relationship`"
+/// (`LANG/docs/odin/master05-content` §Adding Type Information, verbatim in
+/// `AM/docs/ADL1.4/master04-dadl` §Adding Type Information, whose principle
+/// box restates it normatively: "Type Information can be included optionally
+/// on any node immediately before the opening '<' of any block, in the form
+/// of a UML-style type identifier in parentheses. Dot-separated namespace
+/// identifiers and template parameters may be used.").
+///
+/// Two consequences of that wording are honoured here. The package segments
+/// take either case — the chapter's own two examples are a lowercase package
+/// path (`org.openehr.rm.ehr.content`) and an upper-case one
+/// (`Core.Abstractions.Relationships`) — while the TYPE the qualification
+/// names stays `ALPHA_UC_ID`, since a package prefix qualifies the same type
+/// identifier the unqualified form spells. And because a template parameter
+/// is itself a type identifier, a parameter may be qualified too
+/// (`List<org.openehr.rm.ehr.content.ENTRY>`); the recursion gives that for
+/// free.
+///
+/// The qualified name is preserved FLAT, exactly as authored, so no caller
+/// loses the package information the author supplied.
 fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
     recursive(|t| {
-        select! { Token::AlphaUcId(s) => s }
+        let package_segment = select! {
+            Token::AlphaUcId(s) => s,
+            Token::AlphaLcId(s) => s,
+        };
+        package_segment
+            .then_ignore(just(Token::Dot))
+            .repeated()
+            .collect::<Vec<String>>()
+            .then(select! { Token::AlphaUcId(s) => s })
+            .map(|(namespace, name)| {
+                if namespace.is_empty() {
+                    name
+                } else {
+                    format!("{}.{name}", namespace.join("."))
+                }
+            })
             .then(
                 t.separated_by(just(Token::Comma))
                     .at_least(1)

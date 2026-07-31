@@ -320,11 +320,37 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
             if let serde_json::Value::Object(m) = &mut inner {
                 m.insert(
                     "_type".to_owned(),
-                    serde_json::Value::String(rm_type.clone()),
+                    serde_json::Value::String(class_name(rm_type).to_owned()),
                 );
             }
             inner
         }
+    }
+}
+
+/// The class name a (possibly namespaced) ODIN type cast denotes.
+///
+/// `LANG/docs/odin/master05-content` §Adding Type Information (verbatim in
+/// `AM/docs/ADL1.4/master04-dadl` §Adding Type Information) builds a qualified
+/// type identifier "by prepending package names, separated by the '.'
+/// character" to the type name, so the dotted prefix says which package the
+/// class comes from and the class itself is the terminal segment:
+/// `org.openehr.rm.ehr.content.ENTRY` and a bare `ENTRY` name the same type.
+/// The canonical-JSON `_type` tag carries the class name, so the package path
+/// is dropped on the way into JSON; the cast keeps its fully-qualified
+/// spelling, as authored, on the ODIN tree.
+///
+/// A generic head is qualified independently of its parameters
+/// (`org.openehr.base.Interval<Quantity>`), so only the text before the first
+/// `<` is unqualified.
+fn class_name(rm_type: &str) -> &str {
+    let head_end = rm_type.find('<').unwrap_or(rm_type.len());
+    let Some(head) = rm_type.get(..head_end) else {
+        return rm_type;
+    };
+    match head.rfind('.') {
+        Some(dot) => rm_type.get(dot + 1..).unwrap_or(rm_type),
+        None => rm_type,
     }
 }
 
@@ -446,4 +472,42 @@ pub(crate) fn is_delimited_regex_trimmed(s: &str) -> bool {
     let t = s.trim();
     t.len() >= 2
         && ((t.starts_with('/') && t.ends_with('/')) || (t.starts_with('^') && t.ends_with('^')))
+}
+#[cfg(test)]
+mod tests {
+    use super::{class_name, odin_to_json};
+
+    /// A namespaced ODIN cast names the same class as its bare spelling
+    /// (`LANG/docs/odin/master05-content` §Adding Type Information), so the
+    /// package path is dropped on the way into the canonical-JSON `_type`
+    /// tag while a generic head is unqualified independently of its
+    /// parameters.
+    #[test]
+    fn a_namespaced_cast_reduces_to_its_class_name() {
+        assert_eq!(class_name("ENTRY"), "ENTRY");
+        assert_eq!(class_name("org.openehr.rm.ehr.content.ENTRY"), "ENTRY");
+        assert_eq!(
+            class_name("Core.Abstractions.Relationships.Relationship"),
+            "Relationship"
+        );
+        assert_eq!(class_name("Interval<Quantity>"), "Interval<Quantity>");
+        assert_eq!(
+            class_name("org.openehr.base.Interval<org.openehr.base.Quantity>"),
+            "Interval<org.openehr.base.Quantity>"
+        );
+    }
+
+    /// The `_default` value block a namespaced cast heads carries the class
+    /// name as its `_type`, so a qualified spelling in the source does not
+    /// produce a dotted tag no RM reader recognises.
+    #[test]
+    fn a_namespaced_cast_tags_a_default_value_with_the_class_name() {
+        let value = openehr_lang::odin::parse(
+            "a = (org.openehr.rm.data_types.text.DV_TEXT) <value = <\"x\">>",
+        )
+        .expect("the namespaced cast should parse");
+        let json = odin_to_json(&value);
+        assert_eq!(json["a"]["_type"], serde_json::json!("DV_TEXT"));
+        assert_eq!(json["a"]["value"], serde_json::json!("x"));
+    }
 }
