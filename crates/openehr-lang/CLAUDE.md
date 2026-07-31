@@ -11,9 +11,32 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
 - Codegen consumes the JSON BMM serialization only
   (`tools/openehr-codegen/vendor/bmm/`); the ODIN reader exists for
   ADL/ODIN instance text, not for loading meta-models.
-- **`src/odin/` is the real ODIN reader** (a self-contained `logos` lexer +
-  `chumsky` parser + `OdinValue` tree; `openehr_lang::odin::parse`), NOT part
-  of the generated/`bmm*`/`beom` model — never route it through codegen.
+- **`src/lexer/` is the ONE lexer in the workspace** for the ADL/ODIN/BEL
+  family — one `logos` token superset (`lexer::Token`/`Spanned`, the union of
+  `base_lexer.g4` + `adl_keywords.g4` + `odin.g4`/`odin_values.g4` +
+  `base_expressions.g4`) plus three thin entry points `lex_adl` / `lex_odin` /
+  `lex_bel` that apply a per-language **reclassification pass** over the shared
+  stream. Never add a second lexer, here or in a consuming crate; a language's
+  lexical difference is a rule in `lexer/reclassify.rs`, never a new DFA.
+  - Keyword variants stay UNIT variants: a language that does not reserve a
+    word gets the identifier variant back, re-tagged from the source slice at
+    the token's span. `LANG/docs/odin/master03-basics.adoc` §Keywords ("ODIN
+    has no keywords of its own") is why the ODIN pass demotes every cADL/BEL
+    keyword; `AM/docs/ADL2/master07.04` (section keywords "can safely appear
+    as identifiers") is why section words are not tokens at all.
+  - Where a language's longest match is SHORTER than the union's, the pass
+    narrows by retrying shorter prefixes — the union always matches at least
+    as far as any member, so no member ever needs a merge.
+  - The Expression Language (`LANG/docs/EL/`) is deliberately OUT of the
+    union (`#`-codes, a different bracket algebra, `|`-comments; DEVELOPMENT
+    status, no vendored grammar).
+  - The three readings are pinned token-, span- and payload-for-payload by
+    `tests/it/lexer_equivalence.rs` against fixtures captured from the three
+    pre-unification lexers. **Editing a fixture line changes an accepted or
+    refused lexical surface** and needs an adjudicated, spec-cited reason.
+- **`src/odin/` is the real ODIN reader** (a `chumsky` parser over
+  `lexer::lex_odin` + an `OdinValue` tree; `openehr_lang::odin::parse`), NOT
+  part of the generated/`bmm*`/`beom` model — never route it through codegen.
   Spec oracle: `docs/specs/openehr/LANG/docs/odin/` + the vendored grammars
   `vendor/grammar/{odin.g4,odin_values.g4,base_lexer.g4}`. `openehr-adl`
   consumes it to parse ADL2 ODIN sections. Do not touch
@@ -25,12 +48,12 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   is closed ("Any other character combination starting with a backslash is
   illegal"), so an unknown sequence, an unpaired trailing backslash, a `\u`
   with the wrong digit count, and a `\u` that denotes no character are each a
-  typed `EscapeError`, never pass-through text. The ODIN and BEL
-  lexers call `escape::validate` beside their structural escape scan (so a
-  token never carries an undecodable escape, which is what lets their parsers
-  decode infallibly), and `openehr-adl`'s cADL parser calls `escape::decode`
-  and reports a defect at the literal's span. Never re-implement escape
-  decoding anywhere.
+  typed `EscapeError`, never pass-through text. The shared lexer's
+  `STRING`/`CHARACTER` callbacks call `escape::validate` beside their
+  structural escape scan (so a token never carries an undecodable escape,
+  which is what lets the ODIN and BEL parsers decode infallibly), and
+  `openehr-adl`'s cADL parser calls `escape::decode` and reports a defect at
+  the literal's span. Never re-implement escape decoding anywhere.
 - Spec authority: `docs/specs/openehr/LANG/docs/` (bmm, odin). Parser
   behaviour divergences are spec-citable, never silent.
 - Versioned LANG 1.0.0 (spec pin).

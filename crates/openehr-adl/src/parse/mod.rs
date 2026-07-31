@@ -1,7 +1,8 @@
 //! The cADL definition-section parser.
 //!
-//! A hand-written recursive-descent parser over the lexer's token stream
-//! ([`crate::lexer`]), transcribed 1:1 from the vendored normative grammars
+//! A hand-written recursive-descent parser over the shared openEHR token
+//! stream under its cADL reading ([`openehr_lang::lexer::lex_adl`]),
+//! transcribed 1:1 from the vendored normative grammars
 //! `crates/openehr-adl/vendor/grammar/{cadl2.g4, cadl2_primitives.g4}`. It
 //! builds the **generated** AOM2 constraint model
 //! (`openehr_am::am24::aom2::constraint_model`) directly — never a new model
@@ -50,8 +51,8 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 
 use crate::aom::build::{cobject_to_primitive, cstring_regex};
 use crate::error::{SyntaxError, SyntaxErrorCode};
-use crate::lexer::{Spanned, Token};
 use crate::odin::regex_inner;
+use openehr_lang::lexer::{Spanned, Token};
 
 /// Internal parse result: `Err(())` signals a bail-out; the concrete
 /// [`SyntaxError`] is already recorded in [`Parser::errors`].
@@ -108,9 +109,9 @@ pub fn parse_definition_body(
     body: &str,
     dialect: Dialect,
 ) -> Result<CComplexObject, Vec<SyntaxError>> {
-    let toks = match crate::lexer::lex(body) {
+    let toks = match openehr_lang::lexer::lex_adl(body) {
         Ok(t) => t,
-        Err(e) => return Err(vec![e]),
+        Err(failure) => return Err(vec![crate::error::lexical(&failure, body)]),
     };
     let mut parser = Parser {
         src: body,
@@ -208,7 +209,8 @@ impl Parser<'_> {
     /// catalogue (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity
     /// Rules) and carries no code for a lexical defect INSIDE a literal, so
     /// this reuses `SUNK` ("Syntax error (unknown cause)") — the same bucket
-    /// every other lexical failure reports under ([`crate::lexer::lex`]) — and
+    /// every other lexical failure reports under
+    /// ([`openehr_lang::lexer::lex_adl`]) — and
     /// names the defect in the message. Inventing a code would break the 1:1
     /// mirror.
     pub(crate) fn decoded_literal(
@@ -336,7 +338,8 @@ impl Parser<'_> {
 /// Returns the cADL `S*` catalogue errors if the constraint is malformed or its
 /// body is not a single primitive constraint.
 pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject, Vec<SyntaxError>> {
-    let toks = crate::lexer::lex(raw).map_err(|e| vec![e])?;
+    let toks = openehr_lang::lexer::lex_adl(raw)
+        .map_err(|failure| vec![crate::error::lexical(&failure, raw)])?;
     let mut parser = Parser {
         src: raw,
         toks: &toks,

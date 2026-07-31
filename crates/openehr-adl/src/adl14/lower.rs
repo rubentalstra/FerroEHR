@@ -32,8 +32,8 @@ use crate::aom::build::{
 };
 use crate::aom::interval::{point_value_f64, point_value_i32};
 use crate::error::SyntaxErrorCode;
-use crate::lexer::Token;
 use crate::parse::{PResult, Parser};
+use openehr_lang::lexer::Token;
 
 // ── the ADL 1.4-only object productions ───────────────────────────────────
 impl Parser<'_> {
