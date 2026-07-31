@@ -278,3 +278,156 @@ fn ch4_schema_identifier_prefix() {
     // a misplaced `@` is still a parse error.
     assert!(parse("a = <1> @ b").is_err());
 }
+
+/// The `master05-content` §General Structure typical structure (its
+/// `leaf_value` placeholders materialized) and the COMPLETE 9-path set
+/// §Paths extracts from it, verbatim (#1377).
+#[test]
+fn ch5_typical_structure_and_its_complete_path_set() {
+    let src = r#"attr_1 = <
+    attr_2 = <
+        attr_3 = <"leaf">
+        attr_4 = <"leaf">
+    >
+    attr_5 = <
+        attr_3 = <
+            attr_6 = <"leaf">
+        >
+        attr_7 = <"leaf">
+    >
+>
+attr_8 = <...>"#;
+    let parsed = parse(src).unwrap_or_else(|e| panic!("the §5.1 structure should parse: {e}"));
+    assert_eq!(
+        parsed.paths(),
+        vec![
+            "/attr_1",
+            "/attr_1/attr_2",
+            "/attr_1/attr_2/attr_3",
+            "/attr_1/attr_2/attr_4",
+            "/attr_1/attr_5",
+            "/attr_1/attr_5/attr_3",
+            "/attr_1/attr_5/attr_3/attr_6",
+            "/attr_1/attr_5/attr_7",
+            "/attr_8",
+        ]
+    );
+}
+
+/// The `master05-content` §Container Objects `school_schedule` example. The
+/// VERBATIM text is refused — its `weighting = <76%>` uses a percent literal
+/// no leaf-data production defines (`master07-leaf_data`'s type set is
+/// closed; `%` is not an ODIN token) — and the materialized twin (weighting
+/// as the plain Real it is declared as) parses, with the section's two
+/// listed container paths present in its path set.
+#[test]
+fn ch5_school_schedule_twins_and_container_paths() {
+    let verbatim_weighting = "s = <weighting = <76%>>";
+    let err = parse(verbatim_weighting).expect_err("`76%` is not a leaf of any production");
+    assert_eq!(err.kind, OdinErrorKind::UnrecognisedToken);
+
+    let src = r#"school_schedule = <
+    lesson_times = <08:30:00, 09:30:00, 10:30:00, ...>
+    locations = <
+        [1] = <"under the big plane tree">
+        [2] = <"under the north arch">
+        [3] = <"in a garden">
+    >
+    subjects = <
+        ["philosophy:plato"] = <
+            name = <"philosophy">
+            teacher = <"plato">
+            topics = <"meta-physics", "natural science">
+            weighting = <76.0>
+        >
+        ["philosophy:kant"] = <
+            name = <"philosophy">
+            teacher = <"kant">
+            topics = <"meaning and reason", "meta-physics", "ethics">
+            weighting = <80.0>
+        >
+        ["art"] = <
+            name = <"art">
+            teacher = <"goya">
+            topics = <"technique", "portraiture", "satire">
+            weighting = <78.0>
+        >
+    >
+>"#;
+    let parsed =
+        parse(src).unwrap_or_else(|e| panic!("the materialized schedule should parse: {e}"));
+    let paths = parsed.paths();
+    for expected in [
+        "/school_schedule/locations[1]",
+        "/school_schedule/subjects[\"philosophy:kant\"]",
+    ] {
+        assert!(
+            paths.contains(&expected.to_owned()),
+            "{expected} missing from {paths:?}"
+        );
+    }
+}
+
+/// The `master05-content` §Nested Container Objects `List<List<String>>`
+/// example, with its listed nested-key paths (`/list_of_string_lists[1]/[1]`
+/// …) present in the extracted set.
+#[test]
+fn ch5_nested_containers_and_their_paths() {
+    let src = r#"list_of_string_lists = <
+    [1] = <
+        [1] = <"first string in first list">
+        [2] = <"second string in first list">
+    >
+    [2] = <
+        [1] = <"first string in second list">
+        [2] = <"second string in second list">
+        [3] = <"third string in second list">
+    >
+    [3] = <
+        [1] = <"only string in third list">
+    >
+>"#;
+    let parsed = parse(src).unwrap_or_else(|e| panic!("the §5.5 example should parse: {e}"));
+    let paths = parsed.paths();
+    for expected in [
+        "/list_of_string_lists[1]/[1]",
+        "/list_of_string_lists[1]/[2]",
+        "/list_of_string_lists[2]/[1]",
+    ] {
+        assert!(
+            paths.contains(&expected.to_owned()),
+            "{expected} missing from {paths:?}"
+        );
+    }
+}
+
+/// The `master05-content` §Adding Type Information `destinations` example
+/// (placeholders materialized as the `<...>` voids the chapter itself
+/// writes): dynamic-type casts at keyed and attribute positions, incl. the
+/// statically-typed-attribute default (no cast on `hotels`/`attractions`)
+/// and the fully-typed `(List<HOTEL>)` variant.
+#[test]
+fn ch5_adding_type_information_example() {
+    let src = r#"destinations = <
+    ["seville"] = (TOURIST_DESTINATION) <
+        profile = (DESTINATION_PROFILE) <...>
+        hotels = <
+            ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+            ["sofitel"] = (LUXURY_HOTEL) <...>
+            ["hotel real"] = (PENSION) <...>
+        >
+        attractions = <
+            ["la corrida"] = (SPORT_VENUE) <...>
+            ["Alcázar"] = (HISTORIC_SITE) <...>
+        >
+    >
+>"#;
+    let parsed =
+        parse(src).unwrap_or_else(|e| panic!("the destinations example should parse: {e}"));
+    let paths = parsed.paths();
+    assert!(paths.contains(&"/destinations[\"seville\"]/hotels[\"gran sevilla\"]".to_owned()));
+
+    let typed = parse(r#"hotels = (List<HOTEL>) <["gran sevilla"] = (HISTORIC_HOTEL) <...>>"#)
+        .unwrap_or_else(|e| panic!("the fully-typed variant should parse: {e}"));
+    assert!(matches!(typed, OdinValue::Object(_)));
+}

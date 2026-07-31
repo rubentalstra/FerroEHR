@@ -58,6 +58,14 @@ const EXCLUSIONS: &[(&str, &str)] = &[
         "openEHR-TEST_PKG-ENTRY.FAIL_terminology_term_definitions_missing.v1.0.0.adls",
         "terminology section is empty (no ODIN body) — violates `terminology_section : SYM_TERMINOLOGY odin_text` (SDINV)",
     ),
+    (
+        "openEHR-TEST_PKG-ENTRY.VOKU_ac_code_duplicated_in_terminology.v1.0.0.adls",
+        "duplicate sibling container keys in the terminology ODIN — refused at the ODIN layer per LANG/docs/odin/master05-content §Container Objects rule VDOBU (#1376), pre-empting the AOM-level VOKU tag (SDINV)",
+    ),
+    (
+        "openEHR-TEST_PKG-ENTRY.VOKU_at_code_duplicated_in_terminology.v1.0.0.adls",
+        "duplicate sibling container keys in the terminology ODIN — refused at the ODIN layer per LANG/docs/odin/master05-content §Container Objects rule VDOBU (#1376), pre-empting the AOM-level VOKU tag (SDINV)",
+    ),
 ];
 
 fn corpus_root() -> PathBuf {
@@ -124,4 +132,25 @@ fn every_adl2_source_outer_parses() {
         "these .adls files failed to outer-parse:\n{}",
         failures.join("\n")
     );
+}
+
+/// Every `EXCLUSIONS` entry is an intentional-FAIL fixture the outer parser
+/// must actually REJECT — an exclusion that silently starts parsing would
+/// otherwise decay into dead adjudication text.
+#[test]
+fn every_excluded_file_is_actually_rejected() {
+    let root = corpus_root();
+    let mut files = Vec::new();
+    collect_adls(&root, &mut files);
+    for (name, reason) in EXCLUSIONS {
+        let path = files
+            .iter()
+            .find(|p| p.file_name().and_then(|n| n.to_str()) == Some(name))
+            .unwrap_or_else(|| panic!("excluded fixture {name} missing from the corpus"));
+        let src = std::fs::read_to_string(path).expect("read corpus file");
+        assert!(
+            openehr_adl::source::parse_source(&src, Dialect::Adl2).is_err(),
+            "{name} parses but is excluded as: {reason}"
+        );
+    }
 }
