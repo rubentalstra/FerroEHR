@@ -76,7 +76,7 @@ on its own freshly composed stack with its own committed party statement;
 payload skeletons are byte-identical; database maintenance is settled
 deterministically on both sides before every measured window; configuration
 parity is explicit (connection pools raised in lockstep; version signing —
-an ferroehr extension upstream does not perform — disabled for throughput
+a FerroEHR extension upstream does not perform — disabled for throughput
 comparisons and labeled). Both directions publish on equal footing: where
 upstream sustains more, its curve says so exactly like the reverse — see
 [Comparison](comparison.md).

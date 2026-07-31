@@ -104,7 +104,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   §Supported Authentication Flows, so the runner takes the Authorization-Server
   role for that lane only). Undeclared => not-applicable with the citation,
   never a driven guess. The SMART resource-server posture IS the standard
-  ferroehr conformance posture (owner ruling 2026-07-28): the pipeline
+  FerroEHR conformance posture (owner ruling 2026-07-28): the pipeline
   always overlays `docker/sut-smart.yml`, the ixit's principals mint scoped
   Bearer tokens (per-instance standing grants; a step-level `scopes:`
   overrides for the boundary cases), and the ONE committed record covers the

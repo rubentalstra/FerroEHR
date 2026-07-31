@@ -189,7 +189,7 @@ but currently serves no method (see
   reach this response.
 
 > [!NOTE]
-> The template and stored-query deletes and the config view are ferroehr
+> The template and stored-query deletes and the config view are FerroEHR
 > extensions — the openEHR admin API defines only EHR deletes. They share the
 > same admin gate and authorization as the EHR deletes.
 
@@ -306,7 +306,7 @@ while the rest of the archive loads.
 
 > [!NOTE]
 > The activity report, the archive routes, and the dump/load pair are
-> ferroehr extensions too — the openEHR *service model* defines these
+> FerroEHR extensions too — the openEHR *service model* defines these
 > operations, but the released REST API surfaces no endpoint for them, so their
 > URLs are our own. They gate no openEHR conformance claim; see
 > [Conformance](conformance.md).
@@ -369,7 +369,7 @@ clinical content.
   limit, which answers **413** when exceeded.
 
 > [!NOTE]
-> The whole `/message` group is an ferroehr extension: the openEHR service
+> The whole `/message` group is a FerroEHR extension: the openEHR service
 > model defines a Message component, but the released REST API publishes no
 > message, extract, or TDD endpoints at all. These URLs are our own and gate no
 > openEHR conformance claim; see [Conformance](conformance.md).

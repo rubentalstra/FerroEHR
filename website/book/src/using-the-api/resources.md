@@ -237,7 +237,7 @@ invalid input, unknown EHR, or a uid conflict.
 contribution, or **404**.
 
 `GET /ehr/{ehr_id}/contribution` (no uid) lists the EHR's contributions,
-newest first — an ferroehr extension (the openEHR REST API defines only the
+newest first — a FerroEHR extension (the openEHR REST API defines only the
 by-uid read). Paginate with `?offset=` (default 0) and `?fetch=` (default 20,
 capped at 100). It returns **200** with a JSON summary, or **404** for an
 unknown EHR:

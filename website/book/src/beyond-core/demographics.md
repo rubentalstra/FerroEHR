@@ -47,7 +47,7 @@ tags (`/demographic/tags`, `/demographic/{kind}/{uid_based_id}/tags`, and
 
 ## Relationships
 
-Party relationships are managed through a parallel set of routes (an FerroEHR
+Party relationships are managed through a parallel set of routes (a FerroEHR
 extension), with the same versioned shape as parties:
 
 | Method | Path | Purpose |
