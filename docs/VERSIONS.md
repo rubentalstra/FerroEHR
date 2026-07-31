@@ -15,7 +15,8 @@ tooling) follows its own SemVer line, starting at **3.0.0**
 (2026-07-11 — the fork's inherited upstream tags/releases were removed; this
 project releases as the successor of the EHRbase 2.x line). Releases are
 changelog-driven (`CHANGELOG.md`, Keep a Changelog 1.1.0) and published as
-pre-releases until production sign-off.
+official releases (owner sign-off 2026-07-31); only an explicitly suffixed
+tag (`vX.Y.Z-rc1`, ...) publishes as a pre-release.
 
 The `openehr-*` **spec crates** are versioned by the openEHR specification
 they implement (the pins below): `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
