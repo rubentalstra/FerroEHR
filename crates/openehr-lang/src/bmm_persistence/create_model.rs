@@ -189,6 +189,11 @@ struct ClassEntry<'a> {
 /// Every name written into the produced `BMM_*` values is the class's OWN
 /// `name`, never the upper-cased key.
 struct Builder<'a> {
+    /// The schema being materialised
+    /// ([`crate::bmm_persistence::p_bmm_schema::PBmmSchema::schema_id`]) — the
+    /// `BMM_CLASS.source_schema_id` of a definition that carries none of its
+    /// own (see [`Builder::build_class`]).
+    schema_id: String,
     /// Class definitions by upper-cased name (`primitive_types` first, then
     /// `class_definitions`).
     classes: BTreeMap<String, ClassEntry<'a>>,
@@ -240,6 +245,7 @@ impl<'a> Builder<'a> {
         }
 
         Ok(Self {
+            schema_id: schema.schema_id(),
             classes,
             owning_package,
             descendants,
@@ -280,6 +286,29 @@ impl<'a> Builder<'a> {
     }
 
     /// Builds one `BMM_CLASS` at the given embedding depth.
+    ///
+    /// NOTE (adjudicated): a persisted `P_BMM_INTERFACE` materialises as an
+    /// ABSTRACT class with no properties. An interface is a class-like
+    /// definition declaring only functions — "In addition to ordinary classes,
+    /// the model can also represent pure interfaces via `P_BMM_INTERFACE`, i.e.
+    /// class-like definitions that declare only functions and carry no state"
+    /// (`master02-overview.adoc` §Conceptual Approach) — and the `BMM_*` model
+    /// has no interface class at all (`org.openehr.lang.bmm.bmm_class.adoc` and
+    /// its descendants are the whole entity family), so the abstract-class
+    /// projection is the only faithful destination: it keeps every package
+    /// listing and every property type reference naming an interface
+    /// (`TERMINOLOGY_SERVICE.terminology: TERMINOLOGY_ACCESS` in the vendored
+    /// RM 1.2.0 schema) resolvable, while `is_abstract` records that an
+    /// interface is not instantiable. Its FUNCTIONS have no destination, exactly
+    /// as class functions do not: `BMM_CLASS` declares `properties` but no
+    /// function map (class doc §Attributes), so `P_BMM_CLASS.functions` is
+    /// preserved in the P_BMM graph and carried no further — an honest boundary,
+    /// not a shadow field.
+    ///
+    /// `BMM_CLASS.source_schema_id` is `1..1` ("Reference to original source
+    /// schema defining this class", class doc §Attributes) while an interface
+    /// declares no such attribute to stamp, so it takes the id of the schema
+    /// being materialised.
     fn build_class(
         &self,
         entry: &ClassEntry<'a>,
@@ -296,7 +325,10 @@ impl<'a> Builder<'a> {
                 EmbedDepth::Stub | EmbedDepth::Bare => None,
                 EmbedDepth::Full | EmbedDepth::Ancestor => self.build_properties(persisted)?,
             },
-            source_schema_id: persisted.source_schema_id().to_owned(),
+            source_schema_id: persisted
+                .source_schema_id()
+                .unwrap_or(&self.schema_id)
+                .to_owned(),
             immediate_descendants: self
                 .descendants
                 .get(&name.to_uppercase())

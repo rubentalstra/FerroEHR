@@ -5264,6 +5264,7 @@ dependencies = [
 name = "openehr-lang"
 version = "1.0.0"
 dependencies = [
+ "assert_fs",
  "chumsky",
  "indexmap 2.14.0",
  "logos",

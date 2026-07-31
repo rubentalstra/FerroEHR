@@ -26,6 +26,11 @@ chumsky.workspace = true     # combinator parser for ODIN (odin.g4 / odin_values
 thiserror.workspace = true   # typed OdinError
 indexmap.workspace = true    # insertion-ordered ODIN objects
 
+[dev-dependencies]
+# Temp-directory fixtures for the rm_access schema-repository tests (the one
+# module that exercises real filesystem scanning).
+assert_fs.workspace = true
+
 [lints]
 workspace = true
 

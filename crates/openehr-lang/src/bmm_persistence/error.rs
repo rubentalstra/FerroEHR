@@ -125,33 +125,6 @@ pub enum PBmmReadError {
         path: String,
     },
 
-    /// A persisted `P_BMM_INTERFACE` appears where the schema's class list
-    /// admits only `P_BMM_CLASS`.
-    ///
-    /// `P_BMM_SCHEMA` declares `primitive_types`/`class_definitions` as
-    /// `List<P_BMM_CLASS>`
-    /// (`org.openehr.lang.bmm_persistence.p_bmm_schema.adoc` §Attributes) while
-    /// `P_BMM_INTERFACE` inherits `P_BMM_MODEL_ELEMENT`, not `P_BMM_CLASS`
-    /// (`…p_bmm_interface.adoc` §Inherit), so the pinned P_BMM model has no
-    /// slot for one; `master03-model.adoc` §Overview says only that the model
-    /// "can also represent pure interfaces via `P_BMM_INTERFACE`" and
-    /// `master04-syntax.adoc` never serialises one. The interface is refused
-    /// rather than silently dropped.
-    // TODO: reading a persisted P_BMM_INTERFACE needs a slot for it in
-    // P_BMM_SCHEMA (an `interfaces` attribute, or P_BMM_INTERFACE joining the
-    // P_BMM_CLASS subtype set) in the vendored BMM meta-model, plus an
-    // openehr-codegen regeneration; several vendored openEHR ODIN schemas
-    // (BASE 1.2.0/1.3.0, RM 1.0.2–1.2.0) already declare interfaces.
-    #[error(
-        "{path}: `{name}` is a P_BMM_INTERFACE; the schema's class list admits only P_BMM_CLASS"
-    )]
-    InterfaceInClassList {
-        /// ODIN attribute path of the interface block.
-        path: String,
-        /// The interface's name.
-        name: String,
-    },
-
     /// A schema includes another that was not supplied to the resolver.
     ///
     /// `P_BMM_SCHEMA.merge` has precondition

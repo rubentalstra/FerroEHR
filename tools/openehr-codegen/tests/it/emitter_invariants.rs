@@ -239,6 +239,36 @@ fn decision_map_integrity_entries_are_cited_and_reference_real_classes() {
     }
 }
 
+/// Every declared additional subtype member actually widens its parent's
+/// polymorphic slot: in every composition whose model defines both classes, the
+/// parent's variant set contains the subtype (and at least one composition does
+/// define both, so no entry is inert).
+#[test]
+fn subtype_extensions_widen_their_parents_variant_set() {
+    for (parent, subtype) in testsupport::subtype_extensions() {
+        let mut seen = 0_usize;
+        for key in testsupport::crate_keys() {
+            let Some(variants) = testsupport::enum_variants(key, &parent).unwrap() else {
+                continue;
+            };
+            if testsupport::enum_variants(key, &subtype).unwrap().is_none() {
+                continue;
+            }
+            seen += 1;
+            assert!(
+                variants.contains(&subtype),
+                "{key}: {parent}'s variants {variants:?} do not include the declared \
+                 extension subtype {subtype}",
+            );
+        }
+        assert!(
+            seen > 0,
+            "no composition defines both {parent} and {subtype}: the subtype_extensions entry \
+             is inert",
+        );
+    }
+}
+
 /// The crate → schema-merge table is itself declarative decision data: every
 /// composition entry carries a non-empty citation, lists at least one own BMM
 /// file, resolves (its member/dependency BMM files load), and references only
