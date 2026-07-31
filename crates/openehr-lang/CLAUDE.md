@@ -21,8 +21,11 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
 - **`src/escape.rs` is the ONE home for `master03` string-escape semantics**
   (`LANG/docs/odin/master03-basics.adoc` §File Encoding + §Special Character
   Sequences, verbatim in `AM/docs/ADL2/master03-file_encoding.adoc`): the six
-  quoted forms plus BOTH `\uHHHH` and `\uHHHHHHHH`, with a typed
-  `EscapeError` for a `\u` escape that denotes no character. The ODIN and BEL
+  quoted forms plus BOTH `\uHHHH` and `\uHHHHHHHH`, and NOTHING else — the set
+  is closed ("Any other character combination starting with a backslash is
+  illegal"), so an unknown sequence, an unpaired trailing backslash, a `\u`
+  with the wrong digit count, and a `\u` that denotes no character are each a
+  typed `EscapeError`, never pass-through text. The ODIN and BEL
   lexers call `escape::validate` beside their structural escape scan (so a
   token never carries an undecodable escape, which is what lets their parsers
   decode infallibly), and `openehr-adl`'s cADL parser calls `escape::decode`

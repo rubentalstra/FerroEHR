@@ -89,8 +89,9 @@ else; each helper has exactly ONE home.
   (`aom/interval::point_value_{i32,f64}`): both sides bounded, both bounds
   included, both bounds equal — irrespective of point/proper tagging. The
   `master03` escape semantics likewise have exactly ONE implementation for the
-  whole workspace — `openehr_lang::escape` (both `\uHHHH` and `\uHHHHHHHH`,
-  with a typed decode error) — which the cADL parser, the ODIN lexer and the
+  whole workspace — `openehr_lang::escape` (a CLOSED set: the six quoted forms
+  plus `\uHHHH` and `\uHHHHHHHH`, everything else a typed decode error) — which
+  the cADL parser, the ODIN lexer and the
   BEL lexer all read through; the cADL side reports a decode defect as `SUNK`
   at the literal's span, the two `openehr-lang` lexers refuse it at the lex.
   The two full-pipeline entries run the SAME schedule: `validate` and
