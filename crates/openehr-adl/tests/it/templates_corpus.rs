@@ -31,7 +31,8 @@
 use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::ArchetypeRepository;
-use openehr_adl::assemble::{parse_artefact, regression_tag};
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::meta::regression_tag;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
 use openehr_adl::validate::slots::validate_fillers;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;

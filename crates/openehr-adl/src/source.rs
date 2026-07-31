@@ -162,7 +162,7 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
 ///   sections").
 /// - **A missing `language` section is accepted** when the ontology carries the
 ///   old-form `primary_language` (§Language Section NOTE + §Ontology Header
-///   Statements NOTE); [`crate::assemble::assemble_adl14`] performs the
+///   Statements NOTE); `crate::assemble::assemble_adl14` performs the
 ///   upgrade. With no `primary_language` to upgrade from, the
 ///   [`SyntaxErrorCode::Salan`] of the grammar's mandatory-language reading
 ///   stands.

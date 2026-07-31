@@ -137,7 +137,7 @@ impl EhrbaseService {
         let mut log = ConversionLog::new();
         let converted = parse_and_convert(&source, &ConvertConfig::default(), &mut log)
             .map_err(|e| ServiceError::Unprocessable(format!("1.4 → 2 conversion failed: {e}")))?;
-        Ok(openehr_adl::printer::print(&converted))
+        Ok(openehr_adl::print::print(&converted))
     }
 
     /// Convert a stored ADL 1.4 **operational template** (by `UUID`) to ADL2

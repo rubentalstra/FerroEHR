@@ -312,7 +312,7 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
 
 /// Parse an **ADL 1.4** source and validate it against the FULL ADL 1.4
 /// catalogue: [`validate_source_phase1_adl14`] plus the one 1.4 validity rule
-/// that needs a reference model, VUNT ([`rm::validate_adl14_rm`]).
+/// that needs a reference model, VUNT (`rm::validate_adl14_rm`).
 ///
 /// VUNT is a rule of the ADL 1.4 formalism itself — `ADL1.4/master05-cadl.adoc`
 /// §Internal References L512-513 — so a 1.4 artefact that violates it is
@@ -320,7 +320,7 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
 /// The RM pass runs only when phase 1 raised no
 /// [`Severity::Error`] — the `master08` §Overview
 /// phase gate ("more basic kinds of errors being checked first"). A type `rm`
-/// does not know is undecidable rather than wrong ([`rm::type_conforms`] returns
+/// does not know is undecidable rather than wrong (`rm::type_conforms` returns
 /// `None`), so an artefact built on a reference model the supplied
 /// [`rm::RmModel`] does not carry simply raises no VUNT.
 ///

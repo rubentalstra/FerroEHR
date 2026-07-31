@@ -134,7 +134,7 @@ pub(crate) fn convert_opt_to_adl2(
         .into_iter()
         .map(|(archetype_id, art)| ConvertedRoot {
             archetype_id,
-            adl2: openehr_adl::printer::print(&art),
+            adl2: openehr_adl::print::print(&art),
         })
         .collect();
     Ok(OptConversion { roots, structure })
@@ -1934,7 +1934,7 @@ mod tests {
                 // depth-0 emission and reused 1.4 node codes re-mint
                 // archetype-wide-unique ids in the converter core.
                 assert!(errors.is_empty(), "{name}/{id}: phase-1 errors: {errors:?}");
-                let printed = openehr_adl::printer::print(art);
+                let printed = openehr_adl::print::print(art);
                 openehr_adl::assemble::parse_artefact(&printed).unwrap_or_else(|e| {
                     panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}")
                 });

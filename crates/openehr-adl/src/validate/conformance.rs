@@ -29,7 +29,7 @@ use crate::paths::locate;
 /// L58-68): true if `child`'s existence conforms to `other`'s — i.e. both set
 /// and `other.contains(child)`, or either unset.
 #[must_use]
-pub fn existence_conforms_to(
+pub(crate) fn existence_conforms_to(
     child: Option<&MultiplicityInterval>,
     other: Option<&MultiplicityInterval>,
 ) -> bool {
@@ -43,7 +43,10 @@ pub fn existence_conforms_to(
 /// L70-80): true if `child`'s cardinality conforms to `other`'s — i.e. both
 /// set and `other.contains(child)`, or either unset.
 #[must_use]
-pub fn cardinality_conforms_to(child: Option<&Cardinality>, other: Option<&Cardinality>) -> bool {
+pub(crate) fn cardinality_conforms_to(
+    child: Option<&Cardinality>,
+    other: Option<&Cardinality>,
+) -> bool {
     match (child, other) {
         (Some(c), Some(o)) => o.interval.contains(&c.interval),
         _ => true,
@@ -73,7 +76,7 @@ pub fn occurrences_conforms_to(
 /// `node_id_conforms_to` (`master04.5` §Conformance Semantics: `C_OBJECT`,
 /// L301-306): `codes_conformant(node_id, other.node_id)`.
 #[must_use]
-pub fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
+pub(crate) fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
     codes_conformant(child_id, other_id)
 }
 
@@ -82,7 +85,7 @@ pub fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
 /// the reference model — `(0, cardinality.upper)` for a container, else the
 /// attribute existence.
 #[must_use]
-pub fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bounds {
+pub(crate) fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bounds {
     match rm.attribute(rm_type, attr) {
         Some(a) if a.is_multiple => match a.cardinality {
             Some(c) => Bounds::new(0, c.upper),
@@ -103,7 +106,7 @@ pub fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bound
 /// the RM type of the object owning that attribute (the Eiffel `parent.parent`),
 /// used for the RM fallback.
 #[must_use]
-pub fn effective_occurrences(
+pub(crate) fn effective_occurrences(
     occ: Option<&MultiplicityInterval>,
     owning_attr: &CAttribute,
     grandparent_rm_type: &str,
@@ -138,7 +141,7 @@ pub fn effective_occurrences(
 /// node's occurrences (`parent_occ`). `flattened_card_upper` is the finite upper
 /// bound of the owning attribute's flattened cardinality (`None` = unbounded).
 #[must_use]
-pub fn collective_occurrences_of(
+pub(crate) fn collective_occurrences_of(
     attr: &CAttribute,
     parent_node_id: &str,
     parent_occ: Bounds,
@@ -203,7 +206,7 @@ pub fn effective_existence_adl14(attr: &CAttribute) -> Bounds {
 /// As with [`effective_existence_adl14`], this is an accessor: nothing is written
 /// back into the parsed model.
 #[must_use]
-pub fn effective_occurrences_adl14(root: &CComplexObject, obj: &CObject) -> Bounds {
+pub(crate) fn effective_occurrences_adl14(root: &CComplexObject, obj: &CObject) -> Bounds {
     if let Some(occ) = child_occurrences(obj) {
         return bounds(occ);
     }
@@ -229,7 +232,7 @@ const BOUNDS_ONE: Bounds = Bounds {
 /// `C_COMPLEX_OBJECT_PROXY` parent admits a `C_COMPLEX_OBJECT`; an
 /// `ARCHETYPE_SLOT` parent admits a `C_ARCHETYPE_ROOT` (slot filling).
 #[must_use]
-pub fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
+pub(crate) fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
     let (ct, pt) = (aom_type(child), aom_type(parent));
     if ct == pt {
         return true;
@@ -249,7 +252,7 @@ pub fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
 
 /// The outcome of a value-constraint conformance test.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ValueConformance {
+pub(crate) enum ValueConformance {
     /// The child value constraint is the same as, or narrower than, the parent's.
     Conforms,
     /// The child value constraint is definitely wider than / outside the parent's
@@ -274,7 +277,7 @@ pub enum ValueConformance {
 /// Returns [`ValueConformance::Unknown`] when the two nodes are not the same
 /// primitive AOM type (the meta-type mismatch is VSONT, handled separately).
 #[must_use]
-pub fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
+pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
     match (child, parent) {
         (CObject::CBoolean(c), CObject::CBoolean(o)) => {
             // `C_BOOLEAN` (L551-557): parent `any_allowed` (empty) ⇒ conform; else

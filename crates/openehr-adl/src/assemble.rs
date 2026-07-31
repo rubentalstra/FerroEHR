@@ -98,7 +98,7 @@ pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// # Errors
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
-pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+pub(crate) fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
     assemble_with(art, src, crate::parse::Dialect::Adl2)
 }
 
@@ -111,7 +111,10 @@ pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<Syntax
 /// # Errors
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
-pub fn assemble_adl14(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+pub(crate) fn assemble_adl14(
+    art: &SourceArtefact,
+    src: &str,
+) -> Result<Archetype, Vec<SyntaxError>> {
     assemble_with(art, src, crate::parse::Dialect::Adl14)
 }
 
@@ -842,31 +845,5 @@ impl From<&ArtefactMeta> for Meta {
             is_generated: m.generated,
             other,
         }
-    }
-}
-
-/// The `regression` tag of an assembled [`Archetype`], read from the resource
-/// description's `other_details["regression"]`. The corpus uses this tag as the
-/// authoritative expected-outcome oracle (INVENTORY.md); validation-phase
-/// harnesses read it through this helper.
-#[must_use]
-pub fn regression_tag(archetype: &Archetype) -> Option<String> {
-    description_of(archetype)?
-        .other_details
-        .as_ref()?
-        .get("regression")
-        .cloned()
-}
-
-/// The [`ResourceDescription`] of an archetype, if it carries one (a
-/// `TEMPLATE_OVERLAY` inherits its owner's description and has none).
-fn description_of(archetype: &Archetype) -> Option<&ResourceDescription> {
-    match archetype {
-        Archetype::AuthoredArchetype(a) => match a.as_ref() {
-            AuthoredArchetype::AuthoredArchetype(d) => d.description.as_deref(),
-            AuthoredArchetype::Template(t) => t.description.as_ref(),
-            AuthoredArchetype::OperationalTemplate(o) => o.description.as_ref(),
-        },
-        Archetype::TemplateOverlay(_) => None,
     }
 }
