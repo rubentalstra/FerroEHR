@@ -9,7 +9,7 @@ in [Resource walkthroughs](resources.md) make sense in general.
 
 ## JSON and XML
 
-EHRbase-rs speaks **canonical JSON** and **canonical XML** for the RM-typed
+FerroEHR speaks **canonical JSON** and **canonical XML** for the RM-typed
 resources. Choose with the standard HTTP headers:
 
 - **Request body:** set `Content-Type: application/json` or
@@ -25,11 +25,11 @@ DTOs) are JSON-only, as is the CONTRIBUTION envelope.
 
 ```shell
 # Commit a composition as XML, ask for XML back
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/xml' \
   -H 'Accept: application/xml' \
   --data-binary @composition.xml \
-  http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition
 ```
 
 ### Choosing the XML namespace
@@ -46,16 +46,16 @@ Pick one per request with a `version` parameter on the XML media type:
 
 ```shell
 # Read a composition in the v2 namespace
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Accept: application/xml; version=2' \
-  "http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition/$UID"
+  "http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$UID"
 
 # Commit one whose payload already uses the v2 namespace
-curl -u ehrbase:ehrbase \
+curl -u ferroehr:ferroehr \
   -H 'Content-Type: application/xml; version=2' \
   -H 'Accept: application/xml; version=2' \
   --data-binary @composition-v2.xml \
-  "http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition"
+  "http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition"
 ```
 
 What to expect:
@@ -76,7 +76,7 @@ What to expect:
   canonical RM resource.
 
 > [!NOTE]
-> The `version` parameter is an EHRbase-rs extension: the openEHR REST
+> The `version` parameter is an FerroEHR extension: the openEHR REST
 > specification predates the two schema lineages and says nothing about
 > selecting one. It never changes the media type itself — responses are always
 > `application/xml` — so a client that ignores it behaves exactly as the
@@ -364,7 +364,7 @@ Content-Type: application/json
 
 When a resource is switched off by configuration — the
 [admin API](../operations.md#the-admin-api-physical-deletion) with
-`EHRBASE__ADMIN__ENABLED=false` — the header is present but **empty**, which
+`FERROEHR__ADMIN__ENABLED=false` — the header is present but **empty**, which
 [RFC 9110 §10.2.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.1)
 defines as "the resource allows no methods": nothing you can send to that path
 will be served until the gate is opened.

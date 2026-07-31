@@ -8,7 +8,7 @@ description: >
   CLAUDE.md. Use when a plan calls for standing up a crate that does not
   exist yet.
 allowed-tools: [Read, Write, Bash]
-argument-hint: "<crate-name, e.g. ehrbase-admin-ui>"
+argument-hint: "<crate-name, e.g. ferroehr-admin-ui>"
 ---
 
 # /crate-scaffold
@@ -18,15 +18,15 @@ the current three-directory workspace).
 
 > **Naming + placement:** `openehr-*` = the openEHR spec layer → `crates/`
 > (generated crates get their `src` from `openehr-codegen`, NOT this skill);
-> `ehrbase-*` / `ehrbase` = the application → `app/`; dev/verification
+> `ferroehr-*` / `ferroehr` = the application → `app/`; dev/verification
 > tooling → `tools/`. Workspace members are the globs
 > `["crates/*", "app/*", "tools/*"]` — **every directory under these globs
 > must contain a Cargo.toml or `cargo metadata` fails**, so never create the
 > directory without the manifest in the same step. Do not scaffold retired
-> names (`openehr-foundation`, `ehrbase-sm`, `ehrbase-audit`,
-> `ehrbase-signing`, `ehrbase-authz`, `ehrbase-compat` — all folded in or
-> removed; the app is now the four crates `ehrbase`, `ehrbase-rest`,
-> `ehrbase-server`, `ehrbase-admin-ui`).
+> names (`openehr-foundation`, `ferroehr-sm`, `ferroehr-audit`,
+> `ferroehr-signing`, `ferroehr-authz`, `ferroehr-compat` — all folded in or
+> removed; the app is now the four crates `ferroehr`, `ferroehr-rest`,
+> `ferroehr-server`, `ferroehr-admin-ui`).
 
 ## Steps
 
@@ -34,9 +34,9 @@ the current three-directory workspace).
    layout + crate map) and the governing tracker issue / plan file
    (`docs/plans/`, if one exists) for its role and dependency arrows. Dependencies point downward only:
    `tools/* → app/* → crates/openehr-*`; never `app → app` unless the
-   architecture doc names the seam (`ehrbase-server → {ehrbase-rest,
-   ehrbase}`, `ehrbase-rest → ehrbase`; `ehrbase-admin-ui` depends on
-   `crates/openehr-*` only, never on `ehrbase`/`ehrbase-rest`).
+   architecture doc names the seam (`ferroehr-server → {ferroehr-rest,
+   ferroehr}`, `ferroehr-rest → ferroehr`; `ferroehr-admin-ui` depends on
+   `crates/openehr-*` only, never on `ferroehr`/`ferroehr-rest`).
 2. **Create `<dir>/<name>/Cargo.toml`**:
    - `[package]`: `name`, plus `version`, `edition`, `rust-version`,
      `license`, `authors`, `repository` all `.workspace = true` (never

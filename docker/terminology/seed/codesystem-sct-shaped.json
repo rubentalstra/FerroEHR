@@ -7,7 +7,7 @@
   "title": "CNF test code system, SNOMED-CT-shaped (synthetic)",
   "status": "active",
   "experimental": true,
-  "publisher": "ehrbase-rs CNF conformance corpus",
+  "publisher": "ferroehr CNF conformance corpus",
   "description": "SYNTHETIC test content. A hierarchical, numerically-coded code system SHAPED like SNOMED CT so the conformance battery can exercise is-a subsumption and value-set membership against a real FHIR R4 terminology server. It contains no SNOMED CT content and is not derived from any licensed terminology: every code and display is invented for this test corpus and lives under the reserved example.test domain (IETF RFC 6761 §6.2).",
   "caseSensitive": true,
   "hierarchyMeaning": "is-a",

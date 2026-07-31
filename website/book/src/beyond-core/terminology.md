@@ -3,7 +3,7 @@
 openEHR records carry coded values — a diagnosis, a route of administration, a
 laboratory unit. Some codes come from openEHR's own terminology; others must be
 validated against an external code system such as SNOMED CT or LOINC.
-EHRbase-rs serves the bundled openEHR terminology in-process and can
+FerroEHR serves the bundled openEHR terminology in-process and can
 additionally validate and expand coded values against any external FHIR R4
 terminology server.
 
@@ -18,7 +18,7 @@ whether a code is a member of a value set.
 You can also expose these lookups over a small read-only REST surface. It is an
 extension (not part of the openEHR ITS-REST contract) and is **off by default**;
 when disabled, every route returns `404` as if unmounted. Enable it with
-`EHRBASE__TERMINOLOGY__API_ENABLED=true`, and it serves:
+`FERROEHR__TERMINOLOGY__API_ENABLED=true`, and it serves:
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -29,7 +29,7 @@ when disabled, every route returns `404` as if unmounted. Enable it with
 | `GET` | `/terminology/{terminology_id}/value_set/{value_set_id}` | get a value set |
 | `GET` | `/terminology/{terminology_id}/value_set/{value_set_id}/validate?candidate_code=&at_date=` | validate a code |
 
-(All paths are relative to the API base path, `/ehrbase/rest/openehr/v1`.)
+(All paths are relative to the API base path, `/ferroehr/rest/openehr/v1`.)
 
 ## External FHIR terminology servers
 
@@ -47,7 +47,7 @@ Only the external bindings go to the FHIR server — openEHR and local
 terminologies are still served by the in-process bundle.
 
 > [!NOTE]
-> **The CDR is only ever a client of the terminology server.** EHRbase-rs does
+> **The CDR is only ever a client of the terminology server.** FerroEHR does
 > not implement a terminology server; you run an off-the-shelf FHIR R4 server
 > and point the CDR at it by URL. HAPI FHIR is a good open, single-container
 > default for development and CI; Snowstorm is the opt-in choice for genuine
@@ -58,17 +58,17 @@ terminologies are still served by the in-process bundle.
 
 External terminology is off by default; validation then uses only the
 in-process bundle. These keys live in the `[terminology.external]` section of
-`ehrbase.toml` (providers are a map, so complex blocks are usually supplied in
+`ferroehr.toml` (providers are a map, so complex blocks are usually supplied in
 that TOML file); each can be overridden with the shown
-`EHRBASE__TERMINOLOGY__EXTERNAL__*` environment variable, with `__` separating
+`FERROEHR__TERMINOLOGY__EXTERNAL__*` environment variable, with `__` separating
 nested keys:
 
 | Key | Meaning |
 |---|---|
-| `EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED` | master switch (default `false`) |
-| `EHRBASE__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR` | on a server error: `true` rejects (fail-closed), `false` accepts (fail-open) |
-| `EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4) |
-| `EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__URL` | the FHIR base URL, e.g. `http://terminology:8090/fhir` |
+| `FERROEHR__TERMINOLOGY__EXTERNAL__ENABLED` | master switch (default `false`) |
+| `FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR` | on a server error: `true` rejects (fail-closed), `false` accepts (fail-open) |
+| `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4) |
+| `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__URL` | the FHIR base URL, e.g. `http://terminology:8090/fhir` |
 
 A provider can carry per-provider OAuth2 client-credentials and mutual-TLS
 settings for servers that require them. A short worked example, pointing the CDR
@@ -76,11 +76,11 @@ at a HAPI FHIR container over Docker Compose:
 
 ```yaml
 services:
-  ehrbase:
+  ferroehr:
     environment:
-      EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED: "true"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__TYPE: "fhir"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL: "http://terminology:8090/fhir"
+      FERROEHR__TERMINOLOGY__EXTERNAL__ENABLED: "true"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__TYPE: "fhir"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL: "http://terminology:8090/fhir"
 ```
 
 > [!TIP]
@@ -139,11 +139,11 @@ docker compose --profile terminology \
 ```
 
 The profile starts the server (host port `8090` by default,
-`EHRBASE_TERMINOLOGY_PORT`) plus a one-shot seeding container that uploads the
+`FERROEHR_TERMINOLOGY_PORT`) plus a one-shot seeding container that uploads the
 fixtures over the server's own FHIR API and verifies `$validate-code` and
 `$expand` before exiting. The `docker/sut-terminology.yml` overlay is what
 points the CDR at it, by switching on the `[terminology.external]` providers
-that `docker/ehrbase.dev.toml` already carries in the disabled state. Without
+that `docker/ferroehr.dev.toml` already carries in the disabled state. Without
 that overlay the CDR ignores the terminology server entirely, so the plain
 quickstart is unchanged.
 

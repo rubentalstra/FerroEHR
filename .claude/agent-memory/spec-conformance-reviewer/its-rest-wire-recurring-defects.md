@@ -1,6 +1,6 @@
 ---
 name: its-rest-wire-recurring-defects
-description: Confirmed recurring ITS-REST wire defects in ehrbase-rest/ehrbase (item-tag identity, query_parameters form, stored-query name keying, OBJECT_VERSION_ID leniency) with spec citations
+description: Confirmed recurring ITS-REST wire defects in ferroehr-rest/ferroehr (item-tag identity, query_parameters form, stored-query name keying, OBJECT_VERSION_ID leniency) with spec citations
 metadata:
   type: project
 ---
@@ -50,5 +50,5 @@ Confirmed 2026-07-26 by first-hand spec reading; re-verify before citing (code m
   paths + operation ids `composition_tags_get` etc.). A client written against
   `/item_tag` is on a dev-branch surface.
 - Internal-doc citations "review doc 03 req N.N" survive in
-  `app/ehrbase/migrations/ehr/0001_baseline.sql` (9 sites) and
+  `app/ferroehr/migrations/ehr/0001_baseline.sql` (9 sites) and
   `migrations/ext/0001_openehr_functions.sql` — scrub on touch.

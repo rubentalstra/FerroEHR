@@ -1,6 +1,6 @@
 # Memory index
 
-- [Product rename → FerroEHR](product-rename-ferroehr.md) — owner 2026-07-31 (#1353): rebrand decided, rename not yet executed; keep current names in code until sub-issues land; never put "openEHR" in the brand
+- [Product rename → FerroEHR](product-rename-ferroehr.md) — EXECUTED 2026-07-31 (#1353): crates/binary/FERROEHR_*/base-path/images renamed; Java-EHRbase prior-art refs keep their name; folder rename + trademark search still open
 - [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand over ADR claims; rerun the CNF pipeline (scripts/conformance.sh) after runner/validation merges
 - [Official CLI/tooling first](official-cli-tooling-first.md) — always use the official CLI (sqlx-cli etc.) for tool-managed artifacts; never hand-name/hand-roll
 - [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — commit-msg hook deletes lines containing "Claude Code" etc.; avoid the literal in commit/PR text
@@ -19,7 +19,7 @@
 - [Session workflow gotchas](session-workflow-gotchas.md) — background-task ~30min kill (nohup+caffeinate+Monitor), attribution-hook regex traps, changelog-guard label needs PR reopen, conformance.sh EXIT trap wipes the seed on any kill
 - [Pre-production migrations: edit the baseline directly](pre-production-migrations-edit-baseline.md) — never append ALTER/DROP migrations while nothing is deployed; minimum migration files, update the count guard in the same change
 - [No task IDs in code](no-task-ids-in-code.md) — F-nn/S-nn/G-nn/W-nn tracker markers banned from all code/doc comments; only docs/specs/openehr citations
-- [Served OpenAPI is native](served-openapi-is-native.md) — ehrbase-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input ONLY (owner 2026-07-24+28: the ITS-REST docs text is the conformance oracle and wins every conflict; the released OAS grounds only docs-text-silent behaviour), never imported/served; update our #[utoipa::path] in the same PR as any wire change
+- [Served OpenAPI is native](served-openapi-is-native.md) — ferroehr-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input ONLY (owner 2026-07-24+28: the ITS-REST docs text is the conformance oracle and wins every conflict; the released OAS grounds only docs-text-silent behaviour), never imported/served; update our #[utoipa::path] in the same PR as any wire change
 - [TODO-only markers](todo-only-markers.md) — pending work uses ONLY official TODO(...); PORT NOTE/TODO(port)/PERF(port) deleted+banned+CI-guarded; design notes are plain NOTE: with spec citation
 - [CNF design record is permanent](cnf-strategy-doc-kept-permanently.md) — owner rulings 2026-07-22/23: the CNF 2.0 design record lives at docs/conformance/cnf-design.md (moved from docs/plans/, never delete/move back); §8.14 perf-class + journey model lives there
 - [Benchmark crate retires into cnf-runner](benchmark-crate-retires-into-cnf-runner.md) — DONE 2026-07-23: lab deleted; NOTHING consumes cnf-runner as a lib, ever; all measurement = cnf-runner subcommands, always fresh-seeded

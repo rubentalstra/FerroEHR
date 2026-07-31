@@ -1,0 +1,425 @@
+# Default values for ferroehr.
+#
+# Configuration model: the server reads ONE `ferroehr.toml`. This
+# chart renders that file from the `config:` block below (typed values mapped
+# 1:1 onto the ferroehr.toml schema) into a ConfigMap mounted at
+# /etc/ferroehr/ferroehr.toml — the server's config search order discovers it
+# automatically. Secrets never go in the ConfigMap: they are injected as
+# `FERROEHR_*` env from a Secret (see `secrets:` and `database:`), and the env
+# layer overrides the file. `config.files` mounts genuinely file-shaped material
+# (Cedar policies, ATNA PEMs, the PGP key, JWKS) that in-TOML `*_path`/`*_file`
+# keys point at. `extraEnv` is the escape hatch for anything not surfaced here.
+#
+# Every feature below defaults to the SAME state as the binary (all optional
+# integrations OFF), with one deliberate deployment exception: the management
+# surface's master switch is ON, so enabling Prometheus scraping is a one-key
+# change (config.management.endpoints.prometheus: public). Every management
+# endpoint still defaults to `off`, so nothing is actually exposed. The health
+# probes do NOT depend on it: /health, /health/liveness and /health/readiness are
+# always served on the HTTP port.
+#
+# The env-mapping grammar for overrides is FERROEHR_ + the TOML path upper-cased
+# with `__` between segments (e.g. config.db.max_connections ⇔
+# FERROEHR__DB__MAX_CONNECTIONS). Run `ferroehr config default` to print the
+# complete TOML schema with every key and its default.
+#
+# The database role architecture, the pgaudit/TLS/PITR posture, and the
+# optional-integrations security notes are deployment concerns: no openEHR spec
+# governs them, so each is summarised inline at the setting it applies to.
+
+# -- Number of replicas (ignored when autoscaling.enabled is true).
+replicaCount: 2
+
+image:
+  # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base).
+  repository: ghcr.io/rubentalstra/ferroehr
+  # -- Pull policy. IfNotPresent + an immutable pinned tag/digest in production.
+  pullPolicy: IfNotPresent
+  # -- Image tag. Empty string falls back to .Chart.appVersion. PIN a version
+  # or, better, a @sha256 digest in production (never `latest`).
+  tag: ""
+
+# -- imagePullSecrets for private registries.
+imagePullSecrets: []
+# -- Override the chart name portion of resource names.
+nameOverride: ""
+# -- Override the full resource name.
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a dedicated ServiceAccount.
+  create: true
+  # -- Extra annotations (e.g. IRSA/Workload-Identity role bindings for S3).
+  annotations: {}
+  # -- Name to use; generated when empty.
+  name: ""
+  # -- The workload never calls the K8s API, so no token is mounted.
+  automountServiceAccountToken: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Database credential (external PostgreSQL 18).
+#
+# There is NO in-chart PostgreSQL. A clinical data repository stores PHI; its
+# database MUST be an externally-managed, backed-up, PITR-capable PostgreSQL 18
+# (managed service or an operator-run cluster) — never a chart-side sidecar.
+#
+# The application connects as the UNPRIVILEGED `ferroehr_app` writer role: a
+# LOGIN role granted the DML privileges the runtime needs and none of the DDL
+# ones, so a compromised app process cannot alter the schema (PostgreSQL 18
+# docs, "Database Roles": https://www.postgresql.org/docs/18/user-manag.html).
+# The DSN is a SECRET: it is injected as FERROEHR__DB__URL env from a
+# Secret (never the ConfigMap). The non-secret pool bounds live in
+# config.db.{max_connections,min_connections,acquire_timeout_secs}.
+# ─────────────────────────────────────────────────────────────────────────────
+database:
+  # -- Reference an existing Secret holding the app-role DSN (STRONGLY preferred
+  # for production — keeps the credential out of chart values and git). The
+  # secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr`
+  # (optionally `?sslmode=verify-full`).
+  existingSecret: ""
+  # -- Key within existingSecret holding the DSN (the env var name the server reads).
+  existingSecretKey: FERROEHR__DB__URL
+  # -- Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty
+  # and use existingSecret in production. Ignored when existingSecret is set.
+  url: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Migrations: who runs the schema.
+#
+# Migrations are append-only and are applied by the `ferroehr_migrator` role, NOT
+# by the runtime app role. The app binary DOES call run_migrations on boot, so
+# for that to be safe you EITHER:
+#   (a) grant the runtime DSN the migrator role (simplest; single-tenant), OR
+#   (b) disable in-app migration and run them out-of-band as a Job/CI step with
+#       a migrator DSN (recommended for least-privilege prod).
+# This chart does not ship a migration Job. Run the out-of-band flow with a
+# migrator DSN and a short `lock_timeout`, so DDL blocked behind live traffic
+# fails fast instead of queueing (PostgreSQL 18 docs, "Client Connection
+# Defaults" § lock_timeout:
+# https://www.postgresql.org/docs/18/runtime-config-client.html).
+# ─────────────────────────────────────────────────────────────────────────────
+migrations:
+  # -- Purely informational marker rendered into NOTES for the operator; the
+  # chart never runs migrations itself.
+  runByMigratorRole: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Secret values injected as FERROEHR_* env from a chart-managed Secret. Anything
+# set here is rendered from values (keep it out of committed values — prefer an
+# external secret store / IRSA, or set these via `helm --set`/a values overlay
+# from your secret manager). Each maps to the matching in-TOML key but wins over
+# the file (env layer). Empty = not injected (the ConfigMap value, if any, stands).
+# ─────────────────────────────────────────────────────────────────────────────
+secrets:
+  # -- Symmetric HS256 secret for [auth.oidc] (dev/test) → FERROEHR__AUTH__OIDC__HMAC_SECRET.
+  authOidcHmacSecret: ""
+  # -- PGP key passphrase (config.signing.mode=pgp) → FERROEHR__SIGNING__KEY_PASSPHRASE.
+  signingKeyPassphrase: ""
+  # -- AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL.
+  eventsUrl: ""
+  # -- AMQP broker URL for [fhir.outbound] (carries credentials) → FERROEHR__FHIR__OUTBOUND__URL.
+  fhirOutboundUrl: ""
+  # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID.
+  # Prefer IRSA/Workload-Identity (leave empty) on cloud.
+  multimediaAccessKeyId: ""
+  # -- S3 secret access key for [multimedia] → FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY.
+  multimediaSecretAccessKey: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Prometheus scraping. When enabled the chart adds the prometheus.io scrape pod
+# annotations (requires config.management.enabled). Set the endpoint itself to
+# `public` via config.management.endpoints.prometheus.
+# ─────────────────────────────────────────────────────────────────────────────
+metrics:
+  # -- Add prometheus.io scrape annotations.
+  enabled: false
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ferroehr.toml — rendered VERBATIM into the ConfigMap as /etc/ferroehr/ferroehr.toml
+# (keys map 1:1 onto the server config schema — `ferroehr config default` prints
+# it in full). Secrets are NOT here — see `secrets:` above.
+# The `files:` key is NOT part of the TOML (see below); it is mounted separately.
+# ═════════════════════════════════════════════════════════════════════════════
+config:
+  # [server] — HTTP listener + REST surface.
+  server:
+    bind: "0.0.0.0:8080"
+    base_path: /ferroehr/rest/openehr/v1
+    # Serve Swagger UI + the OpenAPI JSON. Consider false in production.
+    swagger_ui: true
+    # Permissive CORS — DEV ONLY. Production configures explicit origins.
+    cors_permissive: false
+
+  # [db] — pool bounds (the DSN itself is the FERROEHR__DB__URL secret, above).
+  db:
+    max_connections: 10
+    min_connections: 0
+    acquire_timeout_secs: 30
+
+  # [log] — logging. json is correct for cluster log collectors.
+  log:
+    format: json
+
+  # [auth] — authentication (Basic + OAuth2/OIDC bearer). Enabled by default. A
+  # server with auth.enabled=true but no mechanism 401s every request — add an
+  # [auth.oidc] issuer, an [[auth.basic.users]] entry, or set enabled=false (dev).
+  auth:
+    enabled: true
+
+  # [authz] — coarse RBAC (on with auth) + ABAC (off).
+  authz:
+    rbac:
+      enabled: true
+      admin_role: ADMIN
+      user_role: USER
+      # admin_only | private | public
+      management_access: admin_only
+    abac:
+      enabled: false
+
+  # [admin] — ADMIN API group (physical, irreversible delete). Off ⇒ routes 404.
+  admin:
+    enabled: false
+
+  # [tenancy] — multi-tenancy. Our own extension; no openEHR spec governs it.
+  # Off by default.
+  tenancy:
+    enabled: false
+    claim: tenant
+
+  # [management] — ops-introspection surface (info / prometheus / metrics / env /
+  # loggers). The master switch is ON here (unlike the bare binary) so scraping is
+  # a one-key change; every endpoint below stays off, so nothing is exposed until
+  # you opt in (set prometheus=public + metrics.enabled to scrape). Health probes
+  # are NOT part of this surface — /health, /health/liveness and /health/readiness
+  # are always served on the HTTP port, whatever this section says.
+  management:
+    enabled: true
+    base_path: /management
+    # off | admin_only | private | public
+    access_default: admin_only
+    endpoints:
+      # off | public | private | admin_only
+      info: "off"
+      metrics: "off"
+      prometheus: "off"
+      env: "off"
+      loggers: "off"
+
+  # [signing] — VERSION signing. On/digest by default (the STANDARD "Signing"
+  # capability). pgp mode requires signing.key_path (a mounted config.files key)
+  # + the secrets.signingKeyPassphrase secret, and FAILS CLOSED at boot.
+  signing:
+    enabled: true
+    # digest | pgp
+    mode: digest
+    # off | warn | strict — read-time verification of OUR OWN signatures.
+    # Defaults to strict when signing is enabled (a served version whose stored
+    # signature no longer recomputes is a 5xx integrity fault); set warn (log +
+    # meter, still serve) or off (never check) to opt out. Client-supplied
+    # signatures are always stored verbatim and never re-verified.
+    verify_on_read: "strict"
+
+  # [audit] — the IHE ATNA audit trail. ON by default with only the local
+  # store active (records stay in PostgreSQL, queryable via the ITI-81 FHIR
+  # AuditEvent search); forwarding to an external ARR is opt-in per sink
+  # ([audit.syslog] classic DICOM/syslog, [audit.fhir_feed] RESTful ATNA).
+  audit:
+    enabled: true
+    store:
+      enabled: true
+      retention_days: 0
+
+  # [events] — contribution-outbox eventing → AMQP. Our own extension; no
+  # openEHR spec governs it. Off by default.
+  # Envelopes are PHI-FREE by design. The broker URL is the secrets.eventsUrl secret.
+  events:
+    enabled: false
+    exchange: ferroehr.events
+    tls: false
+
+  # [fhir] — FHIR connector. api_enabled mounts /fhir/r4/* (inbound façade).
+  # outbound.enabled emits mapped resources → AMQP (WARNING: PHI stream; distinct
+  # exchange). The outbound broker URL is the secrets.fhirOutboundUrl secret.
+  fhir:
+    api_enabled: false
+    outbound:
+      enabled: false
+      exchange: ferroehr.fhir
+      tls: false
+
+  # [terminology] — terminology extension API + external FHIR-TS validation.
+  terminology:
+    api_enabled: false
+    external:
+      enabled: false
+      fail_on_error: false
+
+  # [multimedia] — DV_MULTIMEDIA externalization → S3. Our own extension; no
+  # openEHR spec governs it. Off by default
+  # (inline behaviour byte-identical). WARNING: offloaded blobs are PHI — bucket
+  # must be private, encrypted, HTTPS. Credentials are the secrets.multimedia* secrets.
+  multimedia:
+    enabled: false
+    bucket: openehr-multimedia
+    region: us-east-1
+    # Allow plain HTTP — DEV ONLY; prod S3 is HTTPS.
+    allow_http: false
+
+  # ── Mounted config files (NOT part of the TOML above) ──────────────────────
+  # Each key becomes /etc/ferroehr/<key> from a chart Secret (opaque, read-only),
+  # alongside ferroehr.toml. Use for file-shaped material an in-TOML `*_path`/
+  # `*_file` key points at: the PGP key (signing.key_path), Cedar policies
+  # (authz.abac.cedar.policy_dir), ATNA PEMs, terminology-server mutual-TLS PEMs
+  # (terminology.external.providers.<name>.client_cert_path / client_key_path /
+  # ca_bundle_path), a JWKS blob (auth.oidc.jwks_json_file).
+  files: {}
+  # signing.asc: |
+  #   -----BEGIN PGP PRIVATE KEY BLOCK-----
+  #   ...
+
+# -- Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch
+# for anything not surfaced above (array-valued keys via comma-separated values,
+# one-off FERROEHR_* overrides).
+extraEnv: []
+# -- Extra envFrom sources (configMapRef/secretRef).
+extraEnvFrom: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Networking.
+# ─────────────────────────────────────────────────────────────────────────────
+service:
+  # -- Service type. ClusterIP + an Ingress/gateway in front is the norm.
+  type: ClusterIP
+  # -- Public API port.
+  port: 8080
+  # -- Extra annotations.
+  annotations: {}
+
+ingress:
+  # -- Create an Ingress. TLS termination belongs here (or at a gateway).
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ferroehr.example.com
+      paths:
+        - path: /ferroehr
+          pathType: Prefix
+  tls: []
+
+networkPolicy:
+  # -- Install a default-deny-ingress NetworkPolicy that only admits traffic to
+  # the API (and management) port. Strongly recommended for a PHI workload.
+  enabled: true
+  # -- Additional ingress `from` selectors admitted to the API port. Empty =
+  # admit from any pod in the namespace to the API port only (still default-deny
+  # for every other port). Tighten to your ingress-controller namespace/pods.
+  ingressFrom: []
+  # -- Restrict egress too (default-deny egress except DNS + the DB/broker/TS).
+  # Off by default because egress targets are deployment-specific; see the doc.
+  egress:
+    enabled: false
+    # Extra egress `to`/`ports` rules (raw NetworkPolicyEgressRule entries).
+    rules: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pod / container security: the Kubernetes Pod Security Standards "Restricted"
+# profile — non-root, no privilege escalation, seccomp RuntimeDefault, all
+# capabilities dropped
+# (https://kubernetes.io/docs/concepts/security/pod-security-standards/) —
+# plus a read-only root filesystem.
+# ─────────────────────────────────────────────────────────────────────────────
+podSecurityContext:
+  runAsNonRoot: true
+  # 65532 = the distroless `nonroot` uid/gid.
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  allowPrivilegeEscalation: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Resource requests/limits. Sized for a modest API replica; tune for load.
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "2"
+    memory: 1Gi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Probes. httpGet against the always-on public health family on the HTTP port
+# (/health/liveness + /health/readiness) — no configuration prerequisite. Set
+# exec.enabled to use the binary's `healthcheck` subcommand instead (e.g. when
+# the HTTP port is not reachable from the kubelet).
+# ─────────────────────────────────────────────────────────────────────────────
+probes:
+  # -- Use `ferroehr healthcheck` exec probes instead of httpGet.
+  exec:
+    enabled: false
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  startup:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Autoscaling.
+# ─────────────────────────────────────────────────────────────────────────────
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PodDisruptionBudget.
+# ─────────────────────────────────────────────────────────────────────────────
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: ""   # set one of minAvailable / maxUnavailable
+
+# -- Extra pod labels / annotations.
+podLabels: {}
+podAnnotations: {}
+
+# -- Scheduling.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# -- Spread replicas across nodes/zones. Empty = none.
+topologySpreadConstraints: []
+
+# -- Termination grace period (audit/outbox drain has a 5s window in-binary).
+terminationGracePeriodSeconds: 30
+
+# -- Extra volumes / volumeMounts (e.g. an external secret store for the PGP key).
+extraVolumes: []
+extraVolumeMounts: []

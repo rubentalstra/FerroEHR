@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generate the committed example skeletons for the CKM journey template
-# pack: upload every vendored OPT to a running ehrbase-rs SUT, fetch its
+# pack: upload every vendored OPT to a running ferroehr SUT, fetch its
 # example composition (the ITS-REST "Get example data by template"
 # endpoint), and commit the responses byte-identical — the deterministic
 # payload ground EVERY SUT receives at measurement time (never fetched at
@@ -10,8 +10,8 @@
 # after re-vendoring the pack (scripts/vendor-ckm-templates.sh).
 set -Eeuo pipefail
 
-BASE="${SUT_BASE:-http://localhost:8080/ehrbase/rest/openehr/v1}"
-AUTH="${SUT_USER:-ehrbase-user}:${SUT_PASS:-SuperSecretPassword}"
+BASE="${SUT_BASE:-http://localhost:8080/ferroehr/rest/openehr/v1}"
+AUTH="${SUT_USER:-ferroehr-user}:${SUT_PASS:-SuperSecretPassword}"
 PACK="tools/cnf-runner/artifacts/corpus/templates/ckm"
 
 command -v jq >/dev/null || { echo "::error::jq required" >&2; exit 1; }

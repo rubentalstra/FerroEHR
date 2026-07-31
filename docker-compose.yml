@@ -1,9 +1,9 @@
-# Quickstart for ehrbase-rs: the preconfigured PostgreSQL image + the app image
+# Quickstart for ferroehr: the preconfigured PostgreSQL image + the app image
 # + the admin console.
 #
 #   docker compose up --build          # build + run the core services
-#   curl -u ehrbase:ehrbase -X POST -i \
-#     http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+#   curl -u ferroehr:ferroehr -X POST -i \
+#     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 #
 # The same Dockerfiles CI publishes are used here (no drift — the compose build
 # targets `runtime-from-source`, CI targets `runtime-prebuilt`, both share ONE
@@ -20,11 +20,11 @@
 #
 #   | Lane      | Invocation                                   | Project             |
 #   |-----------|----------------------------------------------|---------------------|
-#   | dev       | docker compose up                            | ehrbase-rs (dir)    |
-#   | CNF (rs)  | scripts/conformance.sh                       | ehrbase-rs-cnf      |
-#   | CNF (pgp) | (same run — the parallel signing posture)    | ehrbase-rs-cnf-pgp  |
+#   | dev       | docker compose up                            | ferroehr (dir)    |
+#   | CNF (rs)  | scripts/conformance.sh                       | ferroehr-cnf      |
+#   | CNF (pgp) | (same run — the parallel signing posture)    | ferroehr-cnf-pgp  |
 #   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java    |
-#   | ui-e2e    | scripts/ui-e2e.sh                            | ehrbase-rs-e2e      |
+#   | ui-e2e    | scripts/ui-e2e.sh                            | ferroehr-e2e      |
 #
 # The CNF (rs) run brings up BOTH of its projects: the standard stack and a
 # second deployment of the same image in the openPGP version-signing posture
@@ -32,7 +32,7 @@
 # one record covers both claimed signing modes.
 #
 # ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
-# Core services (postgres, ehrbase, ehrbase-admin-ui) are profile-less and start
+# Core services (postgres, ferroehr, ferroehr-admin-ui) are profile-less and start
 # on every `up`. Optional dependencies are opt-in:
 #   --profile keycloak        OAuth2/OIDC provider (the app defaults to Basic)
 #   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
@@ -43,7 +43,7 @@
 #                               docker compose --profile terminology \
 #                                 -f docker-compose.yml -f docker/sut-terminology.yml up
 # The observability stack stays a documented overlay
-# (docker-compose.observability.yml) because it must MUTATE the ehrbase service's
+# (docker-compose.observability.yml) because it must MUTATE the ferroehr service's
 # env (OTEL endpoint, internal management port) — a change profiles cannot express
 # (docs.docker.com/compose/how-tos/multiple-compose-files).
 #
@@ -55,8 +55,8 @@
 # version-only with SHA=unknown by design (.git is not in the build context).
 
 services:
-  ehrbase-postgres:
-    image: ${EHRBASE_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:local}
+  ferroehr-postgres:
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
@@ -70,11 +70,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       # App role/database created by the init script (dev defaults). These
       # configure the DB *container*, not the server binary — the PG_INIT_
-      # prefix keeps them out of the server's reserved EHRBASE_ namespace (the
+      # prefix keeps them out of the server's reserved FERROEHR_ namespace (the
       # strict boot-time env sweep would otherwise reject them).
-      PG_INIT_USER: ${PG_INIT_USER:-ehrbase}
-      PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ehrbase}
-      PG_INIT_DB: ${PG_INIT_DB:-ehrbase}
+      PG_INIT_USER: ${PG_INIT_USER:-ferroehr}
+      PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+      PG_INIT_DB: ${PG_INIT_DB:-ferroehr}
     # pg_stat_statements is loaded so the P20 profiling harness
     # (scripts/profile.sh) can attribute time per statement; negligible
     # overhead, ships in the stock image.
@@ -91,9 +91,9 @@ services:
       - -c
       - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     volumes:
-      - ehrbase-pgdata:/var/lib/postgresql
+      - ferroehr-pgdata:/var/lib/postgresql
     ports:
-      - "${EHRBASE_DB_PORT:-5432}:5432"
+      - "${FERROEHR_DB_PORT:-5432}:5432"
     # Resource ceilings (docs.docker.com/reference/compose-file/deploy;
     # docs.docker.com/engine/containers/resource_constraints) — the DB gets
     # headroom above the app for shared_buffers (1GB) + /dev/shm (1gb).
@@ -103,17 +103,17 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "${EHRBASE_DB_CPUS:-4}"
-          memory: ${EHRBASE_DB_MEM:-4G}
+          cpus: "${FERROEHR_DB_CPUS:-4}"
+          memory: ${FERROEHR_DB_MEM:-4G}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ehrbase} -d ${PG_INIT_DB:-ehrbase}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ferroehr} -d ${PG_INIT_DB:-ferroehr}"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 10s
 
-  ehrbase:
-    image: ${EHRBASE_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs:local}
+  ferroehr:
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
     build:
       context: .
       dockerfile: docker/Dockerfile
@@ -125,61 +125,61 @@ services:
       args:
         REVISION: ${REVISION:-}
     depends_on:
-      ehrbase-postgres:
+      ferroehr-postgres:
         condition: service_healthy
     environment:
-      # EHRBASE_ env overrides use the mechanical `__` mapping (TOML path,
+      # FERROEHR_ env overrides use the mechanical `__` mapping (TOML path,
       # upper-cased, `__` between segments); they layer on top of the mounted
-      # ehrbase.dev.toml (env beats file).
-      EHRBASE__DB__URL: postgres://${PG_INIT_USER:-ehrbase}:${PG_INIT_PASSWORD:-ehrbase}@ehrbase-postgres:5432/${PG_INIT_DB:-ehrbase}
+      # ferroehr.dev.toml (env beats file).
+      FERROEHR__DB__URL: postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/${PG_INIT_DB:-ferroehr}
       # Connection-pool ceiling; measured comparison runs raise it in lockstep
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
-      EHRBASE__DB__MAX_CONNECTIONS: ${EHRBASE__DB__MAX_CONNECTIONS:-10}
+      FERROEHR__DB__MAX_CONNECTIONS: ${FERROEHR__DB__MAX_CONNECTIONS:-10}
       # In-flight admission cap (503 load shed past it; 0 disables). The
       # comparison runs raise it so overload manifests as queueing latency —
       # the same failure mode as upstream's Tomcat admission window — instead
       # of shed errors tripping the stress envelope's error-rate arm.
-      EHRBASE__SERVER__MAX_IN_FLIGHT: ${EHRBASE__SERVER__MAX_IN_FLIGHT:-256}
+      FERROEHR__SERVER__MAX_IN_FLIGHT: ${FERROEHR__SERVER__MAX_IN_FLIGHT:-256}
       # Version-signing toggle pass-through (measured comparison runs disable it
       # for throughput parity — upstream has no signing.)
-      EHRBASE__SIGNING__ENABLED: ${EHRBASE__SIGNING__ENABLED:-true}
+      FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
       # Dev quickstart: human-readable colored logs in `docker compose logs`.
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
-      EHRBASE__LOG__FORMAT: ${EHRBASE__LOG__FORMAT:-pretty}
+      FERROEHR__LOG__FORMAT: ${FERROEHR__LOG__FORMAT:-pretty}
       # Measurement parity (logging equal and minimal on both SUTs):
       # measured comparison runs set warn on BOTH SUTs; default stays info.
-      EHRBASE__LOG__FILTER: ${EHRBASE__LOG__FILTER:-info}
+      FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
     volumes:
       # Auto-discovered at config search-order position 4 (no pointer needed).
       # Enables Basic auth with the ehrbase/ehrbase user.
-      - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
+      - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
     ports:
-      - "${EHRBASE_PORT:-8080}:8080"
+      - "${FERROEHR_PORT:-8080}:8080"
     # Default sized to the party ixit's documented measurement envelope (the
     # committed measured records are environment-bound to the 8-CPU/8GB
     # docker VM; a 2cpu/1Gi cap halved the measured knee). Production limits
-    # are the Helm values' concern (deploy/helm/ehrbase-rs/values.yaml);
+    # are the Helm values' concern (deploy/helm/ferroehr/values.yaml);
     # override via env for a constrained profile.
     deploy:
       resources:
         limits:
-          cpus: "${EHRBASE_CPUS:-4}"
-          memory: ${EHRBASE_MEM:-4G}
+          cpus: "${FERROEHR_CPUS:-4}"
+          memory: ${FERROEHR_MEM:-4G}
     healthcheck:
-      test: ["CMD", "/usr/local/bin/ehrbase", "healthcheck"]
+      test: ["CMD", "/usr/local/bin/ferroehr", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
-  # The admin console (ehrbase-admin-ui): a standalone Leptos SSR web app +
+  # The admin console (ferroehr-admin-ui): a standalone Leptos SSR web app +
   # BFF that consumes the CDR strictly over ITS-REST — never the database.
   # Basic login proxies the CDR's dev users (ehrbase/ehrbase); for OIDC set
-  # the EHRBASE_ADMIN__AUTH__OIDC__* variables at the Keycloak realm below.
-  ehrbase-admin-ui:
-    image: ${EHRBASE_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-admin-ui:local}
+  # the FERROEHR_ADMIN__AUTH__OIDC__* variables at the Keycloak realm below.
+  ferroehr-admin-ui:
+    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}
     build:
       context: .
       dockerfile: docker/admin-ui/Dockerfile
@@ -187,19 +187,19 @@ services:
       args:
         REVISION: ${REVISION:-}
     depends_on:
-      ehrbase:
+      ferroehr:
         condition: service_healthy
     environment:
-      EHRBASE_ADMIN__CDR__BASE_URL: http://ehrbase:8080
+      FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
     ports:
-      - "${EHRBASE_ADMIN_UI_PORT:-3000}:3000"
+      - "${FERROEHR_ADMIN_UI_PORT:-3000}:3000"
     deploy:
       resources:
         limits:
           cpus: "1"
           memory: 512M
     healthcheck:
-      test: ["CMD", "/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
+      test: ["CMD", "/usr/local/bin/ferroehr-admin-ui", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -209,12 +209,12 @@ services:
   # behind the `s3` profile (off by default; externalization is OFF by default,
   # so the app does NOT depend on this). To try it:
   #   docker compose --profile s3 up
-  #   EHRBASE__MULTIMEDIA__ENABLED=true
-  #   EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
-  #   EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia
-  #   EHRBASE__MULTIMEDIA__ALLOW_HTTP=true          # dev only; prod S3 is HTTPS
+  #   FERROEHR__MULTIMEDIA__ENABLED=true
+  #   FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
+  #   FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
+  #   FERROEHR__MULTIMEDIA__ALLOW_HTTP=true          # dev only; prod S3 is HTTPS
   # With no AWS keys the gateway runs in unauthenticated "allow-all" mode
-  # (dev/test only). In production point EHRBASE__MULTIMEDIA__* at a real,
+  # (dev/test only). In production point FERROEHR__MULTIMEDIA__* at a real,
   # credentialed, HTTPS S3 endpoint (AWS S3 / MinIO / etc.) instead of this.
   seaweedfs:
     profiles: [s3]
@@ -223,9 +223,9 @@ services:
     image: chrislusf/seaweedfs:4.40@sha256:52194fba4fecd0083c842158b3a902ba6e04a63619b2b0efcd08007bdb6a4602
     command: ["server", "-s3", "-dir=/data"]
     volumes:
-      - ehrbase-seaweedfs:/data
+      - ferroehr-seaweedfs:/data
     ports:
-      - "${EHRBASE_S3_PORT:-8333}:8333"
+      - "${FERROEHR_S3_PORT:-8333}:8333"
     deploy:
       resources:
         limits:
@@ -248,7 +248,7 @@ services:
   # many other terminologies and vocabularies used in healthcare" — so a
   # deployment binds to SEVERAL at once. This service is that server for the
   # conformance record and for local experimentation; the CDR reaches it
-  # through the `[terminology.external]` providers in docker/ehrbase.dev.toml,
+  # through the `[terminology.external]` providers in docker/ferroehr.dev.toml,
   # which stay DISABLED until an overlay enables them.
   #
   # The seeded content is SYNTHETIC (docker/terminology/seed/): two code
@@ -275,12 +275,12 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
     ports:
-      - "${EHRBASE_TERMINOLOGY_PORT:-8090}:8080"
+      - "${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
     deploy:
       resources:
         limits:
-          cpus: "${EHRBASE_TERMINOLOGY_CPUS:-2}"
-          memory: ${EHRBASE_TERMINOLOGY_MEM:-2G}
+          cpus: "${FERROEHR_TERMINOLOGY_CPUS:-2}"
+          memory: ${FERROEHR_TERMINOLOGY_MEM:-2G}
     # No healthcheck: the image carries no in-container HTTP client (no
     # curl/wget), so readiness is polled EXTERNALLY by the seeder below, which
     # is also the gate every dependant waits on.
@@ -305,11 +305,11 @@ services:
       - ./docker/terminology/seed:/seed:ro
     restart: "no"
 
-  # Keycloak for OAuth2/OIDC bearer auth (the "ehrbase" realm is imported from
+  # Keycloak for OAuth2/OIDC bearer auth (the "ferroehr" realm is imported from
   # docker/keycloak/import), behind the `keycloak` profile. The app defaults to
-  # Basic auth (see ehrbase.dev.toml), so it does NOT depend on Keycloak; add an
-  # [auth.oidc] block to ehrbase.dev.toml (or set EHRBASE__AUTH__OIDC__* env)
-  # pointing issuer at http://localhost:8081/auth/realms/ehrbase to use it, and
+  # Basic auth (see ferroehr.dev.toml), so it does NOT depend on Keycloak; add an
+  # [auth.oidc] block to ferroehr.dev.toml (or set FERROEHR__AUTH__OIDC__* env)
+  # pointing issuer at http://localhost:8081/auth/realms/ferroehr to use it, and
   # start it with `docker compose --profile keycloak up`.
   keycloak:
     profiles: [keycloak]
@@ -328,7 +328,7 @@ services:
       KC_HTTP_PORT: 8081
       # ONE canonical issuer regardless of which host the caller used —
       # token `iss` claims stay stable, so the CDR can validate bearer
-      # tokens against a single configured issuer (ehrbase.dev.toml
+      # tokens against a single configured issuer (ferroehr.dev.toml
       # [auth.oidc]). Override for human admin-console browsing if needed.
       # NOTE: a URL-form KC_HOSTNAME replaces the whole base — Keycloak does
       # NOT append KC_HTTP_RELATIVE_PATH to it, so /auth must be included.
@@ -350,12 +350,12 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ehrbase/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
+        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ferroehr/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 20s
 
 volumes:
-  ehrbase-pgdata:
-  ehrbase-seaweedfs:
+  ferroehr-pgdata:
+  ferroehr-seaweedfs:

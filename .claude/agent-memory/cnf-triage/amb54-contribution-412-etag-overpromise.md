@@ -32,7 +32,7 @@ Contrast that proves the app is not at fault: every route where the antecedent
 DOES hold passes (`update_composition-stale_if_match`,
 `update_directory-/delete_directory-stale_if_match`,
 `set_ehr_queryable-stale_if_match`, `update_party-weak_etag_stale`) — the
-`error_with_meta` decoration in `app/ehrbase-rest` covers exactly those.
+`error_with_meta` decoration in `app/ferroehr-rest` covers exactly those.
 
 **How to apply:** a register `handling:` text is a catalogue artifact and a
 suspect — an adjudicated status code does NOT license attaching further

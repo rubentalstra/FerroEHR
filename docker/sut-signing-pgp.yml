@@ -1,12 +1,12 @@
 # CNF pgp-mode signing variant (compose OVERLAY).
 #
-# Reconfigures the ehrbase SUT to sign committed VERSIONs with an OpenPGP
+# Reconfigures the ferroehr SUT to sign committed VERSIONs with an OpenPGP
 # (RFC 4880) key instead of the default digest, so the SIG-VERSION `verifiable`
 # case exercises real OpenPGP signature verification (RM common master06
 # §Digital Signature) — not only the digest recompute.
 #
 # Usage (overlay on the root stack):
-#   docker compose -f docker-compose.yml -f docker/sut-signing-pgp.yml up -d --wait ehrbase
+#   docker compose -f docker-compose.yml -f docker/sut-signing-pgp.yml up -d --wait ferroehr
 # The reference conformance pipeline composes it UNCONDITIONALLY, as the
 # second (parallel) deployment of the same image: scripts/conformance.sh
 # stacks it with docker/sut-pgp-parallel.yml under its own project so both
@@ -19,9 +19,9 @@
 # (tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc) — test-only, no
 # passphrase; its paired public key is the pgp ixit's signing.public_key.
 services:
-  ehrbase:
+  ferroehr:
     environment:
-      EHRBASE__SIGNING__MODE: pgp
-      EHRBASE__SIGNING__KEY_PATH: /etc/ehrbase/cnf-signing.sec.asc
+      FERROEHR__SIGNING__MODE: pgp
+      FERROEHR__SIGNING__KEY_PATH: /etc/ferroehr/cnf-signing.sec.asc
     volumes:
-      - ./tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc:/etc/ehrbase/cnf-signing.sec.asc:ro
+      - ./tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc:/etc/ferroehr/cnf-signing.sec.asc:ro

@@ -20,5 +20,5 @@ git diff deploy/helm/golden
 ```
 
 `deploy/helm/validate.sh` (no args) fails on any drift, so a stale golden is
-caught before merge. Renders are pinned to release name `ehrbase-rs`, namespace
-`ehrbase`. Do not hand-edit these files.
+caught before merge. Renders are pinned to release name `ferroehr`, namespace
+`ferroehr`. Do not hand-edit these files.

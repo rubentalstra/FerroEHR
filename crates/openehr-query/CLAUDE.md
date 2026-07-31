@@ -9,11 +9,11 @@ hand-written and corpus-validated.
   Accept exactly what the grammar accepts; parser-level divergences are
   spec-citable decisions, never silent. Where the spec is wider than the
   engine implements, the *parser* still parses — rejection happens as a
-  typed error at semantic analysis/engine level (in `app/ehrbase`), so the
+  typed error at semantic analysis/engine level (in `app/ferroehr`), so the
   reject message can cite the construct.
 - This crate stops at the AST: no SQL, no storage, no RM knowledge beyond
   what path syntax needs. The engine (IR → sea-query SQL) lives in
-  `app/ehrbase`; keep the boundary clean.
+  `app/ferroehr`; keep the boundary clean.
 - The parser corpus tests are the regression net — extend them with every
   grammar-touching change; never delete a corpus case to get green.
 - Versioned by the spec (QUERY 1.1.0).

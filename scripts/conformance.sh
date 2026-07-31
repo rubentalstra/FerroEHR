@@ -20,8 +20,8 @@
 # FILTER (optional) is passed to the runner's --filter (an id substring).
 #
 # Env:
-#   CONF_SUT        ehrbase-rs (default) | ehrbase-java | byo.
-#                   ehrbase-rs: builds + composes the root stack (the current
+#   CONF_SUT        ferroehr (default) | ehrbase-java | byo.
+#                   ferroehr: builds + composes the root stack (the current
 #                     sources — the phase-gate zero-drift run), PLUS a second
 #                     deployment of the same image in the openPGP
 #                     version-signing posture on its own project/ports, so
@@ -58,7 +58,7 @@
 set -Eeuo pipefail
 
 FILTER="${1:-}"
-SUT="${CONF_SUT:-ehrbase-rs}"
+SUT="${CONF_SUT:-ferroehr}"
 SUT_NAME="${CONF_SUT_NAME:-$SUT}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${CONF_OUT:-$REPO_ROOT/docs/conformance}/$SUT_NAME"
@@ -67,11 +67,11 @@ PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
 IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
-# The ehrbase-rs SUT composes as its OWN project (docs.docker.com/compose/how-tos/project-name)
+# The ferroehr SUT composes as its OWN project (docs.docker.com/compose/how-tos/project-name)
 # so it coexists with — and never tears down — a running dev stack (which
-# defaults to the directory-name project `ehrbase-rs`). Its `down -v` is thus
-# scoped to `ehrbase-rs-cnf` only (issue #282 D3/F7).
-# The conformance posture for ehrbase-rs is the SMART resource-server role
+# defaults to the directory-name project `ferroehr`). Its `down -v` is thus
+# scoped to `ferroehr-cnf` only (issue #282 D3/F7).
+# The conformance posture for ferroehr is the SMART resource-server role
 # (docker/sut-smart.yml): SMART on, fail-closed scopes, the committed static
 # test issuer trusted — the strongest claimed posture, so the ONE committed
 # record covers the whole claimed surface (SMART cases included) in one run.
@@ -85,7 +85,7 @@ STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 # validation — when a real FHIR R4 server is composed and seeded beside the
 # CDR. docker/sut-terminology.yml points the CDR at it in the fail-OPEN
 # posture; the ixit declares the resulting servers/namespaces/posture.
-EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf --profile terminology \
+FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf --profile terminology \
   -f "$REPO_ROOT/docker-compose.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-terminology.yml")
@@ -105,7 +105,7 @@ EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf --profile terminology \
 # follow. Postures are independent properties of a deployment, so this project
 # carries the pgp signing posture AND the fail-closed terminology posture, and
 # the ixit declares both on its `sut_pgp` instance.
-EHRBASE_RS_PGP_COMPOSE=(docker compose -p ehrbase-rs-cnf-pgp \
+FERROEHR_RS_PGP_COMPOSE=(docker compose -p ferroehr-cnf-pgp \
   -f "$REPO_ROOT/docker-compose.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-signing-pgp.yml" \
@@ -118,13 +118,13 @@ EHRBASE_RS_PGP_COMPOSE=(docker compose -p ehrbase-rs-cnf-pgp \
 # build.rs). Degrades to `unknown` (never a broken run) outside a git checkout.
 export REVISION="${REVISION:-$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 
-# The dev-compose credentials (docker/ehrbase.dev.toml); override for byo.
-export SUT_USER="${SUT_USER:-ehrbase}"
-export SUT_PASS="${SUT_PASS:-ehrbase}"
-export SUT_ADMIN_USER="${SUT_ADMIN_USER:-ehrbase-admin}"
-export SUT_ADMIN_PASS="${SUT_ADMIN_PASS:-ehrbase}"
-export SUT_RO_USER="${SUT_RO_USER:-ehrbase-readonly}"
-export SUT_RO_PASS="${SUT_RO_PASS:-ehrbase}"
+# The dev-compose credentials (docker/ferroehr.dev.toml); override for byo.
+export SUT_USER="${SUT_USER:-ferroehr}"
+export SUT_PASS="${SUT_PASS:-ferroehr}"
+export SUT_ADMIN_USER="${SUT_ADMIN_USER:-ferroehr-admin}"
+export SUT_ADMIN_PASS="${SUT_ADMIN_PASS:-ferroehr}"
+export SUT_RO_USER="${SUT_RO_USER:-ferroehr-readonly}"
+export SUT_RO_PASS="${SUT_RO_PASS:-ferroehr}"
 
 [ -f "$IXIT" ] || { echo "conformance: ixit not found: $IXIT" >&2; exit 2; }
 [ -f "$STATEMENT" ] || { echo "conformance: statement not found: $STATEMENT" >&2; exit 2; }
@@ -146,22 +146,22 @@ fi
 
 if [ "$SUT" = "ehrbase-java" ]; then
   # The upstream image tag is the SUT version (default pinned in the compose).
-  JAVA_IMAGE="${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}"
+  JAVA_IMAGE="${FERROEHR_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}"
   SUT_VERSION="${JAVA_IMAGE#*:}"
 else
   SUT_VERSION="$(grep -m1 '^version' "$REPO_ROOT/Cargo.toml" | sed 's/.*"\(.*\)"/\1/')"
 fi
 
 # ehrbase-java composes as its own project so it can coexist with (and never
-# tear down) the ehrbase-rs stack.
+# tear down) the ferroehr stack.
 JAVA_COMPOSE=(docker compose -p cnf-ehrbase-java -f "$REPO_ROOT/docker/sut-ehrbase-java.yml")
 
 compose_down() {
   if [ "$SUT" = "ehrbase-java" ]; then
     "${JAVA_COMPOSE[@]}" down -v || true
   else
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
   fi
 }
 
@@ -174,11 +174,11 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
     # The official EHRbase image has no in-container health tooling (no
     # wget/curl), so poll the status endpoint EXTERNALLY: any HTTP answer
     # (200 with credentials, 401 without) means the server is serving.
-    echo "==> Waiting for upstream EHRbase on :${EHRBASE_JAVA_PORT:-8091}"
+    echo "==> Waiting for upstream EHRbase on :${FERROEHR_JAVA_PORT:-8091}"
     ready=""
     for _ in $(seq 1 60); do
       code=$(curl -s -o /dev/null -w '%{http_code}' \
-        "http://localhost:${EHRBASE_JAVA_PORT:-8091}/ehrbase/rest/status" || true)
+        "http://localhost:${FERROEHR_JAVA_PORT:-8091}/ferroehr/rest/status" || true)
       case "$code" in
         200|401|403) ready=1; break ;;
       esac
@@ -186,23 +186,23 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
     done
     [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
   else
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
     if [ -n "${SKIP_BUILD:-}" ]; then
-      (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --wait ehrbase)
+      (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --wait ferroehr)
     else
       # A conformance verdict on OUR server is only meaningful against the
       # CURRENT sources — build the image unless explicitly skipped.
-      (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --build --wait ehrbase)
+      (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --build --wait ferroehr)
     fi
     # The parallel pgp-posture deployment of the SAME image. NEVER --build:
     # docker-compose.yml pins explicit `image:` tags, which are project-
     # independent, so the artefact the primary just built (or, under
     # SKIP_BUILD, pulled) is the artefact this project starts — one build,
     # two postures, and no chance of the two records describing different code.
-    # `up ehrbase` starts only that service and its depends_on (postgres);
-    # the admin console depends ON ehrbase, so it stays down.
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" up -d --wait ehrbase)
+    # `up ferroehr` starts only that service and its depends_on (postgres);
+    # the admin console depends ON ferroehr, so it stays down.
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" up -d --wait ferroehr)
   fi
 fi
 
@@ -240,9 +240,9 @@ if [ -n "${CONF_PERF_CLASS:-}" ]; then
   # holding their own CPU/memory limits). The functional catalogue is done with
   # it by now, and perf drives the primary alone, so tear it down BEFORE the
   # window opens — the measured envelope must be the one the ixit declares.
-  if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" = "ehrbase-rs" ]; then
+  if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" = "ferroehr" ]; then
     echo "==> Tearing down the parallel pgp deployment before the measured window"
-    (cd "$REPO_ROOT" && "${EHRBASE_RS_PGP_COMPOSE[@]}" down -v) || true
+    (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
   fi
   echo "==> Measured performance run (class $CONF_PERF_CLASS, ${CONF_PERF_HOURS:-1} h window)"
   perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"

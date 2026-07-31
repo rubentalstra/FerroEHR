@@ -60,7 +60,7 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
   wins for those).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits.
 - `conformance/` — CNF 2.0 pipeline artifacts, one directory per SUT
-  (`ehrbase-rs/`: `results.json`, `verdicts.json`, the rendered
+  (`ferroehr/`: `results.json`, `verdicts.json`, the rendered
   reviewed ECC↔CNF cutover record). `ehrbase-java/` + `COMPARISON.md` are
   the FROZEN final artifacts of the retired ECC harness (2026-07-22) —
   historical comparison data until the CNF pipeline re-bases the public

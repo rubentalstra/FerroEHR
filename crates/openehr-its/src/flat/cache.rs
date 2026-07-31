@@ -3,7 +3,7 @@
 //! `WebTemplate` construction is deterministic and moderately expensive (a full
 //! OPT walk + compaction); the REST `wt+json` endpoint builds each template once
 //! and serves the shared [`Arc`] thereafter. Mirrors the `moka::future::Cache`
-//! usage in `ehrbase-rest`'s JWKS cache.
+//! usage in `ferroehr-rest`'s JWKS cache.
 
 use std::sync::Arc;
 

@@ -32,7 +32,7 @@ instead of fixing it. If an emission change pulls in a large new class
 set, that is the CORRECT outcome — emit it all and let the diff be big.
 
 **A generated-model gap is fixed in the GENERATOR, never worked around in a
-consumer (owner hard rule, 2026-07-19).** When a consumer (`ehrbase-*`,
+consumer (owner hard rule, 2026-07-19).** When a consumer (`ferroehr-*`,
 `openehr-adl`, `openehr-its` runtime, …) hits a generated shape that is
 wrong or insufficient versus the vendored spec/BMM — a missing subtype
 seam, a too-narrow field, a closed enum a downstream component's BMM

@@ -1,12 +1,12 @@
 ---
-paths: ["app/ehrbase-admin-ui/**"]
+paths: ["app/ferroehr-admin-ui/**"]
 ---
 
-# Leptos admin-UI rules (`app/ehrbase-admin-ui` — and any Leptos code)
+# Leptos admin-UI rules (`app/ferroehr-admin-ui` — and any Leptos code)
 
 Authored 2026-07-13 from a full read of the official Leptos book
 (leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates recorded
-in `app/ehrbase-admin-ui/CLAUDE.md`. Citations are book chapters
+in `app/ferroehr-admin-ui/CLAUDE.md`. Citations are book chapters
 (`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack pins live
 in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 `cargo-leptos`, Tailwind v4, `thaw` (a pinned main rev until 0.5 stable),
@@ -23,8 +23,8 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   bindings etc.) are banned; charts are `leptos-chartistry` (pure Rust+SVG).
 - **REST boundary:** the console reaches the CDR only over ITS-REST from the
   BFF (server functions → `reqwest`). It may depend on `crates/openehr-*`;
-  it must NEVER depend on `app/ehrbase` or
-  `app/ehrbase-rest` (the REST-only boundary in the crate CLAUDE.md).
+  it must NEVER depend on `app/ferroehr` or
+  `app/ferroehr-rest` (the REST-only boundary in the crate CLAUDE.md).
 - **Server functions are a public HTTP API** (`server/25_server_functions`
   security warning). Every `#[server]` fn that touches the CDR or session
   state MUST enforce the console's auth (session/token check) inside the
@@ -249,22 +249,22 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - **E2E is a merge gate**: Rust-native only —
   `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
   against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
-  `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs`, skip-with-
+  `#[tokio::test]`s in `app/ferroehr-admin-ui/tests/e2e_*.rs`, skip-with-
   reason when `UI_E2E_BASE_URL` is unset (CI always sets it). Every journey
   fails on any browser-console hydration error or panic. Explicit waits on
   elements/conditions, never `sleep`; a flaky journey is fixed, never
   `#[ignore]`d or retried-by-default. NOT Playwright/JS (the no-JS mandate
   covers the test suite).
-- Gates for every UI change: `cargo clippy -p ehrbase-admin-ui
+- Gates for every UI change: `cargo clippy -p ferroehr-admin-ui
   --all-targets` green on native **and**
   `--target wasm32-unknown-unknown` (lib); `cargo nextest run -p
-  ehrbase-admin-ui`; `leptosfmt` + `cargo fmt` clean; `cargo leptos build`
+  ferroehr-admin-ui`; `leptosfmt` + `cargo fmt` clean; `cargo leptos build`
   completes. Target-dir discipline from CLAUDE.md applies unchanged.
 - `console_error_panic_hook` is set in the hydrate entry point (real stack
   traces in the browser — `getting_started/leptos_dx`). RustRover users:
   leptosfmt runs via the FileWatchers plugin (no rust-analyzer there).
 - **The `ui-screenshot-guard` CI job** (`.github/workflows/ci.yml`): any PR
-  that touches `app/ehrbase-admin-ui/src/` or `style/` must EITHER commit
+  that touches `app/ferroehr-admin-ui/src/` or `style/` must EITHER commit
   refreshed captures under `website/book/src/admin-ui/img/` (run
   `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS=1` and commit the PNGs) OR
   carry the **`no-ui-visual-change`** PR label — reserved for changes with

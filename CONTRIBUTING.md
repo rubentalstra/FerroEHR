@@ -1,4 +1,4 @@
-# Contributing to EHRbase-rs
+# Contributing to FerroEHR
 
 Thank you for your interest in contributing. This document covers the practical
 rules; the architectural ground rules live in
@@ -8,7 +8,7 @@ rules; the architectural ground rules live in
 
 - **Read [`docs/architecture.md`](docs/architecture.md) first** — it explains
   the two-layer split (generated `openehr-*` spec crates, hand-written
-  `ehrbase-*` application) every change must respect.
+  `ferroehr-*` application) every change must respect.
 - For anything spec-facing (RM semantics, REST wire behaviour, AQL, canonical
   JSON/XML, templates, terminology), **the vendored openEHR specification text at
   [`docs/specs/openehr/`](docs/specs/openehr/) is the authority** — cite the spec
@@ -52,7 +52,7 @@ CI runs the same set; nothing is advisory.
   member crates, and don't hand-roll what a pinned crate already provides.
 - `thiserror` in library crates, `anyhow` only in the binary; no
   `unwrap`/`expect` outside tests.
-- Application crates (`ehrbase-*`) consume the generated `openehr-*` types
+- Application crates (`ferroehr-*`) consume the generated `openehr-*` types
   directly — never re-model the RM or re-serialize.
 
 ## Pull requests

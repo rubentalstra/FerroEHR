@@ -10,7 +10,7 @@ platform, language, database, and openEHR specification pins.
 ## Product and crate versioning
 
 The **product** version (the workspace `version` in the root `Cargo.toml`,
-inherited by the `ehrbase-*` application crates, the tools, and the codegen
+inherited by the `ferroehr-*` application crates, the tools, and the codegen
 tooling) follows its own SemVer line, starting at **3.0.0**
 (2026-07-11 — the fork's inherited upstream tags/releases were removed; this
 project releases as the successor of the EHRbase 2.x line). Releases are

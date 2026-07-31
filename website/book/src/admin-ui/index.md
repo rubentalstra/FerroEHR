@@ -1,6 +1,6 @@
 # Admin console
 
-`ehrbase-admin-ui` is a standalone web console for managing an
+`ferroehr-admin-ui` is a standalone web console for managing an
 ITS-REST-1.1.0 CDR — this server or any other. It is a **pure REST client**:
 everything it does goes through the CDR's public API (never the database),
 so what you see in the console is exactly what the API serves. The whole
@@ -9,11 +9,11 @@ JavaScript anywhere, including its browser tests.
 
 ## Running it
 
-The quickstart compose ships the console as the `ehrbase-admin-ui` service
+The quickstart compose ships the console as the `ferroehr-admin-ui` service
 on port 3000:
 
 ```bash
-docker compose up ehrbase-postgres ehrbase ehrbase-admin-ui
+docker compose up ferroehr-postgres ferroehr ferroehr-admin-ui
 # → http://localhost:3000  (log in with the dev users, e.g. ehrbase/ehrbase)
 ```
 
@@ -21,8 +21,8 @@ Standalone, point it at any CDR:
 
 ```bash
 docker run -p 3000:3000 \
-  -e EHRBASE_ADMIN__CDR__BASE_URL=https://cdr.example.org \
-  ghcr.io/rubentalstra/ehrbase-rs-admin-ui
+  -e FERROEHR_ADMIN__CDR__BASE_URL=https://cdr.example.org \
+  ghcr.io/rubentalstra/ferroehr-admin-ui
 ```
 
 ## Signing in
@@ -65,9 +65,9 @@ and a previewed grant is an upper bound.
 
 ## Configuration
 
-One TOML file (`ehrbase-admin-ui.toml`, searched in the working directory
-and `/etc/ehrbase/admin-ui.toml`, or pointed at with
-`EHRBASE_ADMIN_CONFIG`), with `EHRBASE_ADMIN__<SECTION>__<KEY>` environment
+One TOML file (`ferroehr-admin-ui.toml`, searched in the working directory
+and `/etc/ferroehr/admin-ui.toml`, or pointed at with
+`FERROEHR_ADMIN_CONFIG`), with `FERROEHR_ADMIN__<SECTION>__<KEY>` environment
 overrides:
 
 | Key | Default | Meaning |

@@ -49,7 +49,7 @@ pub trait AdminApi {
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for
-/// wiring an axum router in `ehrbase-rest`.
+/// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[
     ("DELETE", "/admin/ehr/{ehr_id}", "admin_ehr_delete"),
     ("DELETE", "/admin/ehr/all{?ehr_id*}", "admin_ehr_delete_all"),

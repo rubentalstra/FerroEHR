@@ -28,7 +28,7 @@ use openehr_rm::prelude::{Composition, ItemTree};
 
 const DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../app/ehrbase/tests/resources/service/samples"
+    "/../../app/ferroehr/tests/resources/service/samples"
 );
 
 /// Parse `xml` into `T`, re-serialize, and confirm the canonical output is
@@ -49,7 +49,7 @@ fn read_and_round_trip<T: FromXml + ToXml>(file: &str, tag: &str) -> Result<usiz
 }
 
 #[test]
-fn ehrbase_xml_fixtures_read_and_round_trip() {
+fn ferroehr_xml_fixtures_read_and_round_trip() {
     // Canonical ITS-XML fixtures: a full composition (~1120 lines, xsi:type
     // polymorphism, namespace prefixes, archie-omitted Interval flags) and an
     // ITEM_TREE whose `xsi:type` values carry a `v1:` prefix.

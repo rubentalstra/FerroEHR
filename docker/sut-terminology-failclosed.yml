@@ -12,8 +12,8 @@
 # §Digital Signature; docker/sut-signing-pgp.yml).
 #
 # This overlay is the fail-closed half. The pipeline stacks it on the SECOND
-# deployment the ehrbase-rs run already composes — the parallel openPGP-signing
-# project (`-p ehrbase-rs-cnf-pgp`, host port 8081) — so the two terminology
+# deployment the ferroehr run already composes — the parallel openPGP-signing
+# project (`-p ferroehr-cnf-pgp`, host port 8081) — so the two terminology
 # branches cost no third server. A deployment carries independent postures;
 # the ixit declares them independently too, as that instance's own `signing`
 # and `terminology` blocks.
@@ -26,16 +26,16 @@
 # terminology behaviour this deployment can evidence is the unresolvable
 # branch it exists to prove.
 services:
-  ehrbase:
+  ferroehr:
     environment:
-      EHRBASE__TERMINOLOGY__EXTERNAL__ENABLED: "true"
-      EHRBASE__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR: "true"
+      FERROEHR__TERMINOLOGY__EXTERNAL__ENABLED: "true"
+      FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR: "true"
       # RFC 2606 §2 reserves `.invalid` precisely so a name is guaranteed not
       # to resolve — the connect fails the way a terminology-server outage
       # does, on every attempt, for the whole run.
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__URL: "http://terminology-unreachable.invalid:8080/fhir"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__CONNECT_TIMEOUT_MS: "500"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__REQUEST_TIMEOUT_MS: "1000"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__URL: "http://terminology-unreachable.invalid:8080/fhir"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__CONNECT_TIMEOUT_MS: "500"
-      EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__REQUEST_TIMEOUT_MS: "1000"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__URL: "http://terminology-unreachable.invalid:8080/fhir"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__CONNECT_TIMEOUT_MS: "500"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__SCT__REQUEST_TIMEOUT_MS: "1000"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__URL: "http://terminology-unreachable.invalid:8080/fhir"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__CONNECT_TIMEOUT_MS: "500"
+      FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__LOINC__REQUEST_TIMEOUT_MS: "1000"

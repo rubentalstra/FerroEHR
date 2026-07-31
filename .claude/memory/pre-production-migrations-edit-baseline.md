@@ -20,6 +20,6 @@ production.
 **How to apply:** when a schema change is needed, rewrite the relevant SQL in
 place (columns into CREATE TABLE, indexes added/removed at their definition),
 delete any now-redundant migration files, and update the migration-count
-guard test (`app/ehrbase/tests/persistence.rs`) in the same change. The
+guard test (`app/ferroehr/tests/persistence.rs`) in the same change. The
 `sqlx migrate add` flow resumes only once something is deployed. Related:
 [[owner-work-style]].

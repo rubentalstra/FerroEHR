@@ -2,19 +2,19 @@
 # `CONF_SUT=ehrbase-java scripts/conformance.sh` (issue #232: the public CDR
 # comparison re-based on the CNF 2.0 pipeline). Fresh volumes per run (the
 # exclusive-server ground), its own project network, host port 8091 so it can
-# coexist with the ehrbase-rs stack on 8080.
+# coexist with the ferroehr stack on 8080.
 #
 # Image + configuration mirror the benchmark harness's upstream side
 # (docker/benchmark/docker-compose.yml — the fairness-governed definition):
-# the official ehrbase/ehrbase image with its companion ehrbase-v2-postgres,
+# the official ehrbase/ehrbase image with its companion ferroehr-v2-postgres,
 # Basic auth with a clinical user and a distinct admin user, template
 # overwrite allowed for idempotent re-provisioning, and the Admin API active
 # (the catalogue's ADMIN chapter drives it).
 services:
   ehrbase-java-db:
-    image: ${EHRBASE_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+    image: ${FERROEHR_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
     # The same /dev/shm floor as the rs stack (docker-compose.yml
-    # ehrbase-postgres) — Docker's default 64MB starves PostgreSQL's dynamic
+    # ferroehr-postgres) — Docker's default 64MB starves PostgreSQL's dynamic
     # shared memory (`could not resize shared memory segment … No space left
     # on device` during vacuumdb/parallel workers). The resource floor is
     # host environment, not SUT tuning: both comparison sides share it.
@@ -22,10 +22,10 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      EHRBASE_USER_ADMIN: ehrbase
-      EHRBASE_PASSWORD_ADMIN: ehrbase
-      EHRBASE_USER: ehrbase_restricted
-      EHRBASE_PASSWORD: ehrbase_restricted
+      FERROEHR_USER_ADMIN: ferroehr
+      FERROEHR_PASSWORD_ADMIN: ferroehr
+      FERROEHR_USER: ferroehr_restricted
+      FERROEHR_PASSWORD: ferroehr_restricted
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -33,22 +33,22 @@ services:
       retries: 24
 
   ehrbase-java:
-    image: ${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}
+    image: ${FERROEHR_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}
     depends_on:
       ehrbase-java-db:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://ehrbase-java-db:5432/ehrbase
-      DB_USER_ADMIN: ehrbase
-      DB_PASS_ADMIN: ehrbase
-      DB_USER: ehrbase_restricted
-      DB_PASS: ehrbase_restricted
+      DB_URL: jdbc:postgresql://ehrbase-java-db:5432/ferroehr
+      DB_USER_ADMIN: ferroehr
+      DB_PASS_ADMIN: ferroehr
+      DB_USER: ferroehr_restricted
+      DB_PASS: ferroehr_restricted
       SECURITY_AUTHTYPE: BASIC
-      SECURITY_AUTHUSER: ehrbase
-      SECURITY_AUTHPASSWORD: ehrbase
+      SECURITY_AUTHUSER: ferroehr
+      SECURITY_AUTHPASSWORD: ferroehr
       # EHRbase's in-memory user store requires a DISTINCT admin username.
-      SECURITY_AUTHADMINUSER: ehrbase-admin
-      SECURITY_AUTHADMINPASSWORD: ehrbase
+      SECURITY_AUTHADMINUSER: ferroehr-admin
+      SECURITY_AUTHADMINPASSWORD: ferroehr
       # The catalogue's admin chapter (physical delete, template admin).
       ADMINAPI_ACTIVE: "true"
       # Duplicate template upload must 409 — a GATING expectation for every
@@ -60,8 +60,8 @@ services:
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "false"
       LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
     ports:
-      - "${EHRBASE_JAVA_PORT:-8091}:8080"
+      - "${FERROEHR_JAVA_PORT:-8091}:8080"
     # NO container healthcheck: the official image ships no wget/curl, so an
     # in-container probe can never pass and `up --wait` hangs on
     # health:starting forever. Readiness is probed EXTERNALLY by
-    # scripts/conformance.sh against /ehrbase/rest/status.
+    # scripts/conformance.sh against /ferroehr/rest/status.

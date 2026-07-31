@@ -5,8 +5,8 @@
 //! spec-first from the vendored OpenAPI (`vendor/rest-oas/*-codegen.openapi.yaml`).
 //! RM payload types resolve to `openehr-rm`/`openehr-base` rather than being
 //! re-emitted. This module is the hand-written [`runtime`] (the `ApiError`
-//! response type) + re-exports. `ehrbase-rest` implements the generated traits
-//! and wires axum; the handler bodies are our own service layer (`ehrbase`,
+//! response type) + re-exports. `ferroehr-rest` implements the generated traits
+//! and wires axum; the handler bodies are our own service layer (`ferroehr`,
 //! the openEHR specs are the authority, EHRbase is prior art).
 //! Regenerate with `cargo run -p openehr-codegen -- emit-rest`.
 

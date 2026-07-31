@@ -1,7 +1,7 @@
 # The tracker is GitHub Issues
 
 This file retired on 2026-07-20 (owner ruling; issue
-[#134](https://github.com/rubentalstra/ehrbase-rs/issues/134)). **The open
+[#134](https://github.com/rubentalstra/FerroEHR/issues/134)). **The open
 GitHub issue list IS the worklist** — there is no in-repo tracker table
 anymore.
 

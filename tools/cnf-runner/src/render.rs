@@ -777,7 +777,7 @@ mod tests {
 
     fn statement() -> Statement {
         serde_json::from_value(serde_json::json!({
-            "product": { "name": "EHRbase-rs", "version": "3.5.0",
+            "product": { "name": "FerroEHR", "version": "3.5.0",
                           "vendor": "Ruben Talstra", "identifier": "urn:x" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
@@ -791,7 +791,7 @@ mod tests {
 
     fn results() -> Results {
         serde_json::from_value(serde_json::json!({
-            "sut": { "name": "ehrbase-rs", "version": "3.5.0" },
+            "sut": { "name": "ferroehr", "version": "3.5.0" },
             "runner": { "name": "cnf-runner", "version": "0.1.0",
                          "verification_pack_status": "passed" },
             "schedule_release": "CNF-2.0",
@@ -917,7 +917,7 @@ mod tests {
         }))
         .unwrap();
         let statement: Statement = serde_json::from_value(serde_json::json!({
-            "product": { "name": "EHRbase-rs", "version": "3.5.0",
+            "product": { "name": "FerroEHR", "version": "3.5.0",
                           "vendor": "Ruben Talstra", "identifier": "urn:x" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },

@@ -1,6 +1,6 @@
 # Contributing
 
-EHRbase-rs is open source (Apache-2.0) and welcomes contributions. This
+FerroEHR is open source (Apache-2.0) and welcomes contributions. This
 chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below.
@@ -9,11 +9,11 @@ repository and are linked below.
 
 The three governing documents are kept in the repository root:
 
-- [CONTRIBUTING](https://github.com/rubentalstra/ehrbase-rs/blob/develop/CONTRIBUTING.md)
+- [CONTRIBUTING](https://github.com/rubentalstra/FerroEHR/blob/develop/CONTRIBUTING.md)
   — the practical rules for setup, the required checks, and pull requests.
-- [Code of conduct](https://github.com/rubentalstra/ehrbase-rs/blob/develop/CODE_OF_CONDUCT.md)
+- [Code of conduct](https://github.com/rubentalstra/FerroEHR/blob/develop/CODE_OF_CONDUCT.md)
   — the Contributor Covenant (v2.1) the community follows.
-- [Security policy](https://github.com/rubentalstra/ehrbase-rs/blob/develop/SECURITY.md)
+- [Security policy](https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md)
   — how to report a vulnerability privately.
 
 ## Setting up
@@ -69,7 +69,7 @@ Use the GitHub issue tracker for bugs and feature requests.
 > [!WARNING]
 > Do **not** open a public issue for a suspected security vulnerability.
 > Report it privately through
-> [GitHub's private vulnerability reporting](https://github.com/rubentalstra/ehrbase-rs/security/advisories/new)
+> [GitHub's private vulnerability reporting](https://github.com/rubentalstra/FerroEHR/security/advisories/new)
 > ("Report a vulnerability" on the repository's Security tab). Because the
 > server handles PHI-class data by design, reports about data exposure through
 > the API, AQL, telemetry, or the audit trail are in scope even when they look

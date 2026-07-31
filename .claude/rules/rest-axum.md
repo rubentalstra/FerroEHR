@@ -1,5 +1,5 @@
 ---
-paths: ["app/ehrbase-rest/**", "app/ehrbase/src/application/**"]
+paths: ["app/ferroehr-rest/**", "app/ferroehr/src/application/**"]
 ---
 
 # REST server (axum) — the ITS-REST protocol adapter (shipped; rule governs maintenance/extension)
@@ -43,13 +43,13 @@ sections (spec-adherence.md; `/spec-lookup`).
 - **Errors → responses** via `openehr-its::rest::runtime::ApiError` (it carries
   the ITS-REST status codes). Map service/domain errors into it; return the
   openEHR error body shape the spec defines.
-- **OpenAPI:** `ehrbase-rest` serves its own `utoipa`-generated OpenAPI +
+- **OpenAPI:** `ferroehr-rest` serves its own `utoipa`-generated OpenAPI +
   Swagger UI; the vendored OAS is the `emit-rest` codegen input for the
   ITS-REST contract and a subordinate wire source (owner rulings 2026-07-24 +
   2026-07-28: the docs text wins every conflict; the OAS grounds only what
   the docs text is silent on), never a served document (owner ruling,
   2026-07-17).
-- **Admin** (`/rest/admin`) lives in `ehrbase-rest`, reusing the same service
+- **Admin** (`/rest/admin`) lives in `ferroehr-rest`, reusing the same service
   layer. (There is no EhrScape adapter — that surface was cut; the FLAT /
   STRUCTURED / Web-Template simplified formats are served through the standard
   openEHR endpoints via `openehr_its::flat`.)

@@ -12,7 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 OUT="$ROOT/_site"
-SITE_BASE="${SITE_BASE:-/ehrbase-rs}"
+SITE_BASE="${SITE_BASE:-/ferroehr}"
 MODE="${1:---dev-only}"
 
 log() { printf '\033[1;33m[build-site]\033[0m %s\n' "$*"; }

@@ -1,0 +1,141 @@
+# Dev-only server configuration for the compose stack.
+#
+# Mounted into the app container at /etc/ferroehr/ferroehr.toml — the server's
+# config search order (position 4) discovers it automatically, so no
+# FERROEHR_CONFIG / --config pointer is needed. Env vars in docker-compose.yml
+# override individual keys on top of this file (layer 3 beats the file).
+#
+# The out-of-the-box auth posture has authentication ENABLED but no configured
+# mechanism, so every API request 401s until a user store is provided. This
+# file ships two dev Basic-auth users so the quickstart authenticates out of
+# the box.
+#
+# DEV DEFAULTS — do NOT use in production. The credentials are:
+#   username: ferroehr           password: ferroehr   (Argon2id PHC hash below)
+#   username: ferroehr-admin     password: ferroehr   (ADMIN + USER roles)
+#   username: ferroehr-readonly  password: ferroehr   (READONLY role; writes 403)
+
+[server]
+bind = "0.0.0.0:8080"
+# Permissive CORS — dev only. Production configures explicit origins.
+cors_permissive = true
+
+# Dev-only: expose the admin API (`DELETE /admin/...`) so the conformance
+# suite's AdminApi cases run against the compose stack (they authenticate as
+# the ADMIN-role user below). Production deployments keep this off unless
+# operationally needed.
+[admin]
+enabled = true
+
+[auth]
+enabled = true
+
+# Dev-only: expose the ops-introspection surface (`/management/...`) on the main
+# listener so the admin console's Operations panel has something to read and the
+# browser E2E battery can exercise it. The surface is OFF by default on the bare
+# binary and each endpoint is independently opt-in; production deployments enable
+# only what they need, and preferably on a separate internal port
+# (`management.port`). The health probes need none of this — `/health`,
+# `/health/liveness` and `/health/readiness` are always served.
+[management]
+enabled = true
+
+# Per-endpoint access levels (dev posture): the read-only introspection an
+# authenticated console session may see, the Prometheus text left public so a
+# scrape needs no credentials, and the two sensitive endpoints (the effective
+# configuration and the live log-filter control) admin-gated.
+[management.endpoints]
+info = "private"
+metrics = "private"
+prometheus = "public"
+env = "admin_only"
+loggers = "admin_only"
+
+# Dev-only trust for the shipped dev Keycloak realm (docker/keycloak/import):
+# standard OIDC discovery — the issuer is the canonical KC_HOSTNAME from
+# docker-compose.yml; the CDR resolves the JWKS lazily from the issuer's
+# discovery document (cached, refreshed — key rotation just works, exactly
+# like any real OAuth2 resource server; no static key material). With this
+# the CDR advertises `Basic, Bearer` and an OIDC-logged-in admin console can
+# query it. Do NOT copy into production; configure your real issuer instead.
+[auth.oidc]
+issuer = "http://keycloak:8081/auth/realms/ferroehr"
+algorithms = ["RS256"]
+
+# External terminology servers for the `terminology` compose profile —
+# DISABLED here and switched on only by an overlay
+# (docker/sut-terminology.yml), so the plain quickstart is byte-identical to a
+# deployment without any of this. The providers and routes live in the file
+# rather than in compose env because a route KEY is a terminology namespace
+# (a code-system URI, a value-set URL), which the `FERROEHR__…` env grammar
+# cannot spell.
+#
+# WHY THREE PROVIDERS. BASE docs/architecture_overview/master12-terminology.adoc
+# §Overview names the ecosystem archetypes bind to — LOINC, ICDx, ICPC,
+# SNOMED CT "and the many other terminologies and vocabularies used in
+# healthcare" — so a deployment serves several terminologies at once. Two
+# providers therefore carry the two seeded namespaces, and a third is wired to
+# an address nothing answers on (RFC 2606 §2 reserves `.invalid`), which is how
+# the terminology-server-down branch is exercised for a whole run without any
+# reconfiguration. NOTE: there is deliberately NO provider named `default` —
+# with two or more providers and no `default`, an unrouted terminology has no
+# server at all, so every answer below is proof that its route entry selected
+# its provider. No openEHR spec governs the routing mechanics; our own
+# design/extension.
+[terminology.external]
+enabled = false
+fail_on_error = false
+
+[terminology.external.providers.sct]
+type = "fhir"
+url = "http://terminology:8080/fhir"
+
+[terminology.external.providers.loinc]
+type = "fhir"
+url = "http://terminology:8080/fhir"
+
+[terminology.external.providers.unreachable]
+type = "fhir"
+url = "http://terminology-unreachable.invalid:8080/fhir"
+# Short timeouts: this provider exists to fail, and the branch it proves is
+# "the server could not be reached", not "the server was slow".
+connect_timeout_ms = 500
+request_timeout_ms = 1000
+cache_ttl_secs = 0
+
+# Terminology namespace -> provider. The keys are matched whole-string and
+# case-insensitively: the FHIR `system` URIs and value-set URLs the AQL
+# TERMINOLOGY() operands carry, plus the terminology ids an archetype
+# constraint binding declares.
+[terminology.external.routes]
+"http://cnf.example.test/fhir/CodeSystem/sct-shaped" = "sct"
+"http://cnf.example.test/fhir/ValueSet/sct-shaped-disorders" = "sct"
+"cnf-sct-shaped" = "sct"
+"http://cnf.example.test/fhir/CodeSystem/lab-shaped" = "loinc"
+"http://cnf.example.test/fhir/ValueSet/lab-shaped-vitals" = "loinc"
+"cnf-lab-shaped" = "loinc"
+"http://cnf.example.test/fhir/CodeSystem/ts-down" = "unreachable"
+"http://cnf.example.test/fhir/ValueSet/ts-down-set" = "unreachable"
+"cnf-ts-down" = "unreachable"
+
+[[auth.basic.users]]
+username = "ferroehr"
+# Argon2id hash of the password "ferroehr".
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+
+# Dev-only ADMIN account for the admin API (`DELETE /admin/...`) and the
+# conformance suite's AdminApi cases (scripts/conformance.sh CONF_ADMIN_AUTH
+# defaults to it). Same dev password "ferroehr" (same hash); ADMIN + USER
+# roles. Do NOT use in production.
+[[auth.basic.users]]
+username = "ferroehr-admin"
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+roles = ["ADMIN", "USER"]
+
+# Dev-only READ-ONLY account for the conformance suite's authorization-
+# separation cases (SEC-BASIC): authenticated, but every write operation is
+# refused by the RBAC read-only gate. Do NOT use in production.
+[[auth.basic.users]]
+username = "ferroehr-readonly"
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+roles = ["READONLY"]

@@ -10,7 +10,7 @@
 # NO STATE PROOF is authorable for the no-write half — see the
 # -format_not_a_member sibling: observing what a location holds means loading
 # it, and the "no readable archive" answer is a 5xx with no outcome kind. The
-# no-write effect is proved in-process (app/ehrbase/tests/service_dump_load.rs).
+# no-write effect is proved in-process (app/ferroehr/tests/service_dump_load.rs).
 id: I_ADMIN_DUMP_LOAD.export_ehrs-segment_split_size_non_positive
 kind: functional
 component: ADMIN

@@ -22,7 +22,7 @@
 //!   vendored XSDs (`schemas/xml/`). (Implementation is P5.)
 //! - [`rest`] — **ITS-REST**: the openEHR REST API contract. The machine-readable
 //!   OpenAPI specs are vendored (`vendor/rest-oas/`); the server that implements
-//!   them is `ehrbase-rest` (P6).
+//!   them is `ferroehr-rest` (P6).
 //! - [`bmm`] — **ITS-BMM**: BMM serialization. The vendored BMM meta-model that
 //!   drives code generation lives in `openehr-codegen/vendor/bmm`; the generated
 //!   runtime BMM object model is `openehr-lang`.

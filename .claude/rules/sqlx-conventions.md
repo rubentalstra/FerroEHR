@@ -1,10 +1,10 @@
 ---
-paths: ["app/ehrbase/**"]
+paths: ["app/ferroehr/**"]
 ---
 
 # sqlx + sea-query conventions (persistence + the AQL engine — both shipped)
 
-`ehrbase` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
+`ferroehr` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
 pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
 + binder; `sea-query-binder` is the obsolete sea-query-0.32 pairing — do not
 use it). **Not sea-orm.** Target PostgreSQL 18.4+.
@@ -17,10 +17,10 @@ use it). **Not sea-orm.** Target PostgreSQL 18.4+.
   is live and CNF-pipeline-verified — schema changes are migrations on top, never a
   rewrite of shipped history.
 - Create migrations with the official CLI only:
-  `sqlx migrate add --source app/ehrbase/migrations/<schema> --sequential <desc>`,
+  `sqlx migrate add --source app/ferroehr/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,
   `RETURNING OLD/NEW` where the design calls for them).
-- `ehrbase::db::run_migrations` bootstraps schemas + extensions and runs the
+- `ferroehr::db::run_migrations` bootstraps schemas + extensions and runs the
   `ext` migrator before `ehr`; each set keeps its own `_sqlx_migrations` table.
 - `sea-query` `Iden` table/column definitions (`db/iden.rs`) + hand-written
   row-mapping structs (over the generated `openehr-rm` types) — no ORM/codegen.

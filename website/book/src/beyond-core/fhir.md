@@ -1,6 +1,6 @@
 # FHIR connectors
 
-Many systems around a CDR speak FHIR. EHRbase-rs ships a set of FHIR R4
+Many systems around a CDR speak FHIR. FerroEHR ships a set of FHIR R4
 connectors so it can take FHIR resources in, hand openEHR data back out as
 FHIR, and emit FHIR resources to downstream systems — all driven by mappings
 you control. It is not a full FHIR server; it is a focused, mapping-driven
@@ -9,7 +9,7 @@ bridge between the FHIR and openEHR worlds.
 The connectors come in two independent switches — an inbound/read-façade
 switch and an outbound-emission switch — because they have very different
 data-exposure characteristics. All FHIR routes are relative to the API base path
-(`/ehrbase/rest/openehr/v1`), use FHIR R4, and speak `application/fhir+json`. A
+(`/ferroehr/rest/openehr/v1`), use FHIR R4, and speak `application/fhir+json`. A
 resource type the connector does not map yet is answered with a FHIR
 `OperationOutcome`, never a silent success.
 
@@ -43,14 +43,14 @@ server**. A
 background task drains the same commit outbox used by
 [change events](amqp.md), reverse-maps each committed composition through every
 enabled mapping bound to its template, and publishes each resulting FHIR
-resource to a topic exchange (default `ehrbase.fhir`) with a routing key of
+resource to a topic exchange (default `ferroehr.fhir`) with a routing key of
 `<resource_type>.<template_id>`. Delivery is at-least-once.
 
 > [!WARNING]
 > Outbound FHIR messages carry PHI — the payload is the mapped clinical FHIR
 > resource itself, unlike the PHI-free [change-event](amqp.md) envelopes. That
 > is exactly why they are a separate switch on a separate exchange
-> (`ehrbase.fhir`, not `ehrbase.events`): broker access control can then isolate
+> (`ferroehr.fhir`, not `ferroehr.events`): broker access control can then isolate
 > the PHI-bearing stream. Enable it only against a TLS, access-controlled
 > broker, and treat every consumer as a PHI processor.
 
@@ -85,20 +85,20 @@ definition drives inbound ingest, the read façade, and outbound emission.
 ## Enabling the connectors
 
 Both switches are off by default. The inbound/read-façade switch lives in the
-`[fhir]` section of `ehrbase.toml` and the outbound emitter in
-`[fhir.outbound]`; each key can be overridden with the shown `EHRBASE_*`
+`[fhir]` section of `ferroehr.toml` and the outbound emitter in
+`[fhir.outbound]`; each key can be overridden with the shown `FERROEHR_*`
 environment variable:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__FHIR__API_ENABLED` | `false` | enable inbound ingest, the read façade, and the mapping API |
-| `EHRBASE__FHIR__OUTBOUND__ENABLED` | `false` | enable outbound emission to AMQP |
-| `EHRBASE__FHIR__OUTBOUND__URL` | `amqp://guest:guest@localhost:5672/%2f` | outbound broker URL |
-| `EHRBASE__FHIR__OUTBOUND__EXCHANGE` | `ehrbase.fhir` | outbound topic exchange (kept distinct from the event stream) |
-| `EHRBASE__FHIR__OUTBOUND__TLS` | `false` | upgrade an `amqp://` URL to `amqps://` |
-| `EHRBASE__FHIR__OUTBOUND__BATCH_SIZE` | `128` | commits drained per cycle |
-| `EHRBASE__FHIR__OUTBOUND__POLL_INTERVAL_MS` | `1000` | poll interval while idle |
-| `EHRBASE__FHIR__OUTBOUND__PUBLISH_MAX_RETRIES` | `3` | retries per message |
+| `FERROEHR__FHIR__API_ENABLED` | `false` | enable inbound ingest, the read façade, and the mapping API |
+| `FERROEHR__FHIR__OUTBOUND__ENABLED` | `false` | enable outbound emission to AMQP |
+| `FERROEHR__FHIR__OUTBOUND__URL` | `amqp://guest:guest@localhost:5672/%2f` | outbound broker URL |
+| `FERROEHR__FHIR__OUTBOUND__EXCHANGE` | `ferroehr.fhir` | outbound topic exchange (kept distinct from the event stream) |
+| `FERROEHR__FHIR__OUTBOUND__TLS` | `false` | upgrade an `amqp://` URL to `amqps://` |
+| `FERROEHR__FHIR__OUTBOUND__BATCH_SIZE` | `128` | commits drained per cycle |
+| `FERROEHR__FHIR__OUTBOUND__POLL_INTERVAL_MS` | `1000` | poll interval while idle |
+| `FERROEHR__FHIR__OUTBOUND__PUBLISH_MAX_RETRIES` | `3` | retries per message |
 
 When the inbound switch is off, the `/fhir/r4/*` and `/admin/fhir_mapping`
 routes answer `404` without touching the backend. When the outbound switch is

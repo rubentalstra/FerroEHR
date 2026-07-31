@@ -54,4 +54,4 @@ deploy/**    linguist-detectable=false
 .githooks/** linguist-detectable=false
 .claude/**   linguist-detectable=false
 Dockerfile*  linguist-detectable=false
-app/ehrbase/migrations/** linguist-detectable=false
+app/ferroehr/migrations/** linguist-detectable=false

@@ -732,7 +732,7 @@ fn cases_phrase(total: u64) -> String {
 /// total and rolled-up counts, expanded into one scaled bar per band.
 ///
 /// Every declared band renders — a band with no case for this SUT becomes an
-/// explicit "no cases" row rather than vanishing — so the ehrbase-rs and
+/// explicit "no cases" row rather than vanishing — so the ferroehr and
 /// ehrbase-java charts read band-for-band.
 ///
 /// Pure over its inputs: [`TAXONOMY`] order, no timestamps, no randomness.
@@ -896,8 +896,8 @@ mod tests {
             ("AqlBasic".to_owned(), Evidence::Failed),
             ("AuthenticatedAccess".to_owned(), Evidence::NotEvidenced),
         ];
-        let a = heat_grid_svg("EHRbase-rs 3.7.0", &m, &caps);
-        let b = heat_grid_svg("EHRbase-rs 3.7.0", &m, &caps);
+        let a = heat_grid_svg("FerroEHR 3.7.0", &m, &caps);
+        let b = heat_grid_svg("FerroEHR 3.7.0", &m, &caps);
         assert_eq!(a, b);
         // Both encodings present: the fill class AND the glyph.
         assert!(a.contains("ev-passed"));
@@ -1310,8 +1310,8 @@ mod tests {
             ),
         ]))
         .unwrap();
-        let svg = chapter_bars_svg("EHRbase-rs 3.7.0", &rows);
-        assert_eq!(svg, chapter_bars_svg("EHRbase-rs 3.7.0", &rows));
+        let svg = chapter_bars_svg("FerroEHR 3.7.0", &rows);
+        assert_eq!(svg, chapter_bars_svg("FerroEHR 3.7.0", &rows));
 
         // Both levels are drawn: every chapter header and every band label.
         for (chapter, bands) in TAXONOMY {
@@ -1357,7 +1357,7 @@ mod tests {
             OutcomeStatus::Passed,
         )]))
         .unwrap();
-        let svg = chapter_bars_svg("EHRbase-rs 3.7.0", &rows);
+        let svg = chapter_bars_svg("FerroEHR 3.7.0", &rows);
         // The book + landing pages embed the SVG at this width; the two-level
         // layout is allowed to grow taller, never wider.
         let bands: usize = TAXONOMY.iter().map(|(_, b)| b.len()).sum();

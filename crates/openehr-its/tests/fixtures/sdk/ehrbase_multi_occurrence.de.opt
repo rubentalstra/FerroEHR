@@ -1081,7 +1081,7 @@
             <value>openEHR-EHR-COMPOSITION.encounter.v1</value>
         </archetype_id>
         <template_id>
-            <value>ehrbase_multi_occurence.de.v1</value>
+            <value>ferroehr_multi_occurence.de.v1</value>
         </template_id>
         <term_definitions code="at0000">
             <items id="description">Interaction, contact or care event between a subject of care and healthcare                 provider(s).             </items>

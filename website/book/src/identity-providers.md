@@ -1,6 +1,6 @@
 # Enterprise identity providers
 
-EHRbase-rs does not manage users. There is no user table, no user API, and no
+FerroEHR does not manage users. There is no user table, no user API, and no
 plan to add one: **identity administration is delegated to your identity
 provider (IdP)**, and the CDR consumes standard OIDC bearer tokens. This page
 records that posture and walks through connecting the two enterprise IdPs we
@@ -23,7 +23,7 @@ existing governance. So the split is deliberate and permanent:
   its claims, and enforces [RBAC/ABAC and per-EHR access
   control](security.md#authorization) on every request.
 
-The HTTP Basic user list in `ehrbase.toml` is a bootstrap/dev convenience,
+The HTTP Basic user list in `ferroehr.toml` is a bootstrap/dev convenience,
 not a user store — production deployments authenticate with OIDC bearer
 tokens.
 
@@ -40,7 +40,7 @@ Two configuration groups do all the work:
    the issuer's `.well-known/openid-configuration` and validates each
    bearer token's signature, `iss`, and (when configured) `aud` — see the
    [OIDC settings table](security.md#authentication).
-2. **Role mining** (`[authz.rbac]`): `EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS`
+2. **Role mining** (`[authz.rbac]`): `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS`
    (default `["realm_access.roles","scope"]` — the Keycloak shape) names the
    JWT claim paths whose values become the caller's roles for the
    [role layer](security.md#authorization).
@@ -58,13 +58,13 @@ Entra ID exposes a standards-compliant OIDC issuer per tenant.
    assign users/groups to them (Enterprise applications → your app → Users
    and groups). Entra puts assigned app roles in the token's `roles` claim.
 3. **Expose an audience**: either use the client ID as the audience or add an
-   *Application ID URI* (for example `api://ehrbase`).
+   *Application ID URI* (for example `api://ferroehr`).
 4. **Point the CDR at the tenant issuer** and mine the `roles` claim:
 
    ```bash
-   export EHRBASE__AUTH__OIDC__ISSUER=https://login.microsoftonline.com/<tenant-id>/v2.0
-   export EHRBASE__AUTH__OIDC__AUDIENCES=api://ehrbase
-   export EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS='["roles"]'
+   export FERROEHR__AUTH__OIDC__ISSUER=https://login.microsoftonline.com/<tenant-id>/v2.0
+   export FERROEHR__AUTH__OIDC__AUDIENCES=api://ferroehr
+   export FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS='["roles"]'
    ```
 
 5. **Verify**: request a token for the app (any OAuth2 client credential or
@@ -91,9 +91,9 @@ broker) rather than pointing anything at LDAP.
 3. **Point the CDR at the AD FS issuer** and mine the `role` claim:
 
    ```bash
-   export EHRBASE__AUTH__OIDC__ISSUER=https://adfs.example.com/adfs
-   export EHRBASE__AUTH__OIDC__AUDIENCES=ehrbase-api
-   export EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS='["role"]'
+   export FERROEHR__AUTH__OIDC__ISSUER=https://adfs.example.com/adfs
+   export FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr-api
+   export FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS='["role"]'
    ```
 
    Discovery works out of the box (`https://adfs.example.com/adfs/.well-known/openid-configuration`).

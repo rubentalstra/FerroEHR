@@ -17,7 +17,7 @@ use crate::render::emit::GenFile;
 use std::collections::BTreeSet;
 
 /// Classes the node codec splits into their own `node` row — mirrored **verbatim**
-/// from `ehrbase::storage::codec::STRUCTURE_TYPES` (the codec decompose rule).
+/// from `ferroehr::storage::codec::STRUCTURE_TYPES` (the codec decompose rule).
 ///
 /// This is a hand-picked set, **not** a pure BMM-derivable predicate. It is the
 /// set of LOCATABLE *content* subtypes that occur inside COMPOSITION / `EHR_STATUS`
@@ -377,7 +377,7 @@ fn emit_mod() -> String {
 //! # `is_structure_root`
 //!
 //! `is_structure_root(class)` is true for exactly the RM types the node codec
-//! splits into their own `node` row (`ehrbase::storage::codec`). That set is
+//! splits into their own `node` row (`ferroehr::storage::codec`). That set is
 //! **not** derivable from the BMM alone — it is a hand-picked list mirrored from
 //! `codec::STRUCTURE_TYPES`: the LOCATABLE *content* subtypes used inside
 //! COMPOSITION / EHR_STATUS / FOLDER trees, **plus** `EVENT_CONTEXT` and

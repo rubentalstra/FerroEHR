@@ -1,8 +1,8 @@
-# EHRbase-rs documentation website
+# FerroEHR documentation website
 
 This directory holds the public documentation site published to
-**https://rubentalstra.github.io/ehrbase-rs/** (GitHub Pages, project sub-path
-`/ehrbase-rs/`). The site conventions — toolchain pins, URL scheme,
+**https://rubentalstra.github.io/ferroehr/** (GitHub Pages, project sub-path
+`/ferroehr/`). The site conventions — toolchain pins, URL scheme,
 versioning machinery, design tokens, content map — are documented in
 `.claude/rules/docs-website.md` and this file.
 

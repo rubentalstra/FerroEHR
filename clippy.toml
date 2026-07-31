@@ -38,7 +38,7 @@ disallowed-types = [
 #    site carries a narrowly-scoped #[expect(clippy::disallowed_methods, reason)] ─
 disallowed-methods = [
   { path = "std::time::SystemTime::now", reason = "wall-clock time comes from jiff (Zoned/Timestamp); std::time::Instant stays fine for latency measurement" },
-  { path = "std::env::var", reason = "configuration flows through the config tree (ehrbase::config), never ad-hoc env reads" },
-  { path = "std::env::var_os", reason = "configuration flows through the config tree (ehrbase::config), never ad-hoc env reads" },
+  { path = "std::env::var", reason = "configuration flows through the config tree (ferroehr::config), never ad-hoc env reads" },
+  { path = "std::env::var_os", reason = "configuration flows through the config tree (ferroehr::config), never ad-hoc env reads" },
   { path = "uuid::Uuid::new_v4", reason = "DB keys are uuidv7 (Uuid::now_v7) for index locality; v4 only for non-key randomness with a scoped expect" },
 ]

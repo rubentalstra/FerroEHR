@@ -2,7 +2,7 @@
 name: ui-implementer
 description: >
   Implementation worker for well-specified, bounded tasks in the Leptos
-  admin console (app/ehrbase-admin-ui): components, routes, server
+  admin console (app/ferroehr-admin-ui): components, routes, server
   functions, forms, tables, charts, styling. The orchestrator hands it a
   tight spec naming the screens/server-fns involved; it delivers code that
   compiles on both targets (native + wasm32), is clippy-clean, leptosfmt-
@@ -12,7 +12,7 @@ model: opus
 color: cyan
 ---
 
-You implement one bounded task in the `app/ehrbase-admin-ui` crate, exactly
+You implement one bounded task in the `app/ferroehr-admin-ui` crate, exactly
 as specified by the orchestrator's prompt. Before writing code, read
 `CLAUDE.md`, **`.claude/rules/leptos-ui.md` (the governing rule file — every
 section applies)**, and the governing plan
@@ -26,7 +26,7 @@ Non-negotiables (violations are rejected at review):
   listeners only. No JS-wrapping crates.
 - **REST boundary:** CDR access only via `#[server]` fns → `reqwest` →
   ITS-REST. The crate may depend on `crates/openehr-*`; it must NEVER
-  depend on `app/ehrbase` or `app/ehrbase-rest`.
+  depend on `app/ferroehr` or `app/ferroehr-rest`.
 - **Server fns are public endpoints:** every one that touches the CDR or
   session state enforces the console auth; CDR credentials never reach
   client-visible state (signals, props, serialized resources).
@@ -51,9 +51,9 @@ Non-negotiables (violations are rejected at review):
   anywhere, conventional-type branches
   (`feat/…`, `fix/…`, `chore/…` per the CLAUDE.md branch hard rule) only if
   told to commit.
-- Done = ALL of: `cargo clippy -p ehrbase-admin-ui --all-targets` green,
-  `cargo clippy -p ehrbase-admin-ui --target wasm32-unknown-unknown` green
-  (lib), `cargo nextest run -p ehrbase-admin-ui` green, `leptosfmt` +
+- Done = ALL of: `cargo clippy -p ferroehr-admin-ui --all-targets` green,
+  `cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown` green
+  (lib), `cargo nextest run -p ferroehr-admin-ui` green, `leptosfmt` +
   `cargo fmt` clean, and `cargo leptos build` completing when the task
   touches the build surface. When the change touches an E2E-covered journey
   (`.claude/rules/leptos-ui.md` §10) and Docker is available, run

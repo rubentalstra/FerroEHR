@@ -2,11 +2,11 @@
 # (docker-compose.observability.yml mounts it into the image's
 # scrape-configs directory). Scrapes the app's management Prometheus endpoint
 # over the compose network; the management port (9464) is internal-only.
-- job_name: ehrbase
+- job_name: ferroehr
   metrics_path: /management/prometheus
   scrape_interval: 15s
   static_configs:
     - targets:
-        - ehrbase:9464
+        - ferroehr:9464
       labels:
-        service: ehrbase
+        service: ferroehr

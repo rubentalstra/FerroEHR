@@ -181,7 +181,7 @@ else; each helper has exactly ONE home.
   VATDF/VACDF/STCDC/STCAC, VCOC, the operators the chapter names but no grammar
   defines — `~matches`/`~is_in`/`∉`, `=~`/`!~` — and the
   `cadl_breadth_{structure,primitives,datetime}` trio covering every construct
-  of the chapter). `app/ehrbase/tests/it/adl14_knowledge_archetypes.rs` is the
+  of the chapter). `app/ferroehr/tests/it/adl14_knowledge_archetypes.rs` is the
   DB-free parse gate over the app's real-world CKM 1.4 knowledge resources.
   Corpus cases are the regression net — never delete/weaken one to get green;
   a defect goes through adjudication, not case edits, and every refusal keeps

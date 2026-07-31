@@ -108,7 +108,7 @@ fn generic_parameters_resolve_to_their_bound() {
 
 #[test]
 fn is_structure_root_matches_the_node_codec() {
-    // Mirrors ehrbase::storage::codec::STRUCTURE_TYPES.
+    // Mirrors ferroehr::storage::codec::STRUCTURE_TYPES.
     for t in [
         "COMPOSITION",
         "EHR_STATUS",

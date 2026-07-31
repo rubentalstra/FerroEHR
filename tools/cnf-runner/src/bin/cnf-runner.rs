@@ -98,7 +98,7 @@ enum Command {
         #[arg(long)]
         out: PathBuf,
         /// SUT display name.
-        #[arg(long, default_value = "ehrbase-rs")]
+        #[arg(long, default_value = "ferroehr")]
         sut_name: String,
         /// SUT version label.
         #[arg(long, default_value = "dev")]

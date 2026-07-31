@@ -2,7 +2,7 @@
 name: leptos-reviewer
 description: >
   Read-only reviewer that checks a diff or subsystem of the Leptos admin
-  console (app/ehrbase-admin-ui) against .claude/rules/leptos-ui.md — the
+  console (app/ferroehr-admin-ui) against .claude/rules/leptos-ui.md — the
   no-JS mandate, the REST/auth boundary, hydration safety, reactivity and
   <For>-key discipline, form/async/router idioms — returning ranked
   findings with rule/book citations. Use proactively before committing any
@@ -29,7 +29,7 @@ Review priority (report in this order):
 
 1. **Mandate violations:** any authored JavaScript (`.js` files, inline
    `<script>`, `onxxx="…"` string attributes, JS-wrapper crates); any
-   dependency from the UI crate on `app/ehrbase*`; any CDR access not going
+   dependency from the UI crate on `app/ferroehr*`; any CDR access not going
    through a `#[server]` fn; any `#[server]` fn touching CDR/session
    without an auth check; credentials/tokens reaching client-visible state.
 2. **Hydration hazards:** view structure branched on `cfg!`/features;

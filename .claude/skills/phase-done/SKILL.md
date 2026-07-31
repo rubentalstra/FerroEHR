@@ -41,9 +41,9 @@ does not decide the work is done on your behalf.
 3a. **CNF zero-drift gate:** confirm a full CNF 2.0 run
    (`/run-conformance` → `scripts/conformance.sh`) happened at close and
    shows zero drift vs the committed baseline
-   (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`; the
+   (`docs/conformance/ferroehr/results.json` + `verdicts.json`; the
    baseline only ratchets upward), and that the ratcheted
-   `docs/conformance/ehrbase-rs/` artifacts (results.json, verdicts.json,
+   `docs/conformance/ferroehr/` artifacts (results.json, verdicts.json,
    CONFORMANCE_REPORT/STATEMENT/CERTIFICATE.md, badge*.json) are in-branch.
    No green CNF run → the issue is not closable.
 3b. **User docs + changelog updated?** If this work changed a user-visible

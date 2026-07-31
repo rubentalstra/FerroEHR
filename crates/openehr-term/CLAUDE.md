@@ -13,7 +13,7 @@ derivable, so this crate is NOT generated).
   distinction matters for validation; see
   `docs/specs/openehr/TERM/docs/SupportTerminology/`.
 - External terminology-server integration (FHIR TS) does NOT live here —
-  it is the terminology provider seam in `ehrbase` (`service::terminology`).
+  it is the terminology provider seam in `ferroehr` (`service::terminology`).
   This crate is the local openEHR bundle only.
 - Versioned by the spec (3.1.0); bump only on a TERM pin bump.
 - Gates: `cargo clippy -p openehr-term --all-targets` +

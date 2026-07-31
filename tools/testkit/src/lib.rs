@@ -7,26 +7,26 @@
 //!
 //! Server resolution, in order:
 //!
-//! 1. **`EHRBASE_TEST_PG_URL`** — a DSN to an existing `PostgreSQL` 18 server
+//! 1. **`FERROEHR_TEST_PG_URL`** — a DSN to an existing `PostgreSQL` 18 server
 //!    whose role may `CREATE DATABASE` (CI provides the workflow's
 //!    `postgres:18.4` container; a local developer server works too).
 //! 2. Otherwise a **reusable named testcontainer**
-//!    (`ehrbase-testkit-pg18`, `postgres:18`) is started — or adopted if a
+//!    (`ferroehr-testkit-pg18`, `postgres:18`) is started — or adopted if a
 //!    previous run left it — via `testcontainers`' reusable-containers
 //!    support, tuned with the non-durable settings the `PostgreSQL` docs
 //!    describe for throwaway data (`fsync=off`, `synchronous_commit=off`,
 //!    `full_page_writes=off`; `PostgreSQL` docs § "Non-Durable Settings")
 //!    and an explicit shared-memory size (`SHM_SIZE_BYTES`). The container is
 //!    deliberately left running across runs — reclaim it with
-//!    `docker rm -f ehrbase-testkit-pg18`.
+//!    `docker rm -f ferroehr-testkit-pg18`.
 //!
-//! The template database (`ehrbase_tk_tpl_<fingerprint>`) is created and
+//! The template database (`ferroehr_tk_tpl_<fingerprint>`) is created and
 //! migrated exactly once per migration fingerprint, guarded by a `PostgreSQL`
 //! advisory lock so concurrent test processes (nextest runs one process per
 //! test) converge on a single build. Completion is stamped as the database
 //! comment, readable via `shobj_description` without connecting to the
 //! template — connections to a template block cloning (`PostgreSQL` docs
-//! § CREATE DATABASE). Clones are named `ehrbase_tk_<secs>_<rand>`.
+//! § CREATE DATABASE). Clones are named `ferroehr_tk_<secs>_<rand>`.
 //!
 //! Every test process sweeps stale clones and outdated templates **once at
 //! initialization, before it hands out any database** — the drops are
@@ -46,15 +46,15 @@ use testcontainers::{ContainerAsync, ImageExt, ReuseDirective};
 use testcontainers_modules::postgres::Postgres;
 use tokio::sync::OnceCell;
 
-use ehrbase::db;
-use ehrbase::db::DbConfig;
+use ferroehr::db;
+use ferroehr::db::DbConfig;
 
 /// Prefix for every database the harness creates (templates + clones), so a
 /// sweep can never touch anything else.
-const DB_PREFIX: &str = "ehrbase_tk_";
+const DB_PREFIX: &str = "ferroehr_tk_";
 
 /// The fixed name of the reusable local `PostgreSQL` container.
-const CONTAINER_NAME: &str = "ehrbase-testkit-pg18";
+const CONTAINER_NAME: &str = "ferroehr-testkit-pg18";
 
 /// Explicit shared-memory (`/dev/shm`) size for the reusable container, in
 /// bytes — one gibibyte.
@@ -73,7 +73,7 @@ const CONTAINER_NAME: &str = "ehrbase-testkit-pg18";
 ///
 /// The size is applied at container CREATION only: `ReuseDirective::Always`
 /// adopts an existing container as-is, so an already-running 64 MB container
-/// must be reclaimed (`docker rm -f ehrbase-testkit-pg18`) for a changed value
+/// must be reclaimed (`docker rm -f ferroehr-testkit-pg18`) for a changed value
 /// to take effect.
 const SHM_SIZE_BYTES: u64 = 1024 * 1024 * 1024;
 
@@ -84,7 +84,7 @@ const SHM_SIZE_BYTES: u64 = 1024 * 1024 * 1024;
 const SQLSTATE_OBJECT_IN_USE: &str = "55006";
 
 /// Environment variable naming an externally provided server (CI, local dev).
-const ENV_URL: &str = "EHRBASE_TEST_PG_URL";
+const ENV_URL: &str = "FERROEHR_TEST_PG_URL";
 
 /// Advisory-lock key serializing template builds across test processes.
 const TEMPLATE_LOCK_KEY: i64 = 0x0EB2_7E57_0001;
@@ -311,7 +311,7 @@ async fn server() -> Result<&'static str, TestkitError> {
 /// container (started or adopted).
 #[expect(
     clippy::disallowed_methods,
-    reason = "`EHRBASE_TEST_PG_URL` is the harness's OWN environment contract (CI \
+    reason = "`FERROEHR_TEST_PG_URL` is the harness's OWN environment contract (CI \
               hands it the workflow server); testkit is test tooling and must not \
               depend on the server's config tree, which is what that ban protects"
 )]
@@ -409,7 +409,7 @@ async fn connect_ready(admin_url: &str) -> Result<PgConnection, TestkitError> {
 async fn ensure_template(admin_url: &str) -> Result<String, TestkitError> {
     let fingerprint = db::migration_fingerprint();
     let template = format!("{DB_PREFIX}tpl_{fingerprint}");
-    let stamp = format!("ehrbase-testkit fingerprint={fingerprint} complete");
+    let stamp = format!("ferroehr-testkit fingerprint={fingerprint} complete");
 
     let mut admin = connect_ready(admin_url).await?;
 
@@ -504,7 +504,7 @@ async fn build_template(
 // ---------------------------------------------------------------------------
 
 /// A unique clone name embedding its creation time (hex seconds) for the
-/// sweep: `ehrbase_tk_<secs-hex>_<rand>`.
+/// sweep: `ferroehr_tk_<secs-hex>_<rand>`.
 #[expect(
     clippy::disallowed_methods,
     reason = "non-key randomness: a v4 suffix that makes a clone's database name \
@@ -774,8 +774,8 @@ mod tests {
     #[test]
     fn clone_url_replaces_database_segment() {
         assert_eq!(
-            clone_url("postgres://u:p@h:5432/postgres", "ehrbase_tk_x"),
-            "postgres://u:p@h:5432/ehrbase_tk_x"
+            clone_url("postgres://u:p@h:5432/postgres", "ferroehr_tk_x"),
+            "postgres://u:p@h:5432/ferroehr_tk_x"
         );
     }
 
@@ -795,9 +795,9 @@ mod tests {
     #[test]
     fn stale_spares_current_template_and_young_clones() {
         let now = 0x1000_0000u64;
-        let current = "ehrbase_tk_tpl_abcd";
+        let current = "ferroehr_tk_tpl_abcd";
         assert!(!stale(current, current, now));
-        assert!(stale("ehrbase_tk_tpl_old0", current, now));
+        assert!(stale("ferroehr_tk_tpl_old0", current, now));
         let young = format!("{DB_PREFIX}{:x}_aaaa", now - 10);
         assert!(!stale(&young, current, now));
         let old = format!("{DB_PREFIX}{:x}_aaaa", now - SWEEP_GRACE.as_secs() - 1);
@@ -810,7 +810,7 @@ mod tests {
     /// every clone is made from it.
     #[test]
     fn stale_never_sweeps_the_live_template() {
-        let current = "ehrbase_tk_tpl_deadbeef";
+        let current = "ferroehr_tk_tpl_deadbeef";
         for now in [0u64, 0x1000_0000, u64::MAX] {
             assert!(
                 !stale(current, current, now),
@@ -818,18 +818,18 @@ mod tests {
             );
         }
         // A template built from any OTHER migration fingerprint is stale.
-        assert!(stale("ehrbase_tk_tpl_0", current, 0));
-        assert!(stale("ehrbase_tk_tpl_feedface", current, 0));
+        assert!(stale("ferroehr_tk_tpl_0", current, 0));
+        assert!(stale("ferroehr_tk_tpl_feedface", current, 0));
     }
 
     /// A clone name whose embedded creation time does not parse is never swept:
     /// an unknown age is not evidence of staleness.
     #[test]
     fn stale_spares_unparseable_clone_names() {
-        let current = "ehrbase_tk_tpl_abcd";
+        let current = "ferroehr_tk_tpl_abcd";
         let now = 0x1000_0000u64;
-        assert!(!stale("ehrbase_tk_notahexnumber_x", current, now));
-        assert!(!stale("ehrbase_tk_nounderscore", current, now));
+        assert!(!stale("ferroehr_tk_notahexnumber_x", current, now));
+        assert!(!stale("ferroehr_tk_nounderscore", current, now));
     }
 
     /// `PostgreSQL` refuses a force-free `DROP DATABASE` on a database with

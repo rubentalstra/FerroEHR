@@ -34,12 +34,12 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
    SUT and points `auth.oidc` at it, with a static issuer + audience, and turns
    the SMART resource-server role on (`smart.enabled`,
    `smart.require_smart_scopes`).
-2. `tools/cnf-runner/party/ehrbase-rs/ixit.json` declares the posture: the
+2. `tools/cnf-runner/party/ferroehr/ixit.json` declares the posture: the
    `smart` block names this key file, the issuer, the audience and the `kid`;
    the `sut`/`admin`/`readonly` principals carry `bearer_mint` auth with
    per-instance roles + standing scope grants, and the `smart_app` instance
    mints exactly the step-declared `scopes` for the boundary cases.
-3. `scripts/conformance.sh` composes the posture on every ehrbase-rs run —
+3. `scripts/conformance.sh` composes the posture on every ferroehr run —
    it IS the standard conformance posture (owner ruling 2026-07-28), so the
    one committed record covers the whole claimed surface in one invocation.
 

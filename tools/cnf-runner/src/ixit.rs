@@ -230,7 +230,7 @@ impl TerminologyLane {
 #[serde(deny_unknown_fields)]
 pub struct Instance {
     /// The openEHR REST base (up to and including the API version segment,
-    /// e.g. `http://localhost:8080/ehrbase/rest/openehr/v1`).
+    /// e.g. `http://localhost:8080/ferroehr/rest/openehr/v1`).
     pub base_url: String,
     /// How requests to this instance are authenticated.
     pub auth: AuthMode,
@@ -432,11 +432,11 @@ mod tests {
     fn ixit_parses_with_principals() {
         let ixit: Ixit = serde_json::from_value(serde_json::json!({
             "instances": {
-                "sut": { "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+                "sut": { "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
                           "auth": { "mode": "basic", "user_env": "SUT_USER", "password_env": "SUT_PASS" } },
-                "unauthenticated": { "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+                "unauthenticated": { "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
                           "auth": { "mode": "none" } },
-                "readonly": { "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+                "readonly": { "base_url": "http://localhost:8080/ferroehr/rest/openehr/v1",
                           "auth": { "mode": "bearer", "token_env": "SUT_RO_TOKEN" } }
             },
             "environment": { "hardware_class": "consumer-laptop", "cores": 8,
@@ -466,12 +466,12 @@ mod tests {
 
         let with: Ixit = serde_json::from_value(serde_json::json!({
             "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
-            "containers": { "sut": "ehrbase-rs-ehrbase-1", "db": "ehrbase-rs-ehrbase-postgres-1" }
+            "containers": { "sut": "ferroehr-ferroehr-1", "db": "ferroehr-ferroehr-postgres-1" }
         }))
         .unwrap();
         let containers = with.containers.unwrap();
-        assert_eq!(containers.sut, "ehrbase-rs-ehrbase-1");
-        assert_eq!(containers.db, "ehrbase-rs-ehrbase-postgres-1");
+        assert_eq!(containers.sut, "ferroehr-ferroehr-1");
+        assert_eq!(containers.db, "ferroehr-ferroehr-postgres-1");
     }
 
     #[test]
@@ -484,10 +484,10 @@ mod tests {
 
         let declared: Ixit = serde_json::from_value(serde_json::json!({
             "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
-            "system_id": "ehrbase-rs.local"
+            "system_id": "ferroehr.local"
         }))
         .unwrap();
-        assert_eq!(declared.system_id.as_deref(), Some("ehrbase-rs.local"));
+        assert_eq!(declared.system_id.as_deref(), Some("ferroehr.local"));
     }
 
     #[test]
@@ -532,16 +532,16 @@ mod tests {
 
         // A relative key file resolves against the ixit document's directory,
         // never the runner's working directory.
-        declared.rebase_paths(Path::new("/party/ehrbase-rs"));
+        declared.rebase_paths(Path::new("/party/ferroehr"));
         assert_eq!(
             declared.smart.as_ref().unwrap().mint.key_file,
-            PathBuf::from("/party/ehrbase-rs/../smart/cnf-smart-test.key.pem")
+            PathBuf::from("/party/ferroehr/../smart/cnf-smart-test.key.pem")
         );
         // Rebasing is idempotent for an already-absolute path.
         declared.rebase_paths(Path::new("/elsewhere"));
         assert_eq!(
             declared.smart.as_ref().unwrap().mint.key_file,
-            PathBuf::from("/party/ehrbase-rs/../smart/cnf-smart-test.key.pem")
+            PathBuf::from("/party/ferroehr/../smart/cnf-smart-test.key.pem")
         );
     }
 

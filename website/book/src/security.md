@@ -2,7 +2,7 @@
 
 A clinical data repository holds PHI, so its access controls and audit trail
 are part of the product, not an afterthought. This chapter covers the four
-security surfaces you configure when you deploy EHRbase-rs: **authentication**
+security surfaces you configure when you deploy FerroEHR: **authentication**
 (who is calling), **authorization** (what they may do), **multi-tenancy**
 (isolating independent logical systems), and the **ATNA audit trail**
 (recording what happened). Each is independently configurable, and each is
@@ -11,16 +11,16 @@ described here in terms of the environment variables you actually set.
 <!-- toc -->
 
 Configuration follows the same pattern throughout: the server reads defaults,
-then the single `ehrbase.toml` file, then environment variables, with `__`
+then the single `ferroehr.toml` file, then environment variables, with `__`
 separating nested keys. The security configuration groups live in
-distinct sections of `ehrbase.toml` — `[auth]` (authentication), `[tenancy]`
+distinct sections of `ferroehr.toml` — `[auth]` (authentication), `[tenancy]`
 (multi-tenancy), `[authz]` (authorization), and `[audit]`
 (the ATNA audit trail) — and any key can be overridden with the matching
-`EHRBASE_*` environment variable shown below.
+`FERROEHR_*` environment variable shown below.
 
 ## Authentication
 
-Authentication is on by default (`EHRBASE__AUTH__ENABLED=true`). Setting
+Authentication is on by default (`FERROEHR__AUTH__ENABLED=true`). Setting
 it to `false` lets all requests through unauthenticated — a development-only
 mode.
 
@@ -37,7 +37,7 @@ each by the presence of its configuration block:
   audience.
 
 Successfully verified Basic credentials are cached for
-`EHRBASE__AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
+`FERROEHR__AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
 the cache) so a busy client pays the deliberately-expensive Argon2
 verification once per TTL instead of on every request. The cache stores only
 a SHA-256 digest of the presented credential — never a plaintext password —
@@ -49,11 +49,11 @@ The OIDC settings:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base |
-| `EHRBASE__AUTH__OIDC__AUDIENCES` | empty (not checked) | accepted `aud` values |
-| `EHRBASE__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
-| `EHRBASE__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret (development/testing) |
-| `EHRBASE__AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
+| `FERROEHR__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base |
+| `FERROEHR__AUTH__OIDC__AUDIENCES` | empty (not checked) | accepted `aud` values |
+| `FERROEHR__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
+| `FERROEHR__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret (development/testing) |
+| `FERROEHR__AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
 
 There is no separate JWKS or discovery URL to set: the server discovers the
 JWKS URI from the issuer's `.well-known/openid-configuration` unless you supply
@@ -64,8 +64,8 @@ a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
 > rest:
 >
 > ```bash
-> export EHRBASE__AUTH__OIDC__ISSUER=https://keycloak.example/realms/ehrbase
-> export EHRBASE__AUTH__OIDC__AUDIENCES=ehrbase-api
+> export FERROEHR__AUTH__OIDC__ISSUER=https://keycloak.example/realms/ferroehr
+> export FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr-api
 > ```
 >
 > The same pattern works for Active Directory or any standards-compliant
@@ -92,7 +92,7 @@ enable a fourth, token-scope layer on top — see
 Every EHR carries a versioned `EHR_ACCESS` object — the openEHR
 access-decision authority for that record. By default it has no settings and
 the EHR is open to any authenticated caller (all existing workflows keep
-working). Committing settings with the `ehrbase.access_control.v1` scheme
+working). Committing settings with the `ferroehr.access_control.v1` scheme
 switches that EHR to explicit policy:
 
 ```json
@@ -101,7 +101,7 @@ switches that EHR to explicit policy:
   "name": { "_type": "DV_TEXT", "value": "access" },
   "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
   "settings": {
-    "_type": "EHRBASE_ACCESS_CONTROL_V1",
+    "_type": "FERROEHR_ACCESS_CONTROL_V1",
     "gate_keeper": "user:alice",
     "default_access": "restricted",
     "access_list": [
@@ -132,7 +132,7 @@ switches that EHR to explicit policy:
   `EHR_ACCESS` endpoint in the openEHR REST API). Changes are versioned and
   audited like all record content.
 
-The scheme is an EHRbase-rs extension: openEHR mandates the `EHR_ACCESS`
+The scheme is an FerroEHR extension: openEHR mandates the `EHR_ACCESS`
 object and its change control but publishes no concrete access-control
 scheme. Query (AQL) results are not filtered by privacy level in this
 release; the per-EHR gate still applies to EHR-scoped query routes.
@@ -145,12 +145,12 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
-| `EHRBASE__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
-| `EHRBASE__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
-| `EHRBASE__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
-| `EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
-| `EHRBASE__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
+| `FERROEHR__AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
+| `FERROEHR__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
+| `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
+| `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
+| `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
+| `FERROEHR__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
 Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the
 Keycloak `realm_access.roles` array plus the space-separated `scope` claim —
@@ -163,8 +163,8 @@ every write operation — creating an EHR, committing a composition, uploading a
 template, and any update/delete — even when it also holds granting roles such
 as `ADMIN` (a restriction always overrides a grant). Reads and AQL queries stay
 permitted, so a `READONLY` account is an authenticated, view-only principal. The
-dev compose stack ships one such account (`ehrbase-readonly`, password
-`ehrbase`) for evaluation.
+dev compose stack ships one such account (`ferroehr-readonly`, password
+`ferroehr`) for evaluation.
 
 ### ABAC (attribute-based, fine-grained)
 
@@ -174,15 +174,15 @@ point is consulted per clinical operation with resolved attributes.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__AUTHZ__ABAC__ENABLED` | `false` | master ABAC switch |
-| `EHRBASE__AUTHZ__ABAC__ENGINE` | `cedar` | `cedar` (embedded) or `remote` (external PDP) |
-| `EHRBASE__AUTHZ__ABAC__ORGANIZATION_CLAIM` | `organization_id` | JWT claim for the organisation attribute |
-| `EHRBASE__AUTHZ__ABAC__PATIENT_CLAIM` | `patient_id` | JWT claim for the patient attribute (enables the subject gate) |
-| `EHRBASE__AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `.cedar` policy files |
-| `EHRBASE__AUTHZ__ABAC__CEDAR__RELOAD_SECS` | off | optional policy hot-reload interval |
-| `EHRBASE__AUTHZ__ABAC__REMOTE__SERVER` | — (required for `remote`) | PDP base URL (must end with `/`) |
-| `EHRBASE__AUTHZ__ABAC__REMOTE__CONNECT_TIMEOUT_MS` | `2000` | PDP connect timeout |
-| `EHRBASE__AUTHZ__ABAC__REMOTE__REQUEST_TIMEOUT_MS` | `5000` | PDP request timeout |
+| `FERROEHR__AUTHZ__ABAC__ENABLED` | `false` | master ABAC switch |
+| `FERROEHR__AUTHZ__ABAC__ENGINE` | `cedar` | `cedar` (embedded) or `remote` (external PDP) |
+| `FERROEHR__AUTHZ__ABAC__ORGANIZATION_CLAIM` | `organization_id` | JWT claim for the organisation attribute |
+| `FERROEHR__AUTHZ__ABAC__PATIENT_CLAIM` | `patient_id` | JWT claim for the patient attribute (enables the subject gate) |
+| `FERROEHR__AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `.cedar` policy files |
+| `FERROEHR__AUTHZ__ABAC__CEDAR__RELOAD_SECS` | off | optional policy hot-reload interval |
+| `FERROEHR__AUTHZ__ABAC__REMOTE__SERVER` | — (required for `remote`) | PDP base URL (must end with `/`) |
+| `FERROEHR__AUTHZ__ABAC__REMOTE__CONNECT_TIMEOUT_MS` | `2000` | PDP connect timeout |
+| `FERROEHR__AUTHZ__ABAC__REMOTE__REQUEST_TIMEOUT_MS` | `5000` | PDP request timeout |
 
 Two engines sit behind one interface. **Cedar** is the embedded default:
 policies live in `.cedar` files, are schema-validated at boot (an invalid
@@ -205,9 +205,9 @@ server behaves byte-for-byte as a single-tenant system.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__TENANCY__ENABLED` | `false` | enable multi-tenancy |
-| `EHRBASE__TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
-| `EHRBASE__TENANCY__HEADER` | unset | a development header override for the tenant |
+| `FERROEHR__TENANCY__ENABLED` | `false` | enable multi-tenancy |
+| `FERROEHR__TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
+| `FERROEHR__TENANCY__HEADER` | unset | a development header override for the tenant |
 
 A request's tenant is resolved from the configured JWT claim (a dotted path
 such as `realm_access.tenant` is walked through nested objects). Isolation is
@@ -216,7 +216,7 @@ tenant scopes the connection so a query can only ever see its own tenant's
 rows.
 
 > [!WARNING]
-> Leave `EHRBASE__TENANCY__HEADER` unset in production — a client-supplied
+> Leave `FERROEHR__TENANCY__HEADER` unset in production — a client-supplied
 > header must never be able to select a tenant; the tenant must come from the
 > authenticated token. Isolation is also fail-safe by design: an absent or
 > unresolvable tenant runs unscoped against a reserved default rather than
@@ -225,7 +225,7 @@ rows.
 
 ## ATNA audit trail
 
-Separately from openEHR's own provenance, EHRbase-rs keeps an IHE ATNA
+Separately from openEHR's own provenance, FerroEHR keeps an IHE ATNA
 security audit trail of API access — **on by default**, persisted in the
 local Audit Record Repository (the dedicated `audit` PostgreSQL schema),
 rendered in both official formats (FHIR R4 `AuditEvent` per IHE BALP, and

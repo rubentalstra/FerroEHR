@@ -1,6 +1,6 @@
 # Benchmarks
 
-EHRbase-rs measures performance with the **same instrument family that
+FerroEHR measures performance with the **same instrument family that
 measures conformance** — the built-in CNF runner. There is no separate
 benchmark harness: every published number is measured by a committed,
 re-runnable instrument, reported in both directions, and regenerated from
@@ -52,13 +52,13 @@ CONF_PERF_CLASS=POC bash scripts/conformance.sh
 
 # the step-load stress ladder (fresh compose + seed, then the climb)
 cnf-runner stress --root tools/cnf-runner/artifacts \
-                  --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
-                  --out docs/conformance/ehrbase-rs/stress.json
+                  --ixit tools/cnf-runner/party/ferroehr/ixit.json \
+                  --out docs/conformance/ferroehr/stress.json
 
 # the AQL optimization probe
 cnf-runner aql-probe --root tools/cnf-runner/artifacts \
-                     --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
-                     --out docs/conformance/ehrbase-rs/aql-probe.json
+                     --ixit tools/cnf-runner/party/ferroehr/ixit.json \
+                     --out docs/conformance/ferroehr/aql-probe.json
 ```
 
 Every instrument seeds a freshly composed, empty server through the public
@@ -76,7 +76,7 @@ on its own freshly composed stack with its own committed party statement;
 payload skeletons are byte-identical; database maintenance is settled
 deterministically on both sides before every measured window; configuration
 parity is explicit (connection pools raised in lockstep; version signing —
-an ehrbase-rs extension upstream does not perform — disabled for throughput
+an ferroehr extension upstream does not perform — disabled for throughput
 comparisons and labeled). Both directions publish on equal footing: where
 upstream sustains more, its curve says so exactly like the reverse — see
 [Comparison](comparison.md).

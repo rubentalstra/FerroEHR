@@ -1,0 +1,118 @@
+[package]
+name = "ferroehr-rest"
+version.workspace = true
+description = "openEHR ITS-REST 1.1.0 server surface (axum) + authentication"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+publish = false
+
+[dependencies]
+urlencoding.workspace = true
+# openEHR generated foundation: the domain model + the ITS-REST contract.
+openehr-base = { path = "../../crates/openehr-base" }
+openehr-rm = { path = "../../crates/openehr-rm" }
+openehr-its = { path = "../../crates/openehr-its" }
+# The platform library: the SM-shaped service this crate dispatches to, plus its
+# response/query types. The audit tower layer emits through the platform's SM
+# `SystemLog` component; the ATNA event model + `EmitOutcome` come from here.
+ferroehr = { path = "../ferroehr" }
+
+# Web framework & HTTP core.
+axum = { workspace = true }
+axum-server = { workspace = true }
+rustls = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+http = { workspace = true }
+bytes = { workspace = true }
+async-trait = { workspace = true }
+uuid = { workspace = true }
+
+# Async runtime.
+tokio = { workspace = true }
+
+# Serialization & data structures.
+serde = { workspace = true }
+serde_json = { workspace = true }
+indexmap = { workspace = true }
+
+# Config, errors, observability, time. (Configuration is one root tree owned by
+# the `ferroehr` binary; this crate defines the
+# adapter's config slice as plain serde structs, with no loader of its own.)
+thiserror = { workspace = true }
+tracing = { workspace = true }
+jiff = { workspace = true }
+# Metrics facade + the Prometheus recorder handle (the HTTP-metrics tower layer
+# and the /management/prometheus render surface).
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+# Trace-context propagation (W3C traceparent) + the OTel span extension used by
+# the root-span middleware; the export layer itself is installed in the binary.
+opentelemetry = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+
+# Authentication: Basic (argon2) + OAuth2/OIDC bearer (jsonwebtoken over a JWKS,
+# issuer discovery via openidconnect, whose bundled reqwest does the network I/O).
+# See src/auth for the resource-server scope decision.
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+base64 = { workspace = true }       # RFC 7617 Basic-credential decode (never hand-rolled)
+openidconnect = { workspace = true }
+moka = { workspace = true }
+sha2 = { workspace = true }
+
+# Authorization (RBAC + ABAC), folded in from the former ferroehr-authz crate:
+# the embedded Cedar policy engine, the v1-compatible remote-PDP
+# HTTP client, and the hot-reload policy swap. (`serde`/`serde_json`/
+# `thiserror`/`tracing`/`metrics`/`async-trait`/`tokio` are already deps above.)
+cedar-policy = { workspace = true }
+reqwest = { workspace = true }
+arc-swap = { workspace = true }
+
+# OpenAPI / Swagger UI. This server serves ONLY the document it generates from
+# its own handlers; the vendored ITS-REST OAS is `emit-rest` codegen input and
+# is never imported or served here. utoipa-axum single-sources each operation's
+# route + OpenAPI path metadata (OpenApiRouter + routes!()); utoipa-swagger-ui
+# serves the UI shell.
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+
+[dev-dependencies]
+testkit = { path = "../../tools/testkit" }
+sqlx.workspace = true
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
+tokio = { workspace = true }
+tower = { workspace = true }
+axum = { workspace = true }
+# Overload-shedding tests hold an API permit by parking a handler on a
+# never-ending request body (`futures::stream::pending`).
+futures = { workspace = true }
+http = { workspace = true }
+http-body-util = { workspace = true }
+serde_json = { workspace = true }
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+assert_fs = { workspace = true }
+reqwest = { workspace = true }
+base64 = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+# ABAC engine tests (moved from ferroehr-authz): the RemotePdp wire-contract
+# suite + the Cedar/remote differential suite.
+wiremock = { workspace = true }
+
+[features]
+admin-api = []
+
+[lints]
+workspace = true

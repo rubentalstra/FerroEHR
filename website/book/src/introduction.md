@@ -1,6 +1,6 @@
 # Introduction
 
-EHRbase-rs is a pure-Rust [openEHR](https://www.openehr.org/) Clinical Data
+FerroEHR is a pure-Rust [openEHR](https://www.openehr.org/) Clinical Data
 Repository (CDR): a headless, API-first server that stores and queries
 structured health records through a vendor-neutral REST API and the Archetype
 Query Language. This book is the user-facing guide — how to run it, configure
@@ -18,7 +18,7 @@ application code. Applications then store and retrieve that data through a
 standard API, against a shared Reference Model, so the same record is portable
 across every conformant system.
 
-EHRbase-rs implements that standard natively. It speaks the openEHR
+FerroEHR implements that standard natively. It speaks the openEHR
 **REST API** (ITS-REST Release-1.1.0), executes
 **Archetype Query Language (AQL 1.1)**, and holds data as canonical openEHR
 compositions with full, indelible version history. There is no proprietary data format in the middle: what you commit is
@@ -43,7 +43,7 @@ what you query and what you read back.
 
 ## How the system is layered
 
-EHRbase-rs is built in two layers. A **specification layer** is generated
+FerroEHR is built in two layers. A **specification layer** is generated
 deterministically from openEHR's published models — the Reference Model types,
 canonical JSON/XML serialization, the REST contract, and the AQL front end. On
 top of it sits the **application** — the server, the PostgreSQL-native storage,
@@ -67,7 +67,7 @@ user terms; if you are new to openEHR itself, start with the
   explains how templates drive what the server will accept.
 
 > [!NOTE]
-> EHRbase-rs is a successor to the Java **EHRbase** project (by vitasystems and
+> FerroEHR is a successor to the Java **EHRbase** project (by vitasystems and
 > the Peter L. Reichertz Institute) and keeps that lineage in its history, but
 > it is an independent, from-scratch Rust implementation and is not affiliated
 > with or endorsed by the upstream project. It is licensed under Apache-2.0.

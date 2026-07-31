@@ -4,8 +4,8 @@ paths: ["crates/**/*.rs", "app/**/*.rs", "tools/**/*.rs"]
 
 # Rust style — idiomatic application code
 
-Applies to hand-written `.rs`: the application (`ehrbase`, `ehrbase-rest`,
-`ehrbase-server`, `ehrbase-admin-ui`), the tools (`cnf-runner`, `benchmark`,
+Applies to hand-written `.rs`: the application (`ferroehr`, `ferroehr-rest`,
+`ferroehr-server`, `ferroehr-admin-ui`), the tools (`cnf-runner`,
 `testkit`, `openehr-codegen`), the hand-written spec
 crates (`openehr-its`, `openehr-term`, `openehr-query`, the
 tooling crates), and `*_impl.rs` behaviour files. **The application is modern idiomatic Rust of our own design, built on the
@@ -56,7 +56,7 @@ There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
 
 ## Type and error conventions
 
-- `thiserror` error enums in library crates; `anyhow` only in the `ehrbase`
+- `thiserror` error enums in library crates; `anyhow` only in the `ferroehr`
   binary. No `unwrap`/`expect` outside `#[cfg(test)]`; `todo!()` is denied
   workspace-wide (owner rule 2026-07-12) — an unready dependency gets a typed
   error or real code, never a panic placeholder.

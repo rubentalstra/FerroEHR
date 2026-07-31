@@ -195,7 +195,7 @@ exist. If you need a specific version, type it.
 **Delete from CDR** (on a stored-query row) deletes *that version* of the
 query from the CDR's stored-query store, for every client — the only
 destructive action on the screen. It appears only when the CDR's admin API is
-enabled (`admin.enabled` / `EHRBASE__ADMIN__ENABLED`, off by default — see
+enabled (`admin.enabled` / `FERROEHR__ADMIN__ENABLED`, off by default — see
 [`[admin]`](../installation/configuration.md#admin)); the delete itself
 additionally needs the ADMIN role, and a session without it is refused with
 a message naming what is missing.

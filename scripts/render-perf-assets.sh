@@ -7,7 +7,7 @@
 # the build (the same honesty rule as check-conformance-numbers.sh).
 #
 # Env:
-#   CONF_SUT   which SUT's committed artifacts to render (default ehrbase-rs
+#   CONF_SUT   which SUT's committed artifacts to render (default ferroehr
 #              — the product's assets, published into the book; any other
 #              value renders beside that SUT's party artifacts).
 # Args:
@@ -16,8 +16,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SUT="${CONF_SUT:-ehrbase-rs}"
-if [ "$SUT" = "ehrbase-rs" ]; then
+SUT="${CONF_SUT:-ferroehr}"
+if [ "$SUT" = "ferroehr" ]; then
   OUT="${1:-website/book/src/perf-assets}"
   SUMMARY="${2:-website/book/generated/perf-summary.md}"
 else

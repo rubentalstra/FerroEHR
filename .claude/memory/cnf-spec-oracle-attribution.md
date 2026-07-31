@@ -10,7 +10,7 @@ metadata:
 
 Owner ruling (2026-07-24, emphatic — "we run into this very very often"): when
 CNF goes red, the recurring failure is agents assuming `crates/openehr-*` /
-`app/ehrbase-*` are correct and "fixing the CNF" (editing the catalogue or
+`app/ferroehr-*` are correct and "fixing the CNF" (editing the catalogue or
 runner) to make it green, or saying "let me check our SUT" and treating the
 server's observed behaviour as the reference. Both are banned.
 

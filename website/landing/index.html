@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EHRbase-rs — a pure-Rust openEHR Clinical Data Repository</title>
-  <meta name="description" content="EHRbase-rs is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0, AQL 1.1, PostgreSQL 18-native storage, shipped as a single static binary. Spec-compliant and machine-verified.">
-  <link rel="canonical" href="https://rubentalstra.github.io/ehrbase-rs/">
+  <title>FerroEHR — a pure-Rust openEHR Clinical Data Repository</title>
+  <meta name="description" content="FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0, AQL 1.1, PostgreSQL 18-native storage, shipped as a single static binary. Spec-compliant and machine-verified.">
+  <link rel="canonical" href="https://rubentalstra.github.io/ferroehr/">
   <link rel="icon" type="image/svg+xml" href="./assets/logo-mark.svg">
   <link rel="stylesheet" href="./style.css">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="EHRbase-rs — a pure-Rust openEHR Clinical Data Repository">
+  <meta property="og:title" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
   <meta property="og:description" content="Spec-compliant, measured, built for production. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
-  <meta property="og:url" content="https://rubentalstra.github.io/ehrbase-rs/">
+  <meta property="og:url" content="https://rubentalstra.github.io/ferroehr/">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
         <a href="./docs/latest/">Docs</a>
         <a href="./api/">API</a>
         <a href="#conformance" class="hide-sm">Conformance</a>
-        <a href="https://github.com/rubentalstra/ehrbase-rs" rel="noopener">GitHub ↗</a>
+        <a href="https://github.com/rubentalstra/FerroEHR" rel="noopener">GitHub ↗</a>
       </nav>
     </div>
   </header>
@@ -36,12 +36,12 @@
     <!-- ── Hero ─────────────────────────────────────────────────────────── -->
     <section class="hero">
       <div class="wrap">
-        <img class="hero-logo" src="./assets/logo.svg" alt="EHRbase-rs">
+        <img class="hero-logo" src="./assets/logo.svg" alt="FerroEHR">
         <h1>A pure-Rust openEHR Clinical Data Repository — spec-compliant, measured, built for production.</h1>
         <p class="sub">
           openEHR separates clinical knowledge from software: applications store
           and query structured health records through a vendor-neutral REST API
-          and the Archetype Query Language. EHRbase-rs implements that standard
+          and the Archetype Query Language. FerroEHR implements that standard
           natively in Rust — headless, API-first, one static binary on PostgreSQL 18.
         </p>
         <div class="hero-cta">
@@ -61,7 +61,7 @@
           <p>Every release runs the complete conformance catalogue against the live server, in JSON and XML, and computes the openEHR profile verdicts.</p>
         </div>
         <!-- Conformance numbers/verdicts are DERIVED AT BUILD TIME from
-             docs/conformance/ehrbase-rs/ by scripts/render-conformance-stats.sh
+             docs/conformance/ferroehr/ by scripts/render-conformance-stats.sh
              (fill-html). Never hand-type a number here — CI's stale-numbers
              gate (scripts/check-conformance-numbers.sh) fails the build. -->
         <div class="proof-nums">
@@ -72,13 +72,13 @@
         <!-- The heat grid is GENERATED output (scripts/render-conformance-assets.sh,
              regenerate-and-diff guarded) — its labels are rendered, never hand-typed. -->
         <a class="proof-grid" href="./docs/latest/conformance.html">
-          <img src="./assets/conformance-heat-grid.svg" alt="Capability conformance heat grid: every claimed capability grouped by profile tier, marked passed, failed, not evidenced, excused or no-cases" loading="lazy">
+          <img src="./docs/latest/conformance-assets/conformance-heat-grid.svg" alt="Capability conformance heat grid: every claimed capability grouped by profile tier, marked passed, failed, not evidenced, excused or no-cases" loading="lazy">
         </a>
         <div class="proof-pills">
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-core">—</span></a>
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-standard">—</span></a>
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-options">—</span></a>
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-sec">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/FerroEHR/blob/develop/docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-core">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/FerroEHR/blob/develop/docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-standard">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/FerroEHR/blob/develop/docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-options">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/FerroEHR/blob/develop/docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-sec">—</span></a>
           <a class="pill" href="./docs/latest/comparison.html">Full comparison vs upstream →</a>
         </div>
       </div>
@@ -162,16 +162,16 @@
           <pre><code><span class="prompt">$</span> docker compose up --build
 
 <span class="cmt"># Probe the status endpoint</span>
-<span class="prompt">$</span> curl http://localhost:8080/ehrbase/rest/status
+<span class="prompt">$</span> curl http://localhost:8080/ferroehr/rest/status
 
-<span class="cmt"># Create an EHR (development credentials: ehrbase / ehrbase)</span>
-<span class="prompt">$</span> curl -u ehrbase:ehrbase -X POST -i \
-    http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+<span class="cmt"># Create an EHR (development credentials: ferroehr / ferroehr)</span>
+<span class="prompt">$</span> curl -u ferroehr:ferroehr -X POST -i \
+    http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 
 <span class="cmt"># Query it with AQL</span>
-<span class="prompt">$</span> curl -u ehrbase:ehrbase -H 'Content-Type: application/json' \
+<span class="prompt">$</span> curl -u ferroehr:ferroehr -H 'Content-Type: application/json' \
     -d '{"q":"SELECT e/ehr_id/value FROM EHR e"}' \
-    http://localhost:8080/ehrbase/rest/openehr/v1/query/aql</code></pre>
+    http://localhost:8080/ferroehr/rest/openehr/v1/query/aql</code></pre>
         </div>
       </div>
     </section>
@@ -207,7 +207,7 @@
             <span>EHRbase<span class="tld">-rs</span></span>
           </a>
           <p>A pure-Rust openEHR Clinical Data Repository. Licensed under
-            <a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/LICENSE" rel="noopener">Apache-2.0</a>.</p>
+            <a href="https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE" rel="noopener">Apache-2.0</a>.</p>
           <p>A fork of EHRbase, originally by vitasystems and the Peter L. Reichertz
             Institute (PLRI). openEHR specifications © the openEHR Foundation.</p>
         </div>
@@ -224,16 +224,16 @@
           <div>
             <h4>Project</h4>
             <ul>
-              <li><a href="https://github.com/rubentalstra/ehrbase-rs" rel="noopener">GitHub</a></li>
-              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/SECURITY.md" rel="noopener">Security policy</a></li>
-              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/CHANGELOG.md" rel="noopener">Changelog</a></li>
-              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener">Conformance certificate</a></li>
+              <li><a href="https://github.com/rubentalstra/FerroEHR" rel="noopener">GitHub</a></li>
+              <li><a href="https://github.com/rubentalstra/FerroEHR/blob/develop/SECURITY.md" rel="noopener">Security policy</a></li>
+              <li><a href="https://github.com/rubentalstra/FerroEHR/blob/develop/CHANGELOG.md" rel="noopener">Changelog</a></li>
+              <li><a href="https://github.com/rubentalstra/FerroEHR/blob/develop/docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md" rel="noopener">Conformance certificate</a></li>
             </ul>
           </div>
         </div>
       </div>
       <div class="footer-note">
-        <span>© EHRbase-rs contributors.</span>
+        <span>© FerroEHR contributors.</span>
         <span>Not affiliated with or endorsed by upstream EHRbase.</span>
       </div>
     </div>
