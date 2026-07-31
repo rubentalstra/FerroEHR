@@ -149,3 +149,87 @@ fn lex_error_is_typed_and_located() {
     let err = parse_statements("a \u{00a7} b").unwrap_err(); // § is not a BEL token
     assert!(matches!(err, BelError::Lex { .. }), "got {err:?}");
 }
+
+/// `LANG/docs/BEL/master03-language.adoc` §Typing/§Statements (#1402):
+/// generic type_ids in declarations (`base_expressions.g4` `type_id`'s
+/// recursive form) and the chapter's own declaration examples.
+#[test]
+fn generic_type_ids_in_declarations() {
+    for src in [
+        "$heart_rate_history: List<Real>",
+        "$table: Hash<String,Integer>",
+        "$age_in_years: Integer := current_date() - $date_of_birth",
+    ] {
+        let stmts = parse_statements(src).unwrap_or_else(|e| panic!("{src}: {e}"));
+        assert!(
+            matches!(&stmts[0], Statement::VariableDeclaration(_)),
+            "{src}"
+        );
+    }
+}
+
+/// `master03-language.adoc` §Constants (#1402): `Name : Type = primitive_object`
+/// parses as a constant declaration (never a silently mis-read assertion),
+/// including the section's interval example; a UC-tagged assertion still
+/// parses when the shape does not complete as a constant.
+#[test]
+fn constant_declarations_parse() {
+    for src in [
+        "Mph_to_kmh_factor: Real = 1.6",
+        "Pounds_to_kg: Real = 0.4536",
+        "Systolic_normal_range: Interval<Integer> = |105..135|",
+    ] {
+        let stmts = parse_statements(src).unwrap_or_else(|e| panic!("{src}: {e}"));
+        // the beom carries a constant as its one declaration shape (no
+        // constant class exists — the NOTE at BeomBuilder::constant_declaration).
+        assert!(
+            matches!(&stmts[0], Statement::VariableDeclaration(_)),
+            "{src}"
+        );
+    }
+    // a UC tag whose body is not a `Type [= …]` shape stays an assertion.
+    let stmts = parse_statements("Check_vs_vars: exists $heart_rate").expect("tagged assertion");
+    assert!(matches!(&stmts[0], Statement::Assertion(_)));
+}
+
+/// `master03-language.adoc` §Container Operators (#1402): the quantifier
+/// binding accepts the docs-text bare identifier alongside the grammar's
+/// `$`-form, with both `:` and `in` separators and the optional `|`.
+#[test]
+fn quantifier_binding_spellings() {
+    for src in [
+        "Check: for_all v : $events | v/value > 0",
+        "Check: for_all v in $events | v/value > 0",
+        "Check: for_all $v : $events | $v/value > 0",
+        "Check: there_exists v : $events | v/value > 0",
+        "Check: \u{2200} v : $events | v/value > 0",
+        "Check: \u{2203} v : $events | v/value > 0",
+    ] {
+        assert!(
+            parse_statements(src).is_ok(),
+            "{src}: {:?}",
+            parse_statements(src).err()
+        );
+    }
+}
+
+/// `master03-language.adoc` §Literals (#1402): terminology-code literals are
+/// BEL primitives; the boundary twins — container literals have no grammar
+/// production and no beom destination (the BEOM-normative bound,
+/// `master02-overview.adoc`) — stay refused.
+#[test]
+fn terminology_code_literals_and_container_literal_boundary() {
+    let stmts =
+        parse_statements("Check: $code = [snomed_ct::389086002]").expect("term-code equality");
+    assert_eq!(stmts.len(), 1);
+
+    for refused in [
+        "$l: List<Integer> := [1, 2, 3]",
+        "$s: Set<Integer> := {1, 2, 3}",
+    ] {
+        assert!(
+            parse_statements(refused).is_err(),
+            "{refused} must stay refused (no grammar production, no beom class)"
+        );
+    }
+}

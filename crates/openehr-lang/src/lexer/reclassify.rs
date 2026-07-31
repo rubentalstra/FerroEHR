@@ -162,9 +162,16 @@ pub(super) fn reclassify(
             Language::Adl | Language::Bel => Some(token.clone()),
             Language::Odin => None,
         },
-        // A qualified term code is a cADL primitive and an ODIN leaf value;
-        // `base_expressions.g4` has no such token.
-        Token::TermCodeRef(_) | Token::EmbeddedUri(_) => match language {
+        // A qualified term code is a cADL primitive, an ODIN leaf value, AND
+        // a BEL literal: `LANG/docs/BEL/master03-language.adoc` §Literals
+        // lists `Terminology_code` among the BEL primitive literal types, and
+        // the BEL grammar reaches `TERM_CODE_REF` through its `odin_values`
+        // import (`constant_declaration`'s `primitive_object`). (#1402)
+        Token::TermCodeRef(_) => Some(token.clone()),
+        // An embedded URI has no `base_expressions.g4` production and the
+        // §Literals `Uri` row shows a BARE URI (lexically unproductive in
+        // expression text) — the BEL boundary recorded at the #884 audit.
+        Token::EmbeddedUri(_) => match language {
             Language::Adl | Language::Odin => Some(token.clone()),
             Language::Bel => None,
         },

@@ -97,6 +97,22 @@ pub enum BelLiteral {
     DateTime(String),
     /// An ISO-8601 duration (verbatim).
     Duration(String),
+    /// A terminology-code reference (verbatim incl. brackets) —
+    /// `LANG/docs/BEL/master03-language.adoc` §Literals lists
+    /// `Terminology_code` among the BEL primitive literal types
+    /// (`[snomed_ct::389086002]`), and the BEL grammar reaches
+    /// `TERM_CODE_REF` through its `odin_values` import.
+    TermCode(String),
+    /// An interval literal, carried as its VERBATIM source text
+    /// (`|105..135|`) — the constant-declaration RHS is the full
+    /// `odin_values` `primitive_object`, which includes the per-type
+    /// interval values (`base_expressions.g4` `constant_declaration`;
+    /// `master03-language.adoc` §Constants' own
+    /// `Systolic_normal_range: Interval<Integer> = |105..135|`). NOTE: the
+    /// beom has no interval-literal class, so the verbatim text is the
+    /// serialisation an `EXPR_LITERAL.item` can carry — the BEOM-normative
+    /// bound (`master02-overview.adoc`).
+    Interval(String),
 }
 
 impl BelLiteral {
@@ -113,7 +129,9 @@ impl BelLiteral {
             | BelLiteral::Date(s)
             | BelLiteral::Time(s)
             | BelLiteral::DateTime(s)
-            | BelLiteral::Duration(s) => serde_json::Value::String(s.clone()),
+            | BelLiteral::Duration(s)
+            | BelLiteral::TermCode(s)
+            | BelLiteral::Interval(s) => serde_json::Value::String(s.clone()),
             BelLiteral::Character(c) => serde_json::Value::String(c.to_string()),
         }
     }
@@ -192,6 +210,16 @@ pub trait BelBuilder {
         name: &str,
         type_id: &str,
         init: Option<Self::Expr>,
+    ) -> Self::Stmt;
+
+    /// Build a constant declaration (`Name : Type [ = primitive_object ]`) —
+    /// `base_expressions.g4` `constant_declaration`;
+    /// `LANG/docs/BEL/master03-language.adoc` §Constants.
+    fn constant_declaration(
+        &mut self,
+        name: &str,
+        type_id: &str,
+        value: Option<Self::Expr>,
     ) -> Self::Stmt;
 }
 
@@ -394,6 +422,30 @@ impl BelBuilder for BeomBuilder {
         // beom VARIABLE_DECLARATION has no initialiser slot (an `:= init` is a
         // separate ASSIGNMENT in the model); the parsed init is discarded here.
         drop(init);
+        Statement::VariableDeclaration(VariableDeclaration {
+            name: name.to_owned(),
+            r#type: ty,
+        })
+    }
+
+    fn constant_declaration(
+        &mut self,
+        name: &str,
+        type_id: &str,
+        value: Option<Expression>,
+    ) -> Statement {
+        // NOTE: the beom defines exactly three statement classes — ASSERTION,
+        // VARIABLE_DECLARATION and ASSIGNMENT
+        // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core
+        // Package) — and no constant class, while the language chapter
+        // (`master03-language.adoc` §Constants) and the grammar
+        // (`constant_declaration`) both define the construct. The BEOM is the
+        // normative bound (`master02-overview.adoc`), so a constant
+        // materialises as the model's one declaration shape, its value
+        // discarded exactly as a variable initialiser is.
+        let ty = object_ref_type(type_id);
+        self.vars.insert(name.to_owned(), ty.clone());
+        drop(value);
         Statement::VariableDeclaration(VariableDeclaration {
             name: name.to_owned(),
             r#type: ty,
