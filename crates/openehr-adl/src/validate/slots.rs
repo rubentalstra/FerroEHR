@@ -10,14 +10,15 @@
 //! `master08-validation.adoc` §Phase 2 → Validate Specialised Definition.
 //!
 //! The first half is the slot arm of the specialisation walk: a second
-//! `impl` block on `Phase2`, reached from
-//! `Phase2::check_object_pair` in `super::specialisation` in unchanged
+//! `impl` block on `ParentScan`, reached from
+//! `ParentScan::check_object_pair` in `super::specialisation` in unchanged
 //! invocation order.
 //!
 //! The second half ([`validate_fillers`]) is the repository-dependent pass. VTPL
 //! and VARXR both need the supplier repository (a filler is resolved,
 //! flattened, and inspected), so they run only when a repository is available —
-//! separately from the standalone phase-1/2 passes. They un-defer:
+//! separately from the standalone integrity / parent-conformance passes. They
+//! un-defer:
 //!
 //! * **VTPL** — template/filler language consistency (`master03` §Validity
 //!   Rules, VTPL): every filler flattened into a *template* must support the
@@ -42,14 +43,14 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::beom::core::assertion::Assertion;
 
 use super::catalogue::ValidationCode;
-use super::specialisation::Phase2;
+use super::specialisation::ParentScan;
 use super::{ValidationIssue, push_issue};
 use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
 use crate::codes::{codes_conformant, specialisation_depth};
 use crate::flatten::flat_form;
 use crate::source::ArtefactKind;
 
-impl<'a> Phase2<'a> {
+impl<'a> ParentScan<'a> {
     /// Checks for a child node that redefines an `ARCHETYPE_SLOT` in the flat
     /// parent (slot filling or slot narrowing).
     pub(super) fn check_slot_redefinition(

@@ -10,8 +10,8 @@
 //!   as source text, so the path literals are scanned out of it.
 //!
 //! Both are therefore reachable only from the source-level entry points
-//! ([`super::validate_source_phase1`], [`super::validate_source_phase1_adl14`],
-//! [`super::validate_source_adl14`], [`super::validate_source`]), which carry
+//! ([`super::validate_source_integrity`], [`super::validate_adl14_source`],
+//! [`super::validate_source`]), which carry
 //! the [`SourceArtefact`] alongside the assembled archetype.
 
 use std::collections::BTreeSet;

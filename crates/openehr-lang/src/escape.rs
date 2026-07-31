@@ -123,7 +123,7 @@ pub fn decode(inner: &str) -> Result<String, EscapeError> {
             // combination starting with a backslash is illegal") instead of
             // passing it through verbatim; each lexer that feeds this decoder
             // rejects them structurally today, so the pass-through only serves
-            // direct callers.
+            // direct callers — tracked as issue #1344.
             Some(other) => {
                 out.push('\\');
                 out.push(other);

@@ -1,5 +1,6 @@
 //! The ADL 1.4 phase-1 validation subset
-//! ([`openehr_adl::validate::validate_source_phase1_adl14`]).
+//! ([`openehr_adl::validate::validate_source_integrity`] in
+//! [`openehr_adl::parse::Dialect::Adl14`]).
 //!
 //! A 1.4 source is judged **as 1.4** (never post-conversion): the checks that
 //! correspond to an ADL 1.4 / AOM 1.4 standalone rule run; the AOM2-only rules
@@ -14,8 +15,9 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::Severity;
-use openehr_adl::validate::validate_source_phase1_adl14;
+use openehr_adl::validate::validate_source_integrity;
 
 /// A minimal, valid standalone ADL 1.4 archetype (`adl_version=1.4`, no
 /// `rm_release`, at-code node ids, `ontology` keyword) — the exact shape a 1.4
@@ -55,7 +57,7 @@ ontology
 ";
 
 fn errors(src: &str) -> Vec<String> {
-    let issues = validate_source_phase1_adl14(src).expect("1.4 source parses");
+    let issues = validate_source_integrity(src, Dialect::Adl14, None).expect("1.4 source parses");
     issues
         .iter()
         .filter(|i| i.severity == Severity::Error)
@@ -106,7 +108,7 @@ fn undefined_node_code_raises_vatdf() {
 
 #[test]
 fn unparseable_source_is_a_parse_error() {
-    assert!(validate_source_phase1_adl14("this is not an archetype").is_err());
+    assert!(validate_source_integrity("this is not an archetype", Dialect::Adl14, None).is_err());
 }
 
 // ── the one 1.4 rule that needs a reference model: VUNT ──────────────────────
@@ -169,7 +171,7 @@ ontology
 }
 
 fn adl14_codes(src: &str) -> Vec<String> {
-    let issues = openehr_adl::validate::validate_source_adl14(
+    let issues = openehr_adl::validate::validate_adl14_source(
         src,
         &openehr_adl::validate::rm::ProductionRmModel,
     )

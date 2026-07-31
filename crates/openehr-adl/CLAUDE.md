@@ -28,34 +28,34 @@ else; each helper has exactly ONE home.
 
 | module | role |
 |---|---|
-| `source` | the outer artefact parser: sections, kind, meta, spans (`parse_source`, `parse_source_adl14`) |
-| `parse/mod` | the `Dialect` selector, the `Parser` state, `parse_definition_body{,_adl14}`, the re-entrant sub-parsers `rules` drives, cursor/error helpers |
+| `source` | the outer artefact parser: sections, kind, meta, spans (`parse_source(src, dialect)`) |
+| `parse/mod` | the **public `Dialect` seam**, the `Parser` state, `parse_definition_body(body, dialect)`, the re-entrant sub-parsers `rules` drives, cursor/error helpers |
 | `parse/parser` | the cADL structure / attribute / tuple productions |
 | `parse/refs` | archetype slots, `use_archetype` roots, `use_node` proxies |
 | `parse/primitives` | the inline `C_PRIMITIVE` family |
 | `parse/values` | value lists, `\|…\|` intervals, endpoints, the `CadlValue` kind trait |
 | `parse/patterns` | the date/time constraint-pattern validators |
 | `rules` | the `rules` section + slot assertions (BEL over `openehr_lang`) |
-| `assemble` | fold the ODIN sections + `definition` + `rules` into a complete `Archetype` |
+| `assemble` | fold the ODIN sections + `definition` + `rules` into a complete `Archetype` (`parse_artefact(src, dialect)`) |
 | `meta` | the read-only artefact summary accessors (`ArtefactSummary`/`summarize`, `regression_tag`) |
 
 **Semantics — validation, flattening, generation, serialization.**
 
 | module | role |
 |---|---|
-| `validate/mod` | orchestration ONLY: `ValidationIssue`, the six public entry points, `push_issue`, and the three phase drivers whose call order IS the `master08` schedule |
+| `validate/mod` | orchestration ONLY: `ValidationIssue`, the five public entry points, `push_issue`, and the three drivers (`run_integrity_checks` / `run_parent_conformance` / `run_flat_form_checks`) whose call order IS the `master08` schedule |
 | `validate/catalogue` | the `Severity` + `ValidationCode` vocabulary (91 codes) |
 | `validate/identification` | id / root / versions / languages + the STCNT/VOLT gate |
-| `validate/structure` | the phase-1 definition walk |
+| `validate/structure` | the basic-integrity definition walk (`StructureScan`) |
 | `validate/terminology` | term definitions, value sets, code usage |
 | `validate/bindings` | binding keys + the `TerminologyResolver` seam for VETDF |
 | `validate/annotations` | `annotations` + `rm_overlay` |
 | `validate/source_level` | VOKU/VRRLP over the raw parsed source |
-| `validate/specialisation` | the differential-vs-flat-parent walk + the parent-dependent VACSD/VASID/VALC |
-| `validate/slots` | the slot arm of that walk (a second `impl Phase2` block) + `validate_fillers` |
-| `validate/rm` | the reference-model seam (`RmModel`, `ProductionRmModel`, phase-2 RM checks) |
+| `validate/specialisation` | the differential-vs-flat-parent walk (`ParentScan`) + the parent-dependent VACSD/VASID/VALC |
+| `validate/slots` | the slot arm of that walk (a second `impl ParentScan` block) + `validate_fillers` |
+| `validate/rm` | the reference-model seam (`RmModel`, `ProductionRmModel`, `validate_rm_conformance(archetype, rm, dialect)` over `RmScan`) |
 | `validate/conformance` | the `master04.5` conformance functions |
-| `validate/flat` | phase 3 + the deferred flat-form halves |
+| `validate/flat` | the flat-form walk (`FlatScan`: `validate_flat_form_structure` + the 1.4 VDFPT twin) + the deferred flat-form halves (`validate_flat_form`) |
 | `flatten` | specialisation flattening (`flatten`, `flat_form`) |
 | `opt` | OPT2 generation — raw via `create_opt`, profiled via `profile_opt` |
 | `print/mod` | the printer state, the artefact-kind projection, the top-level section driver, `print` |
@@ -93,13 +93,17 @@ else; each helper has exactly ONE home.
   with a typed decode error) — which the cADL parser, the ODIN lexer and the
   BEL lexer all read through; the cADL side reports a decode defect as `SUNK`
   at the literal's span, the two `openehr-lang` lexers refuse it at the lex.
-  The two full-pipeline entries run the SAME phase schedule: `validate` and
-  `validate_source` both drive phase 1 → phase-2 RM → phase-2 specialisation →
-  phase 3, and neither may omit a phase (there is no partial-validation
-  profile in AOM2).
-- **`validate/` is grouped by TOPIC, never by phase number.** A new rule goes
-  in the topic module that owns its subject, and its driver call keeps the
-  existing order — issue emission order is behaviour.
+  The two full-pipeline entries run the SAME schedule: `validate` and
+  `validate_source` both drive basic integrity → RM conformance → parent
+  conformance → flat form, and neither may omit a pass (there is no
+  partial-validation profile in AOM2).
+- **`validate/` is grouped by TOPIC, never by phase number, and NOTHING is
+  named after a phase number.** A new rule goes in the topic module that owns
+  its subject, and its driver call keeps the existing order — issue emission
+  order is behaviour. Functions, structs, tests and files are named for what
+  they DO (`validate_integrity`, `run_parent_conformance`, `FlatScan`,
+  `corpus_validity_integrity.rs`); master08's "phase 1/2/3" vocabulary survives
+  only as a doc-comment cross-reference into the spec.
 - **The cADL parser is `parse/`, one module per production family**, and the
   ADL 1.4-only productions do NOT live there: they are `adl14/lower.rs` +
   `adl14/domain.rs`, and the three dialect-gated dispatch points in
@@ -121,12 +125,22 @@ else; each helper has exactly ONE home.
 - **No ANTLR runtime, ever.** The normative `.g4` grammars from
   `openEHR/adl-antlr` are vendored under `vendor/grammar/` (with PROVENANCE.md)
   as reference input only.
+- **The dialect is a PUBLIC PARAMETER, never a twin function.**
+  `parse::Dialect` is the seam: `parse_source`, `parse_definition_body`,
+  `parse_artefact`, `assemble`, `validate::validate_source_integrity` and
+  `validate::rm::validate_rm_conformance` each take it and dispatch internally
+  — there are no `*_adl14` twins. The one deliberately separate 1.4 entry is
+  `validate::validate_adl14_source(src, rm)` (the FULL 1.4 catalogue), because
+  the 1.4 pipeline takes neither an `ArchetypeRepository` nor a
+  `TerminologyResolver` (no differential lineage to flatten, no AOM2
+  external-binding rule) — folding it into `validate_source` would add two
+  parameters it silently ignores.
 - **A 1.4 upload is judged AS 1.4, never as an ADL2 superset.**
   `parse::Dialect::Adl14` both ADDS the 1.4-only forms and REMOVES the
   constructs ADL 2 introduced — the cADL 1.4 keyword set is closed
   (`ADL1.4/master05-cadl.adoc` §Keywords). The dialect reaches the OUTER
-  structure too (`source::parse_source_adl14`, the entry every 1.4 caller
-  uses): 1.4 section keywords are case-insensitive (`master08-adl.adoc`
+  structure too (`source::parse_source` in `Dialect::Adl14`, the reading every
+  1.4 caller gets): 1.4 section keywords are case-insensitive (`master08-adl.adoc`
   §Symbols), an old-form archetype with `primary_language`/
   `languages_available` in its ontology and no `language` section is accepted
   and upgraded on parse (§Language Section + §Ontology Header Statements), and
@@ -134,7 +148,7 @@ else; each helper has exactly ONE home.
   VARCN). ADL2 outer parsing is unchanged — exact lowercase keywords,
   unconditional `SALAN`, no concept clause. The 1.4-only validity rules (VCOC;
   VATDF/VACDF over the qualified/listed spelling) run on the
-  `Dialect::Adl14` phase-1 path only. The `S*` error space is a verbatim 1:1
+  `Dialect::Adl14` basic-integrity path only. The `S*` error space is a verbatim 1:1
   mirror of the openEHR catalogue (`ADL2/master04.6`): never invent a code —
   reuse the catalogue code for the parse position and name the construct in
   the message.
@@ -159,7 +173,7 @@ else; each helper has exactly ONE home.
   VATDF/VACDF/STCDC/STCAC, VCOC, the operators the chapter names but no grammar
   defines — `~matches`/`~is_in`/`∉`, `=~`/`!~` — and the
   `cadl_breadth_{structure,primitives,datetime}` trio covering every construct
-  of the chapter). `app/ehrbase/tests/adl14_knowledge_archetypes.rs` is the
+  of the chapter). `app/ehrbase/tests/it/adl14_knowledge_archetypes.rs` is the
   DB-free parse gate over the app's real-world CKM 1.4 knowledge resources.
   Corpus cases are the regression net — never delete/weaken one to get green;
   a defect goes through adjudication, not case edits, and every refusal keeps

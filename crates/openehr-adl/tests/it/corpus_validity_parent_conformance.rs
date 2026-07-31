@@ -28,6 +28,7 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::{ArchetypeRepository, FlatParent, resolve_flat_parent};
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::bindings::NoTerminologyResolver;
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::ProductionRmModel;
@@ -37,7 +38,7 @@ const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-ref
 
 /// The phase-2 (and gated phase-1) codes this harness asserts a tag names is
 /// raised on its fixture.
-const PHASE2_FIRING: &[&str] = &[
+const PARENT_CONFORMANCE_FIRING: &[&str] = &[
     "VSANCE", "VSANCC", "VSONIN", "VSSM", "VDIFP", "VCORMT", "VARXID", "VARXS", "VARXR", "VDSSID",
     "VSONCO", "VPOV", // gated phase-1 codes reached through the same pipeline:
     "VACSD", "VTSD",
@@ -94,7 +95,7 @@ fn build_repository() -> ArchetypeRepository {
         let Ok(src) = std::fs::read_to_string(&path) else {
             continue;
         };
-        if let Ok(art) = parse_artefact(&src) {
+        if let Ok(art) = parse_artefact(&src, Dialect::Adl2) {
             repo.insert(art);
         }
     }
@@ -110,7 +111,7 @@ struct Counts {
 }
 
 #[test]
-fn corpus_phase2_outcomes() {
+fn corpus_parent_conformance_outcomes() {
     let repo = build_repository();
     let rm = ProductionRmModel;
     let mut counts = Counts::default();
@@ -134,7 +135,7 @@ fn corpus_phase2_outcomes() {
         };
         let tag = read_tag_raw(&src).map(|t| normalise_tag(&t));
 
-        let Ok(archetype) = parse_artefact(&src) else {
+        let Ok(archetype) = parse_artefact(&src, Dialect::Adl2) else {
             // A non-parsing fixture is owned by the parse gates; a FAIL tag is a
             // valid outcome here.
             if tag.as_deref() == Some("FAIL") {
@@ -189,7 +190,7 @@ fn corpus_phase2_outcomes() {
                     violations.push(format!("{name}: PASS/untagged but raised {error_codes:?}"));
                 }
             }
-            Some(t) if PHASE2_FIRING.contains(&t) => {
+            Some(t) if PARENT_CONFORMANCE_FIRING.contains(&t) => {
                 if error_codes.iter().any(|c| c == t) {
                     counts.exact_code += 1;
                 } else {

@@ -8,6 +8,7 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
+use openehr_adl::parse::Dialect;
 use openehr_adl::rules::{parse_rules_body, parse_slot_assertions};
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
@@ -182,7 +183,7 @@ fn archetype_ref_item_resolves_to_target_node() {
         definition\n\tCLUSTER[id1] matches {\n\t\titems matches {\n\t\t\tELEMENT[id2] matches {*}\n\t\t}\n\t}\n\n\
         rules\n\t\texists /items[id2]\n\n\
         terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>\n\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>\n\t\t>\n\t>\n";
-    let art = parse_artefact(src).unwrap_or_else(|e| panic!("parse: {e:?}"));
+    let art = parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse: {e:?}"));
     let rules = match art {
         Archetype::AuthoredArchetype(a) => match *a {
             AuthoredArchetype::AuthoredArchetype(d) => d.rules,

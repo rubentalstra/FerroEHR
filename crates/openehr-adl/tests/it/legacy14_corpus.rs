@@ -12,7 +12,8 @@
 //!   `adl14_conversion.rs`).
 //! - `validity/legacy_adl_1.4/*.adl` — parse (1.4 dialect) clean AND validate
 //!   clean under the ADL 1.4 phase-1 subset
-//!   ([`openehr_adl::validate::validate_source_phase1_adl14`]; every file here
+//!   ([`openehr_adl::validate::validate_source_integrity`] in the 1.4 dialect;
+//!   every file here
 //!   is `regression`-tagged PASS), EXCEPT `FAIL_c_dv_quantity_minimal.v1.adl`
 //!   which rejects at parse with `SDINV` (its `regression` tag) — an empty
 //!   `(C_DV_QUANTITY) <>` inline dADL block — and the two concept-less
@@ -35,10 +36,11 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
 use openehr_adl::adl14::log::ConversionLog;
-use openehr_adl::assemble::parse_artefact_adl14;
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::SyntaxErrorCode;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::Severity;
-use openehr_adl::validate::validate_source_phase1_adl14;
+use openehr_adl::validate::validate_source_integrity;
 
 /// The vendored `legacy_adl_1.4` fixtures that carry no `concept` section and
 /// are therefore refused with `SACO` (the adjudication is stated at the
@@ -103,8 +105,8 @@ fn every_adl_file_is_claimed_with_an_outcome() {
         } else if r.contains("validity/legacy_adl_1.4/") {
             if r.contains("FAIL_c_dv_quantity_minimal") {
                 // The SDINV reject: an empty `(C_DV_QUANTITY) <>` domain block.
-                let err =
-                    parse_artefact_adl14(&src).expect_err("FAIL_c_dv_quantity_minimal must reject");
+                let err = parse_artefact(&src, Dialect::Adl14)
+                    .expect_err("FAIL_c_dv_quantity_minimal must reject");
                 assert!(
                     err.iter().any(|e| e.code == SyntaxErrorCode::Sdinv),
                     "{r}: expected SDINV, got {:?}",
@@ -123,7 +125,7 @@ fn every_adl_file_is_claimed_with_an_outcome() {
                 // prior art, not the oracle. Their concept-carrying twins live
                 // in `adl14-cadl/` (see `adl14_cadl_gates.rs`), so the
                 // constructs they exercise keep their accepting coverage.
-                let err = parse_artefact_adl14(&src)
+                let err = parse_artefact(&src, Dialect::Adl14)
                     .err()
                     .unwrap_or_else(|| panic!("{r}: a concept-less 1.4 source must reject"));
                 assert!(
@@ -132,12 +134,12 @@ fn every_adl_file_is_claimed_with_an_outcome() {
                     err.iter().map(|e| e.code).collect::<Vec<_>>()
                 );
             } else {
-                parse_artefact_adl14(&src)
+                parse_artefact(&src, Dialect::Adl14)
                     .unwrap_or_else(|e| panic!("{r}: 1.4-tolerant parse failed: {e:?}"));
                 // Every legacy_adl_1.4 fixture is `regression`-tagged PASS: it
                 // must validate clean under the ADL 1.4 phase-1 subset (no
                 // AOM2-only rule may false-reject a valid 1.4 archetype).
-                let issues = validate_source_phase1_adl14(&src)
+                let issues = validate_source_integrity(&src, Dialect::Adl14, None)
                     .unwrap_or_else(|e| panic!("{r}: 1.4 validation parse failed: {e:?}"));
                 let errs: Vec<_> = issues
                     .iter()
@@ -152,7 +154,7 @@ fn every_adl_file_is_claimed_with_an_outcome() {
             claimed += 1;
         } else if r.contains("features/") {
             // The lone 1.4 features source (intervention_decisions.v0).
-            parse_artefact_adl14(&src)
+            parse_artefact(&src, Dialect::Adl14)
                 .unwrap_or_else(|e| panic!("{r}: 1.4-tolerant parse failed: {e:?}"));
             claimed += 1;
         } else if r.starts_with("adl14-dadl/") {

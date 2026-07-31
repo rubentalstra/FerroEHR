@@ -33,6 +33,7 @@ use std::path::{Path, PathBuf};
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::regression_tag;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
 use openehr_adl::validate::slots::validate_fillers;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
@@ -45,7 +46,8 @@ const TEMPLATES: &str = concat!(
 fn parse(path: &Path) -> Archetype {
     let src =
         std::fs::read_to_string(path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-    parse_artefact(&src).unwrap_or_else(|e| panic!("parse {}: {e:?}", path.display()))
+    parse_artefact(&src, Dialect::Adl2)
+        .unwrap_or_else(|e| panic!("parse {}: {e:?}", path.display()))
 }
 
 /// A repository over the whole templates directory, so fillers referenced by the

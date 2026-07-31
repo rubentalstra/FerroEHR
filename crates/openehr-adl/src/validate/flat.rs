@@ -1,12 +1,13 @@
 //! Flat-form topic: everything decidable only after flattening.
 //!
-//! Two groups, both run by [`super::run_phase3`] on the flat form
-//! ([`crate::flatten::flat_form`]) and both gated on an error-free phase 1
-//! (`master08` §Overview phase gate).
+//! Two groups, both run by [`super::run_flat_form_checks`] on the flat form
+//! ([`crate::flatten::flat_form`]) and both gated on an error-free
+//! basic-integrity pass (`master08` §Overview phase gate).
 //!
-//! **Phase 3 proper** — `docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc`
+//! **The flat-form pass proper** —
+//! `docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc`
 //! §Phase 3 - Validation of Flat Form ("carried out after successful generation
-//! of the flat form"), [`validate_phase3`]:
+//! of the flat form"), [`validate_flat_form_structure`]:
 //!
 //! * VUNP — every `C_COMPLEX_OBJECT_PROXY` (`use_node`) target path must resolve
 //!   to an object node in the flat form (`master04.5`
@@ -20,8 +21,8 @@
 //! serves the ADL 1.4 rule VDFPT ([`validate_definition_paths_adl14`]), whose
 //! resolution target is a 1.4 artefact's own (standalone) definition.
 //!
-//! **Deferred phase-1 halves for a SPECIALISED archetype**
-//! ([`validate_flat_form`]) — four phase-1 checks are properties of the *flat*
+//! **Deferred basic-integrity halves for a SPECIALISED archetype**
+//! ([`validate_flat_form`]) — four integrity checks are properties of the *flat*
 //! form, not the differential. For a non-specialised archetype the differential
 //! *is* the flat form, so [`super::structure`] / [`super::terminology`] run them
 //! directly; for a specialised archetype they are deferred here:
@@ -42,8 +43,8 @@
 //!   judged per node IDENTITY, since flattening clones a redefined node's whole
 //!   subtree (see `check_node_id_unique`).
 //!
-//! [`super::run_phase3`] runs that second group only for a specialised archetype
-//! whose flat form was produced, so no check double-fires.
+//! [`super::run_flat_form_checks`] runs that second group only for a specialised
+//! archetype whose flat form was produced, so no check double-fires.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -62,13 +63,16 @@ use crate::artefact::view;
 use crate::codes::{is_at_code, is_id_code, is_redefined_code, specialisation_parent_from_code};
 use crate::paths::{Resolution, child_path, locate, parse_path, resolve};
 
-// ── phase 3 proper: the flat-form proxy + cardinality walk ────────────────
+// ── the flat-form proxy + cardinality walk ────────────────────────────────
 
-/// Validate the FLAT form `flat` against the phase-3 catalogue (VUNP, VACMCO).
+/// Validate the FLAT form `flat` against the internal-reference and
+/// cardinality/occurrences catalogue: VUNP (every `use_node` proxy target
+/// resolves) and VACMCO (`master08` "phase 3 — validation of flat form" in the
+/// spec's guide vocabulary).
 #[must_use]
-pub(super) fn validate_phase3(flat: &Archetype) -> Vec<ValidationIssue> {
+pub(super) fn validate_flat_form_structure(flat: &Archetype) -> Vec<ValidationIssue> {
     let v = view(flat);
-    let mut scan = Phase3 {
+    let mut scan = FlatScan {
         root: v.definition,
         issues: Vec::new(),
         proxy_code: ValidationCode::Vunp,
@@ -84,12 +88,13 @@ pub(super) fn validate_phase3(flat: &Archetype) -> Vec<ValidationIssue> {
 /// §Definition Section validity rules, VDFPT). A 1.4 artefact is standalone —
 /// no differential lineage — so its own definition tree IS the resolution
 /// target; the AOM2 flat-form mirror of this rule is VUNP
-/// ([`validate_phase3`]). Cardinality/occurrences stay with the 1.4-dialect
-/// VCOC check in phase 1, so only the proxy walk runs here.
+/// ([`validate_flat_form_structure`]). Cardinality/occurrences stay with the
+/// 1.4-dialect VCOC check in the basic-integrity pass, so only the proxy walk
+/// runs here.
 #[must_use]
 pub(super) fn validate_definition_paths_adl14(archetype: &Archetype) -> Vec<ValidationIssue> {
     let v = view(archetype);
-    let mut scan = Phase3 {
+    let mut scan = FlatScan {
         root: v.definition,
         issues: Vec::new(),
         proxy_code: ValidationCode::Vdfpt,
@@ -99,7 +104,7 @@ pub(super) fn validate_definition_paths_adl14(archetype: &Archetype) -> Vec<Vali
     scan.issues
 }
 
-struct Phase3<'a> {
+struct FlatScan<'a> {
     root: &'a CComplexObject,
     issues: Vec<ValidationIssue>,
     /// The catalogue code a non-resolving proxy target raises: VUNP on the
@@ -110,7 +115,7 @@ struct Phase3<'a> {
     check_cardinality: bool,
 }
 
-impl Phase3<'_> {
+impl FlatScan<'_> {
     fn walk(&mut self, node: &CComplexObject, path: &str) {
         for attr in complex_attributes(node) {
             let attr_path = format!("{path}/{}", attr.rm_attribute_name);
@@ -466,14 +471,18 @@ fn check_container_cardinality(
 }
 
 #[cfg(test)]
-mod phase3_tests {
-    use super::validate_phase3;
+mod flat_form_structure_tests {
+    use super::validate_flat_form_structure;
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use crate::validate::ValidationCode;
 
     fn codes(src: &str) -> Vec<ValidationCode> {
-        let art = parse_artefact(src).unwrap();
-        validate_phase3(&art).into_iter().map(|i| i.code).collect()
+        let art = parse_artefact(src, Dialect::Adl2).unwrap();
+        validate_flat_form_structure(&art)
+            .into_iter()
+            .map(|i| i.code)
+            .collect()
     }
 
     #[test]
@@ -735,10 +744,11 @@ terminology
 mod flat_form_tests {
     use super::{specialisation_root_path, validate_flat_form};
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use crate::validate::ValidationCode;
 
     fn codes(src: &str) -> Vec<ValidationCode> {
-        let art = parse_artefact(src).unwrap();
+        let art = parse_artefact(src, Dialect::Adl2).unwrap();
         validate_flat_form(&art)
             .into_iter()
             .map(|i| i.code)

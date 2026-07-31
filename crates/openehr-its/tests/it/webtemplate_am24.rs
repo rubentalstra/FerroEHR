@@ -29,6 +29,7 @@ use std::path::Path;
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
+use openehr_adl::parse::Dialect;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::{
     ValidationKind, validate_archetype_conformance, validate_rm_and_terminology,
@@ -66,7 +67,7 @@ fn corpus_repo() -> ArchetypeRepository {
                 walk(&p, repo);
             } else if p.extension().is_some_and(|x| x == "adls")
                 && let Ok(src) = std::fs::read_to_string(&p)
-                && let Ok(a) = parse_artefact(&src)
+                && let Ok(a) = parse_artefact(&src, Dialect::Adl2)
             {
                 repo.insert(a);
             }
@@ -78,7 +79,7 @@ fn corpus_repo() -> ArchetypeRepository {
 
 /// Compile a corpus source to its WebTemplate through the am24 front end.
 fn web_template(rel: &str) -> WebTemplate {
-    let archetype = parse_artefact(&read(rel)).expect("parse ADL2");
+    let archetype = parse_artefact(&read(rel), Dialect::Adl2).expect("parse ADL2");
     let opt = create_opt(&archetype, &corpus_repo()).expect("create_opt");
     build_web_template_am24(&opt).expect("build am24 web template")
 }
@@ -525,8 +526,8 @@ terminology
 #[test]
 fn am24_template_filler_subtree_reaches_the_web_template() {
     let mut repo = ArchetypeRepository::new();
-    repo.insert(parse_artefact(FILLER_ARCHETYPE).expect("parse filler archetype"));
-    let template = parse_artefact(FILLER_TEMPLATE).expect("parse template");
+    repo.insert(parse_artefact(FILLER_ARCHETYPE, Dialect::Adl2).expect("parse filler archetype"));
+    let template = parse_artefact(FILLER_TEMPLATE, Dialect::Adl2).expect("parse template");
     let opt = create_opt(&template, &repo).expect("create_opt inlines the filler");
     let wt = build_web_template_am24(&opt).expect("build am24 web template");
 

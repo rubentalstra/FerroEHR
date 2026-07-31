@@ -20,14 +20,15 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::Severity;
-use openehr_adl::validate::validate_source_phase1;
+use openehr_adl::validate::validate_source_integrity;
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 
 /// The phase-1 codes the validator actively raises. A tag in this set must be
 /// raised exactly; a tag outside it (but still a V/W code) is not asserted here.
-const PHASE1_FIRING: &[&str] = &[
+const INTEGRITY_FIRING: &[&str] = &[
     "VARDT", "VARCN", "STCNT", "VACSD", "VOLT", "VARAV", "VARRV", "VOTM", "VDIFV", "VATCV", "VTSD",
     "VTLC", "VTTBK", "VTCBK", "VTVSID", "VTVSMD", "VTVSUQ", "VDSEV", "VDSIV", "VARXNC", "VARXAV",
     "VARXTV", "VATID", "VATCD", "VATDF", "VACDF", "VATDA", "VRANP", "VOKU", "VARID", "VDEOL",
@@ -133,7 +134,7 @@ fn build_repository() -> ArchetypeRepository {
         let Ok(src) = std::fs::read_to_string(&path) else {
             continue;
         };
-        if let Ok(art) = parse_artefact(&src) {
+        if let Ok(art) = parse_artefact(&src, Dialect::Adl2) {
             repo.insert(art);
         }
     }
@@ -149,7 +150,7 @@ struct Counts {
 }
 
 #[test]
-fn corpus_phase1_outcomes() {
+fn corpus_integrity_outcomes() {
     let repo = build_repository();
     let mut counts = Counts::default();
     let mut violations: Vec<String> = Vec::new();
@@ -175,7 +176,7 @@ fn corpus_phase1_outcomes() {
                 continue;
             };
 
-            let parsed = parse_artefact(&src);
+            let parsed = parse_artefact(&src, Dialect::Adl2);
             let raw_tag = read_tag_raw(&src);
 
             // ── files that do not parse: claimed by the parse gates ──────────
@@ -190,10 +191,10 @@ fn corpus_phase1_outcomes() {
             };
 
             let tag = raw_tag.map(|t| normalise_tag(&t));
-            let Ok(issues) = validate_source_phase1(&src, Some(&repo)) else {
+            let Ok(issues) = validate_source_integrity(&src, Dialect::Adl2, Some(&repo)) else {
                 // Re-parse succeeded above; a source-parse failure here is a
                 // harness inconsistency.
-                violations.push(format!("{name}: validate_source_phase1 parse error"));
+                violations.push(format!("{name}: validate_source_integrity parse error"));
                 continue;
             };
             let error_codes: Vec<String> = issues
@@ -226,7 +227,7 @@ fn corpus_phase1_outcomes() {
                     // typed error or none (owned by the parse gates).
                     counts.syntax_or_fail += 1;
                 }
-                Some(t) if PHASE1_FIRING.contains(&t) => {
+                Some(t) if INTEGRITY_FIRING.contains(&t) => {
                     if error_codes.iter().any(|c| c == t)
                         || issues.iter().any(|i| i.code.mnemonic() == t)
                     {

@@ -1,4 +1,4 @@
-//! The outer ADL2 artefact parser (phase A2).
+//! The outer ADL artefact parser: sections, kind, meta, spans.
 //!
 //! Transcribed from the vendored `adl2.g4` (at
 //! `crates/openehr-adl/vendor/grammar/`) plus the spec-text section extensions
@@ -130,28 +130,15 @@ pub struct SourceArtefact {
     pub overlays: Vec<SourceArtefact>,
 }
 
-/// Parse an ADL2 source into a [`SourceArtefact`].
+/// Parse an ADL source into a [`SourceArtefact`], reading the outer structure
+/// with the rules of `dialect`.
 ///
 /// ODIN sections are delegated to `openehr_lang::odin::parse`; the `definition`
 /// and `rules` bodies are captured as [`RawSpan`]s. Recoverable errors are
 /// collected; the whole error list is returned on any failure.
 ///
-/// # Errors
-/// Returns every [`SyntaxError`] found (lexical, identification, ODIN-section,
-/// or missing-required-section). ODIN parse failures surface as
-/// [`SyntaxErrorCode::Sdinv`] carrying the section name.
-pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    parse_source_with(src, Dialect::Adl2)
-}
-
-/// Parse an **ADL 1.4** source into a [`SourceArtefact`] — the outer-structure
-/// twin of [`parse_source`] for the 1.4 dialect, and the entry every 1.4 caller
-/// uses ([`crate::assemble::parse_artefact_adl14`],
-/// [`crate::validate::validate_source_phase1_adl14`],
-/// [`crate::validate::validate_source_adl14`]).
-///
-/// Three outer-structure behaviours differ from ADL2, each 1.4-only so ADL2
-/// parsing is byte-identical:
+/// Three outer-structure behaviours differ under [`Dialect::Adl14`], each
+/// 1.4-only so ADL2 parsing is byte-identical:
 /// - **Section and artefact keywords are case-insensitive**
 ///   (`AM/docs/ADL1.4/master08-adl` §Syntax Specification/§Symbols spells every
 ///   one of them `^[Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee]`-style), so
@@ -162,8 +149,8 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
 ///   sections").
 /// - **A missing `language` section is accepted** when the ontology carries the
 ///   old-form `primary_language` (§Language Section NOTE + §Ontology Header
-///   Statements NOTE); `crate::assemble::assemble_adl14` performs the
-///   upgrade. With no `primary_language` to upgrade from, the
+///   Statements NOTE); `crate::assemble::assemble` performs the upgrade for
+///   that dialect. With no `primary_language` to upgrade from, the
 ///   [`SyntaxErrorCode::Salan`] of the grammar's mandatory-language reading
 ///   stands.
 /// - **A malformed `concept` clause is refused** with
@@ -171,12 +158,10 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
 ///   SYM_CONCEPT V_LOCAL_TERM_CODE_REF | SYM_CONCEPT error`).
 ///
 /// # Errors
-/// Returns every [`SyntaxError`] found, exactly as [`parse_source`] does.
-pub fn parse_source_adl14(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    parse_source_with(src, Dialect::Adl14)
-}
-
-fn parse_source_with(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
+/// Returns every [`SyntaxError`] found (lexical, identification, ODIN-section,
+/// or missing-required-section). ODIN parse failures surface as
+/// [`SyntaxErrorCode::Sdinv`] carrying the section name.
+pub fn parse_source(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
     let toks = match crate::lexer::lex(src) {
         Ok(t) => t,
         Err(e) => return Err(vec![e]),
@@ -754,7 +739,7 @@ mod tests {
                    \ndescription\n\tlifecycle_state = <\"published\">\n\
                    \ndefinition\n\tWHOLE[id1]\n\
                    \nterminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <\n\t\t\t\ttext = <\"x\">\n\t\t\t\tdescription = <\"x\">\n\t\t\t>\n\t\t>\n\t>\n";
-        let a = parse_source(src).unwrap_or_else(|e| panic!("parse failed: {e:?}"));
+        let a = parse_source(src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"));
         assert_eq!(a.kind, ArtefactKind::Archetype);
         assert_eq!(a.meta.adl_version.as_deref(), Some("2.0.5"));
         assert_eq!(a.meta.rm_release.as_deref(), Some("1.0.2"));
@@ -779,7 +764,7 @@ mod tests {
                    \nlanguage\n\toriginal_language = <[ISO_639-1::en]>\n\
                    \ndescription\n\tlifecycle_state = <\"published\">\n\
                    \nterminology\n\tterm_definitions = <\n\t\t[\"en\"] = <>\n\t>\n";
-        let errs = parse_source(src).expect_err("should fail");
+        let errs = parse_source(src, Dialect::Adl2).expect_err("should fail");
         assert!(
             errs.iter().any(|e| e.code == SyntaxErrorCode::Sadf),
             "{errs:?}"

@@ -31,11 +31,12 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::aom::interval::Bounds;
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::bindings::NoTerminologyResolver;
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::{
     EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
-    production_model_governs, validate_phase2_rm,
+    production_model_governs, validate_rm_conformance,
 };
 use openehr_adl::validate::{ValidationIssue, validate_source};
 use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
@@ -388,7 +389,7 @@ fn corpus_rm_outcomes() {
         };
         let tag = read_tag_raw(&src);
 
-        let Ok(archetype) = parse_artefact(&src) else {
+        let Ok(archetype) = parse_artefact(&src, Dialect::Adl2) else {
             violations.push(format!("{name}: failed to parse"));
             continue;
         };
@@ -419,7 +420,7 @@ fn corpus_rm_outcomes() {
             // errors are RM-firing codes — good.
         } else {
             // phase-1 error gated the RM pass; run the RM pass directly.
-            codes = error_codes(&validate_phase2_rm(&archetype, rm));
+            codes = error_codes(&validate_rm_conformance(&archetype, rm, Dialect::Adl2));
         }
 
         match tag.as_deref() {
@@ -482,8 +483,8 @@ fn corpus_rm_outcomes() {
 // container cardinality.
 
 fn assert_raises(src: &str, rm: &dyn RmModel, code: &str) {
-    let archetype = parse_artefact(src).unwrap();
-    let issues = validate_phase2_rm(&archetype, rm);
+    let archetype = parse_artefact(src, Dialect::Adl2).unwrap();
+    let issues = validate_rm_conformance(&archetype, rm, Dialect::Adl2);
     let raised = error_codes(&issues);
     assert!(
         raised.iter().any(|c| c == code),
@@ -492,8 +493,8 @@ fn assert_raises(src: &str, rm: &dyn RmModel, code: &str) {
 }
 
 fn assert_clean(src: &str, rm: &dyn RmModel) {
-    let archetype = parse_artefact(src).unwrap();
-    let issues = validate_phase2_rm(&archetype, rm);
+    let archetype = parse_artefact(src, Dialect::Adl2).unwrap();
+    let issues = validate_rm_conformance(&archetype, rm, Dialect::Adl2);
     let raised = error_codes(&issues);
     assert!(raised.is_empty(), "expected clean, raised {raised:?}");
 }

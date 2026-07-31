@@ -5,7 +5,7 @@
 //! implemented 1:1 from the Eiffel blocks in
 //! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
 //! (line ranges cited per function). They are the pure machinery the phase-2
-//! specialisation validator (`phase2`) drives; each is unit-tested
+//! specialisation validator (`specialisation`) drives; each is unit-tested
 //! against the spec text's own examples.
 //!
 //! The functions take their context explicitly (owning attribute, grand-parent
@@ -476,7 +476,7 @@ where
 /// and the lexical `codes_conformant` half only. The `value_set_expanded` subset
 /// half (`master04.5` §`C_TERMINOLOGY_NODE` L683-690) needs the child + flat
 /// parent terminologies, which this function does not receive; it is applied in
-/// `phase2` (`check_terminology_leaf`), which has both flattened
+/// `specialisation` (`check_terminology_leaf`), which has both flattened
 /// terminologies. This lexical core is used for the non-specialisation value
 /// path (`c_value_conforms_to`), where no value-set expansion is required.
 fn terminology_conforms(
@@ -512,6 +512,7 @@ mod tests {
     use super::*;
     use crate::aom::access::complex_attributes;
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use openehr_am::am24::aom2::archetype::archetype::Archetype;
     use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 
@@ -565,7 +566,7 @@ mod tests {
     /// Build the definition root of a tiny 1.4 archetype, for the ADL 1.4
     /// effective-value tests.
     fn definition_of_adl14(src: &str) -> CComplexObject {
-        let art = crate::assemble::parse_artefact_adl14(src).unwrap();
+        let art = parse_artefact(src, Dialect::Adl14).unwrap();
         match art {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,
@@ -670,7 +671,7 @@ ontology
     /// Build a single-attribute `C_ATTRIBUTE` from a tiny archetype's root, for
     /// the collective-occurrences tests.
     fn attr_of(src: &str, attr_name: &str) -> CAttribute {
-        let art = parse_artefact(src).unwrap();
+        let art = parse_artefact(src, Dialect::Adl2).unwrap();
         let def = match art {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,

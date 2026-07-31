@@ -1,4 +1,4 @@
-//! The ADL2 `rules` section + structured slot-assertion parser (phase A3b).
+//! The ADL2 `rules` section + structured slot-assertion parser.
 //!
 //! The core BEL grammar is `openehr_lang::bel` (a LANG spec — statements,
 //! assertions, assignments, operators, literals → the generated `beom` model).
@@ -10,7 +10,7 @@
 //! * an archetype/data **path** leaf becomes an `EXPR_ARCHETYPE_REF`
 //!   (`master05`; the path is a runtime-value proxy);
 //! * a `matches { c_primitive_object }` right-hand side becomes an
-//!   `EXPR_CONSTRAINT` wrapping the cADL primitive (reusing the A3a primitive
+//!   `EXPR_CONSTRAINT` wrapping the cADL primitive (reusing the cADL primitive
 //!   parser, `crate::parse::parse_inline_primitive_text`);
 //! * inside a **slot** assertion (`master04.3` §Archetype Slots), a
 //!   `matches { /regex/ }` right-hand side becomes an
@@ -340,18 +340,6 @@ pub fn parse_rules_body(body: &str) -> Result<StatementSet, Vec<SyntaxError>> {
             }
         }
     }
-}
-
-/// Parse the `rules` section of a whole ADL2 source, span-offsetting errors and
-/// the requested statement set back to the file. Returns `Ok(None)` when the
-/// artefact has no `rules` section.
-///
-/// # Errors
-/// Returns the outer-parse errors if `src` does not parse, or the rule
-/// (`SINVS`/`SEXPT` + cADL) errors offset to the whole file.
-pub fn parse_rules(src: &str) -> Result<Option<StatementSet>, Vec<SyntaxError>> {
-    let artefact = crate::source::parse_source(src)?;
-    parse_artefact_rules(&artefact, src)
 }
 
 /// Parse the `rules` span of an already-parsed [`SourceArtefact`] (the rules

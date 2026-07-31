@@ -830,10 +830,10 @@ mod tests {
     use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
     use openehr_base::prelude::{Interval, ProperInterval};
 
-    use crate::parse::parse_definition_body;
+    use crate::parse::{Dialect, parse_definition_body};
 
     fn parse(body: &str) -> CComplexObject {
-        parse_definition_body(body).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
+        parse_definition_body(body, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
     }
 
     fn data(cco: &CComplexObject) -> &CComplexObjectData {
