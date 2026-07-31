@@ -613,25 +613,32 @@ fn log4j2_xml_is_not_odin() {
 }
 
 #[test]
-fn anonymous_document_is_illustrative_not_grammar_valid() {
-    // Adjudication: this illustrative "ODIN Anonymous Object Document" uses the
-    // bareword meta-placeholder `leaf_value` as a leaf. Per `odin.g4`
-    // `object_value_block` a bareword is neither a `primitive_object`, an
-    // `attr_vals`, a `keyed_object`, nor an `object_reference_block` path
-    // (`base_lexer.g4` ADL_PATH requires a `/`), so it is not grammar-valid.
-    // archie has no test referencing it.
+fn anonymous_document_placeholder_leaf_is_refused() {
+    // Adjudication (re-grounded by the #854 ch.4 audit): the Anonymous
+    // Object Document FORM — an outer `<>` around a fragment — is normative
+    // and "should be supported by parsers"
+    // (`LANG/docs/odin/master04-odin_artefacts` §Anonymous Object Document);
+    // its materialized twin parses in `odin_spec_examples.rs`. What keeps
+    // THIS fixture refused is only its illustrative bareword
+    // meta-placeholder `leaf_value`: a bareword is neither a
+    // `primitive_object`, an `attr_vals`, a `keyed_object`, nor an
+    // `object_reference_block` path (`base_lexer.g4` ADL_PATH requires a
+    // `/`). archie has no test referencing it.
     let err = parse(&read("odin/odin/anonymous_odin.txt")).expect_err("bareword leaf is invalid");
     assert!(err.line >= 1 && err.column >= 1);
 }
 
 #[test]
-fn identified_document_is_illustrative_not_grammar_valid() {
-    // Adjudication: this illustrative "ODIN Identified Object Document" places
-    // keyed objects (`["id_1"] = <...>`) and a bare `...` at the top level.
-    // The `odin.g4` start rule `odin_text : attr_vals | object_value_block`
-    // does not accept a top-level keyed-object list, so it is not
-    // grammar-valid. archie has no test referencing it.
+fn identified_document_placeholder_ellipsis_is_refused() {
+    // Adjudication (re-grounded by the #854 ch.4 audit / #1374): the
+    // Identified Object Document FORM — top-level `["id"] = <…>` keyed
+    // objects — is normative (`LANG/docs/odin/master04-odin_artefacts`
+    // §Identified Object Document) and parses since #1374; its materialized
+    // twin is pinned in `odin_spec_examples.rs`. What keeps THIS fixture
+    // refused is only the illustrative bare `...` ellipsis line standing
+    // BETWEEN two keyed objects at the top level, which no production
+    // admits. archie has no test referencing it.
     let err = parse(&read("odin/odin/identified_object_document.txt"))
-        .expect_err("top-level keyed list is invalid");
+        .expect_err("a bare top-level `...` between keyed objects is invalid");
     assert!(err.line >= 1 && err.column >= 1);
 }

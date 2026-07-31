@@ -158,16 +158,56 @@ pub struct OdinError {
     pub span: std::ops::Range<usize>,
 }
 
+/// A parsed ODIN artefact: the optional leading schema identifier plus the
+/// main text (`LANG/docs/odin/master04-odin_artefacts` intro:
+/// `odin_text ::= ( schema_identifier )? main_text`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct OdinDocument {
+    /// The optional `@<name> = <uri>` schema identifier ("used to indicate
+    /// the schema, including its version, on which the main ODIN text is
+    /// based" — `master04-odin_artefacts`).
+    pub schema: Option<OdinSchemaId>,
+    /// The main text: an attribute object (embedded fragment / implicit
+    /// object document), a keyed list (Identified Object Document), or a
+    /// bare object block (Anonymous Object Document).
+    pub root: OdinValue,
+}
+
+/// The `schema_identifier ::= '@' schema '=' URI` document prefix of
+/// `LANG/docs/odin/master04-odin_artefacts`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OdinSchemaId {
+    /// The identifier between `@` and `=` (the chapter's undefined `schema`
+    /// nonterminal — commonly the literal word `schema`), verbatim.
+    pub name: String,
+    /// The schema URI, verbatim including its `<>` delimiters (the same
+    /// spelling [`OdinValue::Uri`] keeps).
+    pub uri: String,
+}
+
 /// Parse ODIN source text into an [`OdinValue`] tree.
 ///
-/// Accepts either a set of top-level `attr = <…>` pairs (an
-/// [`OdinValue::Object`], the usual ADL-section shape) or a bare
-/// object-value block.
+/// Accepts every `master04-odin_artefacts` main-text form — a set of
+/// top-level `attr = <…>` pairs (an [`OdinValue::Object`], the usual
+/// ADL-section shape), a top-level keyed-object list (an Identified Object
+/// Document), or a bare object-value block — and tolerates a leading
+/// `@<name> = <uri>` schema identifier, which it discards; use
+/// [`parse_document`] to read it.
 ///
 /// # Errors
 /// Returns an [`OdinError`] (with line/column) on the first lexical or
 /// syntactic error.
 pub fn parse(src: &str) -> Result<OdinValue, OdinError> {
+    parse_document(src).map(|document| document.root)
+}
+
+/// Parse ODIN source text into an [`OdinDocument`], keeping the optional
+/// schema identifier.
+///
+/// # Errors
+/// Returns an [`OdinError`] (with line/column) on the first lexical or
+/// syntactic error.
+pub fn parse_document(src: &str) -> Result<OdinDocument, OdinError> {
     let spanned = crate::lexer::lex_odin(src).map_err(|failure| {
         let (line, column) = line_col(src, failure.span.start);
         OdinError {
