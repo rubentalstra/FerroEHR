@@ -85,10 +85,11 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           body_path: release-notes.md
-          # Every release is a pre-release until the first production
-          # sign-off (owner decision 2026-07-11); flip to
-          # `contains(<tag>, '-')` at that point.
-          prerelease: true
+          # Releases publish as OFFICIAL releases (owner sign-off
+          # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
+          # only an explicitly suffixed tag (v3.16.0-rc1, ...) is a
+          # pre-release.
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
 
   # Native runner per arch (no cross toolchain, no QEMU) — same strategy as
   # .github/workflows/containers.yml, which handles the GHCR images on tags.

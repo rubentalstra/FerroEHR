@@ -27,8 +27,10 @@ optional:
   match), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
-  version match is missing**. Releases stay `prerelease: true` until the
-  owner's production sign-off.
+  version match is missing**. Releases publish as OFFICIAL
+  releases — `prerelease` is true only for an explicitly suffixed tag
+  (`vX.Y.Z-rc1`, ...) — owner sign-off 2026-07-31, superseding the
+  2026-07-11 always-prerelease rule.
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
