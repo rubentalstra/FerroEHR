@@ -373,7 +373,33 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
 
         let uri = select! { Token::EmbeddedUri(s) => OdinValue::Uri(s) };
 
-        choice((uri, value_block))
+        // `attr_name = (syntax) <# … #>` — a plug-in-syntax object block
+        // (`LANG/docs/odin/master09-plug_in_syntaxes`: "Plug-in syntaxes are
+        // indicated in ODIN in a similar way as typed objects, i.e. by the
+        // use of the syntax type in parentheses preceding the `<>` block. For
+        // a plug-in section, the `<>` delimiters are modified to `<# #>`").
+        // The general form makes the `(syntax)` tag part of the construct —
+        // it names the plug-in parser the body is for — so a bare `<# … #>`
+        // with no tag stays a parse error. The tag is an ordinary identifier
+        // (the chapter's example tag is the lower-case `cadl`), and the body
+        // is handed over verbatim.
+        let plug_in_tag = select! {
+            Token::AlphaLcId(s) => s,
+            Token::AlphaUcId(s) => s,
+        };
+        let plug_in = plug_in_tag
+            .delimited_by(just(Token::LParen), just(Token::RParen))
+            .then(select! { Token::PlugInBlock(s) => s })
+            .map(|(syntax, raw)| OdinValue::PlugIn {
+                syntax,
+                text: raw
+                    .strip_prefix("<#")
+                    .and_then(|t| t.strip_suffix("#>"))
+                    .unwrap_or(&raw)
+                    .to_owned(),
+            });
+
+        choice((uri, plug_in, value_block))
     })
 }
 

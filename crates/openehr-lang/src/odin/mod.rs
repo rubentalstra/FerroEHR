@@ -76,6 +76,16 @@ pub enum OdinValue {
     TermCode(String),
     /// An embedded URI value (verbatim incl. the `<>` delimiters).
     Uri(String),
+    /// A plug-in-syntax object block `attr = (syntax) <# … #>`
+    /// (`LANG/docs/odin/master09-plug_in_syntaxes`): an object value
+    /// "expressed in some other syntax". The body is raw foreign text for a
+    /// plug-in parser — never interpreted here.
+    PlugIn {
+        /// The plug-in syntax tag from the parentheses (e.g. `cadl`).
+        syntax: String,
+        /// The block body between the `<#` and `#>` delimiters, verbatim.
+        text: String,
+    },
     /// A single object-reference path (`odin_path`).
     Path(String),
     /// The list-continuation marker (`...`), the final element of an open list.

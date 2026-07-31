@@ -292,6 +292,19 @@ pub(crate) enum OdinJsonError {
         "a '|centre +/- delta|' interval whose bounds leave the representable numeric range has no lower/upper reduction"
     )]
     PlusMinusOutOfRange,
+    /// A plug-in-syntax block (`(syntax) <# … #>`,
+    /// `LANG/docs/odin/master09-plug_in_syntaxes`) as a default value. Its
+    /// body is raw foreign text for a plug-in parser — it denotes no RM
+    /// instance, so it has no canonical-JSON encoding as a
+    /// `C_DEFINED_OBJECT.default_value`. Refused rather than smuggled through
+    /// as a string.
+    #[error(
+        "a plug-in-syntax block (({syntax}) <# … #>) is foreign text, not an RM instance; it has no default_value encoding"
+    )]
+    PlugInBlock {
+        /// The plug-in syntax tag.
+        syntax: String,
+    },
 }
 
 /// Convert an [`OdinValue`] to canonical JSON for a
@@ -332,6 +345,11 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> Result<serde_json::Value, OdinJsonE
         OdinValue::Boolean(b) => serde_json::Value::from(*b),
         OdinValue::Character(c) => serde_json::Value::String(c.to_string()),
         OdinValue::Empty => serde_json::Value::Null,
+        OdinValue::PlugIn { syntax, .. } => {
+            return Err(OdinJsonError::PlugInBlock {
+                syntax: syntax.clone(),
+            });
+        }
         OdinValue::Interval(iv) => interval_to_json(iv)?,
         OdinValue::ListContinue => serde_json::Value::String("...".to_owned()),
         OdinValue::List(items) => serde_json::Value::Array(
