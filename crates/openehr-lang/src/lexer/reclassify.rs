@@ -219,14 +219,18 @@ pub(super) fn reclassify(
         // ── symbols only some layers carry ──
         // `odin.g4` has neither an assignment nor a bare colon, and no
         // arithmetic/binding operators.
-        Token::SymAssignment
-        | Token::SymColon
-        | Token::SymPercent
-        | Token::SymCarat
-        | Token::SymAt => match language {
-            Language::Adl | Language::Bel => Some(token.clone()),
-            Language::Odin => None,
-        },
+        Token::SymAssignment | Token::SymColon | Token::SymPercent | Token::SymCarat => {
+            match language {
+                Language::Adl | Language::Bel => Some(token.clone()),
+                Language::Odin => None,
+            }
+        }
+        // `@` opens the optional document prefix `schema_identifier ::= '@'
+        // schema '=' URI` (`LANG/docs/odin/master04-odin_artefacts` intro),
+        // so the ODIN reading admits it — a misplaced `@` is the parser's
+        // refusal, not the lexer's. (The vendored `odin.g4` start rule lacks
+        // the production; the docs text wins.)
+        Token::SymAt => Some(token.clone()),
         // `<>` is the ADL 1.4 assertion spelling of `SYM_NE` and is admitted
         // only by BEL; under cADL and ODIN the two characters are the separate
         // `SYM_LT` `SYM_GT` an empty ODIN block is written with.

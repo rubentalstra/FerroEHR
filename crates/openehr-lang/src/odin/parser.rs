@@ -100,12 +100,12 @@ pub(super) struct Located {
     pub(super) offset: usize,
 }
 
-/// Parse a spanned ODIN token stream into an [`OdinValue`].
+/// Parse a spanned ODIN token stream into an [`super::OdinDocument`].
 ///
 /// # Errors
 /// Returns the first failure, resolved to a byte offset in the original
 /// source.
-pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<OdinValue, Located> {
+pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<super::OdinDocument, Located> {
     let tokens: Vec<Token> = spanned.iter().map(|s| s.token.clone()).collect();
     odin_text().parse(&tokens).into_result().map_err(|errs| {
         let failure = errs
@@ -125,11 +125,48 @@ pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<OdinValue, Located> {
     })
 }
 
-/// `odin_text : attr_vals | object_value_block`.
-fn odin_text<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> {
+/// `odin_text : ( schema_identifier )? main_text`, where the main text is
+/// `attr_vals | keyed_objects | object_value_block`.
+///
+/// The prefix and the top-level keyed-object form are both docs-text
+/// productions of `LANG/docs/odin/master04-odin_artefacts`: the chapter intro
+/// defines `odin_text ::= ( schema_identifier )? main_text`, and §Identified
+/// Object Document defines the multi-object document as top-level
+/// `["id"] = <…>` entries — the vendored `odin.g4` start rule
+/// (`attr_vals | object_value_block`) carries neither, and the docs text
+/// wins.
+fn odin_text<'a>() -> impl Parser<'a, &'a [Token], super::OdinDocument, Err<'a>> {
     let block = object_block();
     let attrs = attr_vals(block.clone());
-    choice((attrs, block)).then_ignore(end())
+    let keyed = keyed_objects(block.clone());
+    schema_identifier()
+        .or_not()
+        .then(choice((attrs, keyed, block)))
+        .map(|(schema, root)| super::OdinDocument { schema, root })
+        .then_ignore(end())
+}
+
+/// `schema_identifier ::= '@' schema '=' URI`
+/// (`LANG/docs/odin/master04-odin_artefacts` intro: "used to indicate the
+/// schema, including its version, on which the main ODIN text is based").
+///
+/// NOTE: two ambiguities in that production, adjudicated here (the chapter
+/// defines neither and gives no example): its `schema` is an unquoted,
+/// never-defined nonterminal — read as the identifier naming the schema
+/// (commonly the literal word `schema`), in the same identifier classes as an
+/// ODIN object key; and its `URI` ("a value of the URI primitive type") is
+/// taken in the embedded `<uri>` spelling every other ODIN URI value uses.
+fn schema_identifier<'a>() -> impl Parser<'a, &'a [Token], super::OdinSchemaId, Err<'a>> + Clone {
+    let name = select! {
+        Token::AlphaUcId(s) => s,
+        Token::AlphaLcId(s) => s,
+        Token::AlphaUnderscoreId(s) => s,
+    };
+    just(Token::SymAt)
+        .ignore_then(name)
+        .then_ignore(just(Token::SymEq))
+        .then(select! { Token::EmbeddedUri(s) => s })
+        .map(|(name, uri)| super::OdinSchemaId { name, uri })
 }
 
 /// `attr_vals : ( attr_val ';'? )+` → [`OdinValue::Object`].
@@ -168,35 +205,46 @@ fn attr_vals<'a>(
         })
 }
 
+/// `( keyed_object ';'? )+` with `keyed_object : '[' key_id ']' '='
+/// object_block` → [`OdinValue::KeyedList`] — the container-item form, both
+/// inside a block and as a whole Identified Object Document
+/// (`LANG/docs/odin/master04-odin_artefacts` §Identified Object Document;
+/// "Identifiers can be values of the String, Integer or any Date/Time
+/// primitive types").
+///
+/// NOTE: the trailing optional `';'` is a docs-text widening over the
+/// vendored `odin.g4`, which writes the separator only on `attr_vals`:
+/// "Semi-colons can be used to separate ODIN blocks … Semi-colons make no
+/// semantic difference at all" (`LANG/docs/odin/master03-basics`
+/// §Semi-colons), and a keyed object ends in an ODIN block, so the separator
+/// is accepted (and ignored) here exactly as between attribute pairs.
+fn keyed_objects<'a>(
+    block: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
+) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
+    let key_id = select! {
+        Token::String(s) => OdinKey::String(decode_string(&s)),
+        Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
+        Token::Iso8601Date(s) => OdinKey::Date(s),
+        Token::Iso8601Time(s) => OdinKey::Time(s),
+        Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
+    };
+    just(Token::LBracket)
+        .ignore_then(key_id)
+        .then_ignore(just(Token::RBracket))
+        .then_ignore(just(Token::SymEq))
+        .then(block)
+        .then_ignore(just(Token::SymSemiColon).or_not())
+        .repeated()
+        .at_least(1)
+        .collect::<Vec<(OdinKey, OdinValue)>>()
+        .map(OdinValue::KeyedList)
+}
+
 /// `object_block : object_value_block | object_reference_block` (+ the
 /// `EMBEDDED_URI` and typed-cast forms).
 fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
     recursive(|block| {
-        // keyed list: ( '[' key_id ']' '=' object_block )+
-        let key_id = select! {
-            Token::String(s) => OdinKey::String(decode_string(&s)),
-            Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
-            Token::Iso8601Date(s) => OdinKey::Date(s),
-            Token::Iso8601Time(s) => OdinKey::Time(s),
-            Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
-        };
-        // NOTE: the trailing optional `';'` is a docs-text widening over the
-        // vendored `odin.g4`, which writes the separator only on `attr_vals`:
-        // "Semi-colons can be used to separate ODIN blocks … Semi-colons make
-        // no semantic difference at all" (`LANG/docs/odin/master03-basics`
-        // §Semi-colons), and a keyed object ends in an ODIN block, so the
-        // separator is accepted (and ignored) here exactly as between
-        // attribute pairs.
-        let keyed_list = just(Token::LBracket)
-            .ignore_then(key_id)
-            .then_ignore(just(Token::RBracket))
-            .then_ignore(just(Token::SymEq))
-            .then(block.clone())
-            .then_ignore(just(Token::SymSemiColon).or_not())
-            .repeated()
-            .at_least(1)
-            .collect::<Vec<(OdinKey, OdinValue)>>()
-            .map(OdinValue::KeyedList);
+        let keyed_list = keyed_objects(block.clone());
 
         // object_reference_block : odin_path ( (',' odin_path)+ | '...' )?
         let path = select! { Token::AdlPath(s) => s }.or(just(Token::SymSlash).to("/".to_owned()));

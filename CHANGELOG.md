@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **ODIN document artefacts parse in all three `master04` forms.** The ODIN
+  reader now accepts Identified Object Documents (top-level
+  `["id"] = <…>` keyed objects) and the optional leading
+  `@schema = <uri>` schema identifier, exposed via the new
+  `odin::parse_document`; the anonymous and implicit forms were already
+  supported.
+
 ### Fixed
 
 - **ODIN sections accept `true`/`false`/`infinity` as attribute names and
