@@ -370,11 +370,7 @@ fn class_name(rm_type: &str) -> &str {
 /// digits), so this is where such a defect is caught, with the offending
 /// literal's span.
 pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
-    let inner = raw
-        .strip_prefix('"')
-        .and_then(|s| s.strip_suffix('"'))
-        .unwrap_or(raw);
-    openehr_lang::escape::decode(inner)
+    openehr_lang::escape::decode_string_literal(raw)
 }
 
 /// Decode a single-quoted `CHARACTER` literal (delimiters included) into the
@@ -384,11 +380,7 @@ pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::escape::E
 /// As [`decode_string`]. The lexer admits only the six quoted forms inside a
 /// character literal, so no `\u` escape reaches here in practice.
 pub(crate) fn decode_character(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
-    let inner = raw
-        .strip_prefix('\'')
-        .and_then(|s| s.strip_suffix('\''))
-        .unwrap_or(raw);
-    openehr_lang::escape::decode(inner)
+    openehr_lang::escape::decode_character_literal(raw)
 }
 
 // ── delimited regex (`AOM2/master04.5` §`C_STRING`) ───────────────────────

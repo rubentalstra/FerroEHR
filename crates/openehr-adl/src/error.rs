@@ -10,6 +10,8 @@
 //! are present-but-unused here by design — the enum is the catalogue, not only
 //! the slice this outer parser reaches.
 
+use openehr_lang::position::line_col;
+
 /// An ADL2 syntax-error code.
 ///
 /// Each variant's doc comment is the normative gloss verbatim from
@@ -243,28 +245,6 @@ impl SyntaxError {
     }
 }
 
-/// Resolve a byte offset into a 1-based `(line, column)` pair.
-///
-/// `column` counts Unicode scalar values (`char`s) from the line start, not
-/// bytes, so multi-byte clinical text reports an intuitive column.
-fn line_col(src: &str, offset: usize) -> (usize, usize) {
-    let clamped = offset.min(src.len());
-    let mut line = 1usize;
-    let mut col = 1usize;
-    for (idx, ch) in src.char_indices() {
-        if idx >= clamped {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
-        }
-    }
-    (line, col)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -326,13 +306,15 @@ mod tests {
         assert_eq!(seen.len(), 45);
     }
 
+    /// A defect's reported position comes from the shared
+    /// [`openehr_lang::position::line_col`] (whose own tests pin the
+    /// arithmetic); what this crate owns is that `SyntaxError::at` resolves the
+    /// SPAN START against the source it was handed.
     #[test]
-    fn line_col_is_one_based_and_counts_chars() {
+    fn a_syntax_error_reports_the_span_start_as_a_line_and_column() {
         let src = "ab\ncdé/f";
-        assert_eq!(line_col(src, 0), (1, 1));
-        assert_eq!(line_col(src, 3), (2, 1)); // 'c'
-        // byte offset of '/' (after the 2-byte 'é'): still column 4 by chars.
-        let slash = src.find('/').expect("slash present");
-        assert_eq!(line_col(src, slash), (2, 4));
+        let slash = src.find('/').expect("the fixture contains a slash");
+        let err = SyntaxError::at(SyntaxErrorCode::Sunk, "x", slash..slash + 1, src);
+        assert_eq!((err.line, err.column), (2, 4));
     }
 }

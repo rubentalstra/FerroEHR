@@ -16,6 +16,8 @@ mod parser;
 
 use indexmap::IndexMap;
 
+use crate::position::line_col;
+
 /// A parsed ODIN value.
 ///
 /// The tree mirrors `odin.g4`: an object (`attr = <…>` pairs), an
@@ -193,25 +195,6 @@ pub fn parse(src: &str) -> Result<OdinValue, OdinError> {
             span: located.offset..located.offset,
         }
     })
-}
-
-/// Resolve a byte offset to a 1-based `(line, column)` (columns count `char`s).
-fn line_col(src: &str, offset: usize) -> (usize, usize) {
-    let clamped = offset.min(src.len());
-    let mut line = 1usize;
-    let mut col = 1usize;
-    for (idx, ch) in src.char_indices() {
-        if idx >= clamped {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
-        }
-    }
-    (line, col)
 }
 
 #[cfg(test)]

@@ -240,15 +240,7 @@ pub(crate) enum Token {
 /// single-character token and are refused as malformed unicode escapes.
 fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    if bytes.get(1) == Some(&b'\\')
-        && !matches!(
-            bytes.get(2),
-            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
-        )
-    {
-        return Err(());
-    }
+    crate::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
 
@@ -274,39 +266,7 @@ fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
 /// irreversible for text that legitimately contains it. The sequence is
 /// therefore carried through verbatim, as authored.
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
-    let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    let mut i = 0;
-    while let Some(&byte) = bytes.get(i) {
-        if byte == b'\\' {
-            let Some(&next) = bytes.get(i + 1) else {
-                return Err(());
-            };
-            match next {
-                b'r' | b'n' | b't' | b'\\' | b'"' | b'\'' => i += 2,
-                b'u' => {
-                    let hex_start = i + 2;
-                    let count = raw
-                        .get(hex_start..)
-                        .unwrap_or_default()
-                        .chars()
-                        .take_while(char::is_ascii_hexdigit)
-                        .count();
-                    if count >= 8 {
-                        i = hex_start + 8;
-                    } else if count >= 4 {
-                        i = hex_start + 4;
-                    } else {
-                        return Err(());
-                    }
-                }
-                _ => return Err(()),
-            }
-        } else {
-            i += 1;
-        }
-    }
-    let stripped = strip_line_leaders(raw, leader_budget(lex));
+    let stripped = strip_line_leaders(lex.slice(), leader_budget(lex));
     crate::escape::validate(&stripped).map_err(|_defect| ())?;
     Ok(stripped)
 }
