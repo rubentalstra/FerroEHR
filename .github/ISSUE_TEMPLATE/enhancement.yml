@@ -1,34 +1,28 @@
 name: Enhancement Request
-description: Request new or extended functionality in ferroehr
+description: Request new or extended functionality in FerroEHR
 labels: ["enhancement"]
 body:
   - type: textarea
+    id: contract
     attributes:
       label: Contract
       description: What should exist and why — the context, the benefit, and any governing openEHR spec sections (or the explicit "no openEHR spec governs this" flag for an extension).
     validations:
       required: true
   - type: textarea
+    id: exit-criteria
     attributes:
       label: Exit criteria
       description: The checklist that defines "done" — observable, verifiable outcomes.
-      placeholder: |
+      value: |
         - [ ] ...
         - [ ] ...
     validations:
       required: true
   - type: textarea
+    id: further-information
     attributes:
       label: Further information
       description: Discussion links, prior art, related issues.
     validations:
       required: false
-  - type: markdown
-    attributes:
-      value: >
-        **Relationships** are GitHub metadata, not body text. After filing, link
-        this issue as a **sub-issue** (`Add parent`) if it decomposes a larger
-        issue, or with **blocked-by / blocking** for real sequencing — a
-        maintainer sets these with `scripts/gh-rel.sh`
-        (policy: `.claude/rules/issue-relationships.md`). Milestones, not epics,
-        group a release.

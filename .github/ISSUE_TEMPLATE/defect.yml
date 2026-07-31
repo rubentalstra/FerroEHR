@@ -1,8 +1,9 @@
 name: Bug Report
-description: Report a defect in ferroehr (wrong wire behaviour, a crash, a conformance divergence)
+description: Report a defect in FerroEHR (wrong wire behaviour, a crash, a conformance divergence)
 labels: ["bug"]
 body:
   - type: checkboxes
+    id: preflight
     attributes:
       label: Before reporting an issue
       options:
@@ -11,41 +12,70 @@ body:
         - label: I have reproduced the issue on the latest release
           required: true
   - type: textarea
+    id: server-status
+    attributes:
+      label: Server status
+      description: >
+        Paste the response of `GET <server>/ferroehr/rest/status` (unauthenticated;
+        default deployment: `http://localhost:8080/ferroehr/rest/status`).
+        It reports the server and openEHR REST API versions.
+      render: json
+      placeholder: |
+        {
+          "status": "UP",
+          "server_version": "3.15.3",
+          "openehr_rest_api_version": "1.1.0",
+          "timestamp": "2026-07-31T12:34:56.789Z"
+        }
+    validations:
+      required: true
+  - type: textarea
+    id: environment
     attributes:
       label: Environment
-      description: You can get most of this from `GET %baseUri%/ferroehr/rest/status`.
-      placeholder: |
-        - ferroehr version:
+      description: The parts the status endpoint does not report.
+      value: |
         - PostgreSQL version:
         - Deployment (compose / Helm / binary):
         - Operating system:
     validations:
       required: true
   - type: textarea
+    id: steps
     attributes:
       label: Steps to reproduce
       description: Include requests, payloads, and templates as attachments where possible.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
     validations:
       required: true
   - type: textarea
+    id: expected
     attributes:
       label: Expected behaviour
       description: For spec-governed behaviour, cite the openEHR spec section (component + document + heading) that defines the expectation.
     validations:
       required: true
   - type: textarea
+    id: actual
     attributes:
       label: Actual result
+      description: The actual response — status code, headers, and body where relevant.
     validations:
       required: true
   - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Server log lines around the failure. This is automatically formatted into a code block — no backticks needed.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: further-information
     attributes:
       label: Further information
     validations:
       required: false
-  - type: markdown
-    attributes:
-      value: >
-        **Relationships** are GitHub metadata, not body text. If this defect is
-        **blocked by** or **blocks** another issue, a maintainer links it with
-        `scripts/gh-rel.sh` (policy: `.claude/rules/issue-relationships.md`).
