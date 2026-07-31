@@ -38,6 +38,7 @@ pub mod status;
 pub mod validity;
 pub mod version_update;
 
+use crate::service::definition::lineage::{ArchetypeLineageCache, archetype_lineage_cache};
 use crate::service::ehr::access::EhrAccessCache;
 use crate::service::query::config::QueryConfig;
 use crate::service::query::plan_cache::PlanCache;
@@ -149,6 +150,12 @@ pub struct EhrbaseService {
     /// across service clones (moka-backed). No openEHR spec governs it — our
     /// own performance design.
     pub(crate) plan_cache: PlanCache,
+    /// Memo of the stored archetype specialisation graph
+    /// (`adl2_artefact.parent_hrid` edges) the AQL archetype predicate widens a
+    /// parent query through (AM `Identification` master07 §Supporting
+    /// Archetype-based Querying). Invalidated on every local ADL2 artefact
+    /// write; the memo itself is spec-silent — our own performance design.
+    pub(crate) archetype_lineage: ArchetypeLineageCache,
     /// Per-query DB execution budget (`[query].timeout_ms`); `None` disables it
     /// (the global request timeout is then the only guard). On overrun the
     /// query is reported as `408`. No openEHR spec governs a query timeout —
@@ -193,6 +200,7 @@ impl EhrbaseService {
             tenant_cache: tenant_cache(),
             ehr_access: EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
+            archetype_lineage: archetype_lineage_cache(),
             query_timeout: None,
             outbox_enabled: true,
             created_ehr_repr: moka::future::Cache::builder()

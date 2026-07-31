@@ -598,12 +598,24 @@ CREATE TABLE adl2_artefact (
     hrid       text NOT NULL,
     kind       text NOT NULL,
     adl        text NOT NULL,
+    -- The artefact's declared `specialize` parent (AUTHORED_ARCHETYPE
+    -- .parent_archetype_id), extracted from the validated source at upload;
+    -- NULL for a non-specialised artefact. This is the ONLY lineage source for
+    -- an AOM2-era identifier: AM Identification master03 §Legacy ADL 1.4
+    -- Semantics strips the '-' concept separator of all meaning, and master07
+    -- §Supporting Archetype-based Querying rules that "for specialised
+    -- archetypes, the specialisation lineage can only be obtained from the
+    -- operational form of the archetype". The AQL archetype predicate reads
+    -- the (hrid, parent_hrid) edge set to widen a parent query to its stored
+    -- specialisation children.
+    parent_hrid text,
     created_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT pk_adl2_artefact PRIMARY KEY (hrid),
     CONSTRAINT ck_adl2_artefact_kind CHECK (kind IN ('archetype', 'template', 'operational_template'))
 );
 
 COMMENT ON TABLE adl2_artefact IS 'SM-2 ADL2 artefacts (I_DEFINITION_ADL2), keyed by ARCHETYPE_HRID; kind ∈ archetype/template/operational_template; verbatim ADL2 text.';
+COMMENT ON COLUMN adl2_artefact.parent_hrid IS 'Declared `specialize` parent HRID (NULL when unspecialised); the archetype-lineage edge the AQL archetype predicate resolves an AOM2-era parent query through (AM Identification master07 §Supporting Archetype-based Querying).';
 
 -- ── ehr_index (SM-3, I_EHR_INDEX) ─────────────────────────────────────────────
 -- N:M subject↔EHR associations with duplicate-management metadata (master07).
