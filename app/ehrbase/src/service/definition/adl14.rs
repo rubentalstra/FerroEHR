@@ -3,11 +3,12 @@
 //! `archetype_store`) and OPTs keyed by `UUID` (on `template_store`).
 //!
 //! ADL 1.4 archetype validity is the real `openehr-adl` engine, judged **as
-//! 1.4**: an upload parses via [`openehr_adl::assemble::parse_artefact_adl14`]
+//! 1.4**: an upload parses via [`openehr_adl::assemble::parse_artefact`] in
+//! [`openehr_adl::parse::Dialect::Adl14`]
 //! (the 1.4-shaped `openehr_am::am24` model) and validates against the subset
 //! of the phase-1 catalogue that corresponds to the ADL 1.4 / AOM 1.4 standalone
 //! validity rules, plus the one 1.4 rule stated "according to the reference
-//! model" — VUNT ([`openehr_adl::validate::validate_source_adl14`]; ADL1.4
+//! model" — VUNT ([`openehr_adl::validate::validate_adl14_source`]; ADL1.4
 //! `master08` §Validity Rules + `master05-cadl.adoc` §Internal References
 //! L512-513 + AOM1.4 class invariants). A 1.4 source is
 //! validated **as 1.4**, never post-conversion — converting the artefact would
@@ -25,8 +26,9 @@ use std::str::FromStr;
 use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
 use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::error::SyntaxError;
+use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::ProductionRmModel;
-use openehr_adl::validate::{Severity, ValidationIssue, validate_source_adl14};
+use openehr_adl::validate::{ValidationIssue, validate_adl14_source};
 use openehr_base::prelude::ArchetypeId;
 use openehr_its::rest::runtime::ValidationError;
 use uuid::Uuid;
@@ -71,7 +73,7 @@ impl EhrbaseService {
     )]
     pub fn valid_archetype(&self, adl: &str) -> Result<bool, SmError> {
         Ok(matches!(
-            validate_source_adl14(adl, &ProductionRmModel),
+            validate_adl14_source(adl, &ProductionRmModel),
             Ok(issues) if issues.iter().all(|i| i.severity != Severity::Error)
         ))
     }
@@ -136,7 +138,7 @@ impl EhrbaseService {
         let mut log = ConversionLog::new();
         let converted = parse_and_convert(&source, &ConvertConfig::default(), &mut log)
             .map_err(|e| ServiceError::Unprocessable(format!("1.4 → 2 conversion failed: {e}")))?;
-        Ok(openehr_adl::printer::print(&converted))
+        Ok(openehr_adl::print::print(&converted))
     }
 
     /// Convert a stored ADL 1.4 **operational template** (by `UUID`) to ADL2
@@ -628,7 +630,7 @@ impl EhrbaseService {
 // ── stateless validity helpers ────────────────────────────────────────────────
 
 /// Validate an ADL 1.4 source through the `openehr-adl` engine, judged **as
-/// 1.4** (`openehr_adl::validate::validate_source_adl14`). An unparseable
+/// 1.4** (`openehr_adl::validate::validate_adl14_source`). An unparseable
 /// source (S-codes) or a catalogue failure (V-codes) is a
 /// [`ServiceError::ValidationFailed`] carrying the rule-code mnemonics — the SM
 /// `upload_archetype` maps it to `invalid_archetype` / `content_invalid`
@@ -641,7 +643,7 @@ impl EhrbaseService {
 /// an upload instead of being unreachable behind a phase-1-only entry point.
 fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
     let issues =
-        validate_source_adl14(adl, &ProductionRmModel).map_err(archetype_syntax_failure)?;
+        validate_adl14_source(adl, &ProductionRmModel).map_err(archetype_syntax_failure)?;
     let errors: Vec<ValidationError> = issues
         .iter()
         .filter(|i| i.severity == Severity::Error)

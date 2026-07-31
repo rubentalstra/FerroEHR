@@ -457,43 +457,40 @@ fn relational(t: &Token) -> Option<(&'static str, &'static str)> {
     }
 }
 
-/// Decode a double-quoted BEL string literal (strip delimiters, unescape the
-/// `master03` escapes `\r \n \t \\ \" \'`).
+/// Decode a double-quoted BEL string literal (strip delimiters, decode the
+/// `master03` escapes).
+///
+/// The lexer (`validate_string`) has already run
+/// [`crate::escape::validate`] over the same text, so the decode cannot fail
+/// here.
+#[expect(
+    clippy::expect_used,
+    reason = "`Token::String` only exists when the lexer's validate_string ran crate::escape::validate over the same body and it succeeded, so this decode of that body cannot fail"
+)]
 fn decode_string(raw: &str) -> String {
     let inner = raw
         .strip_prefix('"')
         .and_then(|s| s.strip_suffix('"'))
         .unwrap_or(raw);
-    unescape(inner)
+    crate::escape::decode(inner).expect("a lexer-validated string literal should decode")
 }
 
 /// Decode a single-quoted character literal to a `char`.
+///
+/// The lexer (`validate_char`) admits only the six quoted forms in a character
+/// literal, so the decode cannot fail here.
+#[expect(
+    clippy::expect_used,
+    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
+)]
 fn decode_char(raw: &str) -> char {
     let inner = raw
         .strip_prefix('\'')
         .and_then(|s| s.strip_suffix('\''))
         .unwrap_or(raw);
-    unescape(inner).chars().next().unwrap_or('\u{fffd}')
-}
-
-fn unescape(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut chars = s.chars();
-    while let Some(c) = chars.next() {
-        if c == '\\' {
-            match chars.next() {
-                Some('r') => out.push('\r'),
-                Some('n') => out.push('\n'),
-                Some('t') => out.push('\t'),
-                Some('"') => out.push('"'),
-                Some('\'') => out.push('\''),
-                // `\\` and a trailing `\` both yield a literal backslash.
-                Some('\\') | None => out.push('\\'),
-                Some(other) => out.push(other),
-            }
-        } else {
-            out.push(c);
-        }
-    }
-    out
+    crate::escape::decode(inner)
+        .expect("a lexer-validated character literal should decode")
+        .chars()
+        .next()
+        .unwrap_or('\u{fffd}')
 }

@@ -5,7 +5,7 @@
 //! implemented 1:1 from the Eiffel blocks in
 //! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
 //! (line ranges cited per function). They are the pure machinery the phase-2
-//! specialisation validator (`phase2`) drives; each is unit-tested
+//! specialisation validator (`specialisation`) drives; each is unit-tested
 //! against the spec text's own examples.
 //!
 //! The functions take their context explicitly (owning attribute, grand-parent
@@ -19,103 +19,17 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
-use super::rm::{Bounds, RmModel};
+use super::rm::RmModel;
+use crate::aom::access::{AomType, aom_type, child_occurrences, object_node_id};
+use crate::aom::interval::{Bounds, bounds};
 use crate::codes::codes_conformant;
-use crate::paths::{locate, object_node_id};
-
-/// The AOM meta-type (node class) of a [`CObject`], for the VSONT meta-type
-/// conformance rule (`master04.5` §Validity Rules: `C_OBJECT`, VSONT L342).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AomType {
-    /// `ARCHETYPE_SLOT`.
-    Slot,
-    /// `C_COMPLEX_OBJECT`.
-    ComplexObject,
-    /// `C_ARCHETYPE_ROOT`.
-    ArchetypeRoot,
-    /// `C_COMPLEX_OBJECT_PROXY`.
-    Proxy,
-    /// `C_BOOLEAN`.
-    Boolean,
-    /// `C_INTEGER`.
-    Integer,
-    /// `C_REAL`.
-    Real,
-    /// `C_STRING`.
-    String,
-    /// `C_TERMINOLOGY_CODE`.
-    TerminologyCode,
-    /// `C_DATE`.
-    Date,
-    /// `C_TIME`.
-    Time,
-    /// `C_DATE_TIME`.
-    DateTime,
-    /// `C_DURATION`.
-    Duration,
-}
-
-impl AomType {
-    /// True if this is a `C_PRIMITIVE_OBJECT` descendant (`master04.5`
-    /// §`C_PRIMITIVE_OBJECT`).
-    #[must_use]
-    pub fn is_primitive(self) -> bool {
-        matches!(
-            self,
-            Self::Boolean
-                | Self::Integer
-                | Self::Real
-                | Self::String
-                | Self::TerminologyCode
-                | Self::Date
-                | Self::Time
-                | Self::DateTime
-                | Self::Duration
-        )
-    }
-}
-
-/// The [`AomType`] of any [`CObject`].
-#[must_use]
-pub fn aom_type(obj: &CObject) -> AomType {
-    match obj {
-        CObject::ArchetypeSlot(_) => AomType::Slot,
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(_) => AomType::ComplexObject,
-            CComplexObject::CArchetypeRoot(_) => AomType::ArchetypeRoot,
-        },
-        CObject::CComplexObjectProxy(_) => AomType::Proxy,
-        CObject::CBoolean(_) => AomType::Boolean,
-        CObject::CInteger(_) => AomType::Integer,
-        CObject::CReal(_) => AomType::Real,
-        CObject::CString(_) => AomType::String,
-        CObject::CTerminologyCode(_) => AomType::TerminologyCode,
-        CObject::CDate(_) => AomType::Date,
-        CObject::CTime(_) => AomType::Time,
-        CObject::CDateTime(_) => AomType::DateTime,
-        CObject::CDuration(_) => AomType::Duration,
-    }
-}
-
-/// [`Bounds`] view of a [`MultiplicityInterval`] (existence / occurrences /
-/// cardinality bound), with `upper == None` denoting an unbounded (`*`) limit.
-#[must_use]
-pub fn bounds(mi: &MultiplicityInterval) -> Bounds {
-    Bounds {
-        lower: if mi.lower_unbounded {
-            0
-        } else {
-            mi.lower.unwrap_or(0)
-        },
-        upper: if mi.upper_unbounded { None } else { mi.upper },
-    }
-}
+use crate::paths::locate;
 
 /// `existence_conforms_to` (`master04.5` §Conformance Semantics: `C_ATTRIBUTE`,
 /// L58-68): true if `child`'s existence conforms to `other`'s — i.e. both set
 /// and `other.contains(child)`, or either unset.
 #[must_use]
-pub fn existence_conforms_to(
+pub(crate) fn existence_conforms_to(
     child: Option<&MultiplicityInterval>,
     other: Option<&MultiplicityInterval>,
 ) -> bool {
@@ -129,7 +43,10 @@ pub fn existence_conforms_to(
 /// L70-80): true if `child`'s cardinality conforms to `other`'s — i.e. both
 /// set and `other.contains(child)`, or either unset.
 #[must_use]
-pub fn cardinality_conforms_to(child: Option<&Cardinality>, other: Option<&Cardinality>) -> bool {
+pub(crate) fn cardinality_conforms_to(
+    child: Option<&Cardinality>,
+    other: Option<&Cardinality>,
+) -> bool {
     match (child, other) {
         (Some(c), Some(o)) => o.interval.contains(&c.interval),
         _ => true,
@@ -159,7 +76,7 @@ pub fn occurrences_conforms_to(
 /// `node_id_conforms_to` (`master04.5` §Conformance Semantics: `C_OBJECT`,
 /// L301-306): `codes_conformant(node_id, other.node_id)`.
 #[must_use]
-pub fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
+pub(crate) fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
     codes_conformant(child_id, other_id)
 }
 
@@ -168,7 +85,7 @@ pub fn node_id_conforms_to(child_id: &str, other_id: &str) -> bool {
 /// the reference model — `(0, cardinality.upper)` for a container, else the
 /// attribute existence.
 #[must_use]
-pub fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bounds {
+pub(crate) fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bounds {
     match rm.attribute(rm_type, attr) {
         Some(a) if a.is_multiple => match a.cardinality {
             Some(c) => Bounds::new(0, c.upper),
@@ -189,7 +106,7 @@ pub fn object_multiplicity(rm: &dyn RmModel, rm_type: &str, attr: &str) -> Bound
 /// the RM type of the object owning that attribute (the Eiffel `parent.parent`),
 /// used for the RM fallback.
 #[must_use]
-pub fn effective_occurrences(
+pub(crate) fn effective_occurrences(
     occ: Option<&MultiplicityInterval>,
     owning_attr: &CAttribute,
     grandparent_rm_type: &str,
@@ -224,7 +141,7 @@ pub fn effective_occurrences(
 /// node's occurrences (`parent_occ`). `flattened_card_upper` is the finite upper
 /// bound of the owning attribute's flattened cardinality (`None` = unbounded).
 #[must_use]
-pub fn collective_occurrences_of(
+pub(crate) fn collective_occurrences_of(
     attr: &CAttribute,
     parent_node_id: &str,
     parent_occ: Bounds,
@@ -289,7 +206,7 @@ pub fn effective_existence_adl14(attr: &CAttribute) -> Bounds {
 /// As with [`effective_existence_adl14`], this is an accessor: nothing is written
 /// back into the parsed model.
 #[must_use]
-pub fn effective_occurrences_adl14(root: &CComplexObject, obj: &CObject) -> Bounds {
+pub(crate) fn effective_occurrences_adl14(root: &CComplexObject, obj: &CObject) -> Bounds {
     if let Some(occ) = child_occurrences(obj) {
         return bounds(occ);
     }
@@ -309,35 +226,13 @@ const BOUNDS_ONE: Bounds = Bounds {
     upper: Some(1),
 };
 
-/// The `occurrences` interval of any [`CObject`], if it carries one.
-#[must_use]
-pub fn child_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.occurrences.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.occurrences.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::CBoolean(o) => o.occurrences.as_ref(),
-        CObject::CInteger(o) => o.occurrences.as_ref(),
-        CObject::CReal(o) => o.occurrences.as_ref(),
-        CObject::CString(o) => o.occurrences.as_ref(),
-        CObject::CTerminologyCode(o) => o.occurrences.as_ref(),
-        CObject::CDate(o) => o.occurrences.as_ref(),
-        CObject::CTime(o) => o.occurrences.as_ref(),
-        CObject::CDateTime(o) => o.occurrences.as_ref(),
-        CObject::CDuration(o) => o.occurrences.as_ref(),
-    }
-}
-
 /// VSONT meta-type conformance (`master04.5` §Validity Rules: `C_OBJECT`, VSONT
 /// L342): the child meta-type must equal the parent's, with three exceptions —
 /// a childless `C_COMPLEX_OBJECT` parent admits any non-primitive; a
 /// `C_COMPLEX_OBJECT_PROXY` parent admits a `C_COMPLEX_OBJECT`; an
 /// `ARCHETYPE_SLOT` parent admits a `C_ARCHETYPE_ROOT` (slot filling).
 #[must_use]
-pub fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
+pub(crate) fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
     let (ct, pt) = (aom_type(child), aom_type(parent));
     if ct == pt {
         return true;
@@ -357,7 +252,7 @@ pub fn meta_type_conforms(child: &CObject, parent: &CObject) -> bool {
 
 /// The outcome of a value-constraint conformance test.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ValueConformance {
+pub(crate) enum ValueConformance {
     /// The child value constraint is the same as, or narrower than, the parent's.
     Conforms,
     /// The child value constraint is definitely wider than / outside the parent's
@@ -382,7 +277,7 @@ pub enum ValueConformance {
 /// Returns [`ValueConformance::Unknown`] when the two nodes are not the same
 /// primitive AOM type (the meta-type mismatch is VSONT, handled separately).
 #[must_use]
-pub fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
+pub(crate) fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformance {
     match (child, parent) {
         (CObject::CBoolean(c), CObject::CBoolean(o)) => {
             // `C_BOOLEAN` (L551-557): parent `any_allowed` (empty) ⇒ conform; else
@@ -581,7 +476,7 @@ where
 /// and the lexical `codes_conformant` half only. The `value_set_expanded` subset
 /// half (`master04.5` §`C_TERMINOLOGY_NODE` L683-690) needs the child + flat
 /// parent terminologies, which this function does not receive; it is applied in
-/// `phase2` (`check_terminology_leaf`), which has both flattened
+/// `specialisation` (`check_terminology_leaf`), which has both flattened
 /// terminologies. This lexical core is used for the non-specialisation value
 /// path (`c_value_conforms_to`), where no value-set expansion is required.
 fn terminology_conforms(
@@ -615,8 +510,9 @@ fn status_value(status: Option<&ConstraintStatus>) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::aom::access::complex_attributes;
     use crate::assemble::parse_artefact;
-    use crate::paths::complex_attributes;
+    use crate::parse::Dialect;
     use openehr_am::am24::aom2::archetype::archetype::Archetype;
     use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 
@@ -670,7 +566,7 @@ mod tests {
     /// Build the definition root of a tiny 1.4 archetype, for the ADL 1.4
     /// effective-value tests.
     fn definition_of_adl14(src: &str) -> CComplexObject {
-        let art = crate::assemble::parse_artefact_adl14(src).unwrap();
+        let art = parse_artefact(src, Dialect::Adl14).unwrap();
         match art {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,
@@ -775,7 +671,7 @@ ontology
     /// Build a single-attribute `C_ATTRIBUTE` from a tiny archetype's root, for
     /// the collective-occurrences tests.
     fn attr_of(src: &str, attr_name: &str) -> CAttribute {
-        let art = parse_artefact(src).unwrap();
+        let art = parse_artefact(src, Dialect::Adl2).unwrap();
         let def = match art {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,

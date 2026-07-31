@@ -18,6 +18,7 @@
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
+use crate::aom::access::{complex_attributes, object_node_id};
 use crate::codes::code_prefix;
 
 /// One segment of an archetype path: an RM attribute name plus an optional
@@ -254,75 +255,15 @@ fn walk_paths(node: &CComplexObject, prefix: &str, out: &mut Vec<String>) {
     }
 }
 
-/// The constrained attributes of a [`CComplexObject`] (either concrete
-/// subtype).
-#[must_use]
-pub fn complex_attributes(
-    cco: &CComplexObject,
-) -> &[openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute] {
-    match cco {
-        CComplexObject::CComplexObject(d) => &d.attributes,
-        CComplexObject::CArchetypeRoot(r) => &r.attributes,
-    }
-}
-
-/// The node id of any [`CObject`] (empty string where the subtype carries no
-/// meaningful node id).
-#[must_use]
-pub fn object_node_id(obj: &CObject) -> &str {
-    match obj {
-        CObject::ArchetypeSlot(s) => &s.node_id,
-        CObject::CComplexObject(c) => complex_node_id(c),
-        CObject::CComplexObjectProxy(p) => &p.node_id,
-        CObject::CBoolean(o) => &o.node_id,
-        CObject::CInteger(o) => &o.node_id,
-        CObject::CReal(o) => &o.node_id,
-        CObject::CString(o) => &o.node_id,
-        CObject::CTerminologyCode(o) => &o.node_id,
-        CObject::CDate(o) => &o.node_id,
-        CObject::CTime(o) => &o.node_id,
-        CObject::CDateTime(o) => &o.node_id,
-        CObject::CDuration(o) => &o.node_id,
-    }
-}
-
-/// The reference-model type name of any [`CObject`] (empty string for a
-/// primitive object, whose RM type is implicit in its cADL leaf kind). Used by
-/// the reference-model checks (VCORM/VCORMT), which apply only to the
-/// non-primitive object nodes that carry an explicit `rm_type_name`.
-#[must_use]
-pub fn object_rm_type(obj: &CObject) -> &str {
-    match obj {
-        CObject::ArchetypeSlot(s) => &s.rm_type_name,
-        CObject::CComplexObject(c) => complex_rm_type(c),
-        CObject::CComplexObjectProxy(p) => &p.rm_type_name,
-        CObject::CBoolean(_)
-        | CObject::CInteger(_)
-        | CObject::CReal(_)
-        | CObject::CString(_)
-        | CObject::CTerminologyCode(_)
-        | CObject::CDate(_)
-        | CObject::CTime(_)
-        | CObject::CDateTime(_)
-        | CObject::CDuration(_) => "",
-    }
-}
-
-/// The node id of a [`CComplexObject`] (either concrete subtype).
-#[must_use]
-pub fn complex_node_id(cco: &CComplexObject) -> &str {
-    match cco {
-        CComplexObject::CComplexObject(d) => &d.node_id,
-        CComplexObject::CArchetypeRoot(r) => &r.node_id,
-    }
-}
-
-/// The RM type name of a [`CComplexObject`] (either concrete subtype).
-#[must_use]
-pub fn complex_rm_type(cco: &CComplexObject) -> &str {
-    match cco {
-        CComplexObject::CComplexObject(d) => &d.rm_type_name,
-        CComplexObject::CArchetypeRoot(r) => &r.rm_type_name,
+/// The path string of a child object under `attr_path`: `attr_path[node_id]`,
+/// or bare `attr_path` when the child carries no node id
+/// (`ADL2/master05-paths.adoc` §Overview — the `attribute[predicate]` segment
+/// form [`parse_path`] reads).
+pub(crate) fn child_path(attr_path: &str, node_id: &str) -> String {
+    if node_id.is_empty() {
+        attr_path.to_owned()
+    } else {
+        format!("{attr_path}[{node_id}]")
     }
 }
 
@@ -330,6 +271,7 @@ pub fn complex_rm_type(cco: &CComplexObject) -> &str {
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use openehr_am::am24::aom2::archetype::archetype::Archetype;
     use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 
@@ -355,7 +297,7 @@ mod tests {
     }
 
     fn root_of(src: &str) -> CComplexObject {
-        match parse_artefact(src).unwrap() {
+        match parse_artefact(src, Dialect::Adl2).unwrap() {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,
                 AuthoredArchetype::Template(t) => t.definition,

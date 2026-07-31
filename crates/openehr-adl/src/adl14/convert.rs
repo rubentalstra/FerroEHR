@@ -11,7 +11,14 @@
 //! mapping (`build_uid` + the `RESOURCE_DESCRIPTION` governance items), which
 //! `ADL1.4/masterAppB-extended_metadata.adoc` §Standardised Items governs
 //! directly — those items are "intended to be implemented by any ADL 1.4 =>
-//! ADL 2 conversion tool". It is applied by the description transform below.
+//! ADL 2 conversion tool". It is applied by `crate::adl14::metadata`.
+//!
+//! This module owns the code spaces (planning, renumbering, terminology
+//! rebuild) and the constraint conversion; the three stages that need no
+//! converter state are siblings — `crate::adl14::walk` (the read-only
+//! definition traversals + the shared complex-object accessor),
+//! `crate::adl14::multiplicity` (the occurrences/cardinality reconciliation)
+//! and `crate::adl14::metadata` (description / meta-data / version).
 
 use std::collections::BTreeMap;
 
@@ -19,10 +26,7 @@ use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
-    CComplexObject, CComplexObjectData,
-};
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
@@ -30,6 +34,11 @@ use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::am24::aom2::terminology::value_set::ValueSet;
 
 use crate::adl14::log::ConversionLog;
+use crate::adl14::metadata::{set_release_version, transform_description};
+use crate::adl14::multiplicity::{elide_multiplicity, materialise_adl14_occurrences};
+use crate::adl14::walk::{
+    cco_data_mut, collect_local_value_codes, collect_node_codes, walk_constraints,
+};
 use crate::error::SyntaxError;
 
 /// Configuration for a 1.4→2 conversion (all spec-silent — our own design).
@@ -99,11 +108,13 @@ pub fn parse_and_convert(
     cfg: &ConvertConfig,
     log: &mut ConversionLog,
 ) -> Result<Archetype, ConvertError> {
-    let art = crate::assemble::parse_artefact_adl14(src).map_err(ConvertError::Parse)?;
+    let art = crate::assemble::parse_artefact(src, crate::parse::Dialect::Adl14)
+        .map_err(ConvertError::Parse)?;
     convert(&art, cfg, log)
 }
 
-/// Convert a 1.4-shaped [`Archetype`] (from [`crate::assemble::parse_artefact_adl14`])
+/// Convert a 1.4-shaped [`Archetype`] (from [`crate::assemble::parse_artefact`] in
+/// [`crate::parse::Dialect::Adl14`])
 /// into a spec-valid ADL2 archetype. For a specialised source, this performs the
 /// base conversion (renumbering against the child's own codes); re-differentialisation
 /// against the converted+flattened parent is [`crate::adl14::differ::differentiate`].
@@ -756,235 +767,7 @@ impl<'a> Converter<'a> {
     }
 }
 
-// ── description transform ────────────────────────────────────────────────────
-
-fn transform_description(
-    desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
-) {
-    // NOTE: every 1.4 lifecycle state converts to `unmanaged`, matching the
-    // conversion oracle — the vendored `upgrade_from_14` expected `.adls` all
-    // carry `lifecycle_state = <"unmanaged">` regardless of the 1.4 source state
-    // (AuthorDraft / CommitteeDraft / published). A finer state map would diverge
-    // from that oracle. No openEHR spec governs 1.4→2 conversion — our own
-    // design/extension.
-    "unmanaged".clone_into(&mut desc.lifecycle_state);
-
-    // Hoist `details[lang].copyright` (if any) up to `description.copyright`.
-    if desc.copyright.is_none()
-        && let Some(details) = desc.details.as_ref()
-        && let Some(cr) = details.values().find_map(|item| {
-            item.other_details
-                .as_ref()
-                .and_then(|o| o.get("copyright"))
-                .cloned()
-        })
-    {
-        desc.copyright = Some(cr);
-    }
-
-    convert_standardised_meta_data(desc);
-
-    // Drop the consumed `revision` from other_details.
-    if let Some(o) = desc.other_details.as_mut() {
-        o.remove("revision");
-    }
-}
-
-/// Convert the ADL 1.4 standardised `description/other_details` meta-data items
-/// to their AOM2 `RESOURCE_DESCRIPTION` homes, consuming each converted key.
-///
-/// `ADL1.4/masterAppB-extended_metadata.adoc` §Standardised Items is the one
-/// part of 1.4→2 conversion the spec text governs directly: the items' "naming
-/// and rules should be followed, and … are intended to be implemented by any
-/// ADL 1.4 => ADL 2 conversion tool". The mapping applied here is the table's:
-///
-/// - `original_namespace`, `original_publisher`, `custodian_namespace`,
-///   `custodian_organisation`, `licence` transfer verbatim to the same-named
-///   `RESOURCE_DESCRIPTION` attributes. The table's `"name <URN>"` shapes are
-///   DISPLAY conventions ("the use of the typical string for a person or
-///   organisation of the form \"name \<URN\>\", which enables email addresses,
-///   website URLs etc to be easily extracted", §Extended Meta-data Guide
-///   preamble) — the AOM2 attributes are single strings, so the value is not
-///   decomposed.
-/// - `references` and `ip_acknowledgements` are "string with one LF (`\n`)
-///   terminated line for each reference. Intervening LFs and leading and
-///   trailing whitespace may be added for clarity, to be stripped on
-///   conversion to ADL2" — so the value splits on LF, each line is trimmed,
-///   and blank lines are dropped.
-///
-/// §Other Items (`MD5-CAM-1.0.1`, `current_contact`, `review_date`,
-/// `responsible_organisation`) are reserved/display-only names with no
-/// conversion mandated; they stay in `other_details` untouched, as does any
-/// value that violates its item's stated syntax.
-///
-/// An AOM2 attribute already populated from elsewhere is never overwritten, and
-/// its `other_details` key is then left in place (nothing was consumed).
-fn convert_standardised_meta_data(
-    desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
-) {
-    let Some(other) = desc.other_details.as_mut() else {
-        return;
-    };
-    take_verbatim(other, "original_namespace", &mut desc.original_namespace);
-    take_verbatim(other, "original_publisher", &mut desc.original_publisher);
-    take_verbatim(other, "custodian_namespace", &mut desc.custodian_namespace);
-    take_verbatim(
-        other,
-        "custodian_organisation",
-        &mut desc.custodian_organisation,
-    );
-    take_verbatim(other, "licence", &mut desc.licence);
-    take_keyed_lines(other, "references", &mut desc.references);
-    take_keyed_lines(other, "ip_acknowledgements", &mut desc.ip_acknowledgements);
-}
-
-/// Move `other[key]` verbatim into `target`, consuming the key; a no-op when
-/// `target` is already populated or the key is absent.
-fn take_verbatim(other: &mut BTreeMap<String, String>, key: &str, target: &mut Option<String>) {
-    if target.is_some() {
-        return;
-    }
-    if let Some(value) = other.remove(key) {
-        *target = Some(value);
-    }
-}
-
-/// Move the LF-separated lines of `other[key]` into `target` as a keyed list,
-/// consuming the key; a no-op when `target` is already populated, the key is
-/// absent, or no non-blank line survives the strip (nothing to convert — the
-/// value stays in `other_details` rather than being dropped).
-fn take_keyed_lines(
-    other: &mut BTreeMap<String, String>,
-    key: &str,
-    target: &mut Option<BTreeMap<String, String>>,
-) {
-    if target.is_some() {
-        return;
-    }
-    let Some(raw) = other.get(key) else {
-        return;
-    };
-    let lines: Vec<String> = raw
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(str::to_owned)
-        .collect();
-    if lines.is_empty() {
-        return;
-    }
-    // NOTE: the appendix prescribes the LF-per-entry SOURCE syntax and the
-    // AOM2 target ("a keyed list of strings"), but no key scheme for the
-    // converted entries — no openEHR spec governs the key scheme, so this is
-    // our own design: stable 1-based ordinals in source line order, matching
-    // the `["1"]`/`["2"]` keys the vendored `upgrade_from_14` reference output
-    // carries. (Ordinals are unpadded, so a list of ten or more entries sorts
-    // lexicographically in the `BTreeMap` — a display order, not a semantic
-    // one; the ordinal itself still names the source line.)
-    *target = Some(
-        lines
-            .into_iter()
-            .enumerate()
-            .map(|(index, line)| ((index + 1).to_string(), line))
-            .collect(),
-    );
-    other.remove(key);
-}
-
 // ── free-function tree walks ─────────────────────────────────────────────────
-
-/// The mutable `C_COMPLEX_OBJECT` data, if this is a plain complex object.
-///
-/// NOTE: a 1.4 *source archetype* never contains an inline `C_ARCHETYPE_ROOT`
-/// (only a flattened OPT does), so the `CArchetypeRoot` arm yields `None` and its
-/// walk is a no-op. Feeding a flattened OPT-1.4 through here is a separate
-/// capability (OPT-1.4 → ADL2 conversion, not performed by this source-archetype
-/// converter). No openEHR spec governs 1.4→2 conversion — our own
-/// design/extension.
-fn cco_data_mut(cco: &mut CComplexObject) -> Option<&mut CComplexObjectData> {
-    match cco {
-        CComplexObject::CComplexObject(d) => Some(d),
-        CComplexObject::CArchetypeRoot(_) => None,
-    }
-}
-
-fn collect_node_codes(def: &CComplexObject, f: &mut impl FnMut(&str)) {
-    if let CComplexObject::CComplexObject(d) = def {
-        f(&d.node_id);
-        for attr in &d.attributes {
-            for child in &attr.children {
-                collect_node_codes_obj(child, f);
-            }
-        }
-        for tuple in &d.attribute_tuples {
-            for member in &tuple.members {
-                for child in &member.children {
-                    collect_node_codes_obj(child, f);
-                }
-            }
-        }
-    }
-}
-
-fn collect_node_codes_obj(obj: &CObject, f: &mut impl FnMut(&str)) {
-    match obj {
-        CObject::CComplexObject(cco) => collect_node_codes(cco, f),
-        CObject::CComplexObjectProxy(p) => f(&p.node_id),
-        CObject::ArchetypeSlot(s) => f(&s.node_id),
-        _ => {}
-    }
-}
-
-fn collect_local_value_codes(def: &CComplexObject, f: &mut impl FnMut(&str)) {
-    walk_constraints(def, &mut |raw, _| {
-        if let Some((term, codes)) = raw.split_once("::")
-            && term == "local"
-        {
-            for code in codes.split([',', ';']).map(str::trim) {
-                if crate::codes::is_at_code(code) {
-                    f(code);
-                }
-            }
-        }
-    });
-}
-
-/// Visit every `C_TERMINOLOGY_CODE.constraint` (with its enclosing element
-/// rubric context — unused here, passed empty).
-fn walk_constraints(def: &CComplexObject, f: &mut impl FnMut(&str, &str)) {
-    if let CComplexObject::CComplexObject(d) = def {
-        for attr in &d.attributes {
-            for child in &attr.children {
-                walk_constraints_obj(child, f);
-            }
-        }
-        for tuple in &d.attribute_tuples {
-            for member in &tuple.members {
-                for child in &member.children {
-                    walk_constraints_obj(child, f);
-                }
-            }
-            // Tuple ROWS carry the actual primitive constraints (e.g. ordinal
-            // `[value, symbol]` symbol codes) — visit their terminology codes
-            // so value at-codes are planned and converted like attribute ones.
-            for row in &tuple.tuples {
-                for m in &row.members {
-                    if let CPrimitiveObject::CTerminologyCode(tc) = m {
-                        f(&tc.constraint, "");
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn walk_constraints_obj(obj: &CObject, f: &mut impl FnMut(&str, &str)) {
-    match obj {
-        CObject::CTerminologyCode(tc) => f(&tc.constraint, ""),
-        CObject::CComplexObject(cco) => walk_constraints(cco, f),
-        _ => {}
-    }
-}
 
 fn renumber_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>) {
     let Some(d) = cco_data_mut(cco) else { return };
@@ -1102,143 +885,6 @@ fn rewrite_path(path: &str, cx: &Converter<'_>) -> String {
     out
 }
 
-fn elide_multiplicity(def: &mut CComplexObject) {
-    elide_cco(def);
-}
-
-/// Materialise the ADL 1.4 default `occurrences` on container children before the
-/// definition is emitted as ADL 2.
-///
-/// The two formalisms give an ABSENT `occurrences` different meanings, so the
-/// default cannot be carried across implicitly:
-///
-/// - ADL 1.4 — `ADL1.4/master05-cadl.adoc` §Occurrences L316: "The default
-///   occurrences, if none is mentioned, is `{1..1}`".
-/// - ADL 2 — `AOM2/master04.5-constraint_model-class_definitions.adoc`
-///   §Occurrences inferencing rules: an absent `occurrences` is inferred from the
-///   owning attribute's cardinality upper (lower forced to 0), i.e.
-///   `0..cardinality.upper`.
-///
-/// So an unstated 1.4 occurrences on a container child means "exactly once", and
-/// leaving it unstated in the ADL 2 output would silently widen it to "none to
-/// many". It is written out explicitly here.
-///
-/// Restricted to CONTAINER attributes because master05 L308 restricts the rule's
-/// significance to them ("It only has significance for objects which are children
-/// of a container attribute, since by definition, the occurrences of an object
-/// which is the value of a single valued attribute can only be `0..1` or `1..1`,
-/// and this is already defined by the attribute `existence`"). A `use_node`
-/// internal reference is exempt: master05 L515 gives it the REFERENCED node's
-/// occurrences, which is exactly what leaving it unstated means in ADL 2 once the
-/// proxy is expanded.
-///
-/// NOTE: no openEHR spec governs 1.4→2 conversion — our own design (see the
-/// module flag on [`crate::adl14`]); the two default rules it reconciles are the
-/// spec-cited ones above.
-fn materialise_adl14_occurrences(def: &mut CComplexObject) {
-    let Some(d) = cco_data_mut(def) else { return };
-    for attr in &mut d.attributes {
-        let is_container = attr.cardinality.is_some();
-        for child in &mut attr.children {
-            if is_container
-                && child_occurrences(child).is_none()
-                && !matches!(child, CObject::CComplexObjectProxy(_))
-            {
-                set_occurrences(child, one_to_one());
-            }
-            if let CObject::CComplexObject(c) = child {
-                materialise_adl14_occurrences(c);
-            }
-        }
-    }
-}
-
-/// The ADL 1.4 default multiplicity `{1..1}` (`ADL1.4/master05-cadl.adoc`
-/// §Occurrences L316).
-fn one_to_one() -> openehr_base::prelude::MultiplicityInterval {
-    openehr_base::prelude::MultiplicityInterval {
-        lower: Some(1),
-        upper: Some(1),
-        lower_unbounded: false,
-        upper_unbounded: false,
-        lower_included: true,
-        upper_included: true,
-    }
-}
-
-fn set_occurrences(obj: &mut CObject, occ: openehr_base::prelude::MultiplicityInterval) {
-    match obj {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences = Some(occ),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences = Some(occ),
-        CObject::CComplexObjectProxy(p) => p.occurrences = Some(occ),
-        CObject::ArchetypeSlot(s) => s.occurrences = Some(occ),
-        CObject::CBoolean(o) => o.occurrences = Some(occ),
-        CObject::CInteger(o) => o.occurrences = Some(occ),
-        CObject::CReal(o) => o.occurrences = Some(occ),
-        CObject::CString(o) => o.occurrences = Some(occ),
-        CObject::CTerminologyCode(o) => o.occurrences = Some(occ),
-        CObject::CDate(o) => o.occurrences = Some(occ),
-        CObject::CTime(o) => o.occurrences = Some(occ),
-        CObject::CDateTime(o) => o.occurrences = Some(occ),
-        CObject::CDuration(o) => o.occurrences = Some(occ),
-    }
-}
-
-fn elide_cco(cco: &mut CComplexObject) {
-    let Some(d) = cco_data_mut(cco) else { return };
-    for attr in &mut d.attributes {
-        elide_attr(attr);
-        for child in &mut attr.children {
-            if let CObject::CComplexObject(c) = child {
-                elide_cco(c);
-            }
-        }
-    }
-}
-
-fn elide_attr(attr: &mut CAttribute) {
-    // Drop a container cardinality equal to the RM default `{0..*}` (the
-    // fixtures elide `cardinality matches {0..*; unordered}`); keep any narrower
-    // bound. Drop `occurrences matches {0..*}` on children likewise.
-    if let Some(card) = &attr.cardinality
-        && is_zero_unbounded(&card.interval)
-    {
-        attr.cardinality = None;
-        attr.is_multiple = false;
-    }
-    for child in &mut attr.children {
-        if let Some(occ) = child_occurrences(child)
-            && is_zero_unbounded(occ)
-        {
-            clear_occurrences(child);
-        }
-    }
-}
-
-fn is_zero_unbounded(mi: &openehr_base::prelude::MultiplicityInterval) -> bool {
-    mi.lower == Some(0) && mi.upper_unbounded
-}
-
-fn child_occurrences(obj: &CObject) -> Option<&openehr_base::prelude::MultiplicityInterval> {
-    match obj {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences.as_ref(),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences.as_ref(),
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        _ => None,
-    }
-}
-
-fn clear_occurrences(obj: &mut CObject) {
-    match obj {
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences = None,
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences = None,
-        CObject::CComplexObjectProxy(p) => p.occurrences = None,
-        CObject::ArchetypeSlot(s) => s.occurrences = None,
-        _ => {}
-    }
-}
-
 // ── code shifting ────────────────────────────────────────────────────────────
 
 /// Shift a 1.4 code to an ADL2 code with the given `prefix` (`"id"`/`"at"`).
@@ -1300,40 +946,5 @@ fn synth_value_set_rubric(owner_text: &str) -> (String, String) {
     (
         format!("{base} (synthesised)"),
         format!("{base} (synthesised)"),
-    )
-}
-
-fn set_release_version(
-    hrid: &mut openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid,
-    version: &str,
-) {
-    // `version` may be `1.1.0` or `0.0.1-alpha`; split a `-status.build` tail.
-    let (numeric, status, build) = split_version(version);
-    hrid.release_version = numeric;
-    hrid.version_status = openehr_base::prelude::VersionStatus::from_wire(status);
-    hrid.build_count = build;
-}
-
-fn split_version(v: &str) -> (String, &'static str, String) {
-    for (marker, status) in [("-rc", "rc"), ("-alpha", "alpha"), ("-beta", "beta")] {
-        if let Some((numeric, tail)) = v.split_once(marker) {
-            let numeric = normalise_numeric(numeric);
-            let build = tail.strip_prefix('.').unwrap_or("").to_owned();
-            return (numeric, status, build);
-        }
-    }
-    (normalise_numeric(v), "", String::new())
-}
-
-fn normalise_numeric(v: &str) -> String {
-    let mut parts = v.split('.');
-    let major = parts.next().unwrap_or("1");
-    let minor = parts.next().unwrap_or("0");
-    let patch = parts.next().unwrap_or("0");
-    format!(
-        "{}.{}.{}",
-        if major.is_empty() { "1" } else { major },
-        if minor.is_empty() { "0" } else { minor },
-        if patch.is_empty() { "0" } else { patch }
     )
 }

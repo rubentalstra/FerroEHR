@@ -1,0 +1,750 @@
+//! Basic-integrity structural topic: the definition-tree walk and the rules that are
+//! decidable from the archetype's own constraint structure — node identity and
+//! uniqueness, sibling attribute uniqueness, differential-path placement,
+//! container cardinality vs child occurrences, `C_ARCHETYPE_ROOT` shape, slot
+//! include/exclude consistency, terminology-constraint code form, and primitive
+//! assumed values.
+//!
+//! Rule texts:
+//! `docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
+//! §Validity Rules (`C_OBJECT` / `C_COMPLEX_OBJECT` / `C_ATTRIBUTE` /
+//! `ARCHETYPE_SLOT` / `C_PRIMITIVE_OBJECT`) and `master08-validation.adoc`
+//! §Phase 1 - Basic Integrity; the ADL 1.4-only VCOC rule is
+//! `ADL1.4/master05-cadl.adoc` §Occurrences.
+
+use std::collections::{BTreeSet, HashMap};
+
+use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_base::prelude::Interval;
+use openehr_base::prelude::MultiplicityInterval;
+
+use super::catalogue::ValidationCode;
+use super::conformance::effective_occurrences_adl14;
+use super::{ValidationIssue, push_issue};
+use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object_node_id};
+use crate::aom::interval::finite_upper;
+use crate::artefact::ArchetypeView;
+use crate::codes::{is_at_code, is_id_code, is_valid_code};
+use crate::hrid::is_archetype_id;
+use crate::parse::Dialect;
+use crate::paths::child_path;
+
+/// raises issues; the terminology checks re-derive code usage in a second pass
+/// ([`collect_usage`]), so no code sets are accumulated here.
+struct StructureScan<'a> {
+    v: &'a ArchetypeView<'a>,
+    dialect: Dialect,
+    issues: Vec<ValidationIssue>,
+    /// node id → first path seen (VCOSU uniqueness).
+    seen_node_ids: HashMap<String, String>,
+}
+
+pub(super) fn check_structure(
+    v: &ArchetypeView<'_>,
+    dialect: Dialect,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let mut scan = StructureScan {
+        v,
+        dialect,
+        issues: Vec::new(),
+        seen_node_ids: HashMap::new(),
+    };
+    let root = CObject::CComplexObject(v.definition.clone());
+    // The root object always requires a node id (the concept code, `at0000`/
+    // `id1`); child requirement is decided per owning attribute in
+    // [`StructureScan::walk_attribute`].
+    scan.walk_object("", &root, true);
+    issues.append(&mut scan.issues);
+}
+
+impl StructureScan<'_> {
+    fn walk_object(&mut self, path: &str, obj: &CObject, require_node_id: bool) {
+        let nid = object_node_id(obj);
+        let is_identified = !aom_type(obj).is_primitive();
+
+        // VCOID: every (non-primitive) object node must have a node id
+        // (master04.5 §`C_OBJECT`). In the ADL 1.4 dialect this is relaxed to
+        // the AOM 1.4 node_id rule via `require_node_id` (see
+        // [`StructureScan::walk_attribute`]): AOM1.4 master04 §Node_id and Paths + ADL1.4
+        // master08 §Definition Section ("any leaf or near-leaf node which has no
+        // sibling nodes from the same attribute can safely have no node_id").
+        // A 1.4 `use_node` (a `C_COMPLEX_OBJECT_PROXY` / ARCHETYPE_INTERNAL_REF)
+        // is a *reference* to another node, not a node definition, and carries
+        // no node id of its own in 1.4 (unlike ADL2's `use_node TYPE[id]`), so
+        // it is exempt in the 1.4 dialect (AOM1.4 master04 §Node_id and Paths).
+        let is_proxy_ref =
+            self.dialect == Dialect::Adl14 && matches!(obj, CObject::CComplexObjectProxy(_));
+        if is_identified && nid.is_empty() && require_node_id && !is_proxy_ref {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcoid,
+                "object node has no node identifier",
+                path,
+            );
+        }
+        // VCOSU: object node ids must be unique archetype-wide (master04.5
+        // §`C_OBJECT`). Synthetic primitive ids are exempt. Deferred for a
+        // specialised archetype: a differential legitimately re-references an
+        // inherited node id at a redefinition, so uniqueness is a flat-form
+        // property (run on the flattened form in [`super::flat`]). AOM2-only:
+        // AOM 1.4 node ids are only *sibling*-unique (AOM1.4 master04 §Node_id and
+        // Paths — "guarantees sibling node unique identification"), so a valid 1.4
+        // archetype may repeat an at-code at non-sibling paths; the archetype-wide
+        // check is skipped in the 1.4 dialect, which instead gets the
+        // sibling-scoped check in [`StructureScan::walk_complex`].
+        if is_identified
+            && !nid.is_empty()
+            && !self.v.is_specialised()
+            && self.dialect == Dialect::Adl2
+        {
+            if let Some(first) = self.seen_node_ids.get(nid) {
+                let dup = format!("node id {nid:?} is not unique (also at {first})");
+                push_issue(&mut self.issues, ValidationCode::Vcosu, dup, path);
+            } else {
+                self.seen_node_ids.insert(nid.to_owned(), path.to_owned());
+            }
+        }
+
+        match obj {
+            CObject::CComplexObject(cco) => self.walk_complex(path, cco),
+            CObject::ArchetypeSlot(slot) => self.check_slot(path, slot),
+            CObject::CTerminologyCode(tc) => {
+                // VATCV (code form) applies only to ADL2 constraint codes; the
+                // ADL 1.4 dialect preserves 1.4 terminology constraints
+                // verbatim (`local, at0004`, `[openehr::524]`, listed forms) in
+                // the constraint string — these are not ADL2 code forms, and
+                // their validity is ontology-definedness (ADL1.4 master08
+                // §Local Constraint Codes / VATDF/VACDF), not the ADL2 regex.
+                if self.dialect == Dialect::Adl2 {
+                    self.check_terminology_code_form(path, &tc.constraint);
+                }
+            }
+            CObject::CBoolean(_)
+            | CObject::CInteger(_)
+            | CObject::CReal(_)
+            | CObject::CString(_)
+            | CObject::CDate(_)
+            | CObject::CTime(_)
+            | CObject::CDateTime(_)
+            | CObject::CDuration(_) => self.check_primitive_assumed(path, obj),
+            // NOTE: VUNP (`C_COMPLEX_OBJECT_PROXY` target-path validity) is a
+            // flat-form (phase-3) check — a proxy target may be assembled from
+            // several specialisation levels — so it runs in [`super::flat`]
+            // against the flattened form (`master08` §Phase 3; `master04.5`
+            // §`C_COMPLEX_OBJECT_PROXY` VUNP L482-483), not in the phase-1 walk.
+            CObject::CComplexObjectProxy(_) => {}
+        }
+    }
+
+    fn walk_complex(&mut self, path: &str, cco: &CComplexObject) {
+        // VARXNC / VARXAV / VARXTV: `C_ARCHETYPE_ROOT` validity (master08 §Phase 1
+        // §Various Structure Validation).
+        //
+        // NOTE: VARXR (external-reference *resolution*) is a phase-2 check that
+        // needs the supplier repository, so it is not run in the standalone
+        // phase-1 walk: a `C_ARCHETYPE_ROOT` filling a parent slot is resolved by
+        // the specialisation validator ([`super::slots::ParentScan::check_slot_filler`],
+        // `master04.5` §`C_ARCHETYPE_ROOT`) and a `use_archetype` filler by
+        // [`super::slots::validate_fillers`] (`master08` §Phase 2).
+        if let CComplexObject::CArchetypeRoot(r) = cco {
+            if r.node_id.is_empty() {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Varxnc,
+                    "C_ARCHETYPE_ROOT has no node id",
+                    path,
+                );
+            }
+            if r.rm_type_name.is_empty() {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Varxtv,
+                    "C_ARCHETYPE_ROOT has no RM type",
+                    path,
+                );
+            }
+            if !r.archetype_ref.is_empty() && !is_archetype_id(&r.archetype_ref) {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Varxav,
+                    format!(
+                        "C_ARCHETYPE_ROOT reference {:?} is not a valid archetype id",
+                        r.archetype_ref
+                    ),
+                    path,
+                );
+            }
+        }
+
+        // VCATU: sibling attributes uniquely named (master04.5 §`C_COMPLEX_OBJECT`).
+        let mut seen_attrs = BTreeSet::new();
+        for attr in complex_attributes(cco) {
+            if !seen_attrs.insert(attr.rm_attribute_name.as_str()) {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vcatu,
+                    format!(
+                        "attribute {:?} is defined more than once",
+                        attr.rm_attribute_name
+                    ),
+                    path,
+                );
+            }
+        }
+
+        for attr in complex_attributes(cco) {
+            // VCOSU (AOM 1.4 sibling scope): in the 1.4 dialect node ids are only
+            // *sibling*-unique — children under the same container attribute must
+            // have distinct node ids (AOM1.4 master04 §Node_id and Paths —
+            // "guarantees sibling node unique identification"). ADL2 uses the
+            // stronger archetype-wide uniqueness (walk_object above / the flat-form walk),
+            // so this sibling-scoped pass is 1.4-only.
+            if self.dialect == Dialect::Adl14 {
+                let mut sibling_ids: BTreeSet<&str> = BTreeSet::new();
+                for child in &attr.children {
+                    let cid = object_node_id(child);
+                    if !cid.is_empty()
+                        && (is_id_code(cid) || is_at_code(cid))
+                        && !sibling_ids.insert(cid)
+                    {
+                        let cpath = child_path(&format!("{path}/{}", attr.rm_attribute_name), cid);
+                        push_issue(
+                            &mut self.issues,
+                            ValidationCode::Vcosu,
+                            format!("node id {cid:?} is not unique among siblings"),
+                            &cpath,
+                        );
+                    }
+                }
+            }
+            self.walk_attribute(path, attr);
+        }
+    }
+
+    fn walk_attribute(&mut self, parent_path: &str, attr: &CAttribute) {
+        let attr_path = format!("{parent_path}/{}", attr.rm_attribute_name);
+
+        // VDIFV: a differential path is only valid in a specialised archetype
+        // (master04.5 §`C_ATTRIBUTE`).
+        if attr.differential_path.is_some() && !self.v.is_specialised() {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vdifv,
+                "differential path in a non-specialised archetype",
+                &attr_path,
+            );
+        }
+
+        // VACMCU/WACMCL compare a child's occurrences against its owning
+        // attribute's *stated* cardinality (master04.5 §`C_ATTRIBUTE`). They run
+        // only when a cardinality is present (which reliably means the attribute
+        // is a container) and the archetype is its own flat form — a specialised
+        // archetype may not restate the inherited cardinality.
+        //
+        // NOTE: VACSO ("child of a single-valued attribute cannot have
+        // occurrences upper > 1") is a reference-model check — a single-valued
+        // attribute is `C_ATTRIBUTE._is_multiple_` False, an RM-derived property
+        // the parser's `is_multiple = cardinality present` heuristic cannot
+        // supply (it misclassifies e.g. `CLUSTER.items`); it runs in
+        // [`super::rm`]. For a specialised archetype VACMCU/WACMCL run on the
+        // flattened form ([`super::flat`]) — a differential may not restate
+        // the inherited cardinality — so they are gated to the non-specialised
+        // (own-flat-form) case here.
+        if !self.v.is_specialised() && attr.is_multiple {
+            self.check_container_cardinality(&attr_path, attr);
+        }
+
+        // VCOC is the ADL 1.4 formalism's own cardinality/occurrences rule,
+        // distinct from the AOM2 VACMCU/WACMCL pair above, so it runs on the 1.4
+        // dialect only. Gated to the non-specialised (own-flat-form) case for the
+        // same reason as VACMCU: a specialised archetype need not restate the
+        // inherited cardinality, so the sums here would be computed against a
+        // cardinality that is not the effective one.
+        if self.dialect == Dialect::Adl14 && !self.v.is_specialised() {
+            self.check_vcoc(&attr_path, attr);
+        }
+
+        // Whether a child object is required to carry a node id. AOM2 requires
+        // one on every non-primitive object (master04.5 §`C_OBJECT`); AOM 1.4
+        // requires one only for children of a container (multiple) attribute —
+        // "any leaf or near-leaf node which has no sibling nodes from the same
+        // attribute can safely have no node_id" (AOM1.4 master04 §Node_id and
+        // Paths; ADL1.4 master08 §Definition Section).
+        let require_child_node_id = match self.dialect {
+            Dialect::Adl2 => true,
+            Dialect::Adl14 => attr.is_multiple,
+        };
+        for child in &attr.children {
+            let cpath = child_path(&attr_path, object_node_id(child));
+            self.walk_object(&cpath, child, require_child_node_id);
+        }
+    }
+
+    /// VACMCU (error) + WACMCL (warning): container cardinality vs child
+    /// occurrences (master04.5 §`C_ATTRIBUTE`).
+    fn check_container_cardinality(&mut self, attr_path: &str, attr: &CAttribute) {
+        let Some(card) = attr.cardinality.as_ref() else {
+            return;
+        };
+        let Some(card_upper) = finite_upper(&card.interval) else {
+            return; // open cardinality upper — nothing to bound
+        };
+        let mut sum_lower = 0i64;
+        for child in &attr.children {
+            let Some(occ) = child_occurrences(child) else {
+                continue;
+            };
+            // VACMCU: a finite child occurrences upper must be <= cardinality upper.
+            if let Some(u) = finite_upper(occ)
+                && i64::from(u) > i64::from(card_upper)
+            {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vacmcu,
+                    format!(
+                        "child occurrences upper {u} exceeds the cardinality upper {card_upper}"
+                    ),
+                    attr_path,
+                );
+            }
+            sum_lower += i64::from(occurrences_lower(occ));
+        }
+        // WACMCL: the sum of child occurrences lowers should be below the
+        // cardinality upper (advisory warning).
+        if sum_lower > i64::from(card_upper) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Wacmcl,
+                format!(
+                    "sum of child occurrences lowers {sum_lower} exceeds the cardinality upper {card_upper}"
+                ),
+                attr_path,
+            );
+        }
+    }
+
+    /// VCOC (ADL 1.4): cardinality/occurrences validity —
+    /// `ADL1.4/master05-cadl.adoc` §Occurrences L321-324: "the interval
+    /// represented by: (the sum of all occurrences minimum values) .. (the sum of
+    /// all occurrences maximum values) must be inside the interval of the
+    /// cardinality."
+    ///
+    /// The children's occurrences are the EFFECTIVE ones
+    /// ([`effective_occurrences_adl14`]): a child with no stated `occurrences` is
+    /// `{1..1}` (master05 L316), and a `use_node` with none takes the referenced
+    /// node's (master05 L515) — without those defaults the sums would be computed
+    /// from zero-width intervals and the rule would never see a real archetype's
+    /// child set.
+    ///
+    /// NOTE (adjudication): the sum-LOWER half of the literal containment — that
+    /// `cardinality.lower <= Σ occurrences.lower` — is NOT raised, because
+    /// openEHR's own regression corpus contradicts it: `aa.v1.adl`,
+    /// `dimensions.v1.adl` and their siblings are tagged `regression = "PASS"`
+    /// while pairing `items cardinality {1..*}` with a single child of
+    /// `occurrences {0..1}` (Σ lower = 0 < 1). AOM 2, where this rule's successor
+    /// lives, splits VCOC the same way: the upper-bound half is the ERROR VACMCU
+    /// and the lower-bound half is the WARNING WACMCL
+    /// (`AOM2/master04.5-constraint_model-class_definitions.adoc` §Validity Rules:
+    /// `C_ATTRIBUTE`). What IS raised is every part of the containment failure that
+    /// is a genuine defect and corpus-consistent: a sum whose maximum exceeds the
+    /// cardinality upper (the child set can overfill the container) and a sum whose
+    /// maximum cannot reach the cardinality lower (the container's minimum is
+    /// unsatisfiable). Both are strict cases of "not inside the interval of the
+    /// cardinality".
+    fn check_vcoc(&mut self, attr_path: &str, attr: &CAttribute) {
+        let Some(card) = attr.cardinality.as_ref() else {
+            return; // no cardinality ⇒ not a container ⇒ VCOC does not apply.
+        };
+        if attr.children.is_empty() {
+            return;
+        }
+        let card_lower = occurrences_lower(&card.interval);
+        let card_upper = finite_upper(&card.interval);
+
+        // Σ of the children's effective occurrences maxima; `None` = unbounded
+        // (any child with an open upper makes the sum open).
+        let mut sum_upper: Option<i64> = Some(0);
+        for child in &attr.children {
+            let occ = effective_occurrences_adl14(self.v.definition, child);
+            match (sum_upper, occ.upper) {
+                (Some(sum), Some(u)) => sum_upper = Some(sum + i64::from(u)),
+                (_, None) => sum_upper = None,
+                (None, _) => {}
+            }
+        }
+        let Some(sum_upper) = sum_upper else {
+            return; // an unbounded sum is inside any cardinality with an open upper
+        };
+
+        if let Some(cu) = card_upper
+            && sum_upper > i64::from(cu)
+        {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcoc,
+                format!(
+                    "the sum of the children's occurrences maxima ({sum_upper}) is outside the \
+                     cardinality {card_lower}..{cu}"
+                ),
+                attr_path,
+            );
+        }
+        if sum_upper < i64::from(card_lower) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vcoc,
+                format!(
+                    "the sum of the children's occurrences maxima ({sum_upper}) cannot reach the \
+                     cardinality lower bound ({card_lower})"
+                ),
+                attr_path,
+            );
+        }
+    }
+
+    fn check_slot(&mut self, path: &str, slot: &ArchetypeSlot) {
+        // VDSEV / VDSIV: slot include/exclude consistency (master04.5
+        // §`ARCHETYPE_SLOT`, the verbatim Eiffel if/elseif chain — exactly one
+        // branch fires):
+        //
+        //   if      includes not empty and =  any then not (excludes empty or /= any) ==> VDSEV
+        //   elseif  includes not empty and /= any then not (excludes empty or =  any) ==> VDSEV
+        //   elseif  excludes not empty and =  any then not (includes empty or /= any) ==> VDSIV
+        //   elseif  excludes not empty and /= any then not (includes empty or =  any) ==> VDSIV
+        //
+        // NOTE: with the include-side branches evaluated first, VDSIV is only
+        // reachable when `includes` is empty — in which case its own guard
+        // ("includes empty") makes the condition false. So on a real slot (which
+        // always has an `include`) every inconsistency reports as VDSEV; VDSIV
+        // is defined by the spec but structurally unreachable through this table.
+        let inc_empty = slot.includes.is_empty();
+        let exc_empty = slot.excludes.is_empty();
+        let inc_any = !inc_empty && slot.includes.iter().all(is_any_assertion);
+        let exc_any = !exc_empty && slot.excludes.iter().all(is_any_assertion);
+
+        // A real slot always carries an `include`, so only the include-side
+        // branches of the spec table are reachable (see the NOTE above): a
+        // violation is reported as VDSEV whether the offending pairing is an
+        // any-include/any-exclude or a specific-include/specific-exclude.
+        if !inc_empty {
+            let contradictory = if inc_any {
+                exc_non_any_and_any(exc_empty, exc_any)
+            } else {
+                !(exc_empty || exc_any)
+            };
+            if contradictory {
+                push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vdsev,
+                    "slot 'include' and 'exclude' constraints are contradictory",
+                    path,
+                );
+            }
+        }
+
+        // VDFAI: archetype ids in slot assertions must be valid (master04.5
+        // §`ARCHETYPE_SLOT`).
+        for a in slot.includes.iter().chain(slot.excludes.iter()) {
+            for id in assertion_archetype_ids(a) {
+                if !is_archetype_id(&id) {
+                    push_issue(
+                        &mut self.issues,
+                        ValidationCode::Vdfai,
+                        format!("slot assertion references an invalid archetype id {id:?}"),
+                        path,
+                    );
+                }
+            }
+        }
+    }
+
+    /// VATCV: a terminology constraint code must be a well-formed code
+    /// (master08 §Code Validation; NOTE-flagged, no full vendored text). The
+    /// definedness / value-set / assumed-value checks run in the gated
+    /// terminology pass ([`check_terminology`](super::terminology::check_terminology)).
+    fn check_terminology_code_form(&mut self, path: &str, constraint: &str) {
+        // Strip an optional operational `@terminology` binding suffix.
+        let code = constraint.split('@').next().unwrap_or(constraint).trim();
+        if !code.is_empty() && !is_valid_code(code) {
+            push_issue(
+                &mut self.issues,
+                ValidationCode::Vatcv,
+                format!("terminology constraint code {code:?} is not a valid code"),
+                path,
+            );
+        }
+    }
+
+    /// VOBAV: a primitive assumed value must fall within its own constraint
+    /// (master04.5 §`C_PRIMITIVE_OBJECT`).
+    ///
+    /// The enumerable primitives (Boolean / String) test list membership; the
+    /// ordered primitives (Integer / Real and the temporal `Iso8601_*` types)
+    /// test point-in-interval containment (`master04.5` §`C_ORDERED` — the value
+    /// space is a list of `Interval`s, `has` = a point falls in some interval).
+    /// A primitive with an empty constraint (`any_allowed`) admits any assumed
+    /// value. The temporal branches use `Interval::has_definite` so an
+    /// incomparable (undecidable) value never raises a false violation.
+    /// Raise VOBAV at `path` with `msg` — the shared shape of every arm of
+    /// [`StructureScan::check_primitive_assumed`].
+    fn vobav(&mut self, msg: &'static str, path: &str) {
+        push_issue(&mut self.issues, ValidationCode::Vobav, msg, path);
+    }
+
+    fn check_primitive_assumed(&mut self, path: &str, obj: &CObject) {
+        match obj {
+            CObject::CBoolean(b) => {
+                if let Some(av) = b.assumed_value
+                    && !b.constraint.is_empty()
+                    && !b.constraint.contains(&av)
+                {
+                    self.vobav("boolean assumed value is not in the constraint", path);
+                }
+            }
+            CObject::CInteger(i) => {
+                // The generated model types the integer assumed value as `f64`;
+                // a valid integer assumed value is a whole number lying in some
+                // constraint interval.
+                if let Some(av) = i.assumed_value
+                    && !i.constraint.is_empty()
+                {
+                    #[expect(clippy::cast_possible_truncation, reason = "guarded by fract()")]
+                    let inside =
+                        av.fract() == 0.0 && i.constraint.iter().any(|iv| iv.has(&(av as i32)));
+                    if !inside {
+                        self.vobav(
+                            "integer assumed value is not within any constraint interval",
+                            path,
+                        );
+                    }
+                }
+            }
+            CObject::CReal(r) => {
+                if let Some(av) = r.assumed_value
+                    && !r.constraint.is_empty()
+                    && !r.constraint.iter().any(|iv| iv.has(&av))
+                {
+                    self.vobav(
+                        "real assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            // The temporal primitives carry their assumed value + constraint as
+            // `Interval<Iso8601_*>`; `openehr-base` now provides ISO 8601 ordering
+            // (`PartialOrd`), so the same point-in-interval VOBAV test applies.
+            // Temporal values are only partially ordered (partial dates,
+            // timezone normalisation), so use `has_definite`: a violation is
+            // raised only when the assumed value is definitely outside EVERY
+            // interval; an incomparable (undecidable) pairing leaves containment
+            // unknown and never raises.
+            CObject::CDate(d) => {
+                if let Some(av) = &d.assumed_value
+                    && temporal_assumed_violates(&d.constraint, av)
+                {
+                    self.vobav(
+                        "date assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CTime(t) => {
+                if let Some(av) = &t.assumed_value
+                    && temporal_assumed_violates(&t.constraint, av)
+                {
+                    self.vobav(
+                        "time assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CDateTime(dt) => {
+                if let Some(av) = &dt.assumed_value
+                    && temporal_assumed_violates(&dt.constraint, av)
+                {
+                    self.vobav(
+                        "date/time assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CDuration(du) => {
+                if let Some(av) = &du.assumed_value
+                    && temporal_assumed_violates(&du.constraint, av)
+                {
+                    self.vobav(
+                        "duration assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CString(s) => {
+                if let Some(av) = &s.assumed_value
+                    && !s.constraint.is_empty()
+                    && !s.constraint.iter().any(|c| c == av)
+                {
+                    self.vobav("string assumed value is not in the constraint list", path);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// VOBAV for an ordered temporal primitive: a non-empty constraint list is
+/// violated only when the assumed value is *definitely* outside every interval
+/// (`Interval::has_definite` returns `Some(false)` for all of them). An
+/// undecidable pairing (`None`, e.g. a partial date whose completions overlap a
+/// bound) leaves containment unknown and never raises — mirroring the numeric
+/// `has`-based check while staying conservative under partial order.
+fn temporal_assumed_violates<T: PartialOrd>(constraint: &[Interval<T>], av: &T) -> bool {
+    !constraint.is_empty()
+        && constraint
+            .iter()
+            .all(|iv| iv.has_definite(av) == Some(false))
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────
+
+pub(super) fn occurrences_lower(mi: &MultiplicityInterval) -> i32 {
+    mi.lower.unwrap_or(0)
+}
+
+/// True if a slot assertion expresses "any archetype" (its regex constraint is
+/// a match-anything pattern), for the include/exclude consistency table.
+fn is_any_assertion(a: &Assertion) -> bool {
+    let Some(body) = a
+        .string_expression
+        .as_deref()
+        .and_then(assertion_constraint_body)
+    else {
+        return false;
+    };
+    // The regex constraint inside `matches { … }`; an "any" slot is `/.*/` /
+    // `/.+/` (or the bare universal pattern).
+    let regex = body.trim().trim_matches('/').trim();
+    regex == ".*" || regex == ".+"
+}
+
+/// Helper for the VDSEV branch-1 condition `not (excludes empty or /= any)`.
+fn exc_non_any_and_any(exc_empty: bool, exc_any: bool) -> bool {
+    !exc_empty && exc_any
+}
+
+/// The content between the first `{` and its matching `}` of a slot assertion's
+/// preserved `string_expression` (the `matches { … }` constraint body) — used
+/// so the leading `archetype_id/value` path (which itself contains `/`) is not
+/// mistaken for the constraint regex.
+fn assertion_constraint_body(text: &str) -> Option<&str> {
+    let open = text.find('{')?;
+    let close = text.rfind('}')?;
+    if close > open {
+        text.get(open + 1..close).map(str::trim)
+    } else {
+        None
+    }
+}
+
+/// The archetype-id literals referenced by a slot assertion (scanned from the
+/// preserved `string_expression` — the constraint targets an id via a regex).
+fn assertion_archetype_ids(a: &Assertion) -> Vec<String> {
+    // Slot assertions constrain `archetype_id/value matches {/regex/}`; the
+    // regex, when it is a literal id (no meta-characters), is itself the id.
+    // VDFAI's subject is the ARCHETYPE IDENTIFIER (ADL1.4 master05 §Archetype
+    // Slots) — an assertion targeting another property (`domain_concept`,
+    // `short_concept_name`, a path) constrains something that is not an
+    // archetype id, so extracting its regex as one is a false positive (#767
+    // audit: `domain_concept matches {/medication\.v1/}` yielded the bogus
+    // id `medication.v1`).
+    let targets_archetype_id = a
+        .string_expression
+        .as_deref()
+        .is_some_and(|s| s.trim_start().starts_with("archetype_id"));
+    if !targets_archetype_id {
+        return Vec::new();
+    }
+    let Some(body) = a
+        .string_expression
+        .as_deref()
+        .and_then(assertion_constraint_body)
+    else {
+        return Vec::new();
+    };
+    let regex = body.trim().trim_matches('/');
+    // A literal id regex contains no unescaped regex meta-characters beyond the
+    // escaped `\.` dots.
+    let literal = regex.replace("\\.", ".");
+    if literal.is_empty() || literal.contains(['*', '+', '?', '(', ')', '[', ']', '|', '^', '$']) {
+        Vec::new()
+    } else {
+        vec![literal]
+    }
+}
+
+/// The second-order attribute tuples of a [`CComplexObject`] (either subtype).
+pub(super) fn complex_attribute_tuples(cco: &CComplexObject) -> &[CAttributeTuple] {
+    match cco {
+        CComplexObject::CComplexObject(d) => &d.attribute_tuples,
+        CComplexObject::CArchetypeRoot(r) => &r.attribute_tuples,
+    }
+}
+
+#[cfg(test)]
+mod temporal_vobav_tests {
+    use openehr_base::prelude::{Interval, Iso8601Date, ProperInterval, ProperIntervalData};
+
+    use super::temporal_assumed_violates;
+
+    fn date(v: &str) -> Iso8601Date {
+        Iso8601Date {
+            value: v.to_owned(),
+        }
+    }
+
+    /// A closed date interval `[lo, hi]`.
+    fn date_interval(lo: &str, hi: &str) -> Interval<Iso8601Date> {
+        Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+            lower: Some(date(lo)),
+            upper: Some(date(hi)),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: true,
+        }))
+    }
+
+    #[test]
+    fn assumed_date_outside_the_interval_raises() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        // 2019-06-15 is definitely before the interval ⇒ VOBAV fires.
+        assert!(temporal_assumed_violates(&constraint, &date("2019-06-15")));
+    }
+
+    #[test]
+    fn assumed_date_inside_the_interval_does_not_raise() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        assert!(!temporal_assumed_violates(&constraint, &date("2020-06-15")));
+    }
+
+    #[test]
+    fn incomparable_assumed_date_does_not_raise() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        // The partial year 2020 overlaps the interval — containment is
+        // undecidable, so it must NOT raise (honest incomparability).
+        assert!(!temporal_assumed_violates(&constraint, &date("2020")));
+    }
+
+    #[test]
+    fn empty_constraint_admits_any_assumed_value() {
+        assert!(!temporal_assumed_violates::<Iso8601Date>(
+            &[],
+            &date("2019-06-15")
+        ));
+    }
+}

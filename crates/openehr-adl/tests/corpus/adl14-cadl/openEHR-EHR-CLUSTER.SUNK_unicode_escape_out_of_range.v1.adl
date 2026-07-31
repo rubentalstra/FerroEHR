@@ -1,0 +1,56 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SUNK_unicode_escape_out_of_range.v1
+
+concept
+	[at0000]	-- Out-of-range eight-digit unicode escape
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"SUNK">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Out-of-range eight-digit unicode escape
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Emoji label
+				value matches {
+					DV_TEXT matches {
+						value matches {
+							-- The invalid twin of `unicode_escape_8_digit`: the 8-digit
+							-- form encodes "unicode code-points in the range `U+10000`
+							-- through `U+10FFFF` (non-BMP planes)"
+							-- (ADL1.4/master03-file_encoding.adoc §File Encoding, verbatim
+							-- ADL2 master03-file_encoding.adoc), so an 8-digit spelling
+							-- of a BMP code point denotes nothing the form can carry.
+							-- Decoding it to U+FFFD or passing it through verbatim would
+							-- turn an authoring defect into silently wrong clinical text.
+							"\u0000FFFF"
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Out-of-range eight-digit unicode escape">
+					description = <"Refusal fixture: an 8-digit escape outside U+10000-U+10FFFF.">
+				>
+				["at0001"] = <
+					text = <"Emoji label">
+					description = <"A label carrying a malformed unicode escape.">
+				>
+			>
+		>
+	>

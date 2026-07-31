@@ -1,4 +1,4 @@
-//! Corpus round-trip gate (phase A3c): for every corpus `.adls` that fully
+//! Corpus round-trip gate: for every corpus `.adls` that fully
 //! assembles, `parse_artefact → print → parse_artefact` must reconstruct a
 //! **structurally equal** [`openehr_adl::assemble`] `Archetype`.
 //!
@@ -16,7 +16,8 @@
 use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::printer::print;
+use openehr_adl::parse::Dialect;
+use openehr_adl::print::print;
 
 /// Files excluded from the round-trip gate, each with a reason. These mirror the
 /// definition-parse exclusions (intentional cADL-syntax FAIL fixtures) plus the
@@ -36,7 +37,7 @@ const EXCLUSIONS: &[(&str, &str)] = &[
     ),
     (
         "openehr-ehr-ACTION.medication_precise.v0.0.1.adls",
-        "attribute tuple with complex-object members — beyond phase A3a (definition does not parse)",
+        "attribute tuple with complex-object members — beyond the cADL parser (definition does not parse)",
     ),
 ];
 
@@ -88,14 +89,14 @@ fn every_assembled_artefact_round_trips() {
             continue;
         }
         let src = std::fs::read_to_string(path).expect("read corpus file");
-        let Ok(first) = parse_artefact(&src) else {
+        let Ok(first) = parse_artefact(&src, Dialect::Adl2) else {
             // A file whose definition/terminology does not fully assemble is not
             // a round-trip concern (the parse-level gates govern it).
             not_assembled += 1;
             continue;
         };
         let printed = print(&first);
-        match parse_artefact(&printed) {
+        match parse_artefact(&printed, Dialect::Adl2) {
             Ok(second) if first == second => round_tripped += 1,
             Ok(_) => mismatches.push(format!(
                 "{}: printed form re-parsed to a DIFFERENT artefact",

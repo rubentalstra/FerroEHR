@@ -1,4 +1,4 @@
-//! The outer ADL2 artefact parser (phase A2).
+//! The outer ADL artefact parser: sections, kind, meta, spans.
 //!
 //! Transcribed from the vendored `adl2.g4` (at
 //! `crates/openehr-adl/vendor/grammar/`) plus the spec-text section extensions
@@ -6,7 +6,7 @@
 //! kind, identification meta + HRID, the specialise parent reference, each
 //! ODIN section parsed via `openehr_lang::odin`, and the cADL `definition` /
 //! `rules` bodies captured as **raw spans** (cADL parsing is a separate pass,
-//! `crate::cadl`).
+//! `crate::parse`).
 //!
 //! Section boundaries follow the grammar's `'\n'`-anchoring of the section
 //! keywords (`adl_keywords.g4`): a section header is a keyword at column 0
@@ -16,11 +16,11 @@
 //! quoted value can never read as a header either.
 
 use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
-use openehr_base::prelude::VersionStatus;
 
-use crate::cadl::Dialect;
 use crate::error::{SyntaxError, SyntaxErrorCode};
+use crate::hrid::parse_hrid;
 use crate::lexer::{Spanned, Token};
+use crate::parse::Dialect;
 
 /// The artefact kind (first keyword of an ADL2 source).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,7 +68,7 @@ pub struct ArtefactMeta {
 }
 
 /// A parsed ADL2 source artefact (outer structure only; the definition/rules
-/// bodies stay raw here, parsed on demand by `crate::cadl` /
+/// bodies stay raw here, parsed on demand by `crate::parse` /
 /// `openehr_lang::odin`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourceArtefact {
@@ -130,28 +130,15 @@ pub struct SourceArtefact {
     pub overlays: Vec<SourceArtefact>,
 }
 
-/// Parse an ADL2 source into a [`SourceArtefact`].
+/// Parse an ADL source into a [`SourceArtefact`], reading the outer structure
+/// with the rules of `dialect`.
 ///
 /// ODIN sections are delegated to `openehr_lang::odin::parse`; the `definition`
 /// and `rules` bodies are captured as [`RawSpan`]s. Recoverable errors are
 /// collected; the whole error list is returned on any failure.
 ///
-/// # Errors
-/// Returns every [`SyntaxError`] found (lexical, identification, ODIN-section,
-/// or missing-required-section). ODIN parse failures surface as
-/// [`SyntaxErrorCode::Sdinv`] carrying the section name.
-pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    parse_source_with(src, Dialect::Adl2)
-}
-
-/// Parse an **ADL 1.4** source into a [`SourceArtefact`] — the outer-structure
-/// twin of [`parse_source`] for the 1.4 dialect, and the entry every 1.4 caller
-/// uses ([`crate::assemble::parse_artefact_adl14`],
-/// [`crate::validate::validate_source_phase1_adl14`],
-/// [`crate::validate::validate_source_adl14`]).
-///
-/// Three outer-structure behaviours differ from ADL2, each 1.4-only so ADL2
-/// parsing is byte-identical:
+/// Three outer-structure behaviours differ under [`Dialect::Adl14`], each
+/// 1.4-only so ADL2 parsing is byte-identical:
 /// - **Section and artefact keywords are case-insensitive**
 ///   (`AM/docs/ADL1.4/master08-adl` §Syntax Specification/§Symbols spells every
 ///   one of them `^[Aa][Rr][Cc][Hh][Ee][Tt][Yy][Pp][Ee]`-style), so
@@ -162,8 +149,8 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
 ///   sections").
 /// - **A missing `language` section is accepted** when the ontology carries the
 ///   old-form `primary_language` (§Language Section NOTE + §Ontology Header
-///   Statements NOTE); [`crate::assemble::assemble_adl14`] performs the
-///   upgrade. With no `primary_language` to upgrade from, the
+///   Statements NOTE); `crate::assemble::assemble` performs the upgrade for
+///   that dialect. With no `primary_language` to upgrade from, the
 ///   [`SyntaxErrorCode::Salan`] of the grammar's mandatory-language reading
 ///   stands.
 /// - **A malformed `concept` clause is refused** with
@@ -171,12 +158,10 @@ pub fn parse_source(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
 ///   SYM_CONCEPT V_LOCAL_TERM_CODE_REF | SYM_CONCEPT error`).
 ///
 /// # Errors
-/// Returns every [`SyntaxError`] found, exactly as [`parse_source`] does.
-pub fn parse_source_adl14(src: &str) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    parse_source_with(src, Dialect::Adl14)
-}
-
-fn parse_source_with(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
+/// Returns every [`SyntaxError`] found (lexical, identification, ODIN-section,
+/// or missing-required-section). ODIN parse failures surface as
+/// [`SyntaxErrorCode::Sdinv`] carrying the section name.
+pub fn parse_source(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
     let toks = match crate::lexer::lex(src) {
         Ok(t) => t,
         Err(e) => return Err(vec![e]),
@@ -742,97 +727,6 @@ fn token_text(t: &Token) -> Option<String> {
     }
 }
 
-/// Parse an archetype HRID (or a version-partial specialise reference) into an
-/// [`ArchetypeHrid`], normalising a partial version per `master07.05`.
-///
-/// Form: `[ns::]publisher-package-class.concept.vMAJOR[.MINOR[.PATCH]]
-/// [-rc|-alpha|-beta[.build]]`.
-///
-/// # Errors
-/// Returns a message describing the first structural problem.
-pub fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
-    let (namespace, rest) = match s.split_once("::") {
-        Some((ns, rest)) => (Some(ns.to_owned()), rest),
-        None => (None, s),
-    };
-
-    let vpos = rest
-        .rfind(".v")
-        .filter(|&i| {
-            rest.get(i + 2..)
-                .is_some_and(|v| v.starts_with(|c: char| c.is_ascii_digit()))
-        })
-        .ok_or_else(|| format!("HRID {s:?} has no `.vN` version segment"))?;
-    let left = rest.get(..vpos).unwrap_or_default();
-    let version = rest.get(vpos + 2..).unwrap_or_default();
-
-    let (model_part, concept_id) = left
-        .rsplit_once('.')
-        .ok_or_else(|| format!("HRID {s:?} has no `.concept` segment"))?;
-
-    let segments: Vec<&str> = model_part.split('-').collect();
-    let [publisher, package, class] = segments.as_slice() else {
-        return Err(format!(
-            "HRID {s:?} model part must be `publisher-package-class`, found {model_part:?}"
-        ));
-    };
-    if publisher.is_empty() || package.is_empty() || class.is_empty() || concept_id.is_empty() {
-        return Err(format!("HRID {s:?} has an empty identifier segment"));
-    }
-
-    let (release_version, version_status, build_count) = parse_version(version)?;
-
-    Ok(ArchetypeHrid {
-        namespace,
-        rm_publisher: (*publisher).to_owned(),
-        rm_package: (*package).to_owned(),
-        rm_class: (*class).to_owned(),
-        concept_id: concept_id.to_owned(),
-        release_version,
-        version_status: VersionStatus::from_wire(version_status),
-        build_count,
-    })
-}
-
-/// Parse the version tail into `(release_version, status, build_count)`,
-/// normalising a 1- or 2-part numeric version to 3 parts (`master07.05`;
-/// 1.4 `v1` ⇒ `1.0.0`).
-fn parse_version(version: &str) -> Result<(String, &'static str, String), String> {
-    let (status, numeric, build) = if let Some((numeric, build)) = split_status(version, "-rc") {
-        ("rc", numeric, build)
-    } else if let Some((numeric, build)) = split_status(version, "-alpha") {
-        ("alpha", numeric, build)
-    } else if let Some((numeric, build)) = split_status(version, "-beta") {
-        ("beta", numeric, build)
-    } else {
-        ("", version, "")
-    };
-
-    let mut parts = numeric.split('.');
-    let major = parts.next().unwrap_or("0");
-    let minor = parts.next().unwrap_or("0");
-    let patch = parts.next().unwrap_or("0");
-    if major.is_empty() || !major.bytes().all(|b| b.is_ascii_digit()) {
-        return Err(format!("invalid version {version:?}"));
-    }
-    let release_version = format!(
-        "{}.{}.{}",
-        major,
-        if minor.is_empty() { "0" } else { minor },
-        if patch.is_empty() { "0" } else { patch }
-    );
-    Ok((release_version, status, build.to_owned()))
-}
-
-/// If `version` carries the `marker` pre-release suffix, split into
-/// `(numeric, build)` where `build` is the `.N` count after the marker (empty
-/// if absent).
-fn split_status<'a>(version: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
-    let (numeric, after) = version.split_once(marker)?;
-    let build = after.strip_prefix('.').unwrap_or("");
-    Some((numeric, build))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -845,7 +739,7 @@ mod tests {
                    \ndescription\n\tlifecycle_state = <\"published\">\n\
                    \ndefinition\n\tWHOLE[id1]\n\
                    \nterminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <\n\t\t\t\ttext = <\"x\">\n\t\t\t\tdescription = <\"x\">\n\t\t\t>\n\t\t>\n\t>\n";
-        let a = parse_source(src).unwrap_or_else(|e| panic!("parse failed: {e:?}"));
+        let a = parse_source(src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"));
         assert_eq!(a.kind, ArtefactKind::Archetype);
         assert_eq!(a.meta.adl_version.as_deref(), Some("2.0.5"));
         assert_eq!(a.meta.rm_release.as_deref(), Some("1.0.2"));
@@ -870,41 +764,10 @@ mod tests {
                    \nlanguage\n\toriginal_language = <[ISO_639-1::en]>\n\
                    \ndescription\n\tlifecycle_state = <\"published\">\n\
                    \nterminology\n\tterm_definitions = <\n\t\t[\"en\"] = <>\n\t>\n";
-        let errs = parse_source(src).expect_err("should fail");
+        let errs = parse_source(src, Dialect::Adl2).expect_err("should fail");
         assert!(
             errs.iter().any(|e| e.code == SyntaxErrorCode::Sadf),
             "{errs:?}"
         );
-    }
-
-    #[test]
-    fn hrid_forms() {
-        let h = parse_hrid("openEHR-EHR-OBSERVATION.blood_pressure.v1.2.3").expect("full");
-        assert_eq!(h.namespace, None);
-        assert_eq!(h.rm_publisher, "openEHR");
-        assert_eq!(h.rm_class, "OBSERVATION");
-        assert_eq!(h.release_version, "1.2.3");
-        // An empty status token is outside the `VERSION_STATUS` constant set, so
-        // `from_wire` preserves it verbatim as `Other` (HRID tolerance).
-        assert_eq!(h.version_status, VersionStatus::Other(String::new()));
-
-        // 1.4 single-number version normalises to 3 parts.
-        let h = parse_hrid("openehr-TASK_PLANNING-TASK_PLAN.good_include.v0").expect("partial");
-        assert_eq!(h.release_version, "0.0.0");
-
-        // namespaced + release-candidate with a build count.
-        let h = parse_hrid("uk.gov::openEHR-EHR-CLUSTER.device.v1.0.0-rc.2").expect("ns+rc");
-        assert_eq!(h.namespace.as_deref(), Some("uk.gov"));
-        // `rc` is not a `VERSION_STATUS` constant (`release_candidate` is), so the
-        // out-of-set token is preserved as `Other`.
-        assert_eq!(h.version_status, VersionStatus::Other("rc".to_owned()));
-        assert_eq!(h.build_count, "2");
-
-        // alpha with no build count.
-        let h = parse_hrid("openEHR-EHR-OBSERVATION.x.v0.0.1-alpha").expect("alpha");
-        assert_eq!(h.version_status, VersionStatus::Alpha);
-        assert_eq!(h.build_count, "");
-
-        assert!(parse_hrid("not-an-hrid").is_err());
     }
 }

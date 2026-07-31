@@ -240,7 +240,7 @@ pub(crate) enum Token {
 /// Validate a `CHARACTER` token: an escaped character must be one of the six
 /// legal quoted forms `\r \n \t \\ \" \'` — "Any other character combination
 /// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
-/// §Special Character Sequences, verbatim in `ADL1.4/master03-adl_basics`).
+/// §Special Character Sequences, verbatim in `ADL1.4/master03-file_encoding.adoc`).
 /// The `\uHHHH` forms cannot fit the single-character token.
 fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
@@ -289,7 +289,14 @@ fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
             i += 1;
         }
     }
-    Ok(strip_line_leaders(raw, leader_budget(lex)))
+    let stripped = strip_line_leaders(raw, leader_budget(lex));
+    // The structural scan above accepts any 4/8 hex-digit `\u` run; the shared
+    // decoder is what decides whether it names a character at all (an 8-digit
+    // form outside U+10000-U+10FFFF, a malformed surrogate pair, a lone
+    // surrogate). Refusing here keeps the token stream free of escapes the
+    // reader cannot decode.
+    crate::escape::validate(&stripped).map_err(|_defect| ())?;
+    Ok(stripped)
 }
 
 /// How many leading whitespace characters may be removed from each

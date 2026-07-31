@@ -11,7 +11,15 @@
 //! converter oracle.
 //!
 //! Pipeline:
-//! 1. **Front end** — [`crate::assemble::parse_artefact_adl14`] parses a 1.4
+//! 0. **cADL front end** ([`lower`] + [`domain`]) — the ADL 1.4-only cADL
+//!    productions the `Dialect::Adl14` parse dispatches into: the
+//!    qualified/listed terminology constraints, the pipe-ordinal shorthand,
+//!    and the inline dADL `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
+//!    domain blocks. They are the WRITE side of the converter-internal
+//!    encoding that step 2 reads back
+//!    ([`convert::convert_constraint`](convert)).
+//! 1. **Front end** — [`crate::assemble::parse_artefact`] in
+//!    [`crate::parse::Dialect::Adl14`] parses a 1.4
 //!    `.adl` into a *1.4-shaped* `openehr_am::am24` [`Archetype`](openehr_am::am24::aom2::archetype::archetype::Archetype) (at-code node
 //!    ids; qualified/listed terminology constraints preserved verbatim in the
 //!    `C_TERMINOLOGY_CODE.constraint` string; inline dADL `C_DV_QUANTITY`/
@@ -30,8 +38,11 @@
 //!    new-at-level codes kept, missing ids synthesised in document order),
 //!    terminology-constraint conversion (local single → at-code, local list →
 //!    synthesised `ac` value set, external code(s) → synthesised at-code(s) +
-//!    term-binding URIs), terminology rebuild, description/meta transform, and
-//!    cardinality/occurrences elision.
+//!    term-binding URIs) and the terminology rebuild. Its three
+//!    converter-state-free stages are siblings: `walk` (the read-only
+//!    definition traversals the code planning consumes), `multiplicity` (the
+//!    1.4 default occurrences materialisation + RM-default elision) and
+//!    `metadata` (the description / meta-data / version transform).
 //! 3. **Differ** ([`differ`]) — for a specialised 1.4 source, re-differentialise
 //!    the converted child against its converted+flattened parent (strip
 //!    inherited-unchanged nodes).
@@ -40,4 +51,9 @@
 
 pub mod convert;
 pub mod differ;
+pub mod domain;
 pub mod log;
+pub mod lower;
+mod metadata;
+mod multiplicity;
+mod walk;

@@ -18,10 +18,10 @@
 //! | `FlattenerSpecExamples` | `flattener/specexamples/**` | `flattener_spec.rs` |
 //! | `FlattenerSiblingOrder` | `flattener/siblingorder/**` | `flattener_spec.rs` |
 //! | `ValidityTemplates` | `validity/templates/*.adls` | `templates_corpus.rs` |
-//! | `ValidityLegacy14Adls` | `validity/legacy_adl_1.4/*.adls` | `legacy14_corpus.rs` + phase-1 |
+//! | `ValidityLegacy14Adls` | `validity/legacy_adl_1.4/*.adls` | `legacy14_corpus.rs` + basic integrity |
 //! | `ValidityLegacy14Adl` | `validity/legacy_adl_1.4/*.adl` | `legacy14_corpus.rs` (1.4 tolerance) |
-//! | `Validity` | `validity/**/*.adls` (rest) | `corpus_validity_{phase1,phase2,rm}.rs` |
-//! | `Robustness` | `robustness/**` | `corpus_validity_phase1.rs` (never-panic floor) |
+//! | `Validity` | `validity/**/*.adls` (rest) | `corpus_validity_{integrity,parent_conformance,rm}.rs` |
+//! | `Robustness` | `robustness/**` | `corpus_validity_integrity.rs` (never-panic floor) |
 //! | `Upgrade14Source` | `upgrade/upgrade_from_14/*.adl` | `adl14_conversion.rs` (convert) |
 //! | `Upgrade14Target` | `upgrade/upgrade_from_14/*.adls` | `adl14_conversion.rs` (compare target) |
 //! | `Upgrade15` | `upgrade/upgrade_from_15/*.adls` | `legacy14_corpus.rs` (parse+validate) |

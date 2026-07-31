@@ -29,7 +29,7 @@
 //! declares no conversion operation; `openehr_adl::adl14` carries the same
 //! flag). The `opt14` object model is `openehr_its::opt14` (the AOM 1.4 / OPT 1.4
 //! model); the target is `openehr_am::am24::aom2` in the 1.4-shaped form
-//! `openehr_adl::assemble::parse_artefact_adl14` produces from ADL 1.4 text, so
+//! `openehr_adl::assemble::parse_artefact` produces from ADL 1.4 text, so
 //! the converter core is fed exactly the shape it was built for.
 //!
 //! Home: this lives in the `ehrbase` service layer (not `openehr-adl`) because
@@ -43,7 +43,7 @@ use std::collections::BTreeMap;
 
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};
 use openehr_adl::adl14::log::ConversionLog;
-use openehr_adl::source::parse_hrid;
+use openehr_adl::hrid::parse_hrid;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
@@ -134,7 +134,7 @@ pub(crate) fn convert_opt_to_adl2(
         .into_iter()
         .map(|(archetype_id, art)| ConvertedRoot {
             archetype_id,
-            adl2: openehr_adl::printer::print(&art),
+            adl2: openehr_adl::print::print(&art),
         })
         .collect();
     Ok(OptConversion { roots, structure })
@@ -143,7 +143,7 @@ pub(crate) fn convert_opt_to_adl2(
 /// The conversion core: decompose the OPT and convert each embedded root,
 /// returning the converted `am24` archetypes (id + object) and the recovered
 /// fill structure. [`convert_opt_to_adl2`] prints these to ADL2 text; tests
-/// validate the objects directly (the converter's `validate_phase1` oracle).
+/// validate the objects directly (the converter's `validate_integrity` oracle).
 ///
 /// # Errors
 /// As [`convert_opt_to_adl2`].
@@ -1802,7 +1802,9 @@ fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
 
 #[cfg(test)]
 mod tests {
-    use openehr_adl::validate::{Severity, validate_phase1};
+    use openehr_adl::parse::Dialect;
+    use openehr_adl::validate::catalogue::Severity;
+    use openehr_adl::validate::validate_integrity;
 
     use super::*;
 
@@ -1826,7 +1828,7 @@ mod tests {
     /// Every converted root converts, is a plain authored archetype, and passes
     /// the AOM2 phase-1 catalogue clean — the converter's own oracle property
     /// (`crates/openehr-adl/tests/adl14_conversion.rs` `assert_structural_match`
-    /// runs the same `validate_phase1(&got, None)` gate).
+    /// runs the same `validate_integrity(&got, None)` gate).
     fn assert_converts_clean(rel: &str, min_roots: usize) {
         let opt = parse_opt(rel);
         let (archetypes, structure) =
@@ -1841,7 +1843,7 @@ mod tests {
                 matches!(art, Archetype::AuthoredArchetype(_)),
                 "{rel}/{id}: not a plain authored archetype"
             );
-            let errors: Vec<&str> = validate_phase1(art, None)
+            let errors: Vec<&str> = validate_integrity(art, None)
                 .iter()
                 .filter(|i| i.severity == Severity::Error)
                 .map(|i| i.code.mnemonic())
@@ -1923,7 +1925,7 @@ mod tests {
             let (archetypes, _) =
                 convert_opt_to_archetypes(&opt).unwrap_or_else(|e| panic!("convert {name}: {e}"));
             for (id, art) in &archetypes {
-                let errors: Vec<&str> = validate_phase1(art, None)
+                let errors: Vec<&str> = validate_integrity(art, None)
                     .iter()
                     .filter(|i| i.severity == Severity::Error)
                     .map(|i| i.code.mnemonic())
@@ -1933,10 +1935,10 @@ mod tests {
                 // depth-0 emission and reused 1.4 node codes re-mint
                 // archetype-wide-unique ids in the converter core.
                 assert!(errors.is_empty(), "{name}/{id}: phase-1 errors: {errors:?}");
-                let printed = openehr_adl::printer::print(art);
-                openehr_adl::assemble::parse_artefact(&printed).unwrap_or_else(|e| {
-                    panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}")
-                });
+                let printed = openehr_adl::print::print(art);
+                openehr_adl::assemble::parse_artefact(&printed, Dialect::Adl2).unwrap_or_else(
+                    |e| panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}"),
+                );
             }
         }
         assert!(count >= 3, "the OPT corpus went missing ({count} files)");
@@ -1951,22 +1953,24 @@ mod tests {
             let opt = parse_opt(rel);
             let conversion = convert_opt_to_adl2(&opt).expect("convert");
             for root in &conversion.roots {
-                openehr_adl::assemble::parse_artefact(&root.adl2).unwrap_or_else(|e| {
-                    let line = e.first().map_or(0, |err| err.line);
-                    let context = root
-                        .adl2
-                        .lines()
-                        .enumerate()
-                        .skip(line.saturating_sub(4))
-                        .take(7)
-                        .map(|(i, l)| format!("{:>4} | {l}", i + 1))
-                        .collect::<Vec<_>>()
-                        .join("\n");
-                    panic!(
-                        "{rel}/{}: printed ADL2 does not re-parse: {e:?}\n{context}",
-                        root.archetype_id
-                    )
-                });
+                openehr_adl::assemble::parse_artefact(&root.adl2, Dialect::Adl2).unwrap_or_else(
+                    |e| {
+                        let line = e.first().map_or(0, |err| err.line);
+                        let context = root
+                            .adl2
+                            .lines()
+                            .enumerate()
+                            .skip(line.saturating_sub(4))
+                            .take(7)
+                            .map(|(i, l)| format!("{:>4} | {l}", i + 1))
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        panic!(
+                            "{rel}/{}: printed ADL2 does not re-parse: {e:?}\n{context}",
+                            root.archetype_id
+                        )
+                    },
+                );
             }
         }
     }
