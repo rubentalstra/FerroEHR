@@ -23,3 +23,7 @@ pub mod bmm_tuple_type;
 pub mod bmm_type;
 pub mod bmm_unitary_type;
 pub mod range_constrained;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_class_impl;
+pub mod bmm_type_impl;
