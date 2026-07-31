@@ -108,11 +108,13 @@ pub fn parse_and_convert(
     cfg: &ConvertConfig,
     log: &mut ConversionLog,
 ) -> Result<Archetype, ConvertError> {
-    let art = crate::assemble::parse_artefact_adl14(src).map_err(ConvertError::Parse)?;
+    let art = crate::assemble::parse_artefact(src, crate::parse::Dialect::Adl14)
+        .map_err(ConvertError::Parse)?;
     convert(&art, cfg, log)
 }
 
-/// Convert a 1.4-shaped [`Archetype`] (from [`crate::assemble::parse_artefact_adl14`])
+/// Convert a 1.4-shaped [`Archetype`] (from [`crate::assemble::parse_artefact`] in
+/// [`crate::parse::Dialect::Adl14`])
 /// into a spec-valid ADL2 archetype. For a specialised source, this performs the
 /// base conversion (renumbering against the child's own codes); re-differentialisation
 /// against the converted+flattened parent is [`crate::adl14::differ::differentiate`].

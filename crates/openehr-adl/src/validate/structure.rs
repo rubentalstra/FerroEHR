@@ -1,4 +1,4 @@
-//! Phase-1 structural topic: the definition-tree walk and the rules that are
+//! Basic-integrity structural topic: the definition-tree walk and the rules that are
 //! decidable from the archetype's own constraint structure — node identity and
 //! uniqueness, sibling attribute uniqueness, differential-path placement,
 //! container cardinality vs child occurrences, `C_ARCHETYPE_ROOT` shape, slot
@@ -36,7 +36,7 @@ use crate::paths::child_path;
 
 /// raises issues; the terminology checks re-derive code usage in a second pass
 /// ([`collect_usage`]), so no code sets are accumulated here.
-struct Scan<'a> {
+struct StructureScan<'a> {
     v: &'a ArchetypeView<'a>,
     dialect: Dialect,
     issues: Vec<ValidationIssue>,
@@ -49,7 +49,7 @@ pub(super) fn check_structure(
     dialect: Dialect,
     issues: &mut Vec<ValidationIssue>,
 ) {
-    let mut scan = Scan {
+    let mut scan = StructureScan {
         v,
         dialect,
         issues: Vec::new(),
@@ -58,12 +58,12 @@ pub(super) fn check_structure(
     let root = CObject::CComplexObject(v.definition.clone());
     // The root object always requires a node id (the concept code, `at0000`/
     // `id1`); child requirement is decided per owning attribute in
-    // [`Scan::walk_attribute`].
+    // [`StructureScan::walk_attribute`].
     scan.walk_object("", &root, true);
     issues.append(&mut scan.issues);
 }
 
-impl Scan<'_> {
+impl StructureScan<'_> {
     fn walk_object(&mut self, path: &str, obj: &CObject, require_node_id: bool) {
         let nid = object_node_id(obj);
         let is_identified = !aom_type(obj).is_primitive();
@@ -71,7 +71,7 @@ impl Scan<'_> {
         // VCOID: every (non-primitive) object node must have a node id
         // (master04.5 §`C_OBJECT`). In the ADL 1.4 dialect this is relaxed to
         // the AOM 1.4 node_id rule via `require_node_id` (see
-        // [`Scan::walk_attribute`]): AOM1.4 master04 §Node_id and Paths + ADL1.4
+        // [`StructureScan::walk_attribute`]): AOM1.4 master04 §Node_id and Paths + ADL1.4
         // master08 §Definition Section ("any leaf or near-leaf node which has no
         // sibling nodes from the same attribute can safely have no node_id").
         // A 1.4 `use_node` (a `C_COMPLEX_OBJECT_PROXY` / ARCHETYPE_INTERNAL_REF)
@@ -97,7 +97,7 @@ impl Scan<'_> {
         // Paths — "guarantees sibling node unique identification"), so a valid 1.4
         // archetype may repeat an at-code at non-sibling paths; the archetype-wide
         // check is skipped in the 1.4 dialect, which instead gets the
-        // sibling-scoped check in [`Scan::walk_complex`].
+        // sibling-scoped check in [`StructureScan::walk_complex`].
         if is_identified
             && !nid.is_empty()
             && !self.v.is_specialised()
@@ -149,7 +149,7 @@ impl Scan<'_> {
         // NOTE: VARXR (external-reference *resolution*) is a phase-2 check that
         // needs the supplier repository, so it is not run in the standalone
         // phase-1 walk: a `C_ARCHETYPE_ROOT` filling a parent slot is resolved by
-        // the specialisation validator ([`super::slots::Phase2::check_slot_filler`],
+        // the specialisation validator ([`super::slots::ParentScan::check_slot_filler`],
         // `master04.5` §`C_ARCHETYPE_ROOT`) and a `use_archetype` filler by
         // [`super::slots::validate_fillers`] (`master08` §Phase 2).
         if let CComplexObject::CArchetypeRoot(r) = cco {
@@ -492,7 +492,7 @@ impl Scan<'_> {
     /// value. The temporal branches use `Interval::has_definite` so an
     /// incomparable (undecidable) value never raises a false violation.
     /// Raise VOBAV at `path` with `msg` — the shared shape of every arm of
-    /// [`Scan::check_primitive_assumed`].
+    /// [`StructureScan::check_primitive_assumed`].
     fn vobav(&mut self, msg: &'static str, path: &str) {
         push_issue(&mut self.issues, ValidationCode::Vobav, msg, path);
     }

@@ -45,6 +45,7 @@ use crate::aom::interval::{Bounds, bounds, display_bounds, finite_upper, point_v
 use crate::artefact::{ArchetypeView, view};
 use crate::codes::{is_at_code, is_id_code};
 use crate::odin::is_delimited_regex_trimmed;
+use crate::parse::Dialect;
 use crate::paths::{child_path, locate};
 
 /// One attribute of an RM type, as reported by a [`RmModel`].
@@ -381,16 +382,34 @@ fn production_model_governs_view(v: &ArchetypeView<'_>) -> bool {
     publisher == "openehr" && !matches!(package.as_str(), "TEST_PKG" | "TASK_PLANNING")
 }
 
-/// Validate `archetype` against `rm` — the reference-model checks (VCORM,
-/// VCARM, VCORMT, VCAEX, VCACA, VCAM), plus the RM-dependent VACSO and the
-/// interior-node half of VATID.
+/// Validate `archetype` against `rm` — the reference-model conformance checks
+/// for `dialect`.
 ///
-/// These are the `master08` §Phase 2 → Validate Against Reference Model checks.
-/// Phase gating (they run only when phase-1 basic integrity passed) is applied
-/// by [`validate_source`](super::validate_source) / [`super::validate`]; called directly, they run
-/// unconditionally.
+/// Under [`Dialect::Adl2`] that is the full AOM2 set: VCORM, VCARM, VCORMT,
+/// VCAEX, VCACA, VCAM, plus the RM-dependent VACSO and the interior-node half of
+/// VATID. These are the `master08` §Phase 2 → Validate Against Reference Model
+/// checks (master08 "phase 2 — validate against reference model" in the spec's
+/// guide vocabulary). Gating (they run only when basic integrity passed) is
+/// applied by [`validate_source`](super::validate_source) /
+/// [`super::validate`]; called directly, they run unconditionally.
+///
+/// Under [`Dialect::Adl14`] only **VUNT** is reported. The ADL 1.4 formalism
+/// defines exactly two cADL validity rules of its own: VCOC
+/// (`ADL1.4/master05-cadl.adoc` §Occurrences L324), which needs no RM and runs
+/// in the 1.4 basic-integrity pass, and VUNT (§Internal References L512-513:
+/// "the type mentioned in a `use_node` must be the same as or a super-type
+/// (according to the reference model) of the reference model type of the node
+/// referred to"), whose "according to the reference model" clause puts it here.
+/// Every other check above is an AOM2 rule with no ADL 1.4 counterpart — running
+/// them would judge a 1.4 artefact by ADL 2's catalogue, which this crate does
+/// not do (a 1.4 upload is judged AS 1.4). So the walk runs once either way and
+/// the 1.4 dialect keeps only VUNT out of it.
 #[must_use]
-pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
+pub fn validate_rm_conformance(
+    archetype: &Archetype,
+    rm: &dyn RmModel,
+    dialect: Dialect,
+) -> Vec<ValidationIssue> {
     let v = view(archetype);
     let defined: BTreeSet<String> = v
         .terminology
@@ -419,30 +438,14 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
         );
     }
     scan.walk_complex("", root_type, v.definition);
-    scan.issues
-}
-
-/// Validate `archetype` against `rm` with the **ADL 1.4** reference-model rule
-/// set — which is VUNT and nothing else.
-///
-/// The ADL 1.4 formalism defines exactly two cADL validity rules of its own:
-/// VCOC (`ADL1.4/master05-cadl.adoc` §Occurrences L324), which needs no RM and
-/// runs in the 1.4 phase-1 pass, and **VUNT** (§Internal References L512-513:
-/// "the type mentioned in a `use_node` must be the same as or a super-type
-/// (according to the reference model) of the reference model type of the node
-/// referred to"), whose "according to the reference model" clause puts it here.
-/// Every other check [`validate_phase2_rm`] performs (VCORM, VCORMT, VCARM,
-/// VCAEX, VCACA, VCAM, VACSO, the interior-node VATID half, the enumeration
-/// family) is an AOM2 rule with no ADL 1.4 counterpart — running them would
-/// judge a 1.4 artefact by ADL 2's catalogue, which this crate does not do (a
-/// 1.4 upload is judged AS 1.4). So the walk runs once and only VUNT is
-/// reported.
-#[must_use]
-pub(super) fn validate_adl14_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
-    validate_phase2_rm(archetype, rm)
-        .into_iter()
-        .filter(|i| i.code == ValidationCode::Vunt)
-        .collect()
+    match dialect {
+        Dialect::Adl2 => scan.issues,
+        Dialect::Adl14 => scan
+            .issues
+            .into_iter()
+            .filter(|i| i.code == ValidationCode::Vunt)
+            .collect(),
+    }
 }
 
 /// Mutable state threaded through the reference-model walk.
@@ -897,8 +900,8 @@ mod tests {
     }
 
     fn rm_codes(src: &str) -> Vec<ValidationCode> {
-        let a = parse_artefact(src).expect("the fixture must parse");
-        validate_phase2_rm(&a, &ProductionRmModel)
+        let a = parse_artefact(src, Dialect::Adl2).expect("the fixture must parse");
+        validate_rm_conformance(&a, &ProductionRmModel, Dialect::Adl2)
             .into_iter()
             .map(|i| i.code)
             .collect()
@@ -946,6 +949,7 @@ mod tests {
              description\n\tlifecycle_state = <\"draft\">\n\n\
              definition\n\tOBSERVATION[id1] matches {*}\n\n\
              terminology\n\tterm_definitions = <[\"en\"] = <[\"id1\"] = <text=<\"\"> description=<\"\">>>>\n",
+            Dialect::Adl2,
         )
         .unwrap();
         assert!(production_model_governs(&ehr));

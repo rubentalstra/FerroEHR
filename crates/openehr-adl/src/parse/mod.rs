@@ -57,19 +57,6 @@ use crate::odin::regex_inner;
 /// [`SyntaxError`] is already recorded in [`Parser::errors`].
 pub(crate) type PResult<T> = Result<T, ()>;
 
-/// Parse a raw cADL `definition`-section body (the text between the
-/// `definition` keyword and the next section) into a [`CComplexObject`].
-///
-/// This is the core entry point: it lexes `body` and runs the cADL grammar.
-/// Error byte spans are relative to `body`.
-///
-/// # Errors
-/// Returns every [`SyntaxError`] found (the `S*` catalogue codes of
-/// `ADL2/master04.6`). Lexer failures surface as [`SyntaxErrorCode::Sunk`].
-pub fn parse_definition_body(body: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
-    parse_definition_body_with(body, Dialect::Adl2)
-}
-
 /// Which ADL dialect the cADL parser accepts.
 ///
 /// `Adl2` is the spec-conformant grammar (`cadl2.g4`). `Adl14` accepts the ADL
@@ -91,30 +78,33 @@ pub fn parse_definition_body(body: &str) -> Result<CComplexObject, Vec<SyntaxErr
 /// keyword set of `ADL1.4/master05-cadl.adoc` §Keywords (L48-53). `Adl2` parsing
 /// is unchanged either way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Dialect {
+pub enum Dialect {
     /// The spec-conformant ADL2 grammar.
     Adl2,
     /// ADL2 plus the 1.4-only tolerance forms (converter front end only).
     Adl14,
 }
 
-/// Parse a **1.4-dialect** definition body into a [`CComplexObject`].
+/// Parse a raw cADL `definition`-section body (the text between the
+/// `definition` keyword and the next section) into a [`CComplexObject`], using
+/// the grammar of `dialect`.
 ///
-/// The 1.4-only terminology-constraint and inline-dADL domain forms are kept in
-/// a converter-internal encoding (qualified codes and lists in the
-/// `C_TERMINOLOGY_CODE.constraint` string; domain blocks lowered to a
-/// `DV_QUANTITY`/`DV_ORDINAL` with a `property` at-code + a tuple/attribute set)
-/// that `crate::adl14::convert` rewrites into spec-valid ADL2. See the
-/// `crate::adl14` module flag: no openEHR spec governs this.
+/// This is the core entry point: it lexes `body` and runs the cADL grammar.
+/// Error byte spans are relative to `body`.
+///
+/// Under [`Dialect::Adl14`] the 1.4-only terminology-constraint and inline-dADL
+/// domain forms are accepted and kept in a converter-internal encoding
+/// (qualified codes and lists in the `C_TERMINOLOGY_CODE.constraint` string;
+/// domain blocks lowered to a `DV_QUANTITY`/`DV_ORDINAL` with a `property`
+/// at-code + a tuple/attribute set) that `crate::adl14::convert` rewrites into
+/// spec-valid ADL2. See the `crate::adl14` module flag: no openEHR spec governs
+/// that conversion.
 ///
 /// # Errors
-/// Returns every [`SyntaxError`] the cADL parse raises (including
-/// [`SyntaxErrorCode::Sdinv`] for a malformed inline dADL domain block).
-pub fn parse_definition_body_adl14(body: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
-    parse_definition_body_with(body, Dialect::Adl14)
-}
-
-fn parse_definition_body_with(
+/// Returns every [`SyntaxError`] found (the `S*` catalogue codes of
+/// `ADL2/master04.6`). Lexer failures surface as [`SyntaxErrorCode::Sunk`], a
+/// malformed inline dADL domain block as [`SyntaxErrorCode::Sdinv`].
+pub fn parse_definition_body(
     body: &str,
     dialect: Dialect,
 ) -> Result<CComplexObject, Vec<SyntaxError>> {
@@ -448,7 +438,7 @@ mod tests {
     use openehr_base::prelude::{Interval, ProperInterval};
 
     use crate::error::SyntaxErrorCode;
-    use crate::parse::{parse_definition_body, parse_definition_body_adl14};
+    use crate::parse::{Dialect, parse_definition_body};
 
     fn data(cco: &CComplexObject) -> &CComplexObjectData {
         match cco {
@@ -530,7 +520,7 @@ mod tests {
             ),
         ];
         for (src, code) in cases {
-            let errs = parse_definition_body_adl14(src)
+            let errs = parse_definition_body(src, Dialect::Adl14)
                 .err()
                 .unwrap_or_else(|| panic!("the 1.4 dialect must refuse:\n{src}"));
             assert!(
@@ -539,7 +529,7 @@ mod tests {
                 errs.iter().map(|e| e.code).collect::<Vec<_>>()
             );
             assert!(
-                parse_definition_body(src).is_ok(),
+                parse_definition_body(src, Dialect::Adl2).is_ok(),
                 "the ADL2 dialect must still accept:\n{src}"
             );
         }
@@ -550,13 +540,14 @@ mod tests {
     /// gated with the ADL2-only constructs.
     #[test]
     fn adl14_accepts_sibling_order() {
-        let cco = parse_definition_body_adl14(
+        let cco = parse_definition_body(
             "CLUSTER[at0000] matches {\n\
              items cardinality matches {0..*} matches {\n\
              ELEMENT[at0001] matches {*}\n\
              before [at0001] ELEMENT[at0002] matches {*}\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("sibling order is legal ADL 1.4 cADL");
         let CComplexObject::CComplexObject(d) = &cco else {
@@ -600,7 +591,7 @@ mod tests {
                 SyntaxErrorCode::Sccog,
             ),
         ] {
-            let errs = parse_definition_body(src)
+            let errs = parse_definition_body(src, Dialect::Adl2)
                 .expect_err("an operator with no cADL production must be refused");
             assert!(
                 errs.iter().any(|e| e.code == code),
@@ -619,14 +610,14 @@ mod tests {
     /// outer parse of [`crate::source::parse_source`] plus
     /// [`parse_definition_body`] over the definition span.
     fn parse_source_definition(src: &str) -> CComplexObject {
-        let artefact =
-            crate::source::parse_source(src).unwrap_or_else(|e| panic!("outer parse: {e:?}"));
+        let artefact = crate::source::parse_source(src, Dialect::Adl2)
+            .unwrap_or_else(|e| panic!("outer parse: {e:?}"));
         let def = artefact
             .definition
             .as_ref()
             .unwrap_or_else(|| panic!("no definition section"));
         let body = src.get(def.bytes.clone()).unwrap_or_default();
-        parse_definition_body(body).unwrap_or_else(|e| panic!("parse: {e:?}"))
+        parse_definition_body(body, Dialect::Adl2).unwrap_or_else(|e| panic!("parse: {e:?}"))
     }
 
     /// Fetch the named attribute of a complex object.

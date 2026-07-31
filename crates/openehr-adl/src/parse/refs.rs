@@ -292,10 +292,10 @@ mod tests {
     };
     use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
-    use crate::parse::{parse_definition_body, parse_definition_body_adl14};
+    use crate::parse::{Dialect, parse_definition_body};
 
     fn parse(body: &str) -> CComplexObject {
-        parse_definition_body(body).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
+        parse_definition_body(body, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
     }
 
     fn data(cco: &CComplexObject) -> &CComplexObjectData {
@@ -313,7 +313,7 @@ mod tests {
         // types shows the identified form (`allow_archetype ENTRY[at2002]`).
         // Both must parse in the 1.4 dialect; ADL 2 keeps the bracket
         // mandatory (cadl2.g4).
-        let cco = parse_definition_body_adl14(
+        let cco = parse_definition_body(
             "SECTION[at0000] matches {\n\
              items cardinality matches {0..*; unordered} matches {\n\
              allow_archetype OBSERVATION occurrences matches {0..1} matches {\n\
@@ -326,6 +326,7 @@ mod tests {
              }\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the spec's own anonymous slot form must parse as ADL 1.4");
         let CComplexObject::CComplexObject(d) = &cco else {
@@ -351,6 +352,7 @@ mod tests {
                  allow_archetype OBSERVATION occurrences matches {0..1}\n\
                  }\n\
                  }",
+                Dialect::Adl2,
             )
             .is_err()
         );

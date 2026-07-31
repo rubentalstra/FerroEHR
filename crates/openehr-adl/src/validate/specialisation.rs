@@ -1,5 +1,5 @@
 //! Specialisation topic: a differential child archetype against its flat
-//! parent, plus the two phase-1 header checks that need the parent
+//! parent, plus the two basic-integrity header checks that need the parent
 //! (VACSD/VASID specialisation depth + parent id, VALC language conformance).
 //!
 //! Orchestration follows
@@ -15,18 +15,18 @@
 //! without a separate id-reduction step.
 //!
 //! Per `ADL2/master09.02` §Differential and Flat Forms a top-level parent is its
-//! own flat form; the caller ([`super::run_phase2_spec`]) only invokes this with
+//! own flat form; the caller ([`super::run_parent_conformance`]) only invokes this with
 //! such an available flat parent (a specialised parent needs the flattener —
 //! [`super::FlatParent::NeedsFlattener`]).
 //!
-//! The slot- and filler-redefinition half of the walk ([`Phase2`]'s
+//! The slot- and filler-redefinition half of the walk ([`ParentScan`]'s
 //! `check_slot_redefinition` / `check_slot_filler`) lives in [`super::slots`]
 //! beside the template-filler checks it shares its rule texts with; the
 //! invocation order from the walk is unchanged.
 //!
 //! The [`ValidationCode`] variants `Vtpnc`/`Vtpin` (tuple conformance vs the
-//! parent node, `master08` §Phase 2 gloss) are present as the phase-2 vocabulary
-//! but not yet raised here.
+//! parent node, `master08` §Phase 2 gloss) are present as the parent-conformance
+//! vocabulary but not yet raised here.
 //! TODO: implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE` conformance
 //! (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN.
 //!
@@ -63,10 +63,10 @@ use crate::hrid::{hrid_lookup_key, raw_id_lookup_key};
 use crate::paths::{PathSegment, child_path, parse_path};
 
 /// Validate the differential child `child` against its flat parent `flat_parent`
-/// (the phase-2 specialisation catalogue). `repo` resolves external references
-/// for VARXR.
+/// (master08 "phase 2 — validate specialised definition" in the spec's guide
+/// vocabulary). `repo` resolves external references for VARXR.
 #[must_use]
-pub(super) fn validate_phase2_spec<'a>(
+pub(super) fn validate_against_flat_parent<'a>(
     child: &'a Archetype,
     flat_parent: &'a Archetype,
     rm: &'a dyn RmModel,
@@ -74,7 +74,7 @@ pub(super) fn validate_phase2_spec<'a>(
 ) -> Vec<ValidationIssue> {
     let cv = view(child);
     let pv = view(flat_parent);
-    let mut scan = Phase2 {
+    let mut scan = ParentScan {
         rm,
         repo,
         child_level: cv.specialisation_level(),
@@ -107,7 +107,7 @@ fn value_set_members(
 /// Mutable state threaded through the specialisation walk. The archetype data is
 /// borrowed for `'a` (independent of the `&mut self` used to append issues), so
 /// the walk can hold parent/child node references while pushing findings.
-pub(super) struct Phase2<'a> {
+pub(super) struct ParentScan<'a> {
     rm: &'a dyn RmModel,
     pub(super) repo: &'a ArchetypeRepository,
     child_level: usize,
@@ -119,7 +119,7 @@ pub(super) struct Phase2<'a> {
     pub(super) issues: Vec<ValidationIssue>,
 }
 
-impl<'a> Phase2<'a> {
+impl<'a> ParentScan<'a> {
     /// Walk the attributes of a child complex object against the corresponding
     /// parent complex object `parent_obj` (RM type `parent_rm`), at `base_path`.
     fn walk_attributes(
@@ -894,6 +894,7 @@ pub(super) fn check_language_conformance(
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use crate::validate::rm::ProductionRmModel;
 
     /// The parent CLUSTER for the hand-written specialisation cases (level 0 —
@@ -959,10 +960,10 @@ terminology
 
     /// The error codes phase-2 raises for `def` (a child definition body).
     fn codes(def: &str, terms: &str) -> Vec<String> {
-        let parent = parse_artefact(PARENT).unwrap();
-        let child = parse_artefact(&child(def, terms)).unwrap();
+        let parent = parse_artefact(PARENT, Dialect::Adl2).unwrap();
+        let child = parse_artefact(&child(def, terms), Dialect::Adl2).unwrap();
         let repo = ArchetypeRepository::new();
-        let issues = validate_phase2_spec(&child, &parent, &ProductionRmModel, &repo);
+        let issues = validate_against_flat_parent(&child, &parent, &ProductionRmModel, &repo);
         issues
             .iter()
             .map(|i| i.code.mnemonic().to_owned())
@@ -1101,11 +1102,11 @@ terminology
         // unidentified new node is only constructible in the AOM model (ADL2 source
         // requires node ids), so it is built by stripping the id off a parsed node.
         use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-        let parent = parse_artefact(PARENT).unwrap();
-        let mut child = parse_artefact(&child(
-            "\t\titems matches { ELEMENT[id0.5] }",
-            &term("id0.5"),
-        ))
+        let parent = parse_artefact(PARENT, Dialect::Adl2).unwrap();
+        let mut child = parse_artefact(
+            &child("\t\titems matches { ELEMENT[id0.5] }", &term("id0.5")),
+            Dialect::Adl2,
+        )
         .unwrap();
         // Strip the new ELEMENT's node id to exercise the unidentified case.
         if let Archetype::AuthoredArchetype(inner) = &mut child
@@ -1122,7 +1123,7 @@ terminology
                 }
             }
         }
-        let issues = validate_phase2_spec(
+        let issues = validate_against_flat_parent(
             &child,
             &parent,
             &ProductionRmModel,

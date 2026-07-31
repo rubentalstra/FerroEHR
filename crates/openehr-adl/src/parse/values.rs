@@ -449,10 +449,10 @@ mod tests {
     use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
     use crate::error::SyntaxErrorCode;
-    use crate::parse::parse_definition_body;
+    use crate::parse::{Dialect, parse_definition_body};
 
     fn parse(body: &str) -> CComplexObject {
-        parse_definition_body(body).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
+        parse_definition_body(body, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
     }
 
     fn data(cco: &CComplexObject) -> &CComplexObjectData {
@@ -567,6 +567,7 @@ mod tests {
     fn interval_timezone_symmetry_is_enforced() {
         let asymmetric = parse_definition_body(
             "WHOLE[id1] matches {\n d matches {|2004-05-20T00:00:00Z..2005-05-19T23:59:59|}\n}",
+            Dialect::Adl2,
         )
         .expect_err("an asymmetric-timezone interval must be refused");
         assert!(
@@ -576,6 +577,7 @@ mod tests {
         );
         let time_asymmetric = parse_definition_body(
             "WHOLE[id1] matches {\n t matches {|09:30:00+0200..10:30:00|}\n}",
+            Dialect::Adl2,
         )
         .expect_err("an asymmetric-timezone time interval must be refused");
         assert!(

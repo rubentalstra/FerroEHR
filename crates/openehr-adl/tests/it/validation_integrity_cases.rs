@@ -6,8 +6,8 @@
 //! prevents the invalid state (e.g. a differential path in a top-level
 //! archetype is the syntax error SDSF, never the semantic VDIFV), the case
 //! builds the state by mutating a parsed model and calls the model-level
-//! [`validate_phase1`]; otherwise it drives the invalid source through
-//! [`validate_source_phase1`].
+//! [`validate_integrity`]; otherwise it drives the invalid source through
+//! [`validate_source_integrity`].
 //!
 //! Spec oracle: `docs/specs/openehr/AM/docs/AOM2/`.
 
@@ -20,8 +20,9 @@
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::ValidationCode;
-use openehr_adl::validate::{ValidationIssue, validate_phase1, validate_source_phase1};
+use openehr_adl::validate::{ValidationIssue, validate_integrity, validate_source_integrity};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
@@ -31,7 +32,7 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
 /// A minimal, phase-1-clean ADL2 archetype (non-specialised, id-coded).
 const BASE: &str = r#"archetype (adl_version=2.0.5; rm_release=1.0.2)
-    openEHR-EHR-ENTRY.phase1_base.v1.0.0
+    openEHR-EHR-ENTRY.integrity_base.v1.0.0
 
 language
     original_language = <[ISO_639-1::en]>
@@ -56,7 +57,7 @@ terminology
 "#;
 
 fn parse(src: &str) -> Archetype {
-    parse_artefact(src).unwrap_or_else(|e| panic!("source must parse: {e:?}"))
+    parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("source must parse: {e:?}"))
 }
 
 /// The mnemonics of the raised issues.
@@ -99,7 +100,7 @@ fn varav_invalid_adl_version() {
     // master03 §Validity Rules — VARAV: `adl_version` must be a valid 3-part
     // version identifier.
     let src = BASE.replace("adl_version=2.0.5", "adl_version=2.0");
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Varav);
 }
 
@@ -108,7 +109,7 @@ fn varrv_invalid_rm_release() {
     // master03 §Validity Rules — VARRV: `rm_release` must be a valid 3-part
     // version identifier.
     let src = BASE.replace("rm_release=1.0.2", "rm_release=1.0");
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Varrv);
 }
 
@@ -116,7 +117,7 @@ fn varrv_invalid_rm_release() {
 fn vard_missing_description() {
     // master03 §Validity Rules — VARD: a `description` section must exist.
     let src = BASE.replace("description\n    lifecycle_state = <\"draft\">\n\n", "");
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vard);
 }
 
@@ -128,7 +129,7 @@ fn vcatu_duplicate_sibling_attribute() {
         "        element_attr matches {\n            ELEMENT[id2]\n        }\n",
         "        element_attr matches { ELEMENT[id2] }\n        element_attr matches { ELEMENT[id3] }\n",
     );
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vcatu);
 }
 
@@ -140,7 +141,7 @@ fn vcosu_duplicate_node_id() {
         "            ELEMENT[id2]\n",
         "            ELEMENT[id2]\n            ELEMENT[id2]\n",
     );
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vcosu);
 }
 
@@ -152,7 +153,7 @@ fn vtvsid_value_set_id_not_defined() {
         "    term_definitions = <",
         "    value_sets = <\n        [\"ac9\"] = < id = <\"ac9\"> members = <\"at2\"> >\n    >\n    term_definitions = <",
     );
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vtvsid);
 }
 
@@ -164,7 +165,7 @@ fn vtcbk_undefined_constraint_binding_key() {
         "    term_definitions = <",
         "    term_bindings = <\n        [\"snomed\"] = < [\"ac9\"] = <http://x/1> >\n    >\n    term_definitions = <",
     );
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vtcbk);
 }
 
@@ -176,7 +177,7 @@ fn vatcv_malformed_defined_code() {
         "            [\"id2\"] = < text = <\"el\"> description = <\"el\"> >",
         "            [\"id2\"] = < text = <\"el\"> description = <\"el\"> >\n            [\"notacode\"] = < text = <\"x\"> description = <\"x\"> >",
     );
-    let issues = validate_source_phase1(&src, None).unwrap();
+    let issues = validate_source_integrity(&src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vatcv);
 }
 
@@ -189,7 +190,7 @@ fn vdifv_differential_path_without_specialisation() {
     // the state is built by mutation.)
     let mut a = parse(BASE);
     root_data_mut(&mut a).attributes[0].differential_path = Some("/element_attr".to_owned());
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Vdifv);
 }
 
@@ -199,7 +200,7 @@ fn varid_malformed_identifier() {
     // well-formed (here: a missing RM class).
     let mut a = parse(BASE);
     authored_mut(&mut a).archetype_id.rm_class = String::new();
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Varid);
 }
 
@@ -240,7 +241,7 @@ fn vobav_assumed_value_outside_constraint() {
     } else {
         panic!("expected a complex ELEMENT child");
     }
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Vobav);
 }
 
@@ -290,7 +291,7 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
     } else {
         panic!("expected a complex ELEMENT child");
     }
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Vobav);
 }
 
@@ -321,7 +322,7 @@ fn vrmvp_and_vrmvav_rm_overlay() {
     authored_mut(&mut a).rm_overlay = Some(RmOverlay {
         rm_visibility: Some(map),
     });
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Vrmvp);
     assert_raises(&issues, ValidationCode::Vrmvav);
 }
@@ -360,7 +361,7 @@ terminology
         >
     >
 "#;
-    let issues = validate_source_phase1(src, None).unwrap();
+    let issues = validate_source_integrity(src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vdfai);
 }
 
@@ -405,7 +406,7 @@ terminology
     } else {
         panic!("expected a C_ARCHETYPE_ROOT child, got {child:?}");
     }
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Varxav);
 }
 
@@ -457,7 +458,7 @@ fn varxnc_archetype_root_missing_node_id() {
     // must carry a node id.
     let mut a = parse(WITH_ARCHETYPE_ROOT);
     archetype_root_child_mut(&mut a).node_id = String::new();
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Varxnc);
 }
 
@@ -467,7 +468,7 @@ fn varxtv_archetype_root_missing_type() {
     // must carry an RM type.
     let mut a = parse(WITH_ARCHETYPE_ROOT);
     archetype_root_child_mut(&mut a).rm_type_name = String::new();
-    let issues = validate_phase1(&a, None);
+    let issues = validate_integrity(&a, None);
     assert_raises(&issues, ValidationCode::Varxtv);
 }
 
@@ -499,7 +500,7 @@ terminology
         >
     >
 "#;
-    let issues = validate_source_phase1(src, None).unwrap();
+    let issues = validate_source_integrity(src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vatcd);
 }
 
@@ -534,7 +535,7 @@ terminology
         >
     >
 "#;
-    let issues = validate_source_phase1(src, None).unwrap();
+    let issues = validate_source_integrity(src, Dialect::Adl2, None).unwrap();
     assert_raises(&issues, ValidationCode::Vrrlp);
 }
 
@@ -594,6 +595,6 @@ terminology
 "#;
     let mut repo = ArchetypeRepository::new();
     repo.insert(parse(parent));
-    let issues = validate_source_phase1(child, Some(&repo)).unwrap();
+    let issues = validate_source_integrity(child, Dialect::Adl2, Some(&repo)).unwrap();
     assert_raises(&issues, ValidationCode::Valc);
 }

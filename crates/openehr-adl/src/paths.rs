@@ -271,6 +271,7 @@ pub(crate) fn child_path(attr_path: &str, node_id: &str) -> String {
 mod tests {
     use super::*;
     use crate::assemble::parse_artefact;
+    use crate::parse::Dialect;
     use openehr_am::am24::aom2::archetype::archetype::Archetype;
     use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 
@@ -296,7 +297,7 @@ mod tests {
     }
 
     fn root_of(src: &str) -> CComplexObject {
-        match parse_artefact(src).unwrap() {
+        match parse_artefact(src, Dialect::Adl2).unwrap() {
             Archetype::AuthoredArchetype(a) => match *a {
                 AuthoredArchetype::AuthoredArchetype(d) => d.definition,
                 AuthoredArchetype::Template(t) => t.definition,

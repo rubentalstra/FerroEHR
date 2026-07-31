@@ -34,10 +34,11 @@
 
 use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
 use openehr_adl::adl14::log::ConversionLog;
-use openehr_adl::assemble::{parse_artefact, parse_artefact_adl14};
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::{SyntaxError, SyntaxErrorCode};
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
-use openehr_adl::validate::validate_source_phase1_adl14;
+use openehr_adl::validate::validate_source_integrity;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
@@ -86,7 +87,8 @@ ontology
 /// The single object constraining `ELEMENT[at0001]/value` in a parsed 1.4
 /// archetype built by [`archetype_with`].
 fn value_object(src: &str) -> CObject {
-    let archetype = parse_artefact_adl14(src).unwrap_or_else(|e| panic!("must parse: {e:?}"));
+    let archetype =
+        parse_artefact(src, Dialect::Adl14).unwrap_or_else(|e| panic!("must parse: {e:?}"));
     let Archetype::AuthoredArchetype(authored) = archetype else {
         panic!("not an authored archetype");
     };
@@ -113,7 +115,7 @@ fn value_object(src: &str) -> CObject {
 
 /// The refusal codes a 1.4 source raises at parse.
 fn refusal_codes(src: &str) -> Vec<SyntaxErrorCode> {
-    let errors: Vec<SyntaxError> = parse_artefact_adl14(src)
+    let errors: Vec<SyntaxError> = parse_artefact(src, Dialect::Adl14)
         .err()
         .unwrap_or_else(|| panic!("must be refused at parse"));
     errors.iter().map(|e| e.code).collect()
@@ -261,7 +263,7 @@ fn code_phrase_dadl_undefined_code_raises_vatdf() {
 \t\t\t\t\t\t>
 \t\t\t\t\t>",
     );
-    let codes: Vec<ValidationCode> = validate_source_phase1_adl14(&src)
+    let codes: Vec<ValidationCode> = validate_source_integrity(&src, Dialect::Adl14, None)
         .expect("the block parses")
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -283,7 +285,7 @@ fn code_phrase_dadl_external_terminology_is_not_an_archetype_term() {
 \t\t\t\t\t\tcode_list = <[\"1\"] = <\"163035008\">>
 \t\t\t\t\t>",
     );
-    let codes: Vec<ValidationCode> = validate_source_phase1_adl14(&src)
+    let codes: Vec<ValidationCode> = validate_source_integrity(&src, Dialect::Adl14, None)
         .expect("the block parses")
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -406,7 +408,7 @@ fn pipe_ordinal_accepts_many_terms_and_external_symbols() {
             (2.0, "SNOMED-CT::163035008".to_owned()),
         ]
     );
-    let codes: Vec<ValidationCode> = validate_source_phase1_adl14(&src)
+    let codes: Vec<ValidationCode> = validate_source_integrity(&src, Dialect::Adl14, None)
         .expect("parses")
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -420,7 +422,7 @@ fn pipe_ordinal_accepts_many_terms_and_external_symbols() {
 #[test]
 fn pipe_ordinal_undefined_symbol_raises_vatdf() {
     let src = archetype_with("\t\t\t\t\t0|[local::at0039],\n\t\t\t\t\t1|[local::at9999]");
-    let codes: Vec<ValidationCode> = validate_source_phase1_adl14(&src)
+    let codes: Vec<ValidationCode> = validate_source_integrity(&src, Dialect::Adl14, None)
         .expect("parses")
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -478,7 +480,7 @@ fn pipe_ordinal_assumed_value_outside_the_list_is_refused() {
 fn pipe_ordinal_is_refused_by_the_adl2_dialect() {
     let src = archetype_with("\t\t\t\t\t0|[local::at0039],\n\t\t\t\t\t1|[local::at0040]");
     assert!(
-        parse_artefact(&src).is_err(),
+        parse_artefact(&src, Dialect::Adl2).is_err(),
         "the deprecated 1.4 pipe-ordinal must not parse as ADL 2"
     );
 }
@@ -509,7 +511,7 @@ fn both_custom_forms_convert_to_adl2_and_print() {
         .unwrap_or_else(|e| panic!("{constraint} must convert: {e:?}"));
         let printed = openehr_adl::print::print(&converted);
         assert!(
-            parse_artefact(&printed).is_ok(),
+            parse_artefact(&printed, Dialect::Adl2).is_ok(),
             "the converted ADL 2 text must re-parse as ADL 2:\n{printed}"
         );
     }
@@ -528,7 +530,7 @@ fn c_dv_state_stays_refused_by_name() {
 \t\t\t\t\t\tvalue = <\"initial\">
 \t\t\t\t\t>",
     );
-    let errors = parse_artefact_adl14(&src)
+    let errors = parse_artefact(&src, Dialect::Adl14)
         .err()
         .unwrap_or_else(|| panic!("C_DV_STATE must be refused"));
     assert!(

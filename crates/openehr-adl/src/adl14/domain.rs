@@ -694,7 +694,7 @@ mod tests {
     use openehr_base::prelude::{Interval, ProperInterval};
 
     use crate::error::SyntaxErrorCode;
-    use crate::parse::parse_definition_body_adl14;
+    use crate::parse::{Dialect, parse_definition_body};
 
     /// `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types
     /// defines `|N +/-M|` as "interval of N ± M" and glosses its own example
@@ -703,7 +703,7 @@ mod tests {
     /// centre alone.
     #[test]
     fn adl14_plus_minus_domain_interval_lowers_to_both_bounds() {
-        let cco = parse_definition_body_adl14(
+        let cco = parse_definition_body(
             "OBSERVATION[at0000] matches {\n\
              value matches {\n\
              C_DV_QUANTITY <\n\
@@ -715,6 +715,7 @@ mod tests {
              >\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the 1.4 inline domain block must parse");
         let CComplexObject::CComplexObject(d) = &cco else {
@@ -752,7 +753,7 @@ mod tests {
     /// alternative, so the assumed instance binds to exactly the row it satisfies.
     #[test]
     fn adl14_domain_assumed_value_lands_on_the_matching_tuple_row() {
-        let cco = parse_definition_body_adl14(
+        let cco = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              C_DV_QUANTITY <\n\
@@ -764,6 +765,7 @@ mod tests {
              >\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the 1.4 inline domain block must parse");
         let CComplexObject::CComplexObject(d) = &cco else {
@@ -804,7 +806,7 @@ mod tests {
     /// `C_PRIMITIVE_OBJECT.assumed_value` (`AOM2/master04.2` §`Assumed_value`).
     #[test]
     fn adl14_domain_assumed_value_lands_on_a_plain_attribute() {
-        let cco = parse_definition_body_adl14(
+        let cco = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              C_DV_QUANTITY <\n\
@@ -816,6 +818,7 @@ mod tests {
              >\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the 1.4 inline domain block must parse");
         let CComplexObject::CComplexObject(d) = &cco else {
@@ -843,7 +846,7 @@ mod tests {
     /// it (`AOM2/master04.3` §Tuple Constraints).
     #[test]
     fn adl14_domain_assumed_value_outside_every_row_is_refused() {
-        let errs = parse_definition_body_adl14(
+        let errs = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              C_DV_QUANTITY <\n\
@@ -855,6 +858,7 @@ mod tests {
              >\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect_err("an unmatched assumed value must be refused");
         assert!(
@@ -869,7 +873,7 @@ mod tests {
     /// as two spellings that "express exactly the same constraint".
     #[test]
     fn adl14_code_phrase_block_lowers_like_the_custom_syntax() {
-        let block = parse_definition_body_adl14(
+        let block = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              DV_CODED_TEXT matches {\n\
@@ -882,9 +886,10 @@ mod tests {
              }\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the dADL block lowers");
-        let custom = parse_definition_body_adl14(
+        let custom = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              DV_CODED_TEXT matches {\n\
@@ -894,6 +899,7 @@ mod tests {
              }\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect("the custom syntax parses");
         assert_eq!(block, custom);

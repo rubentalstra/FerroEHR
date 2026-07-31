@@ -17,10 +17,11 @@ use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::{ArtefactSummary, summarize};
 use openehr_adl::opt::create_opt;
+use openehr_adl::parse::Dialect;
 use openehr_adl::validate::bindings::{TerminologyResolver, external_term_bindings};
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
-use openehr_adl::validate::{validate_source, validate_source_phase1};
+use openehr_adl::validate::{validate_source, validate_source_integrity};
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
@@ -108,7 +109,7 @@ impl EhrbaseService {
     )]
     pub fn valid_artefact(&self, adl2: &str) -> Result<bool, SmError> {
         Ok(matches!(
-            validate_source_phase1(adl2, None),
+            validate_source_integrity(adl2, Dialect::Adl2, None),
             Ok(issues) if issues.iter().all(|i| i.severity != Severity::Error)
         ))
     }
@@ -277,7 +278,7 @@ impl EhrbaseService {
             .await?;
         let mut repo = ArchetypeRepository::new();
         for src in &sources {
-            if let Ok(archetype) = parse_artefact(src) {
+            if let Ok(archetype) = parse_artefact(src, Dialect::Adl2) {
                 repo.insert(archetype);
             }
         }
@@ -300,7 +301,8 @@ impl EhrbaseService {
     /// term bindings are verified through the terminology-service resolver
     /// (VETDF, `master03` §Validity Rules — see [`Self::adl2_terminology_resolver`]).
     async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
-        let archetype = parse_artefact(source).map_err(|errs| syntax_bad_request(&errs))?;
+        let archetype =
+            parse_artefact(source, Dialect::Adl2).map_err(|errs| syntax_bad_request(&errs))?;
         let repo = self.adl2_repository().await?;
         let issues = if production_model_governs(&archetype) {
             // VETDF: external term bindings are verified against the terminology
@@ -309,7 +311,7 @@ impl EhrbaseService {
             let resolver = self.adl2_terminology_resolver(&archetype).await;
             validate_source(source, Some(&repo), &ProductionRmModel, &resolver)
         } else {
-            validate_source_phase1(source, Some(&repo))
+            validate_source_integrity(source, Dialect::Adl2, Some(&repo))
         }
         .map_err(|errs| syntax_bad_request(&errs))?;
 
@@ -481,7 +483,7 @@ impl EhrbaseService {
     /// - The OPT cannot be compiled (an unresolved constituent reference) →
     ///   `Unprocessable` (`422`).
     pub(super) async fn adl2_opt_json(&self, source: &str) -> Result<String, ServiceError> {
-        let archetype = parse_artefact(source).map_err(|errs| {
+        let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
             ServiceError::Internal(format!(
                 "stored ADL2 source no longer parses: {}",
                 join_syntax_errors(&errs)
@@ -650,7 +652,7 @@ impl EhrbaseService {
         &self,
         source: &str,
     ) -> Result<OperationalTemplate, ServiceError> {
-        let archetype = parse_artefact(source).map_err(|errs| {
+        let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
             ServiceError::Internal(format!(
                 "stored ADL2 source no longer parses: {}",
                 join_syntax_errors(&errs)

@@ -589,7 +589,7 @@ fn adl14_terminology_code(constraint: String) -> CObject {
 #[cfg(test)]
 mod tests {
     use crate::error::SyntaxErrorCode;
-    use crate::parse::parse_definition_body_adl14;
+    use crate::parse::{Dialect, parse_definition_body};
 
     /// An inline dADL domain block whose type is not one this lowering models is
     /// refused by NAME, never lowered to a different RM type
@@ -599,7 +599,7 @@ mod tests {
     /// it, so it has no citable shape.
     #[test]
     fn adl14_unsupported_domain_type_is_refused_by_name() {
-        let errs = parse_definition_body_adl14(
+        let errs = parse_definition_body(
             "ELEMENT[at0000] matches {\n\
              value matches {\n\
              (C_DV_STATE) <\n\
@@ -607,6 +607,7 @@ mod tests {
              >\n\
              }\n\
              }",
+            Dialect::Adl14,
         )
         .expect_err("an unmodelled domain constrainer must be refused");
         let sdinv = errs

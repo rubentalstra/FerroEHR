@@ -893,10 +893,10 @@ mod tests {
 
     use crate::aom::access::common_mut;
     use crate::error::SyntaxErrorCode;
-    use crate::parse::parse_definition_body;
+    use crate::parse::{Dialect, parse_definition_body};
 
     fn parse(body: &str) -> CComplexObject {
-        parse_definition_body(body).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
+        parse_definition_body(body, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
     }
 
     fn data(cco: &CComplexObject) -> &CComplexObjectData {
@@ -1036,6 +1036,7 @@ mod tests {
              }\n\
              }\n\
              }",
+            Dialect::Adl2,
         )
         .expect_err("an interval in a `_default` must be refused");
         assert!(
@@ -1066,6 +1067,7 @@ mod tests {
         // Existence {5} is invalid -> SEXLSG.
         let errs = parse_definition_body(
             "WHOLE[id1] matches {\n a existence matches {5} matches { DV_TEXT[id2] }\n}",
+            Dialect::Adl2,
         )
         .expect_err("should fail");
         assert!(
@@ -1074,8 +1076,9 @@ mod tests {
         );
 
         // Empty attribute body -> SCAS.
-        let errs = parse_definition_body("ENTRY[id1] matches {\n value matches {}\n}")
-            .expect_err("should fail");
+        let errs =
+            parse_definition_body("ENTRY[id1] matches {\n value matches {}\n}", Dialect::Adl2)
+                .expect_err("should fail");
         assert!(
             errs.iter().any(|e| e.code == SyntaxErrorCode::Scas),
             "{errs:?}"
@@ -1084,6 +1087,7 @@ mod tests {
         // Empty object body -> SCOAT.
         let errs = parse_definition_body(
             "ENTRY[id1] matches {\n value matches { ELEMENT[id2] matches {} }\n}",
+            Dialect::Adl2,
         )
         .expect_err("should fail");
         assert!(

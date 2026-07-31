@@ -6,11 +6,12 @@
 //! code), a [`Severity`], a message, and — where derivable
 //! — the archetype path the issue is anchored at.
 //!
-//! This module holds ONLY the orchestration: [`ValidationIssue`], the six public
-//! entry points, and the three phase drivers (`run_phase1`,
-//! `run_phase2_spec`, `run_phase3`) that call the topic modules in the order
-//! the spec's phase schedule prescribes. Every rule lives in the topic module
-//! that owns its subject matter:
+//! This module holds ONLY the orchestration: [`ValidationIssue`], the five
+//! public entry points, and the three drivers (`run_integrity_checks`,
+//! `run_parent_conformance`, `run_flat_form_checks`) that call the topic modules
+//! in the order the spec's phase schedule prescribes — master08's "phase 1 /
+//! phase 2 / phase 3" in the spec's guide vocabulary. Every rule lives in the
+//! topic module that owns its subject matter:
 //!
 //! | module | topic |
 //! |---|---|
@@ -75,7 +76,7 @@ use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use crate::artefact::{ArchetypeRepository, ArchetypeView, FlatParent, resolve_flat_parent, view};
 use crate::error::SyntaxError;
 use crate::parse::Dialect;
-use crate::source::{SourceArtefact, parse_source, parse_source_adl14};
+use crate::source::{SourceArtefact, parse_source};
 use crate::validate::catalogue::{Severity, ValidationCode};
 
 /// A single validation finding.
@@ -125,7 +126,8 @@ pub(super) fn push_issue(
     issues.push(ValidationIssue::new(code, msg).at_path(path.to_owned()));
 }
 
-/// Run the phase-1 catalogue over `v`, appending issues to `issues`.
+/// Run the basic-integrity catalogue over `v`, appending issues to `issues`
+/// (master08 "phase 1 — basic integrity" in the spec's guide vocabulary).
 ///
 /// The order follows `master08-validation.adoc` §Phase 1 - Basic Integrity:
 /// basic identification checks first, then structural, then terminology (the
@@ -134,9 +136,9 @@ pub(super) fn push_issue(
 /// missing/inconsistent terminology).
 ///
 /// `dialect` selects the validity catalogue: [`Dialect::Adl2`] runs the full
-/// AOM2 phase-1 catalogue; [`Dialect::Adl14`] runs the subset that corresponds
+/// AOM2 integrity catalogue; [`Dialect::Adl14`] runs the subset that corresponds
 /// to the ADL 1.4 / AOM 1.4 standalone validity rules (see
-/// [`validate_source_phase1_adl14`] for the correspondence + the suppressed
+/// [`validate_source_integrity`] for the correspondence + the suppressed
 /// AOM2-only rules, each spec-cited at its check site).
 ///
 /// Not run in phase 1 (the variant is present as the catalogue vocabulary): the
@@ -149,7 +151,7 @@ pub(super) fn push_issue(
 /// there) needs a live terminology-service resolver the network-free spec engine
 /// cannot hold — it is validated through the [`bindings::TerminologyResolver`]
 /// seam.
-fn run_phase1(
+fn run_integrity_checks(
     v: &ArchetypeView<'_>,
     repo: Option<&ArchetypeRepository>,
     source: Option<(&SourceArtefact, &str)>,
@@ -210,50 +212,39 @@ fn run_phase1(
     }
 }
 
-/// Validate an assembled [`Archetype`] against the AOM2 **phase-1** catalogue.
+/// Validate an assembled [`Archetype`] against the AOM2 basic-integrity
+/// catalogue (master08 "phase 1 — basic integrity" in the spec's guide
+/// vocabulary).
+///
+/// The catalogue is the ADL2 one: an assembled [`Archetype`] carries no memory
+/// of the dialect it was read from, so the dialect-sensitive entry is the
+/// source-level [`validate_source_integrity`].
 ///
 /// `repo`, when supplied, resolves the archetype's parent (and suppliers) so
-/// the parent-dependent phase-1 checks (VACSD depth comparison, VASID, VALC,
+/// the parent-dependent integrity checks (VACSD depth comparison, VASID, VALC,
 /// VTPL) can run; when `None`, those checks compute only their standalone half
 /// or are skipped. Source-level checks that need the raw ODIN text (VOKU) are
-/// not run here — use [`validate_source_phase1`] for those.
+/// not run here — use [`validate_source_integrity`] for those.
 #[must_use]
-pub fn validate_phase1(
+pub fn validate_integrity(
     archetype: &Archetype,
     repo: Option<&ArchetypeRepository>,
 ) -> Vec<ValidationIssue> {
     let mut issues = Vec::new();
-    run_phase1(&view(archetype), repo, None, Dialect::Adl2, &mut issues);
+    run_integrity_checks(&view(archetype), repo, None, Dialect::Adl2, &mut issues);
     issues
 }
 
-/// Parse ADL2 `src` and validate it against the AOM2 **phase-1** catalogue,
-/// including the source-level checks (VOKU keyed-list uniqueness) that need the
-/// raw ODIN text.
+/// Parse `src` in `dialect` and validate it against that dialect's
+/// basic-integrity catalogue, including the source-level checks (VOKU keyed-list
+/// uniqueness, VRRLP rule paths) that need the raw ODIN text (master08 "phase 1
+/// — basic integrity" in the spec's guide vocabulary).
 ///
-/// # Errors
-/// Returns the parse [`SyntaxError`]s if `src` does not parse into an
-/// [`Archetype`]; validation runs only on a successful parse.
-pub fn validate_source_phase1(
-    src: &str,
-    repo: Option<&ArchetypeRepository>,
-) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source(src)?;
-    let archetype = crate::assemble::assemble(&source, src)?;
-    let mut issues = Vec::new();
-    run_phase1(
-        &view(&archetype),
-        repo,
-        Some((&source, src)),
-        Dialect::Adl2,
-        &mut issues,
-    );
-    Ok(issues)
-}
-
-/// Parse an **ADL 1.4** source (the 1.4 dialect) and validate it against the
-/// subset of the AOM2 phase-1 catalogue that corresponds to the ADL 1.4 / AOM
-/// 1.4 standalone validity rules.
+/// Under [`Dialect::Adl2`] this is the full AOM2 integrity catalogue.
+///
+/// Under [`Dialect::Adl14`] it is the subset that corresponds to the ADL 1.4 /
+/// AOM 1.4 standalone validity rules, plus the 1.4-only definition-path walk
+/// (VDFPT).
 ///
 /// A 1.4 upload is judged **as 1.4** (its 1.4-shaped `openehr_am::am24` model),
 /// never post-conversion: converting to ADL 2 changes the artefact, so a 1.4
@@ -295,31 +286,46 @@ pub fn validate_source_phase1(
 ///   `flat::validate_definition_paths_adl14`).
 ///
 /// # Errors
-/// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
+/// Returns the parse [`SyntaxError`]s if `src` does not parse in `dialect`;
 /// validation runs only on a successful parse.
-pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source_adl14(src)?;
-    let archetype = crate::assemble::assemble_adl14(&source, src)?;
+pub fn validate_source_integrity(
+    src: &str,
+    dialect: Dialect,
+    repo: Option<&ArchetypeRepository>,
+) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
+    let source = parse_source(src, dialect)?;
+    let archetype = crate::assemble::assemble(&source, src, dialect)?;
     let mut issues = Vec::new();
-    run_phase1(
+    run_integrity_checks(
         &view(&archetype),
-        None,
+        repo,
         Some((&source, src)),
-        Dialect::Adl14,
+        dialect,
         &mut issues,
     );
-    issues.extend(flat::validate_definition_paths_adl14(&archetype));
+    if dialect == Dialect::Adl14 {
+        issues.extend(flat::validate_definition_paths_adl14(&archetype));
+    }
     Ok(issues)
 }
 
 /// Parse an **ADL 1.4** source and validate it against the FULL ADL 1.4
-/// catalogue: [`validate_source_phase1_adl14`] plus the one 1.4 validity rule
-/// that needs a reference model, VUNT (`rm::validate_adl14_rm`).
+/// catalogue: the 1.4 basic-integrity pass
+/// ([`validate_source_integrity`] with [`Dialect::Adl14`]) plus the one 1.4
+/// validity rule that needs a reference model, VUNT
+/// ([`rm::validate_rm_conformance`] in the 1.4 dialect).
+///
+/// This is the 1.4 counterpart of [`validate_source`], and it is a separate
+/// entry rather than a dialect branch of it because the two pipelines take
+/// genuinely different inputs: ADL 1.4 has no differential lineage to flatten
+/// and no AOM2 external-binding rule, so neither an [`ArchetypeRepository`] nor
+/// a [`bindings::TerminologyResolver`] has anything to do here — accepting
+/// either would be a parameter the 1.4 pipeline silently ignores.
 ///
 /// VUNT is a rule of the ADL 1.4 formalism itself — `ADL1.4/master05-cadl.adoc`
 /// §Internal References L512-513 — so a 1.4 artefact that violates it is
-/// invalid 1.4, and a 1.4 upload path that stops at phase 1 can never reach it.
-/// The RM pass runs only when phase 1 raised no
+/// invalid 1.4, and a 1.4 upload path that stops at basic integrity can never
+/// reach it. The RM pass runs only when the integrity pass raised no
 /// [`Severity::Error`] — the `master08` §Overview
 /// phase gate ("more basic kinds of errors being checked first"). A type `rm`
 /// does not know is undecidable rather than wrong (`rm::type_conforms` returns
@@ -329,14 +335,14 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
 /// # Errors
 /// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
 /// validation runs only on a successful parse.
-pub fn validate_source_adl14(
+pub fn validate_adl14_source(
     src: &str,
     rm: &dyn rm::RmModel,
 ) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source_adl14(src)?;
-    let archetype = crate::assemble::assemble_adl14(&source, src)?;
+    let source = parse_source(src, Dialect::Adl14)?;
+    let archetype = crate::assemble::assemble(&source, src, Dialect::Adl14)?;
     let mut issues = Vec::new();
-    run_phase1(
+    run_integrity_checks(
         &view(&archetype),
         None,
         Some((&source, src)),
@@ -345,21 +351,22 @@ pub fn validate_source_adl14(
     );
     issues.extend(flat::validate_definition_paths_adl14(&archetype));
     if issues.iter().all(|i| i.severity != Severity::Error) {
-        issues.extend(rm::validate_adl14_rm(&archetype, rm));
+        issues.extend(rm::validate_rm_conformance(&archetype, rm, Dialect::Adl14));
     }
     Ok(issues)
 }
 
-/// Validate an assembled [`Archetype`] against the full phase schedule: phase
-/// 1, then — only if phase 1 raised no [`Severity::Error`] — the phase-2
-/// reference-model checks against `rm`, the phase-2 specialisation checks, and
-/// the phase-3 flat-form checks.
+/// Validate an assembled [`Archetype`] against the full schedule: basic
+/// integrity, then — only if that raised no [`Severity::Error`] — the
+/// reference-model checks against `rm`, the parent-conformance checks, and the
+/// flat-form checks (master08's "phase 1 / phase 2 / phase 3" in the spec's
+/// guide vocabulary).
 ///
 /// The gating is the `master08` §Overview phase gate ("more basic kinds of
 /// errors being checked first"): each later pass runs on a structurally-sound
 /// archetype only. [`validate_source`] runs this same schedule from source
-/// text, plus the source-level phase-1 checks (VOKU) that need the raw ODIN and
-/// are not available here.
+/// text, plus the source-level integrity checks (VOKU) that need the raw ODIN
+/// and are not available here.
 ///
 /// `resolver` verifies external term bindings (VETDF); pass
 /// [`bindings::NoTerminologyResolver`] when no terminology service is
@@ -372,22 +379,23 @@ pub fn validate(
     rm: &dyn rm::RmModel,
     resolver: &dyn bindings::TerminologyResolver,
 ) -> Vec<ValidationIssue> {
-    let mut issues = validate_phase1(archetype, repo);
+    let mut issues = validate_integrity(archetype, repo);
     if issues.iter().all(|i| i.severity != Severity::Error) {
-        issues.extend(rm::validate_phase2_rm(archetype, rm));
+        issues.extend(rm::validate_rm_conformance(archetype, rm, Dialect::Adl2));
     }
-    run_phase2_spec(archetype, repo, rm, &mut issues);
-    run_phase3(archetype, repo, &mut issues);
+    run_parent_conformance(archetype, repo, rm, &mut issues);
+    run_flat_form_checks(archetype, repo, &mut issues);
     bindings::check_external_term_bindings(&view(archetype), resolver, &mut issues);
     issues
 }
 
-/// Run the phase-2 specialisation checks against the resolved flat parent, gated
-/// on a supplied repository and a still-clean issue list (`master08` §Overview
-/// phase gate). A non-specialised archetype, an unresolved parent, or a parent
+/// Run the specialised-child-against-flat-parent checks, gated on a supplied
+/// repository and a still-clean issue list (`master08` §Overview phase gate;
+/// these are its "phase 2 — validate against parent" in the spec's guide
+/// vocabulary). A non-specialised archetype, an unresolved parent, or a parent
 /// that itself needs the flattener silently skips the checks (never a wrong
 /// answer against an un-flattened parent).
-fn run_phase2_spec(
+fn run_parent_conformance(
     archetype: &Archetype,
     repo: Option<&ArchetypeRepository>,
     rm: &dyn rm::RmModel,
@@ -401,7 +409,7 @@ fn run_phase2_spec(
     };
     match resolve_flat_parent(archetype, repo) {
         FlatParent::Available(parent) => {
-            issues.extend(specialisation::validate_phase2_spec(
+            issues.extend(specialisation::validate_against_flat_parent(
                 archetype, parent, rm, repo,
             ));
         }
@@ -413,7 +421,7 @@ fn run_phase2_spec(
                 && let Some(parent) = repo.get(parent_id)
                 && let Ok(flat_parent) = crate::flatten::flat_form(parent, repo)
             {
-                issues.extend(specialisation::validate_phase2_spec(
+                issues.extend(specialisation::validate_against_flat_parent(
                     archetype,
                     &flat_parent,
                     rm,
@@ -425,13 +433,14 @@ fn run_phase2_spec(
     }
 }
 
-/// Run the phase-3 flat-form checks (VUNP, VACMCO) on the flattened archetype,
-/// gated on a still-clean issue list (`master08` §Phase 3 — carried out after
-/// successful flat-form generation). A specialised archetype is flattened via
-/// [`crate::flatten::flat_form`] (needs `repo`); a level-0 archetype is its own
-/// flat form. If flattening is impossible (specialised, no resolvable parent) the
-/// checks are skipped rather than run against a wrong (un-flattened) form.
-fn run_phase3(
+/// Run the flat-form checks (VUNP, VACMCO) on the flattened archetype, gated on
+/// a still-clean issue list (`master08` §Phase 3 - Validation of Flat Form —
+/// carried out after successful flat-form generation). A specialised archetype
+/// is flattened via [`crate::flatten::flat_form`] (needs `repo`); a level-0
+/// archetype is its own flat form. If flattening is impossible (specialised, no
+/// resolvable parent) the checks are skipped rather than run against a wrong
+/// (un-flattened) form.
+fn run_flat_form_checks(
     archetype: &Archetype,
     repo: Option<&ArchetypeRepository>,
     issues: &mut Vec<ValidationIssue>,
@@ -445,31 +454,31 @@ fn run_phase3(
         None if view(archetype).parent_archetype_id.is_none() => archetype,
         None => return,
     };
-    issues.extend(flat::validate_phase3(flat_ref));
+    issues.extend(flat::validate_flat_form_structure(flat_ref));
     // The deferred flat-form terminology/structure checks (VATDF / VTVSMD /
     // VACMCU / WACMCL / VCOSU) run only for a *specialised* archetype: a
-    // non-specialised archetype is its own flat form, so the phase-1 topic
+    // non-specialised archetype is its own flat form, so the integrity topic
     // modules already ran their equivalents (never double-firing here).
     if view(archetype).is_specialised() {
         issues.extend(flat::validate_flat_form(flat_ref));
     }
 }
 
-/// Parse and validate ADL2 `src` against the SAME phase schedule as
-/// [`validate`], with the source-level phase-1 checks added: phase 1, then —
-/// only if phase 1 is error-free — the phase-2 reference-model checks against
-/// `rm` (`master08` §Overview phase gate), the phase-2 specialisation checks,
-/// and the phase-3 flat-form checks.
+/// Parse and validate ADL2 `src` against the SAME schedule as [`validate`],
+/// with the source-level integrity checks added: basic integrity, then — only
+/// if that is error-free — the reference-model checks against `rm` (`master08`
+/// §Overview phase gate), the parent-conformance checks, and the flat-form
+/// checks.
 ///
-/// NOTE: this entry runs phase 3 even for a top-level archetype. The V-codes
+/// NOTE: this entry runs the flat-form checks even for a top-level archetype. The V-codes
 /// are unconditional — `master03-archetype_package.adoc` §Validity Rules opens
 /// "apply to all varieties of ARCHETYPE object", and VUNP/VACMCO
 /// (`master04.5-constraint_model-class_definitions.adoc` §Validity Rules) carry
 /// no phase or specialisation precondition — while `master08`'s three-phase
 /// sequence describes itself as "a guide … based on the ADL workbench reference
 /// compiler". AOM2 defines no partial-validation profile, so there is exactly
-/// one notion of validity and a source-level entry may not omit a phase. Phase
-/// 3 is always evaluable: `ADL2/master09.02-spec_concepts.adoc` §Differential
+/// one notion of validity and a source-level entry may not omit a phase. The
+/// flat-form pass is always evaluable: `ADL2/master09.02-spec_concepts.adoc` §Differential
 /// and Flat Forms — "For a top-level archetype, the flat-form is the same as
 /// its differential form" — and VACMCO is unsound on differential source
 /// anyway, because `ADL2/master09.04-spec_attrib_redef.adoc` requires the
@@ -491,10 +500,10 @@ pub fn validate_source(
     rm: &dyn rm::RmModel,
     resolver: &dyn bindings::TerminologyResolver,
 ) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
-    let source = parse_source(src)?;
-    let archetype = crate::assemble::assemble(&source, src)?;
+    let source = parse_source(src, Dialect::Adl2)?;
+    let archetype = crate::assemble::assemble(&source, src, Dialect::Adl2)?;
     let mut issues = Vec::new();
-    run_phase1(
+    run_integrity_checks(
         &view(&archetype),
         repo,
         Some((&source, src)),
@@ -502,10 +511,10 @@ pub fn validate_source(
         &mut issues,
     );
     if issues.iter().all(|i| i.severity != Severity::Error) {
-        issues.extend(rm::validate_phase2_rm(&archetype, rm));
+        issues.extend(rm::validate_rm_conformance(&archetype, rm, Dialect::Adl2));
     }
-    run_phase2_spec(&archetype, repo, rm, &mut issues);
-    run_phase3(&archetype, repo, &mut issues);
+    run_parent_conformance(&archetype, repo, rm, &mut issues);
+    run_flat_form_checks(&archetype, repo, &mut issues);
     bindings::check_external_term_bindings(&view(&archetype), resolver, &mut issues);
     Ok(issues)
 }
