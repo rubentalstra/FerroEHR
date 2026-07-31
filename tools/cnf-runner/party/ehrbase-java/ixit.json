@@ -33,6 +33,6 @@
     "cores": 4,
     "memory_gb": 16,
     "storage_class": "ssd",
-    "topology": "single-node docker compose (docker/sut-ehrbase-java.yml, ehrbase/ehrbase:2.34.0 + ferroehr-v2-postgres:16.2; no readonly principal — EHRbase Basic auth carries one clinical user and one admin user)"
+    "topology": "single-node docker compose (docker/sut-ehrbase-java.yml, ehrbase/ehrbase:2.34.0 + ehrbase-v2-postgres:16.2; no readonly principal — EHRbase Basic auth carries one clinical user and one admin user)"
   }
 }

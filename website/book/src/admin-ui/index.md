@@ -14,7 +14,7 @@ on port 3000:
 
 ```bash
 docker compose up ferroehr-postgres ferroehr ferroehr-admin-ui
-# → http://localhost:3000  (log in with the dev users, e.g. ehrbase/ehrbase)
+# → http://localhost:3000  (log in with the dev users, e.g. ferroehr/ferroehr)
 ```
 
 Standalone, point it at any CDR:
