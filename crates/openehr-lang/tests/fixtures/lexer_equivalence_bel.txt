@@ -243,3 +243,4 @@
 242|AlphaLcId("x")@0..1 SymEq@2..3 SymLt@4..5 SymFalse@5..10 SymGt@10..11
 243|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 AlphaLcId("infinity")@4..12 SymIvlDelim@12..13
 244|SymAt@0..1 AlphaLcId("schema")@1..7 SymEq@8..9 SymLt@10..11 AlphaLcId("http")@11..15 SymColon@15..16 AdlPath("//openehr")@16..25 SymDot@25..26 AdlPath("org/bmm")@26..33 SymGt@33..34
+245|ERROR@12..13

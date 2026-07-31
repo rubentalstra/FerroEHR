@@ -518,3 +518,5 @@ x = <false>
 |0..infinity|
 %%
 @schema = <http://openehr.org/bmm>
+%%
+a = (cadl) <# x #>
