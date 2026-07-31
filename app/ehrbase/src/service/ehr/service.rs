@@ -121,7 +121,7 @@ impl EhrbaseService {
             Err(e) => return Err(e.into()),
         };
 
-        let (_contribution_id, committed) = commit_contribution(
+        let committed = commit_contribution(
             &mut tx,
             Some(ehr_id),
             None,
@@ -186,7 +186,7 @@ impl EhrbaseService {
         // byte-identical to `ehr_summary` for a new EHR (pinned by a test); it
         // is stashed so `ehr_created_object` serves a
         // `Prefer: return=representation` response without a re-read.
-        let body = self.ehr_object_from_committed(ehr_id, time_created, &committed);
+        let body = self.ehr_object_from_committed(ehr_id, time_created, &committed.versions);
         self.created_ehr_repr.insert(ehr_id, body.clone()).await;
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
             .with_last_modified(time_created);
