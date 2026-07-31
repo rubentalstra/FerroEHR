@@ -14,7 +14,8 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
-use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
+use openehr_adl::validate::catalogue::Severity;
+use openehr_adl::validate::validate_source_phase1_adl14;
 
 /// A minimal, valid standalone ADL 1.4 archetype (`adl_version=1.4`, no
 /// `rm_release`, at-code node ids, `ontology` keyword) — the exact shape a 1.4

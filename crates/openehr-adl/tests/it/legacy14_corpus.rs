@@ -37,7 +37,8 @@ use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
 use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::SyntaxErrorCode;
-use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
+use openehr_adl::validate::catalogue::Severity;
+use openehr_adl::validate::validate_source_phase1_adl14;
 
 /// The vendored `legacy_adl_1.4` fixtures that carry no `concept` section and
 /// are therefore refused with `SACO` (the adjudication is stated at the

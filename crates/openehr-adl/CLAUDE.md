@@ -1,8 +1,8 @@
 # `openehr-adl` — ADL 2.4.0 engine (hand-written)
 
 The ADL2 text + semantics engine: ADL2/cADL/ODIN parser (`logos` + `chumsky`,
-like `openehr-query`; `lexer`, `parse/`, `source`), the AOM2 validation catalogue
-(`validate/` phases 1–3 + RM + terminology + flat), the `master04.5` conformance
+like `openehr-query`; `lexer`, `parse/`, `source`), the AOM2 validation engine
+(`validate/`, grouped by TOPIC — see below), the `master04.5` conformance
 functions (`validate/conformance.rs`), specialisation flattening (`flatten.rs`),
 OPT2 generation (`opt.rs` — raw via `create_opt`, profiled via `profile_opt`),
 the ADL printer (`printer`), and ADL 1.4→2 conversion (`adl14/`). Builds directly
@@ -20,6 +20,24 @@ into the generated `openehr_am::am24::aom2` model — never re-model AOM2.
   `adl14/lower.rs` (with the inline dADL domain lowering in
   `adl14/domain.rs`), and the three dialect-gated dispatch points in
   `parse::parser` are the only coupling — keep it that way.
+- **`validate/` is grouped by TOPIC, never by phase number.** `mod` is
+  orchestration ONLY — `ValidationIssue`, the six public entry points, the
+  `push_issue` helper every walker builds its findings with, and the three
+  phase drivers (`run_phase1`, `run_phase2_spec`, `run_phase3`) whose call
+  order + error gating ARE the `master08` phase schedule. Everything else is a
+  topic module: `catalogue` (the `Severity` + `ValidationCode` vocabulary, 91
+  codes), `identification` (id/root/versions/languages + the STCNT/VOLT gate),
+  `structure` (the phase-1 definition walk), `terminology` (term definitions,
+  value sets, code usage), `bindings` (binding keys + the
+  `TerminologyResolver` seam for VETDF), `annotations` (`annotations` +
+  `rm_overlay`), `source_level` (VOKU/VRRLP over the raw parsed source),
+  `specialisation` (the differential-vs-flat-parent walk + the parent-dependent
+  VACSD/VASID/VALC), `slots` (the slot arm of that walk — a second `impl
+  Phase2` block — plus `validate_fillers`), `rm` (the reference-model seam),
+  `conformance` (the `master04.5` functions), `flat` (phase 3 + the deferred
+  flat-form halves). A new rule goes in the topic module that owns its subject,
+  and its driver call keeps the existing order — issue emission order is
+  behaviour.
 - **The shared substrate has ONE home each — never re-inline a copy.** `aom/`
   (`access` = the 13-arm `C_OBJECT` field accessors + `AomType`, `build` = the
   AOM2 constructors, `interval` = `Bounds`/multiplicity + `INTERVAL<T>` maths),

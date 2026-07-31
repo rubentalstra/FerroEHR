@@ -4,7 +4,7 @@
 //! §Validity Rules (VTPL — template/filler language consistency) and
 //! `master08-validation.adoc` §Phase 2 (VARXR — external reference resolution),
 //! resolved against the flattened fillers by
-//! [`openehr_adl::validate::fillers::validate_fillers`].
+//! [`openehr_adl::validate::slots::validate_fillers`].
 //!
 //! Every file under `tests/corpus/adl2-reference/validity/templates` is claimed
 //! here with its expected outcome (the in-file `regression` tag is the oracle,
@@ -32,8 +32,8 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::{parse_artefact, regression_tag};
-use openehr_adl::validate::fillers::validate_fillers;
-use openehr_adl::validate::{Severity, ValidationCode};
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::slots::validate_fillers;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 
 const TEMPLATES: &str = concat!(

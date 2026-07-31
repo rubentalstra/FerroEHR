@@ -1,166 +1,473 @@
-//! External terminology-service validation of ADL2 archetypes (VETDF).
+//! Phase-1 terminology topic: the archetype's own `term_definitions`,
+//! `constraint_definitions` and `value_sets`, and the codes the definition
+//! references against them — definedness, specialisation level, code form,
+//! language coverage, value-set integrity and the unused-code warning.
 //!
-//! `docs/specs/openehr/AM/docs/AOM2/master03-archetype_package.adoc` §Validity
-//! Rules, VETDF: "external term validity. Each external term used within the
-//! archetype definition must exist in the relevant terminology (subject to tool
-//! accessibility; codes for inaccessible terminologies should be flagged with a
-//! warning indicating that no verification was possible)."
+//! Rule texts:
+//! `docs/specs/openehr/AM/docs/AOM2/master07-terminology_package.adoc`
+//! §Validity Rules (VTSD, VTLC, VTVSID, VTVSMD, VTVSUQ),
+//! `master03-archetype_package.adoc` §Validity Rules (VATDF, VACDF, VATDA,
+//! VATCD, VOTM) and `master08-validation.adoc` §Phase 1 - Basic Integrity
+//! (VATID, VATCV). WOUC has no openEHR spec text — our own design/extension
+//! (archie parity), flagged at its check site.
 //!
-//! `openehr-adl` is a network-free spec engine (no app/SQL/REST — see the crate
-//! `CLAUDE.md`), so it cannot hold a live terminology-service client. The check
-//! is threaded through a [`TerminologyResolver`] seam, exactly like the
-//! [`RmModel`](super::rm::RmModel) reference-model seam: the application injects
-//! a resolver backed by its terminology service (the in-process `openehr-term`
-//! bundle + any configured external FHIR TS), and the full-validation entry
-//! points ([`super::validate`] / [`super::validate_source`]) consult it. Every
-//! entry point that takes no resolver behaves as if a [`NoTerminologyResolver`]
-//! were supplied (VETDF is silently not raised — no verification was possible),
-//! matching the spec's "subject to tool accessibility" carve-out.
-//!
-//! The `_type` of a binding target and the terminology-id → resolver mapping are
-//! deliberately kept out of this crate: the resolver receives the binding
-//! target reference exactly as authored and owns all terminology-specific
-//! interpretation.
+//! The pass is gated by [`super::run`]: it runs only when the basic
+//! identification checks are clean and the terminology structure is sound
+//! (`master08` §Overview, "more basic kinds of errors being checked first" — a
+//! code cannot be judged against a missing or inconsistent terminology).
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use std::collections::BTreeSet;
 
-use super::{ValidationCode, ValidationIssue};
-use crate::artefact::{ArchetypeView, view};
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 
-/// The seam by which the application answers "does this code exist in this
-/// terminology?" for the ADL2 VETDF check, without `openehr-adl` holding a
-/// network client.
-///
-/// `code_exists` returns:
-/// - `Some(true)` — the term is known to exist in the terminology (no VETDF);
-/// - `Some(false)` — the term is definitely absent from the terminology
-///   (**VETDF is raised**);
-/// - `None` — the resolver cannot answer (the terminology is unknown or the
-///   service is unavailable). No VETDF is raised: a validator must not reject an
-///   archetype on an infrastructure gap, per the VETDF "subject to tool
-///   accessibility; … no verification was possible" carve-out
-///   (`master03-archetype_package.adoc` §Validity Rules).
-pub trait TerminologyResolver {
-    /// Whether `code` (the external term reference exactly as authored in the
-    /// binding — typically a URI for an external terminology) exists in the
-    /// terminology named by `terminology_id` (the outer binding key). `None` =
-    /// could not be determined (see the trait docs).
-    fn code_exists(&self, terminology_id: &str, code: &str) -> Option<bool>;
-}
+use super::ValidationIssue;
+use super::bindings::check_bindings;
+use super::catalogue::ValidationCode;
+use super::identification::languages;
+use super::structure::complex_attribute_tuples;
+use crate::aom::access::{aom_type, complex_attributes, complex_node_id, object_node_id};
+use crate::artefact::ArchetypeView;
+use crate::codes::{self, is_ac_code, is_at_code, is_id_code, is_valid_code};
+use crate::parse::Dialect;
+use crate::paths::child_path;
 
-/// The default resolver: it can never answer, so VETDF is never raised.
-///
-/// Supplied implicitly by every validation entry point that takes no resolver,
-/// so those paths are byte-for-byte unchanged (the VETDF "no verification was
-/// possible" carve-out — `master03-archetype_package.adoc` §Validity Rules).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct NoTerminologyResolver;
-
-impl TerminologyResolver for NoTerminologyResolver {
-    fn code_exists(&self, _terminology_id: &str, _code: &str) -> Option<bool> {
-        None
-    }
-}
-
-/// One external term binding extracted from an archetype's `term_bindings`: the
-/// external `terminology_id` (the outer binding key), the local `key` bound (an
-/// at/ac-code or a path), and the `target` external term reference (a URI).
-///
-/// Yielded by [`external_term_bindings`] so the application can pre-resolve the
-/// same set the validator will consult (the resolver seam is synchronous; a
-/// terminology lookup is async, so the app resolves ahead of time and hands the
-/// validator a memoised resolver).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExternalTermBinding {
-    /// The external terminology id (the outer `term_bindings` key), e.g.
-    /// `"SNOMED-CT"`, `"LOINC"`, `"ISO_639-1"`.
-    pub terminology_id: String,
-    /// The local binding key: an at/ac-code or an archetype path.
-    pub key: String,
-    /// The external term reference the key is bound to (a URI), e.g.
-    /// `"http://snomedct.info/id/12394009"`.
-    pub target: String,
-}
-
-/// Whether `terminology_id` names a *genuinely external* terminology — one whose
-/// term references VETDF must verify against a terminology service.
-///
-/// Excluded (returns `false`):
-/// - `"local"` — the archetype's own term definitions
-///   (`docs/specs/openehr/AM/docs/ADL2/master07.13-adl_terminology.adoc`
-///   §Terminology: archetype-local terms), never an external terminology;
-/// - `"openehr"` — the openEHR Terminology, treated here as archetype-internal:
-///   its binding *keys* are validated by VTTBK/VTCBK (`master07` §Validity
-///   Rules) and VETDF is scoped to third-party terminologies.
-///
-/// NOTE: openEHR publishes no enumeration of "external" terminology ids, so the
-/// `local`/`openehr` exclusion set is our own scoping decision (the two
-/// archetype-/openEHR-internal ids), not a spec-pinned list. The comparison is
-/// ASCII-case-insensitive, matching openEHR's case-insensitive identifier rules
-/// (`master03` §Lexical Conventions).
-fn is_external_terminology(terminology_id: &str) -> bool {
-    let id = terminology_id.to_ascii_lowercase();
-    id != "local" && id != "openehr"
-}
-
-/// Invoke `f(terminology_id, key, target)` for every external term binding in
-/// `v` — the single walk both [`external_term_bindings`] and
-/// [`check_external_term_bindings`] share, so the app pre-resolves exactly the
-/// set the validator consults.
-fn walk_external_bindings(v: &ArchetypeView<'_>, mut f: impl FnMut(&str, &str, &str)) {
-    let Some(bindings) = v.terminology.term_bindings.as_ref() else {
-        return;
-    };
-    for (terminology_id, entries) in bindings {
-        if !is_external_terminology(terminology_id) {
-            continue;
-        }
-        for (key, target) in entries {
-            f(terminology_id, key, target);
-        }
-    }
-}
-
-/// The external term bindings of `archetype` (`term_bindings` entries under a
-/// genuinely-external terminology id — see `is_external_terminology`).
-///
-/// The application iterates these to pre-resolve each `(terminology_id, target)`
-/// against its terminology service and build the [`TerminologyResolver`] the
-/// validator then consults for VETDF.
-#[must_use]
-pub fn external_term_bindings(archetype: &Archetype) -> Vec<ExternalTermBinding> {
-    let v = view(archetype);
-    let mut out = Vec::new();
-    walk_external_bindings(&v, |terminology_id, key, target| {
-        out.push(ExternalTermBinding {
-            terminology_id: terminology_id.to_owned(),
-            key: key.to_owned(),
-            target: target.to_owned(),
-        });
-    });
-    out
-}
-
-/// VETDF: raise an issue for every external term binding whose target the
-/// `resolver` reports as definitely absent (`Some(false)`).
-///
-/// `Some(true)` (exists) and `None` (could not verify) raise nothing —
-/// `master03-archetype_package.adoc` §Validity Rules, VETDF: an inaccessible
-/// terminology is flagged as unverifiable, not as invalid.
-pub(super) fn check_external_term_bindings(
+#[expect(
+    clippy::too_many_lines,
+    reason = "the individual rules are already extracted into helpers below; the remaining length is the number of terminology codes checked in sequence"
+)]
+pub(super) fn check_terminology(
     v: &ArchetypeView<'_>,
-    resolver: &dyn TerminologyResolver,
+    dialect: Dialect,
     issues: &mut Vec<ValidationIssue>,
 ) {
-    walk_external_bindings(v, |terminology_id, key, target| {
-        if resolver.code_exists(terminology_id, target) == Some(false) {
+    let term = v.terminology;
+    let level = v.specialisation_level();
+
+    // Union of all defined codes across languages (a code defined in any
+    // language counts as defined for the definedness checks).
+    let defined: BTreeSet<&str> = term
+        .term_definitions
+        .values()
+        .flat_map(|m| m.keys().map(String::as_str))
+        .collect();
+
+    // Re-scan the definition for referenced codes (usage + assumed values).
+    let mut usage = CodeUsage::default();
+    let root = CObject::CComplexObject(v.definition.clone());
+    collect_usage(&root, &mut usage);
+
+    // VATID: the root concept code must be defined in the terminology (master08
+    // §Code Validation; NOTE-flagged, no full vendored text).
+    //
+    // NOTE: the per-node id-code definedness half is a reference-model check —
+    // whether an interior node id-code must be defined depends on the RM
+    // multiplicity of its owning attribute (master07 §Overview: "for nodes that
+    // are children of single-valued attribute, a term definition is optional");
+    // it runs in [`super::rm`]. Phase-1 checks only the always-local root
+    // concept code.
+    let root_id = complex_node_id(v.definition);
+    if !root_id.is_empty()
+        && (is_id_code(root_id) || is_at_code(root_id))
+        && !defined.contains(root_id)
+    {
+        issues.push(ValidationIssue::new(
+            ValidationCode::Vatid,
+            format!("root concept code {root_id:?} is not defined in the terminology"),
+        ));
+    }
+
+    // VATDF (ADL 1.4, node-id half): in ADL 1.4 EVERY at-code used as a node
+    // identifier in the definition must be defined in the ontology's
+    // term_definitions (ADL1.4 master08 §Validity Rules VATDF; AOM1.4
+    // `ARCHETYPE.node_ids_valid`). ADL2 defers the interior-node-id definedness
+    // to the RM phase (the master07 single-valued-attribute optionality above),
+    // but the 1.4 formalism has no such optionality for a code that IS present —
+    // "each archetype term used as a node identifier … must be defined". The
+    // 1.4 phase-1 subset runs phase 1 only, so this closes VATDF's interior half
+    // for a 1.4 upload (`used ⇒ defined`; a non-specialised 1.4 archetype is its
+    // own flat form).
+    if dialect == Dialect::Adl14 && !v.is_specialised() {
+        for code in &usage.node_codes {
+            if is_at_code(code) && !defined.contains(code.as_str()) {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vatdf,
+                    format!("node identifier code {code:?} is not defined in the terminology"),
+                ));
+            }
+        }
+    }
+
+    // VATDF: at-codes used in term constraints defined in the terminology of the
+    // flattened form (master03 §Validity Rules). For a specialised archetype the
+    // flat form is not available here, so this runs only when the archetype
+    // is its own flat form (non-specialised); the specialised flat-form half runs
+    // in [`super::flat`].
+    // VACDF: ac-codes defined in the current archetype (master03 — "current",
+    // not flattened; runs for all). VATCD: code level <= archetype level.
+    let flat_self = !v.is_specialised();
+    for code in &usage.value_codes {
+        if is_at_code(code) {
+            if flat_self && !defined.contains(code.as_str()) {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vatdf,
+                    format!("value code {code:?} is not defined in the terminology"),
+                ));
+            }
+        } else if is_ac_code(code) && !defined.contains(code.as_str()) {
             issues.push(ValidationIssue::new(
-                ValidationCode::Vetdf,
+                ValidationCode::Vacdf,
+                format!("constraint code {code:?} is not defined in the terminology"),
+            ));
+        }
+        // VATCD: at/id codes at a level greater than the archetype level.
+        if !is_ac_code(code)
+            && let Some(d) = codes::specialisation_depth(code)
+            && d > level
+        {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vatcd,
+                format!("code {code:?} has specialisation level {d} > archetype level {level}"),
+            ));
+        }
+    }
+
+    // VATDA: an assumed value at-code must be a member of the referenced value
+    // set (master03 §Validity Rules).
+    for (path, ac, assumed) in &usage.assumed_refs {
+        let members = term
+            .value_sets
+            .as_ref()
+            .and_then(|vs| vs.get(ac))
+            .is_some_and(|vs| vs.members.iter().any(|m| m == assumed));
+        if !members {
+            issues.push(
+                ValidationIssue::new(
+                    ValidationCode::Vatda,
+                    format!("assumed value {assumed:?} is not a member of value set {ac:?}"),
+                )
+                .at_path(path.clone()),
+            );
+        }
+    }
+
+    // VTSD: every defined term/constraint code is at the archetype's
+    // specialisation level (differential) or the same-or-less (flat)
+    // (master07 §Validity Rules). ac-codes are a flat code space (master07
+    // §Specialisation Depth) so only an over-level ac-code is invalid, never the
+    // strict differential-equality test.
+    for code in &defined {
+        if let Some(d) = codes::specialisation_depth(code) {
+            // A 1.4 specialised archetype is a FLAT artefact (its ontology
+            // legitimately carries inherited codes at lower levels alongside
+            // the level-N additions), even though the 1.4-shaped model is
+            // marked `is_differential` for the converter's re-differentiation
+            // pass. So the 1.4 dialect always uses the flat-form rule
+            // (`d <= level`), never the differential `d == level`
+            // (AOM1.4 master07 §Specialisation Depth).
+            let differential = v.is_differential && dialect == Dialect::Adl2;
+            let bad = if is_ac_code(code) {
+                d > level
+            } else if differential {
+                d != level
+            } else {
+                d > level
+            };
+            if bad {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vtsd,
+                    format!("terminology code {code:?} specialisation level {d} is invalid for archetype level {level}"),
+                ));
+            }
+        }
+    }
+
+    // VATCV (defined-code form): every defined code must be a valid code form
+    // (master08 §Code Validation). Value-code form on definition-referenced
+    // codes is covered in the walk.
+    for code in &defined {
+        if !is_valid_code(code) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vatcv,
+                format!("terminology code {code:?} is not a valid code form"),
+            ));
+        }
+    }
+
+    // VTLC: every code defined in one language must be defined in all languages
+    // (master07 §Validity Rules).
+    check_language_coverage(term, issues);
+
+    // VOTM: every language declared in description/translations must have
+    // term_definitions (master03 §Validity Rules).
+    for l in languages(v) {
+        if !term.term_definitions.contains_key(&l) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Votm,
+                format!("language {l:?} has no term_definitions"),
+            ));
+        }
+    }
+
+    // VTVSID / VTVSMD / VTVSUQ: value-set integrity (master07 §Validity Rules).
+    check_value_sets(term, &defined, !v.is_specialised(), issues);
+
+    // VTTBK / VTCBK: term/constraint binding key validity (master07 §Validity
+    // Rules).
+    check_bindings(v, &defined, issues);
+
+    // WOUC: a defined at/ac code that is never used in the definition (archie
+    // parity; no openEHR spec governs this — our own design/extension).
+    // Suppressed in the 1.4 dialect: 1.4 value codes are carried inside the
+    // verbatim terminology-constraint strings (not recognised as ADL2 code
+    // usage), so the "unused" heuristic is unreliable on a 1.4-shaped model and
+    // would flag legitimately-used codes.
+    if dialect == Dialect::Adl2 {
+        let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
+        used_all.extend(usage.node_codes.iter().map(String::as_str));
+        // value-set membership also counts as "use" of a member at-code.
+        if let Some(vs) = term.value_sets.as_ref() {
+            for set in vs.values() {
+                used_all.insert(set.id.as_str());
+                for m in &set.members {
+                    used_all.insert(m.as_str());
+                }
+            }
+        }
+        for code in &defined {
+            // The root concept code and id-code node ids are structural, not
+            // "unused" terms; WOUC targets value at-codes and ac-codes.
+            if (is_at_code(code) || is_ac_code(code))
+                && *code != complex_node_id(v.definition)
+                && !used_all.contains(code)
+            {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Wouc,
+                    format!("terminology code {code:?} is defined but unused in the definition"),
+                ));
+            }
+        }
+    }
+}
+
+fn check_language_coverage(
+    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let langs: Vec<&String> = term.term_definitions.keys().collect();
+    if langs.len() < 2 {
+        return;
+    }
+    let all_codes: BTreeSet<&str> = term
+        .term_definitions
+        .values()
+        .flat_map(|m| m.keys().map(String::as_str))
+        .collect();
+    for (lang, codes) in &term.term_definitions {
+        for code in &all_codes {
+            if !codes.contains_key(*code) {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vtlc,
+                    format!("code {code:?} is missing in language {lang:?}"),
+                ));
+            }
+        }
+    }
+}
+
+fn check_value_sets(
+    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    defined: &BTreeSet<&str>,
+    flat_self: bool,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let Some(vs) = term.value_sets.as_ref() else {
+        return;
+    };
+    for set in vs.values() {
+        // VTVSID: the value-set id must be defined in the terminology of the
+        // current archetype (master07 — "current", runs for all).
+        if !defined.contains(set.id.as_str()) {
+            issues.push(ValidationIssue::new(
+                ValidationCode::Vtvsid,
                 format!(
-                    "external term {target:?} bound to {key:?} does not exist in terminology \
-                     {terminology_id:?}"
+                    "value set id {:?} is not defined in the terminology",
+                    set.id
                 ),
             ));
         }
-    });
+        // VTVSUQ: members must be unique within the value set.
+        let mut seen = BTreeSet::new();
+        for m in &set.members {
+            if !seen.insert(m.as_str()) {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vtvsuq,
+                    format!("value set {:?} has a duplicate member {m:?}", set.id),
+                ));
+            }
+        }
+        // VTVSMD: members must be defined in the terminology of the *flattened*
+        // form (master07). Runs only when the archetype is its own flat form; the
+        // specialised flat-form half runs in [`super::flat`].
+        if flat_self {
+            for m in &set.members {
+                if !defined.contains(m.as_str()) {
+                    issues.push(ValidationIssue::new(
+                        ValidationCode::Vtvsmd,
+                        format!(
+                            "value set {:?} member {m:?} is not defined in the terminology",
+                            set.id
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+}
+
+// ── code-usage collector (second pass for the terminology checks) ──────────
+
+#[derive(Default)]
+pub(super) struct CodeUsage {
+    pub(super) value_codes: BTreeSet<String>,
+    pub(super) node_codes: BTreeSet<String>,
+    pub(super) assumed_refs: Vec<(String, String, String)>,
+}
+
+pub(super) fn collect_usage(obj: &CObject, usage: &mut CodeUsage) {
+    collect_usage_at(obj, "", usage);
+}
+
+fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
+    let nid = object_node_id(obj);
+    if !nid.is_empty() && (is_id_code(nid) || is_at_code(nid)) && !aom_type(obj).is_primitive() {
+        usage.node_codes.insert(nid.to_owned());
+    }
+    match obj {
+        CObject::CComplexObject(cco) => {
+            for attr in complex_attributes(cco) {
+                let apath = format!("{path}/{}", attr.rm_attribute_name);
+                for child in &attr.children {
+                    let cpath = child_path(&apath, object_node_id(child));
+                    collect_usage_at(child, &cpath, usage);
+                }
+            }
+            // Second-order tuples (e.g. ordinals) carry primitive constraints
+            // outside the normal attribute tree (master04.4); collect their
+            // terminology-code values too.
+            for tuple in complex_attribute_tuples(cco) {
+                for prim_tuple in &tuple.tuples {
+                    for member in &prim_tuple.members {
+                        if let CPrimitiveObject::CTerminologyCode(tc) = member {
+                            usage.value_codes.extend(constraint_codes(&tc.constraint));
+                        }
+                    }
+                }
+            }
+        }
+        CObject::CTerminologyCode(tc) => {
+            let codes = constraint_codes(&tc.constraint);
+            if let Some(a) = tc.assumed_value.as_ref()
+                && let Some(ac) = codes.iter().find(|c| is_ac_code(c))
+            {
+                usage
+                    .assumed_refs
+                    .push((path.to_owned(), ac.clone(), a.code_string.clone()));
+            }
+            usage.value_codes.extend(codes);
+        }
+        _ => {}
+    }
+}
+
+/// The ARCHETYPE-LOCAL codes a `C_TERMINOLOGY_CODE.constraint` string names.
+///
+/// Two spellings reach this function, because the constraint string is the
+/// verbatim carrier for both dialects:
+///
+/// - **ADL 2** — a single `at`/`ac` code, optionally suffixed with an operational
+///   binding `@terminology` (`ADL2/master08-terminology_integration.adoc`).
+/// - **ADL 1.4** — the qualified/listed custom-syntax form
+///   `terminology::code[,code]*[;assumed]` of
+///   `ADL1.4/master09-customising_adl.adoc` §Custom Syntax, which the 1.4 dialect
+///   preserves verbatim. This is the DOMINANT 1.4 spelling of a coded value set,
+///   so without decomposing it here the definedness rules never see its codes.
+///
+/// Only `local::` codes are archetype terms: VATDF/VACDF
+/// (`ADL1.4/master08-adl.adoc` §Validity Rules) judge definedness against the
+/// archetype's OWN `term_definitions`/`constraint_definitions`, and a code of an
+/// external terminology (`[openehr::127]`, `[ISO_639-1::en]`) is not an archetype
+/// term — its resolution is a terminology-service question (VETDF), not this one.
+/// The ADL 1.4 assumed code (after `;`) IS an archetype term and is included.
+fn constraint_codes(constraint: &str) -> Vec<String> {
+    // Drop any ADL2 operational-binding suffix first.
+    let body = constraint.split('@').next().unwrap_or(constraint).trim();
+    let Some((terminology, rest)) = body.split_once("::") else {
+        // ADL2 form: the constraint IS the code.
+        return if body.is_empty() {
+            Vec::new()
+        } else {
+            vec![body.to_owned()]
+        };
+    };
+    if terminology.trim() != LOCAL_TERMINOLOGY_ID {
+        return Vec::new();
+    }
+    // `code[,code]*[;assumed]`
+    let (codes, assumed) = match rest.split_once(';') {
+        Some((codes, assumed)) => (codes, Some(assumed)),
+        None => (rest, None),
+    };
+    codes
+        .split(',')
+        .chain(assumed)
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+#[cfg(test)]
+mod constraint_code_tests {
+    use super::constraint_codes;
+
+    /// The ADL2 spelling: the constraint IS the code, with any operational
+    /// binding suffix (`ADL2/master08-terminology_integration.adoc`) stripped.
+    #[test]
+    fn adl2_single_code_and_binding_suffix() {
+        assert_eq!(constraint_codes("at1"), vec!["at1".to_owned()]);
+        assert_eq!(constraint_codes("ac1@snomed"), vec!["ac1".to_owned()]);
+        assert!(constraint_codes("").is_empty());
+    }
+
+    /// The ADL 1.4 spelling (`ADL1.4/master09-customising_adl.adoc` §Custom
+    /// Syntax) decomposes into its listed codes plus the assumed code — all of
+    /// them archetype terms VATDF must see.
+    #[test]
+    fn adl14_listed_codes_and_assumed_code() {
+        assert_eq!(
+            constraint_codes("local::at0136,at0137"),
+            vec!["at0136".to_owned(), "at0137".to_owned()]
+        );
+        assert_eq!(
+            constraint_codes("local::at0136,at0137;at0136"),
+            vec![
+                "at0136".to_owned(),
+                "at0137".to_owned(),
+                "at0136".to_owned()
+            ]
+        );
+        assert_eq!(constraint_codes("local::ac0001"), vec!["ac0001".to_owned()]);
+    }
+
+    /// Codes of an EXTERNAL terminology are not archetype terms, so VATDF/VACDF
+    /// definedness (`ADL1.4/master08-adl.adoc` §Validity Rules, judged against the
+    /// archetype's own terminology) does not apply to them.
+    #[test]
+    fn external_terminology_codes_are_not_archetype_terms() {
+        assert!(constraint_codes("openehr::127").is_empty());
+        assert!(constraint_codes("openehr::253,271,273").is_empty());
+        assert!(constraint_codes("ISO_639-1::en").is_empty());
+    }
 }

@@ -20,7 +20,8 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::validate::{Severity, validate_source_phase1};
+use openehr_adl::validate::catalogue::Severity;
+use openehr_adl::validate::validate_source_phase1;
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 

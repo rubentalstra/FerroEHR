@@ -18,11 +18,12 @@
 use std::sync::Mutex;
 
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::validate::rm::ProductionRmModel;
-use openehr_adl::validate::terminology::{
+use openehr_adl::validate::bindings::{
     NoTerminologyResolver, TerminologyResolver, external_term_bindings,
 };
-use openehr_adl::validate::{ValidationCode, validate_source};
+use openehr_adl::validate::catalogue::ValidationCode;
+use openehr_adl::validate::rm::ProductionRmModel;
+use openehr_adl::validate::validate_source;
 
 /// The external terminology id + target the fixture binds its root node to.
 const SNOMED_ID: &str = "SNOMED-CT";

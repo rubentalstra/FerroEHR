@@ -31,12 +31,13 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::aom::interval::Bounds;
 use openehr_adl::assemble::parse_artefact;
+use openehr_adl::validate::bindings::NoTerminologyResolver;
+use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::{
     EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
     production_model_governs, validate_phase2_rm,
 };
-use openehr_adl::validate::terminology::NoTerminologyResolver;
-use openehr_adl::validate::{Severity, ValidationIssue, validate_source};
+use openehr_adl::validate::{ValidationIssue, validate_source};
 use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
