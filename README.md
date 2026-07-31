@@ -404,10 +404,9 @@ project. The openEHR specifications and the machine-readable models this
 project generates from are published by the
 [openEHR Foundation](https://www.openehr.org/).
 
-openEHR® is the registered trademark of the openEHR Foundation and is used
-with the permission of openEHR International. FerroEHR is an independent
-implementation of the openEHR® specifications and is not endorsed by the
-openEHR Foundation.
+openEHR® is the registered trademark of the openEHR Foundation. FerroEHR is
+an independent implementation of the openEHR® specifications and is not
+endorsed by the openEHR Foundation.
 
 The admin console's feature set — the Template Manager, the point-and-click
 Query Builder, and saved/grouped/cohort queries — is inspired by
