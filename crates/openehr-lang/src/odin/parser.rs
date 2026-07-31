@@ -231,19 +231,7 @@ fn attr_vals<'a>(
 fn keyed_objects<'a>(
     block: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
-    // NOTE: the five key types are App.B's `odin.g4` `key_id : string_value |
-    // integer_value | date_value | time_value | date_time_value` — the
-    // appendix includes the grammar as its normative text. §Container Objects
-    // prose says more broadly "any primitive comparable value is allowed as
-    // the key"; the syntax appendix is the specific syntax authority, so the
-    // five-type set stands and the tension is recorded here (#1376).
-    let key_id = select! {
-        Token::String(s) => OdinKey::String(decode_string(&s)),
-        Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
-        Token::Iso8601Date(s) => OdinKey::Date(s),
-        Token::Iso8601Time(s) => OdinKey::Time(s),
-        Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
-    };
+    let key_id = key_id();
     // Sibling keys must be unique — rule *VDOBU*
     // (`LANG/docs/odin/master05-content` §Container Objects: "object
     // identifier uniqueness: sibling objects occurring within a container
@@ -278,6 +266,24 @@ fn keyed_objects<'a>(
         })
 }
 
+/// `'[' key_id ']'`'s inner key (`odin.g4 key_id`).
+///
+/// NOTE: the five key types are App.B's `odin.g4` `key_id : string_value |
+/// integer_value | date_value | time_value | date_time_value` — the appendix
+/// includes the grammar as its normative text. §Container Objects prose says
+/// more broadly "any primitive comparable value is allowed as the key"; the
+/// syntax appendix is the specific syntax authority, so the five-type set
+/// stands and the tension is recorded here (#1376).
+fn key_id<'a>() -> impl Parser<'a, &'a [Token], OdinKey, Err<'a>> + Clone {
+    select! {
+        Token::String(s) => OdinKey::String(decode_string(&s)),
+        Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
+        Token::Iso8601Date(s) => OdinKey::Date(s),
+        Token::Iso8601Time(s) => OdinKey::Time(s),
+        Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
+    }
+}
+
 /// `object_block : object_value_block | object_reference_block` (+ the
 /// `EMBEDDED_URI` and typed-cast forms).
 fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
@@ -285,7 +291,23 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
         let keyed_list = keyed_objects(block.clone());
 
         // object_reference_block : odin_path ( (',' odin_path)+ | '...' )?
-        let path = select! { Token::AdlPath(s) => s }.or(just(Token::SymSlash).to("/".to_owned()));
+        //
+        // A reference path may be rooted at an object identifier —
+        // `<["tourism_db_13"]/hotels["sofitel"]>` — for references across the
+        // identified objects of one document
+        // (`LANG/docs/odin/master06-references` §Across Objects; the vendored
+        // `odin.g4` `odin_path` lacks the form, and the docs text wins). The
+        // key is reconstructed verbatim into the path text.
+        let bare_path =
+            select! { Token::AdlPath(s) => s }.or(just(Token::SymSlash).to("/".to_owned()));
+        let path = key_id()
+            .delimited_by(just(Token::LBracket), just(Token::RBracket))
+            .or_not()
+            .then(bare_path)
+            .map(|(root, p)| match root {
+                Some(key) => format!("[{}]{p}", key.path_text()),
+                None => p,
+            });
         let ref_list = path
             .clone()
             .then(
@@ -324,8 +346,8 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
 
         let inner = choice((
             void,
-            ref_list,
             keyed_list,
+            ref_list,
             attr_vals(block.clone()),
             primitive_object(),
         ));

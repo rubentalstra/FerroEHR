@@ -24,6 +24,10 @@ workflow refuses a tag that has no matching section here.
   `odin::parse_document`; the anonymous and implicit forms were already
   supported.
 
+- **ODIN cross-object references parse.** Reference paths rooted at an
+  object identifier (`<["tourism_db_13"]/hotels["sofitel"]>`,
+  `master06-references` §Across Objects) are accepted alongside the
+  existing within-object reference forms.
 - **ODIN path extraction.** `OdinValue::paths()` extracts the
   `master05-content` tree-path set (attribute paths, `attr[key]` container
   paths, nested bare-key segments) from any parsed ODIN structure.

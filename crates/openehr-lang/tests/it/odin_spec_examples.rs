@@ -431,3 +431,87 @@ fn ch5_adding_type_information_example() {
         .unwrap_or_else(|e| panic!("the fully-typed variant should parse: {e}"));
     assert!(matches!(typed, OdinValue::Object(_)));
 }
+
+/// The `master06-references` §Within An Object example — associations as
+/// fully-qualified reference paths (`</hotels["sofitel"]>`), shared objects
+/// under a sibling top-level attribute.
+#[test]
+fn ch6_within_object_references_example() {
+    let src = r#"destinations = <
+    ["seville"] = <
+        hotels = <
+            ["gran sevilla"] = </hotels["gran sevilla"]>
+            ["sofitel"] = </hotels["sofitel"]>
+            ["hotel real"] = </hotels["hotel real"]>
+        >
+    >
+>
+
+bookings = <
+    ["seville:0134"] = <
+        customer_id = <"0134">
+        period = <...>
+        hotel = </hotels["sofitel"]>
+    >
+>
+
+hotels = <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+    ["sofitel"] = (LUXURY_HOTEL) <...>
+    ["hotel real"] = (PENSION) <...>
+>"#;
+    let parsed = parse(src).unwrap_or_else(|e| panic!("the §Within example should parse: {e}"));
+    let OdinValue::Object(top) = &parsed else {
+        panic!("expected a top-level object");
+    };
+    assert_eq!(top.len(), 3);
+    // the booking's hotel association is a single-path reference block.
+    let paths = parsed.paths();
+    assert!(paths.contains(&"/bookings[\"seville:0134\"]/hotel".to_owned()));
+}
+
+/// The `master06-references` §Across Objects example — an Identified Object
+/// Document whose reference paths are rooted at object identifiers
+/// (`<["tourism_db_13"]/hotels["sofitel"]>`; #1380).
+#[test]
+fn ch6_across_objects_references_example() {
+    let src = r#"["travel_db_0293822"] = <
+    destinations = <
+        ["seville"] = <
+            hotels = <
+                ["gran sevilla"] = <["tourism_db_13"]/hotels["gran sevilla"]>
+                ["sofitel"] = <["tourism_db_13"]/hotels["sofitel"]>
+                ["hotel real"] = <["tourism_db_13"]/hotels["hotel real"]>
+            >
+        >
+    >
+
+    bookings = <
+        ["seville:0134"] = <
+            customer_id = <"0134">
+            period = <...>
+            hotel = <["tourism_db_13"]/hotels["sofitel"]>
+        >
+    >
+>
+
+["tourism_db_13"] = <
+    hotels = <
+        ["gran sevilla"] = (HISTORIC_HOTEL) <...>
+        ["sofitel"] = (LUXURY_HOTEL) <...>
+        ["hotel real"] = (PENSION) <...>
+    >
+>"#;
+    let parsed = parse(src).unwrap_or_else(|e| panic!("the §Across example should parse: {e}"));
+    let OdinValue::KeyedList(entries) = &parsed else {
+        panic!("expected a top-level identified document");
+    };
+    assert_eq!(entries.len(), 2);
+
+    // the association carries the key-rooted path verbatim.
+    let flat = format!("{parsed:?}");
+    assert!(
+        flat.contains(r#"[\"tourism_db_13\"]/hotels[\"sofitel\"]"#),
+        "key-rooted reference path missing: {flat}"
+    );
+}
