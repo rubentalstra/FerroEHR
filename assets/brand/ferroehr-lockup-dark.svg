@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="56" viewBox="0 0 300 56" role="img" aria-label="FerroEHR">
+  <!-- FerroEHR lockup for DARK backgrounds: rust tile + porcelain/ember wordmark. -->
+  <rect x="2" y="4" width="48" height="48" rx="10" fill="#B7431B"/>
+  <text x="24.5" y="37.5" font-family="'Avenir Next',Avenir,Futura,'Helvetica Neue',Arial,sans-serif" font-size="24" font-weight="600" fill="#FFF6F0" text-anchor="middle">Fe</text>
+  <polyline points="10,14 14,14 16.4,9.4 18.8,17.4 21.2,12.6 23,14 28,14" fill="none" stroke="#FFD9C2" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="62" y="39" font-family="'Avenir Next',Avenir,Futura,'Helvetica Neue',Arial,sans-serif" font-size="28" font-weight="600" fill="#F2F1EF">Ferro<tspan fill="#D97742" font-weight="700">EHR</tspan></text>
+</svg>

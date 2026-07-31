@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FerroEHR icon, monochrome">
+  <!-- FerroEHR monochrome icon: single-colour via currentColor for stamps,
+       terminal badges, embossing, and anywhere colour is unavailable. -->
+  <rect x="3.5" y="3.5" width="57" height="57" rx="11" fill="none" stroke="currentColor" stroke-width="3"/>
+  <text x="30" y="44" font-family="'Avenir Next',Avenir,Futura,'Helvetica Neue',Arial,sans-serif" font-size="30" font-weight="600" fill="currentColor" text-anchor="middle">Fe</text>
+  <polyline points="12,15 17,15 20,9 23,19 26,13 29,15 36,15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
