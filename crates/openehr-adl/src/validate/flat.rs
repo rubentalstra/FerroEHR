@@ -38,7 +38,9 @@
 //!   only decidable on the flat form.
 //! * **VCOSU** — object node ids must be unique archetype-wide in the flat form
 //!   (`master04.5` §`C_OBJECT`); a differential legitimately re-references an
-//!   inherited id at a redefinition, so uniqueness is a flat-form property.
+//!   inherited id at a redefinition, so uniqueness is a flat-form property —
+//!   judged per node IDENTITY, since flattening clones a redefined node's whole
+//!   subtree (see `check_node_id_unique`).
 //!
 //! [`super::run_phase3`] runs that second group only for a specialised archetype
 //! whose flat form was produced, so no check double-fires.
@@ -57,7 +59,7 @@ use super::{ValidationIssue, push_issue};
 use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object_node_id};
 use crate::aom::interval::finite_upper;
 use crate::artefact::view;
-use crate::codes::{is_at_code, is_id_code};
+use crate::codes::{is_at_code, is_id_code, is_redefined_code, specialisation_parent_from_code};
 use crate::paths::{Resolution, child_path, locate, parse_path, resolve};
 
 // ── phase 3 proper: the flat-form proxy + cardinality walk ────────────────
@@ -334,7 +336,22 @@ fn walk_flat(
 }
 
 /// VCOSU: an identified (non-primitive) object node's id must be unique across
-/// the flat form.
+/// the flat form — judged per NODE IDENTITY, not per materialisation.
+///
+/// NOTE: raw id counting is unsound on a flat form. `master08-validation.adoc`
+/// §Flattening: "overlays with cloning: where more than one child
+/// specialisation node exists for a single parent complex structure, the parent
+/// structure will be cloned before each overlay" — so redefining one parent node
+/// into several specialised children duplicates that node's whole subtree, ids
+/// included, and `ADL2/master09.05-spec_object_redef.adoc` §Flattening adds that
+/// under cloning "the original parent node survives in its original form in the
+/// child archetype". Every such duplicate is the SAME node identity
+/// materialised more than once, which is why `master08` §Phase 3 lists only
+/// VUNP and VACMCO for the flat form. Two occurrences are therefore compared on
+/// their SPECIALISATION-ROOT paths (every redefined code reduced to the code it
+/// specialises): equal root paths mean clones of one node and are legal;
+/// different root paths are two distinct nodes wearing one id — the VCOSU
+/// violation.
 fn check_node_id_unique(
     obj: &CObject,
     path: &str,
@@ -348,16 +365,62 @@ fn check_node_id_unique(
     if aom_type(obj).is_primitive() {
         return;
     }
-    if let Some(first) = seen.get(nid) {
-        push_issue(
+    let identity = specialisation_root_path(path);
+    match seen.get(nid) {
+        Some(first) if *first != identity => push_issue(
             issues,
             ValidationCode::Vcosu,
             format!("node id {nid:?} is not unique in the flat form (also at {first})"),
             path,
-        );
-    } else {
-        seen.insert(nid.to_owned(), path.to_owned());
+        ),
+        Some(_) => {}
+        None => {
+            seen.insert(nid.to_owned(), identity);
+        }
     }
+}
+
+/// A path with every REDEFINED node code reduced to the level-0 code it
+/// specialises (`[id4.1]` → `[id4]`, `[id4.1.2]` → `[id4]`), so two clones of
+/// one parent node share a path and two distinct nodes do not.
+///
+/// A code that is NEW at its level (`[id0.32]`) specialises nothing —
+/// [`crate::codes::is_redefined_code`] is false for it — so it is left alone and
+/// two independently-added nodes never collapse onto each other.
+fn specialisation_root_path(path: &str) -> String {
+    let mut out = String::with_capacity(path.len());
+    let mut rest = path;
+    while let Some(open) = rest.find('[') {
+        let Some(head) = rest.get(..=open) else { break };
+        out.push_str(head);
+        let Some(after) = rest.get(open + 1..) else {
+            break;
+        };
+        let Some(close) = after.find(']') else {
+            out.push_str(after);
+            return out;
+        };
+        let Some(code) = after.get(..close) else {
+            break;
+        };
+        out.push_str(&specialisation_root_code(code));
+        out.push(']');
+        rest = after.get(close + 1..).unwrap_or_default();
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The level-0 code a redefined code specialises; the code itself otherwise.
+fn specialisation_root_code(code: &str) -> String {
+    let mut current = code.to_owned();
+    while is_redefined_code(&current) {
+        let Some(parent) = specialisation_parent_from_code(&current) else {
+            break;
+        };
+        current = parent;
+    }
+    current
 }
 
 /// VACMCU (error) + WACMCL (warning): container cardinality upper vs child
@@ -670,7 +733,7 @@ terminology
 
 #[cfg(test)]
 mod flat_form_tests {
-    use super::validate_flat_form;
+    use super::{specialisation_root_path, validate_flat_form};
     use crate::assemble::parse_artefact;
     use crate::validate::ValidationCode;
 
@@ -752,6 +815,31 @@ terminology
 \t>
 ";
         assert!(codes(src).contains(&ValidationCode::Vcosu));
+    }
+
+    /// Cloning is what makes raw id counting unsound, so the identity a VCOSU
+    /// occurrence is keyed on collapses redefined codes but not new-at-level
+    /// ones (`master08` §Flattening; `ADL2/master09.05` §Flattening).
+    #[test]
+    fn the_vcosu_identity_path_collapses_clones_but_not_added_nodes() {
+        assert_eq!(
+            specialisation_root_path("/data/events[id3]/data/items[id4.1]/value[id11]"),
+            "/data/events[id3]/data/items[id4]/value[id11]"
+        );
+        assert_eq!(
+            specialisation_root_path("/items[id4.1.2]/value[id11]"),
+            "/items[id4]/value[id11]"
+        );
+        // A node ADDED at level 1 specialises nothing, so it keeps its code and
+        // two added siblings stay distinct identities.
+        assert_eq!(
+            specialisation_root_path("/items[id0.1]/value[id5]"),
+            "/items[id0.1]/value[id5]"
+        );
+        assert_ne!(
+            specialisation_root_path("/items[id0.1]/value[id5]"),
+            specialisation_root_path("/items[id0.2]/value[id5]")
+        );
     }
 
     #[test]

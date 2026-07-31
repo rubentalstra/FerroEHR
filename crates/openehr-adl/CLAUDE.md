@@ -93,9 +93,10 @@ else; each helper has exactly ONE home.
   with a typed decode error) — which the cADL parser, the ODIN lexer and the
   BEL lexer all read through; the cADL side reports a decode defect as `SUNK`
   at the literal's span, the two `openehr-lang` lexers refuse it at the lex.
-  Still carrying a `// TODO:`: the driver asymmetry between the source-level
-  and assembled-archetype validation entries — the former omits `run_phase3`
-  (`validate/mod`, #1341).
+  The two full-pipeline entries run the SAME phase schedule: `validate` and
+  `validate_source` both drive phase 1 → phase-2 RM → phase-2 specialisation →
+  phase 3, and neither may omit a phase (there is no partial-validation
+  profile in AOM2).
 - **`validate/` is grouped by TOPIC, never by phase number.** A new rule goes
   in the topic module that owns its subject, and its driver call keeps the
   existing order — issue emission order is behaviour.

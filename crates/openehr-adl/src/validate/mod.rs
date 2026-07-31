@@ -37,7 +37,9 @@
 //!
 //! Phase orchestration follows `master08` "multi-pass … more basic kinds of
 //! errors being checked first": phase 2 runs only after phase 1 passes, which
-//! [`validate`] / [`validate_source`] apply (`master08` §Overview). Parent-
+//! [`validate`] / [`validate_source`] apply (`master08` §Overview). Those two
+//! full-pipeline entries run the SAME phase set — a source-level entry may not
+//! omit a phase, since AOM2 defines no partial-validation profile. Parent-
 //! dependent checks (VACSD's depth comparison, VASID, VALC, VTPL) take an
 //! optional [`ArchetypeRepository`]; when a parent is not supplied they degrade
 //! to the standalone half they can compute (or are skipped).
@@ -348,14 +350,16 @@ pub fn validate_source_adl14(
     Ok(issues)
 }
 
-/// Validate an assembled [`Archetype`] against phase 1 and — only if phase 1
-/// raised no [`Severity::Error`] — the phase-2
-/// reference-model checks against `rm`.
+/// Validate an assembled [`Archetype`] against the full phase schedule: phase
+/// 1, then — only if phase 1 raised no [`Severity::Error`] — the phase-2
+/// reference-model checks against `rm`, the phase-2 specialisation checks, and
+/// the phase-3 flat-form checks.
 ///
-/// This is the `master08` §Overview phase gate ("more basic kinds of errors
-/// being checked first"): the RM pass runs on a structurally-sound archetype
-/// only. Source-level phase-1 checks (VOKU) are not included — use
-/// [`validate_source`] for those.
+/// The gating is the `master08` §Overview phase gate ("more basic kinds of
+/// errors being checked first"): each later pass runs on a structurally-sound
+/// archetype only. [`validate_source`] runs this same schedule from source
+/// text, plus the source-level phase-1 checks (VOKU) that need the raw ODIN and
+/// are not available here.
 ///
 /// `resolver` verifies external term bindings (VETDF); pass
 /// [`bindings::NoTerminologyResolver`] when no terminology service is
@@ -451,9 +455,27 @@ fn run_phase3(
     }
 }
 
-/// Parse and validate ADL2 `src` against phase 1 (including the source-level
-/// checks) and — only if phase 1 is error-free — the phase-2 reference-model
-/// checks against `rm` (`master08` §Overview phase gate).
+/// Parse and validate ADL2 `src` against the SAME phase schedule as
+/// [`validate`], with the source-level phase-1 checks added: phase 1, then —
+/// only if phase 1 is error-free — the phase-2 reference-model checks against
+/// `rm` (`master08` §Overview phase gate), the phase-2 specialisation checks,
+/// and the phase-3 flat-form checks.
+///
+/// NOTE: this entry runs phase 3 even for a top-level archetype. The V-codes
+/// are unconditional — `master03-archetype_package.adoc` §Validity Rules opens
+/// "apply to all varieties of ARCHETYPE object", and VUNP/VACMCO
+/// (`master04.5-constraint_model-class_definitions.adoc` §Validity Rules) carry
+/// no phase or specialisation precondition — while `master08`'s three-phase
+/// sequence describes itself as "a guide … based on the ADL workbench reference
+/// compiler". AOM2 defines no partial-validation profile, so there is exactly
+/// one notion of validity and a source-level entry may not omit a phase. Phase
+/// 3 is always evaluable: `ADL2/master09.02-spec_concepts.adoc` §Differential
+/// and Flat Forms — "For a top-level archetype, the flat-form is the same as
+/// its differential form" — and VACMCO is unsound on differential source
+/// anyway, because `ADL2/master09.04-spec_attrib_redef.adoc` requires the
+/// cardinality/occurrences relation over "all the contained items (including
+/// those inherited unchanged, and therefore not mentioned in the specialised
+/// archetype)".
 ///
 /// `resolver` verifies external term bindings (VETDF); pass
 /// [`bindings::NoTerminologyResolver`] when no terminology service is
@@ -483,10 +505,7 @@ pub fn validate_source(
         issues.extend(rm::validate_phase2_rm(&archetype, rm));
     }
     run_phase2_spec(&archetype, repo, rm, &mut issues);
-    // TODO: run the phase-3 flat-form checks here too — this source-level entry
-    // omits `run_phase3`, which the assembled-archetype entry `validate` runs,
-    // so VUNP/VACMCO (and the deferred flat-form halves) are not raised on the
-    // parse-and-validate path; tracked as issue #1341.
+    run_phase3(&archetype, repo, &mut issues);
     bindings::check_external_term_bindings(&view(&archetype), resolver, &mut issues);
     Ok(issues)
 }

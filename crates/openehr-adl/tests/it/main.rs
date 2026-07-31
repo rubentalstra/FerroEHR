@@ -28,6 +28,7 @@ mod legacy14_corpus;
 mod opt_spec;
 mod rules_parse;
 mod templates_corpus;
+mod validate_source_phase3;
 mod validation_adl14;
 mod validation_phase1_cases;
 mod vetdf_terminology;

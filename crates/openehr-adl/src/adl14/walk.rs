@@ -3,7 +3,7 @@
 //! The collectors here feed [`crate::adl14::convert`]'s code planning; the
 //! mutable rewrites that consume their results stay in that module (they need
 //! the converter state), and the multiplicity rewrites live in
-//! [`crate::adl14::multiplicity`]. The one mutable helper here is
+//! `crate::adl14::multiplicity`. The one mutable helper here is
 //! [`cco_data_mut`], the complex-object accessor every stage shares.
 //!
 //! NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` module is
