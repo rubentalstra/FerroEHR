@@ -674,3 +674,31 @@ fn ch7_coded_terms_and_uris() {
         );
     }
 }
+
+/// `master08-path_syntax` §Semantics: the chapter's typical path is exactly
+/// the shape `OdinValue::paths()` emits, and a reference block carries it.
+#[test]
+fn ch8_typical_path_shape() {
+    let parsed = parse(r#"term_definitions = <["en"] = <items = <["at0001"] = <text = <"x">>>>>"#)
+        .unwrap_or_else(|e| panic!("should parse: {e}"));
+    assert!(
+        parsed
+            .paths()
+            .contains(&"/term_definitions[\"en\"]/items[\"at0001\"]/text".to_owned())
+    );
+    // …and the same path is legal as an object reference.
+    assert!(parse(r#"r = </term_definitions["en"]/items["at0001"]/text>"#).is_ok());
+}
+
+/// `master09-plug_in_syntaxes`: plug-in blocks `attr = (syntax) <# … #>` are
+/// NOT supported — the chapter itself waives the obligation ("there is no
+/// guarantee that every ODIN parser will support them"), so the refusal is a
+/// conforming, adjudicated boundary (#859; the optional capability is
+/// tracked as a backlog enhancement). Pinned so the boundary never silently
+/// shifts.
+#[test]
+fn ch9_plug_in_blocks_are_refused() {
+    let err = parse("definition = (cadl) <#\n    ENTRY[at0000]\n#>")
+        .expect_err("plug-in blocks are an unsupported (spec-waived) capability");
+    assert_eq!(err.kind, OdinErrorKind::UnrecognisedToken);
+}
