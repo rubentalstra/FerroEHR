@@ -14,7 +14,7 @@
 # case whose subject is an extension operation must not drive released wire, or
 # the realization it evidences stops being the one it is about). That
 # released-read half is HTTP-tested in-process instead
-# (app/ehrbase-rest/tests/admin_extension_http.rs
+# (app/ferroehr-rest/tests/admin_extension_http.rs
 # `archiving_an_ehr_is_read_neutral_and_idempotent`), and the boundary is
 # recorded on the admin-archive family in vocab/wire_surface.yaml.
 id: I_ADMIN_ARCHIVE.archive_ehrs-archive_twice

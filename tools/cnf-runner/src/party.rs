@@ -588,8 +588,8 @@ mod tests {
     #[test]
     fn statement_round_trips() {
         let json = serde_json::json!({
-            "product": { "name": "EHRbase-rs", "version": "3.5.0",
-                          "vendor": "Ruben Talstra", "identifier": "urn:rubentalstra:ehrbase-rs" },
+            "product": { "name": "FerroEHR", "version": "3.5.0",
+                          "vendor": "Ruben Talstra", "identifier": "urn:rubentalstra:ferroehr" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
             "claims": { "capabilities": ["EhrOperations"], "profiles": ["CORE"] },
@@ -602,13 +602,13 @@ mod tests {
         assert_eq!(s.claims.capabilities.len(), 1);
         let back = serde_json::to_value(&s).unwrap();
         let s2: Statement = serde_json::from_value(back).unwrap();
-        assert_eq!(s2.product.name, "EHRbase-rs");
+        assert_eq!(s2.product.name, "FerroEHR");
     }
 
     #[test]
     fn results_round_trip_and_invariants() {
         let json = serde_json::json!({
-            "sut": { "name": "ehrbase-rs", "version": "3.5.0" },
+            "sut": { "name": "ferroehr", "version": "3.5.0" },
             "runner": { "name": "cnf-runner", "version": "0.1.0",
                          "verification_pack_status": "passed" },
             "schedule_release": "CNF-2.0",

@@ -1,11 +1,11 @@
 # SMART App Launch
 
-EHRbase-rs can act as the **resource server** in a SMART App Launch setup: a
+FerroEHR can act as the **resource server** in a SMART App Launch setup: a
 clinical app is launched with an OAuth2/OIDC token from your authorization
 server (Keycloak or any standards-compliant IdP), and the CDR advertises that
 server's endpoints, understands SMART resource scopes in the token, and binds
 the launch context (the selected patient/EHR) to what the token may touch.
-EHRbase-rs never issues tokens, registers clients, or serves the OAuth2
+FerroEHR never issues tokens, registers clients, or serves the OAuth2
 endpoints itself — those remain your authorization server's job.
 
 Support is **off by default**. A stock server serves no discovery document and
@@ -19,9 +19,9 @@ until you opt in.
 Turn it on and tell the server where your authorization server lives:
 
 ```bash
-export EHRBASE__SMART__ENABLED=true
-export EHRBASE__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT=https://as.example/auth
-export EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT=https://as.example/token
+export FERROEHR__SMART__ENABLED=true
+export FERROEHR__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT=https://as.example/auth
+export FERROEHR__SMART__ENDPOINTS__TOKEN_ENDPOINT=https://as.example/token
 ```
 
 SMART scopes ride only **Bearer** tokens, so pair this with OIDC bearer
@@ -29,32 +29,32 @@ authentication (see [Security & multi-tenancy](security.md#authentication)).
 If SMART is enabled without any bearer mechanism, the server logs a warning at
 boot: it can serve discovery, but the scope gate will never see a scope.
 
-The full key set lives in the `[smart]` section of `ehrbase.toml`; each key
-can be overridden with the shown `EHRBASE__SMART__*` environment variable (`__`
+The full key set lives in the `[smart]` section of `ferroehr.toml`; each key
+can be overridden with the shown `FERROEHR__SMART__*` environment variable (`__`
 separates nested fields):
 
 | Key | Default | Meaning |
 |---|---|---|
-| `EHRBASE__SMART__ENABLED` | `false` | Master switch. Off = no discovery document (404) and an inert scope gate. |
-| `EHRBASE__SMART__PLATFORM_BASE_URL` | unset | Base the discovery document hangs off. Unset = the REST root (`/ehrbase/rest`). A leading path is honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`). |
-| `EHRBASE__SMART__EHR_ID_CLAIM` | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
-| `EHRBASE__SMART__PATIENT_CLAIM` | `patient` | Fallback launch-context claim when the EHR-id claim is absent. |
-| `EHRBASE__SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch — see [Advisory vs required](#advisory-vs-required) below. |
-| `EHRBASE__SMART__EPISODE__ENABLED` | `false` | Advertise + accept episode launch context (experimental; advisory only, no episode filtering). |
-| `EHRBASE__SMART__LAUNCH_BASE64_JSON` | `false` | Advertise the base64-JSON launch-parameter capability (experimental; consumed by the app, not the CDR). |
-| `EHRBASE__SMART__ENDPOINTS__ISSUER` | unset | Advertised token issuer. Unset = falls back to the configured OIDC bearer issuer. |
-| `EHRBASE__SMART__ENDPOINTS__JWKS_URI` | unset | Advertised `jwks_uri`. |
-| `EHRBASE__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | unset | Advertised OAuth2 authorization endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT` | unset | Advertised OAuth2 token endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | unset | Advertised dynamic-client registration endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | unset | Advertised token introspection endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__REVOCATION_ENDPOINT` | unset | Advertised token revocation endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | unset | Advertised user management endpoint. |
-| `EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | `[]` | Advertised client auth methods (e.g. `client_secret_basic`, `private_key_jwt`). |
-| `EHRBASE__SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | `[]` | Advertised grant types. `implicit` and the password grant are deprecated in SMART and **rejected at boot**. |
-| `EHRBASE__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | `[]` | Advertised response types (e.g. `code`). |
-| `EHRBASE__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | `[]` | Advertised PKCE methods (e.g. `S256`). |
-| `EHRBASE__SMART__ENDPOINTS__SCOPES_SUPPORTED` | `[]` | Advertised scopes. Empty = a default list reflecting what the CDR enforces. |
+| `FERROEHR__SMART__ENABLED` | `false` | Master switch. Off = no discovery document (404) and an inert scope gate. |
+| `FERROEHR__SMART__PLATFORM_BASE_URL` | unset | Base the discovery document hangs off. Unset = the REST root (`/ferroehr/rest`). A leading path is honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`). |
+| `FERROEHR__SMART__EHR_ID_CLAIM` | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
+| `FERROEHR__SMART__PATIENT_CLAIM` | `patient` | Fallback launch-context claim when the EHR-id claim is absent. |
+| `FERROEHR__SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch — see [Advisory vs required](#advisory-vs-required) below. |
+| `FERROEHR__SMART__EPISODE__ENABLED` | `false` | Advertise + accept episode launch context (experimental; advisory only, no episode filtering). |
+| `FERROEHR__SMART__LAUNCH_BASE64_JSON` | `false` | Advertise the base64-JSON launch-parameter capability (experimental; consumed by the app, not the CDR). |
+| `FERROEHR__SMART__ENDPOINTS__ISSUER` | unset | Advertised token issuer. Unset = falls back to the configured OIDC bearer issuer. |
+| `FERROEHR__SMART__ENDPOINTS__JWKS_URI` | unset | Advertised `jwks_uri`. |
+| `FERROEHR__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | unset | Advertised OAuth2 authorization endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__TOKEN_ENDPOINT` | unset | Advertised OAuth2 token endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | unset | Advertised dynamic-client registration endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | unset | Advertised token introspection endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__REVOCATION_ENDPOINT` | unset | Advertised token revocation endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | unset | Advertised user management endpoint. |
+| `FERROEHR__SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | `[]` | Advertised client auth methods (e.g. `client_secret_basic`, `private_key_jwt`). |
+| `FERROEHR__SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | `[]` | Advertised grant types. `implicit` and the password grant are deprecated in SMART and **rejected at boot**. |
+| `FERROEHR__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | `[]` | Advertised response types (e.g. `code`). |
+| `FERROEHR__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | `[]` | Advertised PKCE methods (e.g. `S256`). |
+| `FERROEHR__SMART__ENDPOINTS__SCOPES_SUPPORTED` | `[]` | Advertised scopes. Empty = a default list reflecting what the CDR enforces. |
 
 Every unset optional endpoint is simply omitted from the discovery document —
 the server advertises your values verbatim and validates none of them beyond
@@ -66,7 +66,7 @@ When enabled, the server serves the standard SMART configuration document,
 **unauthenticated**, at:
 
 ```text
-GET /ehrbase/rest/.well-known/smart-configuration
+GET /ferroehr/rest/.well-known/smart-configuration
 ```
 
 (relative to the REST root — the configured base path without its
@@ -75,7 +75,7 @@ reads it to find your authorization server. It looks like:
 
 ```json
 {
-  "issuer": "https://as.example/realms/ehrbase",
+  "issuer": "https://as.example/realms/ferroehr",
   "authorization_endpoint": "https://as.example/auth",
   "token_endpoint": "https://as.example/token",
   "capabilities": ["context-openehr-ehr", "openehr-permission-v1"],
@@ -88,7 +88,7 @@ reads it to find your authorization server. It looks like:
   ],
   "response_types_supported": ["code"],
   "services": [
-    { "type": "org.openehr.rest", "baseUrl": "/ehrbase/rest/openehr/v1" }
+    { "type": "org.openehr.rest", "baseUrl": "/ferroehr/rest/openehr/v1" }
   ]
 }
 ```

@@ -2,7 +2,7 @@
 
 When something is committed to the CDR, downstream systems often need to
 know — an analytics pipeline, a care-coordination service, a cache
-invalidator. Rather than have them poll, EHRbase-rs can publish a small event
+invalidator. Rather than have them poll, FerroEHR can publish a small event
 for every commit to an AMQP 0.9.1 broker (RabbitMQ). The events are designed
 so you can fan them out broadly without leaking clinical data: they carry only
 identifiers and metadata, never the record content.
@@ -31,7 +31,7 @@ flowchart LR
     node["clinical data"]
     outbox["event_outbox row<br/>(published_at = NULL)"]
     drain["outbox drainer<br/>(background task)"]
-    broker["AMQP topic exchange<br/>ehrbase.events"]
+    broker["AMQP topic exchange<br/>ferroehr.events"]
     consumer["your consumer<br/>(bound queue)"]
 
     commit --> tx
@@ -70,7 +70,7 @@ audit change-type code — `249` creation, `251` modification, `523` deleted,
 
 ## Routing keys and subscriptions
 
-Messages are published to a **topic exchange** (default name `ehrbase.events`),
+Messages are published to a **topic exchange** (default name `ferroehr.events`),
 with a three-field routing key:
 
 ```text
@@ -85,34 +85,34 @@ the usual AMQP topic wildcards to select what you care about — for example
 (change type 523), or `#` for everything.
 
 The server can also manage subscriptions for you. When the event-subscription
-admin API is enabled (`EHRBASE__EVENTS__ADMIN_API`), each enabled
+admin API is enabled (`FERROEHR__EVENTS__ADMIN_API`), each enabled
 subscription row causes the server to declare and bind a durable queue named
-`<exchange>.<name>` (for the default exchange, `ehrbase.events.<name>`) with a
+`<exchange>.<name>` (for the default exchange, `ferroehr.events.<name>`) with a
 binding key built from the subscription's `kind` / `change_type` / `template_id`
 predicates (a wildcard for any predicate left unset).
 
 ## Enabling it
 
 Publishing is off by default. These keys live in the `[events]` section of
-`ehrbase.toml`; each can be overridden with the shown `EHRBASE__EVENTS__*`
+`ferroehr.toml`; each can be overridden with the shown `FERROEHR__EVENTS__*`
 environment variable, with `__` separating nested keys:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__EVENTS__ENABLED` | `false` | master switch |
-| `EHRBASE__EVENTS__URL` | `amqp://guest:guest@localhost:5672/%2f` | broker connection URL |
-| `EHRBASE__EVENTS__EXCHANGE` | `ehrbase.events` | topic exchange name (also the queue-name prefix) |
-| `EHRBASE__EVENTS__TLS` | `false` | when true, upgrades an `amqp://` URL to `amqps://` |
-| `EHRBASE__EVENTS__BATCH_SIZE` | `128` | rows drained per cycle |
-| `EHRBASE__EVENTS__POLL_INTERVAL_MS` | `1000` | poll interval while the outbox is idle |
-| `EHRBASE__EVENTS__PUBLISH_MAX_RETRIES` | `3` | retries per message before the batch stops |
-| `EHRBASE__EVENTS__RETENTION_DAYS` | `7` | how long published rows are kept |
-| `EHRBASE__EVENTS__PRUNE_INTERVAL_SECS` | `3600` | how often published rows are pruned |
+| `FERROEHR__EVENTS__ENABLED` | `false` | master switch |
+| `FERROEHR__EVENTS__URL` | `amqp://guest:guest@localhost:5672/%2f` | broker connection URL |
+| `FERROEHR__EVENTS__EXCHANGE` | `ferroehr.events` | topic exchange name (also the queue-name prefix) |
+| `FERROEHR__EVENTS__TLS` | `false` | when true, upgrades an `amqp://` URL to `amqps://` |
+| `FERROEHR__EVENTS__BATCH_SIZE` | `128` | rows drained per cycle |
+| `FERROEHR__EVENTS__POLL_INTERVAL_MS` | `1000` | poll interval while the outbox is idle |
+| `FERROEHR__EVENTS__PUBLISH_MAX_RETRIES` | `3` | retries per message before the batch stops |
+| `FERROEHR__EVENTS__RETENTION_DAYS` | `7` | how long published rows are kept |
+| `FERROEHR__EVENTS__PRUNE_INTERVAL_SECS` | `3600` | how often published rows are pruned |
 
 > [!WARNING]
 > The broker URL carries credentials, so keep it in a secret, not a plain
 > environment file. For anything beyond a local broker, use a TLS connection
-> (`EHRBASE__EVENTS__TLS=true` or an `amqps://` URL). The commit path never blocks
+> (`FERROEHR__EVENTS__TLS=true` or an `amqps://` URL). The commit path never blocks
 > on the broker — if it is down, events buffer in the outbox and drain when it
 > recovers.
 
@@ -124,7 +124,7 @@ reads. In shell form with the RabbitMQ tooling:
 ```bash
 # bind a queue to every composition creation, then consume
 rabbitmqadmin declare queue name=my-consumer durable=true
-rabbitmqadmin declare binding source=ehrbase.events destination=my-consumer \
+rabbitmqadmin declare binding source=ferroehr.events destination=my-consumer \
   routing_key='COMPOSITION.249.*'
 ```
 

@@ -8,7 +8,7 @@ PostgreSQL-18-native internals. Two layers:
    machine-readable specs, and done.** The spec types, canonical serialization,
    the ITS-REST contract, and the AQL front end are produced deterministically
    by `openehr-codegen`, not hand-written.
-2. **The application (`ehrbase-*`) — modern idiomatic Rust of our own design
+2. **The application (`ferroehr-*`) — modern idiomatic Rust of our own design
    on that foundation.** The server, storage, service layer, AQL
    execution engine, validation, and auth — proper crates, our own algorithms,
    the openEHR specifications as the authority. EHRbase and other CDRs are
@@ -112,9 +112,9 @@ CONTAINS chains; `jsonb_path_query_first` + jsonpath item methods +
 document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.1.0). The feature
 envelope is documented per construct; rejections are explicit typed errors.
 
-## REST surface + auth (`ehrbase-rest`)
+## REST surface + auth (`ferroehr-rest`)
 
-Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
+Base path `/ferroehr/rest/openehr/v1`, implementing the generated ITS-REST
 1.1.0 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
 API (plus the own-design activity-report, archive and dump/load routes under
@@ -124,7 +124,7 @@ the always-on public health family (`/health`, `/health/liveness`,
 `/health/readiness`), `/rest/status`, the ops-introspection `/management/*`
 surface, item tags (the EhrScape surface was cut, not built). **Auth:** Basic +
 OAuth2/OIDC via `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; authorization is the
-shipped RBAC/ABAC `access` module in `ehrbase-rest`.
+shipped RBAC/ABAC `access` module in `ferroehr-rest`.
 
 ## Templates, validation, FLAT
 
@@ -168,10 +168,10 @@ columns for hot extractions. See `docs/postgres-features.md`.
 ## Workspace layout
 
 Three physical directories (consolidated 2026-07-16):
-**`app/*`** holds the application — `ehrbase` (the platform **library**),
-`ehrbase-rest` (the ITS-REST protocol adapter, which calls the concrete
-`EhrbaseService` directly), `ehrbase-server` (the wiring-only binary; the
-bin is still named `ehrbase`), and `ehrbase-admin-ui` (the Leptos SSR admin
+**`app/*`** holds the application — `ferroehr` (the platform **library**),
+`ferroehr-rest` (the ITS-REST protocol adapter, which calls the concrete
+`FerroEhrService` directly), `ferroehr-server` (the wiring-only binary; the
+bin is still named `ferroehr`), and `ferroehr-admin-ui` (the Leptos SSR admin
 console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`cnf-runner` — the
@@ -181,10 +181,10 @@ stress/probe instruments; nothing consumes `cnf-runner` as a library),
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
-`ehrbase-server → {ehrbase-rest, ehrbase}`, `ehrbase-rest → ehrbase`,
-`app/* → crates/openehr-*`. The former `ehrbase-sm` trait catalog is deleted:
+`ferroehr-server → {ferroehr-rest, ferroehr}`, `ferroehr-rest → ferroehr`,
+`app/* → crates/openehr-*`. The former `ferroehr-sm` trait catalog is deleted:
 the SM Platform Service Model survives as the *structure* of
-`ehrbase::service` — one module per SM chapter, concrete methods, SM call
+`ferroehr::service` — one module per SM chapter, concrete methods, SM call
 semantics as the design authority — with zero re-exports anywhere (every
 import names its defining module).
 
@@ -192,17 +192,17 @@ import names its defining module).
 
 The service layer realizes the openEHR **SM Platform Service Model**
 (vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`). One
-`ehrbase::service` module per SM component; the SM interfaces map to concrete
-`EhrbaseService` methods (there is no trait catalog):
+`ferroehr::service` module per SM component; the SM interfaces map to concrete
+`FerroEhrService` methods (there is no trait catalog):
 
-| SM component | SM interface(s) | Realization (`ehrbase::service`) | Status |
+| SM component | SM interface(s) | Realization (`ferroehr::service`) | Status |
 |---|---|---|---|
 | EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `service::ehr` (status/composition/directory/contributions/tags/access modules) | implemented |
 | Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | `service::definition` (adl14/adl2/query_store/wire modules) | implemented |
 | Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`, `I_PARTY_RELATIONSHIP` | `service::demographic` | implemented |
 | Query | `I_QUERY_SERVICE` | `service::query` | implemented |
 | Validity checking | `I_VALIDITY_CHECKER` | `service::validity` | implemented |
-| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ehrbase::system_log` (dual DICOM PS3.15 + FHIR `AuditEvent`/BALP rendering; local Audit Record Repository in the `audit` schema, on by default; syslog + ITI-20 ATX:FHIR Feed forwarding sinks; the ITI-81 retrieval as the read side; ITI-19 mTLS via `[server.tls]`) | implemented |
+| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ferroehr::system_log` (dual DICOM PS3.15 + FHIR `AuditEvent`/BALP rendering; local Audit Record Repository in the `audit` schema, on by default; syslog + ITI-20 ATX:FHIR Feed forwarding sinks; the ITI-81 retrieval as the read side; ITI-19 mTLS via `[server.tls]`) | implemented |
 | Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `service::admin` | implemented |
 | EHR Index | `I_EHR_INDEX` | `service::ehr_index` | implemented |
 | Terminology | `I_TERMINOLOGY_SERVICE` | `service::terminology` (in-process `openehr-term` bundle + N simultaneously-materialised FHIR R4 servers, selected per call by an explicit terminology→provider route map with a `default` fallback; optional OAuth2 client-credentials per server; commit-time ac-code constraint-binding resolution) | implemented |
@@ -220,9 +220,9 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-query` | AQL 1.1 lexer + parser + AST | hand-written |
 | `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
-| `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
-| `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
-| `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
+| `ferroehr-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `FerroEhrService` | application |
+| `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
+| `ferroehr-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ferroehr` | application |
 | `cnf-runner` | CNF 2.0 conformance runner + the measured-performance, step-load stress, and AQL-probe instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 

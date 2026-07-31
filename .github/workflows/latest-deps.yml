@@ -32,5 +32,5 @@ jobs:
         # exclusive hydrate/ssr, compile_error!-guarded) and checked
         # per-feature instead — the same split as ci.yml.
         run: |
-          cargo check --workspace --exclude ehrbase-admin-ui --all-targets --all-features
-          cargo check -p ehrbase-admin-ui --all-targets --features ssr
+          cargo check --workspace --exclude ferroehr-admin-ui --all-targets --all-features
+          cargo check -p ferroehr-admin-ui --all-targets --features ssr

@@ -39,7 +39,7 @@ fn fixture() -> OriginalVersion<Composition> {
         },
         "commit_audit": {
             "_type": "AUDIT_DETAILS",
-            "system_id": "ehrbase-rs.local",
+            "system_id": "ferroehr.local",
             "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-29T10:11:12Z" },
             "change_type": {
                 "_type": "DV_CODED_TEXT", "value": "creation",
@@ -53,7 +53,7 @@ fn fixture() -> OriginalVersion<Composition> {
         },
         "uid": {
             "_type": "OBJECT_VERSION_ID",
-            "value": "0198f4a5-9df1-7d1e-8b6f-2b8c00000001::ehrbase-rs.local::1"
+            "value": "0198f4a5-9df1-7d1e-8b6f-2b8c00000001::ferroehr.local::1"
         },
         "lifecycle_state": {
             "_type": "DV_CODED_TEXT", "value": "complete",

@@ -5,7 +5,7 @@ description: >
   effects, <For>, resources, Suspense/Transition, server functions,
   extractors, SSR modes, hydration bugs, router, ActionForm, islands,
   binary size) in the official Leptos book, cached locally. Use before
-  implementing or reviewing any admin-UI (app/ehrbase-admin-ui) behaviour
+  implementing or reviewing any admin-UI (app/ferroehr-admin-ui) behaviour
   the rule file doesn't fully settle, or when a "how does Leptos do X"
   question comes up.
 allowed-tools: [Read, Grep, Glob, Bash]
@@ -24,7 +24,7 @@ the source when a case isn't covered or needs the full context.
 1. **Ensure the book cache exists** (shared, survives sessions):
 
    ```bash
-   BOOK=~/.cache/ehrbase-rs/leptos-book
+   BOOK=~/.cache/ferroehr/leptos-book
    [ -d "$BOOK/src" ] || git clone --depth 1 https://github.com/leptos-rs/book "$BOOK"
    ```
 

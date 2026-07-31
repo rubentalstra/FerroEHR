@@ -2,5 +2,5 @@
 # integrations OFF) plus the one thing every real deployment must supply — the
 # app-role DSN from an existing Secret. Used as the "default" golden render.
 database:
-  existingSecret: ehrbase-db
-  existingSecretKey: EHRBASE__DB__URL
+  existingSecret: ferroehr-db
+  existingSecretKey: FERROEHR__DB__URL

@@ -84,7 +84,7 @@ Do not re-plan these — the audit confirmed each in code:
   groups (`queries.rs:422`) — unified on the table_shell footer idiom the
   other tables use.
 - [ ] **T9** Scope previewer (feature-gated): resolve the design point
-  first — lift the master08 scope grammar out of `ehrbase-rest` into a
+  first — lift the master08 scope grammar out of `ferroehr-rest` into a
   shared spec-side crate, or add a CDR debug endpoint; then a "what would
   this scope grant" panel in the scopes drawer. If the design point
   resolves against (grammar lift rejected + no debug endpoint), adjudicate

@@ -7,7 +7,7 @@
 //!
 //! Pipeline boundary: this crate produces a parsed, semantically-analyzable
 //! AST. The AST→ASL→SQL engine is **not** here — it lives in
-//! `app/ehrbase/src/aql/` (`EHRbase`'s own IR, ported from Java).
+//! `app/ferroehr/src/aql/` (`EHRbase`'s own IR, ported from Java).
 //!
 //! Layers (built incrementally):
 //! - [`lexer`] — `logos` tokenizer from `AqlLexer.g4`. ✅

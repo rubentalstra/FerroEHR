@@ -1,0 +1,254 @@
+//! The ITS-REST **API hub** — the assembly over the generated `ROUTES` tables.
+//!
+//! The crate is laid out per ITS-REST specification: one module per API group under
+//! `api/`, each split along the spec's own resource boundaries and citing its
+//! governing section. This hub is the wiring layer that turns the generated
+//! contract into one axum router.
+//!
+//! ## The generated contract
+//!
+//! `emit-rest` produces, per API group, a `ROUTES` table of
+//! `(method, path, operation_id)` and one `*Params` struct per operation
+//! (`openehr_its::rest::generated::{ehr,query,definition,admin,demographic}`).
+//! The System API is not part of that contract (no `system` group is emitted),
+//! so its single `OPTIONS /` operation is hand-written in [`system`] and mounted
+//! by [`crate::router::router`], not here.
+//!
+//! ## The per-group modules
+//!
+//! Each group owns a dispatcher — an operation-id `match` that rebuilds the
+//! exact `*Params` from the raw request parts, calls the SM native-API method on
+//! [`AppState`], and renders a negotiated response:
+//!
+//! - [`ehr`] — the EHR API (EHR, `EHR_STATUS`, `VERSIONED_EHR_STATUS`, COMPOSITION,
+//!   `VERSIONED_COMPOSITION`, DIRECTORY, CONTRIBUTION), re-exporting
+//!   `ehr::dispatch::dispatch`.
+//! - [`query`] — the Query API (adhoc + stored), re-exporting `query::dispatch`.
+//! - [`definition`] — the Definition API (ADL 1.4 / ADL 2 templates + stored
+//!   queries), re-exporting `definition::dispatch`.
+//! - [`demographic`] — the Demographic API (spec-governed, DEVELOPMENT) plus the
+//!   own-design `PARTY_RELATIONSHIP` extension routes, re-exporting
+//!   `demographic::dispatch` + `demographic::relationship_routes` (the native
+//!   `utoipa-axum` router for the extension).
+//! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
+//!   as `admin::dispatch::dispatch` (the group publishes no re-export), plus the
+//!   own-design `archive` + activity-`report` + `dump_load` extension routes
+//!   under the same `/admin/` gates.
+//! - [`message`] — the own-design MESSAGE group (`I_EHR_EXTRACT_SERVICE` +
+//!   `I_TDD_SERVICE`); the release publishes no message API at all, so the whole
+//!   group is an extension under its own `/message/` resource root.
+//! - [`system`] — the System API manifest ([`system::options::SystemManifest`],
+//!   `ferroehr::config::server::SystemOptionsConfig`), assembled and mounted by [`crate::router::router`].
+//!
+//! Every group — the standardised ITS-REST groups above and the own-design
+//! extension surfaces ([`crate::extensions`]: terminology, event subscription,
+//! multi-tenancy admin, FHIR connector) — is built as a native `utoipa-axum`
+//! router ([`OpenApiRouter`] + `routes!`), so each operation's route and its
+//! `OpenAPI` path metadata come from ONE `#[utoipa::path]` handler. They are
+//! composed by `api_openapi_router`; the extension groups are config-gated
+//! inside each handler (a disabled group answers `404`), so a stock server
+//! exposes only the standardised ITS-REST surface.
+
+pub mod admin;
+pub mod definition;
+pub mod demographic;
+pub mod ehr;
+pub mod message;
+pub mod query;
+pub mod system;
+
+use std::future::Future;
+use std::pin::Pin;
+
+use axum::Router;
+use axum::extract::{FromRequestParts, RawPathParams};
+use axum::response::Response;
+use bytes::Bytes;
+use http::HeaderMap;
+use indexmap::IndexMap;
+use utoipa_axum::router::OpenApiRouter;
+
+use crate::extensions::access::{ehr_access, pep};
+use crate::extensions::{event_subscription, fhir, tenant_routes, terminology};
+use crate::state::AppState;
+
+/// A boxed response future — the uniform return type of a group dispatcher.
+pub(crate) type BoxResponse = Pin<Box<dyn Future<Output = Response> + Send>>;
+
+/// A group dispatcher: `(state, operation_id, request parts) → response`.
+type Dispatcher = fn(AppState, &'static str, RequestParts) -> BoxResponse;
+
+/// The raw request sources a dispatcher needs to rebuild a `*Params` struct and
+/// decode a body.
+pub(crate) struct RequestParts {
+    pub(crate) path: IndexMap<String, String>,
+    pub(crate) query: Option<String>,
+    pub(crate) headers: HeaderMap,
+    pub(crate) body: Bytes,
+}
+
+/// Decompose a whole axum [`Request`](axum::extract::Request) into the
+/// [`RequestParts`] snapshot a group dispatcher consumes.
+///
+/// Every native `utoipa-axum` handler takes `State` + the whole `Request` and
+/// funnels through here: taking the entire request (rather than the individual
+/// `RawPathParams`/`RawQuery`/`HeaderMap`/`Bytes` extractors) is what keeps the
+/// `#[utoipa::path]` argument introspection happy — `bytes::Bytes` has no
+/// `ToSchema`, so a bare body extractor cannot appear in a documented handler
+/// signature. The upstream `RequestBodyLimitLayer` has already bounded the body,
+/// so the `to_bytes` limit here is only a backstop.
+pub(crate) async fn into_parts(request: axum::extract::Request) -> RequestParts {
+    let (mut parts, body) = request.into_parts();
+    let path: IndexMap<String, String> = RawPathParams::from_request_parts(&mut parts, &())
+        .await
+        .map(|raw| {
+            raw.iter()
+                .map(|(k, v)| (k.to_owned(), v.to_owned()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let query = parts.uri.query().map(str::to_owned);
+    let headers = parts.headers;
+    let body = axum::body::to_bytes(body, usize::MAX)
+        .await
+        .unwrap_or_default();
+    RequestParts {
+        path,
+        query,
+        headers,
+        body,
+    }
+}
+
+/// Build the API router covering every ITS-REST + extension route
+/// (group-relative paths; nested under the configured base path by
+/// [`crate::router::router`]). State is applied by the caller. This is the `Router` half
+/// of [`api_openapi_router`]; the `OpenApi` half feeds the served document
+/// ([`api_doc`]), so route and documentation are single-sourced.
+pub(crate) fn api_router() -> Router<AppState> {
+    api_openapi_router().into()
+}
+
+/// Every API group as one native `utoipa-axum` router (group-relative paths), so
+/// each operation's route and its `OpenAPI` path metadata come from ONE
+/// `#[utoipa::path]` handler — no vendored OAS served, no table-driven synthesis.
+/// The standardised ITS-REST groups (EHR / DEMOGRAPHIC / DEFINITION / QUERY /
+/// ADMIN) and the own-design extensions (terminology, event-subscription,
+/// tenancy, FHIR connector, `PARTY_RELATIONSHIP`) are composed uniformly; every
+/// handler forwards to its group dispatcher through [`guarded_dispatch`], so the
+/// auth / ATNA-audit / ABAC stack is applied identically across the whole surface
+/// (the operation contract each dispatcher implements is generated by `emit-rest`
+/// from the vendored OAS — the codegen input, never served).
+///
+/// The extension groups are always mounted — their config gate is enforced inside
+/// the handler (a disabled group answers `404`). No openEHR spec governs an OAS
+/// layout or the extension surfaces — our own design.
+pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .merge(ehr::openapi_routes::routes())
+        .merge(demographic::openapi_routes::routes())
+        .merge(demographic::relationship::relationship_routes())
+        .merge(definition::openapi_routes::routes())
+        .merge(definition::archetype::archetype_routes())
+        .merge(query::openapi_routes::routes())
+        .merge(admin::openapi_routes::routes())
+        .merge(admin::archive::archive_routes())
+        .merge(admin::report::report_routes())
+        .merge(admin::dump_load::dump_load_routes())
+        .merge(message::extract::extract_routes())
+        .merge(message::tdd::tdd_routes())
+        .merge(terminology::routes())
+        .merge(event_subscription::routes())
+        .merge(tenant_routes::routes())
+        .merge(fhir::routes())
+}
+
+/// The full API surface's `OpenAPI` document, paths nested under `base_path` so
+/// they read as full server paths (e.g. `/ferroehr/rest/openehr/v1/ehr`). Built
+/// from the same [`api_openapi_router`] composition that mounts the routes, so
+/// the document cannot drift from the router.
+pub(crate) fn api_doc(base_path: &str) -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState>::new()
+        .nest(base_path, api_openapi_router())
+        .into_openapi()
+}
+
+/// Run one operation through the uniform per-request stack the extension
+/// handlers and [`mount`] share: the spec-grounded `EHR_ACCESS` gate first (RM
+/// `org.openehr.rm.ehr.ehr_access.adoc` — "All access decisions to data in the
+/// EHR must be made in accordance with the policies and rules in this object"),
+/// then the ABAC PEP pre-check (short-circuits before the backend on a deny),
+/// the dispatcher, the PEP post-check (may replace a success with `403`/`500`),
+/// and finally tag the response with the matched operation id for the ATNA audit
+/// layer. ABAC/`EHR_ACCESS` are inert unless wired (default-open); no openEHR
+/// spec governs the ABAC layer — our own extension.
+pub(crate) async fn guarded_dispatch(
+    state: AppState,
+    op: &'static str,
+    parts: RequestParts,
+    dispatch: Dispatcher,
+) -> Response {
+    let mut resp = match ehr_access::enforce(&state, op, &parts).await {
+        Ok(()) => match pep::pre_check(&state, op, &parts).await {
+            Ok(()) => {
+                let resp = dispatch(state.clone(), op, parts).await;
+                pep::post_check(&state, op, resp).await
+            }
+            Err(deny) => deny,
+        },
+        Err(deny) => deny,
+    };
+    resp.extensions_mut()
+        .insert(crate::system_log::middleware::AuditOpId(op));
+    resp
+}
+
+/// Strip RFC 6570 query/expansion suffixes (e.g. `all{?ehr_id*}` → `all`) that
+/// the `OpenAPI` paths carry but axum path templates do not use; `{name}` capture
+/// segments are already axum-0.8 syntax and pass through unchanged.
+///
+/// Shared with the access-control classifier
+/// ([`crate::extensions::access::authz`]), which keys its route→class map by the
+/// same normalized templates so an axum `MatchedPath` resolves exactly.
+pub(crate) fn normalize_path(path: &str) -> String {
+    let mut out = String::with_capacity(path.len());
+    let mut chars = path.chars().peekable();
+    while let Some(c) = chars.next() {
+        // A `{` immediately followed by an RFC 6570 operator opens a
+        // query/path-style expansion that is not part of the resource path.
+        if c == '{'
+            && chars
+                .peek()
+                .is_some_and(|n| matches!(n, '?' | '&' | '#' | '.' | ';' | '/' | '+'))
+        {
+            // Skip to and including the matching `}`.
+            for skipped in chars.by_ref() {
+                if skipped == '}' {
+                    break;
+                }
+            }
+            continue;
+        }
+        out.push(c);
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_strips_query_expansion() {
+        assert_eq!(normalize_path("/admin/ehr/all{?ehr_id*}"), "/admin/ehr/all");
+        assert_eq!(normalize_path("/ehr/{ehr_id}"), "/ehr/{ehr_id}");
+        assert_eq!(
+            normalize_path("/ehr/{ehr_id}/composition/{uid_based_id}"),
+            "/ehr/{ehr_id}/composition/{uid_based_id}"
+        );
+        assert_eq!(
+            normalize_path("/definition/template/adl1.4"),
+            "/definition/template/adl1.4"
+        );
+    }
+}

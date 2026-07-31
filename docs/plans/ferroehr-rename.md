@@ -29,25 +29,25 @@ Standing constraints (from the decision comments on #1353):
       depend on viewer-installed fonts) and settle the final wordmark typeface
 - [ ] Favicon set (32/16 px PNG + .ico from the committed `favicon.svg`) and
       README banner
-- [ ] Palette committed as design tokens (admin-ui CSS custom properties +
+- [x] Palette committed as design tokens (assets/brand/tokens.css; per-surface integration continues with normal UI work) (admin-ui CSS custom properties +
       website book theme)
-- [ ] Admin console logo/title swap (`app/ehrbase-admin-ui`; screenshot-guard
+- [x] Admin console logo/title swap (`app/ehrbase-admin-ui`; screenshot-guard
       baselines regenerate)
 
 ## Phase 1 — GitHub repo rename (cheap, reversible, do early)
 
-- [ ] `gh repo rename ferroehr` (stays under the personal account; GitHub
+- [x] `gh repo rename` — done by the owner 2026-07-31, canonical slug `rubentalstra/FerroEHR` (stays under the personal account; GitHub
       auto-redirects old URLs, but redirects break the moment a new repo
       reuses the old name — so update references anyway, below)
-- [ ] Verify: open PRs/issues, Actions, branch protection, Pages (if any),
+- [x] Verify: open PRs/issues, Actions, branch protection, Pages (if any),
       webhooks survived the rename
-- [ ] Badges/links that embed the repo slug: README badges, website book
+- [x] Badges/links that embed the repo slug: README badges, website book
       links, `docs/conformance/` report links, `CITATION.cff` `repository`,
       Cargo.toml `repository` fields
 
 ## Phase 2 — local references (every machine/agent that has a clone)
 
-- [ ] `git remote set-url origin git@github.com:rubentalstra/ferroehr.git`
+- [x] `git remote set-url origin git@github.com:rubentalstra/FerroEHR.git`
 - [ ] Local directory rename `~/RustroverProjects/ehrbase-rs` →
       `~/RustroverProjects/ferroehr` — **gotcha:** the Claude harness keys
       its project dir on the absolute path
@@ -59,32 +59,31 @@ Standing constraints (from the decision comments on #1353):
       unchanged; expect one cold build after the move)
 - [ ] Re-run `scripts/gh-rel.sh tree 1353` + one `gh issue list` to confirm
       `gh` resolves the renamed repo from the new clone
-- [ ] Grep sweep for the old slug/path: `rubentalstra/ehrbase-rs`,
+- [x] Grep sweep for the old slug/path: `rubentalstra/ehrbase-rs`,
       `RustroverProjects/ehrbase-rs` in scripts, workflows, compose files,
       docs, hooks, `.claude/` settings
 
 ## Phase 3 — product identity in the workspace (the big PR)
 
-- [ ] Workspace/application crate renames: `ehrbase` → `ferroehr`,
+- [x] Workspace/application crate renames: `ehrbase` → `ferroehr`,
       `ehrbase-rest` → `ferroehr-rest`, `ehrbase-server` → `ferroehr-server`,
       `ehrbase-admin-ui` → `ferroehr-admin-ui`; bin name `ehrbase` →
       `ferroehr` (tools `cnf-runner`/`testkit`/`openehr-codegen` unaffected)
-- [ ] Config env prefix `EHRBASE_*` → `FERROEHR_*` — decide the deprecation
+- [x] Config env prefix `EHRBASE_*` → `FERROEHR_*` — hard cut (owner: never publicly released, no deprecation shim) — decide the deprecation
       story (accept both for one minor with a startup warning, or hard cut
       pre-announcement while user count is ~0); no openEHR spec governs this
       — our own design
-- [ ] REST base path: decide whether `/ehrbase/rest/openehr/v1` becomes
-      `/ferroehr/rest/openehr/v1` (wire-visible! CNF catalogue + ixit +
-      admin-ui client + website examples all update in the same change;
-      spec-check: ITS-REST prescribes the path suffix, the leading segment
-      is deployment-specific)
-- [ ] `docs/conformance/<sut>` identifier `ehrbase-rs` → `ferroehr` (runner
+- [x] REST base path: renamed to `/ferroehr/rest/openehr/v1` (ITS-REST
+      prescribes only the path suffix; the leading segment is
+      deployment-specific — CNF catalogue, ixit, admin-ui client and website
+      examples updated in the same change)
+- [x] `docs/conformance/<sut>` identifier `ehrbase-rs` → `ferroehr` (runner
       artifacts, ixit party ids, badges, render scripts) — baseline artifacts
       re-emitted, numbers unchanged
-- [ ] Test/database/telemetry identifiers: `testkit` template-db names,
+- [x] Test/database/telemetry identifiers: `testkit` template-db names,
       service names in compose/Helm, OTLP service.name, `ehrbase-testkit-pg18`
       container name
-- [ ] Docs sweep: root `CLAUDE.md`, nested `CLAUDE.md`s, `docs/architecture.md`,
+- [x] Docs sweep: root `CLAUDE.md`, nested `CLAUDE.md`s, `docs/architecture.md`,
       `docs/VERSIONS.md` (provenance section STAYS, product line renamed),
       `ROADMAP.md`, `.claude/rules/*`, agent defs, `CHANGELOG.md` entry
       (### Changed: product renamed to FerroEHR)

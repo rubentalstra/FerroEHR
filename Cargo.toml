@@ -1,4 +1,4 @@
-# Root workspace manifest for the pure-Rust EHRbase port.
+# Root workspace manifest for FerroEHR — the pure-Rust openEHR CDR.
 # This file is the authoritative pinned dependency set (the "version check").
 # Versions are current as of 2026-07 and expressed as caret ranges (Cargo pulls
 # the latest matching patch). Where a major/minor was not individually confirmed
@@ -15,12 +15,12 @@ members = ["crates/*", "app/*", "tools/*"]
 version = "3.15.1"
 edition = "2024"
 rust-version = "1.96"
-license = "Apache-2.0"
-repository = "https://github.com/rubentalstra/ehrbase-rs"
+license = "MIT"
+repository = "https://github.com/rubentalstra/FerroEHR"
 authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 # C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
 # members inherit via `<key>.workspace = true`; `readme` resolves from this root.
-documentation = "https://rubentalstra.github.io/ehrbase-rs/"
+documentation = "https://rubentalstra.github.io/FerroEHR/"
 readme = "README.md"
 keywords = ["openehr", "cdr", "healthcare", "ehr", "aql"]
 categories = ["database-implementations", "science", "web-programming::http-server"]
@@ -291,7 +291,7 @@ url = "2"
 urlencoding = "2.1.3"
 csv = "1.4"                        # RESULT_SET → CSV export (admin console BFF; verified live 2026-07-18)
 
-# ── Admin console (Leptos stack — app/ehrbase-admin-ui; pins re-verified live 2026-07-17) ──
+# ── Admin console (Leptos stack — app/ferroehr-admin-ui; pins re-verified live 2026-07-17) ──
 leptos = "0.8.20"
 leptos_axum = "0.8.10"
 leptos_meta = "0.8.6"

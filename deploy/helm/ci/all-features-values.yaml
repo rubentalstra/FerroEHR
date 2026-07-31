@@ -2,8 +2,8 @@
 # separate management port + egress network policy + a mounted config file. Used
 # as the "all-features" golden render and to exercise every template branch.
 database:
-  existingSecret: ehrbase-db
-  existingSecretKey: EHRBASE__DB__URL
+  existingSecret: ferroehr-db
+  existingSecretKey: FERROEHR__DB__URL
 
 secrets:
   authOidcHmacSecret: dev-hmac-secret
@@ -19,7 +19,7 @@ metrics:
 config:
   server:
     bind: "0.0.0.0:8080"
-    base_path: /ehrbase/rest/openehr/v1
+    base_path: /ferroehr/rest/openehr/v1
     swagger_ui: true
     cors_permissive: false
   db:
@@ -28,10 +28,10 @@ config:
     acquire_timeout_secs: 30
   log:
     format: json
-    filter: info,ehrbase=debug
+    filter: info,ferroehr=debug
   telemetry:
     otlp_endpoint: http://otel-collector:4317
-    service_name: ehrbase-rs
+    service_name: ferroehr
     environment: production
     traces_sample_ratio: 0.1
     metrics_push: true
@@ -43,8 +43,8 @@ config:
           password_hash: "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
           roles: [USER]
     oidc:
-      issuer: https://keycloak.example.com/realms/ehrbase
-      audiences: [ehrbase]
+      issuer: https://keycloak.example.com/realms/ferroehr
+      audiences: [ferroehr]
       algorithms: [RS256]
   authz:
     rbac:
@@ -58,13 +58,13 @@ config:
       organization_claim: organization_id
       patient_claim: patient_id
       cedar:
-        policy_dir: /etc/ehrbase
+        policy_dir: /etc/ferroehr
   admin:
     enabled: true
   tenancy:
     enabled: true
     claim: realm_access.tenant
-    header: X-EHRbase-Tenant
+    header: X-FerroEHR-Tenant
   smart:
     enabled: true
     ehr_id_claim: ehrId
@@ -86,11 +86,11 @@ config:
   signing:
     enabled: true
     mode: pgp
-    key_path: /etc/ehrbase/signing.asc
+    key_path: /etc/ferroehr/signing.asc
     verify_on_read: strict
   audit:
     enabled: true
-    source_id: ehrbase-prod
+    source_id: ferroehr-prod
     fail_mode: closed
     enterprise_site_id: site-1
     store:
@@ -106,13 +106,13 @@ config:
       url: https://arr.example.com/fhir
   events:
     enabled: true
-    exchange: ehrbase.events
+    exchange: ferroehr.events
     tls: true
   fhir:
     api_enabled: true
     outbound:
       enabled: true
-      exchange: ehrbase.fhir
+      exchange: ferroehr.fhir
       tls: true
   terminology:
     api_enabled: true
@@ -145,14 +145,14 @@ ingress:
   enabled: true
   className: nginx
   hosts:
-    - host: ehrbase.example.com
+    - host: ferroehr.example.com
       paths:
-        - path: /ehrbase
+        - path: /ferroehr
           pathType: Prefix
   tls:
-    - secretName: ehrbase-tls
+    - secretName: ferroehr-tls
       hosts:
-        - ehrbase.example.com
+        - ferroehr.example.com
 
 networkPolicy:
   enabled: true
@@ -185,4 +185,4 @@ podDisruptionBudget:
 serviceAccount:
   create: true
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ehrbase-s3
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ferroehr-s3

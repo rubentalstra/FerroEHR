@@ -964,7 +964,7 @@ pub trait EhrApi {
 }
 
 /// The operations of this group as `(method, path, operation_id)`, for
-/// wiring an axum router in `ehrbase-rest`.
+/// wiring an axum router in `ferroehr-rest`.
 pub const ROUTES: &[(&str, &str, &str)] = &[
     ("GET", "/ehr", "ehr_get_by_subject"),
     ("POST", "/ehr", "ehr_create"),

@@ -2,9 +2,9 @@
   "annotations": { "list": [] },
   "editable": true,
   "graphTooltip": 1,
-  "title": "ehrbase-rs — service overview",
-  "uid": "ehrbase-overview",
-  "tags": ["ehrbase", "openehr"],
+  "title": "ferroehr — service overview",
+  "uid": "ferroehr-overview",
+  "tags": ["ferroehr", "openehr"],
   "schemaVersion": 39,
   "time": { "from": "now-1h", "to": "now" },
   "templating": { "list": [] },
@@ -179,7 +179,7 @@
       "datasource": { "type": "prometheus" },
       "gridPos": { "h": 6, "w": 24, "x": 0, "y": 35 },
       "targets": [
-        { "expr": "ehrbase_build_info", "format": "table", "instant": true }
+        { "expr": "ferroehr_build_info", "format": "table", "instant": true }
       ]
     }
   ]

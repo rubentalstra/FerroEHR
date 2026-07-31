@@ -53,7 +53,7 @@ pack/catalogue toward any of these.
     `EHR` (BASE `object_ref.adoc` §type: "class names are from the relevant
     reference model").
 13. **500** on `commit_contribution` with invalid change types.
-14. **Admin EHR delete served at `/ehrbase/rest/admin/ehr/{id}`** (204), 404 at
+14. **Admin EHR delete served at `/ferroehr/rest/admin/ehr/{id}`** (204), 404 at
     the released `…/openehr/v1/admin/ehr/{id}` — but SPECITS-80 dates the
     operation to 1.1.0, so it is OUT OF SCOPE for a 1.0.3 party, not a finding.
 

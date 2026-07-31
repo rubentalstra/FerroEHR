@@ -1,6 +1,6 @@
 # Performance
 
-EHRbase-rs makes the same discipline it applies to conformance apply to
+FerroEHR makes the same discipline it applies to conformance apply to
 performance: a *class* is not a marketing label a vendor writes down, it is a
 verdict a server **earns by measurement** on a stated environment, or does
 not. The performance chapter of the CNF suite runs an open-loop clinical

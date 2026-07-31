@@ -3,7 +3,7 @@
 Moving a patient's record between openEHR systems — migrating to another CDR,
 replicating an EHR to a downstream repository, or importing an externally
 produced document — is what openEHR's EHR Extract and messaging services are
-for. EHRbase-rs implements whole-EHR export and import (including cross-system
+for. FerroEHR implements whole-EHR export and import (including cross-system
 cloning that preserves version identity) and Template Data Document (TDD)
 import.
 

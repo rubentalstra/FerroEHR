@@ -1,0 +1,76 @@
+ferroehr {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1).
+
+Configuration: one ferroehr.toml, rendered from .Values.config into a ConfigMap
+and mounted at /etc/ferroehr/ferroehr.toml. Secrets are injected as FERROEHR_* env.
+
+API base path: {{ .Values.config.server.base_path }}
+Service:       {{ include "ferroehr.fullname" . }}:{{ .Values.service.port }} ({{ .Values.service.type }})
+
+Reach it locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "ferroehr.fullname" . }} 8080:{{ .Values.service.port }}
+  curl -i http://127.0.0.1:8080{{ .Values.config.server.base_path | trimSuffix "/openehr/v1" }}/status
+
+Health probes (public, always on):  /health | /health/liveness | /health/readiness
+{{ if and .Values.config.management.enabled .Values.metrics.enabled -}}
+Prometheus (public):     {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
+{{ end -}}
+{{ if not .Values.config.management.enabled -}}
+NOTE: config.management.enabled=false — the ops-introspection surface (info,
+      prometheus, metrics, env, loggers) is absent. Health probes are unaffected.
+{{ end }}
+────────────────────────────────────────────────────────────────────────────
+DATABASE / MIGRATIONS
+────────────────────────────────────────────────────────────────────────────
+This chart NEVER ships a PostgreSQL. It connects to an EXTERNAL PostgreSQL 18
+as the unprivileged app role.
+{{ if .Values.database.existingSecret -}}
+  DSN source: existing Secret "{{ .Values.database.existingSecret }}" key "{{ .Values.database.existingSecretKey }}"  [OK]
+{{ else if .Values.database.url -}}
+  ⚠  DSN source: INLINE database.url (dev/test). For production set
+     database.existingSecret and remove database.url from values.
+{{ else -}}
+  ⚠  No DSN configured — the server falls back to the localhost dev DSN in
+     config.db and will crash-loop against a cluster. Set database.existingSecret
+     (preferred) or database.url.
+{{ end }}
+Migrations are append-only and MUST be applied by the `ferroehr_migrator` role,
+NOT the runtime app role. Either grant the runtime DSN the migrator role, or
+run migrations out-of-band with a migrator DSN (recommended). Wrap that step
+in a short lock_timeout so DDL blocked behind live traffic fails fast instead
+of queueing, and pin the image by digest so a rollback cannot outrun the
+schema.
+
+────────────────────────────────────────────────────────────────────────────
+SECURITY POSTURE
+────────────────────────────────────────────────────────────────────────────
+  runAsNonRoot:            {{ .Values.podSecurityContext.runAsNonRoot }} (uid {{ .Values.podSecurityContext.runAsUser }})
+  readOnlyRootFilesystem:  {{ .Values.securityContext.readOnlyRootFilesystem }}
+  seccompProfile:          {{ .Values.securityContext.seccompProfile.type }}
+  NetworkPolicy:           {{ if .Values.networkPolicy.enabled }}default-deny-ingress (API port only){{ else }}DISABLED — enable networkPolicy for PHI workloads{{ end }}
+{{ if not .Values.config.auth.enabled }}
+  ⚠  config.auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
+{{ end -}}
+{{ if not (or (dig "oidc" "issuer" "" .Values.config.auth) (dig "basic" "users" list .Values.config.auth) .Values.config.files) }}
+  ⚠  config.auth.enabled={{ .Values.config.auth.enabled }} but no OIDC issuer, no
+     Basic user store, and no mounted config.files. With no mechanism, every
+     request 401s — add config.auth.oidc.issuer, an [[auth.basic.users]] entry
+     under config.auth.basic.users, or supply material via config.files.
+{{ end -}}
+{{ if .Values.config.fhir.outbound.enabled }}
+  ⚠  config.fhir.outbound.enabled=true — this AMQP stream carries PHI (mapped FHIR
+     resources). Ensure the broker + exchange "{{ .Values.config.fhir.outbound.exchange }}" are access-controlled and TLS.
+{{ end -}}
+{{ if and .Values.config.multimedia.enabled .Values.config.multimedia.allow_http }}
+  ⚠  config.multimedia.allow_http=true — plain-HTTP object store. Dev only; prod S3 is HTTPS.
+{{ end }}
+Optional integrations currently ON:
+  admin API:        {{ .Values.config.admin.enabled }}
+  multi-tenancy:    {{ .Values.config.tenancy.enabled }}
+  eventing (AMQP):  {{ .Values.config.events.enabled }}
+  FHIR inbound:     {{ .Values.config.fhir.api_enabled }}
+  FHIR outbound:    {{ .Values.config.fhir.outbound.enabled }} (PHI)
+  S3 multimedia:    {{ .Values.config.multimedia.enabled }}
+  ATNA audit:       {{ .Values.config.audit.enabled }}
+  ext terminology:  {{ .Values.config.terminology.external.enabled }}

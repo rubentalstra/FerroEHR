@@ -12,21 +12,21 @@
 >   technology profile reads **N/A with a machine citation**, never fail.
 > - This comparison makes **no certification claim on behalf of any other
 >   vendor** -- each column is computed from that SUT's own run.
-> - Where the comparison SUT out-performs ehrbase-rs, its cell reads pass
+> - Where the comparison SUT out-performs ferroehr, its cell reads pass
 >   while ours reads fail -- stated plainly, not hidden.
 
 ## Systems under test
 
-| | ehrbase-rs | upstream (Java) |
+| | ferroehr | upstream (Java) |
 |---|---|---|
-| Product | ehrbase-rs 3.11.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-29 | 2026-07-28 |
-| Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
+| Product | ferroehr 3.15.0 | ehrbase-java 2.34.0 |
+| Run date | 2026-07-31 | 2026-07-28 |
+| Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (845 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (863 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -36,7 +36,7 @@ branches, unclaimed capabilities, and release-dated behaviour outside the
 declared versions as N/A with a citation, never as silent skips. Verdicts are
 pure functions of (statement, results, catalogue, capability matrix).
 
-**The declared-version delta matters and is stated, not hidden:** ehrbase-rs
+**The declared-version delta matters and is stated, not hidden:** ferroehr
 declares ITS-REST **1.1.0**
 while upstream EHRbase declares ITS-REST
 **1.0.3** —
@@ -49,7 +49,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## Profile verdicts
 
-| Profile | ehrbase-rs | upstream (Java) |
+| Profile | ferroehr | upstream (Java) |
 |---|---|---|
 | CORE | pass | fail |
 | STANDARD | pass | fail |
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ehrbase-rs** (run of 2026-07-29) vs **upstream EHRbase
+Runs compared: **ferroehr** (run of 2026-07-31) vs **upstream EHRbase
 2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -68,7 +68,7 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ehrbase-rs** | 845 | 808 | 808 | 0 | 0 |
+| **ferroehr** | 863 | 826 | 826 | 0 | 0 |
 | **upstream (Java)** | 499 | 459 | 136 | 132 | 191 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
@@ -90,7 +90,7 @@ is no excused state: a required capability without passing evidence fails
 its tier, whichever party claims it), or **not claimed** (absent from that
 party's ICS).
 
-| Capability | ehrbase-rs | upstream (Java) |
+| Capability | ferroehr | upstream (Java) |
 |---|---|---|
 | ActivityReport | passed | not_evidenced |
 | Adl14ArchetypeProvisioning | passed | not_evidenced |
@@ -138,7 +138,7 @@ party's ICS).
 
 ## Failures — both directions
 
-### ehrbase-rs failures (with the upstream outcome on the identical case)
+### ferroehr failures (with the upstream outcome on the identical case)
 
 | Case | Format | Failure | upstream outcome |
 |---|---|---|---|
@@ -161,9 +161,9 @@ party's ICS).
 | I_ITS_REST_REVISION_HISTORY | 1 |
 | SIG | 1 |
 
-<details><summary>Every upstream-failed case, with the ehrbase-rs outcome on the identical case</summary>
+<details><summary>Every upstream-failed case, with the ferroehr outcome on the identical case</summary>
 
-| Case | Format | Upstream failure | ehrbase-rs outcome |
+| Case | Format | Upstream failure | ferroehr outcome |
 |---|---|---|---|
 | CONT-COMP-content_card_1plus-context_any | — | expected `created`, observed `validation_failed` | passed |
 | CONT-COMP-content_card_1plus-context_mand | — | expected `created`, observed `validation_failed` | passed |
@@ -318,7 +318,7 @@ The upstream measured record is honest as measured — errors are observations.
 Every class below was reproduced against a freshly composed upstream and
 adjudicated three-way against the RELEASED ITS-REST docs text before any
 narrative: the driver payloads are spec-correct (the identical exchanges
-succeed 0-error against ehrbase-rs in the committed record), and each class
+succeed 0-error against ferroehr in the committed record), and each class
 attributes to the upstream implementation. No expectation was bent either way.
 
 | Operation | errors/requests (measured window) |

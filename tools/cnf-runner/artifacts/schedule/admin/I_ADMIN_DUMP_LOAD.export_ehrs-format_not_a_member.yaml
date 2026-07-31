@@ -13,7 +13,7 @@
 # the SM's `file_not_writable`, a 5xx the closed outcome vocabulary has no kind
 # for (the boundary recorded on the admin-dump-load family in
 # vocab/wire_surface.yaml). The refusal's no-write effect is proved in-process
-# instead (app/ehrbase/tests/service_dump_load.rs).
+# instead (app/ferroehr/tests/service_dump_load.rs).
 # EXTENSION ROUTE (register AMB-33): the row gates the EhrDumpLoad CAPABILITY
 # verdict only.
 id: I_ADMIN_DUMP_LOAD.export_ehrs-format_not_a_member

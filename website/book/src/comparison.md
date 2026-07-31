@@ -1,6 +1,6 @@
 # Comparison with upstream EHRbase
 
-EHRbase-rs is measured **against upstream EHRbase (Java)** — the project it
+FerroEHR is measured **against upstream EHRbase (Java)** — the project it
 succeeds — on the same instruments it applies to itself: the CNF 2.0
 conformance runner executes the **same committed catalogue** against both
 servers' official deployments, and the benchmark harness drives both with
@@ -36,7 +36,7 @@ Both servers' capability conformance, from each party's committed
 verdicts (generated, diff-guarded — see [Conformance](conformance.md) for
 how to read the grid):
 
-![EHRbase-rs capability conformance](conformance-assets/conformance-heat-grid.svg)
+![FerroEHR capability conformance](conformance-assets/conformance-heat-grid.svg)
 
 ![Upstream EHRbase capability conformance](comparison-assets/conformance-heat-grid-java.svg)
 
@@ -46,7 +46,7 @@ not exercise shows as an explicit `no cases` row in the same position.
 Compare the printed counts, not the bar lengths — each chart scales its bars
 to its own widest band, and the legend states that scale.
 
-![EHRbase-rs outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
+![FerroEHR outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
 ![Upstream EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-java.svg)
 
@@ -64,7 +64,7 @@ a REST-API release newer than the one upstream declares (upstream declares
 ITS-REST 1.0.3; the catalogue realizes 1.1.0), the result reads *not
 claimed* or *N/A with a citation* — upstream is never counted as failing a
 surface it never claimed, never against a release it never declared, and
-never on an ehrbase-rs-only extension.
+never on an ferroehr-only extension.
 
 ### The principal upstream divergences, stated plainly
 

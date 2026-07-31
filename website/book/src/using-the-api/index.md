@@ -1,6 +1,6 @@
 # Using the API
 
-EHRbase-rs exposes the openEHR **REST API** (ITS-REST Release-1.1.0 — the
+FerroEHR exposes the openEHR **REST API** (ITS-REST Release-1.1.0 — the
 version the server reports and is conformance-tested against): a
 resource-based HTTP interface for creating EHRs, committing and
 retrieving versioned clinical documents, managing folders and contributions,
@@ -9,7 +9,7 @@ is the practical reference for client developers — the resources and their
 operations, the headers that drive versioning and content negotiation, and the
 error contract. The complete, machine-generated endpoint reference (every path,
 parameter, and schema) is published separately as the **API reference** on the
-documentation site (under `/ehrbase-rs/api/`); this book explains how to *use*
+documentation site (under `/ferroehr/api/`); this book explains how to *use*
 it.
 
 ## Base path
@@ -17,16 +17,16 @@ it.
 All clinical API routes hang off a configurable base path, which defaults to:
 
 ```text
-/ehrbase/rest/openehr/v1
+/ferroehr/rest/openehr/v1
 ```
 
 Every path in these chapters is relative to that base. So "`POST /ehr`" means
-`POST http://your-host:8080/ehrbase/rest/openehr/v1/ehr`. The base path is set
-with `EHRBASE__SERVER__BASE_PATH` (see the
+`POST http://your-host:8080/ferroehr/rest/openehr/v1/ehr`. The base path is set
+with `FERROEHR__SERVER__BASE_PATH` (see the
 [configuration reference](../installation/configuration.md)).
 
 The public, unauthenticated status probe lives just outside the base path at
-`/ehrbase/rest/status`, and interactive docs at `/ehrbase/rest/swagger-ui` when
+`/ferroehr/rest/status`, and interactive docs at `/ferroehr/rest/swagger-ui` when
 enabled.
 
 An `OPTIONS` request to the API base path (also answered at `/`) returns the
@@ -34,7 +34,7 @@ server's **conformance manifest**: the product name and version, the openEHR
 REST API edition it implements, its conformance profile, and the endpoint
 groups actually mounted in this deployment — useful for capability discovery
 before you call anything else. The identity fields are configurable
-(`EHRBASE__SERVER__IDENTITY__*`, see the
+(`FERROEHR__SERVER__IDENTITY__*`, see the
 [configuration reference](../installation/configuration.md)); the endpoint
 list always reflects reality.
 
@@ -57,7 +57,7 @@ attribute-based policies. The full picture — mechanisms, roles, multi-tenancy 
 is in [Security & multi-tenancy](../security.md).
 
 > [!NOTE]
-> The development stack ships throwaway Basic users (`ehrbase` / `ehrbase`).
+> The development stack ships throwaway Basic users (`ferroehr` / `ferroehr`).
 > Replace them before any real use.
 
 ## The chapters here

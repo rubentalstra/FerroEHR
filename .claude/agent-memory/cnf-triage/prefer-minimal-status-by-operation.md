@@ -24,7 +24,7 @@ So: **UPDATE-minimal = 204, CREATE-minimal = 201.** A 200-with-empty-body on an
 update matches no released response declaration and violates the docs-text
 SHOULD.
 
-App seam: `ehrbase-rest::overview::negotiate::write_negotiated(headers,
+App seam: `ferroehr-rest::overview::negotiate::write_negotiated(headers,
 minimal_status, repr_status, …)` — `AppliedPreference::Minimal =>
 empty(minimal_status)`. EHR_STATUS + DIRECTORY updates pass `no_content`;
 `api/ehr/composition.rs` composition_update passed `ok, ok` (the 2026-07-28 red

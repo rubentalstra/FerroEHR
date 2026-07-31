@@ -1,6 +1,6 @@
 ---
 name: served-openapi-is-native
-description: "ehrbase-rest serves ONLY its own utoipa-generated OpenAPI; the vendored ITS-REST OAS is codegen input ONLY (stalled — NOT a behavioural oracle; the ITS-REST docs text is the oracle), never imported/served — owner corrected agents on this repeatedly"
+description: "ferroehr-rest serves ONLY its own utoipa-generated OpenAPI; the vendored ITS-REST OAS is codegen input ONLY (stalled — NOT a behavioural oracle; the ITS-REST docs text is the oracle), never imported/served — owner corrected agents on this repeatedly"
 metadata: 
   node_type: memory
   type: feedback
@@ -8,11 +8,11 @@ metadata:
 ---
 
 **The served OpenAPI is OURS, generated from OUR code.** Owner correction
-(2026-07-17, angrily, after stale decision-doc framing misled a worker): `ehrbase-rest` never imports, serves, renders, or drift-gates
+(2026-07-17, angrily, after stale decision-doc framing misled a worker): `ferroehr-rest` never imports, serves, renders, or drift-gates
 the vendored ITS-REST OAS yaml. Every handler carries `#[utoipa::path]`;
 the complete document is composed natively in
-`app/ehrbase-rest/src/extensions/openapi.rs` (single-sourced with the
-router; one `ehrbase-rest` spec entry; "serve only what we generate").
+`app/ferroehr-rest/src/extensions/openapi.rs` (single-sourced with the
+router; one `ferroehr-rest` spec entry; "serve only what we generate").
 
 **Why:** the vendored OAS is the `emit-rest` codegen input for the generated
 `openehr-its` contract and a SUBORDINATE wire source — never a served

@@ -6,7 +6,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
-title: "EHRbase-rs"
+title: "FerroEHR"
 abstract: >-
   A pure-Rust, openEHR-specification-conformant clinical data repository
   (CDR): ITS-REST 1.1.0 REST API, AQL 1.1 query language, and the openEHR
@@ -18,9 +18,9 @@ authors:
   - family-names: Talstra
     given-names: Ruben
     orcid: "https://orcid.org/0009-0009-2758-0141"
-repository-code: "https://github.com/rubentalstra/ehrbase-rs"
-url: "https://rubentalstra.github.io/ehrbase-rs/"
-license: Apache-2.0
+repository-code: "https://github.com/rubentalstra/FerroEHR"
+url: "https://rubentalstra.github.io/FerroEHR/"
+license: MIT
 keywords:
   - openEHR
   - clinical data repository

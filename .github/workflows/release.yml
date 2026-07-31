@@ -110,18 +110,18 @@ jobs:
           ref: ${{ needs.publish-release.outputs.tag }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build server
-        # `ehrbase-server` is the binary-producing crate (bin name stays
-        # `ehrbase`) since the crate consolidation; `-p ehrbase` is the
+        # `ferroehr-server` is the binary-producing crate (bin name stays
+        # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
         # platform library and yields no binary.
-        run: cargo build --release --locked -p ehrbase-server
+        run: cargo build --release --locked -p ferroehr-server
       - name: Package
         shell: bash
         env:
           TAG: ${{ needs.publish-release.outputs.tag }}
         run: |
-          out="ehrbase-${TAG}-${{ matrix.target }}.tar.gz"
-          strip target/release/ehrbase
-          tar -C target/release -czf "$out" ehrbase
+          out="ferroehr-${TAG}-${{ matrix.target }}.tar.gz"
+          strip target/release/ferroehr
+          tar -C target/release -czf "$out" ferroehr
           echo "ASSET=$out" >> "$GITHUB_ENV"
       - name: Upload to release
         uses: softprops/action-gh-release@v3

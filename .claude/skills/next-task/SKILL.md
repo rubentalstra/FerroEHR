@@ -39,7 +39,7 @@ separate step the caller takes after seeing the plan.
      **openEHR spec/ITS layer** (`openehr-base`/`openehr-rm`/`openehr-am`/
      `openehr-its`) → **the code generator** — change `openehr-codegen`'s
      emitter and regenerate (`/regen-codegen`).
-     **Application** (`ehrbase`/`ehrbase-rest`) → idiomatic
+     **Application** (`ferroehr`/`ferroehr-rest`) → idiomatic
      modern Rust of our own design on the generated crates, the openEHR
      specs as the authority (EHRbase = prior art only). Build
      compiling + tested. Note whether the task suits fanning out to an
@@ -52,7 +52,7 @@ separate step the caller takes after seeing the plan.
      `/spec-lookup`. Doing the work starts by reading those.
    - **What "done" looks like** for this task specifically — the issue's
      `## Exit criteria` checklist, plus what proves it: the CNF pipeline's
-     zero-drift gate (`docs/conformance/ehrbase-rs/results.json` +
+     zero-drift gate (`docs/conformance/ferroehr/results.json` +
      `verdicts.json`), the `openehr-its` fidelity gates, or corpus tests.
 3. **Do not edit the issue or commit** — recording progress happens after
    the work is actually done, not as part of planning it.

@@ -1,6 +1,6 @@
 # Docker Compose
 
-Docker Compose is the quickest way to run EHRbase-rs together with a
+Docker Compose is the quickest way to run FerroEHR together with a
 preconfigured PostgreSQL 18, for local development and evaluation. This chapter
 describes the two published images, the Compose services, the environment
 variables that tune them, and the optional observability overlay. For a
@@ -8,12 +8,12 @@ step-by-step first run, see [Getting started](../getting-started.md).
 
 ## The two images
 
-EHRbase-rs publishes two container images to GHCR:
+FerroEHR publishes two container images to GHCR:
 
 | Image | Contents |
 |---|---|
-| `ghcr.io/rubentalstra/ehrbase-rs` | The `ehrbase` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured entirely via `EHRBASE_*` environment variables. |
-| `ghcr.io/rubentalstra/ehrbase-rs-postgres` | `postgres:18.4` with the application role, the layered group roles (`ehrbase_migrator`, `ehrbase_app`, `ehrbase_reader`), database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured entirely via `FERROEHR_*` environment variables. |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.4` with the application role, the layered group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
 
 The PostgreSQL image is **init-scripts only** — it creates roles, schemas, and
 extensions, but does not bake in migration state. The server owns the schema
@@ -37,13 +37,13 @@ docker compose up --build
 
 This starts the core services (no profile needed):
 
-- **`ehrbase-postgres`** — the database image, with a named data volume and a
+- **`ferroehr-postgres`** — the database image, with a named data volume and a
   `pg_isready` healthcheck.
-- **`ehrbase`** — the server, which waits for the database to report healthy
+- **`ferroehr`** — the server, which waits for the database to report healthy
   (`depends_on: condition: service_healthy`), then boots, migrates, and serves
   on port 8080. Its healthcheck is the binary's own `healthcheck` subcommand
   (there is no shell in the image).
-- **`ehrbase-admin-ui`** — the admin console, which waits for the server to be
+- **`ferroehr-admin-ui`** — the admin console, which waits for the server to be
   healthy and serves on port 3000.
 
 > [!NOTE]
@@ -53,9 +53,9 @@ This starts the core services (no profile needed):
 > chart, so a local stack cannot exhaust the host.
 
 The server's development configuration is mounted read-only from
-`docker/ehrbase.dev.toml` to `/etc/ehrbase/ehrbase.toml`, where the server
+`docker/ferroehr.dev.toml` to `/etc/ferroehr/ferroehr.toml`, where the server
 auto-discovers it. That file enables Basic auth with the throwaway users
-`ehrbase` / `ehrbase` and `ehrbase-admin` / `ehrbase`, and turns on permissive
+`ferroehr` / `ferroehr` and `ferroehr-admin` / `ferroehr`, and turns on permissive
 CORS — development only.
 
 > [!WARNING]
@@ -71,19 +71,19 @@ shown), so you can retune without editing it:
 
 | Variable | Default | Effect |
 |---|---|---|
-| `EHRBASE_IMAGE` | `ghcr.io/rubentalstra/ehrbase-rs:local` | Server image to run (set to a published tag to skip the build). |
-| `EHRBASE_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ehrbase-rs-postgres:local` | Database image to run. |
-| `EHRBASE_PORT` | `8080` | Host port mapped to the server. |
-| `EHRBASE_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
-| `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ehrbase` | App role, password, and database created by the DB image's init script. |
+| `FERROEHR_IMAGE` | `ghcr.io/rubentalstra/ferroehr:local` | Server image to run (set to a published tag to skip the build). |
+| `FERROEHR_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ferroehr-postgres:local` | Database image to run. |
+| `FERROEHR_PORT` | `8080` | Host port mapped to the server. |
+| `FERROEHR_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
+| `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ferroehr` | App role, password, and database created by the DB image's init script. |
 | `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
-| `EHRBASE__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+| `FERROEHR__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
 
-The server container itself is passed `EHRBASE__DB__URL` (assembled from the
-DB variables); its `ehrbase.toml` is the mounted `docker/ehrbase.dev.toml`,
-auto-discovered at `/etc/ehrbase/ehrbase.toml`. Any other `EHRBASE_*` setting
+The server container itself is passed `FERROEHR__DB__URL` (assembled from the
+DB variables); its `ferroehr.toml` is the mounted `docker/ferroehr.dev.toml`,
+auto-discovered at `/etc/ferroehr/ferroehr.toml`. Any other `FERROEHR_*` setting
 from the [configuration reference](configuration.md) can be added under the
-`ehrbase` service's `environment:` block.
+`ferroehr` service's `environment:` block.
 
 ## Optional services (Compose profiles)
 
@@ -95,15 +95,15 @@ until you enable it:
 
 - **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
   externalization (development/test only). Start it with
-  `docker compose --profile s3 up`, then set `EHRBASE__MULTIMEDIA__ENABLED=true`,
-  `EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
-  `EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
-  `EHRBASE__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
+  `docker compose --profile s3 up`, then set `FERROEHR__MULTIMEDIA__ENABLED=true`,
+  `FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
+  `FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
+  `FERROEHR__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
   settings at a real, credentialed, HTTPS S3 endpoint instead.
 - **`keycloak`** (`--profile keycloak`) — an OIDC provider with a preloaded
-  `ehrbase` realm, on port 8081. Start it with
+  `ferroehr` realm, on port 8081. Start it with
   `docker compose --profile keycloak up`; to use bearer auth instead of Basic,
-  point the auth OIDC settings at `http://localhost:8081/auth/realms/ehrbase`.
+  point the auth OIDC settings at `http://localhost:8081/auth/realms/ferroehr`.
   Its healthcheck probes the realm's OIDC discovery document, so services can
   gate their startup on it being fully ready.
 - **`terminology`** (`--profile terminology`) — a real FHIR R4 terminology
@@ -118,7 +118,7 @@ until you enable it:
   ```
 
   The overlay switches on the `[terminology.external]` providers that
-  `docker/ehrbase.dev.toml` already carries in the disabled state. See
+  `docker/ferroehr.dev.toml` already carries in the disabled state. See
   [Terminology servers](../beyond-core/terminology.md) for what is seeded, how
   several servers are routed per terminology, and the fail-open/fail-closed
   choice.
@@ -126,7 +126,7 @@ until you enable it:
 ## Build provenance
 
 Images built by CI (and any `docker compose build` you drive) embed a build
-SHA reported at `/management/info` and on the `ehrbase_build_info` metric. The
+SHA reported at `/management/info` and on the `ferroehr_build_info` metric. The
 build does not read `.git`; instead the SHA is passed as the standard
 `REVISION` build argument — the same value that fills the
 `org.opencontainers.image.revision` image label (CI uses the commit SHA; the
@@ -146,13 +146,13 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up --bu
 ```
 
 The overlay reconfigures the server for that stack: it exports traces over
-OTLP/gRPC (`EHRBASE__TELEMETRY__OTLP_ENDPOINT`), switches stdout to JSON lines
-(`EHRBASE__LOG__FORMAT=json`), and enables the management surface on its own
-internal port 9464 (`EHRBASE__MANAGEMENT__ENABLED`, `EHRBASE__MANAGEMENT__PORT`)
+OTLP/gRPC (`FERROEHR__TELEMETRY__OTLP_ENDPOINT`), switches stdout to JSON lines
+(`FERROEHR__LOG__FORMAT=json`), and enables the management surface on its own
+internal port 9464 (`FERROEHR__MANAGEMENT__ENABLED`, `FERROEHR__MANAGEMENT__PORT`)
 with `info`, `metrics`, and `prometheus` set to `public` so the bundled
 Prometheus can scrape `/management/prometheus` without credentials. That port is
 only reachable on the Compose network — Grafana's 3000 is the sole published
-port. Every variable uses the same `EHRBASE__…` grammar as the rest of the
+port. Every variable uses the same `FERROEHR__…` grammar as the rest of the
 [configuration reference](configuration.md); a single-underscore spelling is
 rejected at startup, not ignored.
 

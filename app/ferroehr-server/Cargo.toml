@@ -1,0 +1,44 @@
+[package]
+name = "ferroehr-server"
+version.workspace = true
+description = "FerroEHR server binary: boots the ITS-REST server over the platform library"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+publish = false
+
+[[bin]]
+name = "ferroehr"
+path = "src/main.rs"
+
+[dependencies]
+ferroehr = { path = "../ferroehr" }
+ferroehr-rest = { path = "../ferroehr-rest" }
+
+anyhow.workspace = true
+clap.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+# The wiring-seam tests (`tests/it/`) drive `Cli` parsing and the pure-stdout
+# `config default` dispatch: the CLI derive, the async `run` entry point, and
+# its `anyhow` result. Everything past that seam is tested in the crate that
+# owns it (`app/ferroehr/tests/it/`, `app/ferroehr-rest/tests/it/`), so no
+# database, HTTP, or container harness is needed here.
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true

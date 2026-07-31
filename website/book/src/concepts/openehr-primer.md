@@ -3,7 +3,7 @@
 openEHR is an open standard for storing health records in a way that outlives
 any single application. Its central idea is to keep *what clinical data means*
 separate from *the software that stores it*. This chapter introduces the pieces
-you meet when using EHRbase-rs — the Reference Model, archetypes and templates,
+you meet when using FerroEHR — the Reference Model, archetypes and templates,
 compositions, versioning, and AQL — in plain terms. It is enough to follow the
 rest of this book; the [openEHR specifications](https://specifications.openehr.org/)
 are the full reference.
@@ -20,7 +20,7 @@ a unit), `DV_CODED_TEXT` (a term from a terminology), `DV_DATE_TIME`,
 
 The RM is deliberately generic: it knows about "a quantity with a unit" but not
 about "systolic blood pressure in mmHg". That specificity comes from the layer
-above. EHRbase-rs implements **RM 1.2.0**.
+above. FerroEHR implements **RM 1.2.0**.
 
 ## Archetypes and templates: the meaning layer
 
@@ -37,7 +37,7 @@ specific use — a particular form, message, or dataset. It picks the archetypes
 you need, narrows their optionality (mandatory here, hidden there), and pins
 down defaults. The template is what a CDR is actually loaded with.
 
-EHRbase-rs ingests templates in the **Operational Template (OPT) 1.4** XML
+FerroEHR ingests templates in the **Operational Template (OPT) 1.4** XML
 format. Once a template is uploaded, the server derives everything it needs to
 validate incoming data and to describe the data's shape to client applications.
 
@@ -71,7 +71,7 @@ Every change is wrapped in a **contribution** — an atomic change-set that also
 records an **audit** entry (who, when, why). A single contribution can commit
 several compositions together, and either all of them land or none do.
 
-EHRbase-rs supports reading both the **latest version** and **all versions** of
+FerroEHR supports reading both the **latest version** and **all versions** of
 an object, and querying across version history — see
 [Querying with AQL](../querying-aql.md).
 
@@ -114,4 +114,4 @@ flowchart TB
 ```
 
 With these concepts in hand, the [System architecture](architecture.md) chapter
-shows how EHRbase-rs realises them.
+shows how FerroEHR realises them.

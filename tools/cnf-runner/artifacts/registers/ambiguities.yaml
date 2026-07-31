@@ -502,11 +502,11 @@ AMB-33:
     `admin-extension-routes` family of vocab/wire_surface.yaml), so it serves
     no reporting, archive or dump/load route either. The SM operations behind
     them live at the service layer only
-    (`ehrbase::service::admin::{statistics,archive,dump_load}`) and the CNF
+    (`ferroehr::service::admin::{statistics,archive,dump_load}`) and the CNF
     runner is a black-box HTTP instrument, so nothing can drive them. Excusing
     the four while the party CLAIMED them was a certification hole (ISO/IEC
     9646 legitimizes "not applicable" only for a capability a party does NOT
-    claim), so the ehrbase-rs statement withdraws all four claims. The cases
+    claim), so the ferroehr statement withdraws all four claims. The cases
     and this entry stay; each becomes re-assertable the day the product serves
     its operations on declared extension routes.
     RE-ADJUDICATED 2026-07-29 (#637) — THAT DAY CAME for three of the four, and
@@ -643,7 +643,7 @@ AMB-33:
     (d) CORRUPT PAYLOAD ENTRIES stay off the wire for the same reason every
     other corrupt-archive cause does — no operation writes arbitrary bytes to
     the SUT file system — and are proved in-process
-    (app/ehrbase/tests/service_dump_load.rs). Their OUTCOME differs from a
+    (app/ferroehr/tests/service_dump_load.rs). Their OUTCOME differs from a
     mangled manifest or segment, and that too is derived rather than chosen: a
     `versions/*.xml` entry belongs to exactly ONE EHR, so an unreadable one is
     precisely the per-entity shape `dump_load_fail_report.adoc` exists for
@@ -675,13 +675,13 @@ AMB-34:
     first-hand: the release publishes seven API groups (overview, system, ehr,
     demographic, query, definition, admin) and no message/extract/tdd group
     exists in either the docs text or the OAS. The second half of the
-    derivation decides the remedy: `ehrbase::service::message` implements
+    derivation decides the remedy: `ferroehr::service::message` implements
     export/import/TDD, but NO route reaches it — the module's own doc comment
-    expects an extension wire in `ehrbase-rest` that is not mounted — so the
+    expects an extension wire in `ferroehr-rest` that is not mounted — so the
     black-box runner has nothing to drive. Excusing the three while the party
     CLAIMED them was a certification hole (ISO/IEC 9646 legitimizes "not
     applicable" only for a capability a party does NOT claim), so the
-    ehrbase-rs statement withdraws all three claims. The cases and this entry
+    ferroehr statement withdraws all three claims. The cases and this entry
     stay; each becomes re-assertable the day the release adds a MESSAGE API or
     the product serves the operations on declared extension routes.
     RE-ADJUDICATED 2026-07-29 (#659) — THAT DAY CAME for all three, on the
@@ -765,7 +765,7 @@ AMB-37:
     surface, released or extension, for the capability's cases to execute
     against. Excusing it while the party CLAIMED it was a certification hole
     (ISO/IEC 9646 legitimizes "not applicable" only for a capability a party
-    does NOT claim), so the ehrbase-rs statement withdraws the claim. The cases
+    does NOT claim), so the ferroehr statement withdraws the claim. The cases
     and this entry stay; the claim becomes re-assertable when a surface exists.
     RE-ADJUDICATED 2026-07-29 (#637) — THE SURFACE NOW EXISTS, and the
     withdrawal recorded above never took effect (the #623 convergence kept the
@@ -835,9 +835,9 @@ AMB-41:
     outcome. The second half of the derivation decides the remedy: this product
     ALSO serves no route for the operations (upload_archetype / get_archetype /
     list_archetypes / has_archetype / delete_archetype / archetypes_count are
-    implemented in `ehrbase::service::definition::adl14` and reachable by no
+    implemented in `ferroehr::service::definition::adl14` and reachable by no
     HTTP route), so there is no extension surface to execute against either.
-    The ehrbase-rs statement therefore WITHDRAWS the claim. The consequence is
+    The ferroehr statement therefore WITHDRAWS the claim. The consequence is
     stated rather than absorbed: the CNF Profiles book marks ADL 1.4 archetype
     provisioning CORE+STANDARD, so a party claiming CORE while not claiming it
     draws a static-review finding — the honest reading of a release that
@@ -1302,7 +1302,7 @@ AMB-60:
     request the service cannot recognize cannot be authored — and is carried
     as the cited vocab/wire_surface.yaml element
     method-501-unrecognized-method-deviation, whose server behaviour is
-    HTTP-tested (app/ehrbase-rest/tests/http.rs
+    HTTP-tested (app/ferroehr-rest/tests/http.rs
     `unrecognized_method_is_405_with_allow`).
     Revisits if a future ITS-REST release raises either sentence to a MUST or
     states a precedence.
@@ -4926,7 +4926,7 @@ AMB-140:
     whole request is rejected and NOTHING is deleted, so a typo in one id can
     never silently destroy the others in the same call. That ordering — validate
     the entire list, then act — is the shipped behaviour and is documented at
-    its seam (`app/ehrbase/src/service/admin/delete.rs`,
+    its seam (`app/ferroehr/src/service/admin/delete.rs`,
     `admin_ehr_delete_all` → `parse_uuid_list`: "Parse a whole id list,
     rejecting the entire request on the first malformed id (a bulk call is
     validated before any work runs)"). The atomicity question (c above) is left
@@ -5055,7 +5055,7 @@ AMB-142:
     while every other generated operation is `OperationClass::Clinical` (any
     authenticated principal with a role) — the classification and its
     total-coverage guard live in
-    `app/ehrbase-rest/src/extensions/access/authz/classify.rs`. That is a
+    `app/ferroehr-rest/src/extensions/access/authz/classify.rs`. That is a
     deployment decision grounded in what the operations DO (AMB-10: permanent,
     physical, cascading destruction), not in any released sentence, and it is
     flagged as such rather than presented as conformance. Two consequences are
@@ -5129,7 +5129,7 @@ AMB-143:
     EHR_STATUS, the directory FOLDER tree), attestations, ITEM_TAGs,
     CONTRIBUTIONs, the audit records those referenced, archive markers, and any
     externalized multimedia blob no surviving node still references. That
-    closure is documented at its seam (`app/ehrbase/src/service/admin/delete.rs`
+    closure is documented at its seam (`app/ferroehr/src/service/admin/delete.rs`
     — `delete_ehr`: the FK cascade plus the explicit orphan-audit sweep, since
     `audit` has no foreign key from `ehr`, plus the reference-counted blob GC),
     and the storage graph it walks is our own design — no openEHR spec governs
@@ -5196,7 +5196,7 @@ AMB-144:
     against a rule openEHR has not written. What this server does is recorded
     here as an our-own-design extension rather than as conformance — no openEHR
     spec governs it: the admin delete is emitted to the system log
-    (`ehrbase::system_log`, the DICOM PS3.15 + FHIR `AuditEvent`/BALP renderings
+    (`ferroehr::system_log`, the DICOM PS3.15 + FHIR `AuditEvent`/BALP renderings
     into the local Audit Record Repository), so the erasure itself leaves a
     trace outside the EHR it destroys. That record lives in a different store
     precisely because the cascade empties the one the RM would have used. The
@@ -5389,7 +5389,7 @@ AMB-148:
     CONJUNCTIVELY — every listed source must permit — because that is the only
     reading under which "validate" narrows rather than widens, and because this
     server composes the SMART gate as an AND onto the RBAC/ABAC decision
-    (`app/ehrbase-rest/src/extensions/access/pep.rs`: SMART can only narrow,
+    (`app/ferroehr-rest/src/extensions/access/pep.rs`: SMART can only narrow,
     never widen) so that the "applicable access control policies" object of the
     sentence is enforced independently of the scope. No case turns on either
     reading. Reported upstream (UPR-112).
@@ -5459,7 +5459,7 @@ AMB-149:
     absolute-URL requirement itself is NOT part of this silence — it is stated,
     and this server satisfies it from the operator-supplied external origin
     (`smart.public_base_url`, boot-required when SMART is enabled), wire-tested
-    in `app/ehrbase-rest/tests/smart_http.rs`. Reported upstream (UPR-113).
+    in `app/ferroehr-rest/tests/smart_http.rs`. Reported upstream (UPR-113).
   disposition: fixed_handling
   upstream_ref: "UPR-113"
 
@@ -5515,7 +5515,7 @@ AMB-150:
     Fixed handling on all six; where a choice had no released ground it is
     flagged as ours. (1) THE SCOPE-TO-OPERATION MAPPING IS IMPLEMENTER-INVENTED
     — no openEHR spec governs it, our own design/extension. The table lives in
-    `app/ehrbase-rest/src/smart/enforce.rs` (`family_of_op`: `composition_*` /
+    `app/ferroehr-rest/src/smart/enforce.rs` (`family_of_op`: `composition_*` /
     `versioned_composition_*` to Composition, `query_execute_*` /
     `definition_query_*` to Aql, `definition_template_*` to Template;
     `permission_of_op`: `query_execute_*` to `s`, create/upload/store to `c`,
@@ -5551,7 +5551,7 @@ AMB-150:
     `patient/` one (`broaden` in `enforce.rs`); and when the patient
     compartment does decide, the token's claim is compared to the target EHR's
     `EHR_STATUS.subject.external_ref` (`subject_gate` in
-    `app/ehrbase-rest/src/extensions/access/pep.rs`), the only value the RM
+    `app/ferroehr-rest/src/extensions/access/pep.rs`), the only value the RM
     gives an EHR that identifies its patient. Both are our own design where the
     spec is silent. Reported upstream (UPR-114).
   disposition: fixed_handling
@@ -5636,7 +5636,7 @@ AMB-151:
     master04 §Capabilities lets a Platform advertise as `openehr-permission-v1`
     —, the advertised Authorization-Server endpoints, and `auth.oidc` trusting
     a committed static test issuer) — since the owner ruling of 2026-07-28
-    this posture IS the standard ehrbase-rs conformance posture: the pipeline
+    this posture IS the standard ferroehr conformance posture: the pipeline
     always composes it, the ixit principals mint scoped Bearer tokens, and
     the one committed record covers the SMART cases alongside the rest.
     (ii) A PER-CASE TOKEN MINT: a flow step declares the `scope` claim its
@@ -5669,18 +5669,18 @@ AMB-151:
     and its launch-context binding, the `composition-`/`aql-` nouns, the four
     non-`*` pattern rows, the inert demotion), a coverage gap that now shrinks
     case by case because the machinery exists. Both stay proven meanwhile by
-    the server's own tests — `app/ehrbase-rest/tests/smart_http.rs` and the
+    the server's own tests — `app/ferroehr-rest/tests/smart_http.rs` and the
     grammar unit suite in `crates/openehr-its/src/rest/smart_scopes.rs` —
     which is evidence about the server and the parser, never about the wire.
     THE POSTURE IS THE BASELINE (re-adjudicated for PR #611; the earlier
     focused-lane paragraph described the retired
     `statement.smart.json`/sidecar-directory scheme): the SMART
-    resource-server posture IS the standard ehrbase-rs conformance posture —
+    resource-server posture IS the standard ferroehr conformance posture —
     the pipeline always composes the SMART overlay, the ixit's principals
     mint scoped Bearer tokens, and the ONE committed record drives the whole
     claimed surface including the SMART group. The `SmartAppLaunch`
     capability row in `vocab/capability_matrix.yaml` is claimed by THE party
-    statement (`party/ehrbase-rs/statement.json`); there is no second
+    statement (`party/ferroehr/statement.json`); there is no second
     statement and no per-lane artefact directory.
     Reported upstream (UPR-115).
   disposition: statement_declared
@@ -5776,7 +5776,7 @@ AMB-152:
     both the mapping tables and a template-naming channel for resources that
     have no template — exactly the private resolution the attribution law
     forbids. The single refusal point is
-    `app/ehrbase-rest/src/formats/dispatch.rs::guard_non_templated`, applied
+    `app/ferroehr-rest/src/formats/dispatch.rs::guard_non_templated`, applied
     uniformly at the head of the EHR, EHR_STATUS, DIRECTORY and demographic
     handler groups, and its code NOTE carries the same citation. The
     `ehr_create`/`ehr_create_with_id` asymmetry collapses under the same rule:

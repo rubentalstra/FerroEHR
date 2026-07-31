@@ -61,7 +61,7 @@ flow:
     # its wording; the CONTENT fidelity of the canonical-XML transit —
     # storage-JSON -> RM -> XML -> RM -> storage-JSON byte-equal at the served
     # version — is not observable over this wire either and is proved
-    # in-process instead (app/ehrbase/tests/service_dump_load.rs).
+    # in-process instead (app/ferroehr/tests/service_dump_load.rs).
     assert:
       - { assert: returns, matches: '"entity_type"\s*:\s*"EHR"' }
       - { assert: returns, matches: '"dump_status"\s*:\s*false' }

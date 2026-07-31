@@ -15,6 +15,40 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The project's own code is now MIT-licensed** (owner decision
+  2026-07-31). Vendored third-party material keeps its upstream terms: the
+  openEHR machine-readable specification artifacts and CKM-derived clinical
+  models remain under Apache-2.0 (`LICENSE-APACHE-2.0`). The upstream
+  `NOTICE` file was removed together with the relicense — no upstream code
+  is present in this tree.
+- **The product is named FerroEHR** (owner decision 2026-07-31, tracked on
+  #1353 — from *ferrum*, iron, the element Rust is named for). Every
+  product-branded surface changes with it; deployments upgrading across this
+  release must update:
+  - **Configuration:** the environment prefix `EHRBASE_*` → `FERROEHR_*`; the
+    config file search path `./ehrbase.toml` / `/etc/ehrbase/ehrbase.toml` →
+    `./ferroehr.toml` / `/etc/ferroehr/ferroehr.toml`.
+  - **REST base path:** `/ehrbase/rest/openehr/v1` → `/ferroehr/rest/openehr/v1`
+    (likewise the admin/management extension routes under `/ehrbase/…`).
+  - **Binary and crates:** the server binary `ehrbase` → `ferroehr`; the
+    application crates `ehrbase`/`ehrbase-rest`/`ehrbase-server`/
+    `ehrbase-admin-ui` → `ferroehr`/`ferroehr-rest`/`ferroehr-server`/
+    `ferroehr-admin-ui`. The generated `openehr-*` specification crates are
+    unaffected (they are versioned by the openEHR spec they implement).
+  - **Containers and Helm:** the OCI images and the Helm chart are published
+    under `ferroehr`/`ferroehr-admin-ui`; compose service names and the
+    dev-stack database/realm names follow.
+  - **Repository:** the GitHub repository is now
+    `github.com/rubentalstra/FerroEHR` (old URLs redirect).
+  - **Conformance artifacts:** the SUT identifier `ehrbase-rs` → `ferroehr`
+    (`docs/conformance/ferroehr/`); measured numbers are unchanged.
+  - The startup banner, served OpenAPI title, telemetry `service.name`, and
+    the documentation website carry the new name and logo. The openEHR wire
+    behaviour itself (canonical JSON/XML, AQL, status codes/headers) is
+    unchanged.
+
 ## [3.15.1] - 2026-07-31
 
 ### Added

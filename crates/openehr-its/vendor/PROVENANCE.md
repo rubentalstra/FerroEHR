@@ -26,7 +26,7 @@ Per-surface detail + policy live beside each set:
 - **XSDs** -> `openehr-codegen emit-xml` generates canonical-XML (de)ser onto the
   RM types (both v1 default + v2 flagged).
 - **OAS** -> `openehr-codegen emit-rest` generates the REST contract (DTOs +
-  params + server trait + router) into `openehr-its`; `ehrbase-rest` implements it.
+  params + server trait + router) into `openehr-its`; `ferroehr-rest` implements it.
 - **JSON schemas** -> validation oracle for the canonical-JSON fidelity gate.
 
 Related (verified at latest master the same day, vendored elsewhere):

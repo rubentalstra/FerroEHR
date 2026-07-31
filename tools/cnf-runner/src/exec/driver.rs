@@ -2795,8 +2795,8 @@ mod tests {
     fn same_deployment_compares_origins_not_paths() {
         // Same server, different API base path (sut vs smart_platform).
         assert!(same_deployment(
-            "http://localhost:8080/ehrbase/rest/openehr/v1",
-            "http://localhost:8080/ehrbase/rest"
+            "http://localhost:8080/ferroehr/rest/openehr/v1",
+            "http://localhost:8080/ferroehr/rest"
         ));
         // Same server, trailing-slash noise.
         assert!(same_deployment(
@@ -2807,8 +2807,8 @@ mod tests {
         assert!(same_deployment("http://host/api", "http://host:80/api"));
         // A second deployment on another port is NOT the same deployment.
         assert!(!same_deployment(
-            "http://localhost:8081/ehrbase/rest/openehr/v1",
-            "http://localhost:8080/ehrbase/rest/openehr/v1"
+            "http://localhost:8081/ferroehr/rest/openehr/v1",
+            "http://localhost:8080/ferroehr/rest/openehr/v1"
         ));
         // Different host, and different scheme, likewise.
         assert!(!same_deployment(

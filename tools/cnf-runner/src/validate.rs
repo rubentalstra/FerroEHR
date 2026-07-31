@@ -3216,7 +3216,7 @@ h|*1..1*\n\
         let claiming: WireSurface = serde_json::from_value(serde_json::json!({
             "served_extensions": [ {
                 "family": "impostor",
-                "routes": ["POST /ehrbase/rest/openehr/v1/ehr"],
+                "routes": ["POST /ferroehr/rest/openehr/v1/ehr"],
                 "config_gate": "always on",
                 "spec_silence": "s",
                 "never_gates": true

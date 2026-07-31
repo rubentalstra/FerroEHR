@@ -1,6 +1,6 @@
 # From source
 
-You can build the `ehrbase` binary yourself — for a platform without a
+You can build the `ferroehr` binary yourself — for a platform without a
 published image, for local development, or to run the test suite. This chapter
 covers the prerequisites and the build. Most operators should prefer the
 published container images ([Docker Compose](compose.md),
@@ -28,10 +28,10 @@ To build just the server binary in release mode (what the container image
 ships):
 
 ```shell
-cargo build --release --locked -p ehrbase
+cargo build --release --locked -p ferroehr
 ```
 
-The resulting binary is `target/release/ehrbase`. It is statically linked
+The resulting binary is `target/release/ferroehr`. It is statically linked
 against a pure-Rust TLS stack — no OpenSSL, no JVM, no runtime dependencies —
 so it drops into a minimal base image or runs directly on the host.
 
@@ -46,13 +46,13 @@ The suite includes integration tests that start PostgreSQL 18 via
 
 ## Running the binary
 
-The binary is configured entirely through `EHRBASE_*` environment variables
+The binary is configured entirely through `FERROEHR_*` environment variables
 (see the [configuration reference](configuration.md)). At minimum it needs a
 database URL:
 
 ```shell
-export EHRBASE__DB__URL='postgres://ehrbase:ehrbase@localhost:5432/ehrbase'
-target/release/ehrbase
+export FERROEHR__DB__URL='postgres://ferroehr:ferroehr@localhost:5432/ferroehr'
+target/release/ferroehr
 ```
 
 It runs its schema migrations at boot and then serves on the configured bind

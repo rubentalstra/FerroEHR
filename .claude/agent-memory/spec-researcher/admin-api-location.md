@@ -80,7 +80,7 @@ AMB-10 (physical VERSIONED_OBJECT deletion undefined) — extend, don't duplicat
   only** (not CORE, not STANDARD).
 - `CNF/tests/platform/robot/I_ADMIN_SERVICE/` (6 suites) is **EHRbase legacy,
   not the vendored Admin API**: Apache-2.0 Vitasystems/HMS headers, hits
-  `${admin_baseurl}` = `http://localhost:8080/ehrbase/rest/admin`, asserts
+  `${admin_baseurl}` = `http://localhost:8080/ferroehr/rest/admin`, asserts
   EHRbase's own PG table counts, and covers routes openEHR never defined
   (admin composition/contribution/directory/template delete + PUT template).
   **Unrunnable as vendored**: `${admin_baseurl}` is only a COMMENTED line in
@@ -100,10 +100,10 @@ it lives in `vocab/wire_surface.yaml` `sm_operations` as `off_wire`.
 kind — both admin-only branches are unauthorable until the taxonomy extends.
 
 ## Our server
-Admin surface is `{base_path}/admin/**` = `/ehrbase/rest/openehr/v1/admin/**`
+Admin surface is `{base_path}/admin/**` = `/ferroehr/rest/openehr/v1/admin/**`
 (NOT `/rest/admin` — that string survives only as a stale v1 reference in
-`app/ehrbase-rest/src/extensions/access/authz/classify.rs` L13).
-`app/ehrbase-rest/src/api/admin/{mod,dispatch,openapi_routes}.rs`: the two
+`app/ferroehr-rest/src/extensions/access/authz/classify.rs` L13).
+`app/ferroehr-rest/src/api/admin/{mod,dispatch,openapi_routes}.rs`: the two
 spec routes plus three OWN EXTENSIONS (`DELETE /admin/template/{id}`,
 `DELETE /admin/query/{name}/{version}`, `GET /admin/config`). Disabled group
 answers **405 + empty `Allow`**; the "→ 404 when off" phrasings in

@@ -25,7 +25,7 @@ first session's mid-edit files into its own commit.
   of what else sits staged; or run `git diff --cached --name-only` first and
   unstage strangers.
 - Scope cargo gates to the crates you touched (`-p`), not `--workspace` — the
-  other session may have a broken crate in flight (e.g. `ehrbase-conformance`).
+  other session may have a broken crate in flight (e.g. `ferroehr-conformance`).
 - For multi-file subagent work, use worktree isolation and merge branches back.
 - **Parallel implementation agents MUST get `isolation: "worktree"` on the
   Agent call — never two agents in the main tree** (bitten 2026-07-20: two

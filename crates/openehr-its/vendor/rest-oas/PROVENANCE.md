@@ -18,5 +18,5 @@ All **21** OpenAPI 3.0 bundles are vendored verbatim: **7 API groups** ×
 These are hand-authored, self-contained bundles (openEHR authors the OAS by
 hand and publishes these variants); they are the **source of truth** for the
 REST contract. Our generator runs spec→code (OAS → Rust), never code→OAS —
-`ehrbase-rest` may additionally emit its own OAS via `utoipa` purely as a CI
+`ferroehr-rest` may additionally emit its own OAS via `utoipa` purely as a CI
 drift-check against these files.

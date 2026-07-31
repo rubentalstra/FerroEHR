@@ -15,7 +15,7 @@ Consequence for SF cases: on a template whose only events child is `0..1`, the
 event node is hoisted away, so
 `<root>/<obs>:0/any_event:0/...` addresses nothing → `FlatError::UnknownPath`
 → 422 (every FLAT input error maps to 422 via
-`ehrbase-rest::formats::dispatch::flat_input_err`). Event-level master05
+`ferroehr-rest::formats::dispatch::flat_input_err`). Event-level master05
 mappings (`/time`, `/width`, `/math_function`, `|sample_count`) are then
 unreachable, because the collapsed event is re-materialized structurally from
 `slot_types` with no way to supply its attributes.

@@ -2,7 +2,7 @@
 
 Clinical records sometimes carry large binary attachments — scanned documents,
 images, waveforms — as `DV_MULTIMEDIA` values. Keeping big blobs inline in the
-database bloats storage and slows queries. EHRbase-rs can transparently offload
+database bloats storage and slows queries. FerroEHR can transparently offload
 large multimedia blobs to any S3-compatible object store, keeping only a small
 content-addressed reference in the composition, and re-materialize them on
 demand when a record is read back.
@@ -49,19 +49,19 @@ corrupted or tampered blob is never silently served.
 ## Enabling it
 
 Offload is off by default. These keys live in the `[multimedia]` section of
-`ehrbase.toml`; each can be overridden with the shown `EHRBASE__MULTIMEDIA__*`
+`ferroehr.toml`; each can be overridden with the shown `FERROEHR__MULTIMEDIA__*`
 environment variable:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE__MULTIMEDIA__ENABLED` | `false` | master switch |
-| `EHRBASE__MULTIMEDIA__THRESHOLD_BYTES` | `262144` (256 KiB) | offload blobs larger than this; smaller stay inline |
-| `EHRBASE__MULTIMEDIA__ENDPOINT` | unset | S3 endpoint URL (unset uses AWS default resolution) |
-| `EHRBASE__MULTIMEDIA__BUCKET` | `openehr-multimedia` | target bucket |
-| `EHRBASE__MULTIMEDIA__REGION` | `us-east-1` | S3 region |
-| `EHRBASE__MULTIMEDIA__ACCESS_KEY_ID` | unset | access key (see note on credentials) |
-| `EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY` | unset | secret key |
-| `EHRBASE__MULTIMEDIA__ALLOW_HTTP` | `false` | permit plain-HTTP endpoints (development only) |
+| `FERROEHR__MULTIMEDIA__ENABLED` | `false` | master switch |
+| `FERROEHR__MULTIMEDIA__THRESHOLD_BYTES` | `262144` (256 KiB) | offload blobs larger than this; smaller stay inline |
+| `FERROEHR__MULTIMEDIA__ENDPOINT` | unset | S3 endpoint URL (unset uses AWS default resolution) |
+| `FERROEHR__MULTIMEDIA__BUCKET` | `openehr-multimedia` | target bucket |
+| `FERROEHR__MULTIMEDIA__REGION` | `us-east-1` | S3 region |
+| `FERROEHR__MULTIMEDIA__ACCESS_KEY_ID` | unset | access key (see note on credentials) |
+| `FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY` | unset | secret key |
+| `FERROEHR__MULTIMEDIA__ALLOW_HTTP` | `false` | permit plain-HTTP endpoints (development only) |
 
 If both the access key and secret are unset, the client runs unsigned
 (anonymous) — the mode a local development SeaweedFS accepts with no
@@ -69,7 +69,7 @@ credentials. Set both to use signed requests against a real store.
 
 > [!WARNING]
 > Offloaded blobs are PHI. In production the bucket must be private, encrypted,
-> and reached over HTTPS (`EHRBASE__MULTIMEDIA__ALLOW_HTTP=false`). Prefer
+> and reached over HTTPS (`FERROEHR__MULTIMEDIA__ALLOW_HTTP=false`). Prefer
 > instance or workload identity over static keys where your platform supports
 > it. See [Operations](../operations.md) for the deployment-side security
 > posture.
@@ -81,10 +81,10 @@ option for development and testing — its S3 gateway needs no credentials.
 Point the server at the gateway and allow plain HTTP for local use:
 
 ```bash
-export EHRBASE__MULTIMEDIA__ENABLED=true
-export EHRBASE__MULTIMEDIA__ENDPOINT=http://127.0.0.1:8333
-export EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia
-export EHRBASE__MULTIMEDIA__ALLOW_HTTP=true
+export FERROEHR__MULTIMEDIA__ENABLED=true
+export FERROEHR__MULTIMEDIA__ENDPOINT=http://127.0.0.1:8333
+export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
+export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true
 ```
 
 With the feature enabled and the bucket reachable, large `DV_MULTIMEDIA` values

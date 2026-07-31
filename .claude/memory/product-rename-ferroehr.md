@@ -1,15 +1,15 @@
 ---
 name: product-rename-ferroehr
-description: "Owner decided 2026-07-31 the product rebrands from EHRbase-rs to FerroEHR (issue #1353); rename program not yet executed"
-metadata: 
+description: "The product is FerroEHR (issue #1353): the full rename was EXECUTED 2026-07-31 — crates/binary/env-prefix/base-path/images all carry the new name"
+metadata:
   node_type: memory
   type: project
   originSessionId: dcbecbcf-230c-4415-b3e6-d95dc66e6703
-  modified: 2026-07-31T11:23:20.910Z
+  modified: 2026-07-31T12:27:18.188Z
 ---
 
-Owner decision 2026-07-31: the product's new name is **FerroEHR** (ferro/ferrum → Rust, "EHR" kept for category recognition). Tracked on issue #1353 — decision + collision-check evidence in its comments.
+The product is **FerroEHR** (ferro/ferrum → Rust; "EHR" kept for category recognition). Decision + full rename both landed 2026-07-31 (issue #1353): repo `github.com/rubentalstra/FerroEHR`, app crates `ferroehr`/`ferroehr-rest`/`ferroehr-server`/`ferroehr-admin-ui`, binary `ferroehr`, env prefix `FERROEHR_*`, REST base path `/ferroehr/rest/openehr/v1`, conformance SUT id `ferroehr`, Helm chart + OCI images `ferroehr*`. The generated `openehr-*` spec crates keep their names (spec-versioned, not brand).
 
-**Why:** "EHRbase" is vitagroup GmbH's product; this greenfield project needs a distinct identity. "openEHR" must NOT appear in the brand (Foundation trademark needs a Product Use License); prose says "an openEHR® CDR" with attribution.
+**Why:** distinct identity from vitagroup's EHRbase (the Java prior art — references to THAT product deliberately keep the EHRbase name: `docs/conformance/ehrbase-java/`, `docker/sut-ehrbase-java.yml`, upstream fixture names, "EHRbase is prior art" prose). "openEHR" must NOT appear in the brand (Foundation trademark); prose says "an openEHR® CDR" with the attribution line (README §Acknowledgments). Never call the project by its pre-rename working name in public-facing text — it was never released publicly.
 
-**How to apply:** Until the rename program (repo, `ehrbase-*` crates, binary, `EHRBASE_*` env prefix, OCI/Helm, website) lands via #1353 sub-issues, keep using current names in code. The generated `openehr-*` spec crates keep their names regardless. Claimed 2026-07-31: the GitHub org `FerroEHR` (parked — repo stays on the owner's personal Pro account for now; free-org transfer would lose features) and the domain `ferroehr.eu` (the primary domain). Still open: formal EUIPO/USPTO trademark search; ferroehr.com/.org unregistered (squat risk before public announcement).
+**How to apply:** brand assets live in `assets/brand/` (tokens.css = colour source of truth; "Fe element tile" logo, "Oxide & Iron" palette). Still open: local FOLDER rename `~/RustroverProjects/ehrbase-rs` → `ferroehr` (must happen with no live sessions; recreate the harness memory symlink after), formal EUIPO/USPTO trademark search, registering ferroehr.com/.org (`ferroehr.eu` is held; GitHub org `FerroEHR` parked).

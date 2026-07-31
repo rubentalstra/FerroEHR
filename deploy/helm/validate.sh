@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Validate the ehrbase-rs Helm chart:
+# Validate the ferroehr Helm chart:
 #   1. helm lint      — default + all-features value sets (must be clean)
 #   2. helm template  — render both; assert the output is valid multi-doc YAML
 #   3. security gate   — assert the Kubernetes Pod Security Standards
@@ -23,11 +23,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="${SCRIPT_DIR}/ehrbase-rs"
+CHART_DIR="${SCRIPT_DIR}/ferroehr"
 CI_DIR="${SCRIPT_DIR}/ci"
 GOLDEN_DIR="${SCRIPT_DIR}/golden"
-RELEASE_NAME="ehrbase-rs"
-NAMESPACE="ehrbase"
+RELEASE_NAME="ferroehr"
+NAMESPACE="ferroehr"
 
 UPDATE=0
 [[ "${1:-}" == "--update" ]] && UPDATE=1

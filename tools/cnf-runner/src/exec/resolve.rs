@@ -614,13 +614,13 @@ mod tests {
 
         let declared: crate::ixit::Ixit = serde_json::from_value(serde_json::json!({
             "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
-            "system_id": "ehrbase-rs.local"
+            "system_id": "ferroehr.local"
         }))
         .unwrap();
         let mut r = Resolver::new(&m, &dir, Some(&declared));
         assert_eq!(
             r.resolve_ref(&reference, &vars).unwrap(),
-            Value::String("ehrbase-rs.local".to_owned())
+            Value::String("ferroehr.local".to_owned())
         );
 
         let bare: crate::ixit::Ixit = serde_json::from_value(serde_json::json!({

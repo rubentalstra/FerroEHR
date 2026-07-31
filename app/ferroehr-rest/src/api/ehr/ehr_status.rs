@@ -1,0 +1,197 @@
+//! The `EHR_STATUS` resource + its item tags.
+//!
+//! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (`EHR_STATUS`) +
+//! `specifications/operations/{ehr_status_get_by_version_id,
+//! ehr_status_get_at_time,ehr_status_update,ehr_status_tags_get,
+//! ehr_status_tags_update,ehr_status_tags_delete}.yaml`.
+
+use axum::response::Response;
+use http::StatusCode;
+use serde_json::Value;
+
+use openehr_its::rest::generated::ehr::{
+    EhrStatusGetAtTimeParams, EhrStatusGetByVersionIdParams, EhrStatusTagsDeleteParams,
+    EhrStatusTagsGetParams, EhrStatusTagsUpdateParams, EhrStatusUpdateParams,
+};
+use openehr_its::rest::runtime::ApiError;
+use openehr_rm::prelude::EhrStatus;
+
+use ferroehr::service::response::ServiceResponse;
+use ferroehr::service::status::CallStatusType;
+
+use crate::api::RequestParts;
+use crate::overview::error::{RestError, sm_api_error};
+use crate::overview::version_id::{parse_ehr_id, parse_version_uid, require_if_match};
+use crate::state::AppState;
+use crate::{negotiate, params};
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "one arm per EHR_STATUS operation: a flat match keeps every \
+              operation's wire behaviour readable in one place"
+)]
+pub(super) async fn run(
+    state: AppState,
+    op: &'static str,
+    parts: RequestParts,
+) -> Result<Response, RestError> {
+    let h = &parts.headers;
+    let q = parts.query.as_deref();
+    let ok = StatusCode::OK;
+    let no_content = StatusCode::NO_CONTENT;
+    let base = state.config().server.base_path.clone();
+
+    // EHR_STATUS is not templated → no Simplified-Formats mapping; reject a
+    // simplified Content-Type/Accept uniformly (see `formats::dispatch`).
+    crate::formats::dispatch::guard_non_templated(h)?;
+
+    match op {
+        "ehr_status_get_by_version_id" => {
+            let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
+            // the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
+            // 200_EHR_STATUS_retrieved: ETag(version_uid) + Last-Modified.
+            // The bare EHR_STATUS carries no commit_audit, so the commit
+            // instant the spec derives Last-Modified from
+            // (`VERSION.commit_audit.time_committed.value`,
+            // Requests_and_responses.md §"ETag and Last-Modified") comes from
+            // the service's version metadata, not the served body.
+            let resp = state
+                .backend()
+                .ehr_status_at_version_response(ehr_id, ferroehr::ids::VoId(vo_id), &version)
+                .await?;
+            // The addressed version_uid must equal the served version's full
+            // three-part identity, case-insensitively (ITS-REST overview
+            // Resources.md §Identifier types; BASE master05 §Composite
+            // Identifiers and Case) — a fabricated creating_system_id names
+            // no VERSION here.
+            super::ensure_served_version(&p.version_uid, &resp.body)?;
+            Ok(negotiate::read_rm::<EhrStatus>(
+                h,
+                &base,
+                Some("ehr_status"),
+                &resp,
+                "ehr_status",
+            ))
+        }
+        "ehr_status_get_at_time" => {
+            let p = params::build::<EhrStatusGetAtTimeParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            // Same derivation as the by-version read: the bare EHR_STATUS has
+            // no commit_audit, so the version metadata carries the
+            // Last-Modified instant (§"ETag and Last-Modified").
+            let resp = state
+                .backend()
+                .ehr_status_at_time_response(ehr_id, p.version_at_time)
+                .await?;
+            Ok(negotiate::read_rm::<EhrStatus>(
+                h,
+                &base,
+                Some("ehr_status"),
+                &resp,
+                "ehr_status",
+            ))
+        }
+        "ehr_status_update" => {
+            let p = params::build::<EhrStatusUpdateParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            let body = negotiate::rm_value::<EhrStatus>(h, &parts.body)?;
+            let uv = super::mk_update_version(
+                h,
+                body,
+                super::CHANGE_MODIFICATION,
+                "EHR_STATUS update",
+                Some(require_if_match(&p.if_match)?),
+            );
+            // 204_EHR_STATUS (default minimal) / 200_EHR_STATUS_updated
+            // (representation); ETag + Last-Modified + Location on all.
+            // The commit result's instant is the Last-Modified value
+            // (§"ETag and Last-Modified"), carried in the service metadata so
+            // the write path never re-reads the row it just wrote.
+            // 412 → latest version_uid.
+            match state.backend().replace_ehr_status_meta(ehr_id, uv).await {
+                Ok(meta) => {
+                    // apply the openehr-item-tag / openehr-version-item-tag
+                    // write-wrapper headers to the committed target
+                    // (Requests_and_responses.md §…§Usage in Requests).
+                    let stored_tags =
+                        super::apply_item_tag_headers(&state, ehr_id, "EHR_STATUS", &meta.uid, h)
+                            .await?;
+                    let repr = if negotiate::prefers_representation(h) {
+                        state.backend().get_ehr_status(ehr_id).await?
+                    } else {
+                        Value::Null
+                    };
+                    let resp = ServiceResponse::new(repr, meta);
+                    let mut resp = negotiate::write_rm::<EhrStatus>(
+                        h,
+                        &base,
+                        no_content,
+                        ok,
+                        Some("ehr_status"),
+                        &resp,
+                        "ehr_status",
+                    );
+                    super::echo_item_tags(&mut resp, &stored_tags);
+                    Ok(resp)
+                }
+                Err(e) if e.status == CallStatusType::VersionMismatch => {
+                    let meta = state
+                        .backend()
+                        .ehr_status_latest_meta(ehr_id)
+                        .await
+                        .ok()
+                        .flatten();
+                    Ok(negotiate::error_with_meta(
+                        sm_api_error(e),
+                        &base,
+                        Some("ehr_status"),
+                        meta.as_ref(),
+                    ))
+                }
+                Err(e) => Err(RestError::from(e)),
+            }
+        }
+        "ehr_status_tags_get" => {
+            let p = params::build::<EhrStatusTagsGetParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            let tags = state
+                .backend()
+                .target_tags_get(ehr_id, p.uid_based_id, "EHR_STATUS")
+                .await?;
+            Ok(negotiate::respond(h, ok, &Value::Array(tags)))
+        }
+        "ehr_status_tags_update" => {
+            let p = params::build::<EhrStatusTagsUpdateParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            let body = negotiate::json_vec(h, &parts.body)?;
+            let tags = state
+                .backend()
+                .target_tags_replace(ehr_id, p.uid_based_id, "EHR_STATUS", body)
+                .await?;
+            // ehr_status_tags_update.yaml — 200 (the stored ITEM_TAG list) on
+            // `Prefer: return=representation`; 204 (`204_updated.yaml`) when
+            // `Prefer` is missing or `return=minimal` (the default —
+            // overview §Prefer), with `Preference-Applied` declaring which.
+            Ok(negotiate::write_collection(
+                h,
+                no_content,
+                ok,
+                &Value::Array(tags),
+            ))
+        }
+        "ehr_status_tags_delete" => {
+            let p = params::build::<EhrStatusTagsDeleteParams>(&parts.path, q, h)?;
+            let ehr_id = parse_ehr_id(&p.ehr_id)?;
+            state
+                .backend()
+                .target_tag_delete(ehr_id, p.uid_based_id, "EHR_STATUS", p.key)
+                .await?;
+            Ok(negotiate::empty(no_content))
+        }
+        other => Err(RestError(ApiError::Internal(format!(
+            "unrouted ehr operation: {other}"
+        )))),
+    }
+}

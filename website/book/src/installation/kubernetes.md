@@ -1,6 +1,6 @@
 # Kubernetes & Helm
 
-The `deploy/helm/ehrbase-rs` chart deploys EHRbase-rs as a hardened,
+The `deploy/helm/ferroehr` chart deploys FerroEHR as a hardened,
 production-shaped Kubernetes workload: non-root, read-only root filesystem,
 default-deny ingress, connecting to an **external** PostgreSQL 18. This chapter
 covers installing the chart, the database role model it expects, the security
@@ -19,16 +19,16 @@ Create a Secret holding the app-role connection string, then install the chart
 pointing at it:
 
 ```shell
-kubectl -n ehrbase create secret generic ehrbase-db \
-  --from-literal=EHRBASE__DB__URL='postgres://ehrbase_app:***@pg-host:5432/ehrbase?sslmode=verify-full'
+kubectl -n ferroehr create secret generic ferroehr-db \
+  --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
-helm install ehrbase-rs deploy/helm/ehrbase-rs -n ehrbase \
-  --set database.existingSecret=ehrbase-db \
+helm install ferroehr deploy/helm/ferroehr -n ferroehr \
+  --set database.existingSecret=ferroehr-db \
   --set image.tag=3.5.0
 ```
 
 Always pin `image.tag` to an immutable version or, better, a `@sha256` digest —
-never `latest`. Every `values.yaml` key documents the exact `EHRBASE_*`
+never `latest`. Every `values.yaml` key documents the exact `FERROEHR_*`
 environment variable it maps to; the [configuration reference](configuration.md)
 is the full list.
 
@@ -40,16 +40,16 @@ a superuser:
 | Role | Purpose |
 |---|---|
 | owner | owns the database (provisioning only) |
-| `ehrbase_migrator` | runs the append-only schema migrations |
-| `ehrbase_app` | day-to-day reads and writes — **the running pod connects as this** |
-| `ehrbase_reader` | read-only, for replicas and reporting |
+| `ferroehr_migrator` | runs the append-only schema migrations |
+| `ferroehr_app` | day-to-day reads and writes — **the running pod connects as this** |
+| `ferroehr_reader` | read-only, for replicas and reporting |
 
 The binary calls its migrations on boot, so you choose one of two flows:
 
 - **(a) Grant the runtime DSN the migrator role** — simplest for single-tenant
   or small deployments; the pod migrates itself at startup.
 - **(b) Run migrations out of band** with a migrator DSN (a CI step or a
-  one-shot `Job`), then start the pods with the lower-privileged `ehrbase_app`
+  one-shot `Job`), then start the pods with the lower-privileged `ferroehr_app`
   DSN — recommended for least-privilege production. Gate the Deployment rollout
   on the migration step so two server versions never race the schema.
 
@@ -62,8 +62,8 @@ Some settings do not fit cleanly in environment variables — the Basic-auth use
 store, a full OIDC block, RBAC role-claim lists, ABAC policies, the external
 terminology provider map, ATNA TLS certificates, and the PGP signing key. Supply
 these as files via `config.files`, which the chart mounts read-only from a
-Secret at `/etc/ehrbase/<key>`; point the matching in-TOML `*_file` /
-`*_path` key (or its `EHRBASE__…` env override) at the mounted path. Secret-bearing scalar values
+Secret at `/etc/ferroehr/<key>`; point the matching in-TOML `*_file` /
+`*_path` key (or its `FERROEHR__…` env override) at the mounted path. Secret-bearing scalar values
 (DB DSN, HMAC secret, broker URLs, S3 keys, PGP passphrase) go into the chart's
 Secret, never the ConfigMap.
 

@@ -2,7 +2,7 @@
 #
 # Container images, built for speed:
 #
-#   1. The `ehrbase` binary is compiled OUTSIDE Docker, natively per
+#   1. The `ferroehr` binary is compiled OUTSIDE Docker, natively per
 #      architecture (amd64 on ubuntu-26.04, arm64 on ubuntu-26.04-arm — no
 #      QEMU emulation anywhere), inside a rust:*-slim-trixie job container
 #      so the binary links against the same glibc (Debian 13 / 2.41) as the
@@ -27,9 +27,9 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs
-  POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs-postgres
-  ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs-admin-ui
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
+  POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
+  ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
 
 permissions:
   contents: read
@@ -93,8 +93,8 @@ jobs:
           shared-key: containers-${{ matrix.platform }}
 
       - name: Build (release, native)
-        # The binary is produced by the ehrbase-server package (bin name
-        # `ehrbase`) since the crate consolidation; `-p ehrbase` is the
+        # The binary is produced by the ferroehr-server package (bin name
+        # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
         # platform LIBRARY and yields no binary to strip.
         # build.rs stamps the REVISION value into /management/info; passing
         # github.sha here (an env, never interpolated into a shell) makes the
@@ -102,15 +102,15 @@ jobs:
         # slim job container (it is not). Empty/absent degrades to `unknown`.
         env:
           REVISION: ${{ github.sha }}
-        run: cargo build --release --locked -p ehrbase-server
+        run: cargo build --release --locked -p ferroehr-server
 
       - name: Strip
-        run: strip target/release/ehrbase
+        run: strip target/release/ferroehr
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ehrbase-${{ matrix.platform }}
-          path: target/release/ehrbase
+          name: ferroehr-${{ matrix.platform }}
+          path: target/release/ferroehr
           if-no-files-found: error
           retention-days: 1
 
@@ -126,11 +126,11 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          name: ehrbase-amd64
+          name: ferroehr-amd64
           path: bin/amd64
       - uses: actions/download-artifact@v8
         with:
-          name: ehrbase-arm64
+          name: ferroehr-arm64
           path: bin/arm64
 
       # No QEMU: the runtime Dockerfile is COPY-only, so a multi-arch build
@@ -211,15 +211,15 @@ jobs:
           shared-key: containers-admin-ui-${{ matrix.platform }}
 
       - name: Build the ssr server binary (release, native)
-        run: cargo build --release --locked --no-default-features --features ssr -p ehrbase-admin-ui
+        run: cargo build --release --locked --no-default-features --features ssr -p ferroehr-admin-ui
 
       - name: Strip
-        run: strip target/release/ehrbase-admin-ui
+        run: strip target/release/ferroehr-admin-ui
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ehrbase-admin-ui-${{ matrix.platform }}
-          path: target/release/ehrbase-admin-ui
+          name: ferroehr-admin-ui-${{ matrix.platform }}
+          path: target/release/ferroehr-admin-ui
           if-no-files-found: error
           retention-days: 1
 
@@ -248,13 +248,13 @@ jobs:
           curl -sSfL -o /usr/local/bin/tailwindcss \
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
-          cd app/ehrbase-admin-ui
+          cd app/ferroehr-admin-ui
           LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build --release
 
       - uses: actions/upload-artifact@v7
         if: matrix.platform == 'amd64'
         with:
-          name: ehrbase-admin-ui-site
+          name: ferroehr-admin-ui-site
           path: target/site
           if-no-files-found: error
           retention-days: 1
@@ -269,15 +269,15 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          name: ehrbase-admin-ui-amd64
+          name: ferroehr-admin-ui-amd64
           path: bin/amd64
       - uses: actions/download-artifact@v8
         with:
-          name: ehrbase-admin-ui-arm64
+          name: ferroehr-admin-ui-arm64
           path: bin/arm64
       - uses: actions/download-artifact@v8
         with:
-          name: ehrbase-admin-ui-site
+          name: ferroehr-admin-ui-site
           path: site
 
       - uses: docker/setup-buildx-action@v4
@@ -378,14 +378,14 @@ jobs:
       - name: Pull pushed app image (by digest)
         run: |
           docker pull "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}"
-          docker tag  "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}" ehrbase-rs:smoke
+          docker tag  "${APP_IMAGE}@${{ needs.app-image.outputs.digest }}" ferroehr:smoke
 
       - name: Build postgres image (amd64; COPY-only, seconds)
-        run: docker build -t ehrbase-rs-postgres:smoke docker/postgres
+        run: docker build -t ferroehr-postgres:smoke docker/postgres
 
       - name: Smoke test
         shell: bash
         env:
-          EHRBASE_IMAGE: ehrbase-rs:smoke
-          EHRBASE_POSTGRES_IMAGE: ehrbase-rs-postgres:smoke
+          FERROEHR_IMAGE: ferroehr:smoke
+          FERROEHR_POSTGRES_IMAGE: ferroehr-postgres:smoke
         run: bash docker/smoke-test.sh

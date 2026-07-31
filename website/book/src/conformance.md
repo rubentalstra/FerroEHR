@@ -1,6 +1,6 @@
 # Conformance
 
-EHRbase-rs makes a measured claim: it is an openEHR-spec-conformant Clinical
+FerroEHR makes a measured claim: it is an openEHR-spec-conformant Clinical
 Data Repository, and that claim is backed by a test run you can reproduce, not
 by prose. This chapter explains what conformance means here, how to run the
 suite — against this server, against another CDR, or against any deployed
@@ -72,9 +72,9 @@ cited-N/A so it reads as neither a pass nor a failure:
 
 ![Schedule outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
-The published run against EHRbase-rs reports:
+The published run against FerroEHR reports:
 
-<!-- Generated at build time from docs/conformance/ehrbase-rs/results.json by
+<!-- Generated at build time from docs/conformance/ferroehr/results.json by
      scripts/render-conformance-stats.sh — never hand-type numbers here (CI:
      scripts/check-conformance-numbers.sh). -->
 {{#include ../generated/conformance-stats.md}}
@@ -87,11 +87,11 @@ book's "any passes" rule.
 
 ## Any server can be assessed
 
-The runner is deliberately not tied to EHRbase-rs. It assesses **any openEHR
+The runner is deliberately not tied to FerroEHR. It assesses **any openEHR
 CDR reachable over HTTP** and emits the same artefact set for each system
 under test, into its own directory:
 
-- **EHRbase-rs** (the default) — the composed stack built from the current
+- **FerroEHR** (the default) — the composed stack built from the current
   sources. This is the project's own gate: a phase can only close on a run
   with zero drift against the committed baseline.
 - **Upstream EHRbase (Java)** — `CONF_SUT=ehrbase-java` composes the
@@ -131,7 +131,7 @@ CONF_SUT=ehrbase-java bash scripts/conformance.sh
 
 # any deployed CDR, by URL (credentials via the SUT_* variables the
 # ixit references)
-CONF_SUT=byo CONF_BASE_URL=https://your-host/ehrbase/rest/openehr/v1 \
+CONF_SUT=byo CONF_BASE_URL=https://your-host/ferroehr/rest/openehr/v1 \
   SUT_USER=user SUT_PASS=password bash scripts/conformance.sh
 ```
 
@@ -160,7 +160,7 @@ CONF_SIGNING_MODE=pgp bash scripts/conformance.sh
 ```
 
 The **SMART resource-server posture is the standard conformance posture**
-for `ehrbase-rs` — every pipeline run boots the server with `smart.enabled`,
+for `ferroehr` — every pipeline run boots the server with `smart.enabled`,
 `smart.require_smart_scopes` and an `auth.oidc` issuer it trusts
 (`docker/sut-smart.yml`), and the runner's principals present minted Bearer
 tokens carrying the roles and resource scopes each case needs. The SMART
@@ -235,7 +235,7 @@ capabilities the hospital-simulation load actually exercised; a capability the
 simulation does not reach must carry an adjudicated exclusion, printed with
 its reason, and the runner's `validate` gate refuses an artifact tree that
 leaves such a row undecided. It is emitted for **every** assessed system —
-EHRbase-rs, upstream, or your own — and always identifies itself as a
+FerroEHR, upstream, or your own — and always identifies itself as a
 framework assessment with the claim computed from the attached run; it is
 never an official openEHR certification. This is the document to hand to a
 procurement or evaluation reviewer who wants the capability-by-capability

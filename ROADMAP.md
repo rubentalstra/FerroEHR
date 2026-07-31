@@ -1,4 +1,4 @@
-# EHRbase-rs — product roadmap
+# FerroEHR — product roadmap
 
 *Last revised: 2026-07-20. This file is **direction and themes only** — it
 carries no item-level state and no quotable numbers, because both go stale.

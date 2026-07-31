@@ -1350,7 +1350,7 @@ mod tests {
             containers: vec![
                 crate::perf::ContainerResourceSeries {
                     role: crate::perf::ContainerRole::Sut,
-                    name: "ehrbase-rs-ehrbase-1".to_owned(),
+                    name: "ferroehr-ferroehr-1".to_owned(),
                     samples: vec![
                         sample(10, ResourcePhase::Warmup, 12.0, 400_000_000),
                         sample(310, ResourcePhase::Measured, 55.0, 600_000_000),
@@ -1359,7 +1359,7 @@ mod tests {
                 },
                 crate::perf::ContainerResourceSeries {
                     role: crate::perf::ContainerRole::Db,
-                    name: "ehrbase-rs-ehrbase-postgres-1".to_owned(),
+                    name: "ferroehr-ferroehr-postgres-1".to_owned(),
                     samples: vec![
                         sample(10, ResourcePhase::Warmup, 30.0, 900_000_000),
                         sample(310, ResourcePhase::Measured, 140.0, 1_400_000_000),
@@ -1420,7 +1420,7 @@ mod tests {
         assert!(with.contains("| Container | CPU mean | CPU peak | RSS peak |"));
         // The SUT row derives over the measured phase only (one sample:
         // 55% / 600 MB).
-        assert!(with.contains("| sut `ehrbase-rs-ehrbase-1` | 55.0% | 55.0% | 600 MB |"));
+        assert!(with.contains("| sut `ferroehr-ferroehr-1` | 55.0% | 55.0% | 600 MB |"));
         assert!(with.contains("Disk anchors: empty 64 MB"));
         assert!(with.contains("not probed"));
         assert!(with.contains("/ composition over 1,000,000 committed"));
@@ -1474,12 +1474,12 @@ mod tests {
         };
         let ours = report(256.0);
         let theirs = report(512.0); // the comparison side winning is drawn plainly
-        let svg = stress_compare_svg(("ehrbase-rs", &ours), ("EHRbase (Java)", &theirs)).unwrap();
+        let svg = stress_compare_svg(("ferroehr", &ours), ("EHRbase (Java)", &theirs)).unwrap();
         assert_eq!(
             svg,
-            stress_compare_svg(("ehrbase-rs", &ours), ("EHRbase (Java)", &theirs)).unwrap()
+            stress_compare_svg(("ferroehr", &ours), ("EHRbase (Java)", &theirs)).unwrap()
         );
-        assert!(svg.contains("ehrbase-rs max sustainable 256/s"));
+        assert!(svg.contains("ferroehr max sustainable 256/s"));
         assert!(svg.contains("EHRbase (Java) max sustainable 512/s"));
         assert!(svg.contains("class=\"curve\"") && svg.contains("class=\"cmp\""));
         assert!(svg.contains("prefers-color-scheme: dark"));

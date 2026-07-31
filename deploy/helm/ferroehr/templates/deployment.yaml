@@ -1,0 +1,221 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ferroehr.fullname" . }}
+  labels:
+    {{- include "ferroehr.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ferroehr.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Roll pods when the rendered ferroehr.toml changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ include "ferroehr.managementPort" . | quote }}
+        prometheus.io/path: {{ printf "%s/prometheus" (.Values.config.management.base_path | trimSuffix "/") | quote }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "ferroehr.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ferroehr.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ferroehr
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            {{- if and .Values.config.management.enabled .Values.config.management.port }}
+            - name: management
+              containerPort: {{ .Values.config.management.port }}
+              protocol: TCP
+            {{- end }}
+          # Only SECRET config is env; the rest is the mounted ferroehr.toml.
+          # The DSN comes from an existing Secret (preferred) or the chart Secret;
+          # the env layer overrides the file, so each secret here wins over any
+          # matching TOML key.
+          {{- if or (eq (include "ferroehr.hasChartSecret" .) "true") .Values.database.existingSecret .Values.extraEnv }}
+          env:
+            {{- if or .Values.database.existingSecret .Values.database.url }}
+            - name: FERROEHR__DB__URL
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.database.existingSecret }}
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__DB__URL
+                  {{- end }}
+            {{- end }}
+            {{- if .Values.secrets.authOidcHmacSecret }}
+            - name: FERROEHR__AUTH__OIDC__HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__AUTH__OIDC__HMAC_SECRET
+            {{- end }}
+            {{- if .Values.secrets.signingKeyPassphrase }}
+            - name: FERROEHR__SIGNING__KEY_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__SIGNING__KEY_PASSPHRASE
+            {{- end }}
+            {{- if .Values.secrets.eventsUrl }}
+            - name: FERROEHR__EVENTS__URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__EVENTS__URL
+            {{- end }}
+            {{- if .Values.secrets.fhirOutboundUrl }}
+            - name: FERROEHR__FHIR__OUTBOUND__URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__FHIR__OUTBOUND__URL
+            {{- end }}
+            {{- if .Values.secrets.multimediaAccessKeyId }}
+            - name: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
+            {{- end }}
+            {{- if .Values.secrets.multimediaSecretAccessKey }}
+            - name: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probes.exec.enabled }}
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/ferroehr", "healthcheck"]
+            {{- with .Values.probes.liveness }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/ferroehr", "healthcheck"]
+            {{- with .Values.probes.readiness }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.probes.startup.enabled }}
+          startupProbe:
+            exec:
+              command: ["/usr/local/bin/ferroehr", "healthcheck"]
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- else }}
+          {{- /* The health family is always mounted on the main HTTP port and
+                 never gated by config, so httpGet probes need no prerequisite. */}}
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            {{- with .Values.probes.liveness }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            {{- with .Values.probes.readiness }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # readOnlyRootFilesystem=true → give the process a writable scratch dir.
+            - name: tmp
+              mountPath: /tmp
+            # ferroehr.toml (+ any config.files) mounted read-only at /etc/ferroehr.
+            - name: config
+              mountPath: /etc/ferroehr
+              readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "ferroehr.fullname" . }}
+                  items:
+                    - key: ferroehr.toml
+                      path: ferroehr.toml
+              {{- if .Values.config.files }}
+              - secret:
+                  name: {{ include "ferroehr.configSecretName" . }}
+              {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

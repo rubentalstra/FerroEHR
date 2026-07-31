@@ -1,0 +1,32 @@
+apiVersion: v2
+name: ferroehr
+description: >-
+  Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL
+  1.1). A single static binary deployed with a hardened-by-default security posture:
+  runs as a non-root, read-only-rootfs, default-deny-ingress workload that
+  connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
+  are run out of band by a separate migrator role).
+type: application
+
+# Chart versioning is independent of the application version.
+version: 3.2.0
+# The default container image tag (informational; overridable via image.tag).
+appVersion: "3.15.1"
+
+# PDB (policy/v1, GA 1.21), HPA (autoscaling/v2, GA 1.23), and the
+# seccompProfile pod field (GA 1.27) all resolve cleanly at 1.25+.
+kubeVersion: ">=1.25.0-0"
+
+keywords:
+  - openehr
+  - cdr
+  - ehr
+  - fhir
+  - healthcare
+  - rust
+home: https://github.com/rubentalstra/FerroEHR
+sources:
+  - https://github.com/rubentalstra/FerroEHR
+maintainers:
+  - name: ferroehr maintainers
+    url: https://github.com/rubentalstra/FerroEHR

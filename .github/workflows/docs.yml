@@ -19,7 +19,7 @@ env:
   MDBOOK_LINT_VERSION: "0.14.4"
   LYCHEE_VERSION: "0.24.2"
   SWAGGER_UI_VERSION: "5.32.8"
-  SITE_BASE: "/ehrbase-rs"
+  SITE_BASE: "/ferroehr"
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -54,22 +54,22 @@ jobs:
       - name: Conformance-assets drift gate (regenerated SVGs match the committed assets)
         # comparison-assets/ is gitignored build output (regenerated above);
         # the committed, drift-guarded copies are the product's own.
-        run: git diff --exit-code website/book/src/conformance-assets website/landing/assets/conformance-heat-grid.svg website/book/src/comparison-assets/conformance-heat-grid-java.svg website/book/src/comparison-assets/conformance-chapter-bars-java.svg
+        run: git diff --exit-code website/book/src/conformance-assets website/book/src/comparison-assets/conformance-heat-grid-java.svg website/book/src/comparison-assets/conformance-chapter-bars-java.svg
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
         run: bash scripts/build-site.sh --dev-only       # writes ./_site
       - name: Link-check gate (built HTML + external links)
-        # The deployed site lives under the /ehrbase-rs/ project base path, so
-        # absolute /ehrbase-rs/... links must resolve against a prefixed check
+        # The deployed site lives under the /ferroehr/ project base path, so
+        # absolute /ferroehr/... links must resolve against a prefixed check
         # tree (spec §2b). The site's own public origin is excluded: those URLs
         # are the very tree being checked locally (circular before first deploy).
         run: |
           mkdir -p _check
-          ln -sfn "$PWD/_site" _check/ehrbase-rs
+          ln -sfn "$PWD/_site" _check/ferroehr
           lychee --no-progress --max-retries 2 --timeout 20 --exclude-loopback \
             --root-dir "$PWD/_check" \
-            --exclude '^https://rubentalstra\.github\.io/ehrbase-rs' \
+            --exclude '^https://rubentalstra\.github\.io/ferroehr' \
             './_site/**/*.html'
       - uses: actions/upload-artifact@v7
         with:

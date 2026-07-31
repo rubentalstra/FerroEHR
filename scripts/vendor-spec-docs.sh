@@ -93,7 +93,7 @@ cat >"$REQ_OUT/PROVENANCE.md" <<'EOF'
   https://specifications.openehr.org/releases/1.0.2/requirements/iso18308_conformance.pdf).
   Maps the ISO 18308 EHR-architecture requirements (Structure, Process,
   Communication, Privacy & Security, Medico-legal, Ethical, Consumer/Cultural,
-  Evolution) to openEHR features. Used by the ehrbase-rs Conformance Catalogue
+  Evolution) to openEHR features. Used by the ferroehr Conformance Catalogue
   (ECC) as a requirements-level trace dimension (`iso18308:<section>` refs).
 
 Do not hand-edit files under this directory; re-run scripts/vendor-spec-docs.sh.

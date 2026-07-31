@@ -1,7 +1,7 @@
 [book]
-title = "EHRbase-rs Documentation"
-authors = ["EHRbase-rs contributors"]
-description = "User documentation for EHRbase-rs, a pure-Rust openEHR Clinical Data Repository."
+title = "FerroEHR Documentation"
+authors = ["FerroEHR contributors"]
+description = "User documentation for FerroEHR, a pure-Rust openEHR Clinical Data Repository."
 language = "en"
 src = "src"
 
@@ -10,8 +10,8 @@ default-theme = "rust"
 preferred-dark-theme = "coal"
 additional-css = ["theme/custom.css"]
 additional-js = ["theme/mermaid.min.js", "theme/mermaid-init.js", "theme/version-picker.js"]
-git-repository-url = "https://github.com/rubentalstra/ehrbase-rs"
-edit-url-template = "https://github.com/rubentalstra/ehrbase-rs/edit/develop/website/book/{path}"
+git-repository-url = "https://github.com/rubentalstra/FerroEHR"
+edit-url-template = "https://github.com/rubentalstra/FerroEHR/edit/develop/website/book/{path}"
 smart-punctuation = true
 
 [output.html.search]

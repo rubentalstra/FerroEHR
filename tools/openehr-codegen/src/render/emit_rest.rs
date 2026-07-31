@@ -6,7 +6,7 @@
 //! struct per operation, an `#[async_trait]` server trait (one typed method per
 //! operation), and a route table `(method, path, operationId)`. RM payload
 //! schemas resolve to the generated `openehr_rm`/`openehr_base` crates rather
-//! than being re-emitted. `ehrbase-rest` implements the trait and wires axum
+//! than being re-emitted. `ferroehr-rest` implements the trait and wires axum
 //! (the handler logic is the ported `EHRbase` behaviour — not generatable).
 
 use crate::load::oas::{Oas, Operation};
@@ -163,7 +163,7 @@ pub(crate) fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
     let _ = write!(
         b,
         "/// The operations of this group as `(method, path, operation_id)`, for\n\
-         /// wiring an axum router in `ehrbase-rest`.\n\
+         /// wiring an axum router in `ferroehr-rest`.\n\
          pub const ROUTES: &[(&str, &str, &str)] = &[\n"
     );
     for op in &ops {

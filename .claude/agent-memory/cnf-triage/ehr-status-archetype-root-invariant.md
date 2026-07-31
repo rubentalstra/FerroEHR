@@ -20,7 +20,7 @@ root point, the value of this attribute is always the stringified form of the
 `_archetype_id_` found in the `_archetype_details_` object" → node id must equal
 `archetype_details.archetype_id.value`.
 
-`app/ehrbase/src/service/ehr/validation.rs::validate_root_locatable` (PR #431 /
+`app/ferroehr/src/service/ehr/validation.rs::validate_root_locatable` (PR #431 /
 issue #423) enforces exactly this and 422s — **spec-correct, not an app defect**.
 
 **How to apply:** any `expected: created` red row on an EHR_STATUS/EHR_ACCESS

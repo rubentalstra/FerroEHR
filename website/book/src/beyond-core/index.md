@@ -1,6 +1,6 @@
 # Beyond the core
 
-The core of EHRbase-rs is the openEHR platform: EHRs, compositions,
+The core of FerroEHR is the openEHR platform: EHRs, compositions,
 contributions, templates, versioning, and AQL. Around that core the server
 ships a set of optional capabilities for integrating with the wider systems
 landscape — messaging, demographics, external terminology, change events,

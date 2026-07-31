@@ -7,7 +7,7 @@
   "title": "CNF test value set, SNOMED-CT-shaped disorders (synthetic)",
   "status": "active",
   "experimental": true,
-  "publisher": "ehrbase-rs CNF conformance corpus",
+  "publisher": "ferroehr CNF conformance corpus",
   "description": "SYNTHETIC test content. The enumerated value set the SNOMED-CT-shaped conformance cases bind to: 1000001 and 1000002 are members, 1000003 is deliberately NOT, so membership answers differ and a case can prove the value set was really resolved through the terminology server.",
   "compose": {
     "include": [

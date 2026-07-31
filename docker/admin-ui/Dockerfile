@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# The single Dockerfile for the `ehrbase-admin-ui` console image (issue #282
+# The single Dockerfile for the `ferroehr-admin-ui` console image (issue #282
 # D1/D5) — the third OCI image next to the app + postgres images. The console
 # is a standalone Leptos SSR binary + WASM/CSS assets built by cargo-leptos; at
 # runtime it is a pure ITS-REST client of the CDR — no database.
@@ -11,7 +11,7 @@
 #                         then `cargo leptos build --release` reuses the compiled
 #                         target and adds only the console's own crates + WASM.
 #   runtime-prebuilt     CI — COPY-only packaging of a context-provided native
-#                         binary (bin/${TARGETARCH}/ehrbase-admin-ui) + the
+#                         binary (bin/${TARGETARCH}/ferroehr-admin-ui) + the
 #                         arch-independent site bundle (site/); no RUN, no QEMU.
 #
 # Both share ONE runtime-base stage, so the compose-built and CI-published
@@ -90,17 +90,17 @@ COPY --from=planner /app/recipe.json recipe.json
 # WASM/hydrate deps are the smaller share and compile in the leptos build below.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     cargo chef cook --release --locked --no-default-features --features ssr \
-      -p ehrbase-admin-ui --recipe-path recipe.json
+      -p ferroehr-admin-ui --recipe-path recipe.json
 COPY . .
 # The console has no provenance build.rs, so it carries no compile-time SHA env;
 # its image provenance is the OCI-standard REVISION LABEL on the shared runtime
 # stage below (docs.docker.com/build/building/best-practices).
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cd app/ehrbase-admin-ui \
+    cd app/ferroehr-admin-ui \
     && cargo leptos build --release \
     && mkdir -p /out \
-    && cp /app/target/release/ehrbase-admin-ui /out/ \
+    && cp /app/target/release/ferroehr-admin-ui /out/ \
     && cp -r /app/target/site /out/site
 
 # ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
@@ -111,37 +111,37 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775 AS runtime-base
 ENV LEPTOS_SITE_ROOT=/site \
     LEPTOS_SITE_ADDR=0.0.0.0:3000 \
-    LEPTOS_OUTPUT_NAME=ehrbase-admin-ui
+    LEPTOS_OUTPUT_NAME=ferroehr-admin-ui
 EXPOSE 3000
 # Shell-less image: the healthcheck is the binary's own subcommand, which probes
 # its own /login and exits 0 (2xx/3xx) / 1 otherwise.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD ["/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
-ENTRYPOINT ["/usr/local/bin/ehrbase-admin-ui"]
+    CMD ["/usr/local/bin/ferroehr-admin-ui", "healthcheck"]
+ENTRYPOINT ["/usr/local/bin/ferroehr-admin-ui"]
 # OCI image labels. CI (docker/metadata-action) overrides source/revision/
 # version/created at build time; these are sensible static defaults.
 ARG VERSION="0.1.0"
 ARG REVISION=""
-LABEL org.opencontainers.image.title="ehrbase-rs-admin-ui" \
+LABEL org.opencontainers.image.title="ferroehr-admin-ui" \
       org.opencontainers.image.description="Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)" \
-      org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
+      org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
 # ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
 FROM runtime-base AS runtime-from-source
-COPY --from=builder /out/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
+COPY --from=builder /out/ferroehr-admin-ui /usr/local/bin/ferroehr-admin-ui
 COPY --from=builder /out/site /site
 
 # ── runtime-prebuilt: CI (COPY the context-provided native binary + site) ──────
 # The server binary is built natively per architecture on the CI runners
 # (rust:*-slim-trixie → Debian 13 glibc 2.41, matching this base) and lands in
-# the context as bin/${TARGETARCH}/ehrbase-admin-ui; the site bundle (WASM + JS
+# the context as bin/${TARGETARCH}/ferroehr-admin-ui; the site bundle (WASM + JS
 # glue + CSS) is architecture-independent, built once, and lands as site/. No
 # RUN executes, so a multi-arch buildx needs no QEMU.
 FROM runtime-base AS runtime-prebuilt
 # amd64 | arm64 — supplied by buildx per platform.
 ARG TARGETARCH
-COPY --chmod=0755 bin/${TARGETARCH}/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
+COPY --chmod=0755 bin/${TARGETARCH}/ferroehr-admin-ui /usr/local/bin/ferroehr-admin-ui
 COPY site /site

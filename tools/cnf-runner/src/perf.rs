@@ -1670,7 +1670,7 @@ mod tests {
             sample_interval_s: 10,
             containers: vec![ContainerResourceSeries {
                 role: ContainerRole::Sut,
-                name: "ehrbase-rs-ehrbase-1".to_owned(),
+                name: "ferroehr-ferroehr-1".to_owned(),
                 samples: vec![ResourceSample {
                     offset_s: 10,
                     phase: ResourcePhase::Warmup,

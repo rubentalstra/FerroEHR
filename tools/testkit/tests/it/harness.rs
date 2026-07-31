@@ -63,11 +63,11 @@ async fn sweep_reclaims_ancient_leaked_clones() {
     let db = testkit::db().await.expect("clone");
     let pool = db.pool();
 
-    // `ehrbase_tk_<secs-hex>_<rand>` with a 1970 creation stamp: exactly what a
+    // `ferroehr_tk_<secs-hex>_<rand>` with a 1970 creation stamp: exactly what a
     // clone looks like after the owning process was killed before its cleanup
     // landed. `CREATE DATABASE` is cluster-global, so the clone's own
     // connection can create it.
-    let leaked = format!("ehrbase_tk_1_leaked{}", uuid::Uuid::new_v4().simple());
+    let leaked = format!("ferroehr_tk_1_leaked{}", uuid::Uuid::new_v4().simple());
     let create = format!("CREATE DATABASE {leaked}");
     sqlx::raw_sql(sqlx::AssertSqlSafe(create))
         .execute(&pool)
@@ -106,7 +106,7 @@ async fn sweep_reclaims_ancient_leaked_clones() {
 #[test]
 fn fingerprint_is_stable() {
     assert_eq!(
-        ehrbase::db::migration_fingerprint(),
-        ehrbase::db::migration_fingerprint()
+        ferroehr::db::migration_fingerprint(),
+        ferroehr::db::migration_fingerprint()
     );
 }

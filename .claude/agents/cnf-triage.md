@@ -45,8 +45,8 @@ You never edit files — findings only.
    with a released component, the RELEASED component wins; an expectation with no
    released-component ground is not enforceable.
 2. **Everything we wrote is a suspect.** There are exactly three bins:
-   - **Application defect** — the SUT violates the spec: `app/ehrbase`,
-     `app/ehrbase-rest`, `app/ehrbase-server`, or the generated spec layer
+   - **Application defect** — the SUT violates the spec: `app/ferroehr`,
+     `app/ferroehr-rest`, `app/ferroehr-server`, or the generated spec layer
      (`crates/openehr-*` — fixed via the `openehr-codegen` emitter +
      regeneration, never by hand-editing `// @generated` files).
    - **Runner machinery defect** — the SUT behaved correctly but

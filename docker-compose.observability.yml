@@ -1,42 +1,42 @@
-# Observability overlay for the ehrbase-rs dev stack.
+# Observability overlay for the ferroehr dev stack.
 #
 #   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
 #
 # Adds a single-container LGTM stack (grafana/otel-lgtm = OTLP collector +
 # Prometheus + Tempo + Loki + Grafana) and points the app at it:
 #   - traces  → OTLP/gRPC to otel-lgtm:4317 (→ Tempo)
-#   - metrics → pulled by the bundled Prometheus from ehrbase:9464/management/prometheus
+#   - metrics → pulled by the bundled Prometheus from ferroehr:9464/management/prometheus
 #   - logs    → stdout as JSON lines (12-factor; the platform collects them)
 #
 # The management surface is enabled on an INTERNAL port (9464) exposed only on
 # the compose network — never published to the host. Grafana (3000) is the only
 # published port. This overlay is a manual dev convenience, not a CI job.
 services:
-  ehrbase:
-    # Every server setting uses the ONE strict env grammar: `EHRBASE` + the TOML
+  ferroehr:
+    # Every server setting uses the ONE strict env grammar: `FERROEHR` + the TOML
     # path, upper-cased, with `__` between EVERY segment (including after the
-    # prefix). The boot-time sweep of the reserved `EHRBASE_` namespace REJECTS
+    # prefix). The boot-time sweep of the reserved `FERROEHR_` namespace REJECTS
     # any other spelling — a single-`_` variable is a startup error, not a
     # silently ignored setting, so these names must stay in this form.
     environment:
       # Traces to the LGTM collector ([telemetry]; metrics stay a Prometheus
       # pull, see below). Unset otlp_endpoint would leave the OTel layer out.
-      EHRBASE__TELEMETRY__OTLP_ENDPOINT: http://otel-lgtm:4317
-      EHRBASE__TELEMETRY__SERVICE_NAME: ehrbase
-      EHRBASE__TELEMETRY__ENVIRONMENT: dev
-      EHRBASE__TELEMETRY__TRACES_SAMPLE_RATIO: "1.0"
+      FERROEHR__TELEMETRY__OTLP_ENDPOINT: http://otel-lgtm:4317
+      FERROEHR__TELEMETRY__SERVICE_NAME: ferroehr
+      FERROEHR__TELEMETRY__ENVIRONMENT: dev
+      FERROEHR__TELEMETRY__TRACES_SAMPLE_RATIO: "1.0"
       # Structured stdout so the bundled log pipeline ingests fields, not text
       # (overrides the root stack's dev-friendly `pretty`).
-      EHRBASE__LOG__FORMAT: json
+      FERROEHR__LOG__FORMAT: json
       # Ops-introspection surface on an internal-only port; public within the
       # compose network so the bundled Prometheus can scrape without credentials.
       # (The health probes need none of this — /health, /health/liveness and
       # /health/readiness are always served on the main API port.)
-      EHRBASE__MANAGEMENT__ENABLED: "true"
-      EHRBASE__MANAGEMENT__PORT: "9464"
-      EHRBASE__MANAGEMENT__ENDPOINTS__INFO: "public"
-      EHRBASE__MANAGEMENT__ENDPOINTS__METRICS: "public"
-      EHRBASE__MANAGEMENT__ENDPOINTS__PROMETHEUS: "public"
+      FERROEHR__MANAGEMENT__ENABLED: "true"
+      FERROEHR__MANAGEMENT__PORT: "9464"
+      FERROEHR__MANAGEMENT__ENDPOINTS__INFO: "public"
+      FERROEHR__MANAGEMENT__ENDPOINTS__METRICS: "public"
+      FERROEHR__MANAGEMENT__ENDPOINTS__PROMETHEUS: "public"
     expose:
       - "9464"
     depends_on:
@@ -54,9 +54,9 @@ services:
       - ENABLE_LOGS_ALL=true
     volumes:
       # Extra Prometheus scrape config (scrapes the app's /management/prometheus).
-      - ./docker/observability/prometheus-scrape.yaml:/otel-lgtm/prometheus/scrape-configs/ehrbase.yaml:ro
+      - ./docker/observability/prometheus-scrape.yaml:/otel-lgtm/prometheus/scrape-configs/ferroehr.yaml:ro
       # Provisioned Grafana dashboard.
-      - ./docker/observability/grafana-dashboard.json:/otel-lgtm/grafana/dashboards/ehrbase.json:ro
+      - ./docker/observability/grafana-dashboard.json:/otel-lgtm/grafana/dashboards/ferroehr.json:ro
     ports:
       # Grafana UI only. OTLP (4317/4318) stays on the compose network.
       - "${GRAFANA_PORT:-3000}:3000"
