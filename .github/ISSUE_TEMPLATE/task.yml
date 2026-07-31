@@ -3,31 +3,25 @@ description: A general work item (maintenance, research, tooling, docs)
 labels: ["chore"]
 body:
   - type: textarea
+    id: contract
     attributes:
       label: Contract
       description: The goal of this task and its impact once completed.
     validations:
       required: true
   - type: textarea
+    id: exit-criteria
     attributes:
       label: Exit criteria
       description: The checklist that defines "done".
-      placeholder: |
+      value: |
         - [ ] ...
         - [ ] ...
     validations:
       required: true
   - type: textarea
+    id: further-information
     attributes:
       label: Further information
     validations:
       required: false
-  - type: markdown
-    attributes:
-      value: >
-        **Relationships** are GitHub metadata, not body text. After filing, link
-        this issue as a **sub-issue** (`Add parent`) if it decomposes a larger
-        issue, or with **blocked-by / blocking** for real sequencing — a
-        maintainer sets these with `scripts/gh-rel.sh`
-        (policy: `.claude/rules/issue-relationships.md`). Milestones, not epics,
-        group a release.
