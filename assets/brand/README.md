@@ -15,6 +15,8 @@ tick in the atomic-number corner — with the **"Oxide & Iron"** palette.
 | `ferroehr-lockup-light.svg` | Icon + wordmark for light backgrounds. |
 | `ferroehr-lockup-dark.svg` | Icon + wordmark for dark backgrounds. |
 | `ferroehr-lockup-auto.svg` | Theme-adaptive lockup (`prefers-color-scheme` media query inside the SVG) — for README/website contexts that serve one file to both themes. |
+| `ferroehr-social.svg` / `.png` | The 1280×640 social-preview / banner master and its render (upload the PNG as the GitHub repository social preview). |
+| `favicon-32.png` / `favicon-16.png` / `favicon.ico` | The raster favicon set, rendered from `favicon.svg` (48/32/16 in the `.ico`). |
 | `tokens.css` | The palette as CSS custom properties — the single source for brand colours. |
 
 ## Palette — "Oxide & Iron"
@@ -42,9 +44,12 @@ tick in the atomic-number corner — with the **"Oxide & Iron"** palette.
   describes the product as "an openEHR® CDR" with the Foundation's required
   attribution line.
 
-<!-- TODO: convert the SVG <text> elements (Fe + wordmark) to outlined paths so
-     rendering stops depending on viewer-installed fonts (Avenir/Futura stack
-     falls back to a generic sans elsewhere), and settle the final wordmark
-     typeface at that point. -->
-<!-- TODO: emit the raster favicon set (32/16 px PNG + .ico) and the README
-     banner from these masters once outline conversion is done. -->
+## Typeface
+
+The wordmark and the tile "Fe" are set in **Inter** (SemiBold; "EHR" in
+Bold) and committed as **outlined paths** — the SVGs carry no font
+dependency and render identically everywhere. Inter is licensed under the
+SIL Open Font License 1.1 (<https://github.com/rsms/inter>); the OFL
+covers the font software, and outlined logo artwork is free to embed.
+Regenerating the outlines requires the Inter TTFs + HarfBuzz shaping —
+keep edits to geometry/colours in the SVGs themselves.
