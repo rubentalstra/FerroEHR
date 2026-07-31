@@ -198,6 +198,18 @@ pub(crate) enum Token {
     /// `..` (`SYM_IVL_SEP`).
     #[token("..")]
     IvlSep,
+    /// `.` — the namespace separator of a qualified type identifier.
+    ///
+    /// NOTE: the vendored `odin.g4` has no such token, because its
+    /// `rm_type_id` rule admits only `ALPHA_UC_ID`. The docs text is the
+    /// oracle and allows the qualified form: "Namespaces are included by
+    /// prepending package names, separated by the '.' character, in the same
+    /// way as in most programming languages" (`LANG/docs/odin/master05-content`
+    /// §Adding Type Information, verbatim in `AM/docs/ADL1.4/master04-dadl`
+    /// §Adding Type Information). `..`, `...`, `REAL` and every dotted
+    /// composite token above are longer matches, so logos still prefers them.
+    #[token(".")]
+    Dot,
     /// `|` (`SYM_IVL_DELIM`).
     #[token("|")]
     IvlDelim,
@@ -220,14 +232,30 @@ pub(crate) enum Token {
     Star,
 }
 
-/// Validate `master03` string escapes and return the raw (still-quoted) slice
-/// with multi-line whitespace leaders removed.
+/// Validate a `CHARACTER` token's escape and return the raw slice.
 ///
-/// Illegal escapes (anything other than `\r \n \t \\ \" \'` or a `\u` + 4/8
-/// hex-digit sequence) fail the lex (`LANG/docs/odin/master03-basics`
-/// §Special Character Sequences + `AM/docs/ADL1.4/master03-file_encoding`
-/// §Special Character Sequences, which define `\"` as *the* encoding of a
-/// literal double quote).
+/// The escape rules come from [`crate::escape`], the one `master03`
+/// implementation this workspace has, so a `CHARACTER` is judged by exactly
+/// the rules a `STRING` is. The `\uHHHH` forms cannot fit the
+/// single-character token and are refused as malformed unicode escapes.
+fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
+    let raw = lex.slice();
+    crate::escape::validate(raw).map_err(|_defect| ())?;
+    Ok(raw.to_owned())
+}
+
+/// Validate a `STRING` token's `master03` escapes and return the raw
+/// (still-quoted) slice with multi-line whitespace leaders removed.
+///
+/// The escape rules are [`crate::escape`]'s — the six customary quoted forms
+/// plus `\uHHHH`/`\uHHHHHHHH`, nothing else legal, and a `\u` naming no
+/// character a defect as well (`LANG/docs/odin/master03-basics` §Special
+/// Character Sequences + §File Encoding, verbatim in
+/// `AM/docs/ADL1.4/master03-file_encoding`, which define `\"` as *the*
+/// encoding of a literal double quote). Refusing at the lex keeps the token
+/// stream free of escapes the reader cannot decode, which is what lets the
+/// parser decode infallibly. The leader stripping runs first, so the validated
+/// text is exactly the text the parser will decode.
 ///
 /// NOTE (adjudicated as descriptive, not a decoding rule):
 /// `AM/docs/ADL1.4/master04-dadl` §String Data — and verbatim
@@ -237,68 +265,11 @@ pub(crate) enum Token {
 /// normative literal-quote encoding, and decoding `&quot;` would be
 /// irreversible for text that legitimately contains it. The sequence is
 /// therefore carried through verbatim, as authored.
-/// Validate a `CHARACTER` token: an escaped character must be one of the six
-/// legal quoted forms `\r \n \t \\ \" \'` — "Any other character combination
-/// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
-/// §Special Character Sequences, verbatim in `ADL1.4/master03-file_encoding.adoc`).
-/// The `\uHHHH` forms cannot fit the single-character token.
-fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
-    let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    if bytes.get(1) == Some(&b'\\')
-        && !matches!(
-            bytes.get(2),
-            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
-        )
-    {
-        return Err(());
-    }
-    Ok(raw.to_owned())
-}
-
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
-    let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    let mut i = 0;
-    while let Some(&byte) = bytes.get(i) {
-        if byte == b'\\' {
-            let Some(&next) = bytes.get(i + 1) else {
-                return Err(());
-            };
-            match next {
-                b'r' | b'n' | b't' | b'\\' | b'"' | b'\'' => i += 2,
-                b'u' => {
-                    let hex_start = i + 2;
-                    let count = raw
-                        .get(hex_start..)
-                        .unwrap_or_default()
-                        .chars()
-                        .take_while(char::is_ascii_hexdigit)
-                        .count();
-                    if count >= 8 {
-                        i = hex_start + 8;
-                    } else if count >= 4 {
-                        i = hex_start + 4;
-                    } else {
-                        return Err(());
-                    }
-                }
-                _ => return Err(()),
-            }
-        } else {
-            i += 1;
-        }
-    }
-    let stripped = strip_line_leaders(raw, leader_budget(lex));
-    // The structural scan above accepts any 4/8 hex-digit `\u` run; the shared
-    // decoder is what decides whether it names a character at all (an 8-digit
-    // form outside U+10000-U+10FFFF, a malformed surrogate pair, a lone
-    // surrogate). Refusing here keeps the token stream free of escapes the
-    // reader cannot decode.
+    let stripped = strip_line_leaders(lex.slice(), leader_budget(lex));
     crate::escape::validate(&stripped).map_err(|_defect| ())?;
     Ok(stripped)
 }
-
 /// How many leading whitespace characters may be removed from each
 /// continuation line of a multi-line string: the column at which the string's
 /// first line of content starts.
