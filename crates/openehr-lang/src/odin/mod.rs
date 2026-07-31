@@ -529,6 +529,50 @@ mod tests {
         assert!(parse("p = <x = <1>>\nq = <x = <2>>").is_ok());
     }
 
+    /// `LANG/docs/odin/master03-basics` §Keywords: "ODIN has no keywords of
+    /// its own: all identifiers are assumed to come from an information
+    /// model" — so the three words that stay ODIN VALUE tokens
+    /// (`true`/`false` of §Boolean Data, `infinity` of the interval
+    /// endpoints) still parse as attribute names, in the spelling authored,
+    /// while value positions keep the value reading.
+    #[test]
+    fn value_words_parse_as_attribute_names() {
+        let m = obj("true = <1>\nfalse = <2>\ninfinity = <3>\nTrue = <4>");
+        assert_eq!(m.get("true"), Some(&OdinValue::Integer(1)));
+        assert_eq!(m.get("false"), Some(&OdinValue::Integer(2)));
+        assert_eq!(m.get("infinity"), Some(&OdinValue::Integer(3)));
+        assert_eq!(m.get("True"), Some(&OdinValue::Integer(4)));
+
+        // value positions are untouched by the key-position re-tag.
+        let m = obj("a = <true>\nr = <|0..infinity|>");
+        assert_eq!(m.get("a"), Some(&OdinValue::Boolean(true)));
+        let Some(OdinValue::Interval(OdinInterval::Range { upper, .. })) = m.get("r") else {
+            panic!("expected a range interval");
+        };
+        assert_eq!(upper.as_deref(), None);
+    }
+
+    /// `LANG/docs/odin/master03-basics` §Semi-colons: "Semi-colons can be
+    /// used to separate ODIN blocks … Semi-colons make no semantic difference
+    /// at all", with the section's own two `term = <…>` spellings asserted
+    /// equal — and the same separator accepted between keyed objects, whose
+    /// values are ODIN blocks too (a docs-text widening over `odin.g4`, which
+    /// writes the `';'?` only on `attr_vals`).
+    #[test]
+    fn semicolons_separate_blocks_with_no_semantic_difference() {
+        let with = parse(r#"term = <text = <"plan">; description = <"The clinician's advice">>"#)
+            .expect("the §Semi-colons example with separators should parse");
+        let without = parse(r#"term = <text = <"plan"> description = <"The clinician's advice">>"#)
+            .expect("the §Semi-colons example without separators should parse");
+        assert_eq!(with, without);
+
+        let keyed_with = parse(r#"k = <["a"] = <1>; ["b"] = <2>;>"#)
+            .expect("keyed objects with separators should parse");
+        let keyed_without =
+            parse(r#"k = <["a"] = <1> ["b"] = <2>>"#).expect("keyed objects should parse");
+        assert_eq!(keyed_with, keyed_without);
+    }
+
     /// `LANG/docs/odin/master07-leaf_data` §String Data (verbatim in
     /// `AM/docs/ADL1.4/master04-dadl` §String Data): multi-line string
     /// contents drop the white-space leaders of the continuation lines.

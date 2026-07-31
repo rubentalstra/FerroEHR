@@ -237,3 +237,8 @@
 236|ERROR@0..1
 237|ERROR@0..1
 238|ERROR@24..25
+239|AlphaLcId("true")@0..4 SymEq@5..6 SymLt@7..8 Integer("1")@8..9 SymGt@9..10
+240|AlphaUcId("True")@0..4 SymEq@5..6 SymLt@7..8 Integer("1")@8..9 SymGt@9..10
+241|AlphaLcId("infinity")@0..8 SymEq@9..10 SymLt@11..12 Integer("1")@12..13 SymGt@13..14
+242|AlphaLcId("x")@0..1 SymEq@2..3 SymLt@4..5 SymFalse@5..10 SymGt@10..11
+243|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 SymInfinity@4..12 SymIvlDelim@12..13
