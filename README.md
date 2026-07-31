@@ -4,7 +4,7 @@
 
 **A pure-Rust openEHR® Clinical Data Repository — spec-conformant, measured, and built for production.**
 
-*Pronounced "FER-ro-E-H-R" — from **ferrum**, iron: the element Rust is named for.\
+*Pronounced "FER-ro-E-H-R" — from **ferrum**, iron: the element rust is made of (iron oxide, like the language's namesake).\
 (Saying "ferro-air" is unsupported, but we can't stop you.)*
 
 ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
