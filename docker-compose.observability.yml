@@ -1,4 +1,4 @@
-# Observability overlay for the ferroehr dev stack.
+# Observability overlay for the FerroEHR dev stack.
 #
 #   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
 #

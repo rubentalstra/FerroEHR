@@ -76,7 +76,7 @@ What to expect:
   canonical RM resource.
 
 > [!NOTE]
-> The `version` parameter is an FerroEHR extension: the openEHR REST
+> The `version` parameter is a FerroEHR extension: the openEHR REST
 > specification predates the two schema lineages and says nothing about
 > selecting one. It never changes the media type itself — responses are always
 > `application/xml` — so a client that ignores it behaves exactly as the

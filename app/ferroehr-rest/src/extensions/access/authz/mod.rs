@@ -1,4 +1,4 @@
-//! Authorization for the ferroehr CDR — the two composable layers,
+//! Authorization for the FerroEHR CDR — the two composable layers,
 //! folded into the protocol adapter
 //! (authorization is an adapter concern by design; the former `ferroehr-authz`
 //! crate is dissolved here).

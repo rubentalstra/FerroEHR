@@ -39,7 +39,7 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
    the `sut`/`admin`/`readonly` principals carry `bearer_mint` auth with
    per-instance roles + standing scope grants, and the `smart_app` instance
    mints exactly the step-declared `scopes` for the boundary cases.
-3. `scripts/conformance.sh` composes the posture on every ferroehr run —
+3. `scripts/conformance.sh` composes the posture on every FerroEHR run —
    it IS the standard conformance posture (owner ruling 2026-07-28), so the
    one committed record covers the whole claimed surface in one invocation.
 

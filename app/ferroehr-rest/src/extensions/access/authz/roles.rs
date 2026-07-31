@@ -133,7 +133,7 @@ pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> 
 // NOTE: no openEHR spec governs this — our own design/extension. The SM places
 // authorization out of band (SM `openehr_platform/master02-overview.adoc`
 // §General Assumptions) and no CNF profile carries a role requirement; the
-// read-only role is an ferroehr enterprise capability supporting the CNF
+// read-only role is a FerroEHR enterprise capability supporting the CNF
 // SEC-BASIC authorization-separation profile (an authenticated principal
 // refused on every write). It composes on top of the [`authorize`] class gate.
 #[must_use]

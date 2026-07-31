@@ -1,6 +1,6 @@
 # ferroehr-postgres
 
-A preconfigured PostgreSQL 18 image for ferroehr, mirroring the official
+A preconfigured PostgreSQL 18 image for FerroEHR, mirroring the official
 `ehrbase/ehrbase-v2-postgres` two-image model built fresh for this stack
 (the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.4` plus one-time init scripts.
 
