@@ -132,7 +132,7 @@ switches that EHR to explicit policy:
   `EHR_ACCESS` endpoint in the openEHR REST API). Changes are versioned and
   audited like all record content.
 
-The scheme is an FerroEHR extension: openEHR mandates the `EHR_ACCESS`
+The scheme is a FerroEHR extension: openEHR mandates the `EHR_ACCESS`
 object and its change control but publishes no concrete access-control
 scheme. Query (AQL) results are not filtered by privacy level in this
 release; the per-EHR gate still applies to EHR-scoped query routes.

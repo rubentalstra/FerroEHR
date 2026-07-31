@@ -1,6 +1,6 @@
 # Example Cedar policies
 
-Illustrative embedded-Cedar policies for the ferroehr ABAC layer
+Illustrative embedded-Cedar policies for the FerroEHR ABAC layer
 (no openEHR spec governs authorization — our own design; the shipped rules
 live in `.claude/rules/auth.md`). Point `abac.cedar.policy_dir` at a
 copy of this directory (or your own) to try the embedded engine.

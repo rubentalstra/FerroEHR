@@ -71,7 +71,7 @@ SM-anchors/ITS-executes split, tech profiles, and the global ID scheme are
 the 2021–2022 community's work. The deltas are five: one-file-per-case data
 with generated prose; CI enforcement of the derivation chain; computable
 Statement/results schemas with mechanically computed verdicts; the
-governance/resourcing charter; and the ISO/EHDS grounding. ferroehr's ECC
+governance/resourcing charter; and the ISO/EHDS grounding. FerroEHR's ECC
 (394 cases, both wire formats, machine-computed verdicts on the CNF profiles
 model) is the working draft and one reference implementation — explicitly
 not "the standard": the standard is community-owned, vendor-neutral, and
@@ -1920,7 +1920,7 @@ latencies are recorded as lineage only. Procurers who need tighter tails or
 the read-heavy band ceiling tighten per tender via the §10 template
 parameters. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
 evidenced by the committed measurement artifacts (`docs/benchmarks/`,
-regenerated per release, never hand-typed): ferroehr sustains a
+regenerated per release, never hand-typed): FerroEHR sustains a
 631.5 req/s knee at p99 204.7 ms and upstream EHRbase 475.0 req/s
 (`ferroehr/KNEE.md`, `ehrbase-java/KNEE.md`) on 8-core consumer hardware —
 the class-L floor (150/s) is comfortably attainable — a consumer laptop
@@ -2186,7 +2186,7 @@ once §8.3 makes cases enumerable files:
    archives); off-wire capabilities move to statement-declared, not
    schedule-tested — the honest boundary.
 8. **N/A re-adjudication of donated material (hard gate)** — every donated
-   case whose evidence or N/A justification points at ferroehr internal
+   case whose evidence or N/A justification points at FerroEHR internal
    tests is re-adjudicated to spec-text-only evidence **before** entering the
    normative catalogue. No exceptions; this is a scoped workstream, not an
    assumption.
@@ -2251,7 +2251,7 @@ the difference between "nice idea, same risk" and "resourced program".
   be — and a sponsoring vendor is never the sole adjudicator of its own
   sponsored cases: sponsored work is scoped to case authorship reviewed
   against spec text by non-sponsor maintainers.
-- **Commitments in hand**: ferroehr commits the pilot engineering (§14).
+- **Commitments in hand**: FerroEHR commits the pilot engineering (§14).
   The upstream ask explicitly requests matching co-commitments — a second
   vendor's engineering time and 2–3 maintainer volunteers — before the SEC
   agenda item, so the SEC decides on a resourced plan, not a hope.
@@ -2270,7 +2270,7 @@ the difference between "nice idea, same risk" and "resourced program".
 3. **SEC agenda item**: adopt-the-format decision, the maintainer-group
    charter, the AQL chapter blessed as the pilot.
 4. **Execution**: the §14.1 PR series; the registry the moment two products
-   publish (ferroehr volunteers; upstream EHRbase, already assessed by ECC,
+   publish (FerroEHR volunteers; upstream EHRbase, already assessed by ECC,
    is the natural second); an EHRCON26 conformance slot; EHDS liaison per
    §6.5 (track the Art 36/15 implementing acts; revisit the EEHRxF-seam
    profile when they land in 2027).
@@ -2312,7 +2312,7 @@ acceptance gate:
 | U5 | **master11/AQL — the first new chapter**: the §8.6 equivalence rules as normative schema text + ~37 cases seeded from ECC QRY/SQR/AQT (25 QRY + 8 SQR + 4 AQT) + the EHRbase AQL corpus | SEC ratifies the §8.6 [legislated] defaults FIRST; every case spec-cited to AQL 1.1 |
 | U6 | **Simplified-Formats chapter** (new): the §8.7 fifteen categories, ~60 cases driven from the master04/05/06 spec-example blocks | Every case cites its simplified_formats section; OPTIONS-profile placement |
 | U7 | statement/results/ixit schemas + verdict rules + the reference verdict implementation + the runner verification pack (transcripts + adjudications) | Two independent runners (ECC + the rescued Robot suite or another vendor's) compute identical verdicts on the pack |
-| U8 | The registry (production, on openehr.org): statement rendering, attestation-level labels, badges, dispute log | First two products listed (ferroehr + upstream EHRbase baselines) |
+| U8 | The registry (production, on openehr.org): statement rendering, attestation-level labels, badges, dispute log | First two products listed (FerroEHR + upstream EHRbase baselines) |
 
 The performance & volumetrics chapter (§8.14 + §11.4), Demographic
 (master10), and Admin/Messaging (master12/13) follow as U9+ per the §11
