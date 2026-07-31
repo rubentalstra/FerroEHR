@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The quickstart dev credentials authenticate again.** The v3.15.2 rename
+  updated the dev usernames and documented passwords to `ferroehr` but left
+  the committed Argon2id hashes (and the dev Keycloak realm's stored
+  password hashes) verifying the old secret, so every Basic-auth request
+  against the compose stack returned 401. The dev user store now carries
+  hashes of the documented password, and the Keycloak realm import sets the
+  dev passwords at import time. Development stacks only; no production
+  surface stores these credentials.
+
 ## [3.15.2] - 2026-07-31
 
 ### Changed
