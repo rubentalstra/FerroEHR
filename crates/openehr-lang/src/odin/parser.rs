@@ -443,49 +443,70 @@ fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 }
 
 /// `primitive_object : primitive_value | primitive_list_value |
-/// primitive_interval_value`.
+/// primitive_interval_value` (+ the `*_interval_list_value` productions).
 fn primitive_object<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
     let leaf = leaf_value();
 
-    // primitive_value | primitive_list_value: a single leaf (scalar), or a
-    // comma-separated list of leaves, optionally left open with a trailing
-    // `, ...` continuation marker. Per `master07` §"Lists of Built-in Types",
-    // `...` is the open-list continuation marker: a single-datum list `v, ...`
-    // *requires* it (to distinguish the list from a bare scalar `v`), and a
-    // multi-datum list `v1, v2, ..., vn, ...` may equally be left open with it
-    // (as the published CIMI reference-model schemas do). The `odin_values.g4`
+    // A list item is a leaf value or an interval — `odin_values.g4` (App.B)
+    // defines both the per-type `*_list_value` productions and the per-type
+    // `*_interval_list_value` productions (`|0..5|, |8..9|` and the open
+    // `|0..5|, ...`).
+    let item = choice((interval_value(leaf.clone()), leaf));
+
+    // primitive_value | primitive_list_value | *_interval_list_value: a
+    // single item (scalar), or a comma-separated list, optionally left open
+    // with a trailing `, ...` continuation marker. Per `master07` §"Lists of
+    // Built-in Types", `...` is the open-list continuation marker: a
+    // single-datum list `v, ...` *requires* it (to distinguish the list from
+    // a bare scalar `v`), and a multi-datum list `v1, v2, ..., vn, ...` may
+    // equally be left open with it (as the published CIMI reference-model
+    // schemas do). The `odin_values.g4`
     // `string_list_value : v ( (',' v)+ | ',' SYM_LIST_CONTINUE )` encoding
     // admits only the single-datum-plus-continue and the closed-multi forms;
-    // the general `v (',' v)* (',' '...')?` accepted here is a strict superset
-    // that additionally admits the open multi-datum list the spec prose
-    // describes. A bare leaf with no following comma stays a scalar.
-    let list = leaf
-        .clone()
+    // the general `v (',' v)* (',' '...')?` accepted here is a strict
+    // superset that additionally admits the open multi-datum list the spec
+    // prose describes. A bare item with no following comma stays a scalar.
+    //
+    // Lists are HOMOGENEOUS: every `odin_values.g4` list production is
+    // per-type, and §Lists of Built-in Types says "comma-separated lists of
+    // items, all of the same type" — a kind mismatch is a typed refusal at
+    // the offending item, never a silently mixed list. Kinds compare at the
+    // value-variant level (Integer ≠ Real, Date ≠ Date_time, …); NOTE: an
+    // interval item's ENDPOINT type is not re-checked here — the per-type
+    // interval productions already pin each interval's own endpoints, and
+    // interval-list endpoint homogeneity beyond the variant level is left to
+    // the consuming model.
+    item.clone()
+        .map_with(|value, e| (value, e.span()))
         .then(
             just(Token::SymComma)
-                .ignore_then(leaf.clone())
+                .ignore_then(item.map_with(|value, e| (value, e.span())))
                 .repeated()
-                .collect::<Vec<OdinValue>>(),
+                .collect::<Vec<(OdinValue, SimpleSpan)>>(),
         )
         .then(
             just(Token::SymComma)
                 .ignore_then(just(Token::SymListContinue))
                 .or_not(),
         )
-        .map(|((first, mut more), open)| {
+        .try_map(|(((first, _), more), open), _| {
             if more.is_empty() && open.is_none() {
-                first
-            } else {
-                let mut v = vec![first];
-                v.append(&mut more);
-                if open.is_some() {
-                    v.push(OdinValue::ListContinue);
-                }
-                OdinValue::List(v)
+                return Ok(first);
             }
-        });
-
-    interval_value(leaf).or(list)
+            let kind = std::mem::discriminant(&first);
+            let mut values = Vec::with_capacity(more.len() + 2);
+            values.push(first);
+            for (value, span) in more {
+                if std::mem::discriminant(&value) != kind {
+                    return Err(Failure::Syntax(span));
+                }
+                values.push(value);
+            }
+            if open.is_some() {
+                values.push(OdinValue::ListContinue);
+            }
+            Ok(OdinValue::List(values))
+        })
 }
 
 /// One interval `| … |` (`odin_values.g4` `*_interval_value`).
