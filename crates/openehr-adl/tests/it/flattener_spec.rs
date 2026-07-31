@@ -19,10 +19,11 @@
 
 use std::path::PathBuf;
 
+use openehr_adl::aom::access::{complex_attributes, object_node_id, object_rm_type};
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::flatten::flat_form;
-use openehr_adl::paths::{complex_attributes, object_node_id, object_rm_type};
-use openehr_adl::validate::ArchetypeRepository;
+use openehr_adl::parse::Dialect;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
@@ -36,7 +37,7 @@ fn read(dir: &str, file: &str) -> Archetype {
     let path = PathBuf::from(format!("{FLATTENER}/{dir}/{file}"));
     let src =
         std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-    parse_artefact(&src).unwrap_or_else(|e| panic!("parse {file}: {e:?}"))
+    parse_artefact(&src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse {file}: {e:?}"))
 }
 
 /// A repository over an entire flattener subdirectory, so multi-level lineage
@@ -48,7 +49,7 @@ fn repo_of(dir: &str) -> ArchetypeRepository {
         let p = entry.path();
         if p.extension().is_some_and(|e| e == "adls")
             && let Ok(src) = std::fs::read_to_string(&p)
-            && let Ok(art) = parse_artefact(&src)
+            && let Ok(art) = parse_artefact(&src, Dialect::Adl2)
         {
             repo.insert(art);
         }
@@ -133,7 +134,7 @@ fn child<'a>(a: &'a Archetype, obj_path: &str, attr: &str, nid: &str) -> &'a COb
 }
 
 fn occurrences_prohibited(obj: &CObject) -> bool {
-    openehr_adl::validate::conformance::child_occurrences(obj)
+    openehr_adl::aom::access::child_occurrences(obj)
         .is_some_and(openehr_base::prelude::MultiplicityInterval::is_prohibited)
 }
 
@@ -470,7 +471,7 @@ fn specexamples_all_flatten_clean() {
         }
         let file = p.file_name().unwrap().to_string_lossy().to_string();
         let repo = repo_of(SX);
-        let child = parse_artefact(&std::fs::read_to_string(&p).unwrap()).unwrap();
+        let child = parse_artefact(&std::fs::read_to_string(&p).unwrap(), Dialect::Adl2).unwrap();
         let flat = flat_form(&child, &repo).unwrap_or_else(|e| panic!("flatten {file}: {e}"));
         // A flat form is non-differential.
         assert!(
@@ -498,7 +499,7 @@ fn flattener_corpus_coverage_gate() {
                 continue;
             }
             let file = p.file_name().unwrap().to_string_lossy().to_string();
-            let child = parse_artefact(&std::fs::read_to_string(&p).unwrap())
+            let child = parse_artefact(&std::fs::read_to_string(&p).unwrap(), Dialect::Adl2)
                 .unwrap_or_else(|e| panic!("parse {file}: {e:?}"));
             flat_form(&child, &repo).unwrap_or_else(|e| panic!("flatten {file}: {e}"));
             claimed += 1;
@@ -529,13 +530,14 @@ fn flat_form_reprints_and_reparses() {
         SX,
         "openEHR-EHR-CLUSTER.cardinality_specialized.v1.0.0.adls",
     );
-    let text = openehr_adl::printer::print(&flat);
+    let text = openehr_adl::print::print(&flat);
     assert!(
         text.starts_with("flat archetype"),
         "flat header:\n{}",
         text.get(..40.min(text.len())).unwrap_or(&text)
     );
-    let reparsed = parse_artefact(&text).unwrap_or_else(|e| panic!("reparse flat: {e:?}"));
+    let reparsed =
+        parse_artefact(&text, Dialect::Adl2).unwrap_or_else(|e| panic!("reparse flat: {e:?}"));
     assert_eq!(root_node_id(&reparsed), root_node_id(&flat));
     // The ten specialised element ids survive the print→parse round-trip.
     let items = ids(&reparsed, "items[id3]", "items");

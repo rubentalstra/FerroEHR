@@ -11,6 +11,7 @@
 
 use std::path::{Path, PathBuf};
 
+use openehr_adl::parse::Dialect;
 use openehr_adl::rules::parse_artefact_rules;
 use openehr_adl::source::parse_source;
 
@@ -47,7 +48,7 @@ fn every_corpus_rules_section_parses() {
             continue;
         };
         // Only files that outer-parse are relevant to the rules gate.
-        let Ok(artefact) = parse_source(&src) else {
+        let Ok(artefact) = parse_source(&src, Dialect::Adl2) else {
             continue;
         };
         if artefact.rules.is_none() {

@@ -53,13 +53,17 @@ use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
-    MultiplicityInterval, ResourceAnnotations, TerminologyCode, TranslationDetails, Uuid,
+    MultiplicityInterval, ResourceAnnotations, TerminologyCode, TranslationDetails,
 };
 
+use crate::aom::access::{
+    child_occurrences, common_mut, complex_attributes, object_node_id, strip_sibling_order,
+};
+use crate::artefact::{ArchetypeRepository, view};
 use crate::flatten::{FlattenError, flat_form};
-use crate::paths::{complex_attributes, object_node_id, parse_path};
-use crate::printer::hrid_to_string;
-use crate::validate::{ArchetypeRepository, view};
+use crate::hrid::hrid_to_string;
+use crate::odin::nil_uuid;
+use crate::paths::parse_path;
 
 /// A failure while generating or profiling an operational template.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -226,9 +230,7 @@ fn opt_object(
     // `occurrences matches {0}` — a logically-removed object (master03
     // §Flattening: "object … nodes with `occurrences matches {0}` [are
     // removed]").
-    if crate::validate::conformance::child_occurrences(&obj)
-        .is_some_and(MultiplicityInterval::is_prohibited)
-    {
+    if child_occurrences(&obj).is_some_and(MultiplicityInterval::is_prohibited) {
         return Ok(None);
     }
     match obj {
@@ -578,122 +580,4 @@ fn default_language() -> TerminologyCode {
         code_string: "en".to_owned(),
         uri: None,
     }
-}
-
-fn nil_uuid() -> Uuid {
-    Uuid {
-        value: uuid::Uuid::nil(),
-    }
-}
-
-// ── small `C_OBJECT` field helpers (mirroring the flatten module) ──────────
-
-/// Mutable references to the four common `C_OBJECT` fields
-/// (`rm_type_name`, `node_id`, `occurrences`, `sibling_order`).
-fn common_mut(
-    o: &mut CObject,
-) -> (
-    &mut String,
-    &mut String,
-    &mut Option<MultiplicityInterval>,
-    &mut Option<openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder>,
-) {
-    use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
-    fn parts<'a>(
-        rm: &'a mut String,
-        id: &'a mut String,
-        occ: &'a mut Option<MultiplicityInterval>,
-        sib: &'a mut Option<SiblingOrder>,
-    ) -> (
-        &'a mut String,
-        &'a mut String,
-        &'a mut Option<MultiplicityInterval>,
-        &'a mut Option<SiblingOrder>,
-    ) {
-        (rm, id, occ, sib)
-    }
-    match o {
-        CObject::ArchetypeSlot(s) => parts(
-            &mut s.rm_type_name,
-            &mut s.node_id,
-            &mut s.occurrences,
-            &mut s.sibling_order,
-        ),
-        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => parts(
-            &mut d.rm_type_name,
-            &mut d.node_id,
-            &mut d.occurrences,
-            &mut d.sibling_order,
-        ),
-        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => parts(
-            &mut r.rm_type_name,
-            &mut r.node_id,
-            &mut r.occurrences,
-            &mut r.sibling_order,
-        ),
-        CObject::CComplexObjectProxy(p) => parts(
-            &mut p.rm_type_name,
-            &mut p.node_id,
-            &mut p.occurrences,
-            &mut p.sibling_order,
-        ),
-        CObject::CBoolean(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CInteger(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CReal(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CString(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CTerminologyCode(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CDate(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CTime(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CDateTime(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-        CObject::CDuration(o) => parts(
-            &mut o.rm_type_name,
-            &mut o.node_id,
-            &mut o.occurrences,
-            &mut o.sibling_order,
-        ),
-    }
-}
-
-fn strip_sibling_order(obj: &mut CObject) {
-    *common_mut(obj).3 = None;
 }

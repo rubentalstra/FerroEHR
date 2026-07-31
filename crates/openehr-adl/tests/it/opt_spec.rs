@@ -22,10 +22,11 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
+use openehr_adl::aom::access::{complex_attributes, object_node_id, object_rm_type};
+use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::{BindingFilter, OptError, ProfileSpec, create_opt, profile_opt};
-use openehr_adl::paths::{complex_attributes, object_node_id, object_rm_type};
-use openehr_adl::validate::ArchetypeRepository;
+use openehr_adl::parse::Dialect;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
@@ -217,7 +218,7 @@ terminology
 ";
 
 fn parse(src: &str) -> Archetype {
-    parse_artefact(src).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
+    parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse failed: {e:?}"))
 }
 
 /// The repository holding the base archetypes the template + overlay reference
@@ -384,7 +385,7 @@ fn create_opt_reproduces_the_master10_worked_example() {
 #[test]
 fn opt_round_trips_through_printer_and_parser() {
     let opt1 = build_opt();
-    let printed1 = openehr_adl::printer::print(&Archetype::AuthoredArchetype(Box::new(
+    let printed1 = openehr_adl::print::print(&Archetype::AuthoredArchetype(Box::new(
         AuthoredArchetype::OperationalTemplate(Box::new(opt1.clone())),
     )));
 
@@ -399,7 +400,7 @@ fn opt_round_trips_through_printer_and_parser() {
     };
 
     // Textual idempotence: printing the re-parsed OPT is byte-identical.
-    let printed2 = openehr_adl::printer::print(&reparsed);
+    let printed2 = openehr_adl::print::print(&reparsed);
     assert_eq!(
         printed1, printed2,
         "OPT print is stable across a round-trip"

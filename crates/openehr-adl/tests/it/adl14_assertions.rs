@@ -8,7 +8,8 @@
 //! both upstream defects recorded in the #768 audit; the prose-defined `%`
 //! parses, the production-less `for_all`-over-paths stays a typed reject.
 
-use openehr_adl::assemble::parse_artefact_adl14;
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 
 /// Wrap one invariant line in a minimal, valid 1.4 archetype.
 fn archetype_with_invariant(invariant: &str) -> String {
@@ -59,7 +60,7 @@ fn chapter_operator_matrix_parses() {
     for invariant in accepted {
         let text = archetype_with_invariant(invariant);
         assert!(
-            parse_artefact_adl14(&text).is_ok(),
+            parse_artefact(&text, Dialect::Adl14,).is_ok(),
             "chapter form must parse: {invariant}"
         );
     }
@@ -72,7 +73,7 @@ fn chapter_operator_matrix_parses() {
 fn for_all_over_paths_stays_a_typed_reject() {
     let text = archetype_with_invariant("for_all /data[at0001]/events : /a[at0001]/b > 0");
     assert!(
-        parse_artefact_adl14(&text).is_err(),
+        parse_artefact(&text, Dialect::Adl14,).is_err(),
         "a production-less form must not silently parse"
     );
 }
@@ -102,7 +103,7 @@ fn chapter7_path_forms_parse() {
     for invariant in accepted {
         let text = archetype_with_invariant(invariant);
         assert!(
-            parse_artefact_adl14(&text).is_ok(),
+            parse_artefact(&text, Dialect::Adl14,).is_ok(),
             "chapter path form must parse: {invariant}"
         );
     }

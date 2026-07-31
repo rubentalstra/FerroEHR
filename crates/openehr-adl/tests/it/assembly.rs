@@ -1,4 +1,4 @@
-//! Assembly unit tests (phase A3c): hand-checked ODIN-section → AOM mappings
+//! Assembly unit tests: hand-checked ODIN-section → AOM mappings
 //! and the `regression`-tag reader, driving the public
 //! [`openehr_adl::assemble::parse_artefact`] API.
 
@@ -15,8 +15,10 @@
     reason = "the assertions match one artefact variant and treat every other as the failure case; naming the single remaining variant would silently stop covering a newly added one"
 )]
 
-use openehr_adl::assemble::{parse_artefact, regression_tag};
-use openehr_adl::printer::print;
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::meta::regression_tag;
+use openehr_adl::parse::Dialect;
+use openehr_adl::print::print;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
@@ -27,7 +29,7 @@ use openehr_am::am24::resource::resource_description::ResourceDescription;
 fn authored(
     src: &str,
 ) -> openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetypeData {
-    match parse_artefact(src).unwrap_or_else(|e| panic!("assemble failed: {e:?}")) {
+    match parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("assemble failed: {e:?}")) {
         Archetype::AuthoredArchetype(a) => match *a {
             AuthoredArchetype::AuthoredArchetype(d) => d,
             other => panic!("expected a plain authored archetype, got {other:?}"),
@@ -189,7 +191,7 @@ fn rm_overlay_maps_visibility_and_alias() {
     }
     // and it round-trips.
     let first = Archetype::AuthoredArchetype(Box::new(AuthoredArchetype::AuthoredArchetype(a)));
-    let second = parse_artefact(&print(&first)).expect("re-parse");
+    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 
@@ -207,7 +209,7 @@ fn template_with_overlay_assembles_and_round_trips() {
         \topenehr-TEST_PKG-WHOLE.ov.v1.0.0\n\
         \ndefinition\n\tWHOLE[id1]\n\
         \nterminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <\n\t\t\t\ttext = <\"o\">\n\t\t\t\tdescription = <\"o\">\n\t\t\t>\n\t\t>\n\t>\n";
-    let first = parse_artefact(src).unwrap_or_else(|e| panic!("assemble: {e:?}"));
+    let first = parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("assemble: {e:?}"));
     let Archetype::AuthoredArchetype(inner) = &first else {
         panic!("expected authored archetype");
     };
@@ -217,7 +219,7 @@ fn template_with_overlay_assembles_and_round_trips() {
     assert_eq!(t.overlays.len(), 1);
     assert_eq!(t.overlays[0].archetype_id.concept_id, "ov");
     // round-trips through the printer.
-    let second = parse_artefact(&print(&first)).expect("re-parse");
+    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 
@@ -238,7 +240,7 @@ fn operational_template_component_terminologies_round_trip() {
         \t\t\t\t[\"en\"] = <\n\
         \t\t\t\t\t[\"id1\"] = <\n\t\t\t\t\t\ttext = <\"Device\">\n\t\t\t\t\t\tdescription = <\"A device\">\n\t\t\t\t\t>\n\
         \t\t\t\t>\n\t\t\t>\n\t\t>\n\t>\n";
-    let first = parse_artefact(src).unwrap_or_else(|e| panic!("assemble: {e:?}"));
+    let first = parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("assemble: {e:?}"));
     let Archetype::AuthoredArchetype(inner) = &first else {
         panic!("expected authored archetype");
     };
@@ -261,7 +263,7 @@ fn operational_template_component_terminologies_round_trip() {
         Some("Device")
     );
     // round-trips.
-    let second = parse_artefact(&print(&first)).expect("re-parse");
+    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 
@@ -273,7 +275,7 @@ fn corpus(rel: &str) -> Archetype {
         .join("tests/corpus/adl2-reference")
         .join(rel);
     let src = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {rel}: {e}"));
-    parse_artefact(&src).unwrap_or_else(|e| panic!("assemble {rel}: {e:?}"))
+    parse_artefact(&src, Dialect::Adl2).unwrap_or_else(|e| panic!("assemble {rel}: {e:?}"))
 }
 
 #[test]

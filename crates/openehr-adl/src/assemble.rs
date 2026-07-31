@@ -4,7 +4,7 @@
 //! [`Archetype`].
 //!
 //! The lower-level entry points ([`crate::source::parse_source`],
-//! [`crate::cadl::parse_definition_body`], [`crate::rules::parse_rules_body`])
+//! [`crate::parse::parse_definition_body`], [`crate::rules::parse_rules_body`])
 //! stay available; this module composes them and maps each ODIN section
 //! (`language`/`description`/`terminology`/`annotations`/`rm_overlay`/
 //! `component_terminologies`) into its typed model class.
@@ -40,41 +40,36 @@ use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::am24::aom2::terminology::value_set::ValueSet;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
-use openehr_lang::odin::{OdinKey, OdinValue};
+use openehr_lang::odin::OdinValue;
 
-use crate::cadl::parse_definition_body;
 use crate::error::{SyntaxError, SyntaxErrorCode};
+use crate::odin::{
+    as_keyed, as_object, key_str, nil_uuid, parse_term_code, parse_uuid, string_list, string_map,
+    string_map_of, string_of, term_code, term_code_of, term_other_items, untyped, unwrap_items,
+    uri_string,
+};
+use crate::parse::{Dialect, parse_definition_body};
 use crate::rules::parse_artefact_rules;
-use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source, parse_source_adl14};
+use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source};
 
-/// Parse an ADL2 source into a fully-assembled [`Archetype`].
+/// Parse an ADL source into a fully-assembled [`Archetype`], reading it in
+/// `dialect`.
 ///
-/// This is the high-level entry point of the ADL2 front end: it outer-parses
-/// (`crate::source`), cADL-parses the `definition` (`crate::cadl`), parses the
+/// This is the high-level entry point of the front end: it outer-parses
+/// (`crate::source`), cADL-parses the `definition` (`crate::parse`), parses the
 /// `rules` (`crate::rules`), and maps every ODIN section into the generated
 /// `openehr_am::am24::aom2` model, returning the artefact-kind-appropriate
 /// `Archetype` enum variant.
 ///
-/// # Errors
-/// Returns every [`SyntaxError`] found across the outer parse, the cADL
-/// definition, the rules, and the ODIN-section-to-model mapping.
-pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    let art = parse_source(src)?;
-    assemble(&art, src)
-}
-
-/// Parse an **ADL 1.4-dialect** source into an [`Archetype`] (the 1.4→2
-/// converter front end): identical to [`parse_artefact`] except that the outer
-/// structure is read by [`crate::source::parse_source_adl14`] (case-insensitive
-/// section keywords, the old-form language tolerance) and the cADL
-/// `definition` is parsed with [`crate::cadl::parse_definition_body_adl14`],
-/// which tolerates the 1.4-only object forms. The result is a *1.4-shaped*
-/// `Archetype` (at-code node ids, qualified/listed terminology constraints in
-/// the `C_TERMINOLOGY_CODE.constraint` string, domain blocks lowered to
+/// Under [`Dialect::Adl14`] the outer structure is read with the 1.4 rules
+/// (case-insensitive section keywords, the old-form language tolerance, the
+/// mandatory `concept` section) and the cADL `definition` tolerates the 1.4-only
+/// object forms, so the result is a *1.4-shaped* `Archetype` (at-code node ids,
+/// qualified/listed terminology constraints in the
+/// `C_TERMINOLOGY_CODE.constraint` string, domain blocks lowered to
 /// `DV_QUANTITY`/`DV_ORDINAL`) that [`crate::adl14::convert`] rewrites into a
 /// spec-valid ADL2 archetype. No openEHR spec governs 1.4→2 — see
 /// `crate::adl14`.
@@ -82,39 +77,26 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// # Errors
 /// Returns every [`SyntaxError`] found across the outer parse, the cADL
 /// definition, the rules, and the ODIN-section-to-model mapping.
-pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    let art = parse_source_adl14(src)?;
-    assemble_with(&art, src, crate::cadl::Dialect::Adl14)
+pub fn parse_artefact(src: &str, dialect: Dialect) -> Result<Archetype, Vec<SyntaxError>> {
+    let art = parse_source(src, dialect)?;
+    assemble(&art, src, dialect)
 }
 
-/// Assemble an already-outer-parsed [`SourceArtefact`] into an [`Archetype`],
-/// given the whole source text (needed to re-lex the `definition`/`rules`
-/// spans).
+/// Assemble an already-outer-parsed [`SourceArtefact`] into an [`Archetype`] of
+/// `dialect`, given the whole source text (needed to re-lex the
+/// `definition`/`rules` spans).
+///
+/// Kept separate from [`parse_artefact`] so a caller that also needs the
+/// [`SourceArtefact`] — e.g. the validator's source-level checks — can assemble
+/// without re-parsing.
 ///
 /// # Errors
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
-pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    assemble_with(art, src, crate::cadl::Dialect::Adl2)
-}
-
-/// Assemble an already-outer-parsed [`SourceArtefact`] into a *1.4-shaped*
-/// [`Archetype`] (the ADL 1.4 dialect — the twin of [`assemble`] that
-/// [`parse_artefact_adl14`] wraps, exposed so a caller that also needs the
-/// [`SourceArtefact`] — e.g. the 1.4 phase-1 validator's source-level checks —
-/// can assemble without re-parsing).
-///
-/// # Errors
-/// Returns every [`SyntaxError`] from the cADL/rules parse and the section
-/// mapping.
-pub fn assemble_adl14(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
-    assemble_with(art, src, crate::cadl::Dialect::Adl14)
-}
-
-fn assemble_with(
+pub(crate) fn assemble(
     art: &SourceArtefact,
     src: &str,
-    dialect: crate::cadl::Dialect,
+    dialect: Dialect,
 ) -> Result<Archetype, Vec<SyntaxError>> {
     let mut errors: Vec<SyntaxError> = Vec::new();
 
@@ -134,7 +116,7 @@ fn assemble_with(
     // VARCN requires "an archetype term value in the concept section". ADL2
     // derives the concept from the HRID (`ADL2/master07.09`), so the section is
     // obsolete there and its absence is not an error.
-    if dialect == crate::cadl::Dialect::Adl14
+    if dialect == Dialect::Adl14
         && art.kind != ArtefactKind::TemplateOverlay
         && art.concept.is_none()
     {
@@ -186,7 +168,7 @@ fn assemble_with(
     // whole-file byte spans, so they re-assemble against the same `src`.
     let mut overlays = Vec::new();
     for ov in &art.overlays {
-        match assemble_with(ov, src, dialect) {
+        match assemble(ov, src, dialect) {
             Ok(Archetype::TemplateOverlay(b)) => overlays.push(*b),
             Ok(_) => {}
             Err(errs) => errors.extend(errs),
@@ -216,16 +198,13 @@ fn assemble_with(
 fn assemble_definition(
     art: &SourceArtefact,
     src: &str,
-    dialect: crate::cadl::Dialect,
+    dialect: Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> Option<CComplexObject> {
     let def = art.definition.as_ref()?;
     let body = src.get(def.bytes.clone()).unwrap_or_default();
     let offset = def.bytes.start;
-    let parsed = match dialect {
-        crate::cadl::Dialect::Adl2 => parse_definition_body(body),
-        crate::cadl::Dialect::Adl14 => crate::cadl::parse_definition_body_adl14(body),
-    };
+    let parsed = parse_definition_body(body, dialect);
     match parsed {
         Ok(cco) => Some(cco),
         Err(errs) => {
@@ -260,11 +239,11 @@ fn root_node_id(def: &CComplexObject) -> String {
 /// a hard error here (the outer parser already raised `SALAN` where required).
 fn assemble_original_language(
     art: &SourceArtefact,
-    dialect: crate::cadl::Dialect,
+    dialect: Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> TerminologyCode {
     let Some(map) = art.language.as_ref().and_then(as_object) else {
-        if dialect == crate::cadl::Dialect::Adl14
+        if dialect == Dialect::Adl14
             && let Some(code) = old_form_primary_language(art)
         {
             return code;
@@ -292,11 +271,11 @@ fn assemble_original_language(
 /// [`old_form_primary_language`]).
 fn assemble_translations_of(
     art: &SourceArtefact,
-    dialect: crate::cadl::Dialect,
+    dialect: Dialect,
 ) -> Option<BTreeMap<String, TranslationDetails>> {
     match art.language.as_ref() {
         Some(language) => assemble_translations(language),
-        None if dialect == crate::cadl::Dialect::Adl14 => old_form_translations(art),
+        None if dialect == Dialect::Adl14 => old_form_translations(art),
         None => None,
     }
 }
@@ -706,11 +685,7 @@ struct BuildInputs<'a> {
 /// assembled parts and the identification meta (`master07.05`).
 fn build_archetype(i: BuildInputs<'_>) -> Archetype {
     let meta = Meta::from(&i.art.meta);
-    let parent_archetype_id = i
-        .art
-        .parent_ref
-        .as_ref()
-        .map(crate::printer::hrid_to_string);
+    let parent_archetype_id = i.art.parent_ref.as_ref().map(crate::hrid::hrid_to_string);
 
     match i.art.kind {
         ArtefactKind::TemplateOverlay => Archetype::TemplateOverlay(Box::new(TemplateOverlay {
@@ -842,230 +817,5 @@ impl From<&ArtefactMeta> for Meta {
             is_generated: m.generated,
             other,
         }
-    }
-}
-
-// ── ODIN accessors ────────────────────────────────────────────────────────
-
-/// Peel any `(TYPE)` casts off an ODIN value.
-///
-/// `master07.08`/`master07.13` section data carries the optional ODIN type
-/// cast of `LANG/docs/odin/master05-content` §Adding Type Information — a
-/// *dynamic-binding hint for the parser* ("Where dynamic binding occurs in the
-/// data, it must be indicated in an ODIN document"), never part of the datum.
-/// Every accessor below therefore reads straight through it: a section written
-/// `details = (Hash<RESOURCE_DESCRIPTION_ITEM,String>) <…>` assembles exactly
-/// like the uncast form, instead of silently yielding nothing. The cast itself
-/// stays on the tree in [`OdinValue::Typed`] for any caller that wants it.
-fn untyped(v: &OdinValue) -> &OdinValue {
-    let mut cur = v;
-    while let OdinValue::Typed { value, .. } = cur {
-        cur = value;
-    }
-    cur
-}
-
-fn as_object(v: &OdinValue) -> Option<&indexmap::IndexMap<String, OdinValue>> {
-    match untyped(v) {
-        OdinValue::Object(m) => Some(m),
-        _ => None,
-    }
-}
-
-fn as_keyed(v: &OdinValue) -> Option<&[(OdinKey, OdinValue)]> {
-    match untyped(v) {
-        OdinValue::KeyedList(items) => Some(items),
-        _ => None,
-    }
-}
-
-fn key_str(k: &OdinKey) -> String {
-    match k {
-        OdinKey::String(s) | OdinKey::Date(s) | OdinKey::Time(s) | OdinKey::DateTime(s) => {
-            s.clone()
-        }
-        OdinKey::Integer(i) => i.to_string(),
-    }
-}
-
-/// The scalar string an ODIN leaf carries (or a single-element list's leaf).
-fn string_of(v: Option<&OdinValue>) -> Option<String> {
-    match untyped(v?) {
-        OdinValue::String(s)
-        | OdinValue::Date(s)
-        | OdinValue::Time(s)
-        | OdinValue::DateTime(s)
-        | OdinValue::Duration(s)
-        | OdinValue::Path(s) => Some(s.clone()),
-        OdinValue::Integer(i) => Some(i.to_string()),
-        OdinValue::Real(r) => Some(r.to_string()),
-        OdinValue::Boolean(b) => Some(b.to_string()),
-        OdinValue::Character(c) => Some(c.to_string()),
-        OdinValue::Uri(u) => Some(strip_uri_delims(u)),
-        OdinValue::List(items) if items.len() == 1 => string_of(items.first()),
-        _ => None,
-    }
-}
-
-/// A list of strings from an ODIN `List` (or a single scalar as a one-element
-/// list), dropping the trailing open-list marker.
-fn string_list(v: &OdinValue) -> Vec<String> {
-    match untyped(v) {
-        OdinValue::List(items) => items
-            .iter()
-            .filter(|x| !matches!(x, OdinValue::ListContinue))
-            .filter_map(|x| string_of(Some(x)))
-            .collect(),
-        other => string_of(Some(other)).into_iter().collect(),
-    }
-}
-
-/// A `key → String` map from an ODIN keyed list or object of string leaves.
-fn string_map(v: &OdinValue) -> BTreeMap<String, String> {
-    let mut out = BTreeMap::new();
-    match untyped(v) {
-        OdinValue::KeyedList(items) => {
-            for (k, val) in items {
-                if let Some(s) = string_of(Some(val)) {
-                    out.insert(key_str(k), s);
-                }
-            }
-        }
-        OdinValue::Object(map) => {
-            for (k, val) in map {
-                if let Some(s) = string_of(Some(val)) {
-                    out.insert(k.clone(), s);
-                }
-            }
-        }
-        _ => {}
-    }
-    out
-}
-
-/// The `key → String` map at `field` of `obj` (empty if absent).
-fn string_map_of(
-    obj: &indexmap::IndexMap<String, OdinValue>,
-    field: &str,
-) -> BTreeMap<String, String> {
-    obj.get(field).map(string_map).unwrap_or_default()
-}
-
-/// Every string leaf of an object as `key → String` (used to gather an
-/// `ARCHETYPE_TERM`'s `other_items` before removing `text`/`description`).
-fn term_other_items(obj: &indexmap::IndexMap<String, OdinValue>) -> BTreeMap<String, String> {
-    let mut out = BTreeMap::new();
-    for (k, v) in obj {
-        if let Some(s) = string_of(Some(v)) {
-            out.insert(k.clone(), s);
-        }
-    }
-    out
-}
-
-/// Unwrap the deprecated `items = <…>` wrapper around a term/binding block
-/// (`master07.13` §Deprecated Terminology Section Features); returns the inner
-/// value, or `v` unchanged if there is no wrapper.
-fn unwrap_items(v: &OdinValue) -> &OdinValue {
-    let v = untyped(v);
-    if let OdinValue::Object(map) = v
-        && map.len() == 1
-        && let Some(inner) = map.get("items")
-    {
-        return untyped(inner);
-    }
-    v
-}
-
-/// The URI string a binding value carries, stripped of ODIN `<>` delimiters.
-fn uri_string(v: &OdinValue) -> String {
-    match untyped(v) {
-        OdinValue::Uri(u) => strip_uri_delims(u),
-        OdinValue::TermCode(t) => t.clone(),
-        OdinValue::PathList(ps) => ps.first().cloned().unwrap_or_default(),
-        other => string_of(Some(other)).unwrap_or_default(),
-    }
-}
-
-fn strip_uri_delims(u: &str) -> String {
-    u.trim_start_matches('<').trim_end_matches('>').to_owned()
-}
-
-/// A `TerminologyCode` from an ODIN term-code leaf (`[ISO_639-1::en]`).
-fn term_code_of(v: &OdinValue) -> TerminologyCode {
-    match untyped(v) {
-        OdinValue::TermCode(code) => parse_term_code(code),
-        other => string_of(Some(other)).map_or_else(
-            || term_code(LOCAL_TERMINOLOGY_ID, ""),
-            |s| parse_term_code(&s),
-        ),
-    }
-}
-
-/// Parse `[terminology::code]` (or `[terminology(version)::code]`) into a
-/// [`TerminologyCode`].
-fn parse_term_code(raw: &str) -> TerminologyCode {
-    let inner = raw.trim().trim_start_matches('[').trim_end_matches(']');
-    let (terminology_part, code_string) = match inner.split_once("::") {
-        Some((t, c)) => (t.to_owned(), c.to_owned()),
-        None => (LOCAL_TERMINOLOGY_ID.to_owned(), inner.to_owned()),
-    };
-    // Optional `(version)` suffix on the terminology id.
-    let (terminology_id, terminology_version) = match terminology_part.split_once('(') {
-        Some((id, ver)) => (id.to_owned(), Some(ver.trim_end_matches(')').to_owned())),
-        None => (terminology_part, None),
-    };
-    TerminologyCode {
-        terminology_id,
-        terminology_version,
-        code_string,
-        uri: None,
-    }
-}
-
-fn term_code(terminology_id: &str, code: &str) -> TerminologyCode {
-    TerminologyCode {
-        terminology_id: terminology_id.to_owned(),
-        terminology_version: None,
-        code_string: code.to_owned(),
-        uri: None,
-    }
-}
-
-fn parse_uuid(s: &str) -> Option<Uuid> {
-    uuid::Uuid::parse_str(s.trim())
-        .ok()
-        .map(|value| Uuid { value })
-}
-
-fn nil_uuid() -> Uuid {
-    Uuid {
-        value: uuid::Uuid::nil(),
-    }
-}
-
-/// The `regression` tag of an assembled [`Archetype`], read from the resource
-/// description's `other_details["regression"]`. The corpus uses this tag as the
-/// authoritative expected-outcome oracle (INVENTORY.md); validation-phase
-/// harnesses read it through this helper.
-#[must_use]
-pub fn regression_tag(archetype: &Archetype) -> Option<String> {
-    description_of(archetype)?
-        .other_details
-        .as_ref()?
-        .get("regression")
-        .cloned()
-}
-
-/// The [`ResourceDescription`] of an archetype, if it carries one (a
-/// `TEMPLATE_OVERLAY` inherits its owner's description and has none).
-fn description_of(archetype: &Archetype) -> Option<&ResourceDescription> {
-    match archetype {
-        Archetype::AuthoredArchetype(a) => match a.as_ref() {
-            AuthoredArchetype::AuthoredArchetype(d) => d.description.as_deref(),
-            AuthoredArchetype::Template(t) => t.description.as_ref(),
-            AuthoredArchetype::OperationalTemplate(o) => o.description.as_ref(),
-        },
-        Archetype::TemplateOverlay(_) => None,
     }
 }

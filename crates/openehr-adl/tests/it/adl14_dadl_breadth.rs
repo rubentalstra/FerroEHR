@@ -25,10 +25,13 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_adl::assemble::{parse_artefact_adl14, regression_tag};
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::SyntaxErrorCode;
+use openehr_adl::meta::regression_tag;
+use openehr_adl::parse::Dialect;
 use openehr_adl::source::parse_source;
-use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
+use openehr_adl::validate::catalogue::Severity;
+use openehr_adl::validate::validate_source_integrity;
 use openehr_lang::odin::{OdinKey, OdinValue};
 
 /// What a fixture must do.
@@ -70,14 +73,14 @@ fn every_fixture_meets_its_declared_outcome() {
         let src = read(name);
         match expect {
             Expect::Pass => {
-                let archetype = parse_artefact_adl14(&src)
+                let archetype = parse_artefact(&src, Dialect::Adl14)
                     .unwrap_or_else(|e| panic!("{name} must parse, got {e:?}"));
                 assert_eq!(
                     regression_tag(&archetype).as_deref(),
                     Some("PASS"),
                     "{name}: the in-file regression tag must agree with the table"
                 );
-                let issues = validate_source_phase1_adl14(&src)
+                let issues = validate_source_integrity(&src, Dialect::Adl14, None)
                     .unwrap_or_else(|e| panic!("{name} must parse for validation, got {e:?}"));
                 let errors: Vec<_> = issues
                     .iter()
@@ -86,8 +89,8 @@ fn every_fixture_meets_its_declared_outcome() {
                 assert!(errors.is_empty(), "{name} must validate clean: {errors:?}");
             }
             Expect::Refuse(code) => {
-                let errs =
-                    parse_artefact_adl14(&src).expect_err(&format!("{name} must be refused"));
+                let errs = parse_artefact(&src, Dialect::Adl14)
+                    .expect_err(&format!("{name} must be refused"));
                 assert!(
                     errs.iter().any(|e| e.code == *code),
                     "{name}: expected {code:?}, got {errs:?}"
@@ -102,7 +105,7 @@ fn every_fixture_meets_its_declared_outcome() {
 #[test]
 fn breadth_fixture_leaf_values() {
     let src = read("openEHR-EHR-OBSERVATION.dadl_breadth.v1.adl");
-    let art = parse_source(&src).expect("breadth fixture parses");
+    let art = parse_source(&src, Dialect::Adl2).expect("breadth fixture parses");
     let description = art.description.as_ref().expect("description section");
     let OdinValue::Object(desc) = description else {
         panic!("expected an object description section");
@@ -173,7 +176,7 @@ fn breadth_fixture_leaf_values() {
 #[test]
 fn breadth_fixture_unbounded_intervals() {
     let src = read("openEHR-EHR-OBSERVATION.dadl_breadth.v1.adl");
-    let art = parse_source(&src).expect("breadth fixture parses");
+    let art = parse_source(&src, Dialect::Adl2).expect("breadth fixture parses");
     let OdinValue::Object(desc) = art.description.as_ref().expect("description") else {
         panic!("expected an object description section");
     };
@@ -209,7 +212,7 @@ fn breadth_fixture_unbounded_intervals() {
 #[test]
 fn cast_section_values_assemble_transparently() {
     let src = read("openEHR-EHR-OBSERVATION.dadl_breadth.v1.adl");
-    let archetype = parse_artefact_adl14(&src).expect("breadth fixture parses");
+    let archetype = parse_artefact(&src, Dialect::Adl14).expect("breadth fixture parses");
     let openehr_am::am24::aom2::archetype::archetype::Archetype::AuthoredArchetype(authored) =
         &archetype
     else {
@@ -240,7 +243,7 @@ fn cast_section_values_assemble_transparently() {
 #[test]
 fn revision_history_section_is_read_and_preserved() {
     let src = read("openEHR-EHR-OBSERVATION.revision_history.v1.adl");
-    let art = parse_source(&src).expect("revision_history fixture parses");
+    let art = parse_source(&src, Dialect::Adl2).expect("revision_history fixture parses");
     let OdinValue::Object(section) = art
         .revision_history
         .as_ref()

@@ -15,6 +15,7 @@
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
+use openehr_adl::parse::Dialect;
 use std::path::{Path, PathBuf};
 
 /// Files the outer parser correctly *rejects* (an intentional structural FAIL
@@ -105,7 +106,7 @@ fn every_adl2_source_outer_parses() {
             continue;
         }
         let src = std::fs::read_to_string(path).expect("read corpus file");
-        match openehr_adl::source::parse_source(&src) {
+        match openehr_adl::source::parse_source(&src, Dialect::Adl2) {
             Ok(_) => parsed += 1,
             Err(errs) => {
                 let first = errs.first().map(ToString::to_string).unwrap_or_default();

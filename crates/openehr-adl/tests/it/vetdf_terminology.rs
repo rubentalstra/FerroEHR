@@ -18,11 +18,13 @@
 use std::sync::Mutex;
 
 use openehr_adl::assemble::parse_artefact;
-use openehr_adl::validate::rm::ProductionRmModel;
-use openehr_adl::validate::terminology::{
+use openehr_adl::parse::Dialect;
+use openehr_adl::validate::bindings::{
     NoTerminologyResolver, TerminologyResolver, external_term_bindings,
 };
-use openehr_adl::validate::{ValidationCode, validate_source};
+use openehr_adl::validate::catalogue::ValidationCode;
+use openehr_adl::validate::rm::ProductionRmModel;
+use openehr_adl::validate::validate_source;
 
 /// The external terminology id + target the fixture binds its root node to.
 const SNOMED_ID: &str = "SNOMED-CT";
@@ -148,7 +150,7 @@ fn only_external_bindings_are_consulted() {
 
 #[test]
 fn external_term_bindings_excludes_internal_terminologies() {
-    let archetype = parse_artefact(&fixture()).expect("fixture parses");
+    let archetype = parse_artefact(&fixture(), Dialect::Adl2).expect("fixture parses");
     let bindings = external_term_bindings(&archetype);
     assert_eq!(bindings.len(), 1, "only the SNOMED CT binding is external");
     assert_eq!(bindings[0].terminology_id, SNOMED_ID);

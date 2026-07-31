@@ -32,10 +32,12 @@
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
-use openehr_adl::assemble::parse_artefact_adl14;
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::{SyntaxError, SyntaxErrorCode};
-use openehr_adl::source::{parse_source, parse_source_adl14};
-use openehr_adl::validate::{Severity, ValidationCode, validate_source_phase1_adl14};
+use openehr_adl::parse::Dialect;
+use openehr_adl::source::parse_source;
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::validate_source_integrity;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
@@ -146,7 +148,7 @@ fn authored(archetype: &Archetype) -> &AuthoredArchetypeData {
 
 /// The phase-1 error codes a 1.4 source raises.
 fn error_codes(src: &str) -> Vec<ValidationCode> {
-    validate_source_phase1_adl14(src)
+    validate_source_integrity(src, Dialect::Adl14, None)
         .expect("the 1.4 source parses")
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -166,8 +168,8 @@ fn error_codes(src: &str) -> Vec<ValidationCode> {
 )]
 #[test]
 fn adl14_section_keywords_are_case_insensitive() -> Result<(), Vec<SyntaxError>> {
-    let lower = parse_artefact_adl14(LOWER_CASE_14)?;
-    let mixed = parse_artefact_adl14(MIXED_CASE_14)?;
+    let lower = parse_artefact(LOWER_CASE_14, Dialect::Adl14)?;
+    let mixed = parse_artefact(MIXED_CASE_14, Dialect::Adl14)?;
     assert_eq!(authored(&mixed).archetype_id, authored(&lower).archetype_id);
     assert_eq!(authored(&mixed).definition, authored(&lower).definition);
     assert_eq!(authored(&mixed).terminology, authored(&lower).terminology);
@@ -195,7 +197,7 @@ fn adl14_specialise_keyword_is_case_insensitive() -> Result<(), Vec<SyntaxError>
             ),
             1,
         );
-        let parsed = parse_source_adl14(&src)?;
+        let parsed = parse_source(&src, Dialect::Adl14)?;
         let parent = parsed
             .parent_ref
             .expect("the specialise parent is captured");
@@ -220,17 +222,19 @@ fn adl14_specialise_keyword_is_case_insensitive() -> Result<(), Vec<SyntaxError>
 )]
 #[test]
 fn adl2_rejects_upper_case_section_keywords() -> Result<(), Vec<SyntaxError>> {
-    parse_source(LOWER_CASE_ADL2)?;
+    parse_source(LOWER_CASE_ADL2, Dialect::Adl2)?;
 
     let upper_artefact = LOWER_CASE_ADL2.replacen("archetype", "ARCHETYPE", 1);
-    let errs = parse_source(&upper_artefact).expect_err("ADL2 keywords are case-sensitive");
+    let errs =
+        parse_source(&upper_artefact, Dialect::Adl2).expect_err("ADL2 keywords are case-sensitive");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Sunk),
         "{errs:?}"
     );
 
     let upper_section = LOWER_CASE_ADL2.replacen("\nterminology\n", "\nTERMINOLOGY\n", 1);
-    let errs = parse_source(&upper_section).expect_err("ADL2 keywords are case-sensitive");
+    let errs =
+        parse_source(&upper_section, Dialect::Adl2).expect_err("ADL2 keywords are case-sensitive");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Saon),
         "{errs:?}"
@@ -289,7 +293,7 @@ ontology
 )]
 #[test]
 fn adl14_old_form_language_is_upgraded_from_the_ontology() -> Result<(), Vec<SyntaxError>> {
-    let archetype = parse_artefact_adl14(OLD_FORM_14)?;
+    let archetype = parse_artefact(OLD_FORM_14, Dialect::Adl14)?;
     let data = authored(&archetype);
     // `primary_language` → `original_language`.
     assert_eq!(data.original_language.code_string, "en");
@@ -318,7 +322,7 @@ fn adl14_old_form_language_is_upgraded_from_the_ontology() -> Result<(), Vec<Syn
 #[test]
 fn adl14_old_form_without_primary_language_is_salan() {
     let src = OLD_FORM_14.replacen("\tprimary_language = <\"en\">\n", "", 1);
-    let errs = parse_artefact_adl14(&src).expect_err("nothing to upgrade from");
+    let errs = parse_artefact(&src, Dialect::Adl14).expect_err("nothing to upgrade from");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Salan),
         "{errs:?}"
@@ -333,7 +337,7 @@ fn adl2_missing_language_section_is_salan() {
         "",
         1,
     );
-    let errs = parse_source(&src).expect_err("ADL2 requires a language section");
+    let errs = parse_source(&src, Dialect::Adl2).expect_err("ADL2 requires a language section");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Salan),
         "{errs:?}"
@@ -348,7 +352,7 @@ fn adl2_missing_language_section_is_salan() {
 fn adl14_missing_concept_section_is_saco() {
     let src = LOWER_CASE_14.replacen("concept\n\t[at0000]\t-- Header sections\n\n", "", 1);
     assert!(!src.contains("concept"), "the concept section was removed");
-    let errs = parse_artefact_adl14(&src).expect_err("1.4 mandates the concept section");
+    let errs = parse_artefact(&src, Dialect::Adl14).expect_err("1.4 mandates the concept section");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Saco),
         "{errs:?}"
@@ -360,7 +364,8 @@ fn adl14_missing_concept_section_is_saco() {
 #[test]
 fn adl14_malformed_concept_clause_is_saco() {
     let src = LOWER_CASE_14.replacen("\t[at0000]\t-- Header sections", "\t\"at0000\"", 1);
-    let errs = parse_artefact_adl14(&src).expect_err("the concept clause needs a term code");
+    let errs =
+        parse_artefact(&src, Dialect::Adl14).expect_err("the concept clause needs a term code");
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Saco),
         "{errs:?}"
@@ -406,12 +411,12 @@ fn adl2_deprecated_concept_section_is_shape_checked() {
         format!("{head}concept\n    [at0000]{rest}"),
     ] {
         assert!(
-            openehr_adl::assemble::parse_artefact(&ok).is_ok(),
+            parse_artefact(&ok, Dialect::Adl2).is_ok(),
             "a well-formed deprecated concept section must be accepted"
         );
     }
     let bad = format!("{head}concept\n    not_a_code{rest}");
-    let errs = openehr_adl::assemble::parse_artefact(&bad).unwrap_err();
+    let errs = parse_artefact(&bad, Dialect::Adl2).unwrap_err();
     assert!(
         errs.iter().any(|e| e.code == SyntaxErrorCode::Saco),
         "a malformed concept section must raise SACO, got {errs:?}"

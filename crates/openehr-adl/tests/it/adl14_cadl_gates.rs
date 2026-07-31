@@ -49,9 +49,15 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_adl::assemble::parse_artefact_adl14;
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::SyntaxErrorCode;
-use openehr_adl::validate::{Severity, ValidationCode, validate_source_phase1_adl14};
+use openehr_adl::parse::Dialect;
+use openehr_adl::validate::catalogue::{Severity, ValidationCode};
+use openehr_adl::validate::validate_source_integrity;
+use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 
 /// What a fixture must do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -202,6 +208,20 @@ const FIXTURES: &[(&str, Expect)] = &[
         "openEHR-EHR-SECTION.slot_domain_concept_regex.v1.adl",
         Expect::Pass,
     ),
+    // ── the `\u` escape twins (`master03-file_encoding.adoc` §File Encoding) ─
+    // The chapter defines BOTH `\uHHHH` (BMP) and `\uHHHHHHHH`
+    // (U+10000-U+10FFFF, "the algorithm is described in IETF RFC 2781"), so a
+    // C_STRING carrying either spelling must decode; an 8-digit spelling of a
+    // code point outside that range denotes nothing the form can carry and is
+    // refused rather than silently substituted.
+    (
+        "openEHR-EHR-CLUSTER.unicode_escape_8_digit.v1.adl",
+        Expect::Pass,
+    ),
+    (
+        "openEHR-EHR-CLUSTER.SUNK_unicode_escape_out_of_range.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Sunk),
+    ),
     // ── the master05 breadth trio (every construct of the chapter) ────────
     (
         "openEHR-EHR-OBSERVATION.cadl_breadth_structure.v1.adl",
@@ -227,7 +247,7 @@ fn read(name: &str) -> String {
 }
 
 fn error_codes(src: &str, name: &str) -> Vec<ValidationCode> {
-    validate_source_phase1_adl14(src)
+    validate_source_integrity(src, Dialect::Adl14, None)
         .unwrap_or_else(|e| panic!("{name}: must parse, got {e:?}"))
         .into_iter()
         .filter(|i| i.severity == Severity::Error)
@@ -241,7 +261,7 @@ fn every_fixture_meets_its_declared_outcome() {
         let src = read(name);
         match expect {
             Expect::Pass => {
-                parse_artefact_adl14(&src)
+                parse_artefact(&src, Dialect::Adl14)
                     .unwrap_or_else(|e| panic!("{name} must parse, got {e:?}"));
                 let codes = error_codes(&src, name);
                 assert!(
@@ -251,7 +271,7 @@ fn every_fixture_meets_its_declared_outcome() {
                 );
             }
             Expect::Refuse(code) => {
-                let errs = parse_artefact_adl14(&src)
+                let errs = parse_artefact(&src, Dialect::Adl14)
                     .err()
                     .unwrap_or_else(|| panic!("{name} must be refused at parse"));
                 assert!(
@@ -267,6 +287,63 @@ fn every_fixture_meets_its_declared_outcome() {
                     "{name}: expected {code}, got {:?}",
                     codes.iter().map(|c| c.mnemonic()).collect::<Vec<_>>()
                 );
+            }
+        }
+    }
+}
+
+/// The `\u` escape twins, checked on their CONTENT rather than only their
+/// outcome: the 4-digit BMP form, the RFC 2781 surrogate pair and the
+/// zero-filled 8-digit spelling all decode to the characters
+/// `ADL1.4/master03-file_encoding.adoc` §File Encoding names, and the
+/// out-of-range twin's refusal names the defect.
+#[test]
+fn the_unicode_escape_twins_decode_and_refuse_on_content() {
+    let src = read("openEHR-EHR-CLUSTER.unicode_escape_8_digit.v1.adl");
+    let art = parse_artefact(&src, Dialect::Adl14).expect("the accepting twin must parse");
+    let mut values = Vec::new();
+    collect_string_constraints(&art, &mut values);
+    assert_eq!(
+        values,
+        vec![
+            "\u{e9}".to_owned(),
+            "\u{1F600}".to_owned(),
+            "\u{1F600}".to_owned()
+        ],
+        "the three escape spellings must decode to e-acute and two emoji"
+    );
+
+    let src = read("openEHR-EHR-CLUSTER.SUNK_unicode_escape_out_of_range.v1.adl");
+    let errs = parse_artefact(&src, Dialect::Adl14).expect_err("the refusing twin must be refused");
+    let messages: Vec<&str> = errs.iter().map(|e| e.message.as_str()).collect();
+    assert!(
+        messages.iter().any(|m| m.contains("0000FFFF")),
+        "the refusal must name the offending escape, got {messages:?}"
+    );
+}
+
+/// Every `C_STRING` constraint value of an archetype definition, in document
+/// order.
+fn collect_string_constraints(art: &Archetype, out: &mut Vec<String>) {
+    let Archetype::AuthoredArchetype(authored) = art else {
+        return;
+    };
+    let AuthoredArchetype::AuthoredArchetype(data) = authored.as_ref() else {
+        return;
+    };
+    collect_from_complex(&data.definition, out);
+}
+
+fn collect_from_complex(cco: &CComplexObject, out: &mut Vec<String>) {
+    let CComplexObject::CComplexObject(data) = cco else {
+        return;
+    };
+    for attr in &data.attributes {
+        for child in &attr.children {
+            match child {
+                CObject::CString(c) => out.extend(c.constraint.iter().cloned()),
+                CObject::CComplexObject(inner) => collect_from_complex(inner, out),
+                _ => {}
             }
         }
     }

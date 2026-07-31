@@ -21,8 +21,9 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_adl::assemble::parse_artefact_adl14;
+use openehr_adl::assemble::parse_artefact;
 use openehr_adl::error::SyntaxErrorCode;
+use openehr_adl::parse::Dialect;
 
 /// What the ADL 1.4 parser must do with a knowledge-resource archetype.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,11 +80,11 @@ fn every_knowledge_archetype_meets_its_declared_parse_outcome() {
             .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
         match expect {
             Expect::Parses => {
-                parse_artefact_adl14(&src)
+                parse_artefact(&src, Dialect::Adl14)
                     .unwrap_or_else(|e| panic!("{name} must parse as ADL 1.4, got {e:?}"));
             }
             Expect::Refuse(code) => {
-                let errs = parse_artefact_adl14(&src)
+                let errs = parse_artefact(&src, Dialect::Adl14)
                     .err()
                     .unwrap_or_else(|| panic!("{name} must be refused at parse"));
                 assert!(

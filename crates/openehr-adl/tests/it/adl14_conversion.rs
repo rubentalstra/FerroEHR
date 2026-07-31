@@ -40,7 +40,8 @@ use std::path::{Path, PathBuf};
 use openehr_adl::adl14::convert::{ConvertConfig, convert, parse_and_convert};
 use openehr_adl::adl14::differ::differentiate;
 use openehr_adl::adl14::log::ConversionLog;
-use openehr_adl::assemble::{parse_artefact, parse_artefact_adl14};
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::parse::Dialect;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
@@ -104,7 +105,7 @@ fn convert_pair(adl: &str, parent: Option<&str>) -> Archetype {
 /// against the expected `.adls`.
 fn assert_structural_match(adl: &str, adls: &str, parent: Option<&str>) {
     let got = convert_pair(adl, parent);
-    let exp = parse_artefact(&read(adls)).expect("parse expected .adls");
+    let exp = parse_artefact(&read(adls), Dialect::Adl2).expect("parse expected .adls");
     let (gd, gt) = data(&got);
     let (ed, et) = data(&exp);
     assert_eq!(gd, ed, "{adl}: definition tree mismatch vs {adls}");
@@ -121,10 +122,10 @@ fn assert_structural_match(adl: &str, adls: &str, parent: Option<&str>) {
     );
 
     // The converted output validates clean (phase 1).
-    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let issues = openehr_adl::validate::validate_integrity(&got, None);
     let errors: Vec<_> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(
@@ -140,7 +141,7 @@ fn assert_idempotent(adl: &str, parent: Option<&str>) {
     let mut log = ConversionLog::new();
     let first = parse_and_convert(&read(adl), &cfg, &mut log).expect("first convert");
     // Re-run consulting the SAME log (re-parse the source afresh).
-    let reparsed = parse_artefact_adl14(&read(adl)).expect("reparse");
+    let reparsed = parse_artefact(&read(adl), Dialect::Adl14).expect("reparse");
     let second = convert(&reparsed, &cfg, &mut log).expect("second convert");
     let (fd, _) = data(&first);
     let (sd, _) = data(&second);
@@ -242,10 +243,10 @@ fn inherit_unchanged_node_differentiates_exactly() {
 #[test]
 fn adl14_meta_data_converts_and_validates() {
     let got = convert_pair("openEHR-EHR-OBSERVATION.adl14_meta_data.adl", None);
-    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let issues = openehr_adl::validate::validate_integrity(&got, None);
     let errors: Vec<_> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "adl14_meta_data validation: {errors:?}");
@@ -351,10 +352,10 @@ ontology
     let cfg = ConvertConfig::default();
     let mut log = ConversionLog::new();
     let got = parse_and_convert(src, &cfg, &mut log).expect("convert");
-    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let issues = openehr_adl::validate::validate_integrity(&got, None);
     let errors: Vec<&str> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
@@ -440,10 +441,10 @@ ontology
     };
     let mut log = ConversionLog::new();
     let got = parse_and_convert(src, &cfg, &mut log).expect("convert");
-    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let issues = openehr_adl::validate::validate_integrity(&got, None);
     let errors: Vec<&str> = issues
         .iter()
-        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .filter(|i| i.severity == openehr_adl::validate::catalogue::Severity::Error)
         .map(|i| i.code.mnemonic())
         .collect();
     assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
@@ -452,7 +453,7 @@ ontology
     // node id/constraint (`[at0.32]`) or a terminology key (`["at0.32"]`).
     // The conversion_details provenance deliberately NAMES the original
     // dotted codes, so a bare-substring scan would false-positive there.
-    let printed = openehr_adl::printer::print(&got);
+    let printed = openehr_adl::print::print(&got);
     for token in [
         "[id1.", "[id3.", "[at0.", "[\"at0.", "[\"id1.", ".1]", ".1\"]",
     ] {
@@ -469,7 +470,7 @@ ontology
         log.notes
     );
     // The printed ADL2 re-parses (the standalone artefact is well-formed).
-    parse_artefact(&printed)
+    parse_artefact(&printed, Dialect::Adl2)
         .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
 }
 
@@ -519,7 +520,7 @@ ontology
     let mut log = ConversionLog::new();
     let converted = parse_and_convert(src, &ConvertConfig::default(), &mut log).expect("converts");
     let (definition, _) = data(&converted);
-    let items = openehr_adl::paths::complex_attributes(definition)
+    let items = openehr_adl::aom::access::complex_attributes(definition)
         .iter()
         .find(|a| a.rm_attribute_name == "items")
         .expect("the items attribute")
@@ -729,7 +730,7 @@ fn app_b_reference_lists_split_on_lf_into_keyed_entries() {
     );
 
     // The converted homes are visible in the printed ADL2, which re-parses.
-    let printed = openehr_adl::printer::print(&converted);
+    let printed = openehr_adl::print::print(&converted);
     for token in [
         "build_uid=3076af96-e1dd-4f9b-abf2-23913fcf52b1",
         "original_namespace = <\"au.gov.nehta\">",
@@ -746,7 +747,7 @@ fn app_b_reference_lists_split_on_lf_into_keyed_entries() {
         !printed.contains("other_details"),
         "no other_details section survives:\n{printed}"
     );
-    parse_artefact(&printed)
+    parse_artefact(&printed, Dialect::Adl2)
         .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
 }
 

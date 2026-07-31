@@ -1,4 +1,4 @@
-//! The ADL2 `rules` section + structured slot-assertion parser (phase A3b).
+//! The ADL2 `rules` section + structured slot-assertion parser.
 //!
 //! The core BEL grammar is `openehr_lang::bel` (a LANG spec — statements,
 //! assertions, assignments, operators, literals → the generated `beom` model).
@@ -10,8 +10,8 @@
 //! * an archetype/data **path** leaf becomes an `EXPR_ARCHETYPE_REF`
 //!   (`master05`; the path is a runtime-value proxy);
 //! * a `matches { c_primitive_object }` right-hand side becomes an
-//!   `EXPR_CONSTRAINT` wrapping the cADL primitive (reusing the A3a primitive
-//!   parser, `crate::cadl::parse_inline_primitive_text`);
+//!   `EXPR_CONSTRAINT` wrapping the cADL primitive (reusing the cADL primitive
+//!   parser, `crate::parse::parse_inline_primitive_text`);
 //! * inside a **slot** assertion (`master04.3` §Archetype Slots), a
 //!   `matches { /regex/ }` right-hand side becomes an
 //!   `EXPR_ARCHETYPE_ID_CONSTRAINT` (an archetype-id regex matcher).
@@ -43,8 +43,8 @@ use openehr_lang::bel::{BelBuilder, BelError, BelLiteral, parse_statements_with}
 use openehr_lang::prelude::{ExprLiteral, ExprVariableRef, OperatorKind, VariableDeclaration};
 use openehr_lang::prelude::{ExprTypeDef, TypeDefObjectRef};
 
-use crate::cadl::{parse_contained_regexp_text, parse_inline_primitive_text};
 use crate::error::{SyntaxError, SyntaxErrorCode};
+use crate::parse::{parse_contained_regexp_text, parse_inline_primitive_text};
 use crate::source::SourceArtefact;
 
 /// Which AOM leaf a `matches { … }` right-hand side yields.
@@ -342,20 +342,9 @@ pub fn parse_rules_body(body: &str) -> Result<StatementSet, Vec<SyntaxError>> {
     }
 }
 
-/// Parse the `rules` section of a whole ADL2 source, span-offsetting errors and
-/// the requested statement set back to the file. Returns `Ok(None)` when the
-/// artefact has no `rules` section.
-///
-/// # Errors
-/// Returns the outer-parse errors if `src` does not parse, or the rule
-/// (`SINVS`/`SEXPT` + cADL) errors offset to the whole file.
-pub fn parse_rules(src: &str) -> Result<Option<StatementSet>, Vec<SyntaxError>> {
-    let artefact = crate::source::parse_source(src)?;
-    parse_artefact_rules(&artefact, src)
-}
-
-/// Parse the `rules` span of an already-parsed [`SourceArtefact`] (mirrors how
-/// [`crate::cadl::parse_definition`] re-lexes the definition span).
+/// Parse the `rules` span of an already-parsed [`SourceArtefact`] (the rules
+/// counterpart of driving [`crate::parse::parse_definition_body`] over the
+/// definition span).
 ///
 /// # Errors
 /// Returns the rule errors offset to the whole file.

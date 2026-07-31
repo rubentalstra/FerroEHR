@@ -23,7 +23,7 @@
 //! Reference-model type-name matching is case-insensitive and whitespace-
 //! ignored, with generic type names composed from RM class names
 //! (`docs/specs/openehr/AM/docs/ADL2/master04.3-cadl_complex_types.adoc`
-//! §Reference Model Type Matching); [`base_type_name`]/[`normalise_type_name`]
+//! §Reference Model Type Matching); [`base_type_name`]/`normalise_type_name`
 //! implement that lexical layer, shared by every [`RmModel`].
 
 use std::collections::BTreeSet;
@@ -33,46 +33,20 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
+use openehr_base::prelude::Interval;
 use openehr_rm::model;
 
-use super::{ArchetypeView, ValidationCode, ValidationIssue, view};
+use super::catalogue::ValidationCode;
+use super::{ValidationIssue, push_issue};
+use crate::aom::access::{
+    child_occurrences, complex_attributes, complex_rm_type, object_node_id, object_rm_type,
+};
+use crate::aom::interval::{Bounds, bounds, display_bounds, finite_upper, point_value_i32};
+use crate::artefact::{ArchetypeView, view};
 use crate::codes::{is_at_code, is_id_code};
-use crate::paths::{complex_attributes, complex_rm_type, locate, object_node_id, object_rm_type};
-
-/// A multiplicity bound, extracted from an RM attribute or a cADL constraint.
-/// `upper == None` denotes an unbounded (∞) upper limit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Bounds {
-    /// Inclusive lower bound.
-    pub lower: i32,
-    /// Inclusive upper bound; `None` = unbounded.
-    pub upper: Option<i32>,
-}
-
-impl Bounds {
-    /// A closed `{lower..upper}` bound.
-    #[must_use]
-    pub fn new(lower: i32, upper: Option<i32>) -> Self {
-        Self { lower, upper }
-    }
-
-    /// True if `inner` is the same as, or narrower than (wholly contained
-    /// within), `self` — the "conform, i.e. be the same or narrower" test the
-    /// existence (VCAEX) and cardinality (VCACA) rules require (`master04.5`
-    /// §Validity Rules: `C_ATTRIBUTE`).
-    #[must_use]
-    pub fn contains(self, inner: Bounds) -> bool {
-        inner.lower >= self.lower
-            && match (self.upper, inner.upper) {
-                // `self` unbounded above ⇒ any inner upper is within it.
-                (None, _) => true,
-                // `self` bounded but `inner` unbounded ⇒ inner escapes above.
-                (Some(_), None) => false,
-                (Some(outer), Some(i)) => i <= outer,
-            }
-    }
-}
+use crate::odin::is_delimited_regex_trimmed;
+use crate::parse::Dialect;
+use crate::paths::{child_path, locate};
 
 /// One attribute of an RM type, as reported by a [`RmModel`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -166,7 +140,7 @@ pub fn base_type_name(rm_type: &str) -> &str {
 /// The generic argument type names of a generic RM type name, in order
 /// (`"HISTORY<ITEM_LIST>"` → `["ITEM_LIST"]`; a non-generic name → empty).
 #[must_use]
-pub fn generic_arguments(rm_type: &str) -> Vec<String> {
+pub(crate) fn generic_arguments(rm_type: &str) -> Vec<String> {
     let Some(open) = rm_type.find('<') else {
         return Vec::new();
     };
@@ -213,7 +187,7 @@ fn split_top_level_commas(inner: &str) -> Vec<String> {
 /// (`master04.3` §Reference Model Type Matching: case-insensitive, whitespace
 /// ignored).
 #[must_use]
-pub fn normalise_type_name(rm_type: &str) -> String {
+pub(crate) fn normalise_type_name(rm_type: &str) -> String {
     rm_type
         .chars()
         .filter(|c| !c.is_whitespace())
@@ -235,7 +209,7 @@ pub fn normalise_type_name(rm_type: &str) -> String {
 /// child that states no arguments or a differing argument arity — none of those
 /// is a positive non-conformance.
 #[must_use]
-pub fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bool> {
+pub(crate) fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bool> {
     match rm.conforms(child, declared) {
         Some(true) => {}
         other => return other,
@@ -408,16 +382,34 @@ fn production_model_governs_view(v: &ArchetypeView<'_>) -> bool {
     publisher == "openehr" && !matches!(package.as_str(), "TEST_PKG" | "TASK_PLANNING")
 }
 
-/// Validate `archetype` against `rm` — the reference-model checks (VCORM,
-/// VCARM, VCORMT, VCAEX, VCACA, VCAM), plus the RM-dependent VACSO and the
-/// interior-node half of VATID.
+/// Validate `archetype` against `rm` — the reference-model conformance checks
+/// for `dialect`.
 ///
-/// These are the `master08` §Phase 2 → Validate Against Reference Model checks.
-/// Phase gating (they run only when phase-1 basic integrity passed) is applied
-/// by [`validate_source`](super::validate_source) / [`super::validate`]; called directly, they run
-/// unconditionally.
+/// Under [`Dialect::Adl2`] that is the full AOM2 set: VCORM, VCARM, VCORMT,
+/// VCAEX, VCACA, VCAM, plus the RM-dependent VACSO and the interior-node half of
+/// VATID. These are the `master08` §Phase 2 → Validate Against Reference Model
+/// checks (master08 "phase 2 — validate against reference model" in the spec's
+/// guide vocabulary). Gating (they run only when basic integrity passed) is
+/// applied by [`validate_source`](super::validate_source) /
+/// [`super::validate`]; called directly, they run unconditionally.
+///
+/// Under [`Dialect::Adl14`] only **VUNT** is reported. The ADL 1.4 formalism
+/// defines exactly two cADL validity rules of its own: VCOC
+/// (`ADL1.4/master05-cadl.adoc` §Occurrences L324), which needs no RM and runs
+/// in the 1.4 basic-integrity pass, and VUNT (§Internal References L512-513:
+/// "the type mentioned in a `use_node` must be the same as or a super-type
+/// (according to the reference model) of the reference model type of the node
+/// referred to"), whose "according to the reference model" clause puts it here.
+/// Every other check above is an AOM2 rule with no ADL 1.4 counterpart — running
+/// them would judge a 1.4 artefact by ADL 2's catalogue, which this crate does
+/// not do (a 1.4 upload is judged AS 1.4). So the walk runs once either way and
+/// the 1.4 dialect keeps only VUNT out of it.
 #[must_use]
-pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
+pub fn validate_rm_conformance(
+    archetype: &Archetype,
+    rm: &dyn RmModel,
+    dialect: Dialect,
+) -> Vec<ValidationIssue> {
     let v = view(archetype);
     let defined: BTreeSet<String> = v
         .terminology
@@ -435,7 +427,8 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
     let root_type = complex_rm_type(v.definition);
     // VCORM on the root object type (master04.5 §Validity Rules: `C_OBJECT`).
     if !root_type.is_empty() && !rm.type_exists(root_type) {
-        scan.push(
+        push_issue(
+            &mut scan.issues,
             ValidationCode::Vcorm,
             format!(
                 "root object type {root_type:?} is not defined in the reference model ({})",
@@ -445,30 +438,14 @@ pub fn validate_phase2_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<Valida
         );
     }
     scan.walk_complex("", root_type, v.definition);
-    scan.issues
-}
-
-/// Validate `archetype` against `rm` with the **ADL 1.4** reference-model rule
-/// set — which is VUNT and nothing else.
-///
-/// The ADL 1.4 formalism defines exactly two cADL validity rules of its own:
-/// VCOC (`ADL1.4/master05-cadl.adoc` §Occurrences L324), which needs no RM and
-/// runs in the 1.4 phase-1 pass, and **VUNT** (§Internal References L512-513:
-/// "the type mentioned in a `use_node` must be the same as or a super-type
-/// (according to the reference model) of the reference model type of the node
-/// referred to"), whose "according to the reference model" clause puts it here.
-/// Every other check [`validate_phase2_rm`] performs (VCORM, VCORMT, VCARM,
-/// VCAEX, VCACA, VCAM, VACSO, the interior-node VATID half, the enumeration
-/// family) is an AOM2 rule with no ADL 1.4 counterpart — running them would
-/// judge a 1.4 artefact by ADL 2's catalogue, which this crate does not do (a
-/// 1.4 upload is judged AS 1.4). So the walk runs once and only VUNT is
-/// reported.
-#[must_use]
-pub fn validate_adl14_rm(archetype: &Archetype, rm: &dyn RmModel) -> Vec<ValidationIssue> {
-    validate_phase2_rm(archetype, rm)
-        .into_iter()
-        .filter(|i| i.code == ValidationCode::Vunt)
-        .collect()
+    match dialect {
+        Dialect::Adl2 => scan.issues,
+        Dialect::Adl14 => scan
+            .issues
+            .into_iter()
+            .filter(|i| i.code == ValidationCode::Vunt)
+            .collect(),
+    }
 }
 
 /// Mutable state threaded through the reference-model walk.
@@ -484,11 +461,6 @@ struct RmScan<'a> {
 }
 
 impl RmScan<'_> {
-    fn push(&mut self, code: ValidationCode, msg: impl Into<String>, path: &str) {
-        self.issues
-            .push(ValidationIssue::new(code, msg).at_path(path.to_owned()));
-    }
-
     /// Walk a complex object whose RM type is `rm_type`, checking every
     /// attribute and its child objects against the reference model.
     fn walk_complex(&mut self, path: &str, rm_type: &str, cco: &CComplexObject) {
@@ -506,7 +478,7 @@ impl RmScan<'_> {
             // parent — which was itself reference-model-validated before the child
             // could specialise it (master08 §Overview phase ordering), so the
             // resolved node's attribute is RM-valid by construction — or it does
-            // not resolve, in which case [`super::phase2::check_attribute`] raises
+            // not resolve, in which case [`super::specialisation`] raises
             // VDIFP ("does not exist in the flat parent"). No separate RM-path walk
             // of the differential path is needed here.
             if attr.differential_path.is_some() {
@@ -527,7 +499,8 @@ impl RmScan<'_> {
                     // type is itself known; an unknown enclosing type is already
                     // VCORM/VCORMT at the level above.
                     if !rm_type.is_empty() && self.rm.type_exists(rm_type) {
-                        self.push(
+                        push_issue(
+                            &mut self.issues,
                             ValidationCode::Vcarm,
                             format!(
                                 "attribute {:?} is not defined on reference-model type {rm_type:?}",
@@ -553,9 +526,10 @@ impl RmScan<'_> {
         // VCAEX: existence, if set, must conform to (be same-or-narrower than)
         // the RM existence (master04.5 §Validity Rules: `C_ATTRIBUTE`).
         if let Some(ex) = attr.existence.as_ref() {
-            let arch = bounds_of_multiplicity(ex);
+            let arch = bounds(ex);
             if !rm_attr.existence.contains(arch) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcaex,
                     format!(
                         "existence {} does not conform to the reference-model existence {}",
@@ -573,7 +547,8 @@ impl RmScan<'_> {
         // the attribute a container; if the RM attribute is single-valued that
         // is a mismatch (master04.5 §Validity Rules: `C_ATTRIBUTE`, VCAM).
         if has_cardinality && !rm_attr.is_multiple {
-            self.push(
+            push_issue(
+                &mut self.issues,
                 ValidationCode::Vcam,
                 "a cardinality is stated but the reference-model attribute is single-valued",
                 attr_path,
@@ -587,9 +562,10 @@ impl RmScan<'_> {
         if let (Some(card), true) = (attr.cardinality.as_ref(), rm_attr.is_multiple)
             && let Some(rm_card) = rm_attr.cardinality
         {
-            let arch = bounds_of_multiplicity(&card.interval);
+            let arch = bounds(&card.interval);
             if !rm_card.contains(arch) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcaca,
                     format!(
                         "cardinality {} does not conform to the reference-model cardinality {}",
@@ -608,11 +584,12 @@ impl RmScan<'_> {
         // determination is the RM's, not the parser's cardinality heuristic.
         if !rm_attr.is_multiple {
             for child in &attr.children {
-                if let Some(occ) = object_occurrences(child)
+                if let Some(occ) = child_occurrences(child)
                     && let Some(upper) = finite_upper(occ)
                     && upper > 1
                 {
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vacso,
                         format!(
                             "child of single-valued attribute has occurrences upper {upper} > 1"
@@ -634,7 +611,8 @@ impl RmScan<'_> {
             if !child_type.is_empty() {
                 if !self.rm.type_exists(child_type) {
                     // VCORM: the object type must exist in the RM.
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vcorm,
                         format!(
                             "object type {child_type:?} is not defined in the reference model ({})",
@@ -649,7 +627,8 @@ impl RmScan<'_> {
                     // covariantly on any generic arguments (master04.5 §Validity
                     // Rules: `C_OBJECT`, VCORMT; master04.2 §Rm_type_name and
                     // Reference Model Type Matching).
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vcormt,
                         format!(
                             "object type {child_type:?} does not conform to the attribute's reference-model type {:?}",
@@ -677,7 +656,8 @@ impl RmScan<'_> {
             if rm_attr.is_multiple && !self.is_specialised {
                 let nid = object_node_id(child);
                 if (is_id_code(nid) || is_at_code(nid)) && !self.defined.contains(nid) {
-                    self.push(
+                    push_issue(
+                        &mut self.issues,
                         ValidationCode::Vatid,
                         format!("node id {nid:?} is not defined in the terminology"),
                         &child_path,
@@ -730,7 +710,8 @@ impl RmScan<'_> {
         // one (declared is the same type or an ancestor). `None` = a type unknown
         // to the model, already reported as VCORM — undecidable here.
         if type_conforms(self.rm, target_type, &proxy.rm_type_name) == Some(false) {
-            self.push(
+            push_issue(
+                &mut self.issues,
                 ValidationCode::Vunt,
                 format!(
                     "use_node type {:?} is neither the same as nor a super-type of the referenced \
@@ -751,7 +732,8 @@ impl RmScan<'_> {
             let child_type = object_rm_type(child);
             let child_path = child_path(attr_path, object_node_id(child));
             if !child_type.is_empty() && !self.rm.type_exists(child_type) {
-                self.push(
+                push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcorm,
                     format!(
                         "object type {child_type:?} is not defined in the reference model ({})",
@@ -789,7 +771,8 @@ impl RmScan<'_> {
                 EnumUnderlying::Integer => {
                     for v in integer_point_values(&c.constraint) {
                         if !en.int_values.contains(&i64::from(v)) {
-                            self.push(
+                            push_issue(
+                                &mut self.issues,
                                 ValidationCode::Vcormenv,
                                 format!(
                                     "integer value {v} is not a declared literal of the enumeration"
@@ -799,7 +782,8 @@ impl RmScan<'_> {
                         }
                     }
                 }
-                EnumUnderlying::String => self.push(
+                EnumUnderlying::String => push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcormen,
                     "an integer constraint is stated on a string-based enumeration slot",
                     path,
@@ -809,7 +793,8 @@ impl RmScan<'_> {
                 EnumUnderlying::String => {
                     for v in string_literal_values(&c.constraint) {
                         if !en.str_values.iter().any(|lit| lit == v) {
-                            self.push(
+                            push_issue(
+                                &mut self.issues,
                                 ValidationCode::Vcormenu,
                                 format!(
                                     "string value {v:?} is not a declared literal of the enumeration"
@@ -819,7 +804,8 @@ impl RmScan<'_> {
                         }
                     }
                 }
-                EnumUnderlying::Integer => self.push(
+                EnumUnderlying::Integer => push_issue(
+                    &mut self.issues,
                     ValidationCode::Vcormen,
                     "a string constraint is stated on an integer-based enumeration slot",
                     path,
@@ -834,7 +820,8 @@ impl RmScan<'_> {
             | CObject::CDate(_)
             | CObject::CTime(_)
             | CObject::CDateTime(_)
-            | CObject::CDuration(_) => self.push(
+            | CObject::CDuration(_) => push_issue(
+                &mut self.issues,
                 ValidationCode::Vcormen,
                 "a non-integer/string primitive constraint is stated on an enumeration slot",
                 path,
@@ -853,25 +840,7 @@ impl RmScan<'_> {
 /// enumerated here (conservative — no false VCORMENV on the "equivalent range"
 /// form the spec also allows).
 fn integer_point_values(constraint: &[Interval<i32>]) -> Vec<i32> {
-    constraint.iter().filter_map(interval_point_i32).collect()
-}
-
-/// The single point value of an integer interval (`{n}` / `{n..n}`), or `None`
-/// for a range or unbounded interval.
-fn interval_point_i32(iv: &Interval<i32>) -> Option<i32> {
-    match iv {
-        Interval::PointInterval(p) if !p.lower_unbounded && !p.upper_unbounded => p.lower,
-        Interval::ProperInterval(ProperInterval::ProperInterval(d))
-            if d.lower_included
-                && d.upper_included
-                && !d.lower_unbounded
-                && !d.upper_unbounded
-                && d.lower == d.upper =>
-        {
-            d.lower
-        }
-        _ => None,
-    }
+    constraint.iter().filter_map(point_value_i32).collect()
 }
 
 /// The literal string values of a `C_STRING` enumeration constraint: the plain
@@ -881,69 +850,7 @@ fn string_literal_values(constraint: &[String]) -> impl Iterator<Item = &str> {
     constraint
         .iter()
         .map(String::as_str)
-        .filter(|s| !is_regex_entry(s))
-}
-
-/// Whether a `C_STRING` constraint entry is a delimited regex (`/re/` or `^re^`)
-/// rather than a literal string (`master04.5` §`C_STRING`).
-fn is_regex_entry(s: &str) -> bool {
-    let t = s.trim();
-    t.len() >= 2
-        && ((t.starts_with('/') && t.ends_with('/')) || (t.starts_with('^') && t.ends_with('^')))
-}
-
-/// `Bounds` from a [`MultiplicityInterval`] (existence / occurrences).
-fn bounds_of_multiplicity(mi: &MultiplicityInterval) -> Bounds {
-    Bounds {
-        lower: if mi.lower_unbounded {
-            0
-        } else {
-            mi.lower.unwrap_or(0)
-        },
-        upper: if mi.upper_unbounded { None } else { mi.upper },
-    }
-}
-
-/// The occurrences interval of any [`CObject`], if it carries one.
-fn object_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
-    match obj {
-        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
-        CObject::CComplexObject(c) => match c {
-            CComplexObject::CComplexObject(d) => d.occurrences.as_ref(),
-            CComplexObject::CArchetypeRoot(r) => r.occurrences.as_ref(),
-        },
-        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
-        CObject::CBoolean(o) => o.occurrences.as_ref(),
-        CObject::CInteger(o) => o.occurrences.as_ref(),
-        CObject::CReal(o) => o.occurrences.as_ref(),
-        CObject::CString(o) => o.occurrences.as_ref(),
-        CObject::CTerminologyCode(o) => o.occurrences.as_ref(),
-        CObject::CDate(o) => o.occurrences.as_ref(),
-        CObject::CTime(o) => o.occurrences.as_ref(),
-        CObject::CDateTime(o) => o.occurrences.as_ref(),
-        CObject::CDuration(o) => o.occurrences.as_ref(),
-    }
-}
-
-/// The finite upper bound of a multiplicity interval, or `None` if unbounded.
-fn finite_upper(mi: &MultiplicityInterval) -> Option<i32> {
-    if mi.upper_unbounded { None } else { mi.upper }
-}
-
-fn child_path(attr_path: &str, node_id: &str) -> String {
-    if node_id.is_empty() {
-        attr_path.to_owned()
-    } else {
-        format!("{attr_path}[{node_id}]")
-    }
-}
-
-fn display_bounds(b: Bounds) -> String {
-    match b.upper {
-        Some(u) if u == b.lower => format!("{{{}}}", b.lower),
-        Some(u) => format!("{{{}..{u}}}", b.lower),
-        None => format!("{{{}..*}}", b.lower),
-    }
+        .filter(|s| !is_delimited_regex_trimmed(s))
 }
 
 #[cfg(test)]
@@ -966,16 +873,6 @@ mod tests {
             normalise_type_name("Interval <Quantity>"),
             "INTERVAL<QUANTITY>"
         );
-    }
-
-    #[test]
-    fn bounds_containment_is_same_or_narrower() {
-        let one_to_one = Bounds::new(1, Some(1));
-        assert!(one_to_one.contains(Bounds::new(1, Some(1))));
-        assert!(!one_to_one.contains(Bounds::new(0, Some(0)))); // {0} not within {1..1}
-        let star = Bounds::new(0, None);
-        assert!(star.contains(Bounds::new(1, Some(5))));
-        assert!(!Bounds::new(1, Some(5)).contains(star)); // {0..*} escapes {1..5}
     }
 
     /// A `use_node` archetype built around `body`, for the VUNT pair below.
@@ -1003,8 +900,8 @@ mod tests {
     }
 
     fn rm_codes(src: &str) -> Vec<ValidationCode> {
-        let a = parse_artefact(src).expect("the fixture must parse");
-        validate_phase2_rm(&a, &ProductionRmModel)
+        let a = parse_artefact(src, Dialect::Adl2).expect("the fixture must parse");
+        validate_rm_conformance(&a, &ProductionRmModel, Dialect::Adl2)
             .into_iter()
             .map(|i| i.code)
             .collect()
@@ -1052,6 +949,7 @@ mod tests {
              description\n\tlifecycle_state = <\"draft\">\n\n\
              definition\n\tOBSERVATION[id1] matches {*}\n\n\
              terminology\n\tterm_definitions = <[\"en\"] = <[\"id1\"] = <text=<\"\"> description=<\"\">>>>\n",
+            Dialect::Adl2,
         )
         .unwrap();
         assert!(production_model_governs(&ehr));

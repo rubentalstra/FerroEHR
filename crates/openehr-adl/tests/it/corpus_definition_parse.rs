@@ -4,7 +4,7 @@
 //!
 //! Discipline (mirrors the outer-parse gate): a file whose *intended*
 //! failure is at the cADL syntax level (an `S*` rule-code name in the file,
-//! or a structural malformation phase A3a correctly rejects) is excluded from
+//! or a structural malformation the cADL parser correctly rejects) is excluded from
 //! the clean-parse assertion, each with a reason. Files whose intended failure
 //! is semantic (`V*`-code names) MUST still parse — semantic validation is a
 //! validation harness. Files that do not outer-parse are skipped here (they
@@ -18,10 +18,11 @@
 
 use std::path::{Path, PathBuf};
 
+use openehr_adl::parse::Dialect;
 use openehr_adl::source::{SourceArtefact, parse_source};
 
 /// Files whose `definition` section is an intentional cADL-syntax FAIL fixture
-/// (phase A3a correctly rejects them), each with the reason + expected code.
+/// (the cADL parser correctly rejects them), each with the reason + expected code.
 const EXCLUSIONS: &[(&str, &str)] = &[
     (
         "openEHR-TEST_PKG-ENTRY.SCAS_attribute_empty.v1.0.0.adls",
@@ -39,7 +40,7 @@ const EXCLUSIONS: &[(&str, &str)] = &[
         "openehr-ehr-ACTION.medication_precise.v0.0.1.adls",
         "attribute tuple with complex-object members; the pinned `cadl2.g4` \
          `c_primitive_tuple_item` and the generated `CPrimitiveObject` model \
-         only admit primitive tuple members — beyond phase A3a",
+         only admit primitive tuple members — beyond the cADL parser",
     ),
 ];
 
@@ -75,7 +76,7 @@ fn definitions_parse(art: &SourceArtefact, src: &str) -> Result<(), String> {
     for a in std::iter::once(art).chain(art.overlays.iter()) {
         if let Some(def) = a.definition.as_ref() {
             let body = src.get(def.bytes.clone()).unwrap_or_default();
-            openehr_adl::cadl::parse_definition_body(body)
+            openehr_adl::parse::parse_definition_body(body, Dialect::Adl2)
                 .map_err(|errs| errs.first().map(ToString::to_string).unwrap_or_default())?;
         }
     }
@@ -103,7 +104,7 @@ fn every_definition_cadl_parses() {
             continue;
         }
         let src = std::fs::read_to_string(path).expect("read corpus file");
-        let Ok(art) = parse_source(&src) else {
+        let Ok(art) = parse_source(&src, Dialect::Adl2) else {
             // Not a definition-parse concern: the outer-parse gate governs
             // outer-parse failures.
             outer_failed += 1;
