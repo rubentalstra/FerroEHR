@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FerroEHR icon, iron variant">
+  <!-- FerroEHR icon, iron-tile variant: for contexts where the rust tile is too loud
+       (dense UI chrome, monochrome-adjacent surfaces). Carries its own background. -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#21262B"/>
+  <text x="30" y="44" font-family="'Avenir Next',Avenir,Futura,'Helvetica Neue',Arial,sans-serif" font-size="30" font-weight="600" fill="#F2F1EF" text-anchor="middle">Fe</text>
+  <polyline points="12,15 17,15 20,9 23,19 26,13 29,15 36,15" fill="none" stroke="#D97742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
