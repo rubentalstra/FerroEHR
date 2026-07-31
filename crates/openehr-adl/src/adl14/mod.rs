@@ -38,10 +38,10 @@
 //!    terminology-constraint conversion (local single → at-code, local list →
 //!    synthesised `ac` value set, external code(s) → synthesised at-code(s) +
 //!    term-binding URIs) and the terminology rebuild. Its three
-//!    converter-state-free stages are siblings: [`walk`] (the read-only
-//!    definition traversals the code planning consumes), [`multiplicity`] (the
+//!    converter-state-free stages are siblings: `walk` (the read-only
+//!    definition traversals the code planning consumes), `multiplicity` (the
 //!    1.4 default occurrences materialisation + RM-default elision) and
-//!    [`metadata`] (the description / meta-data / version transform).
+//!    `metadata` (the description / meta-data / version transform).
 //! 3. **Differ** ([`differ`]) — for a specialised 1.4 source, re-differentialise
 //!    the converted child against its converted+flattened parent (strip
 //!    inherited-unchanged nodes).

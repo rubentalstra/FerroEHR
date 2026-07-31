@@ -13,7 +13,7 @@
 //! string/character literal decoding of `ADL2/master03-file_encoding.adoc`
 //! §File Encoding + §Special Character Sequences
 //! (`decode_string`/`decode_character` — delimiter stripping over
-//! [`openehr_lang::escape`](openehr_lang::escape), which owns the escape
+//! [`openehr_lang::escape`], which owns the escape
 //! semantics for ODIN, BEL and cADL alike) and the delimited-regex handling of
 //! `AOM2/master04.5` §Class Definitions (`C_STRING`).
 //!
@@ -333,7 +333,7 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
 /// Decode a double-quoted `master03` string literal (delimiters included).
 ///
 /// The escape semantics themselves live in
-/// [`openehr_lang::escape`](openehr_lang::escape) — one home for ODIN, BEL and
+/// [`openehr_lang::escape`] — one home for ODIN, BEL and
 /// cADL, since `ADL2/master03-file_encoding.adoc` §File Encoding + §Special
 /// Character Sequences and their verbatim ODIN twin
 /// (`LANG/docs/odin/master03-basics.adoc`) define one escape set.

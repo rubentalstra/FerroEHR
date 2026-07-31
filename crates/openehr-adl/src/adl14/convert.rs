@@ -11,14 +11,14 @@
 //! mapping (`build_uid` + the `RESOURCE_DESCRIPTION` governance items), which
 //! `ADL1.4/masterAppB-extended_metadata.adoc` §Standardised Items governs
 //! directly — those items are "intended to be implemented by any ADL 1.4 =>
-//! ADL 2 conversion tool". It is applied by [`crate::adl14::metadata`].
+//! ADL 2 conversion tool". It is applied by `crate::adl14::metadata`.
 //!
 //! This module owns the code spaces (planning, renumbering, terminology
 //! rebuild) and the constraint conversion; the three stages that need no
-//! converter state are siblings — [`crate::adl14::walk`] (the read-only
+//! converter state are siblings — `crate::adl14::walk` (the read-only
 //! definition traversals + the shared complex-object accessor),
-//! [`crate::adl14::multiplicity`] (the occurrences/cardinality reconciliation)
-//! and [`crate::adl14::metadata`] (description / meta-data / version).
+//! `crate::adl14::multiplicity` (the occurrences/cardinality reconciliation)
+//! and `crate::adl14::metadata` (description / meta-data / version).
 
 use std::collections::BTreeMap;
 

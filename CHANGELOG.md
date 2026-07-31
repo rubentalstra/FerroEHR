@@ -15,6 +15,32 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Archetype text that carries a non-BMP character now reads correctly.**
+  ADL and ODIN allow a unicode character above the base multilingual plane to
+  be written as an eight-hex-digit `\uHHHHHHHH` escape (emoji, historic
+  scripts, rare CJK). Those escapes were accepted but decoded wrong — the
+  cADL reader kept the escape as literal text and the ODIN reader produced
+  nothing usable — so the character was silently lost. Both forms now decode,
+  in archetype definitions, ODIN sections and rule expressions alike, and an
+  escape that names no character (a value outside the range the eight-digit
+  form covers, a broken surrogate pair) is reported as a syntax error at the
+  offending literal instead of being silently substituted.
+- **Uploading an ADL 2 archetype now runs the complete validation schedule.**
+  The parse-and-validate path skipped the final, flat-form phase, so two
+  defects could pass: an internal `use_node` reference whose target path does
+  not exist, and a container whose cardinality cannot hold the child nodes it
+  declares as mandatory. Both are now reported. Archetypes that were valid
+  remain valid — including specialised archetypes that redefine one parent
+  node into several children, whose node identifiers are no longer
+  mis-reported as duplicates.
+- **A fixed numeric value written as a closed range now behaves like the
+  point value it is.** `{5..5}` and `{5}` are the same constraint, and an
+  ADL 1.4 assumed value spelled either way is read identically; conversely, a
+  "point" whose bound is open or unbounded is no longer treated as a fixed
+  value.
+
 ## [3.15.0] - 2026-07-30
 
 ### Changed
