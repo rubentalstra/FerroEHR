@@ -24,8 +24,18 @@ workflow refuses a tag that has no matching section here.
   `odin::parse_document`; the anonymous and implicit forms were already
   supported.
 
+- **ODIN path extraction.** `OdinValue::paths()` extracts the
+  `master05-content` tree-path set (attribute paths, `attr[key]` container
+  paths, nested bare-key segments) from any parsed ODIN structure.
+
 ### Fixed
 
+- **Duplicate ODIN container keys are refused (rule VDOBU).** Sibling
+  keyed objects sharing a key (`[1] = <…> [1] = <…>`) were silently
+  accepted; they now fail with a typed error per
+  `LANG/docs/odin/master05-content` §Container Objects — archetype uploads
+  whose terminology sections duplicate a term code are refused at the ODIN
+  layer.
 - **ODIN sections accept `true`/`false`/`infinity` as attribute names and
   semicolons between keyed objects.** ODIN reserves no keywords
   (`LANG/docs/odin/master03-basics` §Keywords), so archetype/template

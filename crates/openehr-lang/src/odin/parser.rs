@@ -35,24 +35,34 @@ pub(super) enum Failure {
         /// Token-index span of the offending (second) occurrence.
         span: SimpleSpan,
     },
+    /// VDOBU: two sibling container objects share a key
+    /// (`LANG/docs/odin/master05-content` §Container Objects).
+    DuplicateKey {
+        /// The repeated key, in its path-predicate rendering.
+        key: String,
+        /// Token-index span of the offending (second) occurrence.
+        span: SimpleSpan,
+    },
 }
 
 impl Failure {
     /// The token-index span the failure points at.
     fn span(&self) -> SimpleSpan {
         match self {
-            Self::Syntax(s) | Self::DuplicateAttribute { span: s, .. } => *s,
+            Self::Syntax(s)
+            | Self::DuplicateAttribute { span: s, .. }
+            | Self::DuplicateKey { span: s, .. } => *s,
         }
     }
 
     /// Keep whichever failure carries the most information: a typed
-    /// duplicate-attribute violation always outranks a bare syntax conflict
-    /// (the enclosing `choice`s retry other alternatives after it, and each of
-    /// those contributes a syntax error at the same position).
+    /// uniqueness violation (VDATU/VDOBU) always outranks a bare syntax
+    /// conflict (the enclosing `choice`s retry other alternatives after it,
+    /// and each of those contributes a syntax error at the same position).
     fn preferred(self, other: Self) -> Self {
         match (&self, &other) {
-            (Self::DuplicateAttribute { .. }, _) => self,
-            (_, Self::DuplicateAttribute { .. }) => other,
+            (Self::DuplicateAttribute { .. } | Self::DuplicateKey { .. }, _) => self,
+            (_, Self::DuplicateAttribute { .. } | Self::DuplicateKey { .. }) => other,
             _ => self,
         }
     }
@@ -221,6 +231,12 @@ fn attr_vals<'a>(
 fn keyed_objects<'a>(
     block: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
+    // NOTE: the five key types are App.B's `odin.g4` `key_id : string_value |
+    // integer_value | date_value | time_value | date_time_value` — the
+    // appendix includes the grammar as its normative text. §Container Objects
+    // prose says more broadly "any primitive comparable value is allowed as
+    // the key"; the syntax appendix is the specific syntax authority, so the
+    // five-type set stands and the tension is recorded here (#1376).
     let key_id = select! {
         Token::String(s) => OdinKey::String(decode_string(&s)),
         Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
@@ -228,16 +244,38 @@ fn keyed_objects<'a>(
         Token::Iso8601Time(s) => OdinKey::Time(s),
         Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
     };
+    // Sibling keys must be unique — rule *VDOBU*
+    // (`LANG/docs/odin/master05-content` §Container Objects: "object
+    // identifier uniqueness: sibling objects occurring within a container
+    // attribute must be uniquely identified with respect to each other").
+    // Keys compare as their typed values, so `[01]` duplicates `[1]`. A
+    // repeat is a typed [`Failure::DuplicateKey`], never a silent
+    // last-one-wins overwrite.
     just(Token::LBracket)
         .ignore_then(key_id)
         .then_ignore(just(Token::RBracket))
         .then_ignore(just(Token::SymEq))
         .then(block)
         .then_ignore(just(Token::SymSemiColon).or_not())
+        .map_with(|pair, e| (pair, e.span()))
         .repeated()
         .at_least(1)
-        .collect::<Vec<(OdinKey, OdinValue)>>()
-        .map(OdinValue::KeyedList)
+        .collect::<Vec<((OdinKey, OdinValue), SimpleSpan)>>()
+        .try_map(|entries, _| {
+            let mut seen: std::collections::HashSet<OdinKey> =
+                std::collections::HashSet::with_capacity(entries.len());
+            let mut list = Vec::with_capacity(entries.len());
+            for ((key, value), span) in entries {
+                if !seen.insert(key.clone()) {
+                    return Err(Failure::DuplicateKey {
+                        key: key.path_text(),
+                        span,
+                    });
+                }
+                list.push((key, value));
+            }
+            Ok(OdinValue::KeyedList(list))
+        })
 }
 
 /// `object_block : object_value_block | object_reference_block` (+ the
