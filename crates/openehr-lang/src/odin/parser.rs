@@ -1,6 +1,7 @@
-//! ODIN parser — a `chumsky` parser over the [`super::lexer`] token stream,
-//! transcribed from `odin.g4` / `odin_values.g4`. Produces an
-//! [`OdinValue`] tree.
+//! ODIN parser — a `chumsky` parser over the shared
+//! [`crate::lexer`] token stream under its ODIN reading
+//! ([`crate::lexer::lex_odin`]), transcribed from `odin.g4` /
+//! `odin_values.g4`. Produces an [`OdinValue`] tree.
 
 use chumsky::DefaultExpected;
 use chumsky::error::{Error, LabelError};
@@ -8,8 +9,8 @@ use chumsky::prelude::*;
 use chumsky::util::MaybeRef;
 use indexmap::IndexMap;
 
-use super::lexer::{Spanned, Token};
 use super::{OdinInterval, OdinKey, OdinValue};
+use crate::lexer::{Spanned, Token};
 
 // The chumsky extra-parameter alias. `chumsky::extra::Err` stays fully
 // qualified deliberately: shortening it to `Err<Failure>` would make this
@@ -149,9 +150,9 @@ fn attr_vals<'a>(
         Token::AlphaLcId(s) => s,
         Token::AlphaUnderscoreId(s) => s,
     };
-    key.then_ignore(just(Token::Eq))
+    key.then_ignore(just(Token::SymEq))
         .then(block)
-        .then_ignore(just(Token::SemiColon).or_not())
+        .then_ignore(just(Token::SymSemiColon).or_not())
         .map_with(|pair, e| (pair, e.span()))
         .repeated()
         .at_least(1)
@@ -175,14 +176,14 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
         let key_id = select! {
             Token::String(s) => OdinKey::String(decode_string(&s)),
             Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
-            Token::Date(s) => OdinKey::Date(s),
-            Token::Time(s) => OdinKey::Time(s),
-            Token::DateTime(s) => OdinKey::DateTime(s),
+            Token::Iso8601Date(s) => OdinKey::Date(s),
+            Token::Iso8601Time(s) => OdinKey::Time(s),
+            Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
         };
         let keyed_list = just(Token::LBracket)
             .ignore_then(key_id)
             .then_ignore(just(Token::RBracket))
-            .then_ignore(just(Token::Eq))
+            .then_ignore(just(Token::SymEq))
             .then(block.clone())
             .repeated()
             .at_least(1)
@@ -190,17 +191,17 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
             .map(OdinValue::KeyedList);
 
         // object_reference_block : odin_path ( (',' odin_path)+ | '...' )?
-        let path = select! { Token::Path(s) => s }.or(just(Token::Slash).to("/".to_owned()));
+        let path = select! { Token::AdlPath(s) => s }.or(just(Token::SymSlash).to("/".to_owned()));
         let ref_list = path
             .clone()
             .then(
                 choice((
-                    just(Token::Comma)
+                    just(Token::SymComma)
                         .ignore_then(path)
                         .repeated()
                         .at_least(1)
                         .collect::<Vec<String>>(),
-                    just(Token::ListContinue).to(Vec::new()),
+                    just(Token::SymListContinue).to(Vec::new()),
                 ))
                 .or_not(),
             )
@@ -225,7 +226,7 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
         // and has no data", so no consumer can act on the distinction between
         // the two spellings, and a separate variant would force every match
         // arm in every consumer to handle a second no-data case.
-        let void = just(Token::ListContinue).to(OdinValue::Empty);
+        let void = just(Token::SymListContinue).to(OdinValue::Empty);
 
         let inner = choice((
             void,
@@ -241,7 +242,7 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
             .then(
                 inner
                     .or_not()
-                    .delimited_by(just(Token::Lt), just(Token::Gt)),
+                    .delimited_by(just(Token::SymLt), just(Token::SymGt)),
             )
             .map(|(cast, inner_opt)| {
                 let val = inner_opt.unwrap_or(OdinValue::Empty);
@@ -300,7 +301,7 @@ fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
             Token::AlphaLcId(s) => s,
         };
         package_segment
-            .then_ignore(just(Token::Dot))
+            .then_ignore(just(Token::SymDot))
             .repeated()
             .collect::<Vec<String>>()
             .then(select! { Token::AlphaUcId(s) => s })
@@ -312,10 +313,10 @@ fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
                 }
             })
             .then(
-                t.separated_by(just(Token::Comma))
+                t.separated_by(just(Token::SymComma))
                     .at_least(1)
                     .collect::<Vec<String>>()
-                    .delimited_by(just(Token::Lt), just(Token::Gt))
+                    .delimited_by(just(Token::SymLt), just(Token::SymGt))
                     .or_not(),
             )
             .map(|(name, generics)| match generics {
@@ -345,14 +346,14 @@ fn primitive_object<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + 
     let list = leaf
         .clone()
         .then(
-            just(Token::Comma)
+            just(Token::SymComma)
                 .ignore_then(leaf.clone())
                 .repeated()
                 .collect::<Vec<OdinValue>>(),
         )
         .then(
-            just(Token::Comma)
-                .ignore_then(just(Token::ListContinue))
+            just(Token::SymComma)
+                .ignore_then(just(Token::SymListContinue))
                 .or_not(),
         )
         .map(|((first, mut more), open)| {
@@ -384,21 +385,21 @@ fn interval_value<'a>(
     // separately because the side of the interval the endpoint sits on already
     // determines the direction.
     let unbounded = choice((
-        just(Token::Minus)
+        just(Token::SymMinus)
             .or_not()
-            .ignore_then(just(Token::Infinity))
+            .ignore_then(just(Token::SymInfinity))
             .ignored(),
-        just(Token::Star).ignored(),
+        just(Token::SymStar).ignored(),
     ))
     .to(None);
     let bound = choice((unbounded, leaf.clone().map(Some)));
 
     // `| '>'? a '..' '<'? b |`
-    let range = just(Token::Gt)
+    let range = just(Token::SymGt)
         .or_not()
         .then(bound.clone())
-        .then_ignore(just(Token::IvlSep))
-        .then(just(Token::Lt).or_not())
+        .then_ignore(just(Token::SymIvlSep))
+        .then(just(Token::SymLt).or_not())
         .then(bound.clone())
         .map(|(((gt, lo), lt), hi)| OdinInterval::Range {
             lower_included: gt.is_none() && lo.is_some(),
@@ -410,7 +411,7 @@ fn interval_value<'a>(
     // `| a '+/-' b |`
     let plus_minus = leaf
         .clone()
-        .then_ignore(just(Token::PlusOrMinus))
+        .then_ignore(just(Token::SymPlusOrMinus))
         .then(leaf.clone())
         .map(|(centre, delta)| OdinInterval::PlusMinus {
             centre: Box::new(centre),
@@ -419,10 +420,10 @@ fn interval_value<'a>(
 
     // `| relop? a |`  (relop absent ⇒ a point interval `[a, a]`)
     let relop = choice((
-        just(Token::Ge).to(RelBound::Lower(true)),
-        just(Token::Gt).to(RelBound::Lower(false)),
-        just(Token::Le).to(RelBound::Upper(true)),
-        just(Token::Lt).to(RelBound::Upper(false)),
+        just(Token::SymGe).to(RelBound::Lower(true)),
+        just(Token::SymGt).to(RelBound::Lower(false)),
+        just(Token::SymLe).to(RelBound::Upper(true)),
+        just(Token::SymLt).to(RelBound::Upper(false)),
     ));
     let single = relop.or_not().then(bound).map(|(op, v)| match (op, v) {
         (None, Some(v)) => OdinInterval::Range {
@@ -453,9 +454,9 @@ fn interval_value<'a>(
         },
     });
 
-    just(Token::IvlDelim)
+    just(Token::SymIvlDelim)
         .ignore_then(choice((range, plus_minus, single)))
-        .then_ignore(just(Token::IvlDelim))
+        .then_ignore(just(Token::SymIvlDelim))
         .map(OdinValue::Interval)
 }
 
@@ -468,7 +469,11 @@ enum RelBound {
 
 /// A single primitive leaf value (`primitive_value` in `odin_values.g4`).
 fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
-    let int_sign = choice((just(Token::Plus).to(1i64), just(Token::Minus).to(-1i64))).or_not();
+    let int_sign = choice((
+        just(Token::SymPlus).to(1i64),
+        just(Token::SymMinus).to(-1i64),
+    ))
+    .or_not();
     let integer = int_sign
         .then(select! { Token::Integer(s) => s })
         .try_map(|(sign, s), span| {
@@ -479,7 +484,11 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
                 .ok_or(Failure::Syntax(span))
         });
 
-    let real_sign = choice((just(Token::Plus).to(1f64), just(Token::Minus).to(-1f64))).or_not();
+    let real_sign = choice((
+        just(Token::SymPlus).to(1f64),
+        just(Token::SymMinus).to(-1f64),
+    ))
+    .or_not();
     let real = real_sign
         .then(select! { Token::Real(s) => s })
         .try_map(|(sign, s), span| {
@@ -493,8 +502,8 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
 
     let string = select! { Token::String(s) => OdinValue::String(decode_string(&s)) };
     let boolean = select! {
-        Token::True => OdinValue::Boolean(true),
-        Token::False => OdinValue::Boolean(false),
+        Token::SymTrue => OdinValue::Boolean(true),
+        Token::SymFalse => OdinValue::Boolean(false),
     };
     let character =
         select! { Token::Character(s) => s }.map(|s| OdinValue::Character(decode_char(&s)));
@@ -502,10 +511,10 @@ fn leaf_value<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone 
         Token::TermCodeRef(s) => OdinValue::TermCode(s),
         Token::LocalTermCodeRef(s) => OdinValue::TermCode(s),
     };
-    let date = select! { Token::Date(s) => OdinValue::Date(s) };
-    let time = select! { Token::Time(s) => OdinValue::Time(s) };
-    let date_time = select! { Token::DateTime(s) => OdinValue::DateTime(s) };
-    let duration = select! { Token::Duration(s) => OdinValue::Duration(s) };
+    let date = select! { Token::Iso8601Date(s) => OdinValue::Date(s) };
+    let time = select! { Token::Iso8601Time(s) => OdinValue::Time(s) };
+    let date_time = select! { Token::Iso8601DateTime(s) => OdinValue::DateTime(s) };
+    let duration = select! { Token::Iso8601Duration(s) => OdinValue::Duration(s) };
 
     choice((
         real, integer, string, boolean, character, term_code, date_time, date, time, duration,

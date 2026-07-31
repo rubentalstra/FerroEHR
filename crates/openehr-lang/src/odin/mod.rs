@@ -10,8 +10,11 @@
 //! `base_lexer.g4`). This module is **deliberately off the codegen path** — it
 //! parses ODIN *instances*, it does not load the BMM meta-model (the codegen
 //! input is the JSON BMM serialization under `openehr-codegen/vendor/bmm/`).
+//!
+//! The lexical layer is NOT here: ODIN shares the one workspace token stream,
+//! [`crate::lexer`], and this module reads it through
+//! [`crate::lexer::lex_odin`].
 
-mod lexer;
 mod parser;
 
 use indexmap::IndexMap;
@@ -165,14 +168,14 @@ pub struct OdinError {
 /// Returns an [`OdinError`] (with line/column) on the first lexical or
 /// syntactic error.
 pub fn parse(src: &str) -> Result<OdinValue, OdinError> {
-    let spanned = lexer::lex(src).map_err(|span| {
-        let (line, column) = line_col(src, span.start);
+    let spanned = crate::lexer::lex_odin(src).map_err(|failure| {
+        let (line, column) = line_col(src, failure.span.start);
         OdinError {
             kind: OdinErrorKind::UnrecognisedToken,
             message: "unrecognised token".to_owned(),
             line,
             column,
-            span,
+            span: failure.span,
         }
     })?;
     parser::parse_tokens(&spanned).map_err(|located| {

@@ -29,7 +29,6 @@
 //! `openehr-lang` cannot name (dependency arrows point `adl → lang`); the seam
 //! is exactly the boundary at which they enter, so beom stays free of them.
 
-mod lexer;
 mod parser;
 
 use crate::beom::core::assertion::Assertion;
@@ -218,7 +217,10 @@ pub fn parse_statements_with<B: BelBuilder>(
     src: &str,
     builder: &mut B,
 ) -> Result<Vec<B::Stmt>, BelError> {
-    let tokens = lexer::lex(src)?;
+    let tokens = crate::lexer::lex_bel(src).map_err(|failure| BelError::Lex {
+        at: failure.span.start,
+        text: failure.text,
+    })?;
     parser::Parser::new(src, &tokens, builder).parse_statement_block()
 }
 

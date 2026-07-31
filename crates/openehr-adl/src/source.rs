@@ -19,8 +19,8 @@ use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::hrid::parse_hrid;
-use crate::lexer::{Spanned, Token};
 use crate::parse::Dialect;
+use openehr_lang::lexer::{Spanned, Token};
 
 /// The artefact kind (first keyword of an ADL2 source).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -162,9 +162,9 @@ pub struct SourceArtefact {
 /// or missing-required-section). ODIN parse failures surface as
 /// [`SyntaxErrorCode::Sdinv`] carrying the section name.
 pub fn parse_source(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    let toks = match crate::lexer::lex(src) {
+    let toks = match openehr_lang::lexer::lex_adl(src) {
         Ok(t) => t,
-        Err(e) => return Err(vec![e]),
+        Err(failure) => return Err(vec![crate::error::lexical(&failure, src)]),
     };
     let mut outer = Outer {
         src,

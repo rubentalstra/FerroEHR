@@ -1,0 +1,239 @@
+0|
+1|AlphaLcId("id1")@0..3
+2|AlphaLcId("id1")@0..3 SymDot@3..4 Integer("1")@4..5
+3|AlphaLcId("id2")@0..3
+4|AlphaLcId("id0")@0..3 SymDot@3..4 Integer("1")@4..5
+5|AlphaLcId("at0000")@0..6
+6|AlphaLcId("at0")@0..3 SymDot@3..4 Integer("1")@4..5
+7|AlphaLcId("ac1")@0..3
+8|AlphaLcId("ac0")@0..3 SymDot@3..4 Integer("2")@4..5
+9|AlphaUcId("OBSERVATION")@0..11
+10|AlphaLcId("items")@0..5
+11|AlphaLcId("identity")@0..8
+12|ERROR@0..1
+13|ERROR@0..1
+14|AlphaLcId("at0010")@0..6 SymDot@6..7 Integer("2")@7..8
+15|AlphaLcId("openehr")@0..7 SymMinus@7..8 AlphaUcId("TEST_PKG")@8..16 SymMinus@16..17 AlphaUcId("WHOLE")@17..22 SymDot@22..23 AlphaLcId("most_minimal")@23..35 SymDot@35..36 AlphaLcId("v2")@36..38 SymDot@38..39 Real("0.0")@39..42
+16|AlphaLcId("openehr")@0..7 SymMinus@7..8 AlphaUcId("TASK_PLANNING")@8..21 SymMinus@21..22 AlphaUcId("TASK_PLAN")@22..31 SymDot@31..32 AlphaLcId("good_include")@32..44 SymDot@44..45 AlphaLcId("v0")@45..47
+17|Real("2.0")@0..3 SymDot@3..4 Integer("5")@4..5
+18|Real("1.0")@0..3 SymDot@3..4 Integer("2")@4..5
+19|Real("2.4")@0..3 SymDot@3..4 Real("34.666")@4..10 SymDot@10..11 Real("7.2")@11..14
+20|Integer("8849182")@0..7 AlphaLcId("c")@7..8 SymMinus@8..9 Integer("82")@9..11 AlphaLcId("ad")@11..13 SymMinus@13..14 Integer("4088")@14..18 SymMinus@18..19 AlphaLcId("a07f")@19..23 SymMinus@23..24 Integer("48")@24..26 AlphaLcId("ead4180515")@26..36
+21|AlphaLcId("openEHR")@0..7 SymMinus@7..8 AlphaUcId("EHR")@8..11 SymMinus@11..12 AlphaUcId("OBSERVATION")@12..23 SymDot@23..24 AlphaLcId("blood_pressure")@24..38 SymDot@38..39 AlphaLcId("v1")@39..41 SymDot@41..42 Real("0.0")@42..45
+22|AlphaLcId("openEHR")@0..7 SymMinus@7..8 AlphaUcId("EHR")@8..11 SymMinus@11..12 AlphaUcId("OBSERVATION")@12..23 SymDot@23..24 AlphaLcId("blood_pressure")@24..38 SymDot@38..39 AlphaLcId("v1")@39..41 SymDot@41..42 Real("0.0")@42..45 SymMinus@45..46 AlphaLcId("rc")@46..48 SymDot@48..49 Integer("2")@49..50
+23|AlphaLcId("ns")@0..2 SymColon@2..3 SymColon@3..4 AlphaLcId("openehr")@4..11 SymMinus@11..12 AlphaUcId("EHR")@12..15 SymMinus@15..16 AlphaUcId("CLUSTER")@16..23 SymDot@23..24 AlphaLcId("x")@24..25 SymDot@25..26 AlphaLcId("v1")@26..28
+24|Iso8601Date("2004-06-01")@0..10
+25|Integer("2004")@0..4 SymMinus@4..5 Integer("06")@5..7
+26|ERROR@8..9
+27|Iso8601DateTime("2004-06-01T10:30:00")@0..19
+28|Iso8601Time("10:30:00")@0..8
+29|Iso8601Time("10:30")@0..5
+30|Iso8601Duration("P1Y2M")@0..5
+31|Iso8601Duration("PT30M")@0..5
+32|Iso8601Duration("P0W")@0..3
+33|ERROR@17..18
+34|ERROR@14..15
+35|ERROR@11..12
+36|ERROR@8..9
+37|ERROR@5..6
+38|Iso8601Date("2004-11-02")@0..10 Iso8601Time("09:31:04+1000")@11..24
+39|Iso8601Date("2004-11-02")@0..10 Iso8601Time("09:31")@11..16
+40|Iso8601Time("10:30:00.500")@0..12
+41|Iso8601DateTime("2004-06-01T10:30:00Z")@0..20
+42|Iso8601Duration("-P1D")@0..4
+43|Iso8601Duration("P10D")@0..4
+44|Iso8601Duration("PT1H30M")@0..7
+45|AlphaLcId("yyyy")@0..4 SymMinus@4..5 AlphaLcId("mm")@5..7 SymMinus@7..8 AlphaLcId("dd")@8..10
+46|ERROR@5..6
+47|AlphaLcId("hh")@0..2 SymColon@2..3 AlphaLcId("mm")@3..5 SymColon@5..6 AlphaLcId("ss")@6..8
+48|AlphaLcId("yyyy")@0..4 SymMinus@4..5 AlphaLcId("mm")@5..7 SymMinus@7..8 AlphaLcId("ddThh")@8..13 SymColon@13..14 AlphaLcId("mm")@14..16 SymColon@16..17 AlphaLcId("ss")@17..19
+49|AlphaUcId("PYMD")@0..4
+50|AlphaUcId("POINT_EVENT")@0..11
+51|ERROR@5..6
+52|Integer("1995")@0..4 SymMinus@4..5 AlphaLcId("mm")@5..7 SymMinus@7..8 AlphaLcId("dd")@8..10
+53|AlphaLcId("hh")@0..2 SymColon@2..3 AlphaLcId("mm")@3..5 SymColon@5..6 AlphaLcId("ss")@6..8 SymPlus@8..9 AlphaLcId("hh")@9..11 SymColon@11..12 AlphaLcId("mm")@12..14
+54|AlphaLcId("hh")@0..2 SymColon@2..3 AlphaLcId("mm")@3..5 SymColon@5..6 AlphaLcId("ss")@6..8 SymMinus@8..9 AlphaLcId("hh")@9..11
+55|AlphaLcId("hh")@0..2 SymColon@2..3 AlphaLcId("mm")@3..5 SymColon@5..6 AlphaLcId("ss")@6..8 SymPlus@8..9 AlphaLcId("hhmm")@9..13
+56|AlphaLcId("hh")@0..2 SymColon@2..3 AlphaLcId("mm")@3..5 SymColon@5..6 AlphaLcId("ssZ")@6..9
+57|AlphaLcId("yyyy")@0..4 SymMinus@4..5 AlphaLcId("mm")@5..7 SymMinus@7..8 AlphaLcId("dd")@8..10 AlphaLcId("hh")@11..13 SymColon@13..14 AlphaLcId("mm")@14..16 SymColon@16..17 AlphaUcId("XX")@17..19
+58|ERROR@19..21
+59|AlphaUcId("PWD")@0..3
+60|AlphaUcId("PT")@0..2
+61|Integer("1")@0..1 SymIvlSep@1..3 Integer("5")@3..4
+62|Real("1.5")@0..3
+63|SymIvlDelim@0..1 SymGe@1..3 Real("0.0")@3..6 SymIvlSep@6..8 SymLt@8..9 Real("10.0")@9..13 SymIvlDelim@13..14
+64|Integer("29")@0..2 AlphaLcId("e6")@2..4
+65|Integer("2900")@0..4 AlphaLcId("e")@4..5 SymMinus@5..6 Integer("2")@6..7
+66|Integer("1")@0..1 AlphaLcId("e5")@1..3
+67|Integer("1")@0..1 AlphaUcId("E5")@1..3
+68|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 AlphaLcId("infinity")@4..12 SymIvlDelim@12..13
+69|SymIvlDelim@0..1 SymMinus@1..2 AlphaLcId("infinity")@2..10 SymIvlSep@10..12 Real("5.0")@12..15 SymIvlDelim@15..16
+70|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 SymStar@4..5 SymIvlDelim@5..6
+71|SymIvlDelim@0..1 Real("3.0")@1..4 SymPlus@4..5 SymSlash@5..6 SymMinus@6..7 Real("0.5")@7..10 SymIvlDelim@10..11
+72|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 Integer("10")@4..6 SymIvlDelim@6..7
+73|SymIvlDelim@0..1 SymGe@1..3 Real("0.0")@3..6 SymIvlDelim@6..7
+74|Real("0.0")@0..3
+75|SymMinus@0..1 Real("3.5")@1..4
+76|Integer("5")@0..1
+77|LBracket@0..1 AlphaUcId("ISO_639")@1..8 SymMinus@8..9 Integer("1")@9..10 SymColon@10..11 SymColon@11..12 AlphaLcId("en")@12..14 RBracket@14..15
+78|LBracket@0..1 AlphaUcId("SNOMED")@1..7 SymMinus@7..8 AlphaUcId("CT")@8..10 LParen@10..11 Integer("2020")@11..15 RParen@15..16 SymColon@16..17 SymColon@17..18 Integer("123456")@18..24 RBracket@24..25
+79|SymLt@0..1 AlphaLcId("http")@1..5 SymColon@5..6 AdlPath("//loinc")@6..13 SymDot@13..14 AdlPath("org/id")@14..20 SymSlash@20..21 Integer("9272")@21..25 SymMinus@25..26 Integer("6")@26..27 SymGt@27..28
+80|SymLt@0..1 LBracket@1..2 AlphaUcId("ISO_639")@2..9 SymMinus@9..10 Integer("1")@10..11 SymColon@11..12 SymColon@12..13 AlphaLcId("en")@13..15 RBracket@15..16 SymGt@16..17
+81|LBracket@0..1 AlphaLcId("id2")@1..4 RBracket@4..5
+82|LBracket@0..1 AlphaLcId("ac1")@1..4 RBracket@4..5
+83|LBracket@0..1 AlphaLcId("at0200")@1..7 RBracket@7..8
+84|LBracket@0..1 AlphaLcId("at0200")@1..7 RBracket@7..8 SymComma@8..9 SymIvlSep@10..12 SymDot@12..13
+85|LBracket@0..1 Integer("1")@1..2 RBracket@2..3
+86|LBracket@0..1 Integer("01234")@1..6 RBracket@6..7
+87|LBracket@0..1 Iso8601Date("2004-06-11")@1..11 RBracket@11..12
+88|LBracket@0..1 AlphaLcId("ac1")@1..4 SymAt@4..5 AlphaLcId("openehr")@5..12 RBracket@12..13
+89|LBracket@0..1 AlphaLcId("local")@1..6 SymColon@6..7 SymColon@7..8 AlphaLcId("at0001")@8..14 RBracket@14..15
+90|LBracket@0..1 AlphaLcId("at0010")@1..7 SymDot@7..8 Integer("2")@8..9 RBracket@9..10
+91|SymMatches@0..3
+92|SymAnd@0..3
+93|SymThereExists@0..3
+94|SymMatches@0..7
+95|SymStar@0..1
+96|SymStar@0..3
+97|ERROR@0..3
+98|SymNe@0..3
+99|SymLe@0..3
+100|SymGe@0..3
+101|ERROR@0..2
+102|SymNot@0..2
+103|SymForAll@0..3
+104|SymOr@0..3
+105|SymNot@0..3
+106|SymImplies@0..2
+107|AlphaLcId("id1")@0..3 AlphaLcId("items")@26..31
+108|AlphaLcId("template_overlay")@15..31
+109|String("\"a\\\"x'c\\\\d\"")@0..11
+110|String("\"line1\nline2\"")@0..13
+111|ERROR@0..15
+112|ERROR@0..13
+113|ERROR@0..3
+114|ERROR@1..4
+115|Character("'\\n'")@0..4
+116|Character("'\\t'")@0..4
+117|Character("'\\r'")@0..4
+118|Character("'\\\\'")@0..4
+119|Character("'\\\"'")@0..4
+120|Character("'\\''")@0..4
+121|Character("'x'")@0..3
+122|Character("'ü'")@0..4
+123|ERROR@0..4
+124|ERROR@0..4
+125|AlphaLcId("text")@4..8 SymEq@9..10 SymLt@11..12 String("\"And now the STORM-BLAST came, and he\n        Was tyrannous and strong :\n        And chased us south along.\"")@12..120 SymGt@120..121
+126|String("\"a &quot;phrase&quot;.\"")@0..23
+127|AlphaUcId("MATCHES")@0..7
+128|AlphaUcId("Is_In")@0..5
+129|AlphaUcId("OCCURRENCES")@0..11
+130|AlphaUcId("Existence")@0..9
+131|AlphaUcId("CaRdInAlItY")@0..11
+132|AlphaUcId("ORDERED")@0..7
+133|AlphaUcId("UNORDERED")@0..9
+134|AlphaUcId("Unique")@0..6
+135|AlphaUcId("INFINITY")@0..8
+136|AlphaUcId("Use_Node")@0..8
+137|AlphaUcId("ALLOW_ARCHETYPE")@0..15
+138|AlphaUcId("Include")@0..7
+139|AlphaUcId("EXCLUDE")@0..7
+140|AlphaUcId("Before")@0..6
+141|AlphaUcId("AFTER")@0..5
+142|AlphaUcId("TRUE")@0..4
+143|AlphaLcId("fAlSe")@0..5
+144|AlphaUcId("NOT")@0..3
+145|AlphaUcId("Implies")@0..7
+146|SymThereExists@0..12
+147|AlphaUcId("There_Exists")@0..12
+148|SymIn@0..2
+149|AlphaUcId("In")@0..2
+150|SymMatches@0..5
+151|AlphaLcId("use_archetype")@0..13
+152|AlphaLcId("use_node")@0..8
+153|AlphaLcId("then")@0..4
+154|AlphaLcId("closed")@0..6
+155|SymExists@0..6
+156|SymXor@0..3
+157|SymAnd@0..3
+158|SymOr@0..2
+159|SymNot@0..3
+160|SymImplies@0..7
+161|SymForAll@0..7
+162|AlphaLcId("infinity")@0..8
+163|SymTrue@0..4
+164|SymFalse@0..5
+165|SymTrue@0..4
+166|SymFalse@0..5
+167|AlphaLcId("cardinality")@0..11
+168|AlphaLcId("existence")@0..9
+169|AlphaLcId("occurrences")@0..11
+170|AlphaLcId("ordered")@0..7
+171|AlphaLcId("unordered")@0..9
+172|AlphaLcId("unique")@0..6
+173|AlphaLcId("include")@0..7
+174|AlphaLcId("exclude")@0..7
+175|AlphaLcId("after")@0..5
+176|AlphaLcId("before")@0..6
+177|SymNe@0..2
+178|SymImplies@0..2
+179|SymNe@0..2
+180|SymNe@0..2
+181|SymAssignment@0..2
+182|SymAssignment@0..3
+183|SymIvlSep@0..2 SymDot@2..3
+184|SymIvlSep@0..2
+185|SymPlus@0..1 SymSlash@1..2 SymMinus@2..3
+186|SymPercent@0..1
+187|SymCarat@0..1
+188|SymAt@0..1
+189|LCurly@0..1
+190|RCurly@0..1
+191|SymColon@0..1
+192|SymSemiColon@0..1
+193|SymNot@0..1
+194|SymNot@0..1
+195|VariableId("$var")@0..4
+196|VariableWithPath("$var/path/x")@0..11
+197|VariableId("$sys_bp")@0..7
+198|ContainedRegexp("{/km\\/h|mi\\/h/}")@0..15
+199|ContainedRegexp("{^km/h|mi/h^}")@0..13
+200|ContainedRegexp("{/.*/; \"unknown\"}")@0..17
+201|AdlPath("/data[id2]/items")@0..16
+202|SymSlash@0..1 AlphaUcId("Foo")@1..4 AdlPath("/bar")@4..8
+203|AdlPath("//foo/bar")@0..9
+204|AdlPath("foo[at0001]")@0..11
+205|AdlPath("data/events")@0..11
+206|SymSlash@0..1
+207|AdlPath("/items[at0001]/value")@0..20
+208|AlphaUcId("Foo")@0..3 AdlPath("/bar")@3..7
+209|AlphaLcId("lifecycle_state")@0..15 SymEq@16..17 SymLt@18..19 String("\"published\"")@19..30 SymGt@30..31
+210|AlphaLcId("details")@0..7 SymEq@8..9 SymLt@10..11 LBracket@16..17 String("\"en\"")@17..21 RBracket@21..22 SymEq@23..24 SymLt@25..26 AlphaLcId("language")@35..43 SymEq@44..45 SymLt@46..47 LBracket@47..48 AlphaUcId("ISO_639")@48..55 SymMinus@55..56 Integer("1")@56..57 SymColon@57..58 SymColon@58..59 AlphaLcId("en")@59..61 RBracket@61..62 SymGt@62..63 AlphaLcId("keywords")@72..80 SymEq@81..82 SymLt@83..84 String("\"ADL\"")@84..89 SymComma@89..90 String("\"test\"")@91..97 SymGt@97..98 SymGt@103..104 SymGt@105..106
+211|AlphaLcId("a")@0..1 SymEq@2..3 LParen@4..5 AlphaUcId("Interval")@5..13 SymLt@13..14 AlphaUcId("Quantity")@14..22 SymGt@22..23 RParen@23..24 SymLt@25..26 SymIvlDelim@26..27 Integer("0")@27..28 SymIvlSep@28..30 Integer("1")@30..31 SymIvlDelim@31..32 SymGt@32..33
+212|AlphaLcId("ref")@0..3 SymEq@4..5 SymLt@6..7 AdlPath("/data[id2]/items")@7..23 SymGt@23..24
+213|AlphaLcId("time_committed")@0..14 SymEq@15..16 SymLt@17..18 Iso8601Date("2004-11-02")@18..28 Iso8601Time("09:31:04+1000")@29..42 SymGt@42..43
+214|AlphaLcId("a")@0..1 SymEq@2..3 LParen@4..5 AlphaLcId("org")@5..8 SymDot@8..9 AlphaLcId("openehr")@9..16 SymDot@16..17 AlphaLcId("rm")@17..19 SymDot@19..20 AlphaLcId("ehr")@20..23 SymDot@23..24 AlphaLcId("content")@24..31 SymDot@31..32 AlphaUcId("ENTRY")@32..37 RParen@37..38 SymLt@39..40 AlphaLcId("b")@40..41 SymEq@42..43 SymLt@44..45 Integer("1")@45..46 SymGt@46..47 SymGt@47..48
+215|AlphaLcId("a")@0..1 SymEq@2..3 SymLt@4..5 Integer("29")@5..7 AlphaLcId("e6")@7..9 SymGt@9..10 AlphaLcId("b")@11..12 SymEq@13..14 SymLt@15..16 Integer("2900")@16..20 AlphaLcId("e")@20..21 SymMinus@21..22 Integer("2")@22..23 SymGt@23..24 AlphaLcId("c")@25..26 SymEq@27..28 SymLt@29..30 AlphaUcId("TRUE")@30..34 SymGt@34..35 AlphaLcId("d")@36..37 SymEq@38..39 SymLt@40..41 AlphaLcId("fAlSe")@41..46 SymGt@46..47
+216|VariableId("$sys_bp")@0..7 SymColon@7..8 AlphaUcId("DV_QUANTITY")@9..20 SymAssignment@21..23 AdlPath("/data[id2]/events[id3]/data[id4]/items[id5]/value")@24..73
+217|SymForAll@0..7 VariableId("$x")@8..10 SymIn@11..13 AdlPath("/items")@14..20 SymIvlDelim@21..22 VariableWithPath("$x/value")@23..31 SymGt@32..33 Integer("0")@34..35
+218|SymThereExists@0..12 AdlPath("/items[at0001]")@13..27
+219|AlphaLcId("tag")@0..3 SymColon@3..4 VariableWithPath("$a/magnitude")@5..17 SymMatches@18..25 LCurly@26..27 SymIvlDelim@27..28 Real("0.0")@28..31 SymIvlSep@31..33 Real("100.0")@33..38 SymIvlDelim@38..39 RCurly@39..40
+220|SymNot@0..3 LParen@4..5 AlphaLcId("a")@5..6 SymAnd@7..10 AlphaLcId("b")@11..12 RParen@12..13 SymImplies@14..21 AlphaLcId("c")@22..23 SymXor@24..27 AlphaLcId("d")@28..29
+221|SymExists@0..6 AdlPath("/data[id2]")@7..17
+222|AlphaLcId("x")@0..1 SymAssignment@2..4 Integer("1")@5..6 SymPlus@7..8 Integer("2")@9..10 SymStar@11..12 Integer("3")@13..14 SymCarat@15..16 Integer("4")@17..18 SymPercent@19..20 Integer("5")@21..22 SymSlash@23..24 Integer("6")@25..26
+223|AlphaUcId("OBSERVATION")@0..11 LBracket@11..12 AlphaLcId("id1")@12..15 RBracket@15..16 SymMatches@17..24 LCurly@25..26 AlphaLcId("data")@31..35 SymMatches@36..43 LCurly@44..45 AlphaUcId("HISTORY")@54..61 LBracket@61..62 AlphaLcId("id2")@62..65 RBracket@65..66 AlphaLcId("occurrences")@67..78 SymMatches@79..86 LCurly@87..88 Integer("1")@88..89 SymIvlSep@89..91 Integer("1")@91..92 RCurly@92..93 SymMatches@94..101 LCurly@102..103 SymStar@103..104 RCurly@104..105 RCurly@110..111 RCurly@112..113
+224|AlphaLcId("value")@0..5 SymMatches@6..13 LCurly@14..15 AlphaUcId("DV_QUANTITY")@15..26 LBracket@26..27 AlphaLcId("id9")@27..30 RBracket@30..31 SymMatches@32..39 LCurly@40..41 AlphaLcId("magnitude")@41..50 SymMatches@51..58 LCurly@59..60 SymIvlDelim@60..61 SymGe@61..63 Real("0.0")@63..66 SymIvlDelim@66..67 RCurly@67..68 RCurly@68..69 RCurly@69..70
+225|AlphaLcId("use_archetype")@0..13 AlphaUcId("CLUSTER")@14..21 LBracket@21..22 AlphaLcId("id2")@22..25 SymComma@25..26 AlphaLcId("openehr")@27..34 SymMinus@34..35 AlphaUcId("EHR")@35..38 SymMinus@38..39 AlphaUcId("CLUSTER")@39..46 SymDot@46..47 AlphaLcId("x")@47..48 SymDot@48..49 AlphaLcId("v1")@49..51 RBracket@51..52
+226|AlphaLcId("allow_archetype")@0..15 AlphaUcId("CLUSTER")@16..23 LBracket@23..24 AlphaLcId("id3")@24..27 RBracket@27..28 AlphaLcId("occurrences")@29..40 SymMatches@41..48 LCurly@49..50 Integer("0")@50..51 SymIvlSep@51..53 SymStar@53..54 RCurly@54..55 SymMatches@56..63 LCurly@64..65 AlphaLcId("include")@65..72 SymSemiColon@72..73 AdlPath("archetype_id/value")@74..92 SymMatches@93..100 ContainedRegexp("{/.*/}")@101..107 RCurly@107..108
+227|AlphaLcId("archetype")@0..9 LParen@10..11 AlphaLcId("adl_version")@11..22 SymEq@22..23 Real("2.0")@23..26 SymDot@26..27 Integer("6")@27..28 SymSemiColon@28..29 AlphaLcId("rm_release")@30..40 SymEq@40..41 Real("1.0")@41..44 SymDot@44..45 Integer("2")@45..46 RParen@46..47 AlphaLcId("openehr")@52..59 SymMinus@59..60 AlphaUcId("EHR")@60..63 SymMinus@63..64 AlphaUcId("OBSERVATION")@64..75 SymDot@75..76 AlphaLcId("test")@76..80 SymDot@80..81 AlphaLcId("v1")@81..83 SymDot@83..84 Real("0.0")@84..87
+228|AlphaLcId("term_definitions")@0..16 SymEq@17..18 SymLt@19..20 LBracket@25..26 String("\"en\"")@26..30 RBracket@30..31 SymEq@32..33 SymLt@34..35 AlphaLcId("items")@44..49 SymEq@50..51 SymLt@52..53 LBracket@66..67 String("\"id1\"")@67..72 RBracket@72..73 SymEq@74..75 SymLt@76..77 AlphaLcId("text")@94..98 SymEq@99..100 SymLt@101..102 String("\"Test\"")@102..108 SymGt@108..109 AlphaLcId("description")@126..137 SymEq@138..139 SymLt@140..141 String("\"A test\"")@141..149 SymGt@149..150 SymGt@163..164 SymGt@173..174 SymGt@179..180 SymGt@181..182
+229|ERROR@0..1
+230|ERROR@0..1
+231|ERROR@0..1
+232|ERROR@0..1
+233|ERROR@0..1
+234|AlphaLcId("c1")@0..2 SymIvlDelim@2..3 AlphaLcId("c2")@3..5
+235|Integer("0")@0..1 SymIvlSep@1..3 SymStar@3..4
+236|LCurly@0..1 SymIvlDelim@1..2 SymGe@2..4 Integer("0")@4..5 SymIvlDelim@5..6 RCurly@6..7
+237|LCurly@0..1 LBracket@1..2 AlphaLcId("local")@2..7 SymColon@7..8 SymColon@8..9 AlphaLcId("at0001")@9..15 SymComma@15..16 AlphaLcId("at0002")@17..23 RBracket@23..24 RCurly@24..25
+238|AlphaUcId("DV_ORDINAL")@0..10 LBracket@10..11 AlphaLcId("id5")@11..14 RBracket@14..15 SymMatches@16..23 LCurly@24..25 AlphaLcId("value")@25..30 SymMatches@31..38 LCurly@39..40 SymIvlDelim@40..41 Integer("0")@41..42 SymIvlDelim@42..43 RCurly@43..44 RCurly@44..45
