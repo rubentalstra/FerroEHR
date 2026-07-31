@@ -86,7 +86,7 @@
 85|LBracket@0..1 Integer("1")@1..2 RBracket@2..3
 86|LBracket@0..1 Integer("01234")@1..6 RBracket@6..7
 87|LBracket@0..1 Iso8601Date("2004-06-11")@1..11 RBracket@11..12
-88|ERROR@4..5
+88|LBracket@0..1 AlphaLcId("ac1")@1..4 SymAt@4..5 AlphaLcId("openehr")@5..12 RBracket@12..13
 89|TermCodeRef("[local::at0001]")@0..15
 90|LocalTermCodeRef("[at0010.2]")@0..10
 91|ERROR@0..3
@@ -186,7 +186,7 @@
 185|SymPlusOrMinus@0..3
 186|ERROR@0..1
 187|ERROR@0..1
-188|ERROR@0..1
+188|SymAt@0..1
 189|ERROR@0..1
 190|ERROR@0..1
 191|ERROR@0..1
@@ -242,3 +242,4 @@
 241|AlphaLcId("infinity")@0..8 SymEq@9..10 SymLt@11..12 Integer("1")@12..13 SymGt@13..14
 242|AlphaLcId("x")@0..1 SymEq@2..3 SymLt@4..5 SymFalse@5..10 SymGt@10..11
 243|SymIvlDelim@0..1 Integer("0")@1..2 SymIvlSep@2..4 SymInfinity@4..12 SymIvlDelim@12..13
+244|SymAt@0..1 AlphaLcId("schema")@1..7 SymEq@8..9 EmbeddedUri("<http://openehr.org/bmm>")@10..34

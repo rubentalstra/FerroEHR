@@ -722,9 +722,14 @@ mod tests {
             ]
         );
         // `$variable`, `{`, `:` and `%` have no ODIN production at all.
-        for refused in ["$v", "{", ":", "%", "^", "@", "!="] {
+        for refused in ["$v", "{", ":", "%", "^", "!="] {
             assert!(lex_odin(refused).is_err(), "ODIN must refuse {refused:?}");
         }
+        // `@` IS an ODIN token since #1373: it opens the document prefix
+        // `schema_identifier ::= '@' schema '=' URI`
+        // (`LANG/docs/odin/master04-odin_artefacts` intro); a misplaced `@`
+        // is the parser's refusal, not the lexer's.
+        assert_eq!(odin("@"), vec![Token::SymAt]);
     }
 
     /// `AM/docs/ADL1.4/master04-dadl` §Symbols `V_LOCAL_TERM_CODE_REF` is an
