@@ -430,6 +430,20 @@ pub enum Token {
     /// `..` (`SYM_IVL_SEP`).
     #[token("..")]
     SymIvlSep,
+    /// `.` — the namespace separator of a qualified ODIN type identifier.
+    ///
+    /// NOTE: the outer artefact scan lexes the WHOLE source, ODIN sections
+    /// included, before handing each section's raw text to
+    /// `openehr_lang::odin`, so a construct legal inside an ODIN section must
+    /// have a token here even though no cADL production consumes it. The
+    /// qualified type identifier is such a construct: "Namespaces are included
+    /// by prepending package names, separated by the '.' character"
+    /// (`AM/docs/ADL1.4/master04-dadl` §Adding Type Information, verbatim in
+    /// `LANG/docs/odin/master05-content` §Adding Type Information). Every
+    /// dotted composite above (`...`, `..`, the code and identifier regexes,
+    /// `REAL`) is a longer match, so logos still prefers it.
+    #[token(".")]
+    SymDot,
     /// `|` (`SYM_IVL_DELIM`).
     #[token("|")]
     SymIvlDelim,
@@ -461,68 +475,32 @@ pub enum Token {
     SymAt,
 }
 
-/// Validate `master03` string escapes and return the raw slice (delimiters
-/// retained; the parser decodes).
+/// Validate a `CHARACTER` token's escape and return the raw slice
+/// (delimiters retained; the parser decodes).
 ///
-/// Illegal escapes (anything other than `\r \n \t \\ \" \'` or a
-/// `\u` + 4/8 hex-digit sequence) fail the lex, per
-/// `ADL2/master03-file_encoding.adoc`.
-/// Validate a `CHARACTER` token: an escaped character must be one of the six
-/// legal quoted forms `\r \n \t \\ \" \'` — "Any other character combination
-/// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
-/// §Special Character Sequences). The `\uHHHH` forms cannot fit the
-/// single-character token.
+/// The escape rules are [`openehr_lang::escape`]'s — the ONE `master03`
+/// implementation the whole workspace shares — so an illegal escape fails the
+/// lex here rather than being judged a second time against a drifting local
+/// copy of the same rules. A `\uHHHH` form cannot fit the single-character
+/// token, and the shared decoder refuses it as a malformed unicode escape.
 fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    if bytes.get(1) == Some(&b'\\')
-        && !matches!(
-            bytes.get(2),
-            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
-        )
-    {
-        return Err(());
-    }
+    openehr_lang::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
 
+/// Validate a `STRING` token's `master03` escapes and return the raw slice
+/// (delimiters retained; the parser decodes).
+///
+/// As [`validate_char`], the rules come from [`openehr_lang::escape`]: the six
+/// customary quoted forms plus `\uHHHH`/`\uHHHHHHHH`, and nothing else — "Any
+/// other character combination starting with a backslash is illegal"
+/// (`ADL2/master03-file_encoding.adoc` §Special Character Sequences).
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    let mut i = 0;
-    while let Some(&byte) = bytes.get(i) {
-        if byte == b'\\' {
-            let Some(&next) = bytes.get(i + 1) else {
-                return Err(());
-            };
-            match next {
-                b'r' | b'n' | b't' | b'\\' | b'"' | b'\'' => i += 2,
-                b'u' => {
-                    // \uHHHH (4) or \uHHHHHHHH (8) hex digits.
-                    let hex_start = i + 2;
-                    let count = raw
-                        .get(hex_start..)
-                        .unwrap_or_default()
-                        .chars()
-                        .take_while(char::is_ascii_hexdigit)
-                        .count();
-                    if count >= 8 {
-                        i = hex_start + 8;
-                    } else if count >= 4 {
-                        i = hex_start + 4;
-                    } else {
-                        return Err(());
-                    }
-                }
-                _ => return Err(()),
-            }
-        } else {
-            i += 1;
-        }
-    }
+    openehr_lang::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
-
 /// Lex `src` into a spanned token vector.
 ///
 /// # Errors

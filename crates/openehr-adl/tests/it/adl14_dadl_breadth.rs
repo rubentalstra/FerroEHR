@@ -131,6 +131,24 @@ fn breadth_fixture_leaf_values() {
         }
     );
 
+    // Namespaced type casts (master04 §Adding Type Information): the package
+    // path is preserved flat, exactly as authored, for both the lower-case and
+    // the upper-case package spelling the chapter exemplifies, and on a
+    // template parameter.
+    let OdinValue::Typed { rm_type, value } = get("namespaced_cast_lc_package") else {
+        panic!("expected a namespaced typed cast");
+    };
+    assert_eq!(rm_type, "org.openehr.rm.ehr.content.ENTRY");
+    assert!(matches!(**value, OdinValue::Object(_)));
+    let OdinValue::Typed { rm_type, .. } = get("namespaced_cast_uc_package") else {
+        panic!("expected a namespaced typed cast");
+    };
+    assert_eq!(rm_type, "Core.Abstractions.Relationships.Relationship");
+    let OdinValue::Typed { rm_type, .. } = get("namespaced_cast_generic") else {
+        panic!("expected a namespaced generic typed cast");
+    };
+    assert_eq!(rm_type, "List<org.openehr.rm.ehr.content.ENTRY>");
+
     // Partial date/times (master04 §Partial Date/Times).
     assert_eq!(
         get("date_time_unknown_time"),

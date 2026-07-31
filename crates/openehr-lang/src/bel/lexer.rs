@@ -251,68 +251,32 @@ pub(crate) enum Token {
     Caret,
 }
 
-/// Validate a `STRING` token's escape sequences: the six legal quoted forms
-/// `\r \n \t \\ \" \'` plus the `\uHHHH`/`\uHHHHHHHH` ASCII-encoded-unicode
-/// forms — "Any other character combination starting with a backslash is
-/// illegal" (`ADL2/master03-file_encoding.adoc` §Special Character Sequences +
-/// §File Encoding). The BEL lexer keeps the slice verbatim (this lexer is
-/// deliberately self-contained — the ODIN reader carries its own copy with
-/// multi-line leader stripping on top).
+/// Validate a `STRING` token's `master03` escapes and return the raw slice.
+///
+/// The escape rules come from [`crate::escape`], the one `master03`
+/// implementation this workspace has: the six customary quoted forms plus
+/// `\uHHHH`/`\uHHHHHHHH`, and nothing else — "Any other character combination
+/// starting with a backslash is illegal" (`ADL2/master03-file_encoding.adoc`
+/// §Special Character Sequences + §File Encoding). Refusing at the lex keeps
+/// the token stream free of escapes the reader cannot decode, which is what
+/// lets the parser decode infallibly. The slice is kept verbatim; unlike the
+/// ODIN reader this lexer has no multi-line leader stripping to apply.
 fn validate_string(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    let mut i = 0;
-    while let Some(&byte) = bytes.get(i) {
-        if byte == b'\\' {
-            match bytes.get(i + 1) {
-                Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'') => i += 2,
-                Some(b'u') => {
-                    let hex_start = i + 2;
-                    let count = raw
-                        .get(hex_start..)
-                        .unwrap_or_default()
-                        .chars()
-                        .take_while(char::is_ascii_hexdigit)
-                        .count();
-                    if count >= 8 {
-                        i = hex_start + 8;
-                    } else if count >= 4 {
-                        i = hex_start + 4;
-                    } else {
-                        return Err(());
-                    }
-                }
-                _ => return Err(()),
-            }
-        } else {
-            i += 1;
-        }
-    }
-    // The structural scan above accepts any 4/8 hex-digit `\u` run; the shared
-    // decoder is what decides whether it names a character at all.
     crate::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
 
-/// Validate a `CHARACTER` token: an escaped character must be one of the six
-/// legal quoted forms — "Any other character combination starting with a
-/// backslash is illegal" (`ADL2/master03-file_encoding.adoc` §Special
-/// Character Sequences). The `\uHHHH` forms cannot fit the single-character
-/// token.
+/// Validate a `CHARACTER` token's escape and return the raw slice.
+///
+/// As [`validate_string`], by exactly the same [`crate::escape`] rules. The
+/// `\uHHHH` forms cannot fit the single-character token and are refused as
+/// malformed unicode escapes.
 fn validate_char(lex: &logos::Lexer<Token>) -> Result<String, ()> {
     let raw = lex.slice();
-    let bytes = raw.as_bytes();
-    if bytes.get(1) == Some(&b'\\')
-        && !matches!(
-            bytes.get(2),
-            Some(b'r' | b'n' | b't' | b'\\' | b'"' | b'\'')
-        )
-    {
-        return Err(());
-    }
+    crate::escape::validate(raw).map_err(|_defect| ())?;
     Ok(raw.to_owned())
 }
-
 /// Lex `src` into a spanned token vector.
 ///
 /// # Errors

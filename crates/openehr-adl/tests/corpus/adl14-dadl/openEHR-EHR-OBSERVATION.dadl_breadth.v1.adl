@@ -43,6 +43,25 @@ description
 		>
 		["empty_cast"] = (PENSION) <...>
 
+		-- master04 §Adding Type Information: "Type identifiers can also
+		-- include namespace information, which is necessary when same-named
+		-- types appear in different packages of a model. Namespaces are
+		-- included by prepending package names, separated by the '.'
+		-- character, in the same way as in most programming languages, as in
+		-- the qualified type names `org.openehr.rm.ehr.content.ENTRY` and
+		-- `Core.Abstractions.Relationships.Relationship`" — both example
+		-- spellings, plus the principle box's combination of "Dot-separated
+		-- namespace identifiers AND template parameters".
+		["namespaced_cast_lc_package"] = (org.openehr.rm.ehr.content.ENTRY) <
+			name = <"qualified by a lower-case package path">
+		>
+		["namespaced_cast_uc_package"] = (Core.Abstractions.Relationships.Relationship) <
+			name = <"qualified by an upper-case package path">
+		>
+		["namespaced_cast_generic"] = (List<org.openehr.rm.ehr.content.ENTRY>) <
+			[1] = <"a qualified template parameter">
+		>
+
 		-- master04 §Complete Date/Times + §Partial Date/Times.
 		["date_full"] = <1919-01-23>
 		["date_no_day"] = <2004-06>
