@@ -289,6 +289,9 @@ pub enum Adl2Artefact {
     Kind,
     /// `adl` — the ADL2 source text, stored verbatim.
     Adl,
+    /// `parent_hrid` — the declared `specialize` parent HRID (NULL when the
+    /// artefact is not specialised); the archetype-lineage edge.
+    ParentHrid,
     /// `created_at` — when the artefact was uploaded.
     CreatedAt,
 }

@@ -8,7 +8,6 @@
 //! Requires Docker. Each test owns its container (`Drop` removes it).
 
 #![expect(
-    clippy::expect_used,
     clippy::panic,
     clippy::string_slice,
     let_underscore_drop,
@@ -24,6 +23,8 @@ use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::list::Page;
+
+use crate::adl2_fixture::adl2_source;
 
 fn fixture(rel: &str) -> String {
     let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
@@ -761,33 +762,6 @@ async fn opt_errors() {
 }
 
 // ── ADL2 artefacts (I_DEFINITION_ADL2; on adl2_artefact, HRID-keyed) ──────────
-
-/// Build a minimal spec-valid ADL2 source: header, HRID, optional
-/// `specialize`, `language`, `definition` (root node `id1`, or `id1.1` when
-/// specialised — AOM2 master08 VARCN), `terminology` (ADL2 master02
-/// §Structure — the registration validator enforces STCNT + the
-/// terminology-side AOM2 rules).
-fn adl2_source(keyword: &str, hrid: &str, specialize: Option<&str>) -> String {
-    let rm_type = hrid
-        .split('.')
-        .next()
-        .and_then(|q| q.rsplit_once('-').map(|(_, e)| e))
-        .expect("HRID carries an RM entity");
-    let root = if specialize.is_some() { "id1.1" } else { "id1" };
-    let spec = specialize.map_or(String::new(), |p| format!("\nspecialize\n    {p}\n"));
-    // A `description` section is mandatory (AOM2 master03 §Validity Rules VARD:
-    // "A `description` section containing the main meta-data of the archetype
-    // must exist").
-    format!(
-        "{keyword} (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n{spec}\n\
-         language\n    original_language = <[ISO_639-1::en]>\n\n\
-         description\n    lifecycle_state = <\"published\">\n    details = <\n        \
-         [\"en\"] = <\n            language = <[ISO_639-1::en]>\n        >\n    >\n\n\
-         definition\n    {rm_type}[{root}] matches {{ *}}\n\n\
-         terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
-         [\"{root}\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
-    )
-}
 
 const ADL2_OPT_HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
 const ADL2_ARCH_HRID: &str = "openEHR-EHR-OBSERVATION.bp.v1.0.0";

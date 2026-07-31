@@ -5,9 +5,9 @@
 //! Operator precedence follows that grammar: `implies` < `or` < `xor` < `and` <
 //! `not` < comparison/`matches` < `+ -` < `* / %` < `^` < unary < primary.
 
-use crate::bel::lexer::{Spanned, Token};
 use crate::bel::{BelBuilder, BelError, BelLiteral};
 use crate::beom::core::operator_kind::OperatorKind;
+use crate::lexer::{Spanned, Token};
 
 /// The parser cursor over a lexed token slice, driving a `&mut B` builder.
 pub(crate) struct Parser<'a, 'b, B: BelBuilder> {
@@ -79,15 +79,15 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `statement : declaration | assignment | assertion`.
     fn parse_statement(&mut self) -> Result<B::Stmt, BelError> {
         match self.peek() {
-            Some(Token::Variable(_)) => match self.peek_at(1) {
-                Some(Token::Assign) => self.parse_assignment(),
-                Some(Token::Colon) => self.parse_variable_declaration(),
+            Some(Token::VariableId(_)) => match self.peek_at(1) {
+                Some(Token::SymAssignment) => self.parse_assignment(),
+                Some(Token::SymColon) => self.parse_variable_declaration(),
                 _ => self.parse_assertion(),
             },
             // `tag :` — a tagged assertion (constant declarations, which share
             // the `NAME : Type` shape, do not appear in archetype rules).
-            Some(Token::LowerId(_) | Token::UpperId(_))
-                if self.peek_at(1) == Some(&Token::Colon) =>
+            Some(Token::AlphaLcId(_) | Token::AlphaUcId(_))
+                if self.peek_at(1) == Some(&Token::SymColon) =>
             {
                 self.parse_assertion()
             }
@@ -98,7 +98,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `binding | local_assignment : local_variable ':=' ( bound_path | expression )`.
     fn parse_assignment(&mut self) -> Result<B::Stmt, BelError> {
         let name = self.expect_variable_name()?;
-        if !self.eat(&Token::Assign) {
+        if !self.eat(&Token::SymAssignment) {
             return self.err("expected ':=' in assignment");
         }
         let source = self.parse_expr()?;
@@ -108,13 +108,13 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `variable_declaration : local_variable ':' type_id ( ':=' expression )?`.
     fn parse_variable_declaration(&mut self) -> Result<B::Stmt, BelError> {
         let name = self.expect_variable_name()?;
-        if !self.eat(&Token::Colon) {
+        if !self.eat(&Token::SymColon) {
             return self.err("expected ':' in variable declaration");
         }
-        let Some(Token::UpperId(type_id)) = self.bump() else {
+        let Some(Token::AlphaUcId(type_id)) = self.bump() else {
             return self.err("expected a type name after ':' in a declaration");
         };
-        let init = if self.eat(&Token::Assign) {
+        let init = if self.eat(&Token::SymAssignment) {
             Some(self.parse_expr()?)
         } else {
             None
@@ -125,7 +125,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `assertion : ( ( ALPHA_LC_ID | ALPHA_UC_ID ) ':' )? boolean_expr`.
     fn parse_assertion(&mut self) -> Result<B::Stmt, BelError> {
         let tag = match (self.peek(), self.peek_at(1)) {
-            (Some(Token::LowerId(t) | Token::UpperId(t)), Some(Token::Colon)) => {
+            (Some(Token::AlphaLcId(t) | Token::AlphaUcId(t)), Some(Token::SymColon)) => {
                 let t = t.clone();
                 self.pos += 2; // tag + ':'
                 Some(t)
@@ -138,7 +138,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn expect_variable_name(&mut self) -> Result<String, BelError> {
         match self.bump() {
-            Some(Token::Variable(v)) => Ok(v.trim_start_matches('$').to_owned()),
+            Some(Token::VariableId(v)) => Ok(v.trim_start_matches('$').to_owned()),
             _ => self.err("expected a $variable"),
         }
     }
@@ -147,7 +147,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `expression`/`boolean_expr` entry: lowest-precedence `implies`.
     fn parse_expr(&mut self) -> Result<B::Expr, BelError> {
         let mut left = self.parse_or()?;
-        while self.eat(&Token::Implies) {
+        while self.eat(&Token::SymImplies) {
             let right = self.parse_or()?;
             left = self.builder.binary(kind("implies"), "implies", left, right);
         }
@@ -156,7 +156,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn parse_or(&mut self) -> Result<B::Expr, BelError> {
         let mut left = self.parse_xor()?;
-        while self.eat(&Token::Or) {
+        while self.eat(&Token::SymOr) {
             let right = self.parse_xor()?;
             left = self.builder.binary(kind("or"), "or", left, right);
         }
@@ -165,7 +165,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn parse_xor(&mut self) -> Result<B::Expr, BelError> {
         let mut left = self.parse_and()?;
-        while self.eat(&Token::Xor) {
+        while self.eat(&Token::SymXor) {
             let right = self.parse_and()?;
             left = self.builder.binary(kind("xor"), "xor", left, right);
         }
@@ -174,7 +174,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 
     fn parse_and(&mut self) -> Result<B::Expr, BelError> {
         let mut left = self.parse_not()?;
-        while self.eat(&Token::And) {
+        while self.eat(&Token::SymAnd) {
             let right = self.parse_not()?;
             left = self.builder.binary(kind("and"), "and", left, right);
         }
@@ -182,7 +182,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     }
 
     fn parse_not(&mut self) -> Result<B::Expr, BelError> {
-        if self.eat(&Token::Not) {
+        if self.eat(&Token::SymNot) {
             let operand = self.parse_not()?;
             return Ok(self.builder.unary(kind("not"), "not", operand));
         }
@@ -192,7 +192,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// A comparison / `matches` leaf over arithmetic operands.
     fn parse_comparison(&mut self) -> Result<B::Expr, BelError> {
         let left = self.parse_additive()?;
-        if self.peek() == Some(&Token::Matches) {
+        if self.peek() == Some(&Token::SymMatches) {
             self.pos += 1;
             let (raw, at) = self.constraint_rhs()?;
             let rhs = self.builder.constraint(&raw, at)?;
@@ -210,8 +210,8 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         let mut left = self.parse_multiplicative()?;
         loop {
             let (op, sym) = match self.peek() {
-                Some(Token::Plus) => ("plus", "+"),
-                Some(Token::Minus) => ("minus", "-"),
+                Some(Token::SymPlus) => ("plus", "+"),
+                Some(Token::SymMinus) => ("minus", "-"),
                 _ => break,
             };
             self.pos += 1;
@@ -225,9 +225,9 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         let mut left = self.parse_exponent()?;
         loop {
             let (op, sym) = match self.peek() {
-                Some(Token::Star) => ("multiply", "*"),
-                Some(Token::Slash) => ("divide", "/"),
-                Some(Token::Percent) => ("modulo", "%"),
+                Some(Token::SymStar) => ("multiply", "*"),
+                Some(Token::SymSlash) => ("divide", "/"),
+                Some(Token::SymPercent) => ("modulo", "%"),
                 _ => break,
             };
             self.pos += 1;
@@ -240,7 +240,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// `^` — right-associative (`base_expressions.g4` `<assoc=right>`).
     fn parse_exponent(&mut self) -> Result<B::Expr, BelError> {
         let left = self.parse_unary()?;
-        if self.eat(&Token::Caret) {
+        if self.eat(&Token::SymCarat) {
             let right = self.parse_exponent()?;
             return Ok(self.builder.binary(kind("exponent"), "^", left, right));
         }
@@ -248,11 +248,11 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     }
 
     fn parse_unary(&mut self) -> Result<B::Expr, BelError> {
-        if self.eat(&Token::Minus) {
+        if self.eat(&Token::SymMinus) {
             let operand = self.parse_unary()?;
             return Ok(self.builder.unary(kind("minus"), "-", operand));
         }
-        if self.eat(&Token::Plus) {
+        if self.eat(&Token::SymPlus) {
             return self.parse_unary();
         }
         self.parse_primary()
@@ -268,18 +268,18 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 }
                 Ok(inner)
             }
-            Some(Token::ForAll) => self.parse_for_all(),
-            Some(Token::ThereExists) => self.parse_there_exists(),
-            Some(Token::Exists) => {
+            Some(Token::SymForAll) => self.parse_for_all(),
+            Some(Token::SymThereExists) => self.parse_there_exists(),
+            Some(Token::SymExists) => {
                 self.pos += 1;
                 let operand = self.parse_ref_leaf()?;
                 Ok(self.builder.unary(kind("exists"), "exists", operand))
             }
-            Some(Token::True) => {
+            Some(Token::SymTrue) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Boolean(true)))
             }
-            Some(Token::False) => {
+            Some(Token::SymFalse) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Boolean(false)))
             }
@@ -306,23 +306,23 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
                 let c = decode_char(&s);
                 Ok(self.builder.literal(BelLiteral::Character(c)))
             }
-            Some(Token::Date(s)) => {
+            Some(Token::Iso8601Date(s)) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Date(s)))
             }
-            Some(Token::Time(s)) => {
+            Some(Token::Iso8601Time(s)) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Time(s)))
             }
-            Some(Token::DateTime(s)) => {
+            Some(Token::Iso8601DateTime(s)) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::DateTime(s)))
             }
-            Some(Token::Duration(s)) => {
+            Some(Token::Iso8601Duration(s)) => {
                 self.pos += 1;
                 Ok(self.builder.literal(BelLiteral::Duration(s)))
             }
-            Some(Token::LowerId(name)) if self.peek_at(1) == Some(&Token::LParen) => {
+            Some(Token::AlphaLcId(name)) if self.peek_at(1) == Some(&Token::LParen) => {
                 self.parse_function_call(&name)
             }
             _ => self.parse_ref_leaf(),
@@ -333,10 +333,10 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// bare identifier used as a value reference.
     fn parse_ref_leaf(&mut self) -> Result<B::Expr, BelError> {
         match self.bump() {
-            Some(Token::Variable(v)) => Ok(self.builder.variable_ref(v.trim_start_matches('$'))),
+            Some(Token::VariableId(v)) => Ok(self.builder.variable_ref(v.trim_start_matches('$'))),
             Some(Token::VariableWithPath(v)) => self.builder.path_ref(&v),
-            Some(Token::Path(p)) => self.builder.path_ref(&p),
-            Some(Token::LowerId(id) | Token::UpperId(id)) => self.builder.path_ref(&id),
+            Some(Token::AdlPath(p)) => self.builder.path_ref(&p),
+            Some(Token::AlphaLcId(id) | Token::AlphaUcId(id)) => self.builder.path_ref(&id),
             _ => self.err("expected a value reference (path, $variable, or name)"),
         }
     }
@@ -348,7 +348,7 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         if self.peek() != Some(&Token::RParen) {
             loop {
                 args.push(self.parse_expr()?);
-                if !self.eat(&Token::Comma) {
+                if !self.eat(&Token::SymComma) {
                     break;
                 }
             }
@@ -363,11 +363,11 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     fn parse_for_all(&mut self) -> Result<B::Expr, BelError> {
         self.pos += 1; // for_all
         let var = self.expect_variable_name()?;
-        if !self.eat(&Token::Colon) && !self.eat(&Token::In) {
+        if !self.eat(&Token::SymColon) && !self.eat(&Token::SymIn) {
             return self.err("expected ':' or 'in' after the for_all variable");
         }
         let collection = self.parse_ref_leaf()?;
-        self.eat(&Token::Bar); // optional '|'
+        self.eat(&Token::SymIvlDelim); // optional '|'
         let condition = self.parse_expr()?;
         self.builder.for_all(&var, collection, condition)
     }
@@ -382,16 +382,16 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// same unary the `exists` keyword builds.
     fn parse_there_exists(&mut self) -> Result<B::Expr, BelError> {
         self.pos += 1; // there_exists
-        if !matches!(self.peek(), Some(Token::Variable(_))) {
+        if !matches!(self.peek(), Some(Token::VariableId(_))) {
             let operand = self.parse_ref_leaf()?;
             return Ok(self.builder.unary(kind("exists"), "exists", operand));
         }
         let var = self.expect_variable_name()?;
-        if !self.eat(&Token::Colon) && !self.eat(&Token::In) {
+        if !self.eat(&Token::SymColon) && !self.eat(&Token::SymIn) {
             return self.err("expected ':' or 'in' after the there_exists variable");
         }
         let collection = self.parse_ref_leaf()?;
-        self.eat(&Token::Bar);
+        self.eat(&Token::SymIvlDelim);
         let condition = self.parse_expr()?;
         self.builder.for_all(&var, collection, condition)
     }
@@ -447,12 +447,12 @@ fn kind(name: &str) -> OperatorKind {
 /// Map a relational/equality token to its `(operator_kind, symbol)`.
 fn relational(t: &Token) -> Option<(&'static str, &'static str)> {
     match t {
-        Token::Eq => Some(("eq", "=")),
-        Token::Ne => Some(("ne", "!=")),
-        Token::Lt => Some(("lt", "<")),
-        Token::Le => Some(("le", "<=")),
-        Token::Gt => Some(("gt", ">")),
-        Token::Ge => Some(("ge", ">=")),
+        Token::SymEq => Some(("eq", "=")),
+        Token::SymNe => Some(("ne", "!=")),
+        Token::SymLt => Some(("lt", "<")),
+        Token::SymLe => Some(("le", "<=")),
+        Token::SymGt => Some(("gt", ">")),
+        Token::SymGe => Some(("ge", ">=")),
         _ => None,
     }
 }

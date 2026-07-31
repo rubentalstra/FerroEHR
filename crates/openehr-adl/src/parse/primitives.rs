@@ -24,10 +24,10 @@ use openehr_base::prelude::{Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso86
 
 use crate::aom::build::local_term_code;
 use crate::error::SyntaxErrorCode;
-use crate::lexer::Token;
 use crate::odin::{decode_character, decode_string, escape_regex_delimiter, regex_inner};
 use crate::parse::values::PrimKind;
 use crate::parse::{Dialect, PResult, Parser};
+use openehr_lang::lexer::Token;
 
 // ── inline primitives (`cadl2_primitives.g4`) ─────────────────────────────
 impl Parser<'_> {

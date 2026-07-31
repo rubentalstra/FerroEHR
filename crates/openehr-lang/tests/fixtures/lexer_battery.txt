@@ -1,0 +1,508 @@
+-- The shared lexer equivalence battery: one input snippet per record,
+-- records separated by a line containing exactly `%%`. Every snippet is lexed
+-- by all three per-language entry points; the captured token dumps live in
+-- `lexer_equivalence_{adl,odin,bel}.txt`. This first comment block is itself
+-- record 0 (it lexes as nothing but comments in all three languages).
+%%
+id1
+%%
+id1.1
+%%
+id2
+%%
+id0.1
+%%
+at0000
+%%
+at0.1
+%%
+ac1
+%%
+ac0.2
+%%
+OBSERVATION
+%%
+items
+%%
+identity
+%%
+_default
+%%
+_
+%%
+at0010.2
+%%
+openehr-TEST_PKG-WHOLE.most_minimal.v2.0.0
+%%
+openehr-TASK_PLANNING-TASK_PLAN.good_include.v0
+%%
+2.0.5
+%%
+1.0.2
+%%
+2.4.34.666.7.2
+%%
+8849182c-82ad-4088-a07f-48ead4180515
+%%
+openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0
+%%
+openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0-rc.2
+%%
+ns::openehr-EHR-CLUSTER.x.v1
+%%
+2004-06-01
+%%
+2004-06
+%%
+2004-06-??
+%%
+2004-06-01T10:30:00
+%%
+10:30:00
+%%
+10:30
+%%
+P1Y2M
+%%
+PT30M
+%%
+P0W
+%%
+2004-06-11T10:30:??
+%%
+2004-06-11T10:??:??
+%%
+2004-06-11T??:??:??
+%%
+2004-06-??T??:??:??
+%%
+2004-??-??T??:??:??
+%%
+2004-11-02 09:31:04+1000
+%%
+2004-11-02 09:31
+%%
+10:30:00.500
+%%
+2004-06-01T10:30:00Z
+%%
+-P1D
+%%
+P10D
+%%
+PT1H30M
+%%
+yyyy-mm-dd
+%%
+yyyy-??-XX
+%%
+hh:mm:ss
+%%
+yyyy-mm-ddThh:mm:ss
+%%
+PYMD
+%%
+POINT_EVENT
+%%
+1995-??-XX
+%%
+1995-mm-dd
+%%
+hh:mm:ss+hh:mm
+%%
+hh:mm:ss-hh
+%%
+hh:mm:ss+hhmm
+%%
+hh:mm:ssZ
+%%
+yyyy-mm-dd hh:mm:XX
+%%
+yyyy-mm-ddThh:mm:ss±hh:mm
+%%
+PWD
+%%
+PT
+%%
+1..5
+%%
+1.5
+%%
+|>=0.0..<10.0|
+%%
+29e6
+%%
+2900e-2
+%%
+1e5
+%%
+1E5
+%%
+|0..infinity|
+%%
+|-infinity..5.0|
+%%
+|0..*|
+%%
+|3.0+/-0.5|
+%%
+|0..10|
+%%
+|>=0.0|
+%%
+0.0
+%%
+-3.5
+%%
+5
+%%
+[ISO_639-1::en]
+%%
+[SNOMED-CT(2020)::123456]
+%%
+<http://loinc.org/id/9272-6>
+%%
+<[ISO_639-1::en]>
+%%
+[id2]
+%%
+[ac1]
+%%
+[at0200]
+%%
+[at0200], ...
+%%
+[1]
+%%
+[01234]
+%%
+[2004-06-11]
+%%
+[ac1@openehr]
+%%
+[local::at0001]
+%%
+[at0010.2]
+%%
+∈
+%%
+∧
+%%
+∃
+%%
+matches
+%%
+*
+%%
+∗
+%%
+∉
+%%
+≠
+%%
+≤
+%%
+≥
+%%
+±
+%%
+¬
+%%
+∀
+%%
+∨
+%%
+∼
+%%
+®
+%%
+id1 -- a trailing comment
+items
+%%
+--------------
+template_overlay
+%%
+"a\"x'c\\d"
+%%
+"line1
+line2"
+%%
+"bad \d escape"
+%%
+"unterminated
+%%
+﻿archetype
+%%
+a﻿b
+%%
+'\n'
+%%
+'\t'
+%%
+'\r'
+%%
+'\\'
+%%
+'\"'
+%%
+'\''
+%%
+'x'
+%%
+'ü'
+%%
+'\q'
+%%
+'\d'
+%%
+    text = <"And now the STORM-BLAST came, and he
+        Was tyrannous and strong :
+        And chased us south along.">
+%%
+"a &quot;phrase&quot;."
+%%
+MATCHES
+%%
+Is_In
+%%
+OCCURRENCES
+%%
+Existence
+%%
+CaRdInAlItY
+%%
+ORDERED
+%%
+UNORDERED
+%%
+Unique
+%%
+INFINITY
+%%
+Use_Node
+%%
+ALLOW_ARCHETYPE
+%%
+Include
+%%
+EXCLUDE
+%%
+Before
+%%
+AFTER
+%%
+TRUE
+%%
+fAlSe
+%%
+NOT
+%%
+Implies
+%%
+there_exists
+%%
+There_Exists
+%%
+in
+%%
+In
+%%
+is_in
+%%
+use_archetype
+%%
+use_node
+%%
+then
+%%
+closed
+%%
+exists
+%%
+xor
+%%
+and
+%%
+or
+%%
+not
+%%
+implies
+%%
+for_all
+%%
+infinity
+%%
+true
+%%
+false
+%%
+True
+%%
+False
+%%
+cardinality
+%%
+existence
+%%
+occurrences
+%%
+ordered
+%%
+unordered
+%%
+unique
+%%
+include
+%%
+exclude
+%%
+after
+%%
+before
+%%
+<>
+%%
+->
+%%
+/=
+%%
+!=
+%%
+:=
+%%
+::=
+%%
+...
+%%
+..
+%%
++/-
+%%
+%
+%%
+^
+%%
+@
+%%
+{
+%%
+}
+%%
+:
+%%
+;
+%%
+!
+%%
+~
+%%
+$var
+%%
+$var/path/x
+%%
+$sys_bp
+%%
+{/km\/h|mi\/h/}
+%%
+{^km/h|mi/h^}
+%%
+{/.*/; "unknown"}
+%%
+/data[id2]/items
+%%
+/Foo/bar
+%%
+//foo/bar
+%%
+foo[at0001]
+%%
+data/events
+%%
+/
+%%
+/items[at0001]/value
+%%
+Foo/bar
+%%
+lifecycle_state = <"published">
+%%
+details = <
+    ["en"] = <
+        language = <[ISO_639-1::en]>
+        keywords = <"ADL", "test">
+    >
+>
+%%
+a = (Interval<Quantity>) <|0..1|>
+%%
+ref = </data[id2]/items>
+%%
+time_committed = <2004-11-02 09:31:04+1000>
+%%
+a = (org.openehr.rm.ehr.content.ENTRY) <b = <1>>
+%%
+a = <29e6>
+b = <2900e-2>
+c = <TRUE>
+d = <fAlSe>
+%%
+$sys_bp: DV_QUANTITY := /data[id2]/events[id3]/data[id4]/items[id5]/value
+%%
+for_all $x in /items | $x/value > 0
+%%
+there_exists /items[at0001]
+%%
+tag: $a/magnitude matches {|0.0..100.0|}
+%%
+not (a and b) implies c xor d
+%%
+exists /data[id2]
+%%
+x := 1 + 2 * 3 ^ 4 % 5 / 6
+%%
+OBSERVATION[id1] matches {
+    data matches {
+        HISTORY[id2] occurrences matches {1..1} matches {*}
+    }
+}
+%%
+value matches {DV_QUANTITY[id9] matches {magnitude matches {|>=0.0|}}}
+%%
+use_archetype CLUSTER[id2, openehr-EHR-CLUSTER.x.v1]
+%%
+allow_archetype CLUSTER[id3] occurrences matches {0..*} matches {include; archetype_id/value matches {/.*/}}
+%%
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+    openehr-EHR-OBSERVATION.test.v1.0.0
+%%
+term_definitions = <
+    ["en"] = <
+        items = <
+            ["id1"] = <
+                text = <"Test">
+                description = <"A test">
+            >
+        >
+    >
+>
+%%
+\
+%%
+#
+%%
+?
+%%
+&
+%%
+`
+%%
+c1|c2
+%%
+0..*
+%%
+{|>=0|}
+%%
+{[local::at0001, at0002]}
+%%
+DV_ORDINAL[id5] matches {value matches {|0|}}

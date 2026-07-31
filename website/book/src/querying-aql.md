@@ -29,7 +29,15 @@ ORDER BY systolic DESC
 
 - **`FROM`** binds variables to RM types (`EHR e`, `COMPOSITION c`,
   `OBSERVATION o`). A type can be constrained by archetype id in square brackets
-  (`OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v2]`).
+  (`OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v2]`). Naming a
+  **parent** archetype also returns data recorded under its specialisations, as
+  openEHR requires: for ADL 1.4 identifiers the specialisation is the
+  hyphen-extended concept (`…blood_pressure` matches `…blood_pressure-cuff`),
+  and for ADL 2 identifiers — where the hyphen carries no such meaning — the
+  lineage is read from the ADL 2 archetypes and templates you have uploaded, so
+  the parent matches every stored specialisation of it whatever its concept is
+  named. In both cases the major version is a hard boundary: `.v1` never
+  matches `.v2` data.
 - **`CONTAINS`** expresses structural containment — "an EHR that contains a
   composition that contains a blood-pressure observation". Chains can nest
   several deep, and combine with `AND`, `OR`, and `NOT`.

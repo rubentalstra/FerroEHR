@@ -17,6 +17,7 @@ mod analyze;
 pub mod error;
 pub mod exec;
 pub mod ir;
+pub mod lineage;
 mod lower;
 pub mod sql;
 pub mod terminology;

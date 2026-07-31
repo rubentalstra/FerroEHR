@@ -8,7 +8,7 @@
 //! grammars are vendored under `vendor/grammar/` as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
 //!
-//! Components: the [`lexer`], the outer artefact parser ([`source`]), the
+//! Components: the outer artefact parser ([`source`]), the
 //! shared typed [`error`] catalogue, and the cADL definition-section parser
 //! ([`parse`]) that builds the generated `openehr_am::am24::aom2` constraint
 //! model. Under all of it sits the shared substrate every component reads
@@ -20,7 +20,10 @@
 //! validation catalogue), [`flatten`] + [`opt`] (specialisation flattening +
 //! OPT2), the ADL2 serializer [`mod@print`], and [`adl14`] (ADL 1.4→2 conversion — our own
 //! design, no openEHR spec). ODIN sections are parsed by the
-//! `openehr_lang::odin` reader (ODIN is a LANG-component spec); the `rules`
+//! `openehr_lang::odin` reader (ODIN is a LANG-component spec). **This crate
+//! has no lexer of its own**: the cADL token stream is the shared workspace
+//! lexical layer read under its ADL reading
+//! ([`openehr_lang::lexer::lex_adl`]). The `rules`
 //! body and slot assertion expressions are captured as raw text alongside a
 //! structured placeholder.
 //! TODO: model rule/slot assertion expressions as full BEL/beom trees.
@@ -36,7 +39,6 @@ pub mod codes;
 pub mod error;
 pub mod flatten;
 pub mod hrid;
-pub mod lexer;
 pub mod meta;
 pub mod odin;
 pub mod opt;

@@ -16,6 +16,8 @@
               fixture indexing are the intended shape here (the Rust Book ch11)"
 )]
 
+use std::sync::Arc;
+
 use openehr_query::lexer::CompOp;
 use openehr_query::parser::parse_str;
 
@@ -25,6 +27,7 @@ use ehrbase::aql::ir::{
     ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
 use ehrbase::aql::ir::{ParamValue, Params};
+use ehrbase::aql::lineage::ArchetypeLineage;
 use ehrbase::aql::plan;
 use ehrbase::aql::sql::SqlCtx;
 
@@ -47,6 +50,7 @@ fn build_sql(q: &str) -> String {
         subject_scope: None,
         limit: None,
         offset: None,
+        archetype_lineage: Arc::new(ArchetypeLineage::default()),
     };
     ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
         .unwrap_or_else(|e| panic!("SQL build failed for {q:?}: {e}"))
@@ -1078,6 +1082,7 @@ fn build_sql_limited(q: &str) -> String {
         subject_scope: None,
         limit: Some(50),
         offset: None,
+        archetype_lineage: Arc::new(ArchetypeLineage::default()),
     };
     ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
         .unwrap_or_else(|e| panic!("SQL build failed for {q:?}: {e}"))
@@ -1198,6 +1203,7 @@ fn ehr_scoped_execution_keeps_the_flat_shape() {
         subject_scope: None,
         limit: Some(50),
         offset: None,
+        archetype_lineage: Arc::new(ArchetypeLineage::default()),
     };
     let sql = ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
         .unwrap_or_else(|e| panic!("SQL build failed: {e}"))

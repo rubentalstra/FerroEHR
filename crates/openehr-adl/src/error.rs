@@ -245,6 +245,22 @@ impl SyntaxError {
     }
 }
 
+/// Turn a shared-lexer failure into the catalogue's lexical error.
+///
+/// The `S*` code space is a verbatim 1:1 mirror of the openEHR catalogue
+/// (`ADL2/master04.6-cadl_validity_rules.adoc` §Syntax Validity Rules) and
+/// carries no code for a lexical defect, so every lexical failure reports
+/// under `SUNK` ("Syntax error (unknown cause)") and names the offending input
+/// in the message.
+pub(crate) fn lexical(failure: &openehr_lang::lexer::LexError, src: &str) -> SyntaxError {
+    SyntaxError::at(
+        SyntaxErrorCode::Sunk,
+        format!("unrecognised token {:?}", failure.text),
+        failure.span.clone(),
+        src,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
