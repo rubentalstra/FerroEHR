@@ -10,10 +10,19 @@
 //!
 //! Two lexical concerns sit here too, because they are shared by the ODIN
 //! sections and the cADL definition rather than owned by either: the
-//! string/character escape decoding of `ADL2/master03-file_encoding.adoc`
-//! §Special Character Sequences (`decode_string`/`decode_character`) and the
-//! delimited-regex handling of `AOM2/master04.5` §Class Definitions
-//! (`C_STRING`).
+//! string/character literal decoding of `ADL2/master03-file_encoding.adoc`
+//! §File Encoding + §Special Character Sequences
+//! (`decode_string`/`decode_character` — delimiter stripping over
+//! [`openehr_lang::escape`](openehr_lang::escape), which owns the escape
+//! semantics for ODIN, BEL and cADL alike) and the delimited-regex handling of
+//! `AOM2/master04.5` §Class Definitions (`C_STRING`).
+//!
+//! NOTE: a delimited regex (`/…/`, `^…^`) NEVER passes through the escape
+//! decoder — `ADL2/master03-file_encoding.adoc` §Special Character Sequences,
+//! final paragraph: backslash patterns in a regular expression "should not be
+//! treated as anything other than literal strings, since they are processed by
+//! a regular expression parser". Only the optional `;"assumed"` suffix beside a
+//! regex is decoded.
 
 use std::collections::BTreeMap;
 
@@ -322,67 +331,38 @@ pub(crate) fn odin_to_json(v: &OdinValue) -> serde_json::Value {
 // ── `master03` lexical decoding ───────────────────────────────────────────
 
 /// Decode a double-quoted `master03` string literal (delimiters included).
-pub(crate) fn decode_string(raw: &str) -> String {
+///
+/// The escape semantics themselves live in
+/// [`openehr_lang::escape`](openehr_lang::escape) — one home for ODIN, BEL and
+/// cADL, since `ADL2/master03-file_encoding.adoc` §File Encoding + §Special
+/// Character Sequences and their verbatim ODIN twin
+/// (`LANG/docs/odin/master03-basics.adoc`) define one escape set.
+///
+/// # Errors
+/// [`openehr_lang::escape::EscapeError`] for a `\u` escape that denotes no
+/// character. The cADL lexer's own escape check is STRUCTURAL only (4 or 8 hex
+/// digits), so this is where such a defect is caught, with the offending
+/// literal's span.
+pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
     let inner = raw
         .strip_prefix('"')
         .and_then(|s| s.strip_suffix('"'))
         .unwrap_or(raw);
-    decode_string_inner(inner)
+    openehr_lang::escape::decode(inner)
 }
 
 /// Decode a single-quoted `CHARACTER` literal (delimiters included) into the
 /// one-character string that carries it (`base_lexer.g4` `CHARACTER`).
-pub(crate) fn decode_character(raw: &str) -> String {
+///
+/// # Errors
+/// As [`decode_string`]. The lexer admits only the six quoted forms inside a
+/// character literal, so no `\u` escape reaches here in practice.
+pub(crate) fn decode_character(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
     let inner = raw
         .strip_prefix('\'')
         .and_then(|s| s.strip_suffix('\''))
         .unwrap_or(raw);
-    decode_string_inner(inner)
-}
-
-/// Decode `master03` escape sequences in the (undelimited) string body
-/// (`ADL2/master03-file_encoding.adoc` §Special Character Sequences).
-//
-// TODO: 8-digit `\uHHHHHHHH` escapes (master03 §File Encoding, non-BMP planes)
-// lex but decode wrong — only the 4-digit `\uHHHH` form is handled here;
-// tracked as issue #1340.
-pub(crate) fn decode_string_inner(inner: &str) -> String {
-    let mut out = String::with_capacity(inner.len());
-    let mut chars = inner.chars();
-    while let Some(c) = chars.next() {
-        if c != '\\' {
-            out.push(c);
-            continue;
-        }
-        match chars.next() {
-            Some('r') => out.push('\r'),
-            Some('n') => out.push('\n'),
-            Some('t') => out.push('\t'),
-            Some('\\') | None => out.push('\\'),
-            Some('"') => out.push('"'),
-            Some('\'') => out.push('\''),
-            Some('u') => {
-                let hex: String = chars.clone().take(4).collect();
-                if hex.len() == 4
-                    && let Ok(cp) = u32::from_str_radix(&hex, 16)
-                    && let Some(ch) = char::from_u32(cp)
-                {
-                    out.push(ch);
-                    for _ in 0..4 {
-                        chars.next();
-                    }
-                } else {
-                    out.push('\\');
-                    out.push('u');
-                }
-            }
-            Some(other) => {
-                out.push('\\');
-                out.push(other);
-            }
-        }
-    }
-    out
+    openehr_lang::escape::decode(inner)
 }
 
 // ── delimited regex (`AOM2/master04.5` §`C_STRING`) ───────────────────────

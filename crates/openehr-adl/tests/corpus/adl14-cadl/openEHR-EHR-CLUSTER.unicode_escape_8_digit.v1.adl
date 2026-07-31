@@ -1,0 +1,55 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.unicode_escape_8_digit.v1
+
+concept
+	[at0000]	-- Eight-digit unicode escapes
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Eight-digit unicode escapes
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Emoji label
+				value matches {
+					DV_TEXT matches {
+						value matches {
+							-- ADL1.4/master03-file_encoding.adoc (verbatim ADL2
+							-- master03-file_encoding.adoc) §File Encoding defines BOTH
+							-- `\uHHHH` (BMP) and `\uHHHHHHHH` (U+10000-U+10FFFF,
+							-- "the algorithm is described in IETF RFC 2781"). All three
+							-- spellings below must decode.
+							"\u00E9",
+							"\uD83DDE00",
+							"\u0001F600"
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Eight-digit unicode escapes">
+					description = <"Accepting fixture: the 4- and 8-digit unicode escape forms decode.">
+				>
+				["at0001"] = <
+					text = <"Emoji label">
+					description = <"A label carrying a non-BMP character.">
+				>
+			>
+		>
+	>

@@ -31,4 +31,5 @@ pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // hand-written modules (spec behaviour), auto-declared:
 pub mod bel;
+pub mod escape;
 pub mod odin;

@@ -18,6 +18,16 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   `vendor/grammar/{odin.g4,odin_values.g4,base_lexer.g4}`. `openehr-adl`
   consumes it to parse ADL2 ODIN sections. Do not touch
   `bmm`/`bmm3`/`beom`/`bmm_persistence` when editing `odin`.
+- **`src/escape.rs` is the ONE home for `master03` string-escape semantics**
+  (`LANG/docs/odin/master03-basics.adoc` §File Encoding + §Special Character
+  Sequences, verbatim in `AM/docs/ADL2/master03-file_encoding.adoc`): the six
+  quoted forms plus BOTH `\uHHHH` and `\uHHHHHHHH`, with a typed
+  `EscapeError` for a `\u` escape that denotes no character. The ODIN and BEL
+  lexers call `escape::validate` beside their structural escape scan (so a
+  token never carries an undecodable escape, which is what lets their parsers
+  decode infallibly), and `openehr-adl`'s cADL parser calls `escape::decode`
+  and reports a defect at the literal's span. Never re-implement escape
+  decoding anywhere.
 - Spec authority: `docs/specs/openehr/LANG/docs/` (bmm, odin). Parser
   behaviour divergences are spec-citable, never silent.
 - Versioned LANG 1.0.0 (spec pin).

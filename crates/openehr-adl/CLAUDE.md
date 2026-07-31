@@ -16,7 +16,7 @@ else; each helper has exactly ONE home.
 | `lexer` | the ADL/cADL/ODIN token set (`logos`) + `lex`/`Token`/`Spanned` |
 | `error` | the typed `SyntaxError` + the verbatim `S*` catalogue (`ADL2/master04.6`) |
 | `hrid` | `ARCHETYPE_HRID` parse / print / lookup-key (`AOM2/master07.05`) |
-| `odin` | the ODIN reading bridge + `master03` escape decoding + delimited-regex handling |
+| `odin` | the ODIN reading bridge + literal-delimiter stripping over `openehr_lang::escape` (which owns the `master03` escape semantics for ODIN/BEL/cADL alike) + delimited-regex handling |
 | `codes` | node-code math: `at`/`id`/`ac` prefixes, specialisation depth, redefinition |
 | `paths` | ADL path parse + resolution over the constraint model (`crate::paths::child_path` included) |
 | `aom/access` | the 13-arm `C_OBJECT` field accessors + `AomType` |
@@ -88,8 +88,12 @@ else; each helper has exactly ONE home.
   is a SINGLE spec-adjudicated predicate
   (`aom/interval::point_value_{i32,f64}`): both sides bounded, both bounds
   included, both bounds equal — irrespective of point/proper tagging. The
-  escape decoding's 4-digit-only `\uHHHH` handling (`odin`, #1340) still
-  carries a `// TODO:`, as does the driver asymmetry between the source-level
+  `master03` escape semantics likewise have exactly ONE implementation for the
+  whole workspace — `openehr_lang::escape` (both `\uHHHH` and `\uHHHHHHHH`,
+  with a typed decode error) — which the cADL parser, the ODIN lexer and the
+  BEL lexer all read through; the cADL side reports a decode defect as `SUNK`
+  at the literal's span, the two `openehr-lang` lexers refuse it at the lex.
+  Still carrying a `// TODO:`: the driver asymmetry between the source-level
   and assembled-archetype validation entries — the former omits `run_phase3`
   (`validate/mod`, #1341).
 - **`validate/` is grouped by TOPIC, never by phase number.** A new rule goes

@@ -25,9 +25,7 @@ use openehr_base::prelude::{Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso86
 use crate::aom::build::local_term_code;
 use crate::error::SyntaxErrorCode;
 use crate::lexer::Token;
-use crate::odin::{
-    decode_character, decode_string, decode_string_inner, escape_regex_delimiter, regex_inner,
-};
+use crate::odin::{decode_character, decode_string, escape_regex_delimiter, regex_inner};
 use crate::parse::values::PrimKind;
 use crate::parse::{Dialect, PResult, Parser};
 
@@ -214,8 +212,10 @@ impl Parser<'_> {
         loop {
             match self.peek().cloned() {
                 Some(Token::Character(c)) => {
+                    let span = self.cur_span();
                     self.pos += 1;
-                    constraint.push(decode_character(&c));
+                    let decoded = decode_character(&c);
+                    constraint.push(self.decoded_literal(decoded, span)?);
                 }
                 _ => return self.err(SyntaxErrorCode::Scsav, "expecting a character value"),
             }
@@ -226,8 +226,10 @@ impl Parser<'_> {
         let assumed_value = if self.eat(|t| matches!(t, Token::SymSemiColon)) {
             match self.peek().cloned() {
                 Some(Token::Character(c)) => {
+                    let span = self.cur_span();
                     self.pos += 1;
-                    Some(decode_character(&c))
+                    let decoded = decode_character(&c);
+                    Some(self.decoded_literal(decoded, span)?)
                 }
                 _ => {
                     return self.err(SyntaxErrorCode::Scsav, "assumed value must be a character");
@@ -257,8 +259,10 @@ impl Parser<'_> {
         loop {
             match self.peek().cloned() {
                 Some(Token::String(s)) => {
+                    let span = self.cur_span();
                     self.pos += 1;
-                    constraint.push(decode_string(&s));
+                    let decoded = decode_string(&s);
+                    constraint.push(self.decoded_literal(decoded, span)?);
                 }
                 _ => return self.err(SyntaxErrorCode::Scsav, "expecting a string value"),
             }
@@ -269,8 +273,10 @@ impl Parser<'_> {
         let assumed_value = if self.eat(|t| matches!(t, Token::SymSemiColon)) {
             match self.peek().cloned() {
                 Some(Token::String(s)) => {
+                    let span = self.cur_span();
                     self.pos += 1;
-                    Some(decode_string(&s))
+                    let decoded = decode_string(&s);
+                    Some(self.decoded_literal(decoded, span)?)
                 }
                 _ => return self.err(SyntaxErrorCode::Scsav, "assumed value must be a string"),
             }
@@ -619,16 +625,22 @@ impl Parser<'_> {
             .trim_end_matches('}')
             .trim();
         // Optional `;"assumed"` suffix.
-        let (regex_part, assumed) = match body.split_once(';') {
-            Some((r, a)) => {
-                let a = a.trim();
-                let assumed = a
-                    .strip_prefix('"')
-                    .and_then(|s| s.strip_suffix('"'))
-                    .map(decode_string_inner);
-                (r.trim(), assumed)
-            }
+        let (regex_part, quoted_assumed) = match body.split_once(';') {
+            Some((r, a)) => (
+                r.trim(),
+                a.trim().strip_prefix('"').and_then(|s| s.strip_suffix('"')),
+            ),
             None => (body, None),
+        };
+        // The regex body itself is NEVER escape-decoded (`master03` §Special
+        // Character Sequences, final paragraph); only the `;"assumed"` suffix
+        // is.
+        let assumed = match quoted_assumed {
+            Some(text) => {
+                let decoded = openehr_lang::escape::decode(text);
+                Some(self.decoded_literal(decoded, span.clone())?)
+            }
+            None => None,
         };
         let inner = regex_inner(regex_part);
         if regex::Regex::new(inner).is_err() {
