@@ -15,6 +15,17 @@
 //! plus the six customary quoted forms `\r \n \t \\ \" \'` of §Special
 //! Character Sequences.
 //!
+//! Those eight forms are the WHOLE set: §Special Character Sequences closes
+//! it with "Any other character combination starting with a backslash is
+//! illegal; to get the effect of a literal backslash, the `\\` sequence should
+//! always be used", so every other backslash sequence is a typed decode
+//! defect here rather than pass-through text. Regular expressions are the one
+//! exemption, and they never reach this decoder: the PERL classes a cADL
+//! string constraint carries "should not be treated as anything other than
+//! literal strings, since they are processed by a regular expression parser"
+//! (§Special Character Sequences, final paragraph), so `openehr-adl` decodes
+//! only the `;"assumed"` suffix of a regex constraint, never its body.
+//!
 //! NOTE: the released text contradicts itself about `\u`. §File Encoding
 //! sanctions the two `\u` spellings; §Special Character Sequences, some ten
 //! lines later, closes its six-item list (which does NOT include `\u`) with
@@ -44,6 +55,42 @@
 /// verbatim, both of which turn an authoring defect into silently wrong text.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum EscapeError {
+    /// A backslash sequence outside the sanctioned set — the six customary
+    /// quoted forms of §Special Character Sequences plus the two `\u`
+    /// spellings of §File Encoding. "Any other character combination starting
+    /// with a backslash is illegal; to get the effect of a literal backslash,
+    /// the `\\` sequence should always be used" (§Special Character
+    /// Sequences).
+    #[error(
+        "the escape sequence '{sequence}' at byte {at} is illegal; the legal forms are \\r \\n \\t \\\\ \\\" \\' and \\u"
+    )]
+    IllegalEscape {
+        /// The two-character sequence, as authored.
+        sequence: String,
+        /// Its byte offset in the undelimited string body.
+        at: usize,
+    },
+    /// A string body ending in an unpaired backslash. A backslash carries no
+    /// meaning on its own: "to get the effect of a literal backslash, the
+    /// `\\` sequence should always be used" (§Special Character Sequences).
+    #[error(
+        "the string body ends with an unpaired backslash at byte {at}; a literal backslash is written \\\\"
+    )]
+    DanglingBackslash {
+        /// The byte offset of the unpaired backslash.
+        at: usize,
+    },
+    /// A `\u` escape carrying neither of the two digit counts §File Encoding
+    /// defines (4 for the BMP form, 8 for the non-BMP form).
+    #[error(
+        "the unicode escape at byte {at} carries {digits} hex digits; the \\u forms take 4 (BMP) or 8 (non-BMP)"
+    )]
+    MalformedUnicodeEscape {
+        /// How many hex digits followed the `\u`.
+        digits: usize,
+        /// The byte offset of the backslash opening the escape.
+        at: usize,
+    },
     /// A `\uHHHHHHHH` escape read as a zero-filled scalar whose code point
     /// falls outside `U+10000`-`U+10FFFF`, the only range the 8-digit form
     /// encodes (§File Encoding).
@@ -95,40 +142,49 @@ const NON_BMP_LAST: u32 = 0x0010_FFFF;
 /// Decode the `master03` escape sequences of an undelimited string body.
 ///
 /// # Errors
-/// [`EscapeError`] for a `\u` escape that denotes no character: an 8-digit
-/// form outside `U+10000`-`U+10FFFF`, a malformed surrogate pair, or a lone
-/// surrogate.
+/// [`EscapeError`] for any backslash sequence the two chapters do not
+/// sanction — an unknown letter after the backslash, an unpaired trailing
+/// backslash, a `\u` with neither 4 nor 8 hex digits — and for a `\u` escape
+/// that denotes no character: an 8-digit form outside `U+10000`-`U+10FFFF`, a
+/// malformed surrogate pair, or a lone surrogate.
 pub fn decode(inner: &str) -> Result<String, EscapeError> {
     if !inner.contains('\\') {
         return Ok(inner.to_owned());
     }
     let mut out = String::with_capacity(inner.len());
     let mut chars = inner.chars();
+    // The byte offset of the character `chars` is about to yield, so an error
+    // can name where in the body the offending sequence sits.
+    let mut at = 0usize;
     while let Some(c) = chars.next() {
         if c != '\\' {
             out.push(c);
+            at += c.len_utf8();
             continue;
         }
         match chars.next() {
             Some('r') => out.push('\r'),
             Some('n') => out.push('\n'),
             Some('t') => out.push('\t'),
-            // `\\` and a lone trailing `\` both yield one literal backslash.
-            Some('\\') | None => out.push('\\'),
+            Some('\\') => out.push('\\'),
             Some('"') => out.push('"'),
             Some('\'') => out.push('\''),
-            Some('u') => decode_unicode(&mut chars, &mut out)?,
-            // TODO: reject every backslash sequence outside the six §Special
-            // Character Sequences forms plus `\u` ("Any other character
-            // combination starting with a backslash is illegal") instead of
-            // passing it through verbatim; each lexer that feeds this decoder
-            // rejects them structurally today, so the pass-through only serves
-            // direct callers — tracked as issue #1344.
+            // The `\u` arm consumes its own hex digits on top of the two bytes
+            // the backslash and the `u` take.
+            Some('u') => at += decode_unicode(&mut chars, &mut out, at)?,
+            // "Any other character combination starting with a backslash is
+            // illegal" (§Special Character Sequences). Passing it through
+            // verbatim would make an authoring defect silently readable text.
             Some(other) => {
-                out.push('\\');
-                out.push(other);
+                return Err(EscapeError::IllegalEscape {
+                    sequence: format!("\\{other}"),
+                    at,
+                });
             }
+            None => return Err(EscapeError::DanglingBackslash { at }),
         }
+        // Every arm above consumed the backslash and one ASCII selector.
+        at += 2;
     }
     Ok(out)
 }
@@ -145,31 +201,39 @@ pub fn validate(inner: &str) -> Result<(), EscapeError> {
     decode(inner).map(|_| ())
 }
 
-/// Decode one `\u…` escape, whose `\u` prefix `chars` has already yielded.
+/// Decode one `\u…` escape, whose `\u` prefix `chars` has already yielded, and
+/// report how many bytes of hex digits it consumed (4 or 8 — every digit is
+/// ASCII, so the byte and character counts coincide).
 ///
 /// Consumes exactly the hex digits the chosen spelling uses, so any trailing
-/// hex text stays literal.
-fn decode_unicode(chars: &mut std::str::Chars<'_>, out: &mut String) -> Result<(), EscapeError> {
+/// hex text stays literal. `at` is the byte offset of the backslash that opens
+/// the escape, carried only so a defect can name its position.
+fn decode_unicode(
+    chars: &mut std::str::Chars<'_>,
+    out: &mut String,
+    at: usize,
+) -> Result<usize, EscapeError> {
     let digits: String = chars
         .clone()
         .take(8)
         .take_while(char::is_ascii_hexdigit)
         .collect();
+    let digit_count = digits.chars().count();
     let first: String = digits.chars().take(4).collect();
-    let first_value = if first.chars().count() == 4 {
+    let first_value = if digit_count >= 4 {
         hex_value(&first)
     } else {
         None
     };
     let Some(first_value) = first_value else {
-        // Fewer than four hex digits: not a well-formed `\u` escape at all.
-        // Every lexer feeding this decoder already refuses it; a direct caller
-        // gets it back verbatim.
-        out.push('\\');
-        out.push('u');
-        return Ok(());
+        // Fewer than four hex digits: neither of the two spellings §File
+        // Encoding defines, so the escape names no character.
+        return Err(EscapeError::MalformedUnicodeEscape {
+            digits: digit_count,
+            at,
+        });
     };
-    let has_eight = digits.chars().count() >= 8;
+    let has_eight = digit_count >= 8;
 
     if has_eight && (HIGH_SURROGATE_FIRST..=HIGH_SURROGATE_LAST).contains(&first_value) {
         let second: String = digits.chars().skip(4).take(4).collect();
@@ -185,18 +249,19 @@ fn decode_unicode(chars: &mut std::str::Chars<'_>, out: &mut String) -> Result<(
             + (low - LOW_SURROGATE_FIRST);
         push_non_bmp(code_point, digits, out)?;
         advance(chars, 8);
-        return Ok(());
+        return Ok(8);
     }
 
     if has_eight && first_value <= 0x0001 {
         let Some(code_point) = hex_value(&digits) else {
-            out.push('\\');
-            out.push('u');
-            return Ok(());
+            return Err(EscapeError::MalformedUnicodeEscape {
+                digits: digit_count,
+                at,
+            });
         };
         push_non_bmp(code_point, digits, out)?;
         advance(chars, 8);
-        return Ok(());
+        return Ok(8);
     }
 
     // The 4-digit BMP form.
@@ -214,7 +279,7 @@ fn decode_unicode(chars: &mut std::str::Chars<'_>, out: &mut String) -> Result<(
     };
     out.push(ch);
     advance(chars, 4);
-    Ok(())
+    Ok(4)
 }
 
 /// Push the character an 8-digit escape denotes, refusing anything outside the
@@ -335,5 +400,92 @@ mod tests {
     #[test]
     fn hex_text_after_a_four_digit_escape_stays_literal() {
         assert_eq!(decoded(r"\u00410042"), "A0042");
+    }
+
+    /// "Any other character combination starting with a backslash is illegal"
+    /// (§Special Character Sequences) — including the PERL regex classes that
+    /// are legal only INSIDE a cADL regex literal, which is never decoded.
+    #[test]
+    fn a_backslash_sequence_outside_the_sanctioned_set_is_refused() {
+        for (body, sequence, at) in [
+            (r"\q", r"\q", 0),
+            (r"a\d", r"\d", 1),
+            (r"ab\s.*", r"\s", 2),
+            (r"\0", r"\0", 0),
+            (r"\ ", r"\ ", 0),
+            (r"\U0041", r"\U", 0),
+        ] {
+            assert_eq!(
+                decode(body),
+                Err(EscapeError::IllegalEscape {
+                    sequence: sequence.to_owned(),
+                    at,
+                }),
+                "{body:?} must be refused"
+            );
+        }
+    }
+
+    /// The offset an illegal escape reports counts BYTES of the AUTHORED body,
+    /// so multi-byte text before it does not shift the position it names, and a
+    /// preceding escape counts its two authored characters rather than the one
+    /// it decodes to.
+    #[test]
+    fn the_illegal_escape_offset_counts_authored_bytes() {
+        assert_eq!(
+            decode("\u{e9}\\q"),
+            Err(EscapeError::IllegalEscape {
+                sequence: r"\q".to_owned(),
+                at: 2,
+            })
+        );
+        assert_eq!(
+            decode(r"\t\q"),
+            Err(EscapeError::IllegalEscape {
+                sequence: r"\q".to_owned(),
+                at: 2,
+            })
+        );
+        assert_eq!(
+            decode("\\u00E9\\q"),
+            Err(EscapeError::IllegalEscape {
+                sequence: r"\q".to_owned(),
+                at: 6,
+            })
+        );
+    }
+
+    /// A backslash carries no meaning on its own: "to get the effect of a
+    /// literal backslash, the `\\` sequence should always be used".
+    #[test]
+    fn an_unpaired_trailing_backslash_is_refused() {
+        assert_eq!(decode("\\"), Err(EscapeError::DanglingBackslash { at: 0 }));
+        assert_eq!(
+            decode(r"a\\b\"),
+            Err(EscapeError::DanglingBackslash { at: 4 })
+        );
+    }
+
+    /// §File Encoding defines exactly two `\u` spellings, of 4 and 8 hex
+    /// digits; anything shorter names no character.
+    #[test]
+    fn a_unicode_escape_shorter_than_four_digits_is_refused() {
+        for (body, digits) in [(r"\u", 0), (r"\u4", 1), (r"\u00", 2), (r"\uFFF", 3)] {
+            assert_eq!(
+                decode(body),
+                Err(EscapeError::MalformedUnicodeEscape { digits, at: 0 }),
+                "{body:?} must be refused"
+            );
+        }
+    }
+
+    /// The whole sanctioned set decodes in one body: the six quoted forms, the
+    /// 4-digit spelling, the surrogate pair and the zero-filled 8-digit form.
+    #[test]
+    fn the_whole_sanctioned_set_decodes_together() {
+        assert_eq!(
+            decoded("\\r\\n\\t\\\\\\\"\\'\\u00E9\\uD83DDE00\\u0001F600"),
+            "\r\n\t\\\"'\u{e9}\u{1F600}\u{1F600}"
+        );
     }
 }

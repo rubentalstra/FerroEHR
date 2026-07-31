@@ -1,0 +1,61 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.SUNK_illegal_string_escape.v1
+
+concept
+	[at0000]	-- Illegal backslash escape in a C_STRING
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"SUNK">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Illegal backslash escape in a C_STRING
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Escaped label
+				value matches {
+					DV_TEXT matches {
+						value matches {
+							-- The invalid twin of `unicode_escape_8_digit`, whose three
+							-- legal spellings decode: the escape set is closed at the six
+							-- customary quoted forms plus the two `\u` spellings, and
+							-- "Any other character combination starting with a backslash
+							-- is illegal; to get the effect of a literal backslash, the
+							-- `\\` sequence should always be used"
+							-- (ADL1.4/master03-file_encoding.adoc §Special Character
+							-- Sequences, verbatim ADL2 master03-file_encoding.adoc).
+							-- `\q` is no such combination, and the PERL classes the same
+							-- section names (`\s`, `\d`) are legal ONLY inside a regex
+							-- literal, which is never escape-decoded. Passing the
+							-- sequence through verbatim would make an authoring defect
+							-- silently readable clinical text.
+							"a\qb"
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Illegal backslash escape in a C_STRING">
+					description = <"Refusal fixture: a backslash sequence outside the closed master03 set.">
+				>
+				["at0001"] = <
+					text = <"Escaped label">
+					description = <"A label carrying an illegal backslash escape.">
+				>
+			>
+		>
+	>

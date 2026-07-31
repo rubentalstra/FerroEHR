@@ -222,6 +222,18 @@ const FIXTURES: &[(&str, Expect)] = &[
         "openEHR-EHR-CLUSTER.SUNK_unicode_escape_out_of_range.v1.adl",
         Expect::Refuse(SyntaxErrorCode::Sunk),
     ),
+    // The escape set is CLOSED — the six customary quoted forms plus the two
+    // `\u` spellings — because "Any other character combination starting with
+    // a backslash is illegal" (§Special Character Sequences). The accepting
+    // twin of this one is `unicode_escape_8_digit` above, whose three legal
+    // spellings decode; the PERL classes the same section names (`\s`, `\d`)
+    // are legal only inside a regex literal, which is never escape-decoded
+    // (`slot_domain_concept_regex` and `cadl_breadth_primitives` are their
+    // accepting twins).
+    (
+        "openEHR-EHR-CLUSTER.SUNK_illegal_string_escape.v1.adl",
+        Expect::Refuse(SyntaxErrorCode::Sunk),
+    ),
     // ── the master05 breadth trio (every construct of the chapter) ────────
     (
         "openEHR-EHR-OBSERVATION.cadl_breadth_structure.v1.adl",
@@ -319,6 +331,23 @@ fn the_unicode_escape_twins_decode_and_refuse_on_content() {
     assert!(
         messages.iter().any(|m| m.contains("0000FFFF")),
         "the refusal must name the offending escape, got {messages:?}"
+    );
+}
+/// The illegal-escape twin: the escape set is CLOSED at the six customary
+/// quoted forms plus the two `\u` spellings, so a `C_STRING` carrying any
+/// other backslash combination is refused at the lex rather than read as
+/// literal text (`ADL1.4/master03-file_encoding.adoc` §Special Character
+/// Sequences: "Any other character combination starting with a backslash is
+/// illegal"). Its accepting twin is `unicode_escape_8_digit` above.
+#[test]
+fn an_illegal_string_escape_is_refused_naming_the_literal() {
+    let src = read("openEHR-EHR-CLUSTER.SUNK_illegal_string_escape.v1.adl");
+    let errs =
+        parse_artefact(&src, Dialect::Adl14).expect_err("the illegal escape must be refused");
+    let messages: Vec<&str> = errs.iter().map(|e| e.message.as_str()).collect();
+    assert!(
+        messages.iter().any(|m| m.contains("qb")),
+        "the refusal must name the offending literal, got {messages:?}"
     );
 }
 
