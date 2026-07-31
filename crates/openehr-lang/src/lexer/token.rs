@@ -350,6 +350,14 @@ pub enum Token {
     #[regex(r"\[[a-zA-Z][a-zA-Z0-9._\-]*\]", |lex| lex.slice().to_owned())]
     LocalTermCodeRef(String),
     /// An embedded URI `<scheme:…>` (`EMBEDDED_URI`).
+    ///
+    /// NOTE: captured VERBATIM — the token pins only the `scheme:` shape.
+    /// `LANG/docs/odin/master07-leaf_data` §URIs says ODIN URIs "follow the
+    /// standard syntax from IETF RFC 3986" (percent-encoding per `master03`
+    /// §File Encoding), but RFC 3986 validity is deliberately NOT policed at
+    /// the lexical layer: refusing here would punish real-world authored
+    /// data, and URI validity is the consuming model's typed concern
+    /// (adjudicated at the #1122 §7.3 audit).
     #[regex(r"<[ \t\r\n]*[a-zA-Z][a-zA-Z0-9+.\-]*:[^>]*>", |lex| lex.slice().to_owned())]
     EmbeddedUri(String),
     /// An ADL path (`base_lexer.g4 ADL_PATH`), each segment

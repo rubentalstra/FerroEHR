@@ -34,6 +34,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ODIN leaf lists are type-homogeneous and admit interval lists.** Mixed-kind
+  lists (`<1, "x">`) are refused per the per-type list productions of the
+  ODIN syntax specification, and interval lists (`<|0..5|, |8..9|>`,
+  including the open `, ...` form) now parse.
 - **Duplicate ODIN container keys are refused (rule VDOBU).** Sibling
   keyed objects sharing a key (`[1] = <…> [1] = <…>`) were silently
   accepted; they now fail with a typed error per
