@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **ODIN sections accept `true`/`false`/`infinity` as attribute names and
+  semicolons between keyed objects.** ODIN reserves no keywords
+  (`LANG/docs/odin/master03-basics` §Keywords), so archetype/template
+  uploads whose ODIN sections use those three words as attribute names —
+  previously refused because they lex as ODIN value words — now parse; and
+  the §Semi-colons separator is accepted between keyed-object entries, not
+  only attribute pairs.
+
 ## [3.15.3] - 2026-07-31
 
 ### Fixed
