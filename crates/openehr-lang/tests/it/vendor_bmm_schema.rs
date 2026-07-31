@@ -36,6 +36,7 @@ use std::path::{Path, PathBuf};
 use openehr_lang::bmm_persistence::create_model::create_bmm_model;
 use openehr_lang::bmm_persistence::error::PBmmReadError;
 use openehr_lang::bmm_persistence::include_resolution::resolve_includes;
+use openehr_lang::bmm_persistence::p_bmm_class::PBmmClass;
 use openehr_lang::bmm_persistence::p_bmm_schema::PBmmSchema;
 use openehr_lang::bmm_persistence::reader::read_schema;
 
@@ -62,8 +63,6 @@ enum Kind {
     KeyNameMismatch,
     /// [`PBmmReadError::QualifiedNestedPackage`].
     QualifiedNestedPackage,
-    /// [`PBmmReadError::InterfaceInClassList`].
-    InterfaceInClassList,
     /// [`PBmmReadError::MissingInclude`].
     MissingInclude,
     /// [`PBmmReadError::UnknownAncestor`].
@@ -89,7 +88,6 @@ fn kind_of(error: &PBmmReadError) -> Kind {
         PBmmReadError::UnexpectedTypeMarker { .. } => Kind::UnexpectedTypeMarker,
         PBmmReadError::KeyNameMismatch { .. } => Kind::KeyNameMismatch,
         PBmmReadError::QualifiedNestedPackage { .. } => Kind::QualifiedNestedPackage,
-        PBmmReadError::InterfaceInClassList { .. } => Kind::InterfaceInClassList,
         PBmmReadError::MissingInclude { .. } => Kind::MissingInclude,
         PBmmReadError::UnknownAncestor { .. } => Kind::UnknownAncestor,
         PBmmReadError::UnknownType { .. } => Kind::UnknownType,
@@ -483,28 +481,98 @@ fn collect_bmm(dir: &Path, root: &Path, out: &mut Vec<String>) {
 }
 
 #[test]
-fn the_pinned_openehr_odin_schemas_hit_the_persisted_interface_boundary() {
-    // `P_BMM_SCHEMA.primitive_types`/`class_definitions` are List<P_BMM_CLASS>
-    // (…p_bmm_schema.adoc §Attributes) while P_BMM_INTERFACE inherits
-    // P_BMM_MODEL_ELEMENT (…p_bmm_interface.adoc §Inherit) — the pinned P_BMM
-    // model has no slot for a persisted interface, and master04-syntax.adoc
-    // never serialises one. The RM and BASE ODIN schemas this project pins
-    // (docs/VERSIONS.md: RM 1.2.0, BASE 1.3.0) DO declare interfaces, so the
-    // boundary is pinned here against the real artefacts rather than a fixture.
-    // The reader refuses them rather than silently dropping the interface.
+fn the_pinned_openehr_odin_schemas_read_their_persisted_interfaces() {
+    // master02-overview.adoc §Conceptual Approach: "In addition to ordinary
+    // classes, the model can also represent pure interfaces via
+    // P_BMM_INTERFACE, i.e. class-like definitions that declare only functions
+    // and carry no state" — and the RM and BASE ODIN schemas this project pins
+    // (docs/VERSIONS.md: RM 1.2.0, BASE 1.3.0) serialise them as
+    // `(P_BMM_INTERFACE)`-marked members of `class_definitions`. Those real
+    // artefacts (not a fixture) pin that the reader materialises each one with
+    // its declared functions, and that the whole schema still reads.
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
-    for (file, interface) in [
-        ("RM/odin/openehr_rm_1.2.0.bmm", "CODE_SET_ACCESS"),
-        ("BASE/odin/openehr_base_1.3.0.bmm", "Env"),
+    for (file, interfaces) in [
+        (
+            "RM/odin/openehr_rm_1.2.0.bmm",
+            ["CODE_SET_ACCESS", "TERMINOLOGY_ACCESS"].as_slice(),
+        ),
+        (
+            "BASE/odin/openehr_base_1.3.0.bmm",
+            ["Env", "Locale", "Math", "Quantity_converter"].as_slice(),
+        ),
     ] {
         let full = root.join(file);
         let src = std::fs::read_to_string(&full)
             .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
-        let error = read_schema(&src).expect_err("a persisted P_BMM_INTERFACE is refused");
-        assert_eq!(kind_of(&error), Kind::InterfaceInClassList, "{file}");
-        assert!(
-            error.to_string().contains(interface),
-            "{file}: {error} does not name {interface}"
-        );
+        let schema =
+            read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"));
+        for name in interfaces {
+            let class = schema
+                .primitive_types
+                .iter()
+                .chain(schema.class_definitions.iter())
+                .find(|class| class.name() == *name)
+                .unwrap_or_else(|| panic!("{file}: {name} is not in the class list"));
+            assert!(
+                matches!(class, PBmmClass::PBmmInterface(_)),
+                "{file}: {name} did not read as a P_BMM_INTERFACE",
+            );
+            assert!(
+                class.functions().is_some_and(|f| !f.is_empty()),
+                "{file}: {name} carries no functions",
+            );
+            // A pure interface declares only functions and carries no state.
+            assert!(class.properties().is_none(), "{file}: {name} has state");
+            assert!(class.is_abstract(), "{file}: {name} is not instantiable");
+        }
+    }
+}
+
+#[test]
+fn the_pinned_openehr_odin_schemas_materialise_their_interfaces_as_abstract_classes() {
+    // The whole pinned RM 1.2.0 + BASE 1.3.0 pair runs the three stages: the
+    // interfaces are listed in packages and referenced as property types
+    // (`TERMINOLOGY_SERVICE.terminology: TERMINOLOGY_ACCESS`), so the transform
+    // has to resolve those references — which it does by materialising each
+    // interface as an abstract `BMM_CLASS` with no properties (see
+    // `create_model::Builder::build_class`).
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
+    let read_pinned = |file: &str| -> PBmmSchema {
+        let full = root.join(file);
+        let src = std::fs::read_to_string(&full)
+            .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
+        read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"))
+    };
+    let base = read_pinned("BASE/odin/openehr_base_1.3.0.bmm");
+    let rm = read_pinned("RM/odin/openehr_rm_1.2.0.bmm");
+    let mut available: BTreeMap<String, PBmmSchema> = BTreeMap::new();
+    available.insert(base.schema_id(), base.clone());
+
+    for (schema, interfaces) in [
+        (base, ["Env", "Locale", "Math"].as_slice()),
+        (rm, ["CODE_SET_ACCESS", "TERMINOLOGY_ACCESS"].as_slice()),
+    ] {
+        let id = schema.schema_id();
+        let resolved = resolve_includes(schema, &available)
+            .unwrap_or_else(|e| panic!("{id}: inclusion resolution: {e}"));
+        let model =
+            create_bmm_model(&resolved).unwrap_or_else(|e| panic!("{id}: materialisation: {e}"));
+        let classes = model
+            .class_definitions
+            .as_ref()
+            .unwrap_or_else(|| panic!("{id}: the model defines no classes"));
+        for name in interfaces {
+            let class = classes
+                .get(*name)
+                .unwrap_or_else(|| panic!("{id}: {name} is missing from the model"));
+            assert!(
+                class.is_abstract(),
+                "{id}: {name} did not materialise as an abstract class",
+            );
+            assert!(
+                class.properties().is_none(),
+                "{id}: {name} materialised with state",
+            );
+        }
     }
 }

@@ -47,10 +47,25 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   resolution is case-insensitive (`master04-syntax.adoc` §Non-primitive
   Classes: `name` — "any capitalisation can be used"); embedding depth and
   every other cycle/boundary decision is adjudicated in the module docs, with
-  the honest boundaries (`value_constraint` has no `BMM_*` destination; a
-  persisted `P_BMM_INTERFACE` has no `P_BMM_SCHEMA` slot) written out. This
-  reader is NOT the codegen path either — codegen still consumes only the
-  `.bmm.json` serialisation via `openehr-codegen`.
+  the honest boundaries (`value_constraint` and P_BMM `functions` have no
+  `BMM_*` destination) written out. A persisted `P_BMM_INTERFACE` IS a class-list
+  member (`master02-overview.adoc` §Conceptual Approach + openEHR's own
+  published BASE/RM schemas): the emitter re-opens the `P_BMM_CLASS` subtype set
+  for it (`plan/overrides.rs` `SUBTYPE_EXTENSIONS`), the reader materialises its
+  name/documentation/functions, and `create_model.rs` projects it as an abstract
+  `BMM_CLASS`. This reader is NOT the codegen path either — codegen still
+  consumes only the `.bmm.json` serialisation via `openehr-codegen`.
+- **`src/bmm/rm_access/` is the schema-REPOSITORY facade over that reader**
+  (`LANG/docs/bmm/master04-rm_access.adoc`): `*_impl.rs` behaviour on the
+  generated `REFERENCE_MODEL_ACCESS` / `SCHEMA_DESCRIPTOR` data classes plus a
+  typed `error.rs`. It is the ONLY module in this crate that touches the
+  filesystem (the spec puts `schema_directories` on the class), and it adds
+  nothing to the pipeline semantics: directory scan → load-list closure →
+  descriptor lifecycle (`load` → `validate` + `validate_includes` →
+  `create_schema`) → `valid_models`. Zero-argument spec signatures that need the
+  candidate set (`is_top_level`, `create_schema`) take it as a parameter, each
+  with the adjudication at the site — never a synthetic `meta_data` key or a
+  shadow field.
 - **`src/odin/` is the real ODIN reader** (a `chumsky` parser over
   `lexer::lex_odin` + an `OdinValue` tree; `openehr_lang::odin::parse`), NOT
   part of the generated/`bmm*`/`beom` model — never route it through codegen.

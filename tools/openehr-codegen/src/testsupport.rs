@@ -488,6 +488,19 @@ pub fn decision_maps() -> Vec<DeclMap> {
                 .collect(),
         },
         DeclMap {
+            map: "subtype_extensions",
+            check_existence: true,
+            entries: overrides::SUBTYPE_EXTENSIONS
+                .iter()
+                .map(|e| DeclEntry {
+                    key: e.subtype.to_string(),
+                    decision: format!("additional variant of {}", e.parent),
+                    citation: e.citation.to_string(),
+                    reason: e.reason.to_string(),
+                })
+                .collect(),
+        },
+        DeclMap {
             map: "dialect_predicates",
             // The keys are BMM assertion-dialect predicate spellings, not
             // class/field names, so existence is checked against the classifier
@@ -514,6 +527,34 @@ pub fn dialect_predicates() -> Vec<(String, String)> {
         .iter()
         .map(|e| (e.predicate.to_string(), e.runtime_fn.to_string()))
         .collect()
+}
+
+/// The declared additional polymorphic subtype members
+/// (`analyze`-level inheritance edges the vendored BMM under-declares), as
+/// `(parent, subtype)` pairs.
+#[must_use]
+pub fn subtype_extensions() -> Vec<(String, String)> {
+    overrides::SUBTYPE_EXTENSIONS
+        .iter()
+        .map(|e| (e.parent.to_string(), e.subtype.to_string()))
+        .collect()
+}
+
+/// The immediate concrete variants the emitter gives `class`'s polymorphic slot
+/// in the composition `key`, or `None` when that composition's model does not
+/// define `class`.
+///
+/// # Errors
+/// Returns an error if the composition's BMM files cannot be loaded.
+pub fn enum_variants(key: &str, class: &str) -> Result<Option<Vec<String>>, Error> {
+    let c = compose(key)?;
+    Ok(c.model
+        .get(class)
+        .map(|_| c.model.enum_variants(class))
+        .map(|mut variants| {
+            variants.sort();
+            variants
+        }))
 }
 
 /// The classifier's recognised runtime-backed leaf predicates

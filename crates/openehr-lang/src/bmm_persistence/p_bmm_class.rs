@@ -9,6 +9,7 @@ use crate::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
 use crate::bmm_persistence::p_bmm_function::PBmmFunction;
 use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
+use crate::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 
@@ -55,6 +56,8 @@ pub struct PBmmClassData {
 pub enum PBmmClass {
     /// The `P_BMM_ENUMERATION` subtype of `P_BMM_CLASS`.
     PBmmEnumeration(PBmmEnumeration),
+    /// The `P_BMM_INTERFACE` subtype of `P_BMM_CLASS`.
+    PBmmInterface(PBmmInterface),
     /// An instance of `P_BMM_CLASS` itself (its own, least-rich form).
     PBmmClass(PBmmClassData),
 }

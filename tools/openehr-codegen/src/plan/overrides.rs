@@ -336,6 +336,61 @@ pub(crate) fn class_binding(class: &str) -> BTreeMap<String, String> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Additional polymorphic subtype members (subtype seams the BMM under-declares)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One additional member of a polymorphic subtype set: `subtype` becomes a
+/// variant of `parent`'s untagged enum although the vendored BMM records no
+/// inheritance edge from `subtype` to `parent`.
+pub(crate) struct SubtypeExtension {
+    /// The polymorphic parent whose variant set widens.
+    pub parent: &'static str,
+    /// The class that additionally becomes one of its variants.
+    pub subtype: &'static str,
+    /// Spec citation, or the explicit our-own-design flag.
+    pub citation: &'static str,
+    /// One-line reason.
+    pub reason: &'static str,
+}
+
+/// Subtype sets the vendored BMM under-declares versus the normative spec text
+/// and openEHR's OWN published schema artifacts.
+///
+/// An entry adds one inheritance edge to the analysed model
+/// ([`crate::analyze::Model::inherits`]), so the class joins its parent's
+/// polymorphic enum exactly as a declared descendant would. Property
+/// flattening is deliberately NOT affected: it reads
+/// `crate::load::bmm::BmmClass::ancestors` verbatim, so an extension subtype
+/// gains none of the parent's attributes — it stays the class the BMM declares,
+/// reachable through the parent's slot.
+pub(crate) const SUBTYPE_EXTENSIONS: &[SubtypeExtension] = &[SubtypeExtension {
+    parent: "P_BMM_CLASS",
+    subtype: "P_BMM_INTERFACE",
+    citation: "LANG bmm_persistence master02-overview.adoc §Conceptual Approach — \"In \
+               addition to ordinary classes, the model can also represent pure interfaces via \
+               P_BMM_INTERFACE, i.e. class-like definitions that declare only functions and \
+               carry no state\" — and openEHR's OWN published schemas serialise them as \
+               members of `class_definitions` (`(P_BMM_INTERFACE)`-marked entries in the \
+               vendored BASE 1.3.0 + RM 1.2.0 ODIN schemas, `\"_type\": \"P_BMM_INTERFACE\"` \
+               members in openehr_base_1.3.0.bmm.json), whereas \
+               `P_BMM_SCHEMA.primitive_types`/`class_definitions` are \
+               `List<P_BMM_CLASS>` (org.openehr.lang.bmm_persistence.p_bmm_schema.adoc \
+               §Attributes) and P_BMM_INTERFACE inherits only P_BMM_MODEL_ELEMENT \
+               (…p_bmm_interface.adoc §Inherit). The docs text plus the published artifacts \
+               win over the under-declared inheritance edge.",
+    reason: "A persisted P_BMM_INTERFACE has to be readable where a schema's class list \
+             admits P_BMM_CLASS.",
+}];
+
+/// The parents `subtype` additionally belongs to.
+pub(crate) fn subtype_extension_parents(subtype: &str) -> impl Iterator<Item = &'static str> {
+    SUBTYPE_EXTENSIONS
+        .iter()
+        .filter(move |e| e.subtype == subtype)
+        .map(|e| e.parent)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // REST DTO required-list overrides (docs-text-wins corrections)
 // ─────────────────────────────────────────────────────────────────────────────
 

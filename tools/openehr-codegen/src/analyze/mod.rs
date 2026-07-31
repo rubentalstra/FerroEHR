@@ -9,7 +9,9 @@
 //! decisions in [`crate::plan`].
 
 use crate::load::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
-use crate::plan::overrides::{back_reference, is_mapped_class, primitive};
+use crate::plan::overrides::{
+    back_reference, is_mapped_class, primitive, subtype_extension_parents,
+};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
@@ -115,11 +117,26 @@ impl Model {
     }
 
     /// Does `class` inherit from `target` (transitively)?
+    ///
+    /// The declared `ancestors` plus the additional edges
+    /// [`crate::plan::overrides::SUBTYPE_EXTENSIONS`] declares, so a subtype
+    /// seam the vendored BMM under-declares participates in the
+    /// descendant/variant computation exactly like a declared ancestor. Property
+    /// flattening ([`Model::flattened_props`]) reads `ancestors` directly and is
+    /// therefore untouched by an extension edge.
     pub(crate) fn inherits(&self, class: &str, target: &str) -> bool {
         let Some(c) = self.get(class) else {
             return false;
         };
-        for a in &c.ancestors {
+        for a in c.ancestors.iter().map(String::as_str) {
+            if a == target || self.inherits(a, target) {
+                return true;
+            }
+        }
+        // The declared edges are walked first (the common case); the extension
+        // edges are a separate loop because their `&'static str` items would
+        // otherwise force the borrow of `self` above to `'static`.
+        for a in subtype_extension_parents(class) {
             if a == target || self.inherits(a, target) {
                 return true;
             }
