@@ -13,7 +13,6 @@ else; each helper has exactly ONE home.
 
 | module | role |
 |---|---|
-| `lexer` | the ADL/cADL/ODIN token set (`logos`) + `lex`/`Token`/`Spanned` |
 | `error` | the typed `SyntaxError` + the verbatim `S*` catalogue (`ADL2/master04.6`) |
 | `hrid` | `ARCHETYPE_HRID` parse / print / lookup-key (`AOM2/master07.05`) |
 | `odin` | the ODIN reading bridge + literal-delimiter stripping over `openehr_lang::escape` (which owns the `master03` escape semantics for ODIN/BEL/cADL alike) + delimited-regex handling |
@@ -28,7 +27,7 @@ else; each helper has exactly ONE home.
 
 | module | role |
 |---|---|
-| `source` | the outer artefact parser: sections, kind, meta, spans (`parse_source(src, dialect)`) |
+| `source` | the outer artefact parser: sections, kind, meta, spans (`parse_source(src, dialect)`) — over `openehr_lang::lexer::lex_adl` |
 | `parse/mod` | the **public `Dialect` seam**, the `Parser` state, `parse_definition_body(body, dialect)`, the re-entrant sub-parsers `rules` drives, cursor/error helpers |
 | `parse/parser` | the cADL structure / attribute / tuple productions |
 | `parse/refs` | archetype slots, `use_archetype` roots, `use_node` proxies |
@@ -80,6 +79,13 @@ else; each helper has exactly ONE home.
 
 ## Crate rules
 
+- **This crate has NO lexer.** The cADL token stream is the one workspace
+  lexical layer, `openehr_lang::lexer` (`Token`/`Spanned`), read under its ADL
+  reading `lex_adl`; the ODIN and BEL readings of the same superset back
+  `openehr_lang::odin` and the `rules` BEL parse. Never add a token type or a
+  `logos` enum here — a lexical difference is a rule in
+  `openehr-lang`'s `lexer/reclassify.rs`, adjudicated against the vendored
+  grammars, and pinned by that crate's `lexer_equivalence` battery.
 - **Single home, no re-inlined copies.** A helper lives in exactly one module
   (the substrate table above); consumers read through it. One pair stays
   DELIBERATELY divergent, and its doc comments say why: the bounds renderers
@@ -91,9 +97,10 @@ else; each helper has exactly ONE home.
   `master03` escape semantics likewise have exactly ONE implementation for the
   whole workspace — `openehr_lang::escape` (a CLOSED set: the six quoted forms
   plus `\uHHHH` and `\uHHHHHHHH`, everything else a typed decode error) — which
-  the cADL parser, the ODIN lexer and the
-  BEL lexer all read through; the cADL side reports a decode defect as `SUNK`
-  at the literal's span, the two `openehr-lang` lexers refuse it at the lex.
+  the cADL parser and the shared lexer's
+  `STRING`/`CHARACTER` callbacks both read through; the cADL side reports a
+  decode defect as `SUNK` at the literal's span, the lexer refuses it at the
+  lex.
   The two full-pipeline entries run the SAME schedule: `validate` and
   `validate_source` both drive basic integrity → RM conformance → parent
   conformance → flat form, and neither may omit a pass (there is no

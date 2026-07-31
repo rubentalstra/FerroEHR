@@ -10,9 +10,9 @@ use openehr_base::prelude::{Interval, Iso8601Date, Iso8601DateTime, Iso8601Durat
 
 use crate::aom::build::{point_interval, proper_interval};
 use crate::error::SyntaxErrorCode;
-use crate::lexer::Token;
 use crate::parse::patterns::iso_has_timezone;
 use crate::parse::{PResult, Parser};
+use openehr_lang::lexer::Token;
 
 // ── value lists, intervals, endpoints ─────────────────────────────────────
 impl Parser<'_> {

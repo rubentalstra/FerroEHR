@@ -1,5 +1,6 @@
 # Memory index
 
+- [Product rename → FerroEHR](product-rename-ferroehr.md) — owner 2026-07-31 (#1353): rebrand decided, rename not yet executed; keep current names in code until sub-issues land; never put "openEHR" in the brand
 - [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand over ADR claims; rerun the CNF pipeline (scripts/conformance.sh) after runner/validation merges
 - [Official CLI/tooling first](official-cli-tooling-first.md) — always use the official CLI (sqlx-cli etc.) for tool-managed artifacts; never hand-name/hand-roll
 - [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — commit-msg hook deletes lines containing "Claude Code" etc.; avoid the literal in commit/PR text
@@ -29,6 +30,7 @@
 - [Merge on local gates](merge-on-local-gates.md) — owner 2026-07-26: local gates green (fmt+clippy+nextest+cnf validate) → merge the PR immediately, no CI watchers between issues; CI is a post-merge backstop (release cuts keep normal discipline)
 - [Spec-chapter audit programs](spec-chapter-audit-programs.md) — owner method: milestone=component, issue=chapter, whole-codebase /spec-audit sweep, fix-first cadence; v3.13.0=BASE (#686), v4.0.0=admin-UI (CDS adjudicated out 2026-07-29 — not a CDR component, #716 closed)
 - [Valid+invalid twins rule](valid-invalid-twins-rule.md) — owner hard rule 2026-07-29: a spec-correct refusal always keeps the invalid shape as a corpus entry + refusal case beside the fixed valid twin
+- [Component fixes ride the current patch](component-fixes-ride-current-patch.md) — owner 2026-07-31: open program milestone → fix goes there; closed program (ITS v3.12.0, QUERY v3.14.0, BASE v3.13.0, AM v3.15.x) → fix joins the CURRENT patch milestone and ships that cycle
 - [Pause after #767 for rust-practices update](pause-after-767-for-rust-practices-update.md) — RESOLVED 2026-07-30 (#1311 merged); kept for the pointer to re-read the updated rules
 - [Rust hardening baseline is live](rust-hardening-baseline.md) — #1311 merged 2026-07-30: #[expect(reason)] only, missing_docs+rustdoc gates, one tests/it binary per crate, API bans, split CI lanes; write to this bar from the start
 - [Rust practices #1311](rust-practices-1311.md) — expect-with-reason, banned APIs, tests/it single binary, Book-ch11 shapes; full spec in rules files

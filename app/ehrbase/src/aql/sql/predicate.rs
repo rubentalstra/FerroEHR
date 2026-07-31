@@ -372,7 +372,11 @@ impl Builder<'_> {
             ArchetypeConstraint::NodeCode(c) | ArchetypeConstraint::Archetype(c) => c.clone(),
             ArchetypeConstraint::Param(p) => self.param_str(p)?,
         };
-        Ok(archetype_predicate(node, &value))
+        Ok(archetype_predicate(
+            node,
+            &value,
+            &self.ctx.archetype_lineage,
+        ))
     }
 
     pub(super) fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {

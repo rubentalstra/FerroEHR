@@ -146,6 +146,11 @@ impl EhrbaseService {
             subject_scope: request.subject_scope.clone(),
             limit,
             offset,
+            // The stored specialisation graph an archetype predicate widens a
+            // parent query through (AM `Identification` master07 §Supporting
+            // Archetype-based Querying): resolved here, once per execution,
+            // because SQL building is synchronous.
+            archetype_lineage: self.archetype_lineage().await,
         };
 
         let exec_start = Instant::now();

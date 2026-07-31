@@ -27,9 +27,9 @@ use crate::aom::build::{
     cobject_to_primitive, complex_object, cstring_regex, into_archetype_root, mult, tuple_member,
 };
 use crate::error::SyntaxErrorCode;
-use crate::lexer::Token;
 use crate::odin::{is_interval, odin_to_json};
 use crate::parse::{Dialect, PResult, Parser};
+use openehr_lang::lexer::Token;
 
 // ── productions ───────────────────────────────────────────────────────────
 impl Parser<'_> {

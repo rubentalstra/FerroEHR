@@ -14,8 +14,8 @@ use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::beom::core::assertion::Assertion;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
-use crate::lexer::Token;
 use crate::parse::{Dialect, PResult, Parser};
+use openehr_lang::lexer::Token;
 
 // ── slots, archetype roots, internal references ───────────────────────────
 impl Parser<'_> {

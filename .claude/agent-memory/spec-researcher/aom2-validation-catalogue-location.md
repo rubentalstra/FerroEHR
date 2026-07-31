@@ -46,6 +46,33 @@ VRRLPAR. ADL2 dir does NOT define V-codes with the `*Vxxx*:` bold form (grep
 empty) — it only has SOCCF-style cADL *syntax* error codes in
 `ADL2/master04.6-cadl_validity_rules.adoc`.
 
+PHASE-ARCHITECTURE facts (master08, verified 2026-07-31) — needed whenever a
+question asks "is skipping phase 3 legal?":
+- master08 L3 self-describes as "a guide for validation, flattening and diffing,
+  **based on the ADL workbench reference compiler**"; §Validation L18 says
+  "Validation is **best implemented** in a multi-pass fashion". The 3-phase split is
+  therefore ADVISORY ORDERING, not a conformance profile menu.
+- The L5-14 processing sequence nests BOTH phase 2 and phase 3 under
+  "if passed, and **A is specialised**:" — a literal reading exempts top-level
+  archetypes from phase 3. That reading is defeated by
+  `docs/specs/openehr/AM/docs/ADL2/master09.02-spec_concepts.adoc` L7:
+  "**For a top-level archetype, the flat-form is the same as its differential form**"
+  — so the flat form always exists and phase-3 rules are always evaluable.
+- §Phase 3 - Validation of Flat Form (L107-112) contains exactly TWO codes: VUNP + VACMCO.
+- The V-codes themselves carry NO phase/conditionality qualifier: VUNP + VUNT + VSUNT
+  live under master04.5 §"Validity Rules: C_COMPLEX_OBJECT_PROXY" (L475+);
+  VACMCU + VACMCO under master04.5 §"Validity Rules: C_ATTRIBUTE" (L121+, in the
+  "container attributes / is_multiple = True" sub-paragraph). master03 §Validity Rules
+  (L205) opens "The following validity rules apply to **all varieties of ARCHETYPE
+  object**".
+- Codes whose OWN text is scoped to the flat form: VATDF (master03 L220 "...terminology
+  of the flattened form of the current archetype") and VTVSMD (master07 L65, same
+  phrase). VACDF by contrast says "of the current archetype" (NOT flattened) — the
+  VATDF/VACDF asymmetry is in the released text.
+- **SPEC SILENCE:** grep for "partial validation" / "staged validation" /
+  "validation profile" / "level of validation" across the whole AM tree returns ZERO
+  hits. No reduced/partial validation profile is defined or permitted anywhere.
+
 Generated am24 tree `crates/openehr-am/src/am24/aom2/` covers the class model
 1:1 (archetype/ constraint_model/ primitive/ terminology/ rules/ rm_overlay/
 profile/ definitions/ persistence). DIFFERENTIAL_ARCHETYPE / FLAT_ARCHETYPE are
