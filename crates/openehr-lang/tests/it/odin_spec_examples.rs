@@ -515,3 +515,162 @@ fn ch6_across_objects_references_example() {
         "key-rooted reference path missing: {flat}"
     );
 }
+
+/// The `master07-leaf_data` §Lists of Built-in Types examples — homogeneous
+/// leaf lists, singleton `v, ...` lists, and the whitespace-free identity
+/// pair — plus the App.B interval-list productions and the homogeneity
+/// refusal twins (#1384).
+#[test]
+fn ch7_lists_of_built_in_types() {
+    // the section's three list examples.
+    for src in [
+        r#"a = <"cyan", "magenta", "yellow", "black">"#,
+        "a = <1, 1, 2, 3, 5>",
+        "a = <08:02, 08:35, 09:10>",
+    ] {
+        let parsed = parse(src).unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let OdinValue::Object(top) = parsed else {
+            panic!("expected object");
+        };
+        assert!(matches!(top.get("a"), Some(OdinValue::List(_))), "{src}");
+    }
+
+    // singleton lists carry the continuation marker.
+    for src in [
+        r#"a = <"en", ...>"#,
+        r#"a = <"icd10", ...>"#,
+        "a = <[at0200], ...>",
+    ] {
+        let parsed = parse(src).unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let OdinValue::Object(top) = parsed else {
+            panic!("expected object");
+        };
+        let Some(OdinValue::List(items)) = top.get("a") else {
+            panic!("{src}: expected a list");
+        };
+        assert_eq!(items.last(), Some(&OdinValue::ListContinue), "{src}");
+    }
+
+    // "the following two lists are identical".
+    assert_eq!(parse("a = <1,1,2,3>").ok(), parse("a = <1, 1, 2,3>").ok());
+
+    // interval lists (App.B `*_interval_list_value`), closed and open.
+    for src in [
+        "a = <|0..5|, |8..9|>",
+        "a = <|0..5|, ...>",
+        "a = <|P1D..P2D|, |P3D..P4D|>",
+    ] {
+        assert!(parse(src).is_ok(), "{src} should parse");
+    }
+
+    // homogeneity refusal twins — every list production is per-type.
+    for src in [
+        r#"a = <1, "x">"#,
+        "a = <1, 2.5>",
+        "a = <2004-06-11, 2004-06-11T10:00:00>",
+        r#"a = <|0..5|, "x">"#,
+    ] {
+        assert!(
+            parse(src).is_err(),
+            "{src} must be refused (mixed-kind list)"
+        );
+    }
+}
+
+/// The `master07-leaf_data` §Dates and Times examples — the four complete
+/// forms (incl. the comma-fraction time and the tz-stamped date/time), the
+/// ISO partial patterns, and the `??` partial patterns.
+#[test]
+fn ch7_date_time_forms() {
+    for (src, want) in [
+        ("d = <1919-01-23>", "Date"),
+        ("d = <16:35:04,5>", "Time"),
+        ("d = <2001-05-12T07:35:20+1000>", "DateTime"),
+        ("d = <P22DT4H15M0S>", "Duration"),
+        ("d = <2004-06>", "Date"),
+        ("d = <08:30>", "Time"),
+        ("d = <2004-06-11T10:30>", "DateTime"),
+        ("d = <2004-06-11T10>", "DateTime"),
+        ("d = <2004-06-??>", "Date"),
+        ("d = <2004-??-??>", "Date"),
+        ("d = <10:30:??>", "Time"),
+        ("d = <10:??:??>", "Time"),
+        ("d = <2004-06-11T10:30:??>", "DateTime"),
+        ("d = <2004-06-11T10:??:??>", "DateTime"),
+    ] {
+        let parsed = parse(src).unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let OdinValue::Object(top) = parsed else {
+            panic!("expected object");
+        };
+        let got = match top.get("d") {
+            Some(OdinValue::Date(_)) => "Date",
+            Some(OdinValue::Time(_)) => "Time",
+            Some(OdinValue::DateTime(_)) => "DateTime",
+            Some(OdinValue::Duration(_)) => "Duration",
+            other => panic!("{src}: unexpected {other:?}"),
+        };
+        assert_eq!(got, want, "{src}");
+    }
+}
+
+/// The `master07-leaf_data` §Intervals uniform syntax — all ten listed
+/// forms parse (the point/one-sided/plus-minus family plus the section's own
+/// examples).
+#[test]
+fn ch7_interval_uniform_syntax() {
+    for src in [
+        "i = <|0..5|>",
+        "i = <|>0..5|>",
+        "i = <|0..<5|>",
+        "i = <|>0..<5|>",
+        "i = <|<5|>",
+        "i = <|>5|>",
+        "i = <|>=5|>",
+        "i = <|<=5|>",
+        "i = <|5.0 +/-0.5|>",
+        "i = <|5.0 \u{00B1}0.5|>",
+        "i = <|5.0\u{00B1}0.5|>",
+        "i = <|0.0..1000.0|>",
+        "i = <|0.0..<1000.0|>",
+        "i = <|08:02..09:10|>",
+        "i = <|>=1939-02-01|>",
+    ] {
+        assert!(parse(src).is_ok(), "{src} should parse");
+    }
+}
+
+/// The `master07-leaf_data` §Coded Terms examples, incl. the optional
+/// version, and §URIs' verbatim-capture forms.
+#[test]
+fn ch7_coded_terms_and_uris() {
+    for src in [
+        "t = <[icd10AM::F60.1]>",
+        "t = <[snomed_ct::2004950]>",
+        "t = <[snomed_ct(3.1)::2004950]>",
+    ] {
+        let parsed = parse(src).unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let OdinValue::Object(top) = parsed else {
+            panic!("expected object");
+        };
+        assert!(
+            matches!(top.get("t"), Some(OdinValue::TermCode(_))),
+            "{src}"
+        );
+    }
+    for uri in [
+        "http://openEHR.org/home",
+        "ftp://get.this.file.com?file=cats.doc#section_5",
+        "http://www.mozilla.org/products/firefox/upgrade/?application=thunderbird",
+    ] {
+        let src = format!("u = <{uri}>");
+        let parsed = parse(&src).unwrap_or_else(|e| panic!("{src} should parse: {e}"));
+        let OdinValue::Object(top) = parsed else {
+            panic!("expected object");
+        };
+        assert_eq!(
+            top.get("u"),
+            Some(&OdinValue::Uri(format!("<{uri}>"))),
+            "verbatim capture incl. delimiters"
+        );
+    }
+}
