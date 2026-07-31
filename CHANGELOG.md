@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.15.2] - 2026-07-31
+
 ### Changed
 
 - **The project's own code is now MIT-licensed** (owner decision
@@ -3880,7 +3882,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.15.1...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.2...HEAD
+[3.15.2]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.1...v3.15.2
 [3.15.1]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.15.0...v3.15.1
 [3.15.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.14.0...v3.15.0
 [3.14.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.13.0...v3.14.0
