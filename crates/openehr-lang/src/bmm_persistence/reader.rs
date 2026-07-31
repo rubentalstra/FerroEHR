@@ -35,7 +35,11 @@
 //! `P_BMM_CLASS.source_schema_id` ("Set during `BMM_SCHEMA` materialise") takes
 //! this schema's own [`crate::bmm_persistence::p_bmm_schema::PBmmSchema::schema_id`],
 //! and `P_BMM_CLASS.uid` ("Assigned in post-load processing") is numbered from
-//! 1 in document order over `primitive_types` then `class_definitions`.
+//! 1 in document order over `primitive_types` then `class_definitions`. A
+//! `(P_BMM_INTERFACE)` entry of either list declares neither attribute
+//! (`…p_bmm_interface.adoc` §Attributes), so it stamps neither: its number in
+//! the document order is simply unused, which leaves the remaining `uid`s
+//! document-ordered and unique.
 
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -67,6 +71,7 @@ use crate::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty;
 use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
+use crate::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::bmm_persistence::p_bmm_open_type::PBmmOpenType;
 use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
@@ -121,8 +126,8 @@ pub const TOLERATED_PROPERTY_ATTRIBUTES: &[&str] = &["default"];
 /// Returns [`PBmmReadError::Odin`] when the text is not well-formed ODIN, and
 /// one of the schema-shape variants (missing/unknown attribute, wrong value
 /// shape, unexpected or missing type marker, key/name mismatch, qualified
-/// nested package, unsupported cardinality, persisted interface) when the ODIN
-/// tree does not match the P_BMM class model.
+/// nested package, unsupported cardinality) when the ODIN tree does not match
+/// the P_BMM class model.
 pub fn read_schema(src: &str) -> Result<PBmmSchema, PBmmReadError> {
     let root = crate::odin::parse(src)?;
     let OdinValue::Object(members) = &root else {
@@ -776,6 +781,18 @@ struct EnumerationParts {
 }
 
 /// Reads one class definition, dispatching on its optional type marker.
+///
+/// A `(P_BMM_INTERFACE)`-marked entry reads into
+/// [`PBmmClass::PBmmInterface`]: `master02-overview.adoc` §Conceptual Approach
+/// says the model "can also represent pure interfaces via `P_BMM_INTERFACE`,
+/// i.e. class-like definitions that declare only functions and carry no state",
+/// and openEHR's own published schemas serialise them as members of
+/// `class_definitions` (the vendored BASE 1.3.0 and RM 1.2.0 ODIN schemas mark
+/// `Env`, `Locale`, `Math`, `Quantity_converter`, `Statistical_evaluator`,
+/// `CODE_SET_ACCESS` and `TERMINOLOGY_ACCESS` that way). It declares exactly
+/// three attributes — `name`, `documentation` (inherited) and `functions`
+/// (`…p_bmm_interface.adoc` §Attributes) — so no other class attribute is read
+/// for it.
 fn read_class(
     path: &str,
     key: &str,
@@ -787,10 +804,15 @@ fn read_class(
     let empty = IndexMap::new();
     let mut block = Block::open(path, body, &empty)?;
     if marker == Some("P_BMM_INTERFACE") {
-        return Err(PBmmReadError::InterfaceInClassList {
-            path: path.to_owned(),
-            name: read_name(&mut block, key)?,
-        });
+        let name = read_name(&mut block, key)?;
+        let documentation = block.optional_string("documentation")?;
+        let functions = read_functions(&mut block)?;
+        block.finish(&[])?;
+        return Ok(PBmmClass::PBmmInterface(PBmmInterface {
+            documentation,
+            name,
+            functions,
+        }));
     }
     let parts = read_class_parts(&mut block, key, schema_id, uid)?;
     let class = match marker {
@@ -1985,10 +2007,10 @@ mod tests {
         "#,
         )?;
         assert_eq!(class(&schema, "ELEMENT").ancestors(), ["ITEM"]);
-        assert_eq!(class(&schema, "ELEMENT").uid(), 1);
+        assert_eq!(class(&schema, "ELEMENT").uid(), Some(1));
         assert_eq!(
             class(&schema, "ELEMENT").source_schema_id(),
-            "openehr_adltest_1.0.2"
+            Some("openehr_adltest_1.0.2")
         );
 
         let PBmmProperty::PBmmSingleProperty(single) = property(&schema, "ELEMENT", "null_flavour")
@@ -2379,22 +2401,74 @@ mod tests {
     }
 
     #[test]
-    fn a_persisted_interface_is_refused_not_dropped() {
+    fn a_persisted_interface_reads_its_name_documentation_and_functions()
+    -> Result<(), PBmmReadError> {
+        // master02-overview.adoc §Conceptual Approach: the model "can also
+        // represent pure interfaces via P_BMM_INTERFACE, i.e. class-like
+        // definitions that declare only functions and carry no state".
+        let schema = read(
+            r#"
+            class_definitions = <
+                ["Math"] = (P_BMM_INTERFACE) <
+                    name = <"Math">
+                    documentation = <"Mathematical functions.">
+                    functions = <
+                        ["abs"] = <
+                            name = <"abs">
+                            parameters = <
+                                ["v"] = (P_BMM_SINGLE_FUNCTION_PARAMETER) <
+                                    name = <"v">
+                                    type = <"Real">
+                                >
+                            >
+                            result = (P_BMM_SIMPLE_TYPE) <
+                                type = <"Real">
+                            >
+                        >
+                    >
+                >
+            >
+        "#,
+        )?;
+        let interface = class(&schema, "Math");
+        assert!(matches!(interface, PBmmClass::PBmmInterface(_)));
+        assert_eq!(interface.documentation(), Some("Mathematical functions."));
+        let functions = interface.functions().expect("the declared functions");
+        assert_eq!(functions.keys().collect::<Vec<&String>>(), ["abs"]);
+        // An interface carries no state and no processing-stamped attribute.
+        assert!(interface.properties().is_none());
+        assert!(interface.is_abstract());
+        assert_eq!(interface.source_schema_id(), None);
+        assert_eq!(interface.uid(), None);
+        Ok(())
+    }
+
+    #[test]
+    fn a_persisted_interface_refuses_a_state_carrying_attribute() {
+        // `…p_bmm_interface.adoc` §Attributes declares `name` and `functions`
+        // only (plus the inherited `documentation`), so a property block on an
+        // interface is not part of the P_BMM model.
         let error = read(
             r#"
             class_definitions = <
                 ["Env"] = (P_BMM_INTERFACE) <
                     name = <"Env">
+                    properties = <
+                        ["home"] = (P_BMM_SINGLE_PROPERTY) <
+                            name = <"home">
+                            type = <"String">
+                        >
+                    >
                 >
             >
         "#,
         )
-        .expect_err("P_BMM_SCHEMA has no slot for a persisted interface");
+        .expect_err("an interface declares no properties");
         assert_eq!(
             error,
-            PBmmReadError::InterfaceInClassList {
+            PBmmReadError::UnknownAttribute {
                 path: "class_definitions/Env".to_owned(),
-                name: "Env".to_owned(),
+                attribute: "properties".to_owned(),
             }
         );
     }
@@ -2425,8 +2499,8 @@ mod tests {
                 .primitive_types
                 .iter()
                 .map(PBmmClass::uid)
-                .collect::<Vec<_>>(),
-            [1, 2]
+                .collect::<Vec<Option<i32>>>(),
+            [Some(1), Some(2)]
         );
         Ok(())
     }

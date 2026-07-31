@@ -128,6 +128,15 @@ enum ClassList {
 /// `class_definitions` group" — so one name means one class regardless of which
 /// list holds it. The surviving (including) definition is marked
 /// `is_override = True`.
+///
+/// A persisted `P_BMM_INTERFACE` is one of these list members
+/// (`master02-overview.adoc` §Conceptual Approach; see
+/// [`crate::bmm_persistence::reader::read_schema`]) and takes part in exactly
+/// the same name-collision rule: its `name` is the collision key, and the
+/// includer's definition wins whether either side is an interface or an
+/// ordinary class. The only thing an interface cannot do is RECORD the
+/// override flag — it declares no `is_override` attribute, so
+/// [`PBmmClass::set_is_override`] is a no-op for it (documented there).
 fn absorb_classes(includer: &mut PBmmSchema, incoming: Vec<PBmmClass>, list: ClassList) {
     for class in incoming {
         let name = class.name().to_owned();
@@ -305,19 +314,88 @@ mod tests {
             &[("ELEMENT", "root")],
         ));
         let merged = resolve_includes(root, &loaded(vec![included]))?;
-        let sources: BTreeMap<&str, &str> = merged
+        let sources: BTreeMap<&str, Option<&str>> = merged
             .class_definitions
             .iter()
             .map(|class| (class.name(), class.source_schema_id()))
             .collect();
         assert_eq!(
-            sources.get("Any").copied(),
+            sources.get("Any").copied().flatten(),
             Some("openehr_primitive_types_1.0.2")
         );
         assert_eq!(
-            sources.get("ELEMENT").copied(),
+            sources.get("ELEMENT").copied().flatten(),
             Some("openehr_structures_1.0.2")
         );
+        Ok(())
+    }
+
+    #[test]
+    fn an_included_interface_joins_the_class_list_and_loses_to_the_includer()
+    -> Result<(), PBmmReadError> {
+        // A `(P_BMM_INTERFACE)` entry is a member of `class_definitions`
+        // (master02-overview.adoc §Conceptual Approach), so it merges under the
+        // same includer-wins rule as any other definition.
+        let included = read(
+            r#"
+            bmm_version = <"2.4">
+            rm_publisher = <"openehr">
+            schema_name = <"leaf">
+            rm_release = <"1.0.2">
+            packages = <
+                ["org.openehr.leaf"] = <
+                    name = <"org.openehr.leaf">
+                    classes = <"Math", "TERMINOLOGY_ACCESS">
+                >
+            >
+            class_definitions = <
+                ["Math"] = (P_BMM_INTERFACE) < name = <"Math"> >
+                ["TERMINOLOGY_ACCESS"] = (P_BMM_INTERFACE) <
+                    name = <"TERMINOLOGY_ACCESS">
+                    documentation = <"from the included schema">
+                >
+            >
+        "#,
+        );
+        let root = read(
+            r#"
+            bmm_version = <"2.4">
+            rm_publisher = <"openehr">
+            schema_name = <"root">
+            rm_release = <"1.0.2">
+            includes = <
+                ["1"] = < id = <"openehr_leaf_1.0.2"> >
+            >
+            packages = <
+                ["org.openehr.root"] = <
+                    name = <"org.openehr.root">
+                    classes = <"TERMINOLOGY_ACCESS">
+                >
+            >
+            class_definitions = <
+                ["TERMINOLOGY_ACCESS"] = (P_BMM_INTERFACE) <
+                    name = <"TERMINOLOGY_ACCESS">
+                    documentation = <"from the including schema">
+                >
+            >
+        "#,
+        );
+        let merged = resolve_includes(root, &loaded(vec![included]))?;
+        let mut names: Vec<&str> = merged
+            .class_definitions
+            .iter()
+            .map(PBmmClass::name)
+            .collect();
+        names.sort_unstable();
+        assert_eq!(names, ["Math", "TERMINOLOGY_ACCESS"]);
+        let surviving = merged
+            .class_definitions
+            .iter()
+            .find(|class| class.name() == "TERMINOLOGY_ACCESS")
+            .expect("the surviving definition");
+        assert_eq!(surviving.documentation(), Some("from the including schema"));
+        // An interface has no `is_override` slot, so the flag stays unrecorded.
+        assert!(!surviving.is_override());
         Ok(())
     }
 

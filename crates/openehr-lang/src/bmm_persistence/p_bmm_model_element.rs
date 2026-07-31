@@ -11,7 +11,6 @@ use crate::bmm_persistence::p_bmm_function::PBmmFunction;
 use crate::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter;
 use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
-use crate::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
 use crate::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
@@ -40,8 +39,6 @@ pub enum PBmmModelElement {
     PBmmGenericParameter(PBmmGenericParameter),
     /// The `P_BMM_GENERIC_PROPERTY` subtype of `P_BMM_MODEL_ELEMENT`.
     PBmmGenericProperty(PBmmGenericProperty),
-    /// The `P_BMM_INTERFACE` subtype of `P_BMM_MODEL_ELEMENT`.
-    PBmmInterface(PBmmInterface),
     /// The `P_BMM_PACKAGE` subtype of `P_BMM_MODEL_ELEMENT`.
     PBmmPackage(PBmmPackage),
     /// The `P_BMM_SINGLE_FUNCTION_PARAMETER` subtype of `P_BMM_MODEL_ELEMENT`.

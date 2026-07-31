@@ -4,3 +4,8 @@
 
 pub mod reference_model_access;
 pub mod schema_descriptor;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod error;
+pub mod reference_model_access_impl;
+pub mod schema_descriptor_impl;

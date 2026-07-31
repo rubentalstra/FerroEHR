@@ -15209,12 +15209,14 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmClass {
     fn json_type_name(&self) -> &'static str {
         match self {
             openehr_lang::prelude::PBmmClass::PBmmEnumeration(x) => x.json_type_name(),
+            openehr_lang::prelude::PBmmClass::PBmmInterface(x) => x.json_type_name(),
             openehr_lang::prelude::PBmmClass::PBmmClass(x) => x.json_type_name(),
         }
     }
     fn write_json(&self, w: &mut crate::json_codec::runtime::JsonWriter) {
         match self {
             openehr_lang::prelude::PBmmClass::PBmmEnumeration(x) => x.write_json(w),
+            openehr_lang::prelude::PBmmClass::PBmmInterface(x) => x.write_json(w),
             openehr_lang::prelude::PBmmClass::PBmmClass(x) => x.write_json(w),
         }
     }
@@ -15239,12 +15241,15 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmClass {
             ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => ::core::result::Result::Ok(
                 Self::PBmmEnumeration(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
+            ::core::option::Option::Some("P_BMM_INTERFACE") => ::core::result::Result::Ok(
+                Self::PBmmInterface(crate::json_codec::runtime::FromJson::from_json(node)?),
+            ),
             ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmClass(
                 crate::json_codec::runtime::FromJson::from_json(node)?,
             )),
             ::core::option::Option::Some(__other) => ::core::result::Result::Err(
                 crate::json_codec::runtime::JsonParseError::custom(::std::format!(
-                    "P_BMM_CLASS: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING)"
+                    "P_BMM_CLASS: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_INTERFACE)"
                 )),
             ),
         }
@@ -16271,7 +16276,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmModelElem
             }
             openehr_lang::prelude::PBmmModelElement::PBmmGenericParameter(x) => x.json_type_name(),
             openehr_lang::prelude::PBmmModelElement::PBmmGenericProperty(x) => x.json_type_name(),
-            openehr_lang::prelude::PBmmModelElement::PBmmInterface(x) => x.json_type_name(),
             openehr_lang::prelude::PBmmModelElement::PBmmPackage(x) => x.json_type_name(),
             openehr_lang::prelude::PBmmModelElement::PBmmSingleFunctionParameter(x) => {
                 x.json_type_name()
@@ -16299,7 +16303,6 @@ impl crate::json_codec::runtime::ToJson for openehr_lang::prelude::PBmmModelElem
             }
             openehr_lang::prelude::PBmmModelElement::PBmmGenericParameter(x) => x.write_json(w),
             openehr_lang::prelude::PBmmModelElement::PBmmGenericProperty(x) => x.write_json(w),
-            openehr_lang::prelude::PBmmModelElement::PBmmInterface(x) => x.write_json(w),
             openehr_lang::prelude::PBmmModelElement::PBmmPackage(x) => x.write_json(w),
             openehr_lang::prelude::PBmmModelElement::PBmmSingleFunctionParameter(x) => {
                 x.write_json(w)
@@ -16363,7 +16366,7 @@ impl crate::json_codec::runtime::FromJson for openehr_lang::prelude::PBmmModelEl
                 ))
             }
             ::core::option::Option::Some("P_BMM_INTERFACE") => ::core::result::Result::Ok(
-                Self::PBmmInterface(crate::json_codec::runtime::FromJson::from_json(node)?),
+                Self::PBmmClass(crate::json_codec::runtime::FromJson::from_json(node)?),
             ),
             ::core::option::Option::Some("P_BMM_PACKAGE") => ::core::result::Result::Ok(
                 Self::PBmmPackage(crate::json_codec::runtime::FromJson::from_json(node)?),
