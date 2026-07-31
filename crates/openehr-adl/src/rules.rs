@@ -253,6 +253,24 @@ impl BelBuilder for AmBuilder {
             r#type: object_ref_type(type_id),
         })
     }
+
+    fn constant_declaration(
+        &mut self,
+        name: &str,
+        type_id: &str,
+        value: Option<Expression>,
+    ) -> Statement {
+        // Same beom-normative bound as `variable_declaration`: no constant
+        // class exists (`LANG/docs/BEL/master04-expression_object_model.adoc`
+        // §Core Package), so the model's one declaration shape carries it and
+        // the value is discarded like a variable initialiser. Archetype rules
+        // sections do not use constants in practice.
+        drop(value);
+        Statement::VariableDeclaration(VariableDeclaration {
+            name: name.to_owned(),
+            r#type: object_ref_type(type_id),
+        })
+    }
 }
 
 impl AmBuilder {
