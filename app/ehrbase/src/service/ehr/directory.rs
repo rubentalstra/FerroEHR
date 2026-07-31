@@ -15,7 +15,8 @@
 //! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
 //! §Folders).
 //
-// TODO: dedicated multi-hierarchy directory write management.
+// TODO: dedicated multi-hierarchy directory write management — tracked as
+// issue #1348.
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;
