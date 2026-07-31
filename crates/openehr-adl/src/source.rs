@@ -6,7 +6,7 @@
 //! kind, identification meta + HRID, the specialise parent reference, each
 //! ODIN section parsed via `openehr_lang::odin`, and the cADL `definition` /
 //! `rules` bodies captured as **raw spans** (cADL parsing is a separate pass,
-//! `crate::cadl`).
+//! `crate::parse`).
 //!
 //! Section boundaries follow the grammar's `'\n'`-anchoring of the section
 //! keywords (`adl_keywords.g4`): a section header is a keyword at column 0
@@ -17,10 +17,10 @@
 
 use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
 
-use crate::cadl::Dialect;
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::hrid::parse_hrid;
 use crate::lexer::{Spanned, Token};
+use crate::parse::Dialect;
 
 /// The artefact kind (first keyword of an ADL2 source).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,7 +68,7 @@ pub struct ArtefactMeta {
 }
 
 /// A parsed ADL2 source artefact (outer structure only; the definition/rules
-/// bodies stay raw here, parsed on demand by `crate::cadl` /
+/// bodies stay raw here, parsed on demand by `crate::parse` /
 /// `openehr_lang::odin`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourceArtefact {

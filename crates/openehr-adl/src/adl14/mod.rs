@@ -11,6 +11,13 @@
 //! converter oracle.
 //!
 //! Pipeline:
+//! 0. **cADL front end** ([`lower`] + [`domain`]) — the ADL 1.4-only cADL
+//!    productions the `Dialect::Adl14` parse dispatches into: the
+//!    qualified/listed terminology constraints, the pipe-ordinal shorthand,
+//!    and the inline dADL `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
+//!    domain blocks. They are the WRITE side of the converter-internal
+//!    encoding that step 2 reads back
+//!    ([`convert::convert_constraint`](convert)).
 //! 1. **Front end** — [`crate::assemble::parse_artefact_adl14`] parses a 1.4
 //!    `.adl` into a *1.4-shaped* `openehr_am::am24` [`Archetype`](openehr_am::am24::aom2::archetype::archetype::Archetype) (at-code node
 //!    ids; qualified/listed terminology constraints preserved verbatim in the
@@ -40,4 +47,6 @@
 
 pub mod convert;
 pub mod differ;
+pub mod domain;
 pub mod log;
+pub mod lower;

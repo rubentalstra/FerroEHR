@@ -75,7 +75,7 @@ fn definitions_parse(art: &SourceArtefact, src: &str) -> Result<(), String> {
     for a in std::iter::once(art).chain(art.overlays.iter()) {
         if let Some(def) = a.definition.as_ref() {
             let body = src.get(def.bytes.clone()).unwrap_or_default();
-            openehr_adl::cadl::parse_definition_body(body)
+            openehr_adl::parse::parse_definition_body(body)
                 .map_err(|errs| errs.first().map(ToString::to_string).unwrap_or_default())?;
         }
     }

@@ -7,7 +7,7 @@
 //! operators (`matches`), the canonical section order (identification →
 //! specialise → language → description → definition → rules → terminology →
 //! annotations → `rm_overlay` / `component_terminologies`), ODIN for the ODIN
-//! sections, cADL for the definition (every construct [`crate::cadl`] parses),
+//! sections, cADL for the definition (every construct [`crate::parse`] parses),
 //! and the `rules` via the stored expression tree.
 //!
 //! Section order is example-derived (`ADL2/master07.04`; the vendored grammar

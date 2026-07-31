@@ -41,12 +41,12 @@ use crate::aom::access::{
 };
 use crate::aom::interval::finite_upper;
 use crate::artefact::{ArchetypeRepository, ArchetypeView, view};
-use crate::cadl::Dialect;
 use crate::codes::{
     self, is_ac_code, is_at_code, is_id_code, is_root_code_at_depth, is_valid_code,
 };
 use crate::hrid::{hrid_lookup_key, is_archetype_id, raw_id_lookup_key};
 use crate::odin::key_str;
+use crate::parse::Dialect;
 use crate::paths::{Resolution, child_path, has_node_id_predicate, resolve};
 use crate::source::SourceArtefact;
 
