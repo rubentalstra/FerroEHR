@@ -1,19 +1,25 @@
 {
-  "latest": "v3.15.0",
+  "latest": "v3.15.2",
   "versions": [
     {
       "id": "dev",
       "label": "dev (develop)",
-      "path": "/ehrbase-rs/docs/dev/",
+      "path": "/ferroehr/docs/dev/",
       "released": null,
       "prerelease": true
     },
     {
       "id": "latest",
-      "label": "latest (v3.15.0)",
-      "path": "/ehrbase-rs/docs/latest/",
+      "label": "latest (v3.15.2)",
+      "path": "/ferroehr/docs/latest/",
       "released": "2026-07-31",
-      "aliasOf": "v3.15.0"
+      "aliasOf": "v3.15.2"
+    },
+    {
+      "id": "v3.15.2",
+      "label": "v3.15.2",
+      "path": "/ferroehr/docs/v3.15.2/",
+      "released": "2026-07-31"
     },
     {
       "id": "v3.15.0",
