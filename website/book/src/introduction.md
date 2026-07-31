@@ -70,4 +70,6 @@ user terms; if you are new to openEHR itself, start with the
 > FerroEHR is a successor to the Java **EHRbase** project (by vitasystems and
 > the Peter L. Reichertz Institute) and keeps that lineage in its history, but
 > it is an independent, from-scratch Rust implementation and is not affiliated
-> with or endorsed by the upstream project. It is licensed under Apache-2.0.
+> with or endorsed by the upstream project. FerroEHR's own code is
+> MIT-licensed; vendored openEHR artifacts keep their upstream Apache-2.0
+> terms.

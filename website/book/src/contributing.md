@@ -1,6 +1,6 @@
 # Contributing
 
-FerroEHR is open source (Apache-2.0) and welcomes contributions. This
+FerroEHR is open source (MIT; vendored openEHR artifacts remain Apache-2.0) and welcomes contributions. This
 chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
 repository and are linked below.

@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The project's own code is now MIT-licensed** (owner decision
+  2026-07-31). Vendored third-party material keeps its upstream terms: the
+  openEHR machine-readable specification artifacts and CKM-derived clinical
+  models remain under Apache-2.0 (`LICENSE-APACHE-2.0`). The upstream
+  `NOTICE` file was removed together with the relicense — no upstream code
+  is present in this tree.
 - **The product is named FerroEHR** (owner decision 2026-07-31, tracked on
   #1353 — from *ferrum*, iron, the element Rust is named for). Every
   product-branded surface changes with it; deployments upgrading across this

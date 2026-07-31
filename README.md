@@ -13,7 +13,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
 [![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [**Documentation**](https://rubentalstra.github.io/ferroehr/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Contributing](#contributing-and-security)
 
@@ -416,5 +416,10 @@ Pazos / CaboLabs Health Informatics (Apache-2.0). The UX is reimplemented
 fresh in Rust over this project's own AQL engine — no code is copied — but
 the design lineage is gratefully credited.
 
-Licensed under the [Apache License 2.0](LICENSE), the same license as
-upstream EHRbase.
+**Licensing.** FerroEHR's own code — the application, the tooling, and the
+generated crates — is licensed under the [MIT License](LICENSE). Vendored
+third-party material keeps its upstream terms: the openEHR machine-readable
+specification artifacts (BMM, XSDs, OpenAPI) and CKM-derived clinical models
+are used under the [Apache License 2.0](LICENSE-APACHE-2.0), and each
+vendored tree documents its exact origin in a `PROVENANCE.md`. Upstream
+EHRbase itself remains Apache-2.0; no code from it is present in this tree.

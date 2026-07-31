@@ -35,7 +35,7 @@ ignore = [
 
 [licenses]
 version = 2
-# Allow permissive licenses compatible with an Apache-2.0 project.
+# Allow permissive licenses compatible with an MIT-licensed project.
 allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
