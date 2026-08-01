@@ -17,16 +17,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [3.17.1] - 2026-08-01
 
-### Fixed
-
-- **`openehr-its` builds again for minimal consumers.** The `opt14` module
-  (OPT 1.4 model + XML codec) was declared without the `full` feature gate
-  its codec dependency carries, so any `default-features = false` consumer
-  of the crate — whose documented minimal surface is only the dependency-free
-  SMART scope grammar — failed to compile with 1,191 errors (first visible on
-  the admin console's WebAssembly lane). The module is now gated like its
-  siblings; default builds are unchanged.
-
 ### Added
 
 - **Deprecated ADL 1.4 spellings are warned at ingest.** The paren-less
@@ -59,6 +49,14 @@ workflow refuses a tag that has no matching section here.
   different root types.
 
 ### Fixed
+
+- **`openehr-its` builds again for minimal consumers.** The `opt14` module
+  (OPT 1.4 model + XML codec) was declared without the `full` feature gate
+  its codec dependency carries, so any `default-features = false` consumer
+  of the crate — whose documented minimal surface is only the dependency-free
+  SMART scope grammar — failed to compile with 1,191 errors (first visible on
+  the admin console's WebAssembly lane). The module is now gated like its
+  siblings; default builds are unchanged.
 
 - **Empty inline dADL domain blocks parse (`C_DV_QUANTITY <>`).** The ADL 1.4
   reader refused an empty domain block outright; the dADL chapter's own
