@@ -1,0 +1,1781 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2021-10-28</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Gunn Elin Blakkisrud, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Peter Fedorcsak, University of Oslo, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Rosane Gotardo, Systema Ltda., Brazil</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Manisha Mantri, C-DAC, India</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Julius Hreinsson, Laboratory Director at Reproductive Medicine, Sahlgrenska University Hospital, Sweden</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Alpha Scientists in Reproductive, M. and E.S.I.G.o. Embryology, The Istanbul consensus workshop on embryo assessment: proceedings of an expert meeting. Human Reproduction, 2011. 26(6): p. 1270-1283.&#xD;
+&#xD;
+Eshre Working Group on Time-lapse technology, et al., Good practice recommendations for the use of time-lapse technology. Hum Reprod Open, 2020. 2020(2): p. hoaa008.&#xD;
+&#xD;
+Hardarson, T., L. Van Landuyt, and G. Jones, The blastocyst. Human Reproduction, 2012. 27(suppl_1): p. i72-i91.&#xD;
+&#xD;
+Papale, L., et al., The zygote. Human Reproduction, 2012. 27(suppl_1): p. i22-i49.&#xD;
+&#xD;
+Prados, F.J., et al., The cleavage stage embryo. Human Reproduction, 2012. 27(suppl_1): p. i50-i71.&#xD;
+&#xD;
+Rienzi, L., et al., The oocyte. Human Reproduction, 2012. 27(suppl_1): p. i2-i21.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">582BC252D2D0A957071DDD2E092DAEEE</other_details>
+    <other_details id="build_uid">499194be-296c-4b50-8452-51ca8b9ff491</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For registrering av detaljer ved undersøkelse av morfologi og utvikling av et humant oocytt eller embryo.</purpose>
+      <keywords>morphologi, time-lapse, in vitro, befruktning, IVF, reproduksjon, zygote, fertilisert, befruktet, egg, eggcelle, oocytt, embryo, blastocyst, assistert, ART</keywords>
+      <use>Brukes til å registrere detaljer ved undersøkelse av morfologi og utvikling av et humant oocytt, zygote, embryo i delingsstadium eller en blastocyst, vanligvis som del av assistert befruktning.&#xD;
+&#xD;
+Denne OBSERVATION-arketypen støtter i tillegg registrering av morfokinetiske data og annotering ved undersøkelse av embryoutvikling med time-lapse mikroskopi.</use>
+      <misuse>Skal ikke brukes til å registrere detaljer av prosedyrer som involverer oocytter eller embryo, slik som inseminasjon, mikroinjeksjon og biopsy - bruk spesifikke ACTION arketyper.&#xD;
+&#xD;
+Skal ikke brukes til å registrere detaljer av andre enn morfologiske undersøkelser av oocytt og embryo, f eks genetiske eller metabolske undersøkelser - bruk spesifikke OBSERVATION arketyper.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about the assessment of morphology and development of a single oocyte or embryo.</purpose>
+      <keywords>in vitro, fertilization, IVF, reproductive medicine, zygote, fertilised, fertilized, oocyte, egg, fertilisation, embryo, reproduction, ART, blastocyst, morphology, time-lapse</keywords>
+      <use>Use to record details about assessment of morphology and development of a single oocyte, zygote, cleavage-stage embryo or blastocyst, usually as part of assisted reproduction treatment.&#xD;
+&#xD;
+This OBSERVATION archetype also supports recording morphokinetic data and timed annotations obtained during time-lapse microscopy of embryo development.</use>
+      <misuse>Not to be used for recording details of procedures involving oocytes and embryos, like insemination, microinjection or biopsy - use specific ACTION archetype for this purpose.&#xD;
+&#xD;
+Not to be used for recording non-morphological assessment of single oocyte or embryo, like genetic or metabolic tests - use relevant OBSERVATION archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Peter Fedorcsak, Vebjørn Arntzen</author>
+    <author id="organisation">University of Oslo, Oslo University Hospital</author>
+    <author id="email">peterfe@uio.no, varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>6bce9f1a-8cee-4dfc-89ad-c4c50a526906</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.embryo_assessment.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0011</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0034</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0036</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0043</code_list>
+                            <code_list>at0037</code_list>
+                            <code_list>at0038</code_list>
+                            <code_list>at0039</code_list>
+                            <code_list>at0040</code_list>
+                            <code_list>at0041</code_list>
+                            <code_list>at0042</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0044</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0045</code_list>
+                            <code_list>at0046</code_list>
+                            <code_list>at0047</code_list>
+                            <code_list>at0048</code_list>
+                            <code_list>at0049</code_list>
+                            <code_list>at0050</code_list>
+                            <code_list>at0051</code_list>
+                            <code_list>at0052</code_list>
+                            <code_list>at0053</code_list>
+                            <code_list>at0054</code_list>
+                            <code_list>at0055</code_list>
+                            <code_list>at0056</code_list>
+                            <code_list>at0057</code_list>
+                            <code_list>at0058</code_list>
+                            <code_list>at0059</code_list>
+                            <code_list>at0060</code_list>
+                            <code_list>at0061</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0013</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam_embryo\.v1|openEHR-EHR-CLUSTER\.exam_blastocyst\.v1|openEHR-EHR-CLUSTER\.exam_oocyte\.v1|openEHR-EHR-CLUSTER\.exam_zygote\.v1/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.exam_embryo\.v1|openEHR-EHR-CLUSTER\.exam_blastocyst\.v1|openEHR-EHR-CLUSTER\.exam_oocyte\.v1|openEHR-EHR-CLUSTER\.exam_zygote\.v1</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0022</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0024</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0035</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0066</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0027</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0028</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0029</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0030</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0031</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0032</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0033</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0065</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0062</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0063</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0064</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="ARCHETYPE_INTERNAL_REF">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <target_path>/data[at0001]/events[at0002]/data[at0003]</target_path>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0067</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0005</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_IDENTIFIER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0008</code_list>
+                    <code_list>at0009</code_list>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Oocyte and embryo assessment</items>
+        <items id="description">Assessment of morphological features and development of a single oocyte or embryo.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Device</items>
+        <items id="description">Details of the device used to assess morphology and development of the oocyte or embryo.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Culture dish ID</items>
+        <items id="description">The unique identifier for the culture dish containing the oocyte or embryo.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Method</items>
+        <items id="description">Method for assessment of morphology and development of the oocyte or embryo.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Manual</items>
+        <items id="description">Morphology and development were assessed by manual microscopy.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Time-lapse</items>
+        <items id="description">Morphology and development were assessed by automated device.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Label</items>
+        <items id="description">Label or name identifying an oocyte or embryo.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">ID</items>
+        <items id="description">The unique identifier for the oocyte or embryo.</items>
+        <items id="comment">For example: the entire or applicable part of the "Single European Code” or “SEC” identifier.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Morphological findings</items>
+        <items id="description">Structured morphological findings appropriate for the developmental stage of the oocyte or embryo.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Image representation</items>
+        <items id="description">Digital image, video or diagram representing morphology and development of the oocyte or embryo.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Time post-insemination</items>
+        <items id="description">The duration since insemination.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Interpretation</items>
+        <items id="description">Clinical interpretation of the morphological and developmental assessment of the oocyte or embryo.</items>
+        <items id="comment">For example: 'Suitable for clinical use'; or 'Unsuitable for clinical use'.&#xD;
+</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Fertilisation assessment</items>
+        <items id="description">Observation of the inseminated oocyte to assess fertilization.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Syngamy assessment</items>
+        <items id="description">Observation of the inseminated oocyte to assess syngamy.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Early cleavage assessment</items>
+        <items id="description">Observation of the embryo to assess early first cell cleavage.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Day-2 embryo assessment</items>
+        <items id="description">Embryo observation on Day 2 post insemination.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Day-3 embryo assessment</items>
+        <items id="description">Embryo observation on Day 3 post insemination.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Day-4 embryo assessment</items>
+        <items id="description">Embryo observation on Day 4 post insemination.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Day-5 embryo assessment</items>
+        <items id="description">Embryo observation on Day 5 post insemination.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Description</items>
+        <items id="description">General description of the oocyte or embryo.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the oocyte or embryo assessment, not captured in other fields.</items>
+        <items id="comment">For example: difficulties in visualisation.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Developmental stage</items>
+        <items id="description">Developmental stage of the oocyte or embryo.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Pronuclear stage</items>
+        <items id="description">Pronuclear zygote stage.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">2-cell stage</items>
+        <items id="description">2-cell stage.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">4-cell stage</items>
+        <items id="description">4-cell stage.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">8-cell stage</items>
+        <items id="description">8-cell stage.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Morula</items>
+        <items id="description">Morula stage.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Blastocyst</items>
+        <items id="description">Blastocyst stage.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Oocyte</items>
+        <items id="description">Oocyte stage.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Developmental event</items>
+        <items id="description">Recording of a developmental event observed during time-lapse microscopy.</items>
+        <items id="comment">Value set drawn from the Eshre Working Group's 'Nomenclature of morphokinetic parameters'. For example: extrusion of second polar body, appearance and fading of pronuclei, cell divisions, or compaction. </items>
+      </items>
+      <items code="at0045">
+        <items id="text">tPB2 extrusion</items>
+        <items id="description">The second polar body is completely detached from the oolemma.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">tPNa</items>
+        <items id="description">Appearance of individual pronuclei.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">tPNf</items>
+        <items id="description">Fading of pronuclei.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">t2</items>
+        <items id="description">The embryo reaches 2 blastomeres.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">t3</items>
+        <items id="description">The embryo reaches 3 blastomeres.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">t4</items>
+        <items id="description">The embryo reaches 4 blastomeres.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">t5</items>
+        <items id="description">The embryo reaches 5 blastomeres.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">t6</items>
+        <items id="description">The embryo reaches 6 blastomeres.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">t7</items>
+        <items id="description">The embryo reaches 7 blastomeres.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">t8</items>
+        <items id="description">The embryo reaches 8 blastomeres.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">tSC</items>
+        <items id="description">Evidence of compaction.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">tM</items>
+        <items id="description">Completion of compaction process.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">tSB</items>
+        <items id="description">Initiation of blastulation.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">tB</items>
+        <items id="description">Full blastocyst.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">tE</items>
+        <items id="description">Initiation of expansion.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">tHN</items>
+        <items id="description">Herniation.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">tHB</items>
+        <items id="description">Fully hatched blastocyst.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">Freezing assessment</items>
+        <items id="description">Oocyte or embryo observation at cryopreservation.</items>
+      </items>
+      <items code="at0063">
+        <items id="text">Thawing assessment</items>
+        <items id="description">Oocyte or embryo observation at thawing.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Embryo transfer assessment</items>
+        <items id="description">Embryo observation at embryo transfer.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Day-6 embryo assessment</items>
+        <items id="description">Embryo observation on Day 6 post insemination.</items>
+      </items>
+      <items code="at0066">
+        <items id="text">Oocyte collection assessment</items>
+        <items id="description">Observation of the oocyte at oocyte collection.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Undersøkelse av oocytt og embryo</items>
+        <items id="description">Undersøkelse av morfologi og utvikling av en oocytt eller embryo.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Medisinsk utstyr</items>
+        <items id="description">Detaljer for det medisinske utstyret brukt for vurdering av oocyttens eller embryoets morfologi og utvikling.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Dyrkningsskål ID</items>
+        <items id="description">Et unikt identifiseringsnummer for dyrkningsskål som inneholder oocytten eller embryoet.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Metode</items>
+        <items id="description">Metode for vurdering av oocyttens eller embryoets morfologi og utvikling.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Manuell</items>
+        <items id="description">Morfologi og utvikling ble vurdert ved manuell mikroskopi.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Time-lapse</items>
+        <items id="description">Morfologi og utvikling ble vurdert med automatisert utstyr.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Merking</items>
+        <items id="description">Merking eller betegnelse som identifiserer en oocytt eller embryo.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">ID</items>
+        <items id="description">Unik identifiseringsnummer av oocytt eller embryo.</items>
+        <items id="comment">Eksempelvis hele eller deler av den felles europeiske SEC koden.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Morfologiske funn</items>
+        <items id="description">Strukturerte morfologiske funn for det respektive utviklingsstadiet av oocytt eller embryo.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Multimediarepresentasjon</items>
+        <items id="description">Digitalt bilde, video eller tegning som representerer ooctyttens eller embryoets morfologi og utvikling.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Varighet siden inseminering</items>
+        <items id="description">Tidsperioden siden inseminering.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Tolkning</items>
+        <items id="description">Klinisk tolkning av undersøkelse av oocyttens eller embryoets morfologi og utvikling.</items>
+        <items id="comment">For eksempel "Egnet for klinisk bruk" eller "Uegnet for klinisk bruk".</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Vurdering ved befruktning</items>
+        <items id="description">Undersøkelse av den inseminerte oocytten for å vurdere befruktning.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Vurdering ved syngami</items>
+        <items id="description">Undersøkelse av den inseminerte oocytten for å vurdere syngami.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Vurdering ved tidlig celledeling</items>
+        <items id="description">Undersøkelse av embryo for å vurdere tidlig første celledeling.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Vurdering av dag 2 embryo</items>
+        <items id="description">Undersøkelse av embryo på dag 2 etter inseminering.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Vurdering av dag 3 embryo</items>
+        <items id="description">Undersøkelse av embryo på dag 3 etter inseminering.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Vurdering av dag 4 embryo</items>
+        <items id="description">Undersøkelse av embryo på dag 4 etter inseminering.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Vurdering av dag 5 embryo</items>
+        <items id="description">Undersøkelse av embryo på dag 5 etter inseminering.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Generell beskrivelse av oocytt eller embryo.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om undersøkelse av oocytt eller embryo, som ikke dekkes av andre elementer.</items>
+        <items id="comment">For eksempel vanskelig visualisering.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Utviklingsstadium</items>
+        <items id="description">Oocyttens eller embryoets utviklingsstadium.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Zygote</items>
+        <items id="description">Zygote stadium.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">2-celle stadium</items>
+        <items id="description">2-celle stadium.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">4-celle stadium</items>
+        <items id="description">4-celle stadium.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">8-celle stadium</items>
+        <items id="description">8-celle stadium.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Morula</items>
+        <items id="description">Morula stadium.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Blastocyst</items>
+        <items id="description">Blastocyst stadium.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Oocytt</items>
+        <items id="description">Oocytt stadium.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Hendelse under utvikling</items>
+        <items id="description">Registrering av en hendelse under tidlig utvikling av oocytt eller embryo observert under time-lapse mikroskopi.</items>
+        <items id="comment">Verdisettet er hentet fra Eshre Working Group's 'Nomenclature of morphokinetic parameters'. For eksempel utstøtning av andre pollegeme, forkjernene blir synlige eller visner, celledeling eller kompaktering.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">tPB2 utstøtning</items>
+        <items id="description">Det andre pollegeme er fullstening løsnet fra oolemma.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">tPNa</items>
+        <items id="description">De enkelte forkjernene blir synlig.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">tPNf</items>
+        <items id="description">Forkjernene visner.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">t2</items>
+        <items id="description">Embryoet består av 2 celler.</items>
+      </items>
+      <items code="at0049">
+        <items id="text">t3</items>
+        <items id="description">Embryoet består av 3 celler.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">t4</items>
+        <items id="description">Embryoet består av 4 celler.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">t5</items>
+        <items id="description">Embryoet består av 5 celler.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">t6</items>
+        <items id="description">Embryoet består av 6 celler.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">t7</items>
+        <items id="description">Embryoet består av 7 celler.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">t8</items>
+        <items id="description">Embryoet består av 8 celler.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">tSC</items>
+        <items id="description">Påbegynt kompaktering.</items>
+      </items>
+      <items code="at0056">
+        <items id="text">tM</items>
+        <items id="description">Kompaktering er fullført.</items>
+      </items>
+      <items code="at0057">
+        <items id="text">tSB</items>
+        <items id="description">Påbegynt blastulering.</items>
+      </items>
+      <items code="at0058">
+        <items id="text">tB</items>
+        <items id="description">Komplett blastocyst.</items>
+      </items>
+      <items code="at0059">
+        <items id="text">tE</items>
+        <items id="description">Påbegynt ekspandering.</items>
+      </items>
+      <items code="at0060">
+        <items id="text">tHN</items>
+        <items id="description">Herniering.</items>
+      </items>
+      <items code="at0061">
+        <items id="text">tHB</items>
+        <items id="description">Fullstendig klekket blastocyst.</items>
+      </items>
+      <items code="at0062">
+        <items id="text">Vurdering ved nedfrysing</items>
+        <items id="description">Undersøkelse av oocytt eller embryo ved nedfrysing.</items>
+      </items>
+      <items code="at0063">
+        <items id="text">Vurdering ved opptining</items>
+        <items id="description">Undersøkelse av oocytt eller embryo ved opptining.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Vurdering ved embryo transfer</items>
+        <items id="description">Undersøkelse av embryo ved embryo transfer.</items>
+      </items>
+      <items code="at0065">
+        <items id="text">Vurdering av dag 6 embryo</items>
+        <items id="description">Undersøkelse av embryo på dag 6 etter inseminering.</items>
+      </items>
+      <items code="at0066">
+        <items id="text">Vurdering ved egguttak</items>
+        <items id="description">Undersøkelse av oocyte ved egguttak.</items>
+      </items>
+      <items code="at0067">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -15,6 +15,8 @@ mod adl14_custom_constraints;
 mod adl14_dadl_breadth;
 mod adl14_header_sections;
 mod assembly;
+mod ckm_archetype_packs;
+mod ckm_conversion_breadth;
 mod corpus_coverage;
 mod corpus_definition_parse;
 mod corpus_lex;

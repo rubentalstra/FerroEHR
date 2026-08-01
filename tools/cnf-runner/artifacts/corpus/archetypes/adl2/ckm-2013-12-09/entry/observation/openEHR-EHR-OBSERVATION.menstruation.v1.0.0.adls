@@ -1,0 +1,313 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.menstruation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"20/03/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording information about menstruation">
+			use = <"Use history class to record maximum and minimum durations of bleeding - uses the menstruation cluster for details of a specific or typical cycle">
+			keywords = <"LMP", "menstruation">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sam Heard", ...>
+
+definition
+	OBSERVATION[id1] matches {	-- Menstruation
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									CLUSTER[id16] occurrences matches {0..1} matches {	-- Normal Statements
+										items matches {
+											ELEMENT[id17] matches {	-- Normal statement
+												value matches {
+													DV_TEXT[id44] 
+												}
+											}
+										}
+									}
+									ELEMENT[id31] occurrences matches {0..1} matches {	-- Clinical description
+										value matches {
+											DV_CODED_TEXT[id45] matches {
+												defining_code 
+											}
+										}
+									}
+									CLUSTER[id18] occurrences matches {0..1} matches {	-- Findings
+										items matches {
+											CLUSTER[id33] occurrences matches {0..1} matches {	-- Menarche
+												items matches {
+													ELEMENT[id32] occurrences matches {0..1} matches {	-- Date
+														value matches {
+															DV_DATE_TIME[id46] matches {
+																value matches {yyyy-??-??T??:??:??}
+															}
+														}
+													}
+													ELEMENT[id34] occurrences matches {0..1} matches {	-- Age at menarche
+														value matches {
+															DV_QUANTITY[id47] matches {
+																property matches {[at31]}
+																units matches {"a", "mo"}
+															}
+														}
+													}
+												}
+											}
+											CLUSTER[id5] occurrences matches {0..1} matches {	-- Last Normal Menstrual cycle
+												items matches {
+													CLUSTER[id35] occurrences matches {0..1} matches {	-- Onset of LNMP
+														items matches {
+															allow_archetype ELEMENT[id37] matches {	-- Element: Onset of LNMP
+																include
+																	archetype_id/value matches {/openEHR-EHR-ELEMENT\.lnmp\.v1/}
+															}
+														}
+													}
+													allow_archetype CLUSTER[id38] occurrences matches {0..1} matches {	-- Cluster: Menstrual cycle
+														include
+															archetype_id/value matches {/openEHR-EHR-CLUSTER\.menstrual_cycle\.v1/}
+														exclude
+															archetype_id/value matches {/.*/}
+													}
+													CLUSTER[id15] occurrences matches {0..1} matches {	-- Associated symptoms
+														items matches {
+															allow_archetype CLUSTER[id39] occurrences matches {0..1} matches {	-- Cluster: Associated symptoms
+																include
+																	archetype_id/value matches {/openEHR-EHR-CLUSTER\.symptom-pain\.v1|openEHR-EHR-CLUSTER\.symptom\.v1/}
+																exclude
+																	archetype_id/value matches {/.*/}
+															}
+														}
+													}
+												}
+											}
+											CLUSTER[id6] occurrences matches {0..1} matches {	-- Typical Menstrual cycle
+												items matches {
+													allow_archetype CLUSTER[id40] occurrences matches {0..1} matches {	-- Cluster: Typical Menstrual cycle
+														include
+															archetype_id/value matches {/openEHR-EHR-CLUSTER\.menstrual_cycle\.v1/}
+														exclude
+															archetype_id/value matches {/.*/}
+													}
+													CLUSTER[id21] occurrences matches {0..1} matches {	-- Associated symptoms
+														items matches {
+															allow_archetype CLUSTER[id41] occurrences matches {0..1} matches {	-- Cluster: associated symptoms
+																include
+																	archetype_id/value matches {/openEHR-EHR-CLUSTER\.symptom-pain\.v1|openEHR-EHR-CLUSTER\.symptom\.v1/}
+															}
+														}
+													}
+												}
+											}
+											CLUSTER[id8] matches {	-- Specific Menstrual cycle
+												items matches {
+													ELEMENT[id36] occurrences matches {0..1} matches {	-- Onset of menstrual period
+														value matches {
+															DV_DATE_TIME[id48] matches {
+																value matches {yyyy-??-??T??:??:??}
+															}
+														}
+													}
+													allow_archetype CLUSTER[id42] occurrences matches {0..1} matches {	-- Cluster: Typical Menstrual cycle
+														include
+															archetype_id/value matches {/openEHR-EHR-CLUSTER\.menstrual_cycle\.v1/}
+													}
+													CLUSTER[id22] occurrences matches {0..1} matches {	-- Associated symptoms
+														items matches {
+															allow_archetype CLUSTER[id43] occurrences matches {0..1} matches {	-- Cluster: associated symptoms
+																include
+																	archetype_id/value matches {/openEHR-EHR-CLUSTER\.symptom\.v1|openEHR-EHR-CLUSTER\.symptom-pain\.v1/}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_LIST[id23] matches {
+								items matches {
+									ELEMENT[id24] occurrences matches {0..1} matches {	-- Hormonal or intrauterine contraception
+										value matches {
+											DV_CODED_TEXT[id49] matches {
+												defining_code matches {[ac1]}		-- Hormonal or intrauterine contraception (synthesised)
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Menstruation">
+				description = <"Information about menstruation and menstrual cycles">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Timing event">
+			>
+			["id5"] = <
+				text = <"Last Normal Menstrual cycle">
+				description = <"Clinical information about the last normal menstrual cycle">
+			>
+			["id6"] = <
+				text = <"Typical Menstrual cycle">
+				description = <"Clinical information about a typical menstrual cycle">
+			>
+			["id8"] = <
+				text = <"Specific Menstrual cycle">
+				description = <"Clinical information about a specific menstrual cycle">
+			>
+			["id15"] = <
+				text = <"Associated symptoms">
+				description = <"Symptoms associated with the last menstrual cycle">
+			>
+			["id16"] = <
+				text = <"Normal Statements">
+				description = <"Collection of normal statements about Menstrual History">
+			>
+			["id17"] = <
+				text = <"Normal statement">
+				description = <"Normal statement about Menstrual History">
+			>
+			["id18"] = <
+				text = <"Findings">
+				description = <"Findings associated with menstruation">
+			>
+			["id21"] = <
+				text = <"Associated symptoms">
+				description = <"Symptoms associated with typical menstrual cycles">
+			>
+			["id22"] = <
+				text = <"Associated symptoms">
+				description = <"Symptoms associated with this menstrual cycle">
+			>
+			["id24"] = <
+				text = <"Hormonal or intrauterine contraception">
+				description = <"Details of hormonal or intrauterine contraception">
+			>
+			["at25"] = <
+				text = <"Combined oral">
+				description = <"Oral hormonal containing oestrogen and progestogen">
+			>
+			["at26"] = <
+				text = <"Oral progesterone only">
+				description = <"Oral progesterone only">
+			>
+			["at27"] = <
+				text = <"Progesterone injections or implant">
+				description = <"Using progesterone implant or injections">
+			>
+			["at28"] = <
+				text = <"Non-hormonal intrauterine device">
+				description = <"A non hormonal intrauterine contraceptive device">
+			>
+			["at29"] = <
+				text = <"Hormonal intrauterine device">
+				description = <"An intrauterine device with hormonal release">
+			>
+			["at30"] = <
+				text = <"No hormonal or intrauterine contraception">
+				description = <"Not using any hormonal or intrauterine contraception">
+			>
+			["id31"] = <
+				text = <"Clinical description">
+				description = <"*">
+			>
+			["id32"] = <
+				text = <"Date">
+				description = <"*">
+			>
+			["id33"] = <
+				text = <"Menarche">
+				description = <"*">
+			>
+			["id34"] = <
+				text = <"Age at menarche">
+				description = <"*">
+			>
+			["id35"] = <
+				text = <"Onset of LNMP">
+				description = <"Onset of Last Normal Menstrual Period">
+			>
+			["id36"] = <
+				text = <"Onset of menstrual period">
+				description = <"*">
+			>
+			["id37"] = <
+				text = <"Element: Onset of LNMP">
+				description = <"*">
+			>
+			["id38"] = <
+				text = <"Cluster: Menstrual cycle">
+				description = <"*">
+			>
+			["id39"] = <
+				text = <"Cluster: Associated symptoms">
+				description = <"*">
+			>
+			["id40"] = <
+				text = <"Cluster: Typical Menstrual cycle">
+				description = <"*">
+			>
+			["id41"] = <
+				text = <"Cluster: associated symptoms">
+				description = <"*">
+			>
+			["id42"] = <
+				text = <"Cluster: Typical Menstrual cycle">
+				description = <"*">
+			>
+			["id43"] = <
+				text = <"Cluster: associated symptoms">
+				description = <"*">
+			>
+			["at31"] = <
+				text = <"Time">
+				description = <"Time">
+			>
+			["ac1"] = <
+				text = <"Hormonal or intrauterine contraception (synthesised)">
+				description = <"Details of hormonal or intrauterine contraception (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at31"] = <http://openehr.org/id/128>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at25", "at26", "at27", "at28", "at29", "at30">
+		>
+	>

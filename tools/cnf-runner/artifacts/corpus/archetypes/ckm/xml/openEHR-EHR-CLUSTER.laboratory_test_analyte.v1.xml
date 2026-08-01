@@ -1,0 +1,2119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-07-20</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics, UK</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Fatemeh Chalabianloo, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Nasjonal IKT, Norway</other_contributors>
+    <other_contributors>Silje Kaada, Helse-Bergen, Avdeling for immunologi og transfusjonsmedisin, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Liv Laugen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ole Martin Sand, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Paul Miller, SCIMP NHS Scotland, United Kingdom</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Line Sæle, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Wouter Zanen, Eurotranplant, Netherlands</other_contributors>
+    <other_contributors>Lin Zhang, Taikang Insurance Group, China</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Pathology Test Result, Draft Archetype [Internet]. Australian Digital Health Agency, Australian Digital Health Agency Clinical Knowledge Manager [cited: 2017-06-27]. No longer available.&#xD;
+&#xD;
+Pathology (Data Specifications) Version 1.0 [Internet]. Sydney, Australia: National E-Health Transition Authority; 2007 May 29 [cited 2011 Jul 11]; No longer available.&#xD;
+&#xD;
+Laboratory Technical Framework, Volume 3: Content, Revision 3.0 [Internet]. USA: IHE International; 2011 May 19; [cited 2011 Jul 11]. Available from: https://www.ihe.net/Technical_Framework/upload/IHE_Lab_TF_Rev3-0_Vol3_FT_2011-05-19.pdf&#xD;
+&#xD;
+HL7 FHIR Resource - Observation V1.8.0 FHIR STU3 [Internet]. Health Level Seven International; [accessed 2017 Jun 27]. Available from: http://hl7.org/fhir/2017Jan/.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">25DC09BB69DA53AAF9683F4166266EE9</other_details>
+    <other_details id="build_uid">b0f08214-c8af-4437-9fdf-7ee6b24f83a1</other_details>
+    <other_details id="revision">1.2.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Dient der Darstellung von einzelnen Ergebniswerten für Labor-Analyten, die in der klinischen Diagnostikanalyse wie medizinische Biochemie, Hämatologie, Immunologie und Transfusionsmedizin zu finden ist.</purpose>
+      <keywords>Labor</keywords>
+      <keywords>Pathologie</keywords>
+      <keywords>Analyt</keywords>
+      <keywords>Bestandteil</keywords>
+      <keywords>Ergebnis</keywords>
+      <use>Dient zur Erfassung von einzelnen Ergebniswerten für Labor-Analyten, die in der klinischen Diagnostik verbreitet sind, wie z. B. biochemische, hämatologische, immunologische und transfusionsmedizinische Tests. Diese Ergebnisse können auch in Berichten zur anatomischen Pathologie als "zusätzliche Untersuchungen" vorkommen, zum Beispiel Durchflusszytometrie.&#xD;
+&#xD;
+Eine oder mehrere Instanzen dieses Archetyps können im SLOT "Testergebnis" des Archetyps OBSERVATION.laboratory_test_result verschachtelt werden.&#xD;
+&#xD;
+Unter Umständen kann dieser Archetyp in einem CLUSTER.laboratory_test_panel Archetyp verwendet werden - zusammen mit andere Analyten, die normalerweise als Teil eine Panels oder Profils getestet und/oder befundet werden.&#xD;
+&#xD;
+Dieser Archetyp kann im Rahmen einer komplexerem Labor/Pathologie-Befundung, z.B. in anatomisch-pathologischen Befunden verwendet werden, in denen oft quantitative Resultate, wie Durchfluss-Zytometrie-Analysen neben den üblichen makroskopischen und mikroskopischen Ergebnissen dokumentiert werden.</use>
+      <misuse>Nicht zur Darstellung von strukturierten Details von makroskopischen/mikroskopischen Befunden der anatomischen Pathologie verwenden.&#xD;
+&#xD;
+Nicht zur Darstellung von detaillierten, strukturierten Ergebnissen für Mikrobiologische Befunde verwenden.&#xD;
+</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Registrering av ett enskilt laboratorieanalysresultat som vanligtvis förekommer i undersökningar inom exempelvis klinisk kemi, kliniska mikrobiologi, klinisk genetik, immunologi och transfusionsmedicin.&#xD;
+</purpose>
+      <keywords>laboratorium</keywords>
+      <keywords>labb</keywords>
+      <keywords>patologi</keywords>
+      <keywords>analyt</keywords>
+      <keywords>analys</keywords>
+      <keywords>resultat</keywords>
+      <keywords>analysresultat</keywords>
+      <keywords>svar</keywords>
+      <keywords>komponent</keywords>
+      <use>*Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting. (en)</use>
+      <misuse>*Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere ett enkelt laboratorieresultat innenfor områder som medisinsk biokjemi, hematologi, immunologi og transfusjonsmedisin.</purpose>
+      <keywords>laboratorie</keywords>
+      <keywords>analytt</keywords>
+      <keywords>analyse</keywords>
+      <keywords>svar</keywords>
+      <keywords>resultat</keywords>
+      <use>For å registrere ett enkelt laboratorieresultat innenfor områder som medisinsk biokjemi, hematologi, immunologi og transfusjonsmedisin. Arketypen kan også brukes til tilleggsundersøkelser innenfor patologi, for eksempel flowcytometri.&#xD;
+&#xD;
+En eller flere instanser av denne arketypen kan nøstes i SLOTet "Undersøkelsesresultat" i arketypen OBSERVATION.laboratory_test_result.&#xD;
+&#xD;
+I noen sammenhenger kan denne arketypen brukes i arketypen CLUSTER.laboratory_test_panel, sammen med andre analytter som vanligvis utføres sammen som del av en analysegruppe.&#xD;
+&#xD;
+Denne arketypen kan brukes innenfor mer komplekse laboratorie/patologirapporter der kvantitative svar som for eksempel flowcytometri rapporteres sammen med konvensjonelle makroskopiske og mikroskopiske undersøkelser.</use>
+      <misuse>Skal ikke brukes til å registrere strukturerte detaljer om makroskopiske/mikroskopiske funn i anatomisk patologi.&#xD;
+&#xD;
+Skal ikke brukes til å registrere detaljerte strukturerte resultater for mikrobiologiske dyrkningsfunn.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para gravar valores únicos e individuais de resultados laboratoriais de analitos comuns a testes patológicos clínicos como bioquímica, hematologia e imunologia.&#xD;
+</purpose>
+      <keywords>laboratório</keywords>
+      <keywords>patologia</keywords>
+      <keywords>analito</keywords>
+      <keywords>componente</keywords>
+      <keywords>resultado</keywords>
+      <use>*Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting. (en)</use>
+      <misuse>*Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine.</purpose>
+      <keywords>laboratory</keywords>
+      <keywords>pathology</keywords>
+      <keywords>analyte</keywords>
+      <keywords>constituent</keywords>
+      <keywords>result</keywords>
+      <use>Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting.</use>
+      <misuse>Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Pour enregistrer le résultat d'un paramètre de laboratoire à valeur unique, couramment utilisé dans les examens de pathologie clinique tels que la biochimie médicale, l'hématologie, l'immunologie et la médecine transfusionnelle.</purpose>
+      <keywords>laboratoire</keywords>
+      <keywords>pathologie</keywords>
+      <keywords>analyte</keywords>
+      <keywords>composant</keywords>
+      <keywords>résultat</keywords>
+      <use>À utiliser pour enregistrer le résultat d’un analyte de laboratoire à valeur unique, couramment rencontré dans les examens de pathologie clinique tels que la biochimie médicale, l’hématologie, l’immunologie et la médecine transfusionnelle. Ces résultats peuvent également figurer dans les rapports d’anatomopathologie en tant qu’« examens complémentaires », par exemple la cytométrie de flux.&#xD;
+&#xD;
+Une ou plusieurs instances de cet archétype peuvent être imbriquées dans le SLOT « Résultat d’examen » de l’OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+Dans certaines circonstances, cet archétype peut être intégré dans l’archétype CLUSTER.laboratory_test_panel, avec d’autres analytes qui sont normalement analysés et/ou rapportés dans le cadre d’une batterie de tests, d’un panel ou d’un profil. &#xD;
+&#xD;
+Cet archétype peut être utilisé dans le cadre de rapports de laboratoire/pathologie plus complexes, tels que des rapports de pathologie anatomique, où des résultats quantitatifs, comme des études des cytométrie de flux, sont souvent rapportés parallèlement aux rapports macroscopiques et microscopiques conventionnels.</use>
+      <misuse>À ne pas utiliser pour enregister des informations structurées concernant les résultats macroscopiques ou microscopiques en anatomopathologie.&#xD;
+&#xD;
+À ne pas utiliser pour enregister des résultats détaillés et structurés concernant les résultats de cultures microbiologiques.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>旨在用于记录单值型的实验室检验结果，常见于医学生物化学、血液学、免疫学和输血医学等临床病理学/检验医学检测当中。</purpose>
+      <keywords>实验室</keywords>
+      <keywords>病理学</keywords>
+      <keywords>检验医学</keywords>
+      <keywords>检验</keywords>
+      <keywords>分析物</keywords>
+      <keywords>检验项目</keywords>
+      <keywords>检验结果</keywords>
+      <keywords>化验结果</keywords>
+      <keywords>构成要素</keywords>
+      <use>旨在用于记录单值型的实验室检验结果，常见于医学生物化学、血液学、免疫学和输血医学等临床病理学/检验医学检测当中。&#xD;
+&#xD;
+可以在实验室检验结果观察型原始型OBSERVATION.laboratory_test_result中的检验结果槽位“Test result”之内嵌套本原始型的一个或多个实例。&#xD;
+&#xD;
+在某些情况下，可以将本原始型，与通常作为组合、组套/套餐或项目集组成部分进行检测和/或报告的其他分析物一起，收纳在同一个实验室检验项目组套群簇型原始型CLUSTER.laboratory_test_panel原始型之内。&#xD;
+&#xD;
+而且，还可以将本原始型用于解剖病理学报告之类更为复杂的实验室/病理学报告场景；在此类报告当中，常常会将流式细胞术检查之类的定量结果（如研究）与常规/传统的大体/肉眼检查和显微镜检查报告一同加以报告和呈现。</use>
+      <misuse>本原始型并不用于记录关于解剖病理学大体/肉眼检查和显微镜检查结果的结构化详情。&#xD;
+&#xD;
+本原始型并不用于记录关于微生物培养结果的详细结构化结果信息。</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>Voor het vastleggen van een enkele laboratorium analyt uitslag, gebruikelijk in klinische chemische onderzoeken zoals medische biochemie, hematologie, immunologie en transfusiegeneeskunde.</purpose>
+      <keywords>laboratorium</keywords>
+      <keywords>klinische chemie</keywords>
+      <keywords>analyt</keywords>
+      <keywords>bepaling</keywords>
+      <keywords>uitslag</keywords>
+      <use>*Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting. (en)</use>
+      <misuse>*Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar el resultado de un analito de laboratorio de valor único, normalmente en pruebas de patología clínica como bioquímica médica, hematología, inmunología y medicina transfusional.</purpose>
+      <keywords>laboratorio</keywords>
+      <keywords>patología</keywords>
+      <keywords>analito</keywords>
+      <keywords>componente</keywords>
+      <keywords>resultado</keywords>
+      <use>*Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting. (en)</use>
+      <misuse>*Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar un resultat d'un anàlit de laboratori d'un únic valor, que es troba normalment en les proves de patologia clínica, com ara bioquímica, hematologia, immunologia, i medicina transfusional.</purpose>
+      <keywords>laboratori</keywords>
+      <keywords>patologia</keywords>
+      <keywords>anàlit</keywords>
+      <keywords>constituent</keywords>
+      <keywords>resultat</keywords>
+      <use>*Use to record a single value laboratory analyte result, commonly found in clinical pathology testing such as medical biochemistry, haematology, immunology and transfusion medicine. These results may also appear in anatomical pathology reports as ‘ancillary tests', for example flow cytometry.&#xD;
+&#xD;
+One or more instances of this archetype may be nested within the 'Test result' SLOT in the OBSERVATION.laboratory_test_result. &#xD;
+&#xD;
+In some circumstances this archetype may be carried within a CLUSTER.laboratory_test_panel archetype, together with other analytes which are normally tested and/or reported as part of a battery, panel or profile. &#xD;
+&#xD;
+This archetype may be used within the setting of more complex laboratory/pathology reporting such as anatomical pathology reports where quantitative results such as cytometric flow studies are often reported alongside conventional macroscopic and microscopic reporting. (en)</use>
+      <misuse>*Not to be used to record structured details about anatomical pathology macroscopic/microscopic findings.&#xD;
+&#xD;
+Not to be used to record detailed structured results for microbiological culture findings. (en)</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Michael Lieser, Antje Wulff, Natalia Strauch, Alina Rehberg</author>
+    <author id="organisation">Department of Infectious Diseases, Heidelberg University Hospital, Medizinische Hochschule Hannover</author>
+    <author id="email">michael.lieser@med.uni-heidelberg.de, wulff.antje@mh-hannover.de, Strauch.Natalia@mh-hannover.de, rehberg.alina@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Linda Aulin, Linda Aulin Lundeqvist</author>
+    <author id="organisation">Region Stockholm, Karolinska University Hospital, Karolinska University Hospital, Region Stockholm</author>
+    <author id="email">linda.aulin@sll.se, linda.aulin-lundeqvist@regionstockholm.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Liv Laugen</author>
+    <author id="organisation">Nasjonal IKT HF, ​Oslo University Hospital, Norway</author>
+    <author id="email">liv.laugen@ous-hf.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Adriana Kitajima, Débora Farage, Fernanda Maia, Laíse Figueiredo, Marivan Abrahão</author>
+    <author id="organisation">Core Consulting</author>
+    <author id="email">contato@coreconsulting.com.br</author>
+    <accreditation>Hospital Alemão Oswaldo Cruz (HAOC)</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Jonas Bucher</author>
+    <author id="organisation">Cistec AG</author>
+    <author id="email">jonas.bucher@cistec.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">Freelancer</author>
+    <author id="email">linforest@163.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Joost Holslag</author>
+    <author id="organisation">Nedap</author>
+    <author id="email">joost.holslag@nedap.com</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Julio de Sosa</author>
+    <author id="organisation">Servei Català de la Salut</author>
+    <author id="email">juliodesosa@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Manuel José Zafra Doménech</author>
+    <author id="organisation">TRADCREA, S.L.</author>
+    <author id="email">mzafra@tradcrea.com</author>
+    <other_details id="other_contributors">Servei Català de la Salut</other_details>
+  </translations>
+  <uid>
+    <value>f86cd61b-0e0e-4a18-8c07-9c4e537bb4e4</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.laboratory_test_analyte.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0024</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0028</node_id>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0031</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0015</code_list>
+                <code_list>at0016</code_list>
+                <code_list>at0017</code_list>
+                <code_list>at0018</code_list>
+                <code_list>at0020</code_list>
+                <code_list>at0019</code_list>
+                <code_list>at0021</code_list>
+                <code_list>at0023</code_list>
+                <code_list>at0022</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0026</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_URI</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0032</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_BOOLEAN</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Laboratory analyte result</items>
+        <items id="description">The result of a laboratory test for a single analyte value.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Analyte result</items>
+        <items id="description">The value of the analyte result.</items>
+        <items id="comment">For example '7.3 mmol/l', 'Raised'. The 'Any' data type will need to be constrained to an appropriate data type in a specialisation, a template or at run-time to reflect the actual analyte result. The Quantity data type has reference model attributes that include flags for normal/abnormal, reference ranges and approximations - see https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class for more details.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the analyte result, not captured in other fields.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Reference range guidance</items>
+        <items id="description">Additional advice on the applicability of the reference range to this result or may carry text or coded textual guidance as to whether the result is within the normal range.</items>
+        <items id="comment">For example, 'within normal limits for age and sex'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Result status</items>
+        <items id="description">The status of the analyte result value.</items>
+        <items id="comment">The values have been specifically chosen to match those in the HL7 FHIR Diagnostic report, historically derived from HL7v2 practice. Other local codes/terms can be used via the Text 'choice'.&#xD;
+&#xD;
+This element allows multiple occurrences to support use cases where more than one type of status need to be implemented.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Result status time</items>
+        <items id="description">The date and time that the analyte result was issued for the recorded ‘Result status’.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Analyte result detail</items>
+        <items id="description">Further detail regarding an individual result.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registered</items>
+        <items id="description">The existence of the test is registered in the Laboratory Information System, but there is nothing yet available.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Partial</items>
+        <items id="description">This is a partial (e.g. initial, interim or preliminary) Test Result: data in the Test Result may be incomplete or unverified.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Preliminary</items>
+        <items id="description">Verified early results are available, but not all results are final. This is a sub-category of 'Partial'.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Final</items>
+        <items id="description">The Test result is complete and verified by an authorised person.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Corrected</items>
+        <items id="description">The result has been modified subsequent to being Final, and is complete and verified by an authorised person. This is a sub-category of 'Amended'.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Amended</items>
+        <items id="description">The result has been modified subsequent to being Final, and is complete and verified by an authorised person, and result data has been changed.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Appended</items>
+        <items id="description">Subsequent to being final, the report has been modified by adding new content. The existing content is unchanged. This is a sub-category of 'Amended'.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Entered in error</items>
+        <items id="description">The Test Result has been withdrawn following previous Final release.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Cancelled</items>
+        <items id="description">The result is unavailable because the test was not started or not completed (also sometimes called 'aborted').</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Analyte name</items>
+        <items id="description">The name of the analyte result.</items>
+        <items id="comment">The value for this element is normally supplied in a specialisation, in a template or at run-time to reflect the actual analyte. For example: 'Serum sodium', 'Haemoglobin'. Coding with an external terminology is strongly recommended, such as LOINC, NPU, SNOMED CT, or local lab terminologies.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Validation time</items>
+        <items id="description">The date and time that the analyte result was validated in the laboratory by a healthcare practitioner.</items>
+        <items id="comment">In many jurisdictions the 'Result status' is assumed to include medical validation i.e. a 'final' result will be assumed to be medically validated, but in others this will be recorded and reported separately using this data element.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Specimen</items>
+        <items id="description">Identification of the specimen used for the analyte result.</items>
+        <items id="comment">In some situations, a single Laboratory test result archetype will contain multiple Specimen archetypes and multiple Analyte result archetypes. In these situations, this 'Specimen' data element is needed to be able to connect the results with the correct specimens.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Analyte result sequence</items>
+        <items id="description">The intended position of this analyte result within the overall sequence of analyte results.</items>
+        <items id="comment">For example: '1' '2', '3'. Where multiple analyte results are reported, the 'Analyte result sequence' makes the order in which they were reported explicit.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Test method</items>
+        <items id="description">Description about the method used to perform the test on this analyte only.</items>
+        <items id="comment">If the test method applies to an entire panel, the test method can be captured using the 'Test method' data element within the OBSERVATION.laboratory_test_result</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Analysis performed time</items>
+        <items id="description">The date and time when the analyte result was performed in the laboratory by a healthcare practitioner.</items>
+        <items id="comment">Represents the actual analysis timestamp, independent of when the result is recorded or reported.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Accredited</items>
+        <items id="description">Indicates whether the analytical method used for this analyte is accredited.</items>
+        <items id="comment">Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Analyseresultat</items>
+        <items id="description">Resultatet av en individuell laboratorieanalyse.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Analyseresultat</items>
+        <items id="description">Verdien av analyseresultatet.</items>
+        <items id="comment">For eksempel "7,3 mmol/L" eller "Forhøyet". Datatypen "Udefinert datatype" må begrenses til en passende datatype i en spesialisering, et templat eller i applikasjonen. Datatypen Quantity har attributter fra referansemodellen som dekker flagg for normalt/unormalt, referanseområder og approksimeringer. Se https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class for mer detaljer.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om analyseresultatet som ikke fanges opp av andre elementer.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Veileder for referanseområde</items>
+        <items id="description">Veileder for å finne ut om referanseverdien er relevant for dette resultatet. Kan inneholde tekst eller kodet tekstlig råd for om resultatet ligger innenfor normalområdet.</items>
+        <items id="comment">For eksempel "innenfor normale grenseverdier i forhold til alder og kjønn".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Resultatstatus</items>
+        <items id="description">Status for analyseresultatet.</items>
+        <items id="comment">Verdiene er valgt spesifikt for å samsvare med verdiene i HL7 FHIR-ressursen "Diagnostic report", som historisk sett kommer fra praksis i HL7 v2. Andre lokale koder eller termer kan brukes ved å bruke datatypen "Fri eller kodet tekst".&#xD;
+&#xD;
+Dette elementet kan repeteres for å imøtekomme brukstilfeller der det er mer enn en type status som må implementeres.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tidspunkt for statusendring</items>
+        <items id="description">Datoen og tidspunktet da analyseresultatet ble utstedt for den aktuelle "Analyseresultatstatus".</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Detaljer om analyseresultat</items>
+        <items id="description">Ytterligere detaljer knyttet til et enkelt analyseresultat.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registrert</items>
+        <items id="description">Analysen er registrert i laboratoriesystemet, men resultatet er ikke tilgjengelig per nå.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Ufullstendig</items>
+        <items id="description">Dette er et delvis (dvs initalt, foreløpig eller preliminært) svar: Data i resultatet kan være ukomplett eller ubekreftet.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Foreløpig</items>
+        <items id="description">Verifiserte tidlige resultater er tilgjengelige, men ikke alle resultater er endelige. Dette er en underkategori av "Delvis".</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Endelig</items>
+        <items id="description">Resultatet er komplett og er bekreftet av ansvarlig person.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Korrigert</items>
+        <items id="description">Etter å ha vært satt som status "Endelig", har det blitt lagt nytt innhold til rapporten. Det eksisterende innholdet er uendret. Dette er en underkategori av "Revidert"</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Revidert</items>
+        <items id="description">Resultatet har blitt modifisert etter å ha vært i status "Endelig", og er komplett og verifisert av ansvarlig person, og resultatdata er endret.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tillegg</items>
+        <items id="description">Etter å ha vært satt som status "Endelig", har det blitt lagt nytt innhold til rapporten. Det eksisterende innholdet er uendret. Dette er en underkategori av "Revidert".</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Feilregistrert</items>
+        <items id="description">Analyseresultatet har blitt trukket tilbake etter å ha vært i status Endelig.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kansellert</items>
+        <items id="description">Resultatet er utilgjengelig fordi analysen ikke ble påbegynt eller ferdigstilt (også kalt "avbrutt").</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Analysenavn</items>
+        <items id="description">Navnet på analyseresultatet.</items>
+        <items id="comment">Verdien for dette elementet blir vanligvis lagt inn i en spesialisering av denne arketypen, i en templat, eller i applikasjonen. For eksempel "serum natrium" eller "hemoglobin". Det er sterkt anbefalt å kode dette elementet med en terminologi, for eksempel Norsk laboratoriekodeverk, NPU, LOINC, SNOMED CT eller lokale kodesett.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Tidspunkt for medisinsk validering</items>
+        <items id="description">Datoen og tidspunktet da analyseresultatet ble medisinsk validert i laboratoriet.</items>
+        <items id="comment">I mange myndighetsområder omfatter "Resultatstatus" implisitt medisinsk validering, det vil si at et resultat med status "Endelig" vil antas å være medisinsk validert. I andre myndighetsområder kan dette registreres og rapporteres separat ved hjelp av dette dataelementet.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Prøvemateriale</items>
+        <items id="description">Identifikator eller link til prøvematerialet som ble brukt i analysen.</items>
+        <items id="comment">I noen situasjoner vil én Laboratorieresultat-arketype inneholde flere Prøvemateriale-arketyper og flere Analyseresultat-arketyper. I disse situasjonene må man bruke dette elementet for å kunne koble resultatene til de korrekte prøvematerialene.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Resultatrekkefølge</items>
+        <items id="description">Plasseringen av dette analyseresultatet i den overordnede rekkefølgen av resultater.</items>
+        <items id="comment">For eksempel "1", "2", "3". Dersom det er flere analyseresultater i en rapport gjør "Resultatrekkefølge" rekkefølgen i svarrapporten eksplisitt.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Testmetode</items>
+        <items id="description">Beskrivelse av metoden brukt for analysering av denne analytten.</items>
+        <items id="comment">Hvis testmetoden gjelder for hele testpanelet kan metoden beskrives ved å bruke "Testing method" (Testmetode) dataelementet i arketypen OBSERVATION.laboratory_test_result (Laboratorieresultat).</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Tidspunkt for utført analyse</items>
+        <items id="description">Dato og tidspunkt da analytten ble analysert i laboratoriet.</items>
+        <items id="comment">Representerer det faktiske analysetidspunktet, uavhengig av når resultatet registreres eller rapporteres.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Akkreditert</items>
+        <items id="description">Indikerer om analysemetoden som er brukt for dette analyttet, er akkreditert.</items>
+        <items id="comment">Understøtter kvalitetssikring og etterlevelse av regelverk ved å angi om laboratorieanalysen ble utført etter en akkreditert metode.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">*Laboratory analyte result(en)</items>
+        <items id="description">*The result of a laboratory test for a single analyte value.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Analyte result(en)</items>
+        <items id="description">*The value of the analyte result.(en)</items>
+        <items id="comment">*For example '7.3 mmol/l', 'Raised'. The 'Any' data type will need to be constrained to an appropriate data type in a specialisation, a template or at run-time to reflect the actual analyte result. The Quantity data type has reference model attributes that include flags for normal/abnormal, reference ranges and approximations - see https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class for more details.(en)</items>
+        <items id="hl7v2_mapping">*OBX.2,OBX.5,OBX.6(en)</items>
+        <items id="fhir_mapping">*Observation.value[x](en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Comment(en)</items>
+        <items id="description">*Additional narrative about the analyte result, not captured in other fields.(en)</items>
+        <items id="hl7v2_mapping">*NTE.3(en)</items>
+        <items id="fhir_mapping">*Observation.comments(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Reference range guidance(en)</items>
+        <items id="description">*Additional advice on the applicability of the reference range to this result or may carry text or coded textual guidance as to whether the result is within the normal range.(en)</items>
+        <items id="comment">*For example, 'within normal limits for age and sex'.(en)</items>
+      </items>
+      <items code="at0005">
+        <items id="text">*Result status(en)</items>
+        <items id="description">*The status of the analyte result value.(en)</items>
+        <items id="comment">*The values have been specifically chosen to match those in the HL7 FHIR Diagnostic report, historically derived from HL7v2 practice. Other local codes/terms can be used via the Text 'choice'.&#xD;
+&#xD;
+This element is multiple occurrence to cater for the use cases where there are more than one type of status need to be implemented by using two or more instances of this data element. (en)</items>
+        <items id="hl7v2_mapping">*OBX-11-observation result status(en)</items>
+        <items id="fhir_mapping">*status(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Result status time(en)</items>
+        <items id="description">*The date and time that the analyte result was issued for the recorded ‘Result status’.(en)</items>
+        <items id="hl7v2_mapping">*OBX-22 and/or OBX-19(en)</items>
+        <items id="fhir_mapping">*Observation.issued(en)</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Detalhes do resultado do analito</items>
+        <items id="description">Detalhes adicionais relativos a um resultado individual.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registrado</items>
+        <items id="description">A existência do teste é registrada no sistema de informação do laboratório, mas não há nada disponível ainda.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Parcial</items>
+        <items id="description">Este é um resultado de teste parcial (p.e. inicial, intermediário ou preliminar): dados no resultado do teste podem estar incompletos ou não verificados.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Preliminar</items>
+        <items id="description">Resultados iniciais verificados estão disponíveis, mas nem todos os resultados são definitivos. Esta é uma sub-categoria de "Parcial".</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Final</items>
+        <items id="description">O resultado final está completo e verificado por uma pessoa autorizada.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">*Corrected(en)</items>
+        <items id="description">*The result has been modified subsequent to being Final, and is complete and verified by an authorised person. This is a sub-category of 'Amended'. (en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">*Amended(en)</items>
+        <items id="description">*The result has been modified subsequent to being Final, and is complete and verified by an authorised person, and result data has been changed. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">*Appended(en)</items>
+        <items id="description">*Subsequent to being final, the report has been modified by adding new content. The existing content is unchanged. This is a sub-category of 'Amended'.(en)</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Entrada com erro</items>
+        <items id="description">O resultado do teste foi retirado após ser finalizado.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Cancelado</items>
+        <items id="description">O resultado está indisponível porque o teste não foi iniciado ou não foi completado (algumas vezes chamado de "abortado").</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Analyte name(en)</items>
+        <items id="description">*The name of the analyte result.(en)</items>
+        <items id="comment">*The value for this element is normally supplied in a specialisation, in a template or at run-time to reflect the actual analyte. For example: 'Serum sodium', 'Haemoglobin'. Coding with an external terminology is strongly recommended, such as LOINC, NPU, SNOMED CT, or local lab terminologies.(en)</items>
+        <items id="hl7v2_mapping">*OBX-3.1;3.2(en)</items>
+        <items id="fhir_mapping">*Observation.code(en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Validation time(en)</items>
+        <items id="description">*The date and time that the analyte result was validated in the laboratory by a healthcare practitioner.(en)</items>
+        <items id="comment">*In many jurisdictions the 'Result status' is assumed to include medical validation i.e. a 'final' result will be assumed to be medically validated, but in others this will be recorded and reported separately using this data element.(en)</items>
+      </items>
+      <items code="at0026">
+        <items id="text">*Specimen(en)</items>
+        <items id="description">*Identification of the specimen used for the analyte result.(en)</items>
+        <items id="comment">*In some situations, a single Laboratory test result archetype will contain multiple Specimen archetypes and multiple Analyte result archetypes. In these situations, this 'Specimen' data element is needed to be able to connect the results with the correct specimens.(en)</items>
+      </items>
+      <items code="at0027">
+        <items id="text">*Analyte result sequence(en)</items>
+        <items id="description">*</items>
+      </items>
+      <items code="at0028">
+        <items id="text">*Test method (en)</items>
+        <items id="description">*Description about the method used to perform the test on this analyte only. (en)</items>
+        <items id="comment">*If the test method applies to an entire panel, the test method can be captured using the 'Test method' data element within the OBSERVATION.laboratory_test_result (en)</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Analysis performed time (en)</items>
+        <items id="description">*The date and time when the analyte result was performed in the laboratory by a healthcare practitioner. (en)</items>
+        <items id="comment">*Represents the actual analysis timestamp, independent of when the result is recorded or reported. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Accredited (en)</items>
+        <items id="description">*Indicates whether the analytical method used for this analyte is accredited. (en)</items>
+        <items id="comment">*Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Laboranalyt-Ergebnis</items>
+        <items id="description">Ergebnis einer Laboranalyse für einen bestimmten Analytwert.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Analyt-Ergebnis</items>
+        <items id="description">(Mess-)Wert des Analyt-Ergebnisses.</items>
+        <items id="comment">Z.B. "7,3 mmol/l", "Erhöht". Der "Any"-Datentyp wird dann durch eine Spezialisierung, eine Vorlage oder zur Laufzeit der Anwendung auf einen passenden Datentyp eingeschränkt werden müssen, um das aktuelle Analyt-Ergebnis wiederzugeben. Der "Quantity"-Datentyp hat Referenzmodell-Attribute, wie Kennungen für normal/abnormal, Referenzbereiche und Näherungen - für weitere Details s. https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class .</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kommentar</items>
+        <items id="description">Kommentar zum Analyt-Ergebnis, soweit noch nicht in anderen Feldern erfasst.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Referenzbereichs-Hinweise</items>
+        <items id="description">Zusätzliche Hinweise zur Anwendbarkeit des Referenzbereichs für dieses Resultat oder (codierter) Text, ob das Ergebnis im Referenzbereich ist oder nicht.</items>
+        <items id="comment">z.B.: 'im Referenzbereich, bezogen auf Alter und Geschlecht'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Ergebnis-Status</items>
+        <items id="description">Status des Analyt-Ergebniswertes.</items>
+        <items id="comment">Die Werte wurden speziell so ausgewählt, dass sie mit denen im HL7 FHIR-Diagnosebericht übereinstimmen, der ursprünglich aus der HL7v2-Praxis abgeleitet wurde. Andere lokale Codes / Begriffe können über die Textauswahl verwendet werden.&#xD;
+&#xD;
+Dieses Element ermöglicht mehrere Vorkommen, um Anwendungsfälle zu unterstützen, wo mehr als eine Art von Status implementiert werden muss.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Zeitpunkt Ergebnis-Status</items>
+        <items id="description">Datum und/oder Zeitpunkt an dem der Status für das Analyseergebnis gesetzt wurde.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Analyseergebnis-Detail</items>
+        <items id="description">Weitere Details zu einem einzelnen Ergebnis.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registriert</items>
+        <items id="description">Der Test ist im Laborinformationssystem registriert, aber noch kein Ergebnis verfügbar.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Unvollständig</items>
+        <items id="description">Das Testergebnis ist ein Anfangs- oder Interimswert: Daten im Testergebnis können unvollständig oder nicht verifiziert/validiert sein.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Vorläufig</items>
+        <items id="description">Erste, verifizierte Resultate sind vorhanden, der Test ist aber noch nicht abgeschlossen (Sub-Kategorie von 'Unvollständig').</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Endbefund</items>
+        <items id="description">Das Analyseergebnis ist vollständig und durch eine autorisierte Person verifiziert.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Korrigiert</items>
+        <items id="description">Das Ergebnis wurde nach dem endgültigen Abschluss geändert und ist vollständig und wird von einer autorisierten Person überprüft. Dies ist eine Sub-Kategorie von "Geändert".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Geändert</items>
+        <items id="description">Das Ergebnis wurde nach dem endgültigen Abschluss geändert und ist vollständig und von einer autorisierten Person überprüft. Die Ergebnisdaten wurden geändert.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Ergänzt</items>
+        <items id="description">Nach Abschluss wurde der Bericht durch das Hinzufügen neuer Inhalte abgeändert. Die vorhandene Inhalte sind unverändert. Dies ist eine Sub-Kategorie von "Geändert".</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Endbefund, widerrufen</items>
+        <items id="description">Das Testergebnis wurde nach Endbefundung zurückgezogen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Storniert</items>
+        <items id="description">Das Testergebnis ist nicht verfügbar, weil der Test nicht gestartet oder nicht abgeschlossen wurde (manchmal auch als "abgebrochen" bezeichnet).</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Bezeichnung des Analyts</items>
+        <items id="description">Der Name des untersuchten Analyts.</items>
+        <items id="comment">Der Wert dieses Elements wird normalerweise, meist durch eine Spezialisierung, in einem Template oder zur Laufzeit der Anwendung geliefert, um den aktuellen Analyt wiederzugeben. Zum Beispiel: 'Natrium im Serum', 'Hämoglobin'. &#xD;
+Die Codierung mit einer externen Terminologie, wie LOINC, NPU, SNOMED-CT oder lokalen Labor-Terminologien wird dringend empfohlen.&#xD;
+</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Zeitpunkt der Validierung</items>
+        <items id="description">Datum und Uhrzeit der Validierung des Analyt-Ergebnisses im Labor durch medizinisches Fachpersonal.</items>
+        <items id="comment">In vielen Gerichtsbarkeiten wird angenommen, dass der "Ergebnis-Status" die medizinische Validierung einschliesst, in anderen wird diese anhand dieses Datenelements separat erfasst und befundet.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Probe</items>
+        <items id="description">Kennung der Probe, die für das Analyseergebnis verwendet wurde.</items>
+        <items id="comment">In manchen Situationen wird ein einzelner Laborergebnis-Archetyp mehrere Probe- und Laboranalyt-Ergebnis-Archetypen enthalten. In diesen Fällen wird dieses "Probe"-Datenelement benötigt, um die Ergebnisse mit den richtigen Proben zu verknüpfen.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Analyseergebnis-Reihenfolge</items>
+        <items id="description">Die beabsichtigte Position dieses Analyseergebnisses in der Reihenfolge aller Analyseergebnisse.</items>
+        <items id="comment">z.B. '1', '2', '3'. Werden mehrere Analysenergebnisse berichtet, gibt die Analyseergebnis-Reihenfolge explizit die Reihenfolge der Analyseergebnisse an.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Testmethode</items>
+        <items id="description">Die Beschreibung der Methode, mit der der Test nur für diesen Analyten durchgeführt wurde.</items>
+        <items id="comment">Wenn die Testmethode für ein gesamtes Panel gilt, kann die Testmethode mithilfe des Datenelements "Testmethode" im Ergebnis OBSERVATION.laboratory_test_result erfasst werden.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Zeitpunkt der Analyse</items>
+        <items id="description">Datum und Uhrzeit der Durchführung des Analyt-Ergebnisses im Labor durch medizinisches Fachpersonal.</items>
+        <items id="comment">Stellt den tatsächlichen Analysezeitpunkt dar, unabhängig davon, wann das Ergebnis erfasst oder gemeldet wird.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Akkreditiert</items>
+        <items id="description">Gibt an, ob die für diesen Analyten verwendete Analysemethode akkreditiert ist.</items>
+        <items id="comment">Unterstützt die Qualitätssicherung und die Einhaltung gesetzlicher Vorschriften, indem angegeben wird, ob die Laboranalyse nach einer akkreditierten Methode durchgeführt wurde.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">Laboratorium analyt uitslag</items>
+        <items id="description">Het resultaat van een laboratorium test voor een bepaling van een enkele bepaling.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Uitslag van een analyt</items>
+        <items id="description">De waarde van een analyt uitslag.</items>
+        <items id="comment">Bijvoorbeeld: '7.3 mmol/l', 'Verhoogd'. Om het daadwerkelijke analyt result weer te geven dient het 'Any' data type gespecificeerd te worden tot een toepasselijk data type in een specialisatie, een template of terwijl de applicatie loopt.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Opmerking</items>
+        <items id="description">Extra beschrijving van de analyt uitslag, die niet past binnen andere velden.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Referentiebereik aanwijzing</items>
+        <items id="description">Extra advies over de toepasselijkheid van het referentiebereik van deze uitslag; mag ook een textuele of gecodeerd textuele aanwijzing bevatten of het resultaat binnen het normale bereik valt.</items>
+        <items id="comment">Bijvoorbeeld: 'binnen het normale bereik voor leeftijd en geslacht'</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Uitslag status</items>
+        <items id="description">De status van de waarde van de analyt uitslag.</items>
+        <items id="comment">*The values have been specifically chosen to match those in the HL7 FHIR Diagnostic report, historically derived from HL7v2 practice. Other local codes/terms can be used via the Text 'choice'.&#xD;
+&#xD;
+This element is multiple occurrence to cater for the use cases where there are more than one type of status need to be implemented by using two or more instances of this data element. (en)</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tijd van de status van de uitslag</items>
+        <items id="description">De datum en tijd van de 'Status van de uitslag' van de analyt uitslag.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Analyte uitslag details</items>
+        <items id="description">Verdere details over een individuele uitslag.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Vastgelegd</items>
+        <items id="description">Het bestaan van de test is vastgelegd in het Laboratorium informatie systeem, maar er is nog niets beschikbaar.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Gedeeltelijk</items>
+        <items id="description">Dit is een gedeeltelijke (bijvoorbeeld initiële, tussentijdse of voorlopige) Test Uitslag: data in de Test Uitslag kan incompleet of ongevalideerd zijn.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Voorlopig</items>
+        <items id="description">Gevalideerde uitslagen zijn beschikbaar, maar niet alle uitslagen zijn definitief. Dit is een subcategorie van 'Gedeeltelijk'.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Definitief</items>
+        <items id="description">De Test uitslag is compleet en geverifieerd door een bevoegd persoon.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Gewijzigd</items>
+        <items id="description">*The result has been modified subsequent to being Final, and is complete and verified by an authorised person. This is a sub-category of 'Amended'. (en)</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Aangepast</items>
+        <items id="description">*The result has been modified subsequent to being Final, and is complete and verified by an authorised person, and result data has been changed. (en)</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Informatie toegevoegd</items>
+        <items id="description">Er is nieuwe informatie toegevoegd nadat het verslag eerder Definitief was. De bestaande informatie is onveranderd. Dit is een subcategorie van 'Aangepast'.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Verkeerd ingevoerd</items>
+        <items id="description">De Tets Uitslag is teruggetrokken nadat hij eerder definitief was.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Geanuleerd</items>
+        <items id="description">De uitslag is niet beschikbaar omdat de test niet gestart of niet compleet was.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Naam van het Analyt</items>
+        <items id="description">De naam van de analyt uitslag</items>
+        <items id="comment">De waarde voor dit element wordt normaal bepaald in een specialisatie, in een template of terwijl de applicatie loopt om het daadwerkelijke analyt weer te geven. Bijvoorbeeld: 'Serum natrium' of 'Haemoglobine'. Het wordt sterk aanbevolen te coderen met een externe terminologie, zoals LOINC, NPU, SNOMED CT, of een lokale lab terminologie.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Tijd van validatie</items>
+        <items id="description">De datum en tijd waarop de analyt uitslag werd gevalideerd in het laboratorium door een gezondheidsprofessional.</items>
+        <items id="comment">In veel jurisdicties wordt aangenomen dat de 'Status van de uitslag' een medische validatie bevat, bijvoorbeeld: een 'definitieve' uitslag wordt opgevat als medisch gevalideerd, maar in de andere gebieden wordt deze status apart vastgelegd in dit data element.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Specimen</items>
+        <items id="description">Identificatie van het specimen/monster gebruikt voor de analyt uitslag</items>
+        <items id="comment">In sommige situaties, zal een enkel Laboratorium test archetype meerdere Specimen archetypes en meerdere Analyt uitslag archetypes bevatten. In deze situaties is dit 'Specimen' data element nodig om de uitslag met het juiste monster te verbinden.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Analyt uitslag volgore</items>
+        <items id="description">De bedoelde positie van deze analyt uitslag binnen de gehele volgorde van analyt uitslagen.</items>
+        <items id="comment">Bijvoorbeeld: '1', '2' of '3'. Waar meerdere analyt uitslagen worden gerapporteerd, maakt de 'Analyt uitslag volgorde' de volgorde waarin de uitslagen worden gerapporteerd expliciet.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Test methode</items>
+        <items id="description">Omschrijving van de methode die gebruikt is als onderzoek voor specifiek dit analyt.</items>
+        <items id="comment">Als de test methode van toepassing is op het hele test panel, can de test methode vastgelegd worden middels het 'Test methode' data element in</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Analysis performed time (en)</items>
+        <items id="description">*The date and time when the analyte result was performed in the laboratory by a healthcare practitioner. (en)</items>
+        <items id="comment">*Represents the actual analysis timestamp, independent of when the result is recorded or reported. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Accredited (en)</items>
+        <items id="description">*Indicates whether the analytical method used for this analyte is accredited. (en)</items>
+        <items id="comment">*Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Analysresultat</items>
+        <items id="description">Resultatet för en enskild analys i en laboratorieundersökning.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Analysresultat</items>
+        <items id="description">Analysresultatets värde</items>
+        <items id="comment">Till exempel "7,3 mmol/L" eller "Förhöjd". Datatypen "Any", som är en odefinierad datatyp, måste begränsas till en lämplig datatyp i en specialisering, mall eller applikation. Datatypen "Quantity" har attribut från referensmodellen som täcker flaggor för normal/onormal, referensområden och approximationer.&#xD;
+Se https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class för mer information.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare fritext om analysresultatet som inte fångas av andra dataelement.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Vägledning för referensintervall</items>
+        <items id="description">Ytterligare vägledning för information om referensintervallet är tillämpbart för detta resultat. Kan innehålla text eller kodad text med råd om huruvida resultatet ligger inom det normala intervallet.&#xD;
+</items>
+        <items id="comment">Till exempel "inom normalområde avseende ålder och kön".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Resultatstatus</items>
+        <items id="description">Status för analysresultatet.</items>
+        <items id="comment">Värdena har valts specifikt för att motsvara de i HL7 FHIR-resursen "Diagnostic report", som historiskt kommer från praxis i HL7 v2. Andra lokala koder eller termer kan användas med datatypen "Fri eller kodad text".&#xD;
+&#xD;
+Det här fältet kan repeteras för att stödja användningsfall där behov finns av flera statustyper.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tidsangivelse för resultatstatus</items>
+        <items id="description">Datum och tid då analysresultatet utfärdades för den aktuella resultatstatusen.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Detaljer om analysresultat</items>
+        <items id="description">Ytterligare detaljer om ett enskilt analysresultat.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registrerad</items>
+        <items id="description">Analysen är registrerad i laboratoriesystemet, men resultatet är ej ännu tillgängligt.&#xD;
+&#xD;
+</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Partiellt resultat</items>
+        <items id="description">Detta är ett partiellt (dvs. initialt eller preliminärt) testresultat: Data i resultatet kan vara ofullständiga eller obekräftade.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Preliminärt resultat</items>
+        <items id="description">Verifierade tidiga resultat är tillgängliga, men inte alla resultat är slutgiltiga. Detta är en underkategori av "Partiellt resultat".</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Slutgiltigt resultat</items>
+        <items id="description">Testresultatet är fullständigt och verifierat av en auktoriserad person.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Slutgiltigt resultat, korrigerat</items>
+        <items id="description">Resultatet har korrigerats efter att tidigare ha varit markerat som slutgiltigt. Detta är en underkategori av "Slutgiltigt resultat, reviderat".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Slutgiltigt resultat, reviderat</items>
+        <items id="description">Resultatet har reviderats och ändrats efter att tidigare ha varit markerat som slutgiltigt.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Slutgiltigt resultat, tillägg</items>
+        <items id="description">Efter att ha slutförts har resultatrapporten ändrats genom att nytt innehåll har inkluderats. Det befintliga innehållet är oförändrat. Detta är en underkategori av ”Slutgiltigt svar, reviderat”.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Felaktigt registrerat resultat</items>
+        <items id="description">Analysresultatet har dragits tillbaka efter att ha varit i status "Slutgiltigt resultat".</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Avbrutet</items>
+        <items id="description">Resultatet är inte tillgängligt eftersom testet inte har startats eller inte slutförts (kallas även ibland för "inställt").</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Analysnamn</items>
+        <items id="description">Namnet på analysen.</items>
+        <items id="comment">Värdet för detta fält anges vanligtvis i en specialisering av den här arketypen, i en mall eller i applikationen. Till exempel "S-natrium" eller "hemoglobin". Det rekommenderas starkt att koda med en terminologi såsom exempelvis NPU, LOINC, SNOMED CT eller lokala kodverk.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Tidpunkt för validering</items>
+        <items id="description">Datum och tid då analysresultatet validerades medicinskt i laboratoriet.&#xD;
+</items>
+        <items id="comment">I många fall antas 'resultatstatus' inkludera medicinsk validering, dvs. ett "slutligt" resultat antas vara medicinskt validerat. I andra fall kommer detta att registreras och rapporteras separat med hjälp av detta fält.&#xD;
+&#xD;
+&#xD;
+</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Provmaterial</items>
+        <items id="description">Identifiering av det provmaterial som använts för analysresultatet.</items>
+        <items id="comment">I vissa situationer kommer en arketyp för laboratorietestresultat (OBSERVATION.Laboratory_test_result) att innehålla flera arketyper för provmaterial (Specimen) och flera arketyper för analysresultat (Laboratory_analyte_result). I dessa situationer måste man använda detta dataelement för att kunna koppla resultaten till rätt provmaterial.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Rapporteringsordning</items>
+        <items id="description">Den faktiska positionen för ett enskilt analysresultat i den totala rapporteringsordningen.&#xD;
+&#xD;
+&#xD;
+&#xD;
+</items>
+        <items id="comment">Till exempel 1, 2 eller 3. Om flera analysresultat rapporteras visar detta värde var i ordningsföljden detta resultat har besvarats. &#xD;
+&#xD;
+&#xD;
+&#xD;
+</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Testmetod</items>
+        <items id="description">Beskrivning av metoden som har använts för att utföra testet specifikt för denna analyt.&#xD;
+</items>
+        <items id="comment">Om testmetoden gäller för en hel panel kan testmetoden fångas med hjälp av dataelementet 'Testmetod' i OBSERVATION.laboratory_test_result.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Analysis performed time (en)</items>
+        <items id="description">*The date and time when the analyte result was performed in the laboratory by a healthcare practitioner. (en)</items>
+        <items id="comment">*Represents the actual analysis timestamp, independent of when the result is recorded or reported. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Accredited (en)</items>
+        <items id="description">*Indicates whether the analytical method used for this analyte is accredited. (en)</items>
+        <items id="comment">*Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Resultado de laboratorio del analito</items>
+        <items id="description">Resultado de una prueba de laboratorio para un valor de analito único.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Resultado del analito</items>
+        <items id="description">Valor del resultado del analito.</items>
+        <items id="comment">Por ejemplo, "7,3 mmol/l", "Elevado". El tipo de datos "Cualquiera" deberá limitarse a un tipo de datos adecuado en una especialización, una plantilla o en tiempo de ejecución para reflejar el resultado real del analito. El tipo de dato "Cantidad" tiene atributos de modelo de referencia que incluyen indicadores de normalidad/anormalidad, rangos de referencia y aproximaciones (para más información, véase https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class).</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Comentarios</items>
+        <items id="description">Narración adicional sobre el resultado del analito, no registrada en otros campos.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Intervalos de referencia</items>
+        <items id="description">Asesoramiento adicional sobre la aplicabilidad del intervalo de referencia a este resultado, o bien se puede incluir un texto o guía textual codificada sobre si el resultado está dentro del intervalo normal.&#xD;
+</items>
+        <items id="comment">Por ejemplo, "dentro de los límites normales para la edad y el sexo".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Estado del resultado</items>
+        <items id="description">Estado del valor del resultado del analito.</items>
+        <items id="comment">Los valores se han elegido específicamente para que coincidan con los del informe HL7 FHIR Diagnostic, derivados históricamente de la práctica HL7v2. Pueden utilizarse otros códigos/términos locales mediante el texto "choice".&#xD;
+&#xD;
+Este elemento permite múltiples ocurrencias para admitir casos de uso en los que es necesario implementar más de un tipo de estado.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Fecha/Hora del estado del resultado</items>
+        <items id="description">Fecha y hora en que se emitió el resultado del analito para el estado más reciente.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Detalle del resultado del analito</items>
+        <items id="description">Más detalles sobre un resultado individual.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registrado</items>
+        <items id="description">La prueba está registrada en el Sistema de Información de Laboratorios, pero aún no hay nada disponible.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Parcial</items>
+        <items id="description">Resultado de prueba parcial (por ejemplo, inicial, provisional o preliminar): los datos del resultado de la prueba pueden estar incompletos o sin verificar.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Preliminar</items>
+        <items id="description">Los primeros resultados verificados están disponibles, pero no son definitivos. Se trata de una subcategoría de "Parcial".</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Final</items>
+        <items id="description">El resultado de la prueba está completo y ha sido verificado por una persona autorizada.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Corregido</items>
+        <items id="description">El resultado se ha modificado con posterioridad al estado "Final". Está completo y verificado por una persona autorizada. Se trata de una subcategoría de "Modificado".</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Modificado</items>
+        <items id="description">El resultado se ha modificado con posterioridad al estado "Final". Está completo y verificado por una persona autorizada, y se han cambiado los datos del resultado.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Anexo</items>
+        <items id="description">Tras pasar a estado "Final", el informe se ha modificado añadiendo nuevos contenidos. El contenido existente no ha cambiado. Se trata de una subcategoría de 'Modificado'.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Introducido por error</items>
+        <items id="description">El resultado de la prueba ha sido retirado tras haberse publicado.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Cancelado</items>
+        <items id="description">El resultado no está disponible porque la prueba no se ha iniciado o no se ha completado (a veces también se denomina "anulada").</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Nombre del analito</items>
+        <items id="description">Nombre del resultado del analito.</items>
+        <items id="comment">El valor de este elemento se suministra normalmente en una especialización, en una plantilla o en tiempo de ejecución para reflejar el analito real. Por ejemplo: "Sodio sérico", "Hemoglobina". Se recomienda encarecidamente la codificación con una terminología externa, como LOINC, NPU, SNOMED CT o terminologías de laboratorio locales.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Tiempo de validación</items>
+        <items id="description">Fecha y hora en que un profesional sanitario validó el resultado del analito en el laboratorio.</items>
+        <items id="comment">En muchas jurisdicciones se asume que el "Estado del resultado" incluye la validación médica, es decir, se asumirá que un resultado "final" está validado médicamente, pero en otras esto se registrará y notificará por separado utilizando este elemento de datos.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Muestra</items>
+        <items id="description">Identificación de la muestra utilizada para el resultado del analito.</items>
+        <items id="comment">En algunas situaciones, un único arquetipo de Resultado de Pruebas de Laboratorio podría contener varios arquetipos de muestra y varios arquetipos de resultados del analito. En estas situaciones, el elemento de datos 'Muestra' es necesario para poder conectar los resultados con las muestras correctas.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Secuencia de resultados del analito</items>
+        <items id="description">Posición prevista del resultado del analito dentro de la secuencia general de resultados del analito.</items>
+        <items id="comment">Por ejemplo: "1", "2", "3". Si se notifican varios resultados de analitos, la "Secuencia de resultados del analito" indica explícitamente el orden en que se notificaron.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Método de prueba</items>
+        <items id="description">Descripción del método utilizado para realizar la prueba sólo con este analito.</items>
+        <items id="comment">Si el método de prueba se aplica a un panel completo, puede capturarse utilizando el elemento de datos "Método de prueba" dentro de OBSERVATION.laboratory_test_result.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Analysis performed time (en)</items>
+        <items id="description">*The date and time when the analyte result was performed in the laboratory by a healthcare practitioner. (en)</items>
+        <items id="comment">*Represents the actual analysis timestamp, independent of when the result is recorded or reported. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Accredited (en)</items>
+        <items id="description">*Indicates whether the analytical method used for this analyte is accredited. (en)</items>
+        <items id="comment">*Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Resultat de l'anàlit de laboratori</items>
+        <items id="description">Resultat d'una prova de laboratori per a un únic valor d'anàlit.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Resultat de l'anàlit</items>
+        <items id="description">Valor del resultat de l'anàlit.</items>
+        <items id="comment">Per exemple, «7,3 mmol/l», «Elevat». El tipus de dades «Qualsevol» s'haurà de restringir a un tipus de dades apropiat en una especialització, una plantilla o en un temps d'execució per a reflectir el resultat real de l’anàlit. El tipus de dades «Quantitat» té atributs de model de referència que inclouen indicadors per a normal/anormal, rangs de referència i aproximacions. Veure https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class per a obtindre més detalls.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Observacions</items>
+        <items id="description">Informació addicional sobre el resultat de l'anàlit no recollida en altres caselles.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Instruccions dels rangs de referència</items>
+        <items id="description">Consells addicionals sobre l'aplicabilitat del rang de referència per a aquest resultat, o es pot incloure un text o guia textual programada sobre si el resultat es troba dins del rang normal.</items>
+        <items id="comment">Per exemple, «dins dels límits normals per a l’edat i el sexe».</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Estat del resultat</items>
+        <items id="description">L’estat del valor del resultat de l'anàlit.</items>
+        <items id="comment">Els valors s’han escollit específicament perquè coincideixin amb els de l’Informe de diagnòstic HLT7 FHIR, derivats històricament de la pràctica HL7v2. Es poden utilitzar altres codis/termes mitjançant l'«elecció» del Text.&#xD;
+&#xD;
+Aquest element permet múltiples esdeveniments per admetre casos d'ús on calgui implementar més d'un tipus d'estat.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Data i hora de l'estat del resultat</items>
+        <items id="description">Data i hora en què es va emetre el resultat de l'anàlit per a «L'estat del Resultat» enregistrat.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Detall del resultat de l'anàlit</items>
+        <items id="description">Més informació d'un resultat individual.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Registrat</items>
+        <items id="description">L'existència de la prova està registrada en el Sistema d'Informació del Laboratori, però encara no hi ha res disponible.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Parcial</items>
+        <items id="description">Aquest és un Resultat de la Prova parcial (per exemple; inicial, provisional o preliminar): les dades del Resultat de la Prova poden estar incompletes o sense verificar.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Preliminar</items>
+        <items id="description">Es disposa de resultats preliminars verificats, però no tots els resultats són definitius. Aquesta és una subcategoria de «Parcial».</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Definitiu</items>
+        <items id="description">El resultat de la Prova està complet i l’ha verificat una persona autoritzada.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Corregit</items>
+        <items id="description">S’ha modificat el resultat després d’esdevenir Definitiu i està complet i verificat per una persona autoritzada. Aquesta és una subcategoria de «Modificat».</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Modificat</items>
+        <items id="description">S’ha modificat el resultat després d’esdevenir Definitiu, està complet i verificat per una persona autoritzada i les dades del resultat s’han modificat.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Annex</items>
+        <items id="description">Després d’esdevenir definitiu, l’informe s’ha modificat afegint-hi continguts nous. No s’ha modificat el contingut existent. Aquesta és una subcategoria de «Modificat».</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Introduït per error</items>
+        <items id="description">El Resultat de la Prova s’ha retirat després de la publicació Definitiva anterior.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Cancel·lat</items>
+        <items id="description">El resultat no està disponible perquè la prova no s’ha iniciat o no s’ha completat (de vegades també s’anomena «Interromput»).</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Nom de l'anàlit</items>
+        <items id="description">Nom del resultat de l'anàlit.</items>
+        <items id="comment">El valor per a aquest element normalment s’aporta mitjançant una especialització, en una plantilla o en un temps d'execució per a reflectir l’anàlit real. Per exemple: «Sodi sèric», «Hemoglobina». Es recomana encaridament programar amb terminologia externa, com LOINC, NPU, SNOMED CT o terminologies de laboratoris locals.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Temps de validació</items>
+        <items id="description">Data i hora en què un professional sanitari va validar el resultat de l'anàlit en un laboratori.</items>
+        <items id="comment">En moltes jurisdiccions, «L'estat del resultat» es pressuposa que inclou validació mèdica. És a dir, es pressuposarà que un resultat «definitiu» estarà validat mèdicament, però en altres es registrarà i notificarà per separat utilitzant aquest element de dades.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Mostra</items>
+        <items id="description">Identificació de la mostra utilitzada per al resultat de l'anàlit.</items>
+        <items id="comment">En algunes situacions, un únic arquetip de resultat de proves de laboratori contindrà múltiples arquetips de mostra i diversos arquetips de resultat de l'anàlit. En aquestes situacions, aquest element de dades de «Mostra» ha de poder connectar els resultats amb les mostres correctes.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Seqüència de resultats de l'analit</items>
+        <items id="description">Posició prevista d'aquest resultat d'anàlit dins de la seqüència general dels resultats de l'anàlit.</items>
+        <items id="comment">Per exemple: «1», «2», «3». On s'informen diversos resultats de l’anàlit, la «Seqüència de resultats de l'anàlit» és qui explicita l'ordre en què es van informar.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Mètode de prova</items>
+        <items id="description">Descripció sobre el mètode utilitzat per a dur a terme la prova únicament en aquest anàlit.</items>
+        <items id="comment">Si el mètode de prova s'aplica a una llista completa, el mètode de prova es pot registrar utilitzant l’element de dades «Mètode de prova» dins de OBSERVATION.laboratory_test_result.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">*Analysis performed time (en)</items>
+        <items id="description">*The date and time when the analyte result was performed in the laboratory by a healthcare practitioner. (en)</items>
+        <items id="comment">*Represents the actual analysis timestamp, independent of when the result is recorded or reported. (en)</items>
+      </items>
+      <items code="at0032">
+        <items id="text">*Accredited (en)</items>
+        <items id="description">*Indicates whether the analytical method used for this analyte is accredited. (en)</items>
+        <items id="comment">*Supports quality assurance and regulatory compliance by specifying whether the laboratory analysis was performed under an accredited method. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">分析物检验结果</items>
+        <items id="description">单项分析物检验项目的结果。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">分析物结果</items>
+        <items id="description">分析物结果的取值。</items>
+        <items id="comment">例如，“7.3 mmol/l”、“增高”。需要在特化原始型当中、在模板当中或在运行时将数据类型 'Any' 限制为恰当的数据类型，以反映实际的分析物结果。数据类型 Quantity 具有的参考模型属性包括正常/异常标志、参考范围和近似值。有关详细信息，请参阅 https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class。</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">备注</items>
+        <items id="description">关于分析物结果的，其他字段当中并未采集/反映的其他叙述。</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">参考范围指引</items>
+        <items id="description">关于参考范围是否适用于当前此项结果的补充建议，或者也可能含有关于当前此项结果是否在正常范围之内的文本型或编码文本型指引。</items>
+        <items id="comment">例如，“在针对相应年龄和性别的正常范围之内”。</items>
+      </items>
+      <items code="at0005">
+        <items id="text">结果状态</items>
+        <items id="description">当前分析物结果取值的状态。</items>
+        <items id="comment">这些取值经过了专门的选择，以匹配 HL7 FHIR 诊断报告资源之中的取值，而后者从历史上则源自 HL7v2 的做法。可以利用文本选项 'choice' 来使用其他的本地代码/术语。&#xD;
+&#xD;
+当前的数据元允许多次出现，以支持需要实现不止一种状态类型的用例场景。</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">结果状态时间</items>
+        <items id="description">就所记录的“结果状态”来说，当前分析物结果的发布日期和时间。</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">分析物结果详情</items>
+        <items id="description">关于具体结果的进一步细节。</items>
+      </items>
+      <items code="at0015">
+        <items id="text">已登记</items>
+        <items id="description">实验室信息系统（LIS）当中已登记了当前的检验项目，但其目前还没有任何可用的结果/数据。</items>
+      </items>
+      <items code="at0016">
+        <items id="text">部分</items>
+        <items id="description">这是部分的（如初始的、临时的或初步的）检验结果：当前检验结果之中的数据可能并不完整或未经验证/确认。</items>
+      </items>
+      <items code="at0017">
+        <items id="text">初步</items>
+        <items id="description">已有经过核对/验证的早期结果可用，但并非所有结果都是最终结果。这属于是“部分”类的子类别。</items>
+      </items>
+      <items code="at0018">
+        <items id="text">最终</items>
+        <items id="description">当前的检验结果完整无缺并且经过了授权人员的验证/确认。</items>
+      </items>
+      <items code="at0019">
+        <items id="text">经过修正</items>
+        <items id="description">当前的结果是在其成为最终结果之后又经过修改的结果，且完整无缺，并经过了授权人员的验证/确认。属于是“经过改动”的子类别。</items>
+      </items>
+      <items code="at0020">
+        <items id="text">经过改动</items>
+        <items id="description">当前的结果是在其成为最终结果之后又经过修改的结果，且完整无缺，并经过了授权人员的验证/确认。换句话说，结果数据发生了变化。</items>
+      </items>
+      <items code="at0021">
+        <items id="text">经过增补</items>
+        <items id="description">在成为最终版本之后，对报告进行了修改，在其中增加了新的内容。原有的内容保持不变。属于是“经过改动”的子类别。</items>
+      </items>
+      <items code="at0022">
+        <items id="text">错误录入</items>
+        <items id="description">在之前的最终版本发布之后已撤回了当前的检验结果。</items>
+      </items>
+      <items code="at0023">
+        <items id="text">已取消</items>
+        <items id="description">当前此项结果不可用，因为该检验项目尚未开始或并未完成（有时也称为“中止”）。</items>
+      </items>
+      <items code="at0024">
+        <items id="text">分析物名称</items>
+        <items id="description">分析物结果的名称。</items>
+        <items id="comment">通常会在特化原始型中、在模板当中或在运行时提供当前数据元的取值，以反映实际的分析物。例如：“血清钠”、“血红蛋白”。强烈建议采用外部术语集加以编码，如 LOINC、NPU、SNOMED CT 或本地实验室[检验]术语集。</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">验证时间</items>
+        <items id="description">实验室的医疗保健职业人员验证当前分析物结果的日期和时间。</items>
+        <items id="comment">在许多司法管辖区域，都会假设认为结果状态数据元 'Result status' 之中包括了医疗验证/确认，即假设认为“最终”结果经过了医学验证/确认，而在其他的司法管辖区域，则会单独记录和报告该数据元。</items>
+      </items>
+      <items code="at0026">
+        <items id="text">标本</items>
+        <items id="description">当前分析物结果所使用的标本的标识。</items>
+        <items id="comment">在某些情况下，单个的实验室测试结果原始型当中会包含多个样本原始型 Specimen 和多个分析物结果原始型 “Analyte result”。在此类情况下，就需要利用当前标本数据元 Specimen 才能将结果与相应的标本正确地关联起来。</items>
+      </items>
+      <items code="at0027">
+        <items id="text">分析物结果序号</items>
+        <items id="description">当前的分析物结果在整个分析物结果序列当中的预定位置。</items>
+        <items id="comment">例如：'1'、'2'、'3'。当报告多项分析物结果时，当前数据元旨在明确分析物结果的报告顺序。</items>
+      </items>
+      <items code="at0028">
+        <items id="text">检验方法</items>
+        <items id="description">关于仅仅用于检验当前分析物时所采用的方法的描述。</items>
+        <items id="comment">如果检验方法适用于当前整个的组套/组合项目，则可以采用实验室检验结果原始型 OBSERVATION.laboratory_test_result 之中的检验方法数据元 'Test method' 来记录检验方法。</items>
+      </items>
+      <items code="at0031">
+        <items id="text">分析执行时间</items>
+        <items id="description">医疗卫生执业人员在实验室内执行此项分析并获得结果的日期和时间。</items>
+        <items id="comment">表示的是实际的分析时间戳，与结果的记录时间和报告时间无关。</items>
+      </items>
+      <items code="at0032">
+        <items id="text">认可标志</items>
+        <items id="description">表示用于此项分析的分析方法是否经过/获得认可。</items>
+        <items id="comment">通过标明实验室分析是否依据/采用的是经过认可的方法进行，以支持质量保证和法律合规。</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Résultat d'analyte de laboratoire</items>
+        <items id="description">Résultat d'un examen de laboratoire portant sur une seule valeur d'analyte.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Résultat de l'analyte</items>
+        <items id="description">La valeur du résultat de l'analyte.</items>
+        <items id="comment">Par exemple « 7,3 mmol/l », « Élevé ». Le type de données « Any » devra être restreint à un type de données approprié dans une spécialisation, un template ou lors de l'exécution afin de refléter le résultat réel de l'analyte. Le type de données « Quantité » comporte des attributs du modèle de référence qui incluent des indicateurs de normalité/anomalie, des plages de référence et des approximations — voir https://specifications.openehr.org/releases/RM/latest/data_types.html#_dv_quantity_class pour plus de détails.</items>
+        <items id="hl7v2_mapping">OBX.2, OBX.5, OBX.6, OBX.7, OBX.8</items>
+        <items id="fhir_mapping">Observation.value[x]</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Commentaire</items>
+        <items id="description">Commentaire supplémentaire concernant le résultat de l'analyte, non saisi dans d'autres champs.</items>
+        <items id="hl7v2_mapping">NTE.3</items>
+        <items id="fhir_mapping">Observation.note</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Recommandations relatives aux plages de référence</items>
+        <items id="description">Des conseils supplémentaires sur l'applicabilité de l'intervalle de référence à ce résultat peuvent être fournis, sous forme de texte ou de code, indiquant si le résultat se situe dans la fourchette normale.</items>
+        <items id="comment">Par exemple, « dans les limites normales pour l'âge et le sexe ».</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Statut du résultat</items>
+        <items id="description">Statut de la valeur du résultat de l'analyte.</items>
+        <items id="comment">Ces valeurs ont été spécifiquement choisies pour correspondre à celles du rapport diagnostique HL7 FHIR, issues historiquement de la norme HL7v2. D’autres codes ou termes locaux peuvent être utilisés via l’option de texte « choix ».&#xD;
+&#xD;
+Cet élément autorise plusieurs occurrences afin de prendre en charge les cas d’utilisation où plusieurs types d’état doivent être mis en œuvre.</items>
+        <items id="hl7v2_mapping">OBX.11</items>
+        <items id="fhir_mapping">Observation.status</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Statut du résultat publié le</items>
+        <items id="description">La date/heure auxquelles le résultat de l'analyte a été émis, pour le « Statut du résultat » enregistré.</items>
+        <items id="hl7v2_mapping">OBX.19</items>
+        <items id="fhir_mapping">Observation.issued</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Détail du résultat de l'analyte</items>
+        <items id="description">Informations complémentaires concernant un résultat particulier.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Enregistré</items>
+        <items id="description">La réalisation du test est enregistrée dans le système d'information du laboratoire, mais aucun résultat n'est encore disponible.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Partiel</items>
+        <items id="description">Il s'agit d'un résultat d'analyte partiel (par exemple, initial, intermédiaire ou préliminaire) : les données contenues dans ce résultat d'analyte peuvent être incomplètes ou non vérifiées.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Préliminaire</items>
+        <items id="description">Des résultats préliminaires vérifiés sont disponibles, mais tous les résultats ne sont pas définitifs. Il s'agit d'une sous-catégorie de « Partiel ».</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Final</items>
+        <items id="description">Le résultat du test est complet et a été validé par une personne habilitée.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Corrigé</items>
+        <items id="description">Le résultat a été modifié après avoir été déclaré « définitif » ; il est complet et a été vérifié par une personne habilitée. Il s'agit d'une sous-catégorie de la catégorie « Modifié ».</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Modifié</items>
+        <items id="description">Le résultat a été modifié après avoir été validé comme « définitif » ; il est complet et a été vérifié par une personne habilitée, et les données du résultat ont été modifiées.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">ajouté</items>
+        <items id="description">Après avoir été finalisé, le rapport a été modifié par l'ajout de nouveaux éléments. Le contenu existant reste inchangé. Il s'agit d'une sous-catégorie de « Modifié ».</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Saisi par erreur</items>
+        <items id="description">Le résultat d'analyte a été retiré après sa publication définitive précédente.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Annulé</items>
+        <items id="description">Le résultat n'est pas disponible car l'examen n'a pas été lancé ou n'a pas été mené à terme (ce que l'on appelle parfois un « examen interrompu »).</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Nom de l'analyte</items>
+        <items id="description">Nom du résultat de l'analyte.</items>
+        <items id="comment">La valeur de cet élément est généralement fournie dans une spécialisation, dans un template ou au moment de l'exécution afin de refléter l'analyte réel. Par exemple : « Sodium sérique », « Hémoglobine ». Il est fortement recommandé d'utiliser une terminologie externe pour le codage, telle que LOINC, NPU, SNOMED CT ou des terminologies de laboratoire locales.</items>
+        <items id="hl7v2_mapping">OBX.3</items>
+        <items id="fhir_mapping">Observation.code</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Validation effectuée le</items>
+        <items id="description">Date/heure auxquelles le résultat de l'analyte a été validé au laboratoire par un professionnel de santé.</items>
+        <items id="comment">Dans de nombreuses juridictions, le « statut du résultat » est supposé inclure la validation médicale, c'est-à-dire qu'un résultat « définitif » sera considéré comme validé sur le plan médical ; dans d'autres, en revanche, cette validation sera enregistrée et communiquée séparément à l'aide de cet élément de données.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Échantillon</items>
+        <items id="description">Identification de l'échantillon utilisé pour le résultat de l'analyte.</items>
+        <items id="comment">Dans certains cas, un archétype de résultat d’analyte de laboratoire unique peut contenir plusieurs archétypes d’échantillon et plusieurs archétypes de résultat d’analyte. Dans ces situations, cet élément de données « Échantillon » est nécessaire pour pouvoir associer les résultats aux échantillons correspondants.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Séquence du résultat d'analyte</items>
+        <items id="description">Position prévue de ce résultat d'analyte dans la séquence globale des résultats d'analyte.</items>
+        <items id="comment">Par exemple : « 1 », « 2 », « 3 ». Lorsque plusieurs résultats d’analytes sont communiqués, la « séquence des résultats d’analytes » précise l’ordre dans lequel ils ont été communiqués.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Méthode d'essai</items>
+        <items id="description">Description de la méthode utilisée pour réaliser le test sur ce paramètre uniquement.</items>
+        <items id="comment">Si la méthode d’analyse s’applique à un panel complet, elle peut être saisie à l’aide de l’élément de données « Méthode d’analyse » au sein de l’élément OBSERVATION.laboratory_test_result</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Analyse effectuée le</items>
+        <items id="description">La date/heure auxquelles le résultat de l'analyse a été obtenu en laboratoire par un professionnel de santé.</items>
+        <items id="comment">Représente l'horodatage réel de l'analyse, indépendamment du moment où le résultat est enregistré ou communiqué.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Accrédité</items>
+        <items id="description">Indique si la méthode d'analyse utilisée pour ce paramètre est accréditée.</items>
+        <items id="comment">Contribue à l'assurance qualité et à la conformité réglementaire en précisant si l'analyse de laboratoire a été réalisée selon une méthode accréditée.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,185 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.temperature.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["eu"] = <
+			language = <[ISO_639-1::eu]>
+			author = <
+				["name"] = <"Ander Iruetaguena">
+				["organisation"] = <"EHU">
+				["email"] = <"ander.iruetaguena@ehu.es">
+			>
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+				["email"] = <"monasaleh01@live.com">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"18/09/2008">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the measured temperature of an identified object.">
+			use = <"Used for recording the specific temperature of an identified object.">
+			keywords = <"temperature", ...>
+			misuse = <"This temperature is not to be used to record the body temperature, which is a surrogate for the whole body temperature of the subject - use OBSERVATION.body_temperature instead in this situation.">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل درجة الحرارة التي تم قياسها لشيئ بعينه">
+			use = <"يستخدم لتسجيل درجة الحرارة النوعية لشيئ معين">
+			keywords = <"درجة الحرارة", ...>
+			misuse = <"لا تستخدم درجة الحرارة هذه لتسجيل درجة حرارة الجسم, التي هي بديل عن درجة حرارة الجسم الكلية لشخص معين. استخدم نموذج ملاحظة. درجة حرارة الجسم, في تلك الحالة">
+		>
+		["eu"] = <
+			language = <[ISO_639-1::eu]>
+			purpose = <"Identifikatutako objektuaren neurturiko tenperatura gordetzea.">
+			use = <"*Used for recording the specific temperature of an identified object.(en)">
+			misuse = <"*This temperature is not to be used to record the body temperature, which is a surrogate for the whole body temperature of the subject - use OBSERVATION.body_temperature instead in this situation.(en)">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Temperature
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_LIST[id4] matches {
+								items matches {
+									ELEMENT[id7] occurrences matches {0..1} matches {	-- Object
+										value matches {
+											DV_TEXT[id11] 
+										}
+									}
+									ELEMENT[id5] matches {	-- Temperature
+										value matches {
+											DV_QUANTITY[id12] matches {
+												property matches {[at1]}
+												[units, precision] matches {
+													[{"°C"}, {|>=0|}],
+													[{"°F"}, {1}]
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id8] matches {
+				items matches {
+					allow_archetype CLUSTER[id10] matches {	-- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Temperature">
+				description = <"A measurement of temperature of a specified object">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Temperature">
+				description = <"The measured temperature of the object">
+			>
+			["id7"] = <
+				text = <"Object">
+				description = <"Identify the object for which the temperature is being measured.">
+			>
+			["id10"] = <
+				text = <"Device">
+				description = <"Details of the device used to measure the temperature">
+			>
+			["at1"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"درجة الحرارة">
+				description = <"قياس درجة حرارة شيئ معيَّن">
+			>
+			["id3"] = <
+				text = <"إحدى الوقائع">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"درجة الحرارة">
+				description = <"درجة الحرارة التي تم قياسها للشيئ">
+			>
+			["id7"] = <
+				text = <"الشيئ">
+				description = <"عرِّف الشيئ الذي يتم قياس درجة حرارته">
+			>
+			["id10"] = <
+				text = <"الجهاز (الجهيزة) - عنقود">
+				description = <"تفاصيل عن الجهاز (الجهيزة) المستخدمة في قياس درجة الحرارة">
+			>
+			["at1"] = <
+				text = <"*Temperature (en)">
+				description = <"*Temperature (en)">
+			>
+		>
+		["eu"] = <
+			["id1"] = <
+				text = <"Tenperatura">
+				description = <"Objektu espezifiko baten tenperatura neurketa.">
+			>
+			["id3"] = <
+				text = <"*Any event(en)">
+				description = <"**(en)">
+			>
+			["id5"] = <
+				text = <"Tenperatura">
+				description = <"Objetuaren neurtutako tenperatura.">
+			>
+			["id7"] = <
+				text = <"*Object(en)">
+				description = <"*Identify the object for which the temperature is being measured.(en)">
+			>
+			["id10"] = <
+				text = <"Tresna">
+				description = <"Tenperatura neurketa egiteko erabili den tresnaren inguruko xehetasunak.">
+			>
+			["at1"] = <
+				text = <"*Temperature (en)">
+				description = <"*Temperature (en)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/127>
+		>
+	>

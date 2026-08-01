@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-12-08</original_author>
+    <original_author id="name">Kanika Kuwelker</original_author>
+    <original_author id="organisation">Helse Vest IKT</original_author>
+    <original_author id="email">kanika.kuwelker@helse-vest-ikt.no</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Sangster RL. The Effects of Numerical Labels on Response Scales. U.S. Bureau of Labor Statistics; 2001. Available from: https://www.bls.gov/osmr/research-papers/2001/pdf/st010120.pdf.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">AFDDD37CBFCFA08C0414D77BF4393F50</other_details>
+    <other_details id="build_uid">13b85f69-2f1d-4096-82c9-e1ce2476ba0e</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en numerisk graderingsskala for å kvantifisere en subjektiv evaluering av alvorlighetsgraden av et symptom/sykdomstegn/problem.</purpose>
+      <keywords>numerisk graderingsskala, visuell analog skala, gradering, graderingsskala, alvorlighet</keywords>
+      <use>Brukes for å registrere en numerisk graderingsskala for å kvantifisere en subjektiv evaluering av alvorlighetsgraden av et symptom/sykdomstegn/problem.&#xD;
+&#xD;
+Denne arketypen er ment å brukes til å representere en rekke alvorlighetsskalaer, for eksempel visuell analog skala eller numeriske vurderingsskalaer av ulike omfang.&#xD;
+&#xD;
+Dette CLUSTERet kan nøstes inn i SLOTet "Gradering av alvorlighet" i arketypen CLUSTER.symptom_sign (Symptom/Sykdomstegn), eller andre arketyper der klinisk passende.&#xD;
+&#xD;
+Alvorlighetsgrad kan vurderes av individet ved å registrere en poengsum, for eksempel fra 0 (ikke til stede) til 10,0 (så alvorlig som individet kan forestille seg).&#xD;
+</use>
+      <misuse>Skal ikke brukes i etablerte vurderingsskalaer som Clinical Frailty Scale og Glasgow Coma Scale. Bruk en arketype spesifikt for vurderingsskalaen til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til verbale vurderingsskalaer og grafiske vurderingsskalaer, fordi de vanligvis er skreddersydd til det spesifikke vurderte konseptet.&#xD;
+&#xD;
+Skal ikke brukes for vurderinger der skalaen er invertert, for eksempel der 10 er det minst alvorlige og 0 er det mest alvorlige.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a numeric rating scale to quantify a subjective evaluation of the severity of a symptom/sign/problem/issue.</purpose>
+      <keywords>numeric rating scale, visual analogue scale, rating scale, severity</keywords>
+      <use>Use to record a numeric rating scale to quantify a subjective evaluation of the severity of a symptom/sign/problem/issue.&#xD;
+&#xD;
+This archetype is intended to be used to represent a range of widely used different severity rating scales, such as visual analogue scale, or different ranges of numerical rating scales. &#xD;
+&#xD;
+This cluster can be nested in the 'Severity rating' slot of the archetype CLUSTER.symptom_sign, or in other archetypes where clinically appropriate.&#xD;
+&#xD;
+Severity can be rated by the individual by recording a score, for example from 0 (not present) to 10.0 (as severe as the individual can imagine).</use>
+      <misuse>Not to be used in established rating scales such as Clinical Frailty Scale and Glasgow Coma Scale. Use an archetype specific for the rating scale for this purpose.&#xD;
+&#xD;
+Not to be used for verbal rating scales and graphic rating scales, because they are usually tailored to the specific rated concept.&#xD;
+&#xD;
+Not to be used for ratings where the scale is inverted, for example where 10 is the least severe and 0 is the most severe.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+  </translations>
+  <uid>
+    <value>99056a0d-69ba-40ee-8d37-b459bfc18f6e</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.severity_rating_scale.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>10</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>0</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0007</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0008</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0009</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>6</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0010</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>7</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0011</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>8</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0012</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>9</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0013</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>10</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0014</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0016</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>20</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>100</upper>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>122</code_string>
+            </property>
+            <list>
+              <magnitude>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0.0</lower>
+                <upper>100.0</upper>
+              </magnitude>
+              <precision>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>0</upper>
+              </precision>
+              <units>mm</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0020</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_PROPORTION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>type</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <list>0</list>
+                  <list>2</list>
+                  <list>3</list>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Severity rating scale</items>
+        <items id="description">A numeric rating scale to quantify a subjective evaluation of the severity of a symptom/sign/problem/issue.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Numeric rating scale 0-10</items>
+        <items id="description">Numeric rating scale 0 to 10.</items>
+        <items id="comment">Name of the element will always be renamed to the specific question in the template. </items>
+      </items>
+      <items code="at0004">
+        <items id="text">0</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0005">
+        <items id="text">1</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">3</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">4</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">5</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">6</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">7</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">8</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">9</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">10</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the severity rating not captured in other fields.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Numeric rating scale 0-20</items>
+        <items id="description">Numeric rating scale 0 to 20.</items>
+        <items id="comment">Name of the element will always be renamed to the specific question in the template. </items>
+      </items>
+      <items code="at0017">
+        <items id="text">Numeric rating scale 0-100</items>
+        <items id="description">Numeric rating scale 0 to 100.</items>
+        <items id="comment">Name of the element will always be renamed to the specific question in the template. </items>
+      </items>
+      <items code="at0020">
+        <items id="text">Numeric rating scale</items>
+        <items id="description">Unconstrained numeric rating scale.</items>
+        <items id="comment">Name of the element will always be renamed to the specific question in the template. </items>
+      </items>
+      <items code="at0021">
+        <items id="text">Visual analogue scale</items>
+        <items id="description">Visual analogue scale 0 to 100.</items>
+        <items id="comment">Name of the element will always be renamed to the specific question in the template. </items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Graderingsskala for alvorlighet</items>
+        <items id="description">En numerisk graderingsskala for å kvantifisere en subjektiv evaluering av alvorlighetsgraden av et symptom/sykdomstegn/problem.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Numerisk graderingsskala 0-10</items>
+        <items id="description">Numerisk graderingsskala 0 til 10.</items>
+        <items id="comment">Navnet på elementet vil alltid bli omdøpt til det spesifikke spørsmålet i templatet.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">0</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0005">
+        <items id="text">1</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">2</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">3</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">4</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">5</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0010">
+        <items id="text">6</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0011">
+        <items id="text">7</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0012">
+        <items id="text">8</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0013">
+        <items id="text">9</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0014">
+        <items id="text">10</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0015">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om alvorlighetsgraderingen som ikke dekkes i andre felt.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Numerisk graderingsskala 0-20</items>
+        <items id="description">Numerisk graderingsskala 0 til 20.</items>
+        <items id="comment">Navnet på elementet vil alltid bli omdøpt til det spesifikke spørsmålet i templatet.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Numerisk graderingsskala 0-100</items>
+        <items id="description">Numerisk graderingsskala 0 til 100.</items>
+        <items id="comment">Navnet på elementet vil alltid bli omdøpt til det spesifikke spørsmålet i templatet.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Numerisk graderingsskala</items>
+        <items id="description">Ubegrenset numerisk graderingsskala.</items>
+        <items id="comment">Navnet på elementet vil alltid bli omdøpt til det spesifikke spørsmålet i templatet.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Visuell analog skala</items>
+        <items id="description">Visuell analog skala 0 til 100.</items>
+        <items id="comment">Navnet på elementet vil alltid bli omdøpt til det spesifikke spørsmålet i templatet.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

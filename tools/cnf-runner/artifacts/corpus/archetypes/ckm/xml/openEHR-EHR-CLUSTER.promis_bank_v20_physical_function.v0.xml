@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-06-04</original_author>
+    <original_author id="name">Silje Ljosland Bakke</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">silje.ljosland.bakke@helse-vest-ikt.no</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">https://www.healthmeasures.net/index.php?option=com_instruments&amp;view=measure&amp;id=789&amp;Itemid=992</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">C8026CF5EEC8C34B860BBEF71A5FE553</other_details>
+    <other_details id="build_uid">2c0f8bb6-4bdc-4dec-9d91-6bb01ccb8c72</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Erfassung von PROMIS Datenbank v2.0 Elementen über die physische Funktion.</purpose>
+      <use>Zur Erfassung von PROMIS-Bank-v2.0-Elementen zu körperlichen Funktionen.&#xD;
+&#xD;
+Dieser Archetyp wurde für die Verwendung innerhalb des Archetyps OBSERVATION.promis und zusammen mit anderen PROMIS-Bank-Archetypen entwickelt, die ein bestimmtes PROMIS-Profil wie PROMIS-29 abbilden müssen.&#xD;
+&#xD;
+Der Archetyp ist bei der anfänglichen Modellierung unvollständig und sollte erweitert werden, wenn zusätzliche Elemente aus der entsprechenden Elementbank benötigt werden.&#xD;
+&#xD;
+Obwohl alle openEHR-Archetypen unter einer offenen Lizenz frei verfügbar sind, ist der spezifische Inhalt dieses Archetyps urheberrechtlich geschützt. Jede Verwendung dieses Archetyps innerhalb von Implementierungen muss den von den Urheberrechtsinhabern festgelegten Bedingungen entsprechen.&#xD;
+&#xD;
+Copyright-Erklärung: PROMIS-Tests, Testprotokolle, Testelemente, Normen, Normtabellen, Bewertungsprogramme, Bewertungsschlüssel (einschließlich Bewertungsalgorithmen, Skalendefinitionen, Skalenmitgliedschaft und Bewertungsanweisungen), Bewertungsberichte, Software und andere PROMIS-bezogene Materialien sind ©2006-2017 PROMIS Health Organization oder andere Personen/Einrichtungen, die Informationen und Materialien beigesteuert haben, und werden mit Genehmigung der Urheberrechtsinhaber verwendet.&#xD;
+&#xD;
+Terms and conditions for use: https://www.healthmeasures.net/images/PROMIS/Terms_of_Use_HM_approved_1-12-17_-_Updated_Copyright_Notices.pdf(en)</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record PROMIS bank v2.0 items about physical function.</purpose>
+      <use>Use to record PROMIS bank v2.0 items about physical function.&#xD;
+&#xD;
+This archetype has been designed to be used within the OBSERVATION.promis archetype, and along with other PROMIS bank archetypes constrained to represent a specific PROMIS profile such as PROMIS-29.&#xD;
+&#xD;
+The archetype is incomplete at initial modelling, and should be grown as additional items from the relevant item bank are required.&#xD;
+&#xD;
+While openEHR archetypes are all freely available under an open license, the specific content of this archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners.&#xD;
+&#xD;
+Copyright statement: PROMIS tests, test protocols, test items, norms, norms tables, scoring programs, scoring keys (including scoring algorithms, scale definitions, scale membership, and scoring directions), score reports, software, and other PROMIS-related materials are ©2006-2017 PROMIS Health Organization or other individuals/entities that have contributed information and materials, and are being used with the permission of the copyright holders.&#xD;
+&#xD;
+Terms and conditions for use: https://www.healthmeasures.net/images/PROMIS/Terms_of_Use_HM_approved_1-12-17_-_Updated_Copyright_Notices.pdf</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout, Alina Rehberg</author>
+    <author id="organisation">MHH-Hannover, Medizinische Hochschule Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de, rehberg.alina@mh-hannover.de</author>
+  </translations>
+  <uid>
+    <value>6c4a9886-aa16-4225-a9a2-32ecc532abdb</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.promis_bank_v20_physical_function.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0009</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_ORDINAL">
+            <rm_type_name>DV_ORDINAL</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <list>
+              <value>5</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0002</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>4</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0003</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>3</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0004</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>2</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0005</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+            <list>
+              <value>1</value>
+              <symbol>
+                <value />
+                <defining_code>
+                  <terminology_id>
+                    <value>local</value>
+                  </terminology_id>
+                  <code_string>at0006</code_string>
+                </defining_code>
+              </symbol>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">PROMIS Item Bank v2.0 - Physical Function</items>
+        <items id="description">The PROMIS item bank v2.0 for physical function.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Are you able to do chores such as vacuuming or yard work?</items>
+        <items id="description">Are you able to do chores such as&#xD;
+vacuuming or yard work?</items>
+        <items id="item_code">PFA11</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Without any difficulty</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0003">
+        <items id="text">With a little difficulty</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0004">
+        <items id="text">With some difficulty</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0005">
+        <items id="text">With much difficulty</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">Unable to do</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Are you able to go up and down stairs at a normal pace?</items>
+        <items id="description">*</items>
+        <items id="item_code">PFA21</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Are you able to go for a walk of at least 15 minutes?</items>
+        <items id="description">Are you able to go for a walk of at least&#xD;
+15 minutes?</items>
+        <items id="item_code">PFA23</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Are you able to run errands and shop?</items>
+        <items id="description">*</items>
+        <items id="item_code">PFA53</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">PROMIS Datenbank v2.0 - Physikalische Funktion</items>
+        <items id="description">Die PROMIS-Item-Datenbank v2.0 für physische Funktion.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Können Sie Hausarbeiten erledigen, z.B. Staubsaugen oder Gartenarbeit?</items>
+        <items id="description">Können Sie Hausarbeiten erledigen, z.B. Staubsaugen oder Gartenarbeit?</items>
+        <items id="item_code">PFA11</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ohne jede Schwierigkeit</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0003">
+        <items id="text">Mit geringen Schwierigkeiten</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0004">
+        <items id="text">Mit einigen Schwierigkeiten</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0005">
+        <items id="text">Mit großen Schwierigkeiten</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0006">
+        <items id="text">Kann ich gar nicht</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Können Sie mit normaler Geschwindigkeit Treppen hoch- und runtergehen?</items>
+        <items id="description">*</items>
+        <items id="item_code">PFA21</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Können Sie mindestens 15 Minuten lang spazieren gehen?</items>
+        <items id="description">Können Sie mindestens 15 Minuten lang spazieren gehen?</items>
+        <items id="item_code">PFA23</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Können Sie Besorgungen machen und einkaufen gehen?</items>
+        <items id="description">*</items>
+        <items id="item_code">PFA53</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

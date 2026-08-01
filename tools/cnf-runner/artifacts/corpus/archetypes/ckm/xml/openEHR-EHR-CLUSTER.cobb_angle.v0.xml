@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-10-03</original_author>
+    <original_author id="name">John Tore Valand</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">john.tore.valand@helse-vest-ikt.no</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Greiner, Allen K. "Adolescent idiopathic scoliosis: radiologic decision-making." American family physician 65.9 (2002): 1817. Retrieved from: https://www.aafp.org/pubs/afp/issues/2002/0501/p1817.html&#xD;
+&#xD;
+Horng MH, Kuok CP, Fu MJ, Lin CJ, Sun YN. Cobb Angle Measurement of Spine from X-Ray Images Using Convolutional Neural Network. Comput Math Methods Med. 2019 Feb 19;2019:6357171. doi: 10.1155/2019/6357171. PMID: 30996731; PMCID: PMC6399566.  &#xD;
+Retrieved from: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6399566/#:~:text=In%20current%20clinical%20diagnosis%2C%20the,endplate%20of%20the%20lowest%20vertebra&#xD;
+&#xD;
+https://radiopaedia.org/articles/cobb-angle&#xD;
+&#xD;
+https://surgeryreference.aofoundation.org/spine/deformities/adolescent-idiopathic-scoliosis/further-reading/lenke-classification</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">C46311CCC336FD4E2AD35A393EC11646</other_details>
+    <other_details id="build_uid">79fa72bd-f5b2-48d6-85ed-234f50404d31</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en Cobbvinkel.</purpose>
+      <keywords>skoliose, lordose, kyfose</keywords>
+      <use>Brukes for å registrere en Cobbvinkel.&#xD;
+&#xD;
+Denne arketypen er utformet for å bli nøstet i SLOT'et "Ytterligere detaljer" i arketypen CLUSTER.imaging_exam_spine, CLUSTER.imaging_exam-cervical_spine, CLUSTER.imaging_exam-thoracic_spine, CLUSTER.imaging_exam-lumbal_spine, i SLOT'et "Strukturerte funn" i OBSERVATION.imaging_exam_result (Bildediagnostisk svar) eller i andre relevante Bildediagnostisk svar-arketyper, men kan også brukes innen andre ENTRY- og CLUSTER-arketyper der det er klinisk passende.&#xD;
+&#xD;
+Detaljer om start- og sluttpunkter for målingen, kroppsstilling, støtteutstyr eller metode som brukes for å måle vinkelen, skal registreres i OBSERVATION.imaging_exam eller i andre relevante ENTRY-arketyper.&#xD;
+</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a Cobb angle.</purpose>
+      <keywords>scoliosis, lordosis, kyphosis</keywords>
+      <use>Use to record a Cobb angle.&#xD;
+&#xD;
+This archetype is designed to be nested within the 'Findings' SLOT in the CLUSTER.imaging_exam_spine, CLUSTER.imaging_exam-cervical_spine, CLUSTER.imaging_exam-thoracic_spine, CLUSTER.imaging_exam-lumbal_spine, the 'Structured imaging findings' SLOT in the OBSERVATION.imaging_exam_result or within other relevant CLUSTER.imaging_exam archetypes, but can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate. &#xD;
+&#xD;
+Details about start and end points of the measurement, body postion, supporting devices or method used to measure the angle is to be recorded in OBSERVATION.imaging_exam or in other relevant ENTRY archetypes.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen</author>
+    <author id="email">john.tore.valand@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>fd575057-c5ab-4de3-814e-b54f891324b4</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.cobb_angle.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0012</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_DV_QUANTITY">
+            <rm_type_name>DV_QUANTITY</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <property>
+              <terminology_id>
+                <value>openehr</value>
+              </terminology_id>
+              <code_string>497</code_string>
+            </property>
+            <list>
+              <units>deg</units>
+            </list>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Cobb angle</items>
+        <items id="description">A measurement to determine the degree of curvature of the spine.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Cobb angle</items>
+        <items id="description">Measured angle of the spinal curve.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Upper vertebra</items>
+        <items id="description">The most tilted vertebra on the top of a spinal curve.</items>
+        <items id="comment">Coding of the 'Upper vertebra' with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Lowest vertebra</items>
+        <items id="description">The most tilted vertebra on the bottom of a spinal curve.</items>
+        <items id="comment">Coding of the 'Lowest vertebra' with a terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the cobb angle measurement, not captured in other fields.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Apex vertebra</items>
+        <items id="description">The apex of the spinal curve.</items>
+        <items id="comment">Coding of the 'Apex vertebra' with a terminology is preferred, where possible.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Cobbvinkel</items>
+        <items id="description">En måling for å bestemme graden av krumning av ryggraden.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Cobbvinkel</items>
+        <items id="description">Målt vinkel på spinalkurven.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Øvre vertebra</items>
+        <items id="description">Den mest skråstilte ryggvirvelen på toppen av en spinalkurve.</items>
+        <items id="comment">Koding av 'Øvre vertebra' med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Laveste vertebra</items>
+        <items id="description">Den mest skråstilte ryggvirvelen på bunnen av en spinalkurve.</items>
+        <items id="comment">Koding av 'Laveste vertebra' med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om målingen av cobbvinkel som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Apex vertebra</items>
+        <items id="description">Toppen av spinalkurven.</items>
+        <items id="comment">Koding av 'Apex vertebra' med en terminologi foretrekkes, der det er mulig.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

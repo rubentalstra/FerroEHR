@@ -1,0 +1,1678 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2009-06-21</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Miguel Aguiar Netto, INLAGS, Brazil</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Terje Bektesevic Holmlund, UiT Norges arktiske universitet, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Peter Fedorcsak, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>James Goddard, NHS Wales Informatics Service, United Kingdom</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Anne Grimstvedt Kvalvik, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, Oslo universitetssykehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Johannes Michael Strehle, Helse-Nord, Norway</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>sam philip, NHS Grampian, United Kingdom</other_contributors>
+    <other_contributors>Jussara Rotzsch, Hospital Alemão Oswaldo Cruz, Brazil</other_contributors>
+    <other_contributors>Danielle Santos Alves, Federal University of Pernambuco, Brazil</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">0ED359CA677901E7435742AC45DAF7CF</other_details>
+    <other_details id="build_uid">f4c30a3d-7cf7-44de-945d-feff45de7b0a</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere gjeldende status og detaljer om episoder hvor individet har brukt antikonsepsjon, og hvilke typer.</purpose>
+      <keywords>prevensjonsmiddel, hormon, prevensjon, fødsel, kontroll, svangerskapsprevensjon, familieplanlegging, prevensjonstiltak, kontrasepsjon, spiral, p-pille, hormonspiral, kondom</keywords>
+      <use>Brukes for å registrere gjeldende status og detaljer om episoder hvor individet har brukt antikonsepsjon, og hvilke typer.&#xD;
+&#xD;
+Denne arketypen skal brukes til å registrere informasjon om både nåværende og tidligere bruk av antikonsepsjon.&#xD;
+&#xD;
+Arketypen fokuserer spesifikt på dokumentasjon om bruken av alle typer antikonsepsjon, inkludert episoder der mer enn en type antikonsepsjon kan ha blitt brukt samtidig.&#xD;
+&#xD;
+Clusteret 'Per type' gjør det mulig å registrere spesifikke detaljer og episoder om hver type antikonsepsjon som brukes, og kan bare gjentas en gang per type.&#xD;
+&#xD;
+I mange situasjoner vil den enkelte bare bruke én type antikonsepsjon om gangen. Imidlertid, hvis andre typer antikonsepsjon brukes samtidig, registreres detaljene i en annen forekomst av clusteret 'Per type'.&#xD;
+&#xD;
+For hver type antikonsepsjon kan brukshistorikken over tid registreres ved hjelp av det repeterbare clusteret "Per episode". Dette clusteret gjør det mulig å registrere et veldig detaljert bruksmønster for antikonsepsjon, om nødvendig.&#xD;
+&#xD;
+Dataelementet "Overordnet beskrivelse" kan brukes til å overføre fritekstbeskrivelser fra eksisterende eller tidligere kliniske systemer til arketypeformat.</use>
+      <misuse>Brukes ikke til å registrere detaljert informasjon om reseptbelagte medisiner. Lenker fra denne arketypen til den aktuelle "Legemiddelordinering" (INSTRUCTION.medication_order) eller "Legemiddelhåndtering" (ACTION.medication) bør brukes til å registrere detaljene.&#xD;
+&#xD;
+Brukes ikke til å registrere detaljert informasjon om prosedyrene som er utført. Lenker fra denne arketypen til den aktuelle "Prosedyre" (ACTION.procedure) skal brukes til å registrere detaljene.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the current status and episodic details about specific types of contraception used by an individual.</purpose>
+      <keywords>contraceptive</keywords>
+      <keywords>hormone</keywords>
+      <keywords>contraception</keywords>
+      <keywords>control</keywords>
+      <keywords>family planning</keywords>
+      <keywords>birth control measures</keywords>
+      <use>Use to record the current status and episodic details about specific types of contraception used by an individual.&#xD;
+&#xD;
+This archetype is to be used to record information about both current and previous use of contraception.&#xD;
+&#xD;
+The specific scope of this archetype is on overall documentation about the use of all types of contraception, including episodes where more than one type of contraception may have been used simultaneously.&#xD;
+&#xD;
+The 'Per type' cluster of data elements allows for recording of specific details and episodes about each type of contraception used and can be repeated only once per type. &#xD;
+&#xD;
+In many situations the individual will use only one type of contraception at a time. However, if other types of contraception are used at the same time, the details will be recorded in another instance of the 'Per type' cluster.&#xD;
+&#xD;
+For each type of contraception the history of use over time can be captured using the repeatable 'Per episode' cluster. This cluster of data elements allows for a very detailed pattern of contraception use to be recorded, if necessary.&#xD;
+&#xD;
+Use to incorporate the narrative descriptions of contraceptive history within existing or legacy clinical systems into an archetyped format, using the 'Overall description' data element.</use>
+      <misuse>Not to be used to record detailed information about the medication prescription. Links from this archetype to the relevant INSTRUCTION.medication_order or ACTION.medication should be used to record the detail.&#xD;
+&#xD;
+Not to be used to record detailed information about the procedures performed, such as an IUD insertion or a vasectomy. Links from this archetype to the relevant ACTION.procedure should be used to record the detail.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Marit Alice Venheim, John Tore Valand</author>
+    <author id="organisation">Helse Vest IKT, Helse Bergen</author>
+    <author id="email">marit.alice.venheim@helse-vest-ikt.no, john.tore.valand@helse-bergen.no</author>
+  </translations>
+  <uid>
+    <value>c00537a4-52ae-4ac0-b27e-81659a213233</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-EVALUATION.contraceptive_summary.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>EVALUATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0089</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0003</code_list>
+                    <code_list>at0005</code_list>
+                    <code_list>at0006</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0043</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0029</node_id>
+            <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+              <rm_attribute_name>items</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0151</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0155</code_list>
+                        <code_list>at0157</code_list>
+                        <code_list>at0156</code_list>
+                        <code_list>at0158</code_list>
+                        <code_list>at0159</code_list>
+                        <code_list>at0160</code_list>
+                        <code_list>at0169</code_list>
+                        <code_list>at0163</code_list>
+                        <code_list>at0161</code_list>
+                        <code_list>at0162</code_list>
+                        <code_list>at0154</code_list>
+                        <code_list>at0167</code_list>
+                        <code_list>at0153</code_list>
+                        <code_list>at0152</code_list>
+                        <code_list>at0164</code_list>
+                        <code_list>at0165</code_list>
+                        <code_list>at0166</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0144</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>defining_code</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>1</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_CODE_PHRASE">
+                        <rm_type_name>CODE_PHRASE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <terminology_id>
+                          <value>local</value>
+                        </terminology_id>
+                        <code_list>at0145</code_list>
+                        <code_list>at0146</code_list>
+                        <code_list>at0147</code_list>
+                      </children>
+                    </attributes>
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0053</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0148</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0064</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0081</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>true</upper_unbounded>
+                                <lower>1</lower>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0030</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0168</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0025</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0013</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0082</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DATE</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0074</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0026</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0087</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>1</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0149</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_DATE_TIME</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <children xsi:type="ARCHETYPE_SLOT">
+                <rm_type_name>CLUSTER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>0</lower>
+                </occurrences>
+                <node_id>at0077</node_id>
+                <includes>
+                  <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                  <expression xsi:type="EXPR_BINARY_OPERATOR">
+                    <type>Boolean</type>
+                    <operator>2007</operator>
+                    <precedence_overridden>false</precedence_overridden>
+                    <left_operand xsi:type="EXPR_LEAF">
+                      <type>String</type>
+                      <item xsi:type="xsd:string">archetype_id/value</item>
+                      <reference_type>attribute</reference_type>
+                    </left_operand>
+                    <right_operand xsi:type="EXPR_LEAF">
+                      <type>C_STRING</type>
+                      <item xsi:type="C_STRING">
+                        <pattern>.*</pattern>
+                      </item>
+                      <reference_type>constraint</reference_type>
+                    </right_operand>
+                  </expression>
+                </includes>
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ELEMENT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>0</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0069</node_id>
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>value</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>DV_TEXT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                  </children>
+                </attributes>
+              </children>
+              <cardinality>
+                <is_ordered>false</is_ordered>
+                <is_unique>false</is_unique>
+                <interval>
+                  <lower_included>true</lower_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>true</upper_unbounded>
+                  <lower>1</lower>
+                </interval>
+              </cardinality>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0150</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0019</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0073</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0022</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Contraceptive use summary</items>
+        <items id="description">Summary and persistent information about the use of methods to prevent pregnancy.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Current user</items>
+        <items id="description">Individual currently uses contraception.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Not current user</items>
+        <items id="description">Individual has previously used contraception but is not a current user.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Never used</items>
+        <items id="description">Individual has never used any type of contraception.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Episode start date</items>
+        <items id="description">Date when this episode commenced.</items>
+        <items id="comment">Can be a partial date, for example, only a year.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Overall comment</items>
+        <items id="description">Additional narrative about the use of contraception that has not been captured in other fields.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Last updated</items>
+        <items id="description">The date this contraceptive use summary was last updated.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Specific name</items>
+        <items id="description">Identification of the specific contraception used in this episode, by name.</items>
+        <items id="comment">For example: the brand name of the oral contraceptive pill. This data element is most likely redundant in the context of use of some contraceptives such as condoms where specification of the brand or type is usually not relevant.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Goal</items>
+        <items id="description">Intended outcome as a result of use of the specified contraception.</items>
+        <items id="comment">For example: pregnancy prevention, regular cycle or relief of pain. Coding with a terminology is recommended, where possible.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Episode details</items>
+        <items id="description">Additional structured details about the specified episode of contraception use.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Per type</items>
+        <items id="description">Details about use of a specified type of contraception.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Description</items>
+        <items id="description">Narrative description about the overall use of contraception during this episode.</items>
+        <items id="comment">This data element may be used to describe the pattern of use, including regularity of use. For example, the oral contraceptive pill was missed frequently, condoms used occasionally or to describe minor side effects.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Overall description</items>
+        <items id="description">Narrative summary about the individual's overall use of contraception.</items>
+        <items id="comment">Use this data element to record a narrative description where the structured data does not adequately reflect the use of contraception for this individual or to incorporate unstructured information from existing or legacy clinical systems into an archetyped format.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Description</items>
+        <items id="description">Narrative summary about the use of the specified type of contraception.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Per episode</items>
+        <items id="description">Details about contraceptive use during an identified period of time.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about use of the specified type of contraception, not captured in other fields.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Reason for cessation</items>
+        <items id="description">Narrative description for the reason for stopping use of the specified type of contraception during this episode.</items>
+        <items id="comment">For example: Major side effects or the wish to become pregnant. Coding with a terminology is recommended, where possible.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Type details</items>
+        <items id="description">Additional structured details about the specified type of contraception used.</items>
+      </items>
+      <items code="at0081">
+        <items id="text">Episode label</items>
+        <items id="description">Identification of an episode of contraception use - either as a number in a sequence and/or a named event.</items>
+        <items id="comment">For example: '2' as the second episode within a sequence of episodes; or 'Breastfeeding'.</items>
+      </items>
+      <items code="at0082">
+        <items id="text">Episode end date</items>
+        <items id="description">Date when this episode ceased.</items>
+        <items id="comment">Can be a partial date, for example, only a year. This data field will be empty if the episode is current and ongoing.</items>
+      </items>
+      <items code="at0087">
+        <items id="text">Episode comment</items>
+        <items id="description">Additional narrative about the use of the specified contraception during the specified episode, not captured in other fields.</items>
+      </items>
+      <items code="at0089">
+        <items id="text">Overall status</items>
+        <items id="description">Statement about regular use of any type of contraception.</items>
+      </items>
+      <items code="at0144">
+        <items id="text">Status</items>
+        <items id="description">Statement about current use of the specified type of contraception.</items>
+      </items>
+      <items code="at0145">
+        <items id="text">Current user</items>
+        <items id="description">Individual is a current user of the specified type of contraception.</items>
+      </items>
+      <items code="at0146">
+        <items id="text">Not current user</items>
+        <items id="description">Individual has previously used the specified type of contraception but is not a current user.</items>
+      </items>
+      <items code="at0147">
+        <items id="text">Never used</items>
+        <items id="description">Individual has never used the specified type of contraception.</items>
+      </items>
+      <items code="at0148">
+        <items id="text">Start date</items>
+        <items id="description">Date when the individual first used the specified type of contraception.</items>
+        <items id="comment">Comment: Can be a partial date, for example, only a year.</items>
+      </items>
+      <items code="at0149">
+        <items id="text">End date</items>
+        <items id="description">Date when the individual last used the specified type of contraception.</items>
+        <items id="comment">Comment: Can be a partial date, for example, only a year.</items>
+      </items>
+      <items code="at0150">
+        <items id="text">Overall details</items>
+        <items id="description">Additional structured details about the overall use of contraception.</items>
+      </items>
+      <items code="at0151">
+        <items id="text">Type</items>
+        <items id="description">The type of contraception used by the individual.</items>
+        <items id="comment">Coding the contraceptive type with a terminology is recommended, where possible.</items>
+      </items>
+      <items code="at0152">
+        <items id="text">Male condom</items>
+        <items id="description">A barrier covering the penis to physically block ejaculated sperm from entering the vagina.</items>
+      </items>
+      <items code="at0153">
+        <items id="text">Female condom</items>
+        <items id="description">A barrier worn inside the vagina to physically block ejaculated sperm from entering the cervix.</items>
+      </items>
+      <items code="at0154">
+        <items id="text">Diaphragm</items>
+        <items id="description">A shallow, dome shaped barrier placed in the vagina to cover the cervix.</items>
+      </items>
+      <items code="at0155">
+        <items id="text">Combination pill</items>
+        <items id="description">A combination oral contraceptive pill containing both an oestrogen and progestin.</items>
+      </items>
+      <items code="at0156">
+        <items id="text">Combination skin patch</items>
+        <items id="description">A combination skin patch containing both an oestrogen and progestin.</items>
+      </items>
+      <items code="at0157">
+        <items id="text">Progestogen-only pill</items>
+        <items id="description">Progestogen-only form of oral hormonal contraception.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">Depot progestogen injection</items>
+        <items id="description">Progestogen-only injectable of hormonal contraception.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Hormone implant</items>
+        <items id="description">Hormonal contraception inserted under the skin.</items>
+      </items>
+      <items code="at0160">
+        <items id="text">Vaginal ring</items>
+        <items id="description">Hormone impregnated ring inserted into the vagina.</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Female sterilisation</items>
+        <items id="description">Procedure intended to permanently prevent pregnancy, usually by tubal ligitation.</items>
+      </items>
+      <items code="at0162">
+        <items id="text">Male sterilisation</items>
+        <items id="description">Procedure intended to permanently prevent pregnancy, usually by vasectomy.</items>
+      </items>
+      <items code="at0163">
+        <items id="text">IUD without hormone</items>
+        <items id="description">Device inserted into the uterus to prevent implantation.</items>
+      </items>
+      <items code="at0164">
+        <items id="text">Withdrawal</items>
+        <items id="description">Withdrawing the penis from the vagina and away from a woman's external genitals before ejaculation.</items>
+      </items>
+      <items code="at0165">
+        <items id="text">Fertility awareness method</items>
+        <items id="description">Cyclical use of abstinence or barrier methods during likely fertile periods.</items>
+      </items>
+      <items code="at0166">
+        <items id="text">Abstinence</items>
+        <items id="description">Avoidance of vaginal intercourse or intimate activities which may result in pregnancy.</items>
+      </items>
+      <items code="at0167">
+        <items id="text">Vaginal douching</items>
+        <items id="description">Intravaginal cleansing with a liquid solution.</items>
+      </items>
+      <items code="at0168">
+        <items id="text">Clinical indication</items>
+        <items id="description">Clinical reason for using the specified type of contraception during this episode.</items>
+        <items id="comment">For example: dysmenorrhoea; or irregular menses. Coding with an external terminology is preferred, where possible.</items>
+      </items>
+      <items code="at0169">
+        <items id="text">IUD with hormone</items>
+        <items id="description">Device inserted into the uterus to prevent implantation.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Antikonsepsjonssammendrag</items>
+        <items id="description">Sammendrag og varig (persistent) informasjon om bruk av metoder for å forhindre graviditet.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Bruker antikonsepsjon</items>
+        <items id="description">Individet bruker antikonsepsjon.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Har brukt antikonsepsjon</items>
+        <items id="description">Individet har tidligere brukt antikonsepsjon, men bruker det for tiden ikke.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Har aldri brukt antikonsepsjon</items>
+        <items id="description">Individet har aldri brukt noen form for antikonsepsjon.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Episodens startdato</items>
+        <items id="description">Dato da episoden startet.</items>
+        <items id="comment">Kan være en deldato, for eksempel kun årstall.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Samlet kommentar</items>
+        <items id="description">Ytterligere fritekst om antikonsepsjonsbruken som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Sist oppdatert</items>
+        <items id="description">Datoen da dette antikonsepsjonssammendraget sist ble oppdatert.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Spesifikt navn</items>
+        <items id="description">Identifisering av den spesifikke antikonsepsjonen som brukes i denne episoden, med navn.</items>
+        <items id="comment">For eksempel: Merkenavnet på den p-pillen som brukes. Dette dataelementet er sannsynligvis overflødig for noen antikonsepsjonsmidler der spesifikasjon av merke eller type vanligvis ikke er relevant, som kondom.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Hensikt</items>
+        <items id="description">Forventet utfall som et resultat av bruk av den spesifiserte antikonsepsjonen.</items>
+        <items id="comment">For eksempel: Regelmessig syklus, lindring av smerter eller forhindre graviditet. Koding med ekstern terminologi er å foretrekke, der det er mulig.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Episodedetaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om den spesifiserte episoden med antikonsepsjonsbruk.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Per type</items>
+        <items id="description">Detaljer om bruken for en spesifikk type antikonsepsjon.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstbeskrivelse om den samlede bruken av antikonsepsjon i løpet av denne episoden.</items>
+        <items id="comment">Dette dataelementet kan brukes til å beskrive bruksmønsteret, inkludert regulariteten. For eksempel "p-pillen ble ofte glemt" eller "kondomer brukt noen ganger, eller for å beskrive mindre bivirkninger.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Overordnet beskrivelse</items>
+        <items id="description">Fritekstsammendrag om individets overordnede bruk av antikonsepsjon.</items>
+        <items id="comment">Bruk dette dataelementet for å registrere en fritekstbeskrivelse om individets bruk av antikonsepsjon dersom man ikke kan eller trenger de strukturerte elementene. Kan også brukes for å overføre ustrukturert informasjon fra eksisterende eller gamle systemer til arketypeformat.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">Beskrivelse</items>
+        <items id="description">Fritekstsammendrag om bruken av den spesifiserte antikonsepsjonen.</items>
+      </items>
+      <items code="at0064">
+        <items id="text">Per episode</items>
+        <items id="description">Detaljer om bruk av antikonsepsjon i løpet av en identifisert tidsperiode.</items>
+      </items>
+      <items code="at0069">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om den spesifiserte antikonsepsjonstypen som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Årsak til opphør</items>
+        <items id="description">Fritekstbeskrivelse av årsaken til at en sluttet å bruke den spesifiserte antikonsepsjonstypen i denne episoden.</items>
+        <items id="comment">For eksempel: Alvorlige bivirkninger eller ønsker å bli gravid. Koding med ekstern terminologi er å foretrekke der det er mulig.</items>
+      </items>
+      <items code="at0077">
+        <items id="text">Detaljer om antikonsepsjonstypen</items>
+        <items id="description">Ytterligere strukturerte detaljer om den spesifiserte typen antikonsepsjon.</items>
+      </items>
+      <items code="at0081">
+        <items id="text">Episodens navn</items>
+        <items id="description">Identifisering av en episode med bruk av antikonsepsjon - enten som et nummer i en sekvens og / eller en navngitt hendelse.</items>
+        <items id="comment">For eksempel: "2" som den andre episoden i en sekvens av episoder eller "Amming".</items>
+      </items>
+      <items code="at0082">
+        <items id="text">Episodens sluttdato</items>
+        <items id="description">Datoen episoden opphørte.</items>
+        <items id="comment">Kan være en deldato, for eksempel kun årstall. Dette datafeltet vil være tomt når gjeldene episode pågår.</items>
+      </items>
+      <items code="at0087">
+        <items id="text">Kommentar til episoden</items>
+        <items id="description">Ytterligere fritekst om bruken av antikonsepsjon innenfor den spesifiserte episoden som ikke er omfattet av andre felt.</items>
+      </items>
+      <items code="at0089">
+        <items id="text">Overordnet status</items>
+        <items id="description">Utsagn om regelmessig bruk av alle typer antikonsepsjon.</items>
+      </items>
+      <items code="at0144">
+        <items id="text">Status</items>
+        <items id="description">Utsagn om nåværende bruk for den spesifiserte antikonsepsjonen.</items>
+      </items>
+      <items code="at0145">
+        <items id="text">Bruker antikonsepsjonstypen</items>
+        <items id="description">Individet bruker den angitte typen antikonsepsjon.</items>
+      </items>
+      <items code="at0146">
+        <items id="text">Har brukt antikonsepsjonstypen</items>
+        <items id="description">Individet har tidligere brukt den angitte typen antikonsepsjon, men bruker det ikke nå.</items>
+      </items>
+      <items code="at0147">
+        <items id="text">Aldri brukt antikonsepsjonstypen</items>
+        <items id="description">Individet har aldri brukt den angitte typen antikonsepsjon.</items>
+      </items>
+      <items code="at0148">
+        <items id="text">Startdato</items>
+        <items id="description">Datoen når individet første gang brukte den spesifiserte antikonsepsjonen.</items>
+        <items id="comment">Kan være en deldato, for eksempel årstall.</items>
+      </items>
+      <items code="at0149">
+        <items id="text">Sluttdato</items>
+        <items id="description">Dato da individet sist brukte den angitte typen antikonsepsjon.</items>
+        <items id="comment">Kan være en deldato, for eksempel årstall.</items>
+      </items>
+      <items code="at0150">
+        <items id="text">Samlede detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om den overordnede bruken av prevensjon.</items>
+      </items>
+      <items code="at0151">
+        <items id="text">Type</items>
+        <items id="description">Typen antikonsepsjon individet bruker eller brukte.</items>
+        <items id="comment">Koding med ekstern terminologi er å foretrekke, der det er mulig.</items>
+      </items>
+      <items code="at0152">
+        <items id="text">Kondom</items>
+        <items id="description">En barriere som dekker penis for fysisk å blokkere ejakulert sæd fra å komme inn i skjeden.</items>
+      </items>
+      <items code="at0153">
+        <items id="text">Femidom</items>
+        <items id="description">En barriere som plasseres inne i vagina for fysisk å blokkere ejakulert sæd fra å komme inn i livmorhalsen.</items>
+      </items>
+      <items code="at0154">
+        <items id="text">Pessar</items>
+        <items id="description">En grunn, kuppelformet barriere plassert i skjeden for å dekke livmorhalsen.</items>
+      </items>
+      <items code="at0155">
+        <items id="text">Kombinasjonspille</items>
+        <items id="description">En kombinasjons p-pille som inneholder både østrogen og gestagen.</items>
+      </items>
+      <items code="at0156">
+        <items id="text">Kombinasjonsplaster</items>
+        <items id="description">Et p-plaster som inneholder både østrogen og progestin.</items>
+      </items>
+      <items code="at0157">
+        <items id="text">Progestagen pille</items>
+        <items id="description">Progestagen som oral hormonell antikonsepsjon.</items>
+      </items>
+      <items code="at0158">
+        <items id="text">P-sprøyte</items>
+        <items id="description">Progestagen som injiserbar hormonell antikonsepsjon.</items>
+      </items>
+      <items code="at0159">
+        <items id="text">Hormonimplantat</items>
+        <items id="description">Hormonell antikonsepsjon implantert under huden.</items>
+      </items>
+      <items code="at0160">
+        <items id="text">Vaginal ring</items>
+        <items id="description">Hormonimpregnert ring satt inn i skjeden.</items>
+      </items>
+      <items code="at0161">
+        <items id="text">Kvinnelig sterilisering</items>
+        <items id="description">Fremgangsmåte ment for å permanent forhindre graviditet, vanligvis ved å blokkere egglederne.</items>
+      </items>
+      <items code="at0162">
+        <items id="text">Mannlig sterilisering</items>
+        <items id="description">Fremgangsmåte ment for å permanent forhindre graviditet, vanligvis ved å kutte sædlederne.</items>
+      </items>
+      <items code="at0163">
+        <items id="text">Intrauterin antikonsepsjon uten hormon</items>
+        <items id="description">Spiral satt inn i livmoren for å forhindre implantasjon.</items>
+      </items>
+      <items code="at0164">
+        <items id="text">Avbrutt samleie</items>
+        <items id="description">Å trekke penis fra skjeden og bort fra kvinnens ytre kjønnsorganer før utløsning.</items>
+      </items>
+      <items code="at0165">
+        <items id="text">Fertilitetsbevissthet</items>
+        <items id="description">Periodisk bruk av avholdenhet eller barrieremetoder i sannsynlig fruktbare perioder.</items>
+      </items>
+      <items code="at0166">
+        <items id="text">Avhold</items>
+        <items id="description">Unngåelse av vaginalt samleie eller intime aktiviteter som kan føre til graviditet.</items>
+      </items>
+      <items code="at0167">
+        <items id="text">Vaginal skylling</items>
+        <items id="description">Intravaginal skylling med en flytende oppløsning.</items>
+      </items>
+      <items code="at0168">
+        <items id="text">Klinisk indikasjon</items>
+        <items id="description">Den kliniske årsaken for å bruke spesifisert antikonsepsjon i denne episoden.</items>
+        <items id="comment">For eksempel: dysmenoré; eller uregelmessige menstruasjoner. Koding med ekstern terminologi er å foretrekke der det er mulig.</items>
+      </items>
+      <items code="at0169">
+        <items id="text">Intrauterin antikonsepsjon med hormon</items>
+        <items id="description">Spiral satt inn i livmoren for å forhindre implantasjon.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2007-04-11</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references"></other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">B56CBA0918CF02D45FDF310C8876C63D</other_details>
+    <other_details id="build_uid">c2f502cd-6b9f-4477-9938-044d3ca0e4a0</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ru</code_string>
+      </language>
+      <purpose>*To provide an example framework for modelling conclusions as a component of a complex clinical template. (en)</purpose>
+      <keywords>диагностика</keywords>
+      <keywords>диагноз</keywords>
+      <keywords>дифдиагноз</keywords>
+      <keywords>дифференциальный</keywords>
+      <keywords>заключение</keywords>
+      <keywords>вывод</keywords>
+      <use>*Use to provide an example framework for modelling conclusions as a single component within a multicomponent clinical template. For example: a clinical encounter or a discharge summary.&#xD;
+&#xD;
+This archetype is intended to be nested within any relevant COMPOSITION archetype. (en)</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>*To provide an example framework for modelling conclusions as a component of a complex clinical template. (en)</purpose>
+      <keywords>diagnóstico</keywords>
+      <keywords>diagnóstico diferencial</keywords>
+      <use>*Use to provide an example framework for modelling conclusions as a single component within a multicomponent clinical template. For example: a clinical encounter or a discharge summary.&#xD;
+&#xD;
+This archetype is intended to be nested within any relevant COMPOSITION archetype. (en)</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To provide an example framework for modelling conclusions as a component of a complex clinical template.</purpose>
+      <keywords>diagnosis</keywords>
+      <keywords>differential diagnosis</keywords>
+      <use>Use to provide an example framework for modelling conclusions as a single component within a multicomponent clinical template. For example: a clinical encounter or a discharge summary.&#xD;
+&#xD;
+This archetype is intended to be nested within any relevant COMPOSITION archetype.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ru</code_string>
+    </language>
+    <author id="name">Art Latyp; Латыпов Артур Шамилевич</author>
+    <author id="organisation">RusBITech РусБИТех, Москва</author>
+    <accreditation>hmm</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Pilar, Buenos Aires, Argentina.</author>
+    <author id="email">alandmarch@gmail.com</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <uid>
+    <value>f88b94eb-8afe-404b-9ccc-adf79b44b723</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-SECTION.conclusion.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>SECTION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>EVALUATION</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-EVALUATION\.differential_diagnoses(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-EVALUATION\.clinical_synopsis(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-EVALUATION\.differential_diagnoses(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-EVALUATION\.clinical_synopsis(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Conclusion</items>
+        <items id="description">Example framework for modelling opinions, conclusions or diagnoses drawn at the end of an investigative clinical process.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Opinion</items>
+        <items id="description">Opinions, conclusions or diagnoses drawn at the end of an investigative clinical process.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ru">
+      <items code="at0000">
+        <items id="text">Заключение</items>
+        <items id="description">*Example framework for modelling opinions, conclusions or diagnoses drawn at the end of an investigative clinical process. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Opinion (en)</items>
+        <items id="description">*Opinions, conclusions or diagnoses drawn at the end of an investigative clinical process. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">Conclusión</items>
+        <items id="description">*Example framework for modelling opinions, conclusions or diagnoses drawn at the end of an investigative clinical process. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Opinion (en)</items>
+        <items id="description">*Opinions, conclusions or diagnoses drawn at the end of an investigative clinical process. (en)</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,1251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2008-05-15</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Tomas Alme, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Nadim Anani, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo universitetssykehus HF, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Gustavo Bacelar-Silva, Healthcare Designs, Brazil (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Shahla Foozonkhah, Iran ministry of health and education, Iran</other_contributors>
+    <other_contributors>Einar Fosse, National Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Andreas Hering, Helse Bergen HF, Haukeland universitetssjukehus, Norway</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Arne Løberg Sæter, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Rune Pedersen, Universitetssykehuset i Nord Norge, Norway</other_contributors>
+    <other_contributors>Micaela Thierley, Helse Bergen/Haraldsplass sykehus, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Direct communication with clinicians.</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">C3C3D1004C0B0E25100780E3B3FE6F3E</other_details>
+    <other_details id="build_uid">1f47ccc2-612f-4be1-b514-b1cde6dc24cd</other_details>
+    <other_details id="revision">1.3.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Beschreibung der klinischen Vorgeschichte des Patienten und die Entwicklung eines Frameworks für die Erstellung eines detaillierten CLUSTER-Archetyps, der die Darstellung mit zusätzlichen strukturierten Details zu Symptomen, gesundheitlichen Ereignissen und verwandten Bereichen unterstützt. &#xD;
+&#xD;
+Zur Repräsentation der klinischen Vorgeschichte einer Person, eines Elternteils, eines Betreuers oder einer anderen Partei. Sie kann von einem Kliniker als Teil der ihm vorgelegten klinischen Anamnese erfasst werden oder als Teil eines klinischen Fragebogens oder einer persönlichen Patientenakte selbst erfasst werden.</purpose>
+      <keywords>Vorgeschichte</keywords>
+      <keywords>vorliegende</keywords>
+      <keywords>Beschwerde</keywords>
+      <keywords>Erzählung</keywords>
+      <keywords>Symptom</keywords>
+      <keywords>Gesundheit</keywords>
+      <keywords>Aufzeichnung</keywords>
+      <keywords>aktuelle Beschwerde</keywords>
+      <keywords>Anamnese</keywords>
+      <use>Zur Repräsentation einer Beschreibung über subjektive gesundheitsbezogene Beobachtungen oder Eindrücke aus Sicht der zu pflegenden Person.&#xD;
+&#xD;
+Wenn es von einem Kliniker im Kontext der Gesundheitsversorgung aufgezeichnet wird, kann die Geschichte genutzt werden, um die klinische Vorgeschichte zu erfassen, wie sie von der Person selbst, einem Elternteil, Pflegeperson oder anderen beteiligten Parteien berichtet wurde. Falls diese von der Person selbst erfasst wird, kann sie als Bericht über ihre "Geschichte" von Symptomen und Gesundheitserfahrungen verwendet werden, der zum Austausch mit den Gesundheitsdienstleistern oder zur Dokumentation in ihrer persönlichen Gesundheitsakte verwendet werden kann.&#xD;
+&#xD;
+Verwendung:&#xD;
+- zum Darstellen einer einfachen Erzählung; und/oder&#xD;
+- als Container-Archetyp, um die Darstellung einer detaillierten strukturierten Geschichte durch die Einbeziehung relevanter CLUSTER-Archetypen innerhalb des "Strukturierte Angabe"-SLOTs zu ermöglichen. Zum Beispiel können CLUSTER.symptom-, CLUSTER.issue- oder CLUSTER.health_event-Archetypen in diesem SLOT angemessen verwendet werden.&#xD;
+&#xD;
+Diesen Archetypen verwenden, um die aus bestehenden oder alten klinischen Systemen erfasste Beschreibungen der klinischen Vorgeschichte in einem archetypischen Format mit Hilfe des 'Story'-Textdatenelements integrieren.</use>
+      <misuse>Nicht zur Repräsentation formaler Beurteilungen von Klinikern, die in der Regel unter Nutzung der Archetypenklasse EVALUATION erfasst werden.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera en beskrivning av vårdtagarens sjukdomshistoria samt tillhandahålla ett ramverk i vilken detaljerade CLUSTER-arketyper ska infogas, där syftet med var och en är att stödja berättelsen med ytterligare detaljer för symptom, hälsohändelser och relaterade ämnen.&#xD;
+&#xD;
+Används för att registrera detaljer om en sjukdomshistoria som rapporterats av vårdtagare, förälder, vårdgivare eller annan part. Detta kan registreras som en del av en sjukdomshistoria som rapporterats direkt till en kliniker, eller registreras som en del av ett kliniskt frågeformulär eller patientjournal.</purpose>
+      <keywords>presenterar</keywords>
+      <keywords>klagomål</keywords>
+      <keywords>berättelse</keywords>
+      <keywords>symptom</keywords>
+      <keywords>hälsa</keywords>
+      <keywords>journal</keywords>
+      <keywords>anamnes</keywords>
+      <keywords>sjukdomshistoria</keywords>
+      <use>Används för att registrera en beskrivning av subjektiva, hälsorelaterade observationer eller intryck ur vårdtagarens perspektiv. &#xD;
+&#xD;
+Om registrering sker av en kliniker, kan berättelsen användas för att fånga sjukdomshistorian som rapporterats antigen av vårdtagaren, en förälder, vårdgivaren eller annan närstående. Om registrering sker av vårdtagaren själv, kan berättelsen användas som en redogörelse för deras symptom och hälsoupplevelser, som i sin tur kan användas för att dela med vårdgivare eller för att dokumentera i deras egna personliga hälsojournaler.&#xD;
+&#xD;
+Användningsområden:&#xD;
+- registrering av en enkel sjukdomshistoria; och/eller&#xD;
+- som en containerarketyp för att möjliggöra registrering av en detaljerad berättelse genom att inkludera relevanta CLUSTER-arketyper i "Detail"-SLOT. Till exempel kan CLUSTER.symptom, CLUSTER.issue eller CLUSTER.health_event-arketyper användas på lämpligt sätt i denna SLOT.&#xD;
+&#xD;
+Används för att införliva de beskrivningar av sjukdomshistorier som finns dokumenterade i befintliga eller äldre kliniska system i ett arketypiskt format med hjälp av dataelementet ”Berättelse”.</use>
+      <misuse>Ska inte användas för att registrera formella bedömningar av kliniker. Dessa registreras vanligtvis med EVALUATION-klassen av arketyper.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ko</code_string>
+      </language>
+      <purpose>개인/환자가 의사에게 이야기하거나 직접 기록한 임상 병력에 대한 서술을 기록하기 위한 것과 상세한 CLUSTER archetypes를 포함할 수 있는 프레임워크를 제공하는 것으로 각각에 임상 병력의 다양한 측면들을 상세하게 기술될 것이다.</purpose>
+      <keywords>*병력(ko)</keywords>
+      <keywords>*현재(ko)</keywords>
+      <keywords>*호소(ko)</keywords>
+      <keywords>*이야기(ko)</keywords>
+      <use>환자가 의사에게 이야기한 공식적인 '현재 호소하는 병력(History of Presenting Complaint)'을 기록하기 위해서 사용함; 또는 (예를 들어 개인건강기록에 있는) 개인 자신의 증상들의 '이야기(story)를 설명한 것을 기록하기 위해 사용함.&#xD;
+&#xD;
+기존 또는 이전의 임상 시스템 내의 임상 병력의 서술을 'Story' data element을 사용하여 archetyped format으로 통합하기위해 사용함.&#xD;
+&#xD;
+단순한 서술을 기록하기 위해 사용함 그리고/또는 container archetype으로써 - 추가적이고 특정한 그리고 상세한 CLUSTER archetypes에 의해 확장될 수 있는 공통의 쿼리가능한 ENTRY archetype framework를 제공함. 각각에 임상병력의 다양한 측면을 기술될 것임. 병력과 관련된 CLUSTER archetypes의 예는 CLUSTER.symptom 또는 CLUSTER.health_event를 포함한다.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para registrar uma descrição narrativa da história clínica do sujeito do cuidado e para fornecer um quadro no qual se aninha arquétipos CLUSTER detalhados, cada um dos quais irão apoiar a narrativa com detalhes estruturados adicionais para sintomas, eventos de saúde e tópicos relacionados.&#xD;
+&#xD;
+Use para registrar detalhes sobre a história clínica relatada por um indivíduo, pais, cuidador ou outra pessoa. Pode ser registrado pelo médico como parte de um registro de história clínica relatado, ou auto-registrado como parte de um questionário clínico ou registro de saúde pessoal.</purpose>
+      <keywords>história</keywords>
+      <keywords>queixa</keywords>
+      <keywords>sintoma</keywords>
+      <keywords>saúde</keywords>
+      <keywords>gravar</keywords>
+      <keywords>apresentando queixa</keywords>
+      <keywords>anamnese</keywords>
+      <keywords>presente</keywords>
+      <use>Use para registrar uma descrição sobre observações ou impressões subjetivas relacionadas à saúde do ponto de vista do sujeito do cuidado.&#xD;
+&#xD;
+Quando registrado por um médico dentro do contexto de provisão de cuidados de saúde, a história pode ser utilizada para capturar a história clínica, como relatado pelo próprio sujeito, pais, cuidador ou outra parte relacionada. Se gravado pelo próprio sujeito, pode ser usado como um relato de sua "história" de sintomas e experiências de saúde, que pode ser usado para compartilhar com os prestadores de cuidados de saúde ou para documentar dentro do seu próprio registro de saúde pessoal.&#xD;
+&#xD;
+Usar:&#xD;
+- para gravar uma narrativa simples; e/ou&#xD;
+- como um arquétipo contêiner para permitir o registro de um histórico detalhado por inclusão de arquétipos CLUSTER relevantes dentro do SLOT Detalhes. Por exemplo: arquétipos CLUSTER.symptom, CLUSTER.issue ou CLUSTER.health_event podem ser adequadamente utilizados neste SLOT.&#xD;
+&#xD;
+Use para incorporar as descrições narrativas da história clínica capturadas de sistemas clínicos existentes ou herdados em um formato arquetipado, usando o elemento de dados de texto "História".</use>
+      <misuse>Não deve ser usado para gravar avaliações formais por médicos que normalmente seriam gravadas usando a classe de arquétipos EVALUATION.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ar-sy</code_string>
+      </language>
+      <purpose>*To record a narrative description of the clinical history, as told to a clinician or recorded directly by an individual/patient, and to provide a framework in which to nest detailed CLUSTER archetypes, each of which will describe the various aspects of the clinical history in further detail.(en)</purpose>
+      <use />
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a narrative description of the clinical history of the subject of care and to provide a framework in which to nest detailed CLUSTER archetypes, each of which will support the narrative with additional structured detail for symptoms, health events and related topics.&#xD;
+&#xD;
+Use to record detail about the clinical history as reported by an individual, parent, care-giver or other party. It may be recorded by a clinician as part of a clinical history record as reported to them, or self-recorded as part of a clinical questionnaire or personal health record.</purpose>
+      <keywords>history</keywords>
+      <keywords>presenting</keywords>
+      <keywords>complaint</keywords>
+      <keywords>story</keywords>
+      <keywords>symptom</keywords>
+      <keywords>health</keywords>
+      <keywords>record</keywords>
+      <keywords>presenting complaint</keywords>
+      <keywords>anamnesis</keywords>
+      <use>Use to record a description about subjective health-related observations or impressions from the point of view of the subject of care. &#xD;
+&#xD;
+When recorded by a clinician within the context of healthcare provision the story can be used for capturing the clinical history, as reported by the subject themselves, a parent, care-giver or other related party. If recorded by the subject, it can be used as an account of their 'story' of symptoms and health experiences, which might be used to share with healthcare providers or to document within their own personal health record.&#xD;
+&#xD;
+Use:&#xD;
+- to record a simple narrative; and/or &#xD;
+- as a container archetype to enable recording of a detailed structured history by inclusion of relevant CLUSTER archetypes within the 'Detail' SLOT. For example: CLUSTER.symptom, CLUSTER.issue or CLUSTER.health_event archetypes can be appropriately used in this SLOT.&#xD;
+&#xD;
+Use to incorporate the narrative descriptions of clinical history captured from existing or legacy clinical systems into an archetyped format, using the 'Story' text data element.</use>
+      <misuse>Not to be used to record formal assessments by clinicians which would usually be recorded using the EVALUATION class of archetypes.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>it</code_string>
+      </language>
+      <purpose>Registrare una descrizione narrativa della storia clinica del soggetto di cura e fornire un quadro in cui annidare gli archetipi dettagliati di CLUSTER, ognuno dei quali supporterà la narrazione con ulteriori dettagli strutturati per i sintomi, gli eventi sanitari e gli argomenti correlati.&#xD;
+&#xD;
+Usato per registrare i dettagli della storia clinica come riportata da un individuo, da un genitore, da un caregiver o da un altro soggetto. Può essere registrato da un clinico come parte di una storia clinica così come riportata, o autoregistrato come parte di un questionario clinico o di una cartella clinica personale.</purpose>
+      <keywords>cronologia, presentazione, segnalazione, storia, sintomo, salute, registrazione, presentazione di una lamentela, anamnesi</keywords>
+      <use>Usato per registrare una descrizione delle osservazioni o impressioni soggettive relative alla salute dal punto di vista del soggetto di cura.&#xD;
+&#xD;
+Quando viene registrata da un clinico nell'ambito dell'assistenza sanitaria, la storia può essere utilizzata per acquisire l'anamnesi clinica, come riportata dal soggetto stesso, da un genitore, da un care-giver o da altre parti correlate. Se registrata dal soggetto, può essere utilizzata come resoconto della sua "cronologia" di sintomi ed esperienze di salute, e può essere utilizzata per condividerla con gli operatori sanitari o per documentare all'interno della cartella clinica personale del soggetto.&#xD;
+&#xD;
+Utilizzo:&#xD;
+- per registrare una semplice narrazione; e/o&#xD;
+- come archetipo di contenitore per consentire la registrazione di una storia strutturata e dettagliata includendo i relativi archetipi di CLUSTER all'interno dello SLOT "Dettaglio". Per esempio: Gli archetipi di CLUSTER.symptom, CLUSTER.issue o CLUSTER.health_event possono essere utilizzati in modo appropriato in questo SLOT.&#xD;
+&#xD;
+Utilizzare per incorporare le descrizioni narrative della storia clinica acquisite da sistemi clinici esistenti o preesistenti in un formato archetipizzato, utilizzando l'elemento "Storia".&#xD;
+</use>
+      <misuse>Da non utilizzare per registrare le valutazioni formali dei clinici che di solito vengono registrate utilizzando la classe EVALUATION degli archetipi.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>Pour enregistrer une description narrative des antécédents cliniques du sujet pris en charge et pour fournir un cadre dans lequel intégrer des archétypes CLUSTER détaillés, chacun d’entre eux venant étayer le récit par des détails structurés supplémentaires concernant les symptômes, les événements de santé et les sujets connexes.&#xD;
+&#xD;
+À utiliser pour enregistrer des détails sur les antécédents cliniques tels qu’ils ont été rapportés par une personne, un parent, un soignant ou toute autre partie. Ces informations peuvent être enregistrées par un clinicien dans le cadre d’un dossier d’antécédents cliniques, telles qu’elles lui ont été rapportées, ou saisies par la personne elle-même dans le cadre d’un questionnaire clinique ou d’un dossier de santé personnel.</purpose>
+      <keywords>antécédents</keywords>
+      <keywords>présentant</keywords>
+      <keywords>plainte</keywords>
+      <keywords>récit</keywords>
+      <keywords>symptôme</keywords>
+      <keywords>santé</keywords>
+      <keywords>Pour enregistrer</keywords>
+      <keywords>motif de consultation</keywords>
+      <keywords>anamnèse</keywords>
+      <use>À utiliser pour enregistrer une description des observations ou impressions subjectives liées à la santé du point de vue de la personne prise en charge. &#xD;
+&#xD;
+Lorsqu’elle est enregistrée par un clinicien dans le cadre de la prestation de soins, cette description peut servir à saisir les antécédents cliniques tels qu’ils ont été rapportés par la personne elle-même, un parent, un aidant ou toute autre partie concernée. Si elle est consignée par la personne concernée, elle peut servir de récit de son « histoire » en matière de symptômes et d’expériences de santé, qui pourra être partagé avec des professionnels de santé ou consigné dans son dossier de santé personnel.&#xD;
+&#xD;
+Utilisation :&#xD;
+- pour enregistrer un récit simple ; et/ou &#xD;
+- comme archétype « conteneur » permettant la consignation d’un historique détaillé et structuré grâce à l’inclusion d’archétypes CLUSTER pertinents dans le SLOT « Detail ». Par exemple : les archétypes CLUSTER.symptom, CLUSTER.issue ou CLUSTER.health_event peuvent être utilisés de manière appropriée dans cet emplacement.&#xD;
+&#xD;
+À utiliser pour intégrer les descriptions narratives de l’historique clinique issues de systèmes cliniques existants ou hérités dans un format archétypé, à l’aide de l’élément de données textuel « Story ».</use>
+      <misuse>À ne pas utiliser pour enregister des évaluations formelles réalisées par des cliniciens, qui sont généralement enregistrées à l’aide de la classe d’archétypes EVALUATION.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>zh-cn</code_string>
+      </language>
+      <purpose>旨在用于记录照护服务对象临床病史的叙述性描述，并提供可用于在其中嵌套其他详细的群簇型（CLUSTER ）原始型的框架；其中，所嵌入的每个原始型分别会利用进一步关于症状、健康事件和相关主题的结构化详情来支持上述的叙述。&#xD;
+&#xD;
+用于记录关于个人、父母、照护人员/照料者或其他参与方所报告的临床病史的详细信息。临床医务人员/临床医生可能会将其记录为向他们所报告的临床病史记录的组成部分，或者是照护服务对象将其自行记录为临床问卷或个人健康档案的组成部分。</purpose>
+      <keywords>病史</keywords>
+      <keywords>历史</keywords>
+      <keywords>陈述</keywords>
+      <keywords>描述</keywords>
+      <keywords>叙述</keywords>
+      <keywords>主诉</keywords>
+      <keywords>抱怨</keywords>
+      <keywords>症状</keywords>
+      <keywords>健康</keywords>
+      <keywords>档案</keywords>
+      <keywords>记录</keywords>
+      <keywords>既往史</keywords>
+      <keywords>既往病史</keywords>
+      <use>用于从照护服务对象的角度记录关于主观性的健康相关观察或印象的描述。&#xD;
+&#xD;
+当临床医务人员/临床医生在提供医疗保健服务的背景下加以记录时，临床病史叙述原始型可用于采集照护服务对象自己、父母、照护人员或其他相关[参与]方所报告的临床病史。如果记录者为照护服务对象，则可将其作为对于其症状和健康经历/体验的“临床病史叙述”的说明，而且还可能会将此类的临床病史叙述用来与医疗保健服务人员进行分享，或者是在照护服务对象的个人健康当中进行记录。&#xD;
+&#xD;
+用于：&#xD;
+- 记录一个简单的叙述；和/或&#xD;
+- 作为容器型的原始型，通过在“详情”（Detail）槽位当中收纳相关的群簇型（CLUSTER ）原始型，从而使得能够记录详细的结构化病史。例如：可以在这一槽位当中酌情使用群簇型症状原始型 CLUSTER.symptom、群簇型事项原始型 CLUSTER.issue 或群簇型健康事件原始型 CLUSTER.health_event。&#xD;
+&#xD;
+用于采用原始型的格式，利用“临床病史叙述”（Story）文本型数据元，收纳从已有或历史遗留的临床系统之中所采集的关于临床病史的叙述性描述。</use>
+      <misuse>并非旨在用于记录临床医务人员/临床医生的正式评估[结果]。后者的记录通常会采用的是评估（EVALUATION）类的原始型。</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>*To record a narrative description of the clinical history, as told to a clinician or recorded directly by an individual/patient, and to provide a framework in which to nest detailed CLUSTER archetypes, each of which will describe the various aspects of the clinical history in further detail.(en)</purpose>
+      <use />
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere en fritekstbeskrivelse av individets sykehistorie/anamnese og som et rammeverk for å nøste detaljerte CLUSTER-arketyper som hver for seg kan detaljere ulike aspekter av sykehistorien, som symptomer, helserelaterte hendelser, og andre tilgrensende emner.&#xD;
+&#xD;
+Brukes for å registrere detaljer om sykehistorien slik den blir fortalt av et individ, pårørende, eller en annen part. Det kan registreres av en kliniker som del av opptak av sykehistorie, eller selvregistreres som del av et spørreskjema eller personlig helsearkiv.</purpose>
+      <keywords>anamnese</keywords>
+      <keywords>sykehistorie</keywords>
+      <keywords>problem</keywords>
+      <keywords>helseplage</keywords>
+      <keywords>bekymring</keywords>
+      <use>Brukes for å registrere en beskrivelse av subjektive helserelaterte observasjoner eller inntrykk fra individets synsvinkel.&#xD;
+&#xD;
+Når anamnesen registreres av en kliniker i en konsultasjon kan arketypen brukes for å registrere den kliniske historikken til individet, rapportert av individet selv, en forelder, pårørende eller en annen involvert part. Dersom den registreres av individet selv, kan den brukes som en oversikt over symptom- og helseerfaringer, som kan deles med helsepersonell eller som dokumentasjon i deres eget helsearkiv.&#xD;
+&#xD;
+Brukes:&#xD;
+- for å registrere en enkelt fritekst&#xD;
+- som et rammeverk for å registrere en detaljert strukturert historikk ved å inkludere relevante CLUSTER-arketyper i SLOTet "Strukturerte detaljer". Eksempler kan være CLUSTER.symptom_sign eller CLUSTER.health_event.&#xD;
+&#xD;
+Brukes for å kunne gjenbruke anamnese i eksisterende systemer inn i et arketypeformat ved hjelp av 'Anamnese'-dataelementet.</use>
+      <misuse>Skal ikke brukes for å registrere formelle vurderinger av klinikere. Disse registreres ved hjelp av forskjellige arketyper av klassen EVALUATION.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sl</code_string>
+      </language>
+      <purpose>Za beleženje pripovednega opisa klinične zgodovine subjekta oskrbe in zagotavljanje ogrodja, v katerem lahko vgnezdimo podrobne arhetipe CLUSTER, od katerih bo vsak podpiral pripoved z dodatnimi strukturiranimi podrobnostmi za simptome, zdravstvene dogodke in povezane teme.&#xD;
+&#xD;
+Uporabite za beleženje podrobnosti o klinični zgodovini, kot jo poroča posameznik, starš, skrbnik ali druga stran. Lahko ga zabeleži klinik kot del zapisa klinične zgodovine, kot mu je bilo poročano, ali samozabeleženo kot del kliničnega vprašalnika ali osebnega zdravstvenega kartona.</purpose>
+      <keywords>zgodovina</keywords>
+      <keywords>predstavitev</keywords>
+      <keywords>pritožba</keywords>
+      <keywords>zgodba</keywords>
+      <keywords>simptom</keywords>
+      <keywords>zdravje</keywords>
+      <keywords>karton</keywords>
+      <keywords>anamneza</keywords>
+      <use>Uporabite za beleženje opisa subjektivnih z zdravjem povezanih opazovanj ali vtisov z vidika subjekta oskrbe.&#xD;
+&#xD;
+Ko ga zabeleži klinik v kontekstu zagotavljanja zdravstvene oskrbe, se lahko zgodba uporabi za zajemanje klinične anamneze, kot jo poroča subjekt sam, starš, skrbnik ali druga povezana stran. Če ga zabeleži subjekt, se lahko uporabi kot poročilo o njegovi "zgodbi" simptomov in zdravstvenih izkušenj, ki se lahko uporabi za deljenje z izvajalci zdravstvene oskrbe ali za dokumentiranje v njegovem osebnem zdravstvenem kartonu.&#xD;
+&#xD;
+Uporaba:&#xD;
+- za beleženje preproste pripovedi; in/ali&#xD;
+- kot vsebniški arhetip za omogočanje beleženja podrobne strukturirane zgodovine z vključitvijo ustreznih arhetipov CLUSTER v režo "Podrobnosti". Na primer: arhetipe CLUSTER.symptom, CLUSTER.issue ali CLUSTER.health_event lahko ustrezno uporabimo v tej reži.&#xD;
+&#xD;
+Uporabite za vključitev pripovednih opisov klinične zgodovine, zajetih iz obstoječih ali zastarelih kliničnih sistemov, v arhetipski format, z uporabo podatkovnega elementa "Zgodba".</use>
+      <misuse>Ne uporabljajte za beleženje formalnih ocen klinikov, ki bi se običajno beležile z uporabo razreda arhetipov EVALUATION.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nl</code_string>
+      </language>
+      <purpose>*To record a narrative description of the clinical history of the subject of care and to provide a framework in which to nest detailed CLUSTER archetypes, each of which will support the narrative with additional structured detail for symptoms, health events and related topics.&#xD;
+&#xD;
+Use to record detail about the clinical history as reported by an individual, parent, care-giver or other party. It may be recorded by a clinician as part of a clinical history record as reported to them, or self-recorded as part of a clinical questionnaire or personal health record.(en)</purpose>
+      <keywords>*history(en)</keywords>
+      <keywords>*presenting(en)</keywords>
+      <keywords>*complaint(en)</keywords>
+      <keywords>*story(en)</keywords>
+      <keywords>*symptom(en)</keywords>
+      <keywords>*health(en)</keywords>
+      <keywords>*record(en)</keywords>
+      <keywords>*presenting complaint(en)</keywords>
+      <keywords>*anamnesis(en)</keywords>
+      <use>*Use to record a description about subjective health-related observations or impressions from the point of view of the subject of care. &#xD;
+&#xD;
+When recorded by a clinician within the context of healthcare provision the story can be used for capturing the clinical history, as reported by the subject themselves, a parent, care-giver or other related party. If recorded by the subject, it can be used as an account of their 'story' of symptoms and health experiences, which might be used to share with healthcare providers or to document within their own personal health record.&#xD;
+&#xD;
+Use:&#xD;
+- to record a simple narrative; and/or &#xD;
+- as a container archetype to enable recording of a detailed structured history by inclusion of relevant CLUSTER archetypes within the 'Detail' SLOT. For example: CLUSTER.symptom, CLUSTER.issue or CLUSTER.health_event archetypes can be appropriately used in this SLOT.&#xD;
+&#xD;
+Use to incorporate the narrative descriptions of clinical history captured from existing or legacy clinical systems into an archetyped format, using the 'Story' text data element.(en)</use>
+      <misuse>*Not to be used to record formal assessments by clinicians which would usually be recorded using the EVALUATION class of archetypes.(en)</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout, Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de, Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Emma Malm</author>
+    <author id="organisation">Karolinska Universitetssjukhuset</author>
+    <author id="email">emma.malm@cambio.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ko</code_string>
+    </language>
+    <author id="name">Seung-Jong Yu</author>
+    <author id="organisation">NOUSCO Co.,Ltd.</author>
+    <author id="email">seungjong.yu@gmail.com</author>
+    <accreditation>Certified board of Family medicine</accreditation>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Guillermo Palli</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke</author>
+    <author id="organisation">Nasjonal IKT HF, Helse Vest IKT AS</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Osmeire Chamelette Sanzovo</author>
+    <author id="organisation">Hospital Sírio Libanês - SP</author>
+    <author id="email">osmeire.acsanzovo@hsl.org.br</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ar-sy</code_string>
+    </language>
+    <author id="name">Mona Saleh</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sl</code_string>
+    </language>
+    <author id="name">Vanja Maravić, Lara Škufca</author>
+    <author id="organisation">Better Deutschland GmbH, Better d.o.o.</author>
+    <author id="email">vanja.maravic@better.care, laras@better.care</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>it</code_string>
+    </language>
+    <author id="name">Francesca Frexia</author>
+    <author id="organisation">CRS4 - Center for advanced studies, research and development in Sardinia, Pula (Cagliari), Italy</author>
+    <author id="email">francesca.frexia@crs4.it</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Jonas Bucher</author>
+    <author id="organisation">Cistec AG</author>
+    <author id="email">jonas.bucher@cistec.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>zh-cn</code_string>
+    </language>
+    <author id="name">Lin Zhang</author>
+    <author id="organisation">Freelancer</author>
+    <author id="email">linforest@163.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nl</code_string>
+    </language>
+    <author id="name">Joost Holslag</author>
+    <author id="organisation">Nedap, Joost Holslag Geneeskunde &amp; Advies</author>
+    <author id="email">joost.holslag@nedap.com, info@joostholslag.nl</author>
+    <accreditation>MD</accreditation>
+  </translations>
+  <uid>
+    <value>7e289b5c-e123-4dc0-9aad-548352b64915</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.story.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0006</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.health_event(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.issue(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.symptom_sign(-[a-zA-Z0-9_]+)*\.v2/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>openEHR-EHR-CLUSTER\.health_event(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.issue(-[a-zA-Z0-9_]+)*\.v0|openEHR-EHR-CLUSTER\.symptom_sign(-[a-zA-Z0-9_]+)*\.v2</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>1</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="ar-sy">
+      <items code="at0000">
+        <items id="text">*Story/History(en)</items>
+        <items id="description">*The subjective clinical history of the subject of care as recorded directly by the subject, or reported to a clinician by the subject or a carer.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">إحدى الوقائع</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Story(en)</items>
+        <items id="description">*Narrative description of the story or clinical history for the subject of care.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Structured detail(en)</items>
+        <items id="description">*Structured detail about the individual's story or patient's history.(en)</items>
+        <items id="comment">*For example: a specific symptom such as nausea or pain; an event such as a fall off a bicycle; or an issue such as a desire to quit using tobacco.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Story/History</items>
+        <items id="description">The subjective clinical history of the subject of care as recorded directly by the subject, or reported to a clinician by the subject or a carer.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Story</items>
+        <items id="description">Narrative description of the story or clinical history for the subject of care.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Structured detail</items>
+        <items id="description">Structured detail about the individual's story or patient's history.</items>
+        <items id="comment">For example: a specific symptom such as nausea or pain; an event such as a fall off a bicycle; or an issue such as a desire to quit using tobacco.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local information requirements or additional metadata to align with FHIR equivalents.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">*Story/History(en)</items>
+        <items id="description">*The subjective clinical history of the subject of care as recorded directly by the subject, or reported to a clinician by the subject or a carer.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Eventos</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Arbol</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Story(en)</items>
+        <items id="description">*Narrative description of the story or clinical history for the subject of care.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Structured detail(en)</items>
+        <items id="description">*Structured detail about the individual's story or patient's history.(en)</items>
+        <items id="comment">*For example: a specific symptom such as nausea or pain; an event such as a fall off a bicycle; or an issue such as a desire to quit using tobacco.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ko">
+      <items code="at0000">
+        <items id="text">*Story/History(en)</items>
+        <items id="description">*The subjective clinical history of the subject of care as recorded directly by the subject, or reported to a clinician by the subject or a carer.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">*Story(en)</items>
+        <items id="description">*Narrative description of the story or clinical history for the subject of care.(en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">*Structured detail(en)</items>
+        <items id="description">*Structured detail about the individual's story or patient's history.(en)</items>
+        <items id="comment">*For example: a specific symptom such as nausea or pain; an event such as a fall off a bicycle; or an issue such as a desire to quit using tobacco.(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Anamnese</items>
+        <items id="description">Et individs sykehistorie/anamnese, som fortalt til kliniker eller dokumentert direkte av individet.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Anamnese</items>
+        <items id="description">Narrativ beskrivelse av sykehistorie/anamnese for et individ.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Strukturerte detaljer</items>
+        <items id="description">Ytterligere detaljer i strukturert form, knyttet til individets sykehistorie/anamnese.</items>
+        <items id="comment">Eksempel: et spesifikt symptom som kvalme eller smerte, en hendelse som en sykkelvelt, eller en problemstilling som et ønske om å slutte med tobakk.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">História</items>
+        <items id="description">A história clínica subjetiva do sujeito do cuidado como registrada diretamente por ele, ou relatada a um médico pelo sujeito ou por um cuidador.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Algum Evento</items>
+        <items id="description">Padrão, ponto indeterminado no tempo ou intervalo do evento que pode ser explicitamente definido em um modelo ou em tempo de execução.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">História</items>
+        <items id="description">Descrição narrativa da história ou da história clínica para o sujeito do cuidado.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Detalhes Estruturados</items>
+        <items id="description">Detalhes estruturados sobre a história do indivíduo ou a história do paciente.</items>
+        <items id="comment">Por exemplo: um sintoma específico, tais como náuseas ou dor; um evento como uma queda de bicicleta; ou um problema como o desejo de parar de usar tabaco.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais necessárias para capturar o conteúdo local ou para se alinhar com outros modelos/formalismos de referência.</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="it">
+      <items code="at0000">
+        <items id="text">Storia/Cronologia</items>
+        <items id="description">La storia clinica soggettiva del persona assistita come registrata direttamente dal soggetto, o riportata ad un clinico dal soggetto o da chi lo assiste.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Serie di eventi</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Qualsiasi evento</items>
+        <items id="description">Evento predefinito, non specificato nel tempo o nell'intervallo di tempo, che può essere definito esplicitamente in un modello o in fase di esecuzione.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Storia</items>
+        <items id="description">Descrizione narrativa della storia o dell'anamnesi clinica del soggetto da curare.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Dettaglio strutturato</items>
+        <items id="description">Dettagli strutturati sulla storia dell'individuo o sull'anamnesi del paziente.</items>
+        <items id="comment">Per esempio: un sintomo specifico come la nausea o il dolore; un evento come una caduta dalla bicicletta; o un fenomeno come il desiderio di smettere di usare il tabacco. </items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Estensione</items>
+        <items id="description">Informazioni aggiuntive necessarie per acquisire contenuti locali o per allinearsi con altri modelli/formalismi di riferimento. </items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Erzählung/Vorgeschichte</items>
+        <items id="description">Die subjektive klinische Vorgeschichte der betreuten Person, wie sie direkt von der Person aufgezeichnet oder einem Kliniker von der Person oder einem Betreuer berichtet wird.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardwert, ein undefinierter/s Zeitpunkt oder Intervallereignis, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Geschichte</items>
+        <items id="description">Beschreibung der Geschichte oder der klinischen Vorgeschichte für die betreute Person.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Strukturierte Angabe</items>
+        <items id="description">Strukturierte Angaben über die Vorgeschichte der Person oder des Patienten.</items>
+        <items id="comment">Zum Beispiel: ein spezifisches Symptom wie Übelkeit oder Schmerzen; ein Ereignis wie ein Sturz vom Fahrrad; oder ein Anliegen wie der Wunsch, mit dem Tabakkonsum aufzuhören.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen, die zur Erfassung lokaler Inhalte oder zur Anpassung an andere Referenzmodelle/Formalismen erforderlich sind.</items>
+        <items id="comment">Zum Beispiel: Lokale Informationsanforderungen oder zusätzliche Metadaten, um Verknüpfungen mit FHIR Äquivalenten herzustellen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nl">
+      <items code="at0000">
+        <items id="text">Anamnese</items>
+        <items id="description">*The subjective clinical history of the subject of care as recorded directly by the subject, or reported to a clinician by the subject or a carer.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">*Event Series(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Verhaal</items>
+        <items id="description">Een narratieve beschriijving van het verhaal of de anamnese van het onderwerp van zorg.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Gestructureerde details</items>
+        <items id="description">Gestructureerde details over het verhaal van het individu of de anamnese van de patiënt.</items>
+        <items id="comment">Bijvoorbeeld: een specifiek symptoom zoals misselijkheid of pijn, een gebeurtenis zoals een val met de fiets, of een vraagstuk zoals de wens om te stoppen met roken.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Extension(en)</items>
+        <items id="description">*Additional information required to capture local content or to align with other reference models/formalisms.(en)</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Sjukdomshistoria</items>
+        <items id="description">Vårdtagarens subjektiva sjukdomshistoria som registrerats direkt av vårdgivaren, eller rapporterats till en kliniker av vårdtagaren eller vårdgivaren.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ospecificerad händelse</items>
+        <items id="description">Ospecificerad standardhändelse vid en tidpunkt eller inom ett tidsintervall som explicit kan definieras i en mall eller genereras automatiskt av vissa IT-system.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Sjukdomshistoria</items>
+        <items id="description">Berättande beskrivning av vårdtagarens sjukdomshistoria.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Strukturerade detaljer</items>
+        <items id="description">Strukturerade detaljer om individens eller vårdtagarens sjukdomshistoria.</items>
+        <items id="comment">Till exempel: ett specifikt symptom som illamående eller smärta; en händelse som att falla av en cykel; eller ett problem som en önskan om att sluta använda tobak.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Tilläggsinformation</items>
+        <items id="description">Plats för att infoga tilläggsinformation som krävs för lokala anpassningar eller anpassning till andra referensmodeller eller formella krav.</items>
+        <items id="comment">*For example: Local information requirements or additional metadata to align with FHIR equivalents. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="zh-cn">
+      <items code="at0000">
+        <items id="text">主观临床病史</items>
+        <items id="description">照护服务对象所直接自行记录的主观性临床病史，或者说，照护服务对象或照护人员向临床医务人员/临床医生所报告的主观性临床病史。</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">任何事件</items>
+        <items id="description">可在模板之中或运行时明确定义的默认的、未明确指定的时间点型/时间型或时间区间型/时间间隔型事件，。</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">临床病史叙述</items>
+        <items id="description">关于照护服务对象的健康状况或临床病史的叙述性描述。</items>
+      </items>
+      <items code="at0006">
+        <items id="text">结构化详情</items>
+        <items id="description">关于个人临床病史叙述或患者病史的结构化详情。</items>
+        <items id="comment">例如：特定的症状（如恶心或疼痛）、从自行车上摔下来等事件，或者是希望戒烟等事项。</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">扩展</items>
+        <items id="description">采集本地内容或与其他参考模型/形式保持一致时所需的其他信息。</items>
+        <items id="comment">例如：本地信息要求，或者是与 FHIR 等效项保持一致时所需的其他元数据。</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Récit/Antécédents</items>
+        <items id="description">Les antécédents cliniques subjectifs de la personne prise en charge, tels qu’ils ont été enregistrés directement par celle-ci, ou rapportés à un clinicien par la personne elle-même ou par un aidant.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tout événement</items>
+        <items id="description">Par défaut, événement ponctuel ou d’intervalle non spécifié, pouvant être défini explicitement dans un template ou au moment de l’exécution.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Récit</items>
+        <items id="description">Description narrative de l’histoire ou des antécédents cliniques de la personne prise en charge.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Détails structurés</items>
+        <items id="description">Détails structurés concernant le récit de la personne ou les antécédents du patient.</items>
+        <items id="comment">Par exemple : un symptôme spécifique tel que des nausées ou une douleur ; un événement tel qu’une chute à vélo ; ou un problème tel que le désir d’arrêter de fumer.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Extension</items>
+        <items id="description">Informations supplémentaires nécessaires pour représenter un contenu local ou pour assurer l’alignement avec d’autres modèles de référence ou formalismes.</items>
+        <items id="comment">Par exemple : exigences locales en matière d’information ou métadonnées supplémentaires permettant l’alignement sur les équivalents FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sl">
+      <items code="at0000">
+        <items id="text">Zgodba/Anamneza</items>
+        <items id="description">Subjektivna klinična zgodovina subjekta oskrbe, kot jo neposredno zabeleži subjekt ali kot jo poroča subjektu oskrbe klinik, starš, skrbnik ali druga povezana stran.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Katerikoli dogodek</items>
+        <items id="description">Privzeta, nedoločena časovna točka ali dogodek intervala, ki je lahko eksplicitno določen v predlogi ali med izvajanjem.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Zgodba</items>
+        <items id="description">Pripovedni opis zgodbe ali klinične zgodovine za subjekt oskrbe.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Strukturirane podrobnosti</items>
+        <items id="description">Strukturirane podrobnosti o zgodbi posameznika ali zgodovini pacienta.</items>
+        <items id="comment">Na primer: specifičen simptom, kot sta slabost ali bolečina; dogodek, kot je padec s kolesa; ali težava, kot je želja po prenehanju uporabe tobaka.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Razširitev</items>
+        <items id="description">Dodatne informacije, potrebne za zajemanje lokalnih vsebin ali za uskladitev z drugimi referenčnimi modeli/formalizmi.</items>
+        <items id="comment">Na primer: lokalne informacijske zahteve ali dodatni metapodatki za uskladitev z ustrezniki FHIR.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

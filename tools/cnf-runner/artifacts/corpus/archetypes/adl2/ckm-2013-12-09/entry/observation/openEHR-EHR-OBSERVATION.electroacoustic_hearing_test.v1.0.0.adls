@@ -1,0 +1,442 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.electroacoustic_hearing_test.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"10/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording results of an electroacoustic test">
+			use = <"">
+			keywords = <"hearing", "test", "electro-acoustic">
+			misuse = <"">
+		>
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Electroacoustic Hearing Test
+		data matches {
+			HISTORY[id2] matches {
+				events matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Test
+										value matches {
+											DV_CODED_TEXT[id48] matches {
+												defining_code matches {[ac1]}		-- Test (synthesised)
+											}
+										}
+									}
+									CLUSTER[id38] occurrences matches {0..1} matches {	-- Normal Statements
+										items matches {
+											ELEMENT[id28] occurrences matches {0..1} matches {	-- Normal statement
+												value matches {
+													DV_CODED_TEXT[id49] matches {
+														defining_code matches {[ac2]}		-- Normal statement (synthesised)
+													}
+												}
+											}
+										}
+									}
+									CLUSTER[id11] matches {	-- Details
+										items matches {
+											ELEMENT[id41] occurrences matches {0..1} matches {	-- Screening Outcome
+												value matches {
+													DV_CODED_TEXT[id50] matches {
+														defining_code matches {[ac3]}		-- Screening Outcome (synthesised)
+													}
+												}
+											}
+											ELEMENT[id8] occurrences matches {0..1} matches {	-- Side
+												value matches {
+													DV_CODED_TEXT[id51] matches {
+														defining_code matches {[ac4]}		-- Side (synthesised)
+													}
+												}
+											}
+											ELEMENT[id16] occurrences matches {0..1} matches {	-- Intensity of stimulus
+												value matches {
+													DV_CODED_TEXT[id52] matches {
+														defining_code matches {[ac5]}		-- Intensity of stimulus (synthesised)
+													}
+													DV_COUNT[id53] 
+												}
+											}
+											ELEMENT[id24] occurrences matches {0..1} 	-- Result
+										}
+									}
+									ELEMENT[id13] occurrences matches {0..1} matches {	-- Image of result
+										value matches {
+											DV_MULTIMEDIA[id54] matches {
+												media_type matches {[ac6]}		-- Image of result (synthesised)
+											}
+										}
+									}
+									ELEMENT[id12] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id55] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id25] matches {
+								items matches {
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Stimulus presentation
+										value matches {
+											DV_CODED_TEXT[id56] matches {
+												defining_code matches {[ac7]}		-- Stimulus presentation (synthesised)
+											}
+										}
+									}
+									ELEMENT[id33] occurrences matches {0..1} matches {	-- Masking
+										value matches {
+											DV_CODED_TEXT[id57] matches {
+												defining_code matches {[ac8]}		-- Masking (synthesised)
+											}
+										}
+									}
+									ELEMENT[id47] occurrences matches {0..1} matches {	-- Stimulus Frequency
+										value matches {
+											DV_QUANTITY[id58] matches {
+												property matches {[at51]}
+												units matches {"Hz", "kHz"}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[id14] matches {
+				items matches {
+					ELEMENT[id15] occurrences matches {0..1} matches {	-- Transducer
+						value matches {
+							DV_TEXT[id59] 
+						}
+					}
+					ELEMENT[id37] occurrences matches {0..1} matches {	-- Stimulus
+						value matches {
+							DV_CODED_TEXT[id60] matches {
+								defining_code matches {[ac9]}		-- Stimulus (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Electroacoustic Hearing Test">
+				description = <"For recording results of an electroacoustic test">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"*">
+			>
+			["id5"] = <
+				text = <"Test">
+				description = <"Identify test performed">
+			>
+			["at6"] = <
+				text = <"Transiently Evoked OAE">
+				description = <"*">
+			>
+			["at7"] = <
+				text = <"Distortion Product OAE">
+				description = <"*">
+			>
+			["id8"] = <
+				text = <"Side">
+				description = <"Identify ear being tested">
+			>
+			["at9"] = <
+				text = <"Left">
+				description = <"*">
+			>
+			["at10"] = <
+				text = <"Right">
+				description = <"*">
+			>
+			["id11"] = <
+				text = <"Details">
+				description = <"Details of the audiogram">
+			>
+			["id12"] = <
+				text = <"Comment">
+				description = <"Comment on Test">
+			>
+			["id13"] = <
+				text = <"Image of result">
+				description = <"Image of OAE">
+			>
+			["id15"] = <
+				text = <"Transducer">
+				description = <"Identify transducer">
+			>
+			["id16"] = <
+				text = <"Intensity of stimulus">
+				description = <"Intensity of Stimulus">
+			>
+			["at17"] = <
+				text = <"0.5">
+				description = <"*">
+			>
+			["at18"] = <
+				text = <"1">
+				description = <"*">
+			>
+			["at19"] = <
+				text = <"2">
+				description = <"*">
+			>
+			["at20"] = <
+				text = <"3">
+				description = <"*">
+			>
+			["at21"] = <
+				text = <"4">
+				description = <"*">
+			>
+			["at22"] = <
+				text = <"5">
+				description = <"*">
+			>
+			["at23"] = <
+				text = <"6">
+				description = <"*">
+			>
+			["id24"] = <
+				text = <"Result">
+				description = <"Response to Stimulus">
+			>
+			["id26"] = <
+				text = <"Stimulus presentation">
+				description = <"*">
+			>
+			["at27"] = <
+				text = <"0.25">
+				description = <"*">
+			>
+			["id28"] = <
+				text = <"Normal statement">
+				description = <"Normal statement about Audiogram results">
+			>
+			["at29"] = <
+				text = <"Auditory Brainstem Response (ABR)">
+				description = <"*">
+			>
+			["at30"] = <
+				text = <"SSEP">
+				description = <"*">
+			>
+			["at31"] = <
+				text = <"Air conduction">
+				description = <"*">
+			>
+			["at32"] = <
+				text = <"Bone Conduction">
+				description = <"*">
+			>
+			["id33"] = <
+				text = <"Masking">
+				description = <"Was masking used during the test">
+			>
+			["at34"] = <
+				text = <"Masked">
+				description = <"*">
+			>
+			["at35"] = <
+				text = <"Unmasked">
+				description = <"*">
+			>
+			["at36"] = <
+				text = <"Cortical EP">
+				description = <"*">
+			>
+			["id37"] = <
+				text = <"Stimulus">
+				description = <"Identify stimulus">
+			>
+			["id38"] = <
+				text = <"Normal Statements">
+				description = <"*">
+			>
+			["at39"] = <
+				text = <"Automated OAE (screening)">
+				description = <"*">
+			>
+			["at40"] = <
+				text = <"Automated ABR (Screening)">
+				description = <"*">
+			>
+			["id41"] = <
+				text = <"Screening Outcome">
+				description = <"Response to screening">
+			>
+			["at42"] = <
+				text = <"Clear response">
+				description = <"*">
+			>
+			["at43"] = <
+				text = <"No clear response">
+				description = <"*">
+			>
+			["at44"] = <
+				text = <"Click">
+				description = <"*">
+			>
+			["at45"] = <
+				text = <"Toneburst">
+				description = <"*">
+			>
+			["at46"] = <
+				text = <"Pair of primary tones">
+				description = <"*">
+			>
+			["id47"] = <
+				text = <"Stimulus Frequency">
+				description = <"The frequency stimulus applied">
+			>
+			["at48"] = <
+				text = <"Both sides normal">
+				description = <"Both ears are normal">
+			>
+			["at49"] = <
+				text = <"Left side normal">
+				description = <"The left ear test is normal">
+			>
+			["at50"] = <
+				text = <"Right side normal">
+				description = <"The right ear test is normal">
+			>
+			["at51"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at52"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at53"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at54"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at55"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at56"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Test (synthesised)">
+				description = <"Identify test performed (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Normal statement (synthesised)">
+				description = <"Normal statement about Audiogram results (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Screening Outcome (synthesised)">
+				description = <"Response to screening (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Side (synthesised)">
+				description = <"Identify ear being tested (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Intensity of stimulus (synthesised)">
+				description = <"Intensity of Stimulus (synthesised)">
+			>
+			["ac6"] = <
+				text = <"Image of result (synthesised)">
+				description = <"Image of OAE (synthesised)">
+			>
+			["ac7"] = <
+				text = <"Stimulus presentation (synthesised)">
+				description = <"* (synthesised)">
+			>
+			["ac8"] = <
+				text = <"Masking (synthesised)">
+				description = <"Was masking used during the test (synthesised)">
+			>
+			["ac9"] = <
+				text = <"Stimulus (synthesised)">
+				description = <"Identify stimulus (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at51"] = <http://openehr.org/id/382>
+			["at52"] = <http://openehr.org/id/425>
+			["at53"] = <http://openehr.org/id/426>
+			["at54"] = <http://openehr.org/id/427>
+			["at55"] = <http://openehr.org/id/428>
+			["at56"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at6", "at7", "at29", "at30", "at36", "at39", "at40">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at48", "at49", "at50">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at42", "at43">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at9", "at10">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at17", "at18", "at19", "at20", "at21", "at22", "at23", "at27">
+		>
+		["ac6"] = <
+			id = <"ac6">
+			members = <"at52", "at53", "at54", "at55", "at56">
+		>
+		["ac7"] = <
+			id = <"ac7">
+			members = <"at31", "at32">
+		>
+		["ac8"] = <
+			id = <"ac8">
+			members = <"at34", "at35">
+		>
+		["ac9"] = <
+			id = <"ac9">
+			members = <"at44", "at45", "at46">
+		>
+	>

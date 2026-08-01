@@ -1,0 +1,400 @@
+﻿archetype (adl_version=1.4; uid=d4d058af-cd35-46d5-88ea-e6f3dafd6ce2)
+	openEHR-EHR-ACTION.psychosocial_therapy.v0
+
+concept
+	[at0000]	-- Psychosocial therapy
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2025-05-29">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about the provision of psychosocial therapy at clinically relevant events in the intervention lifecycle, from planning to completion, and including deviations or interruptions.">
+			use = <"Use to record details about the provision of psychosocial therapy at clinically relevant events in the intervention lifecycle, from planning to completion, and including deviations or interruptions.
+
+The scope of this data group includes a wide range of psychological and social therapies, not limited to:
+- Cognitive Behavioral Therapy (CBT),
+- Dialectical Behavior Therapy (DBT),
+- Narrative therapy,
+- Family Therapy,
+- Group Therapy,
+- Social Skills Training,
+- Assertiveness training,
+- Anger management,
+- Interpersonal Therapy (IPT),
+- Grief counselling,
+- Motivational Interviewing,
+- Crisis Intervention,
+- Mindfulness-based stress reduction,
+- Art therapy, and
+- Music therapy
+
+Record one instance per careflow step or event for each therapeutic activity in a health record. If the therapy consists of a single activity, the 'Therapy provided' and the 'Therapy completed' careflow step may be recorded simultaneously. However, if the therapy consists of multiple component activities, record a separate instance of the 'Therapy provided' careflow step for each component activity provided, and record the 'Therapy completed' step only after the final component activity has been provided.">
+			keywords = <"intervention", ...>
+			misuse = <"Not to be used to record other types of therapy or interventions. Use the ACTION.procedure for procedures. The need for other specific archetypes reflecting other types of therapy is acknowledged but have not yet been developed.">
+			copyright = <"© Sparked AU FHIR accelerator, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"AUCDI Clinical Design Group (CDG), Sparked FHIR accelerator, Australia", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Requirements identified by clinicians, reflecting current clinical practice and workflows.">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"D8AA64AFDF46FB47A50AB3D05AF41ED3">
+		["build_uid"] = <"c1d259b2-a12e-4ded-955c-ee73285e5d6e">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	ACTION[at0000] matches {    -- Psychosocial therapy
+		description matches {
+			ITEM_TREE[at0001] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0002] matches {    -- Therapy type
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {    -- Therapy category
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {    -- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0005] occurrences matches {0..1} matches {    -- Clinical indication
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0007] occurrences matches {0..*} matches {    -- Additional details
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {    -- Scheduled date/time
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {    -- Outcome
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0009] occurrences matches {0..1} matches {    -- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0013] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0020] occurrences matches {0..1} matches {    -- Requestor order identifier
+						value matches {
+							DV_TEXT matches {*}
+							DV_IDENTIFIER matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0021] occurrences matches {0..*} matches {    -- Requestor
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0022] occurrences matches {0..1} matches {    -- Receiver order identifier
+						value matches {
+							DV_TEXT matches {*}
+							DV_IDENTIFIER matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0023] occurrences matches {0..*} matches {    -- Receiver
+						include
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[at0024] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+		ism_transition matches {
+			ISM_TRANSITION[at0010] matches {    -- Therapy planned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::526]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0010]    -- Therapy planned
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0011] matches {    -- Therapy request sent
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::526]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0011]    -- Therapy request sent
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0012] matches {    -- Therapy postponed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::527]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0012]    -- Therapy postponed
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0014] matches {    -- Therapy cancelled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::528]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0014]    -- Therapy cancelled
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0015] matches {    -- Therapy scheduled
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::529]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0015]    -- Therapy scheduled
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0016] matches {    -- Therapy delivered
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::245]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0016]    -- Therapy delivered
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0017] matches {    -- Therapy suspended
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::530]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0017]    -- Therapy suspended
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0018] matches {    -- Therapy abandoned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::531]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0018]    -- Therapy abandoned
+						}
+					}
+				}
+			}
+			ISM_TRANSITION[at0019] matches {    -- Therapy completed
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[openehr::532]
+						}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0019]    -- Therapy completed
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Psychosocial therapy">
+					description = <"A therapeutic approach that integrates psychological and social strategies to improve mental health and emotional well-being, strengthen interpersonal relationships, and support positive behavioural change.">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Therapy type">
+					description = <"Name of the specific type of therapy.">
+					comment = <"For example: mindfulness-based cognitive therapy, dialectical behaviour therapy, assertiveness training, functional family therapy, grief counselling, crisis intervention, music therapy, or social skills training
+Use of a clinical terminology is recommended whenever possible. Free text entry should be allowed only when an appropriate coded value is not available.">
+				>
+				["at0003"] = <
+					text = <"Therapy category">
+					description = <"An overarching grouping for the specific therapy identified in 'Therapy type'.">
+				>
+				["at0004"] = <
+					text = <"Description">
+					description = <"Narrative description about the psychosocial therapy, relevant to the active careflow step.">
+				>
+				["at0005"] = <
+					text = <"Clinical indication">
+					description = <"The clinical reason for the psychosocial therapy.">
+					comment = <"For example: diabetes control; or cancer treatment. Coding of the indication with a terminology is preferred, where possible. This data element allows multiple occurrences.">
+				>
+				["at0007"] = <
+					text = <"Additional details">
+					description = <"Additional structured details about the therapy.">
+				>
+				["at0008"] = <
+					text = <"Scheduled date/time">
+					description = <"The intended date and/or time for provision of the therapy.">
+					comment = <"This data element must only be used in conjunction with the 'Therapy scheduled' careflow step.">
+				>
+				["at0009"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the therapy activity or careflow step not captured in other fields.">
+				>
+				["at0010"] = <
+					text = <"Therapy planned">
+					description = <"An intent or need to initiate the therapy process has been recognised; active careflow steps have not commenced.">
+				>
+				["at0011"] = <
+					text = <"Therapy request sent">
+					description = <"A request to initiate the therapy process has been submitted; active careflow steps have not commenced.">
+				>
+				["at0012"] = <
+					text = <"Therapy postponed">
+					description = <"The planned therapy has been temporarily stopped; active careflow steps have not commenced.">
+				>
+				["at0013"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0014"] = <
+					text = <"Therapy cancelled">
+					description = <"The planned therapy has been permanently stopped; active careflow steps have not commenced.">
+				>
+				["at0015"] = <
+					text = <"Therapy scheduled">
+					description = <"A date and/or time has been scheduled for the planned therapy; active careflow steps have not commenced.">
+				>
+				["at0016"] = <
+					text = <"Therapy delivered">
+					description = <"The therapy has been provided; active careflow steps are in process.">
+					comment = <"If the therapy consists of a single component, this careflow step and the 'Therapy completed' step may be recorded simultaneously. If the therapy consists of multiple components, record a separate instance of this careflow step for each component provided, and record the 'Therapy completed' step only after the final component has been delivered.">
+				>
+				["at0017"] = <
+					text = <"Therapy suspended">
+					description = <"The active therapy process has been temporarily stopped; active careflow steps have been put on hold.">
+				>
+				["at0018"] = <
+					text = <"Therapy abandoned">
+					description = <"The active assistance process has been permanently stopped; active careflow steps have been aborted.">
+				>
+				["at0019"] = <
+					text = <"Therapy completed">
+					description = <"All components of the therapy have been delivered; active careflow steps have been completed.">
+					comment = <"If the therapy consists of a single component, this careflow step and the 'Therapy delivered' step may be recorded simultaneously.">
+				>
+				["at0020"] = <
+					text = <"Requestor order identifier">
+					description = <"The local ID assigned to the order by the 'Requestor'.">
+				>
+				["at0021"] = <
+					text = <"Requestor">
+					description = <"Details about the healthcare provider or organisation requesting the order.">
+				>
+				["at0022"] = <
+					text = <"Receiver order identifier">
+					description = <"The ID assigned to the order by the 'Receiver'.">
+					comment = <"This may also be referred to as 'Filler order identifier'.">
+				>
+				["at0023"] = <
+					text = <"Receiver">
+					description = <"Details about the healthcare provider or organisation who received the request.">
+				>
+				["at0024"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0025"] = <
+					text = <"Outcome">
+					description = <"The result or consequence of the therapy provided.">
+					comment = <"For example: completed successfully, partially completed, unable to complete, or ineffective. This data element must only be used in conjunction with the 'Therapy provided' or 'Therapy completed' careflow step.">
+				>
+			>
+		>
+	>

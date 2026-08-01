@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2018-11-06</original_author>
+    <original_author id="name">John Tore Valand</original_author>
+    <original_author id="organisation">Helse Bergen HF</original_author>
+    <original_author id="email">john.tore.valand@helse-bergen.no</original_author>
+    <other_contributors>Erling Are Hole, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heidi Aursand, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Birgitte Bjerkely, Senter for sjeldne diagnoser, OUS, Norway</other_contributors>
+    <other_contributors>Anita Bjørnnes, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Valborg Ellingsen, Haraldsplass Diakonale sykehus, Norway</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Forvaltningssenter EPJ, Helse-Nord, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Tom Jarl Jakobsen, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Nils Kolstrup, Skansen Legekontor og Nasjonalt Senter for samhandling og telemedisin, Norway</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Susanne Trønnes, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">82E2B88773B988D9567B89FC37210DC5</other_details>
+    <other_details id="build_uid">dbc92f53-e0a8-401d-a8fb-de4acd9b5b51</other_details>
+    <other_details id="revision">1.1.2</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere behov for tolking for å kunne levere helsetjenester eller helserelaterte tjenester.</purpose>
+      <keywords>oversetting</keywords>
+      <keywords>oversettelse</keywords>
+      <use>Brukes for å registrere behov for tolking for å kunne levere helsetjenester eller helserelaterte tjenester.&#xD;
+&#xD;
+Denne arketypen er tenkt brukt for å støtte logikken i et klinisk informasjonssystem. Det kan være uhensiktsmessig å utveksle informasjon i denne arketypen til et annet klinisk system.&#xD;
+&#xD;
+Hvis det er flere enn ett administrativt språk (i systemet eller ved lokasjonen der systemet brukes), må det gjøres en separat vurdering om tolkebehov for hvert språk. En ny instans av denne arketypen må da lages for hvert administrative språk.</use>
+      <misuse>Brukes ikke for å registrere individets praktiske evne til å kommunisere, inkludert funksjonsnedsettelser og behov for kommunikasjonshjelpemidler, bruk arketypen EVALUATION.communication_capability (Evne til kommunikasjon) for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere detaljer om et språk, bruk arketypen CLUSTER.language (Språk) for dette formålet.&#xD;
+&#xD;
+Brukes ikke for å registrere detaljer om en forespørsel om tolketjenester. Nøst arketypen CLUSTER.interpreter_requirements (Tolkebehov) i en egnet INSTRUCTION-arketype, for eksempel INSTRUCTION.service_request (Helsetjenesteforespørsel).&#xD;
+&#xD;
+Brukes ikke for å registrere detaljer om tolking som er gjennomført. Bruk arketypen ACTION.interpretation for dette formålet.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the need for language translation in order to provide delivery of health care or related services.</purpose>
+      <use>Use to record the need for language translation in order to provide delivery of health care or related services.&#xD;
+&#xD;
+This archetype is intended to support logistics within the local clinical information system. It may not be appropriate to exchange this content with another clinical system in another location. If there is more than one administrative language a separate assessment should be made of the need for translation of each language. A new instance of this archetype should be created for each administration language.</use>
+      <misuse>Not to be used to record details about the practical ability of an individual to communicate, including impairments and need for communication aids - use EVALUATION.communication_capability for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a language - use CLUSTER.language for this purpose.&#xD;
+&#xD;
+Not to be used to record details about a request for interpreter services - use CLUSTER.Interpreter_requirements nested within a suitable INSTRUCTION archetype, for example INSTRUCTION.service_request.&#xD;
+&#xD;
+Not to be used to record details about an interpretation that was performed - use the proposed ACTION.interpretation.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand and Vebjørn Arntzen, Marit Alice Venheim</author>
+    <author id="organisation">Helse Bergen HF and Oslo University Hospital, Helse Vest IKT</author>
+    <author id="email">john.tore.valand@helse-bergen.no and varntzen@ous-hf.no, marit.alice.venheim@helse-vest-ikt.no</author>
+  </translations>
+  <uid>
+    <value>17b595bb-f18b-477d-8f5b-344b4d17a1f8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-ADMIN_ENTRY.translation_requirements.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>ADMIN_ENTRY</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.language(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0003</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_BOOLEAN</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0005</code_list>
+                    <code_list>at0006</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0004</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Translation requirement</items>
+        <items id="description">The need for language translation in order to provide delivery of health care or related services.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Administrative language</items>
+        <items id="description">The language used for provision of health care or related services.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Translation required?</items>
+        <items id="description">Is translation required?</items>
+        <items id="comment">For example, an English speaker in Quebec will not require an English interpreter but may require one if the consultation is being conducted in French.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the administrative language not captured in other fields.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Interpreter not needed</items>
+        <items id="description">The individual does not normally need an interpreter.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Interpreter needed</items>
+        <items id="description">The individual normally needs an interpreter.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Tolkebehov</items>
+        <items id="description">Behov for tolking for å kunne levere helsetjenester eller helserelaterte tjenester.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Administrasjonsspråk</items>
+        <items id="description">Språket som snakkes eller presenteres når man leverer helsetjenester eller helserelaterte tjenester.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Trengs tolk?</items>
+        <items id="description">Om individet trenger tolk.</items>
+        <items id="comment">For eksempel kan et engelsktalende individ i Quebec trenge tolk dersom administrasjonsspråket er fransk, og dermed konsultasjonen gjennomføres på fransk, men ikke dersom administrasjonsspråket er engelsk.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekstbeskrivelse om administrasjonsspråket som ikke er registrert i andre felt.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Ikke behov for tolk</items>
+        <items id="description">Individet trenger normalt ikke tolk.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Behov for tolk</items>
+        <items id="description">Individet trenger normalt tolk.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

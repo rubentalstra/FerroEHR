@@ -1,0 +1,1166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2017-02-08</original_author>
+    <original_author id="name">Cecilia Mascia</original_author>
+    <original_author id="organisation">CRS4, Italy</original_author>
+    <original_author id="email">cecilia.mascia@crs4.it</original_author>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Francesca Frexia, CRS4 - Center for advanced studies, research and development in Sardinia, Italy</other_contributors>
+    <other_contributors>Gideon Giacomelli, Charité Berlin, Germany</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Christina Jaeger-Schmidt, Heidelberg University Hospital, Germany</other_contributors>
+    <other_contributors>Florian Kaercher, Charité Berlin, Germany</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Cecilia Mascia, CRS4, Italy (openEHR Editor)</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Simon Schumacher, HiGHmed, Germany</other_contributors>
+    <other_contributors>Aurelie Tomczak, Uniklinikum Heidelberg, Germany</other_contributors>
+    <other_contributors>Paolo Uva, CRS4, Italy</other_contributors>
+    <other_contributors>Gianluigi Zanetti, CRS4, Italy</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">den Dunnen JT, Dalgleish R, Maglott DR, Hart RK, Greenblatt MS, McGowan-Jordan J, Roux AF, Smith T, Antonarakis SE, Taschner PE. HGVS Recommendations for the Description of Sequence Variants: 2016 Update. Hum Mutat. 2016 Jun;37(6):564-9. doi: 10.1002/humu.22981. Epub 2016 Mar 25. PubMed PMID: 26931183.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">96CF5AA5A83A89FF4CCD34E3278102D1</other_details>
+    <other_details id="build_uid">d80acb5c-7ce4-4d47-991b-5e1eb8712f4d</other_details>
+    <other_details id="revision">1.0.9</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Details zur Referenzsequenz, die zur Beschreibung von Varianten verwendet wird.</purpose>
+      <keywords>genetische Befunde</keywords>
+      <keywords>Referenzsequenz</keywords>
+      <keywords>Gentest</keywords>
+      <keywords>Identifikation von Varianten</keywords>
+      <keywords>genomisch</keywords>
+      <keywords>Variation</keywords>
+      <use>Dieser Archetyp wurde speziell für die Verwendung in den SLOTs "Reference Genome" und "Transcript reference sequence" innerhalb des Archetyps CLUSTER.genomic_variant_result und in den SLOTs "Reference sequence" innerhalb der anderen spezifischen Genetischen Varianten-Archetypen (z. B. CLUSTER.genomic_insertion_variant, CLUSTER.genomic_deletion_variant, usw.), kann aber auch in anderen ENTRY- oder CLUSTER-Archetypen verwendet werden, sofern dies klinisch angemessen ist.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera detaljer om referenssekvensen som används för att beskriva varianter.</purpose>
+      <use>Denna arketyp har utformats speciellt för att användas i 'Referensgenom' och i 'Transkriptionsreferenssekvens' SLOTS inom CLUSTER.genomic_variant_result-arketypen och i 'Referenssekvens' SLOT inom andra specifika genetiska variantarketyper, såsom CLUSTER. genomic_insertion_variant och CLUSTER.genomic_deletion_variant. Det kan också användas inom andra ENTRY- eller CLUSTER-arketyper, där det är kliniskt lämpligt.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere detaljer om referansesekvensen som brukes for å beskrive varianter.</purpose>
+      <keywords>genetiske funn</keywords>
+      <keywords>referansesekvens</keywords>
+      <keywords>genetisk testing</keywords>
+      <keywords>gentester</keywords>
+      <keywords>variant</keywords>
+      <keywords>genetikk</keywords>
+      <keywords>variasjon</keywords>
+      <keywords>mutasjon</keywords>
+      <keywords>sekvensering</keywords>
+      <keywords>mutasjon</keywords>
+      <use>Denne arketypen har blitt laget for å brukes i SLOT'et "Referansegenom" og i "Transkriptreferansesekvens" i arketypen CLUSTER.genomic_variant_result arketypen (Genetisk variant resultat) og SLOT'et "Referansesekvens" i de spesifikke genetisk variant arketypene (f.eks. CLUSTER.genomic_insertion_variant, CLUSTER.genomic_deletion_variant. osv). Den kan også brukes i andre ENTRY- eller CLUSTER-arketyper der det er klinisk hensiktsmessig.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about the reference sequence used to describe variants.</purpose>
+      <keywords>genetic findings</keywords>
+      <keywords>reference sequence</keywords>
+      <keywords>Genetic test</keywords>
+      <keywords>variant calling</keywords>
+      <keywords>genomic</keywords>
+      <keywords>variation</keywords>
+      <use>This archetype has been specifically designed to be used in the 'Reference Genome' and in the 'Transcript reference sequence' SLOTs within the CLUSTER.genomic_variant_result archetype and in the 'Reference sequence' SLOT within other specific genetic variant archetypes, such as the CLUSTER.genomic_insertion_variant and the CLUSTER.genomic_deletion_variant. Itt can also be used within other ENTRY or CLUSTER archetypes, where clinically appropriate.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg</author>
+    <author id="organisation">Cambio CDS</author>
+    <author id="email">therese.lindberg@cambio.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen, Liv Laugen,</author>
+    <author id="organisation">Oslo University Hospital, Norway, ​Oslo University Hospital, Norway</author>
+    <author id="email">varntzen@ous-hf.no, liv.laugen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>0d76b26d-8cbd-4e0d-a7ac-e83bf4dfcae9</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.reference_sequence.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0018</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>true</upper_unbounded>
+      <lower>1</lower>
+    </occurrences>
+    <node_id>at0018</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0048</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0020</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_URI</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0023</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0024</code_list>
+                <code_list>at0025</code_list>
+                <code_list>at0026</code_list>
+                <code_list>at0027</code_list>
+                <code_list>at0028</code_list>
+                <code_list>at0029</code_list>
+                <code_list>at0030</code_list>
+                <code_list>at0031</code_list>
+                <code_list>at0032</code_list>
+                <code_list>at0033</code_list>
+                <code_list>at0034</code_list>
+                <code_list>at0035</code_list>
+                <code_list>at0036</code_list>
+                <code_list>at0037</code_list>
+                <code_list>at0038</code_list>
+                <code_list>at0039</code_list>
+                <code_list>at0040</code_list>
+                <code_list>at0041</code_list>
+                <code_list>at0042</code_list>
+                <code_list>at0043</code_list>
+                <code_list>at0044</code_list>
+                <code_list>at0045</code_list>
+                <code_list>at0046</code_list>
+                <code_list>at0047</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>true</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>3</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0018">
+        <items id="text">Reference sequence</items>
+        <items id="description">A sequence file that is used as a reference to describe genetic variants that are present in an analysed sequence.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Source name</items>
+        <items id="description">The name of the data source containing the reference sequence.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Accession number</items>
+        <items id="description">A unique identifier to refer to a sequence record in a sequence repository.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Version number</items>
+        <items id="description">The version number of the data record of the reference sequence.</items>
+        <items id="comment">For example: 'hg38', 'hg19'.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">URL</items>
+        <items id="description">Network address.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Chromosome label</items>
+        <items id="description">Chromosome identifier.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Chromosome 1</items>
+        <items id="description">Chromosome 1.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Chromosome 2</items>
+        <items id="description">Chromosome 2.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Chromosome 3</items>
+        <items id="description">Chromosome 3.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Chromosome 4</items>
+        <items id="description">Chromosome 4.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Chromosome 5</items>
+        <items id="description">Chromosome 5.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Chromosome 6</items>
+        <items id="description">Chromosome 6.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Chromosome 7</items>
+        <items id="description">Chromosome 7.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Chromosome 8</items>
+        <items id="description">Chromosome 8.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Chromosome 9</items>
+        <items id="description">Chromosome 9.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Chromosome 10</items>
+        <items id="description">Chromosome 10.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Chromosome 11</items>
+        <items id="description">Chromosome 11.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Chromosome 12</items>
+        <items id="description">Chromosome 12.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Chromosome 13</items>
+        <items id="description">Chromosome 13.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Chromosome 14</items>
+        <items id="description">Chromosome 14.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Chromosome 15</items>
+        <items id="description">Chromosome 15.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Chromosome 16</items>
+        <items id="description">Chromosome 16.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Chromosome 17</items>
+        <items id="description">Chromosome 17.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Chromosome 18</items>
+        <items id="description">Chromosome 18.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Chromosome 19</items>
+        <items id="description">Chromosome 19.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Chromosome 20</items>
+        <items id="description">Chromosome 20.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Chromosome 21</items>
+        <items id="description">Chromosome 21.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Chromosome 22</items>
+        <items id="description">Chromosome 22.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Chromosome X</items>
+        <items id="description">Chromosome X.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Chromosome Y</items>
+        <items id="description">Chromosome Y.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Reference genome assembly</items>
+        <items id="description">The reference genome assembled as a representative model of the human genome.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0018">
+        <items id="text">Referansesekvens</items>
+        <items id="description">En sekvensfil som er brukt som en referanse for å beskrive varianter som er funnet i en analysert sekvens.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Kildenavn</items>
+        <items id="description">Navnet til datakilden som inneholder den anvendte referansesekvensen.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Aksessnummer</items>
+        <items id="description">En unik ID som refererer til en referansesekvens i et referansesekvensregister (engelsk: Accession number).</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Versjonsnummer</items>
+        <items id="description">Versjonsnummeret til databaseposten (data record) til referansesekvensen.</items>
+        <items id="comment">For eksempel: "hg38", "hg19".</items>
+      </items>
+      <items code="at0022">
+        <items id="text">URL</items>
+        <items id="description">Link til nettstedet til den brukte referansesekvensen.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">KromosomID</items>
+        <items id="description">Kromosomets ID (engelsk: Chromosome label).</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Kromosom 1</items>
+        <items id="description">Kromosom 1.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kromosom 2</items>
+        <items id="description">Kromosom 2.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Kromosom 3</items>
+        <items id="description">Kromosom 3.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kromosom 4</items>
+        <items id="description">Kromosom 4.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Kromosom 5</items>
+        <items id="description">Kromosom 5.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Kromosom 6</items>
+        <items id="description">Kromosom 6.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Kromosom 7</items>
+        <items id="description">Kromosom 7.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Kromosom 8</items>
+        <items id="description">Kromosom 8.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Kromosom 9</items>
+        <items id="description">Kromosom 9.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Kromosom 10</items>
+        <items id="description">Kromosom 10.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kromosom 11</items>
+        <items id="description">Kromosom 11.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Kromosom 12</items>
+        <items id="description">Kromosom 12.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Kromosom 13</items>
+        <items id="description">Kromosom 13.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kromosom 14</items>
+        <items id="description">Kromosom 14.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Kromosom 15</items>
+        <items id="description">Kromosom 15.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Kromosom 16</items>
+        <items id="description">Kromosom 16.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Kromosom 17</items>
+        <items id="description">Kromosom 17.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Kromosom 18</items>
+        <items id="description">Kromosom 18.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Kromosom 19</items>
+        <items id="description">Kromosom 19.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Kromosom 20</items>
+        <items id="description">Kromosom 20.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Kromosom 21</items>
+        <items id="description">Kromosom 21.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Kromosom 22</items>
+        <items id="description">Kromosom 22.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Kromosom X</items>
+        <items id="description">Kromosom X.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Kromosom Y</items>
+        <items id="description">Kromosom Y.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Referansegenom</items>
+        <items id="description">Referansegenomet (reference assembly) som en representativ modell for det humane genomet.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0018">
+        <items id="text">Reference sequence</items>
+        <items id="description">Eine Datei mit Sequenzdaten, die als Referenz zur Beschreibung genetischer Varianten, die in einer analysierten Sequenz vorhanden sind, verwendet wird.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Source name</items>
+        <items id="description">The name of the data source containing the reference sequence.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Accession number</items>
+        <items id="description">A unique identifier to refer to a sequence record in a sequence repository.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Version number</items>
+        <items id="description">The version number of the data record of the reference sequence.</items>
+        <items id="comment">For example: "hg38", "hg19".</items>
+      </items>
+      <items code="at0022">
+        <items id="text">URL</items>
+        <items id="description">Network address.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Chromosome label</items>
+        <items id="description">Chromosome identifier.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Chromosome 1</items>
+        <items id="description">Chromosome 1.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Chromosome 2</items>
+        <items id="description">Chromosome 2.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Chromosome 3</items>
+        <items id="description">Chromosome 3.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Chromosome 4</items>
+        <items id="description">Chromosome 4.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Chromosome 5</items>
+        <items id="description">Chromosome 5.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Chromosome 6</items>
+        <items id="description">Chromosome 6.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Chromosome 7</items>
+        <items id="description">Chromosome 7.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Chromosome 8</items>
+        <items id="description">Chromosome 8.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Chromosome 9</items>
+        <items id="description">Chromosome 9.</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Chromosome 10</items>
+        <items id="description">Chromosome 10.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Chromosome 11</items>
+        <items id="description">Chromosome 11.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Chromosome 12</items>
+        <items id="description">Chromosome 12.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Chromosome 13</items>
+        <items id="description">Chromosome 13.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Chromosome 14</items>
+        <items id="description">Chromosome 14.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Chromosome 15</items>
+        <items id="description">Chromosome 15.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Chromosome 16</items>
+        <items id="description">Chromosome 16.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Chromosome 17</items>
+        <items id="description">Chromosome 17.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Chromosome 18</items>
+        <items id="description">Chromosome 18.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Chromosome 19</items>
+        <items id="description">Chromosome 19.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Chromosome 20</items>
+        <items id="description">Chromosome 20.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Chromosome 21</items>
+        <items id="description">Chromosome 21.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Chromosome 22</items>
+        <items id="description">Chromosome 22.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Chromosome X</items>
+        <items id="description">Chromosome X.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Chromosome Y</items>
+        <items id="description">Chromosome Y.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Reference genome assembly</items>
+        <items id="description">The reference genome assembled as a representative model of the human genome.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0018">
+        <items id="text">Referenssekvens</items>
+        <items id="description">En sekvensfil som används som referens för att beskriva genetiska varianter som finns i en analyserad sekvens.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Källnamn</items>
+        <items id="description">Namnet på datakällan som innehåller referenssekvensen.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Anslutningsnummer</items>
+        <items id="description">En unik identifierare som hänvisar till en sekvens registrerad i ett sekvensförvar.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Versionsnummer</items>
+        <items id="description">Versionsnumret för dataregistreringen av referenssekvensen.</items>
+        <items id="comment">Till exempel: 'hg38', 'hg19'.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">URL</items>
+        <items id="description">Nätverksadress.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kromosommärkning</items>
+        <items id="description">Kromosomidentifierare.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Kromosom 1</items>
+        <items id="description">Kromosom 1.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Kromosom 2</items>
+        <items id="description">Kromosom 2.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Kromosom 3</items>
+        <items id="description">Kromosom 3.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Kromosom 4</items>
+        <items id="description">Kromosom 4.</items>
+      </items>
+      <items code="at0028">
+        <items id="text">Kromosom 5</items>
+        <items id="description">Kromosom 5.</items>
+      </items>
+      <items code="at0029">
+        <items id="text">Kromosom 6</items>
+        <items id="description">Kromosom 6.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Kromosom 7</items>
+        <items id="description">Kromosom 7.</items>
+      </items>
+      <items code="at0031">
+        <items id="text">Kromosom 8</items>
+        <items id="description">Kromosom 8.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Kromosom 9</items>
+        <items id="description">Kromosom 9</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Kromosom 10</items>
+        <items id="description">Kromosom 10.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Kromosom 11</items>
+        <items id="description">Kromosom 11.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Kromosom 12</items>
+        <items id="description">Kromosom 12.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Kromosom 13</items>
+        <items id="description">Kromosom 13.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kromosom 14</items>
+        <items id="description">Kromosom 14.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Kromosom 15</items>
+        <items id="description">Kromosom 15.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Kromosom 16</items>
+        <items id="description">Kromosom 16.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Kromosom 17</items>
+        <items id="description">Kromosom 17.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Kromosom 18</items>
+        <items id="description">Kromosom 18.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Kromosom 19</items>
+        <items id="description">Kromosom 19.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Kromosom 20</items>
+        <items id="description">Kromosom 20.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Kromosom 21</items>
+        <items id="description">Kromosom 21.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">Kromosom 22</items>
+        <items id="description">Kromosom 22.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Kromosom X</items>
+        <items id="description">Kromosom X.</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Kromosom Y</items>
+        <items id="description">Kromosom Y.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Hopsättning av referensgenom</items>
+        <items id="description">Referensgenomet monterat som en representativ modell för det mänskliga genomet.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="LOINC">
+      <items code="at0023">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>48000-4</code_string>
+        </value>
+      </items>
+      <items code="at0024">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21254-0</code_string>
+        </value>
+      </items>
+      <items code="at0025">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21255-7</code_string>
+        </value>
+      </items>
+      <items code="at0026">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21256-5</code_string>
+        </value>
+      </items>
+      <items code="at0027">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21257-3</code_string>
+        </value>
+      </items>
+      <items code="at0028">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21258-1</code_string>
+        </value>
+      </items>
+      <items code="at0029">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21259-9</code_string>
+        </value>
+      </items>
+      <items code="at0030">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21260-7</code_string>
+        </value>
+      </items>
+      <items code="at0031">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21261-5</code_string>
+        </value>
+      </items>
+      <items code="at0032">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21262-3</code_string>
+        </value>
+      </items>
+      <items code="at0033">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21263-1</code_string>
+        </value>
+      </items>
+      <items code="at0034">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21264-9</code_string>
+        </value>
+      </items>
+      <items code="at0035">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21265-6</code_string>
+        </value>
+      </items>
+      <items code="at0036">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21266-4</code_string>
+        </value>
+      </items>
+      <items code="at0037">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21267-2</code_string>
+        </value>
+      </items>
+      <items code="at0038">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21268-0</code_string>
+        </value>
+      </items>
+      <items code="at0039">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21269-8</code_string>
+        </value>
+      </items>
+      <items code="at0040">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21270-6</code_string>
+        </value>
+      </items>
+      <items code="at0041">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21271-4</code_string>
+        </value>
+      </items>
+      <items code="at0042">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21272-2</code_string>
+        </value>
+      </items>
+      <items code="at0043">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21273-0</code_string>
+        </value>
+      </items>
+      <items code="at0044">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21274-8</code_string>
+        </value>
+      </items>
+      <items code="at0045">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21275-5</code_string>
+        </value>
+      </items>
+      <items code="at0046">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21276-3</code_string>
+        </value>
+      </items>
+      <items code="at0047">
+        <value>
+          <terminology_id>
+            <value>LOINC(2.65)</value>
+          </terminology_id>
+          <code_string>LA21277-1</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

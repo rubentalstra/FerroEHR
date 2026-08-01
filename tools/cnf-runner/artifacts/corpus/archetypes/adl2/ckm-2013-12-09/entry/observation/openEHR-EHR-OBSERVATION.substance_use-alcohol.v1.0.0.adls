@@ -1,0 +1,170 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.substance_use-alcohol.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.substance_use.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"6/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"This is an archetype used to record details of the use of all forms of alcohol. ">
+			use = <"Use to record details of the use of all forms of alcohol.  This includes use at specific point in time, over intervals of time, and use of mathematical functions such as average or minimum eg average consumption over a week.  A typical use would be to record usage in an alcohol consumption diary.">
+			keywords = <"substance", "addiction", "consumption", "use">
+			misuse = <"Not to be used for recording persistent and summary details about the use of the substance - this should be captured using the EVALUATION.substance_use_summary archetype.  
+Not to be used for recording use or consumption histories for substances other than alcohol.">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"E80C92427092354E9D124F3E3A5093E0">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Alcohol Consumption
+		protocol matches {
+			ITEM_TREE[id0.29] matches {
+				items matches {
+					ELEMENT[id0.30] occurrences matches {0..1} matches {	-- Alcohol per standard drink
+						value matches {
+							DV_QUANTITY[id0.33] matches {
+								property matches {[at0.31]}
+								units matches {"gm"}
+							}
+						}
+					}
+				}
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id5]/value matches {
+			DV_CODED_TEXT[id20.1] matches {
+				defining_code matches {[at0.19]}
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items[id12]/value matches {
+			DV_CODED_TEXT[id21.1] matches {
+				defining_code matches {[ac0.1]}		-- Form (synthesised)
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items matches {
+			ELEMENT[id13] 
+			ELEMENT[id13.1] matches {	-- Standard drinks
+				value matches {
+					DV_QUANTITY[id0.31] matches {
+						property matches {[at0.29]}
+						units matches {"/h", "/d", "/wk"}
+					}
+				}
+			}
+			ELEMENT[id13.2] matches {	-- Grams of alcohol
+				value matches {
+					DV_QUANTITY[id0.32] matches {
+						property matches {[at0.30]}
+						units matches {"gm/d", "gm/wk"}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.19"] = <
+				text = <"Alcohol">
+				description = <"Details about Alcohol consumption">
+			>
+			["at0.20"] = <
+				text = <"All alcohol">
+				description = <"Total amount of alcohol consumed">
+			>
+			["at0.21"] = <
+				text = <"All beer">
+				description = <"All beer consumed">
+			>
+			["at0.22"] = <
+				text = <"All wine">
+				description = <"All wine consumed">
+			>
+			["at0.23"] = <
+				text = <"All spirits">
+				description = <"All spirits consumed">
+			>
+			["at0.24"] = <
+				text = <"Full strength beer">
+				description = <"Full strength beer consumed">
+			>
+			["at0.25"] = <
+				text = <"Light beer">
+				description = <"Light beer consumed">
+			>
+			["at0.26"] = <
+				text = <"Red wine">
+				description = <"Red wine consumed">
+			>
+			["at0.27"] = <
+				text = <"White wine">
+				description = <"White wine consumed">
+			>
+			["at0.28"] = <
+				text = <"Fortified wine">
+				description = <"Fortified wine consumed">
+			>
+			["id0.30"] = <
+				text = <"Alcohol per standard drink">
+				description = <"Amount of alchohol defining a standard drink - this differs in many countries">
+			>
+			["id1.1"] = <
+				text = <"Alcohol Consumption">
+				description = <"Archetype to record the actual use or consumption of alcohol at the present time, a specific time or over a period of time. ">
+			>
+			["id13.1"] = <
+				text = <"Standard drinks">
+				description = <"Number of standard drinks of alcohol consumed">
+			>
+			["id13.2"] = <
+				text = <"Grams of alcohol">
+				description = <"Number of grams of alcohol consumed">
+			>
+			["at0.29"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at0.30"] = <
+				text = <"Flow rate, mass">
+				description = <"Flow rate, mass">
+			>
+			["at0.31"] = <
+				text = <"Mass">
+				description = <"Mass">
+			>
+			["ac0.1"] = <
+				text = <"Form (synthesised)">
+				description = <"Form of alcohol used (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.29"] = <http://openehr.org/id/382>
+			["at0.30"] = <http://openehr.org/id/347>
+			["at0.31"] = <http://openehr.org/id/124>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.20", "at0.21", "at0.22", "at0.23", "at0.24", "at0.25", "at0.26", "at0.27", "at0.28">
+		>
+	>

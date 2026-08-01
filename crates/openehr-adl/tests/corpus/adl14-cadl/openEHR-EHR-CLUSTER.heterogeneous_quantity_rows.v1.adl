@@ -1,0 +1,72 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.heterogeneous_quantity_rows.v1
+
+concept
+	[at0000]	-- Heterogeneous C_DV_QUANTITY list rows
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Heterogeneous C_DV_QUANTITY list rows
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Range of motion
+				value matches {
+					-- The #1466 shape (from the live CKM
+					-- openEHR-EHR-CLUSTER.range_of_motion.v1): row 1
+					-- constrains units + magnitude, rows 2 and 3 constrain
+					-- units only. The rows partition into one DV_QUANTITY
+					-- alternative per constrained member set — ADL 2
+					-- documents tuple rows only with a constraint in EVERY
+					-- member (ADL2/master04.4 §Tuple Constraints), and
+					-- "unconstrained" is said by not constraining the
+					-- attribute. The assumed_value satisfies row 1 only, so
+					-- it must land on the tuple alternative.
+					C_DV_QUANTITY <
+						property = <[openehr::497]>
+						list = <
+							["1"] = <
+								units = <"deg">
+								magnitude = <|-360.0..360.0|>
+							>
+							["2"] = <
+								units = <"mm">
+							>
+							["3"] = <
+								units = <"cm">
+							>
+						>
+						assumed_value = <
+							units = <"deg">
+							magnitude = <90.0>
+						>
+					>
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Heterogeneous C_DV_QUANTITY list rows">
+					description = <"Rows constraining different member sets partition into sibling alternatives">
+				>
+				["at0001"] = <
+					text = <"Range of motion">
+					description = <"units+magnitude row beside units-only rows">
+				>
+			>
+		>
+	>

@@ -1,0 +1,236 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.auscultation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"7/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record data found on examination by auscultation/listening.">
+			use = <"To be embedded in an openEHR-EHR-OBSERVATION.exam cluster to express findings determined by auscultation.">
+			keywords = <"auscultate", "listen", "auscultation", "listening", "bruit", "bowel sounds", "sounds">
+			misuse = <"Not for use in any other context at present.">
+		>
+	>
+	other_contributors = <"Heather Leslie", ...>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"C66B38E8B00A3C982EC70C9B7C514266">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Auscultation
+		items matches {
+			CLUSTER[id2] occurrences matches {0..1} matches {	-- Normal Statements
+				items matches {
+					ELEMENT[id4] matches {	-- Normal Statement
+						value matches {
+							DV_CODED_TEXT[id94] matches {
+								defining_code matches {[ac1]}		-- Normal Statement (synthesised)
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Clinical Description
+				value matches {
+					DV_TEXT[id95] 
+				}
+			}
+			CLUSTER[id3] occurrences matches {0..1} matches {	-- Findings
+				items matches {
+					CLUSTER[id10] occurrences matches {0..1} matches {	-- Bowel sounds
+						items matches {
+							ELEMENT[id75] matches {	-- Specific Findings
+								value matches {
+									DV_CODED_TEXT[id96] matches {
+										defining_code matches {[ac2]}		-- Specific Findings (synthesised)
+									}
+								}
+							}
+							use_node ELEMENT[id97] /items[id5]	-- /items[Clinical Description]
+						}
+					}
+					CLUSTER[id11] occurrences matches {0..1} matches {	-- Vessel bruit
+						items matches {
+							ELEMENT[id89] matches {	-- Vessel name
+								value matches {
+									DV_TEXT[id98] 
+								}
+							}
+							ELEMENT[id31] occurrences matches {0..1} matches {	-- Maximal Location
+								value matches {
+									DV_TEXT[id99] 
+								}
+							}
+							ELEMENT[id92] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT[id100] 
+								}
+							}
+						}
+					}
+					CLUSTER[id90] occurrences matches {0..1} matches {	-- Other sounds
+						items matches {
+							ELEMENT[id91] matches {	-- Description
+								value matches {
+									DV_TEXT[id101] 
+								}
+							}
+							use_node ELEMENT[id102] /items[id3]/items[id11]/items[id31]	-- /items[Findings]/items[Vessel bruit]/items[Maximal Location]
+						}
+					}
+					CLUSTER[id87] matches {	-- Localised auscultation
+						items matches {
+							ELEMENT[id88] matches {	-- Site or region
+								value matches {
+									DV_TEXT[id103] 
+								}
+							}
+							allow_archetype CLUSTER[id93] occurrences matches {0..1} matches {	-- Cluster auscultation
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.auscultation\.v1/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Auscultation">
+				description = <"Findings on Auscultation.">
+			>
+			["id2"] = <
+				text = <"Normal Statements">
+				description = <"A group of statements about the normality of auscultation.">
+			>
+			["id3"] = <
+				text = <"Findings">
+				description = <"Findings on auscultation.">
+			>
+			["id4"] = <
+				text = <"Normal Statement">
+				description = <"Statements about the normality of the auscultation.">
+			>
+			["id5"] = <
+				text = <"Clinical Description">
+				description = <"Detailed clinical description of the findings on auscultation.">
+			>
+			["id10"] = <
+				text = <"Bowel sounds">
+				description = <"Group of findings about auscultation of the bowel.">
+			>
+			["id11"] = <
+				text = <"Vessel bruit">
+				description = <"Group of findings about auscultation of a major blood vessel.">
+			>
+			["id31"] = <
+				text = <"Maximal Location">
+				description = <"Site where finding is heard maximally.">
+			>
+			["at57"] = <
+				text = <"No murmur">
+				description = <"No murmur is heard.">
+			>
+			["at58"] = <
+				text = <"No bruit">
+				description = <"No bruit is heard.">
+			>
+			["at74"] = <
+				text = <"Normal bowel sounds">
+				description = <"Bowel sounds are normal in intensity and character.">
+			>
+			["id75"] = <
+				text = <"Specific Findings">
+				description = <"Specific auscultatory findings related to examination of the bowels.">
+			>
+			["at79"] = <
+				text = <"Absent bowel sounds">
+				description = <"No bowel sounds can be heard.">
+			>
+			["at80"] = <
+				text = <"Decreased bowel sounds">
+				description = <"Bowel sounds are less than normal.">
+			>
+			["at81"] = <
+				text = <"Increased bowel sounds">
+				description = <"Bowel sounds are more intense than normal.">
+			>
+			["at82"] = <
+				text = <"Tinkling bowel sounds">
+				description = <"High pitched and very frequent bowel sounds can be heard.">
+			>
+			["at86"] = <
+				text = <"No abnormality detected">
+				description = <"Nothing abnormal on auscultation.">
+			>
+			["id87"] = <
+				text = <"Localised auscultation">
+				description = <"Auscultation in a particular site.">
+			>
+			["id88"] = <
+				text = <"Site or region">
+				description = <"The site of the localised findings.">
+			>
+			["id89"] = <
+				text = <"Vessel name">
+				description = <"The name of the vessel to which is being listened.">
+			>
+			["id90"] = <
+				text = <"Other sounds">
+				description = <"Recording of sounds of a different nature.">
+			>
+			["id91"] = <
+				text = <"Description">
+				description = <"Description of other sounds.">
+			>
+			["id92"] = <
+				text = <"Description">
+				description = <"Description of the bruit.">
+			>
+			["id93"] = <
+				text = <"Cluster auscultation">
+				description = <"Description of the cluster.">
+			>
+			["id97"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["id102"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac1"] = <
+				text = <"Normal Statement (synthesised)">
+				description = <"Statements about the normality of the auscultation. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Specific Findings (synthesised)">
+				description = <"Specific auscultatory findings related to examination of the bowels. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at57", "at58", "at74", "at86">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at79", "at80", "at81", "at82">
+		>
+	>

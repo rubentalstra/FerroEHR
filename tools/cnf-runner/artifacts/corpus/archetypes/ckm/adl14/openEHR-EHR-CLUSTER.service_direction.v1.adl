@@ -1,0 +1,380 @@
+﻿archetype (adl_version=1.4; uid=b632b54d-8c33-496c-aeb6-5a1798e71151)
+	openEHR-EHR-CLUSTER.service_direction.v1
+
+concept
+	[at0000]	-- Service direction
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Therese Lindberg">
+				["organisation"] = <"Cambio CDS">
+				["email"] = <"therese.lindberg@cambio.se">
+			>
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			author = <
+				["name"] = <"Silje Ljosland Bakke og John Tore Valand, Liv Laugen">
+				["organisation"] = <"Helse Vest IKT og Helse Bergen HF, ​Oslo University Hospital, Norway">
+				["email"] = <"john.tore.valand@helse-bergen.no, liv.laugen@ous-hf.no">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2017-03-22">
+	>
+	details = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"Att registrera strukturerade detaljer i en komplex riktning för en beställd eller begärd tjänst.">
+			use = <"Används för att spela in strukturerade detaljer i en enda, komplex riktning för en beställd eller begärd tjänst.
+
+Den här arketypen har utformats för att kapslas in i ''Komplex timing'' -SLOT i INSTRUCTION.service_request-arketypen, men kan användas inom andra kliniskt relevanta arketyper, efter behov. Flera instanser av denna arketyp kan krävas för att representera en komplex beställning av tjänster, särskilt sådana med förändrad frekvens eller leveransmönster över tid.
+
+Varje tjänst ger detaljerad vägledning om en eller flera sekventiella aktiviteter, var och en innefattande ett belopp och en intradaglig timing, tillsammans med en övergripande riktningstid och detaljer om varje repetitivt mönster utanför en enda dag. Varje aktivitetspar gör det möjligt att beskriva ett komplext intradagligt mönster, till exempel 2 timmars omvårdnad på morgonen och en timme på kvällen.
+
+Varje tjänst kan gälla under en fast tidsperiod eller ett fast antal tjänster, som anges med hjälp av dataelementet 'Totalt belopp'.
+
+Det totala beloppet för hela tjänsteförfrågan registreras i INSTRUCTION.service_request.
+
+Till exempel:
+- \"Hjemsjukvårdshjälp i 2 timmar på morgonen och 1 timme på kvällen under en period av 6 veckor, följt av 1 timme på morgonen endast i ytterligare 6 veckor\".
+- ”Dialysblodprovspaket som ska genomföras: Den andra onsdagen i månaden januari, mars, maj, juli, september och november”.
+- ”INR dagligen i en vecka, veckovis i en månad, månadsvis i sex månader”. eller
+- \"Vital signalerar observationer var timme i fyra timmar, sedan varannan timme i 12 timmar\".
+
+Denna CLUSTER kan byta namn i template eller vid körning för att representera en specifik servicriktning som \"Första fyra timmarna efter operationen\".">
+			keywords = <"begäran", "service", "procedur", "undersökning", "behandling", "timing">
+			misuse = <"Inte utformad för att registrera information om en begäran eller beställning där en dosering krävs, till exempel medicinering eller transfusionsorder. Använd CLUSTER.therapeutic_direction för dessa ändamål.">
+		>
+		["nb"] = <
+			language = <[ISO_639-1::nb]>
+			purpose = <"For å registrere en detaljert beskrivelse av en kompleks anvisning for en rekvirert eller bestilt tjeneste.">
+			use = <"Brukes for å registrere en detaljert beskrivelse av en kompleks anvisning for en rekvirert eller bestilt tjeneste.
+
+Denne arketypen er utviklet for å nøstes i SLOTet \"Kompleks timing\" i arketypen INSTRUCTION.service_request (Helsetjenesteforespørsel), men kan benyttes i andre arketyper der det er klinisk relevant. Det kan være nødvendig med flere instanser av denne arketypen for å representerer komplekse forespørsler etter tjenester, særlig tjenester som endrer frekvens eller leveringsmønstre over tid.
+
+Hver tjenesteanvisning gir en detaljert veiledning om en eller flere sekvensielle aktiviteter, der hver aktivitet inneholder en \"Mengde\" og en \"Timing innenfor en dag\" (arketypen \"Timing - døgn\"), sammen med den overordnede varigheten av anvisningen og detaljer om repeterende mønstre utover en enkelt dag. Hvert aktivitetspar gjør det mulig å beskrive et komplekst mønster, for eksempel 2 timer hjemmesykepleie om morgenen og en time om kvelden.
+
+Hver tjenesteanvisning kan være gyldig i en begrenset tidsperiode, over et begrenset nummer hendelser beskrevet i dataelementet \"Totalmengde\".
+
+Den totale mengden for hele tjenesteanvisningen registreres i arketypen INSTRUCTION.service_request (Helsetjenesteforespørsel).
+
+For eksempel: 
+- Hjemmesykepleier 2 timer om morgenen og 1 time om kvelden over en tidsperiode på 6 måneder. Etterfulgt av kun 1 time om morgenen i 6 uker.
+- Dialyseblodprøvepakke tas på onsdager i den andre uken av Januar, Februar, April, Mai, Juli, August, Oktober, November.
+- INR daglig i 1 uke, ukentlig i 1 måned og månedlig i 6 måneder.
+- Vitale observasjoner hver time i 4 timer, deretter hver andre time i 12 timer.
+
+Arketypen kan gis nye navn i et templat eller en applikasjon for å representere en spesifikk hendelse som f.eks. \"første fire timer eller operasjon\".">
+			keywords = <"rekvirering", "rekvirere", "tjeneste", "prosedyre", "undersøkelse", "behandling", "timing", "tidsangivelse", "timedefinisjon", "tidspunkt", "instruks", "bestilling", "bestille">
+			misuse = <"Skal ikke brukes for å registrere tidsangivelse om en rekvirering eller ordinering der det er behov for en doseangivelse, som legemiddel- eller transfusjonsordinasjoner. Bruk arketypen CLUSTER.therapeutic_direction (Terapeutisk anvisning) for dette formålet.">
+			copyright = <"© openEHR Foundation, Alberta Health Services (Canada)">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record structured details of a complex direction for an ordered or requested service.">
+			use = <"Use to record structured details of a single, complex direction for an ordered or requested service. 
+
+This archetype has been designed to be nested within the 'Complex timing' SLOT in the INSTRUCTION.service_request archetype, but may be used within other clinically relevant archetypes, as required. Multiple instances of this archetype may be required to represent a complex order for services, especially ones with changing frequency or patterns of delivery over time.
+
+Each service direction provides detailed guidance about one or more sequential activities, each comprising an amount and an intradaily timing, together with an overall direction duration and details of any repetitive pattern outside a single day. Each activity pair allows for a complex intradaily pattern to be described, such as 2 hours of nursing assistance in the morning and one hour in the evening.
+
+Each service direction may apply for a fixed duration of time, or fixed number of services, which is specified using the 'Total amount' data element.
+
+The total amount for the entire service request, is recorded in the INSTRUCTION.service_request.
+
+For example: 
+- 'Home nursing assistance for 2 hours in the morning and 1 hour in the evening for a period of 6 weeks, followed by 1 hour in the morning only for a further 6 weeks';
+- 'Dialysis blood test package to be carried out: The second Wednesday of the month in January, March, May, July, September and November';
+- 'INR daily for one week, weekly for one month, monthly for six months'; or
+- 'Vital signs observations every hour for four hours, then every two hours for 12 hours'.
+
+The CLUSTER can be renamed in template or at run-time to represent a specific service direction such as 'First four hours after surgery'.">
+			keywords = <"request", "service", "procedure", "examination", "treatment", "timing">
+			misuse = <"Not to be used to record information about any request or order where a dosage is required, for example medication or transfusion orders. Use the CLUSTER.therapeutic_direction for these purposes.">
+			copyright = <"© openEHR Foundation, Alberta Health Services (Canada)">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"Øyvind Aardal, Helse Vest, Norway", "Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)", "Koray Atalag, University of Auckland, New Zealand", "Heidi Aursand, Oslo universitetssykehus, Norway", "Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)", "Marcus Baw, openGPSoC / BawMedical Ltd, United Kingdom", "John Bennett, NEHTA, Australia", "SB Bhattacharyya, Sudisa Consultancy Services, India", "Sharmila Biswas, Australia", "Lars Bitsch-Larsen, Haukeland University hospital, Norway", "Stephen Chu, NEHTA, Australia (Editor)", "Matthew Cordell, NEHTA, Australia", "Gail Easterbrook, Flinders Medical Centre, Australia", "David Evans, Queensland Health, Australia", "Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom", "Sarah Gaunt, NEHTA, Australia", "Mikkel Gaup Grønmo, FSE, Helse Nord, Norway (Nasjonal IKT redaktør)", "Heather Grain, Llewelyn Grain Informatics, Australia", "Trina Gregory, cpc, Australia", "Robert Hausam, Hausam Consulting LLC, United States", "Sam Heard, Ocean Informatics, Australia (Editor)", "Anca Heyd, DIPS ASA, Norway", "Roar Holm, Helse Vest IKT A/S, Norway", "Evelyn Hovenga, EJSH Consulting, Australia", "Gunnar Jårvik, Nasjonal IKT HF, Norway", "Lars Morgan Karlsen, DIPS ASA, Norway", "Mary Kelaher, NEHTA, Australia", "Robert L'egan, NEHTA, Australia", "Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)", "Russell Leftwich, Russell B Leftwich MD, United States", "Heather Leslie, Atomica Informatics, Australia (openEHR Editor)", "Colin Macfarlane, Elsevier, United Kingdom", "Marlene Mann, BN, MCE, CPHIMS-CA, Prosci Certified, Foundation Knowledge Provincial CMIO, Alberta Health Services, Canada", "Susan McIndoe, Royal District Nursing Service, Australia", "David McKillop, NEHTA, Australia", "Ian McNicoll, freshEHR Clinical Informatics, United Kingdom", "Chris Mitchell, RACGP, Australia", "Stewart Morrison, NEHTA, Australia", "Andrej Orel, Marand d.o.o., Slovenia", "Chris Pearce, Melbourne East GP Network, Australia", "Vladimir Pizzo, Hospital Sírio Libanês, Brazil", "Camilla Preeston, Royal Australian College of General Practitioners, Australia", "Margaret Prichard, NEHTA, Australia", "Cathy Richardson, NEHTA, Australia", "Robyn Richards, NEHTA - Clinical Terminology, Australia", "Ed Schwab,RD, CPHIMS-CA, Foundational Knowledge - Provincial CMIO, Alberta Health Services, Canada", "Gro-Hilde Severinsen, Norwegian center for ehealthresearch, Norway", "Anoop Shah, University College London, United Kingdom", "Line Silsand, Universitetssykehuset i Nord-Norge, Norway", "Katrina Simpson-Pineda, RN, BN, Clinical Knowledge Topics - Provincial CMIO, Alberta Health Services, Canada", "Iztok Stotl, UKCLJ, Slovenia", "Norwegian Review Summary, Nasjonal IKT HF, Norway", "John Taylor, NEHTA, Australia", "Nyree Taylor, Ocean Informatics, Australia", "Richard Townley-O'Neill, NEHTA, Australia", "John Tore Valand, Helse Bergen, Norway (openEHR Editor)", "Ines Vaz, UFN, Portugal", "Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)", "Kylie Young, The Royal Australian College of General Practitioners, Australia">
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Therapeutic direction, Published archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2017-12-05]. Available from: http://openehr.org/ckm/#showArchetype_1013.1.2753">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"0EE9628D2B91CB934A0F3D31546F727F">
+		["build_uid"] = <"40cda3d0-9891-468c-86a2-c9a024383b2a">
+		["revision"] = <"1.0.1">
+	>
+
+definition
+	CLUSTER[at0000] matches {    -- Service direction
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {    -- Direction sequence
+				value matches {
+					DV_COUNT matches {
+						magnitude matches {|>=1|}
+					}
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {    -- Direction description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0003] occurrences matches {0..*} matches {    -- Activity
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0004] occurrences matches {0..1} matches {    -- Activity sequence
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=1|}
+							}
+						}
+					}
+					ELEMENT[at0005] occurrences matches {0..1} matches {    -- Amount
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=1|}
+							}
+							DV_DURATION matches {
+								value matches {|>=PT1S|}
+							}
+						}
+					}
+					allow_archetype CLUSTER[at0006] occurrences matches {0..*} matches {    -- Intraday timing
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.timing_daily\.v1/}
+					}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {    -- Direction duration
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::at0008]    -- Indefinite
+						}
+					}
+					DV_DURATION matches {
+						value matches {|>=PT1S|}
+					}
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0010] occurrences matches {0..*} matches {    -- Repetition timing
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.timing_nondaily\.v1/}
+			}
+			ELEMENT[at0011] occurrences matches {0..1} matches {    -- Total amount
+				value matches {
+					DV_COUNT matches {
+						magnitude matches {|>=1|}
+					}
+					DV_DURATION matches {
+						value matches {|>=PT1S|}
+					}
+				}
+			}
+			allow_archetype CLUSTER[at0012] occurrences matches {0..*} matches {    -- Additional details
+				include
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Service direction">
+					description = <"Structured details of a complex direction for an ordered or requested service.">
+					comment = <"For example: a sequence of vital signs obervations over the first 24 hours post-operatively; or a request for home nursing attendance in the morning and evening, gradually reducing over a month.">
+				>
+				["at0001"] = <
+					text = <"Direction sequence">
+					description = <"The intended position of this direction within the overall sequence of directions.">
+					comment = <"For example: ''1' '2', '3'.
+Where multiple directions are expressed, the 'Direction sequence' makes the order in which they should be executed explicit. For example: (1) 4 times daily for 3 days, (2) 2 times daily for 4 days, (3) 1 time daily for 7 days.">
+				>
+				["at0007"] = <
+					text = <"Direction duration">
+					description = <"The length of time for which this direction should be applied.">
+					comment = <"For example: 'for 7 days','Indefinite'. An example of a set of multiple directions, with varying durations might be '1 time daily for 3 days, 2 times daily for 4 days, then 3 times Indefinite'.">
+				>
+				["at0008"] = <
+					text = <"Indefinite">
+					description = <"The direction should be continued indefinitely.">
+				>
+				["at0010"] = <
+					text = <"Repetition timing">
+					description = <"Structured details about pattern of repetition for each set of intraday activities.">
+					comment = <"For example: 'every 3 days', 'on Thursdays and Sundays', '3 days after onset of menstruation'. This SLOT is not for timings within a 24 hour interval.">
+				>
+				["at0012"] = <
+					text = <"Additional details">
+					description = <"Further details about an ordered item direction.">
+				>
+				["at0011"] = <
+					text = <"Total amount">
+					description = <"The total number of services or hours available for all activities in this direction.">
+					comment = <"Example: 'Perform once only' = 1; or '30 hours'.">
+				>
+				["at0006"] = <
+					text = <"Intraday timing">
+					description = <"Structured details about the timing of the service within a single day.">
+				>
+				["at0002"] = <
+					text = <"Direction description">
+					description = <"Narrative description about the whole direction.">
+					comment = <"For example: \"At 07:00 every Monday, 30 minutes duration, for the next three months\".">
+				>
+				["at0003"] = <
+					text = <"Activity">
+					description = <"A grouping of an amount and timing for a part of a service direction.">
+					comment = <"For example: home nursing request for 2 hours in the morning as one activity and 1 hour in the evening as a second activity.">
+				>
+				["at0005"] = <
+					text = <"Amount">
+					description = <"The amount of service requested as part of a specified activity.">
+					comment = <"Represented either as the number of services or the duration of service/s.">
+				>
+				["at0004"] = <
+					text = <"Activity sequence">
+					description = <"The intended sequential position of this activity within all activities for the service direction.">
+				>
+			>
+		>
+		["nb"] = <
+			items = <
+				["at0000"] = <
+					text = <"Tjenesteanvisning">
+					description = <"Detaljert beskrivelse av en kompleks anvisning for en rekvirert eller bestilt tjeneste.">
+					comment = <"For eksempel: En sekvens av vitale observasjoner de første 24 timene postoperativt, eller en forespørsel om hjemmesykepleie morgen og kveld, gradvis redusert over en måned.">
+				>
+				["at0001"] = <
+					text = <"Anvisningsrekkefølge">
+					description = <"Tilsiktet rekkefølge for denne anvisningen i den overordnede anvisningssekvensen.">
+					comment = <"For eksempel \"1\", \"2\", \"3\". 
+I tilfeller med flere anvisninger spesifiserer \"Anvisningsrekkefølge\" i hvilken rekkefølge anvisningene skal utføres. For eksempel (1) 4 ganger daglig i 3 dager, (2) to ganger daglig i 4 dager, (3) 1 gang daglig i 7 dager.">
+				>
+				["at0002"] = <
+					text = <"Anvisningsbeskrivelse">
+					description = <"Fritekstbeskrivelse av hele anvisningen.">
+					comment = <"For eksempel: \"Klokken 07:00 hver mandag, 30 minutters varighet, de neste tre månedene\".">
+				>
+				["at0003"] = <
+					text = <"Aktivitet">
+					description = <"En gruppering av mengde og timing for en del av en tjenesteanvisning.">
+					comment = <"For eksempel: Forespørsel om hjemmesykepleie 2 timer om morgenen som en aktivitet og 1 time om kvelden som en annen aktivitet.">
+				>
+				["at0004"] = <
+					text = <"Aktivitetssekvens">
+					description = <"Den tiltenkte sekvensielle plasseringen av denne aktiviteten innen alle aktiviteter for tjenesteanvisningen.">
+				>
+				["at0005"] = <
+					text = <"Mengde">
+					description = <"Mengde av den forespurte tjenesten som en del av en spesifisert aktivitet.">
+					comment = <"Representeres enten som et antall av tjenester eller varighet av tjeneste(r).">
+				>
+				["at0006"] = <
+					text = <"Tidspunkter innenfor en dag">
+					description = <"Strukturerte detaljer om tidspunkter tjenesten skal leveres på innenfor en dag.">
+				>
+				["at0007"] = <
+					text = <"Anvisningsvarighet">
+					description = <"Varigheten av denne anvisningen.">
+					comment = <"For eksempel \"i 7 dager\" eller \"på ubestemt tid\". Et eksempel som er sammensatt av flere ulike varigheter kan være: \"1 gang daglig i 3 dager\", \"2 ganger daglig i 4 dager\", \"3 ganger daglig på ubestemt tid\".">
+				>
+				["at0008"] = <
+					text = <"Ubestemt">
+					description = <"Anvisningen skal videreføres på ubestemt tid.">
+				>
+				["at0010"] = <
+					text = <"Repetering av anvisning">
+					description = <"Strukturerte detaljer om mønster for repetering av de daglige aktivitetene.">
+					comment = <"For eksempel \"hver 3. dag\", \"på tirsdager og søndager\", \"3 dager etter menstruasjonsblødningens 1. dag\". Dette SLOTet er ikke for timing innenfor et 24-timersintervall.">
+				>
+				["at0011"] = <
+					text = <"Total mengde">
+					description = <"Det totale antall tjenester eller timer som er tilgjengelige for alle aktiviteter i denne anvisningen.">
+					comment = <"For eksempel: \"Gjennomfør kun en gang\" = 1, eller \"30 timer\".">
+				>
+				["at0012"] = <
+					text = <"Ytterligere detaljer">
+					description = <"Ytterligere detaljer om anvisningen.">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000"] = <
+					text = <"Tjänstriktning">
+					description = <"Strukturerade detaljer i en komplex riktning för en beställd eller begärd tjänst.">
+					comment = <"Till exempel: en sekvens av vitala tecken obervationer under de första 24 timmarna postoperativt; eller en begäran om hemvård på morgonen och kvällen, vilket gradvis minskar över en månad.">
+				>
+				["at0001"] = <
+					text = <"Riktningssekvens">
+					description = <"Den avsedda positionen för denna riktning inom den totala riktningssekvensen.">
+					comment = <"Till exempel: '' 1 '' 2 ',' 3 '.
+Där flera riktningar uttrycks gör \"Riktningssekvensen\" ordningen i vilken de ska köras explicita. Till exempel: (1) 4 gånger dagligen i 3 dagar, (2) 2 gånger dagligen i 4 dagar, (3) 1 gång dagligen i 7 dagar.">
+				>
+				["at0002"] = <
+					text = <"Riktningsbeskrivning">
+					description = <"Berättande beskrivning om riktningen.">
+					comment = <"Till exempel: \"07:00 varje måndag, 30 minuters varaktighet, de närmaste tre månaderna\".">
+				>
+				["at0003"] = <
+					text = <"Aktivitet">
+					description = <"En gruppering av ett belopp och tidpunkt för en del av en tjänstriktning.">
+					comment = <"Till exempel: begäran om hemsjukvård i två timmar på morgonen som en aktivitet och en timme på kvällen som en andra aktivitet.">
+				>
+				["at0004"] = <
+					text = <"Aktivitetssekvens">
+					description = <"Den avsedda sekventiella positionen för denna aktivitet inom alla aktiviteter för tjänstriktningen.">
+				>
+				["at0005"] = <
+					text = <"Mängd">
+					description = <"Mängden service som begärs som en del av en viss aktivitet.">
+					comment = <"Representeras antingen som antalet tjänster eller tjänstens längd.">
+				>
+				["at0006"] = <
+					text = <"Intradagstiming">
+					description = <"Strukturerade detaljer om tidpunkten för tjänsten inom en dag.">
+				>
+				["at0007"] = <
+					text = <"Riktningens varaktighet">
+					description = <"Hur länge denna riktning ska tillämpas.">
+					comment = <"Till exempel: \"i 7 dagar\", \"Obestämd\". Ett exempel på en uppsättning av flera riktningar, med varierande varaktighet kan vara '1 gång dagligen i 3 dagar, 2 gånger dagligen i 4 dagar, sedan 3 gånger obestämd'.">
+				>
+				["at0008"] = <
+					text = <"Obestämd">
+					description = <"Riktningen bör fortsätta på obestämd tid.">
+				>
+				["at0010"] = <
+					text = <"Upprepningstiming">
+					description = <"Strukturerade detaljer om upprepningsmönster för varje uppsättning intradagaktiviteter.">
+					comment = <"Till exempel: \"var tredje dag\", \"på torsdagar och söndagar\", \"3 dagar efter menstruationens början\". Denna SLOT är inte för tidsintervaller inom ett 24-timmarsintervall.">
+				>
+				["at0011"] = <
+					text = <"Totalsumma">
+					description = <"Det totala antalet tillgängliga tjänster eller timmar för alla aktiviteter i den här riktningen.">
+					comment = <"Exempel: 'Utför endast en gång' = 1; eller '30 timmar '.">
+				>
+				["at0012"] = <
+					text = <"Ytterligare detaljer">
+					description = <"Mer information om en beställd artikelriktning.">
+				>
+			>
+		>
+	>

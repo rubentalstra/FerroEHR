@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2017-04-26</original_author>
+    <original_author id="name">John Tore Valand</original_author>
+    <original_author id="organisation">Helse Bergen University Hospital</original_author>
+    <original_author id="email">john.tore.valand@helse-bergen.no</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Malin Berg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Lisbeth Dahlhaug, Helse Midt - Norge IT, Norway</other_contributors>
+    <other_contributors>Stig Erik Hegrestad, Helse Førde, Norway</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Ingrid Heitmann, Oslo universitetssykehus HF, Norway</other_contributors>
+    <other_contributors>Annette Hole Sjøborg, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hilde Hollås, DIPS AS, Norway</other_contributors>
+    <other_contributors>Alfred Honore, Haukeland, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Pétur Júlíusson, Barneklinikken, HUS og K2, UIB, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Siv Marie Lien, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Hildegard McNicoll, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, Nordlandssykehuset Bodø, Norway</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Line Silsand, Universitetssykehuset i Nord-Norge, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Stian Torleif Varpe, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Gro-Hilde Ulriksen, Norwegian center for ehealthresearch, Norway</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Sotos JF, Tokar NJ. Testicular volumes revisited: A proposal for a simple clinical method that can closely match the volumes obtained by ultrasound and its clinical application. Int J Pediatr Endocrinol. 2012 Jun 8;2012(1):17. doi: 10.1186/1687-9856-2012-17. PubMed PMID: 22682237; PubMed Central PMCID: PMC3538616.&#xD;
+&#xD;
+Lin CC, Huang WJ, Chen KK. Measurement of testicular volume in smaller testes: how accurate is the conventional orchidometer? J Androl. 2009 Nov-Dec;30(6):685-9. doi: 10.2164/jandrol.108.006460. Epub 2009 Jul 3. PubMed PMID: 19578133.&#xD;
+&#xD;
+Mbaeri TU, Orakwe JC, Nwofor AM, Oranusi CK, Mbonu OO. Ultrasound measurements of testicular volume: Comparing the three common formulas with the true testicular volume determined by water displacement. African Journal of Urology. 2013 Jun 1;19(2):69-73.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">83F993E83F28FE84B3890CC15499F96B</other_details>
+    <other_details id="build_uid">d29f09dd-9b12-41bd-bcb6-5e98142bcc71</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.</other_details>
+    <other_details id="revision">1.0.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere testikkelvolumet til et individ.</purpose>
+      <keywords>testikler</keywords>
+      <keywords>testikkel</keywords>
+      <keywords>orchidometer</keywords>
+      <keywords>orchiometer</keywords>
+      <keywords>volum</keywords>
+      <use>Brukes for å registrere testikkelvolumet til et individ.&#xD;
+&#xD;
+Måling av testikkelvolum kan være en komponent i en overordnet undersøkelse av genitalia, arketypen er allikevel utviklet som en frittstående OBSERVATION-arketype for å støtte monitorering av testikkelvolum i vekstkurver.&#xD;
+&#xD;
+Brukes til å registrere endring ved gjentatte målinger. Dette kan modelleres ved å begrense "Uspesifisert hendelse" i en templat til et intervall med en tilhørende matematisk funksjon for "økning".</use>
+      <misuse>Brukes ikke for å registrere volumet av et objekt eller av andre kroppsdeler enn testikler. Bruk egne arketyper for dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the volume of an individual's testicle.</purpose>
+      <keywords>testis</keywords>
+      <keywords>testicle</keywords>
+      <keywords>orchiometer</keywords>
+      <keywords>orchidometer</keywords>
+      <keywords>volume</keywords>
+      <use>Use to record the volume of an individual's testicle.&#xD;
+&#xD;
+While the measurement of testicular volume may be one component of a full genital examination, this archetype for recording testicular volume has been developed as a standalone OBSERVATION to support the common monitoring of testicular volume by use of growth charts in childhood and puberty.&#xD;
+&#xD;
+Use to record change from repeated measurements. This can currently be modeled by constraining the 'any event' to an interval in a template with an associated mathematical function, as appropriate.</use>
+      <misuse>Not to be used to record the volume of an object or other bodypart than testicles. Use an appropriate archetype for this purpose.</misuse>
+      <copyright>© Nasjonal IKT HF, openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand</author>
+    <author id="organisation">Helse Bergen HF, Norway</author>
+  </translations>
+  <uid>
+    <value>b88ff750-4108-4e7e-9f97-9c0d6635cd41</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.testicular_volume.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0020</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0021</code_list>
+                            <code_list>at0022</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0010</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>129</code_string>
+                        </property>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>true</upper_unbounded>
+                            <lower>0.0</lower>
+                          </magnitude>
+                          <precision>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>2</lower>
+                            <upper>2</upper>
+                          </precision>
+                          <units>ml</units>
+                        </list>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>true</upper_unbounded>
+                            <lower>0.0</lower>
+                          </magnitude>
+                          <precision>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>2</lower>
+                            <upper>2</upper>
+                          </precision>
+                          <units>cm3</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>2</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0011</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0012</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0019</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Testicular volume</items>
+        <items id="description">The estimated or calculated volume of a testicle.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative not covered in other fields.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Device</items>
+        <items id="description">Structured details about the device used to measure the testicles.</items>
+        <items id="comment">For example: Gima orchidometer.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Formula</items>
+        <items id="description">The formula used to calculate the testicular volume.</items>
+        <items id="comment">For example: 'L × W × H × 0.71'.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Testicular volume</items>
+        <items id="description">Estimated or calculated volume of a testicle.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Confounding factors</items>
+        <items id="description">Issues or factors that may impact on the measurement.</items>
+        <items id="comment">For example: Uncooperative child.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Method</items>
+        <items id="description">The method used to measure the testicles.</items>
+        <items id="comment">For example: By orchidometer, calipers or ultrasound.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local context or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: Local hospital departmental infomation or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Testicle examined</items>
+        <items id="description">Identification of the testicle that was measured.</items>
+        <items id="comment">For example: Left or right testicle.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Left testicle</items>
+        <items id="description">Measurement of the left testicle.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Right testicle</items>
+        <items id="description">Measurement of the right testicle.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Testikkelvolum</items>
+        <items id="description">Testikkelvolum enten estimert eller utregnet.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om målingen som ikke er dekket av andre felt.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Måleutstyr</items>
+        <items id="description">Strukturerte detaljer om utstyret som ble benyttet for å måle testiklene.</items>
+        <items id="comment">For eksempel: Gima Orkidometer.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Formel</items>
+        <items id="description">Formel som ble brukt for å regne ut testikkelvolumet.</items>
+        <items id="comment">For eksempel: "L × W × H × 0.71".</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Testikkelvolum</items>
+        <items id="description">Estimert eller utregnet testikkelvolum.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Problemer eller faktorer som kan ha innvirkning på målingen.</items>
+        <items id="comment">For eksempel: Ikke samarbeidsvillig barn.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Metode</items>
+        <items id="description">Metoden som ble benyttet for å måle testiklene.</items>
+        <items id="comment">For eksempel: Ved bruk av orchidometer, skyvelær eller ultralyd.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR eller CIMI.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Undersøkt testikkel</items>
+        <items id="description">Testikkelen som ble målt.</items>
+        <items id="comment">For eksempel høyre eller venstre testikkel.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Venstre testikkel</items>
+        <items id="description">Måling av venstre testikkel.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Høyre testikkel</items>
+        <items id="description">Måling av høyre testikkel.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0010">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>251828008</code_string>
+        </value>
+      </items>
+      <items code="at0021">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>63239009</code_string>
+        </value>
+      </items>
+      <items code="at0022">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>15598003</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

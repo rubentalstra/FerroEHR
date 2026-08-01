@@ -68,6 +68,31 @@ intuition.
   extension features), flag it explicitly: "no openEHR spec governs this — our
   own design/extension". Scrub any ADR or internal-doc citation from a file you
   touch.
+- **NEVER LAX. Strictness is a hard rule (owner directive, 2026-08-01):**
+  the CDR accepts EXACTLY what the released spec admits — nothing more,
+  nothing less.
+  - Everything the spec REFUSES, we refuse — and every refusal is an
+    ASSERTED NEGATIVE TEST pinning its error code (the corpus/CNF gates fail
+    if a refusal stops happening or fires differently), so a silently
+    loosened reader/validator is a failing build, never a quiet drift. This
+    assert-the-refusal pattern IS the machine enforcement of this rule.
+  - Everything the spec DEPRECATES is enforced at exactly the deprecation's
+    strength: accepted + a Warning-severity finding naming the preferred
+    form (e.g. #1470) — never silently absorbed.
+  - A spec-SILENT form is accepted only with a first-hand citation chain
+    grounded in the released docs text (including a chapter's own embedded
+    normative grammar) — NEVER on stalled reference material alone (.g4
+    grammars, regression fixtures, Robot suites: corroboration at most,
+    decision never). Each such acceptance is recorded on a tracker issue,
+    and any upstream contradiction it exposes is filed as a `spec-update`
+    report — stalled or contradictory upstream information is never carried
+    silently.
+  - Weakening ANY existing refusal requires a docs-text-grounded
+    adjudication recorded on an issue (the #1465 pattern: re-derived
+    citations, the flipped gate updated to assert the new expected outcome,
+    the accepting twin fixture added). Inventing a prohibition the spec does
+    not contain is the same defect class as leniency — strict means
+    exact, in both directions.
 - **Never resolve a spec question from EHRbase behaviour alone.** EHRbase is
   prior art; if it and the spec text disagree, the spec text wins and the
   divergence is worth a note.

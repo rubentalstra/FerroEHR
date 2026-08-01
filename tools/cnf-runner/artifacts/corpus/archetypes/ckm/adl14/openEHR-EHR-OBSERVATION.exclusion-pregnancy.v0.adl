@@ -1,0 +1,130 @@
+﻿archetype (adl_version=1.4; uid=ecdabfea-ad62-4f50-a6dd-369bb53aec2b)
+	openEHR-EHR-OBSERVATION.exclusion-pregnancy.v0
+specialise
+	openEHR-EHR-OBSERVATION.exclusion.v0
+
+concept
+	[at0000.1]	-- Exclusion of pregnancy
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Atomica Informatics">
+		["email"] = <"heather.leslie@atomicainformatics.com">
+		["date"] = <"2020-08-26">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a positive and explicit statement about exclusion of known at the time of recording.">
+			use = <"Use to enable a clinician, at a specified point of time, to record a clear and unambiguous statement about exclusion of known pregnancy at the time of recording. This approach is used in preference to relying on flags or terminology to express negation. 
+
+Please note that exclusion statements should only be considered to be current and accurate at the time of recording, and should not be assumed to be correct at a later date. For example, it is possible (and appropriate from a medico-legal point of view) for a clinician to record, based on best efforts of history-taking and laboratory testing, that an individual is not currently pregnant at a point in time and make clinical decisions based on that assertion, but this assertion should be revisited for each subsequent decision as time passes.">
+			misuse = <"Not to be used to record the exclusion of a specific problem/diagnosis, medication, procedure, family history, adverse reaction or other clinical item - use the EVALUATION.exclusion_specific archetype for this purpose.
+
+Not to be used to record the exclusion of symptoms use the CLUSTER.exclusion_symptom archetype within an appropriate OBSERVATION or CLUSTER archetype.
+
+Not to be used to record the absence of information - use the EVALUATION.absence archetype for this purpose.
+
+Not to be used to record that it is not possible for the patient to become pregnant. For example, after hysterectomy or due to infertility issues. Use appropriate Procedure or Diagnosis archetypes to record these situations.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Derived from: Eksklusjonsutsagn - overordnet, Draft archetype [Internet]. Nasjonal IKT, Nasjonal IKT Clinical Knowledge Manager [cited: 2017-03-17]. Available from: http://arketyper.no/ckm/#showArchetype_1078.36.1650
+
+Exclusion statement, Deprecated Archetype [Internet]. openEHR Foundation, openEHR Clinical Knowledge Manager [cited: 2017-02-17]. Available from: http://openehr.org/ckm/#showArchetype_1013.1.617">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"667E2DFE252F79E9FF6EF2C104C9DBC6">
+		["build_uid"] = <"01ba053d-6bf7-4f56-a3fc-ab64ae8d6143">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000.1] matches {    -- Exclusion
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {0..*; unordered} matches {
+					POINT_EVENT[at0002] occurrences matches {0..*} matches {    -- Any point in time event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0006] occurrences matches {0..1} matches {    -- Exclusion statement
+										value matches {
+											DV_CODED_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {    -- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0004] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000.1"] = <
+					text = <"Exclusion of pregnancy">
+					description = <"A positive and explicit statement about the exclusion of pregnancy at the time of recording.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any point in time event">
+					description = <"Default, unspecified point in time event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0005"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.
+">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+				["at0006"] = <
+					text = <"Exclusion statement">
+					description = <"An overall statement of exclusion.">
+					comment = <"For example: 'No known...'; 'No known history of...'; 'No significant...'">
+				>
+				["at0007"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the exclusion.">
+				>
+			>
+		>
+	>

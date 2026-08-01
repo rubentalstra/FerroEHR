@@ -1,0 +1,101 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-ROLE.third_party_payer.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"in_development">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"22/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a third-party payer demographic data">
+			use = <"Used in demographic service to collect demographic data about an organisation in the role of a third-party payer">
+			keywords = <"demographic service", "third-party payer">
+			misuse = <"">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação dos dados de uma Organização quando atua como uma fonte pagadora (SUS, seguradora de planos de saúde, etc)">
+			use = <"Usado em serviços de demografia para coletar dados demográficos sobre uma organização que atua como fonte pagadora">
+			keywords = <"serviço demográfico", "fonte pagadora">
+			misuse = <"">
+		>
+	>
+
+definition
+	ROLE[id1] matches {	-- Third-party payer
+		details matches {
+			ITEM_TREE[id2] occurrences matches {0..1} matches {	-- Identifiers
+				items cardinality matches {1..*; unordered; unique} matches {
+					allow_archetype CLUSTER[id11] occurrences matches {1..*} matches {	-- Identifier
+						include
+							archetype_id/value matches {/(provider_identifier)[a-zA-Z0-9_-]*\.v1/}
+					}
+				}
+			}
+		}
+		identities matches {
+			allow_archetype PARTY_IDENTITY[id3] occurrences matches {1..*} matches {	-- Name
+				include
+					archetype_id/value matches {/(organisation_name)[a-zA-Z0-9_-]*\.v1/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Fonte pagadora">
+				description = <"Organização no papel de uma fonta pagadora">
+			>
+			["id2"] = <
+				text = <"Documentos de Identificação">
+				description = <"Documentos utilizados pela organização quando atua como fonte pagadora">
+			>
+			["id3"] = <
+				text = <"Nome">
+				description = <"Especifica como a fonte pagadora é conhecida">
+			>
+			["id11"] = <
+				text = <"Documento de Identificação">
+				description = <"Documento de identificação utilizado pela organização quando atua como fonte pagadora">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Third-party payer">
+				description = <"Organisation in the role of a third-party payer">
+			>
+			["id2"] = <
+				text = <"Identifiers">
+				description = <"The identifiers used by the organisation in the role of a third-party payer">
+			>
+			["id3"] = <
+				text = <"Name">
+				description = <"Indicates how the third-party payer is known by">
+			>
+			["id11"] = <
+				text = <"Identifier">
+				description = <"The identifier used by the organisation in the role of a third-party payer">
+			>
+		>
+	>

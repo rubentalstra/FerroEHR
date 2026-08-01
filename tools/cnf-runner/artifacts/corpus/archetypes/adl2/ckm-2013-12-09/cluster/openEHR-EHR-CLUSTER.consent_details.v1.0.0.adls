@@ -1,0 +1,91 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.consent_details.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2012-11-20">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record additional common details about the informed consent request, or the status of the request for informed consent.">
+			use = <"Use to optionally record additional details about the informed consent request by optionally nesting this archetype within the INSTRUCTION.informed_consent.
+
+Use to optionally record additional details about the status of the request for consent  by optionally nesting this archetype within the ACTION.informed_consent.">
+			keywords = <"informed", "consent", "request", "risk", "benefit", "intent">
+			misuse = <"Not to be used to record the actual request for informed consent or the status of the request for informed consent - use the INSTRUCTION.informed_consent or ACTION.informed_consent for this purpose.">
+		>
+	>
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"8FACDB29B39387099465938301E66EC8">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Informed Consent Details
+		items matches {
+			ELEMENT[id5] occurrences matches {0..1} matches {	-- Explicit Risks
+				value matches {
+					DV_TEXT[id9] 
+				}
+			}
+			ELEMENT[id6] occurrences matches {0..1} matches {	-- Explicit Benefits
+				value matches {
+					DV_TEXT[id10] 
+				}
+			}
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Risks from Non-Participation
+				value matches {
+					DV_TEXT[id11] 
+				}
+			}
+			ELEMENT[id4] occurrences matches {0..1} matches {	-- Benefits from Non-Participation
+				value matches {
+					DV_TEXT[id12] 
+				}
+			}
+			ELEMENT[id8] matches {	-- Alternative Options
+				value matches {
+					DV_TEXT[id13] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Informed Consent Details">
+				description = <"Additional details about the specifics of informed consent.">
+			>
+			["id2"] = <
+				text = <"Risks from Non-Participation">
+				description = <"Narrative description of the possible risks from non-participation in the proposed procedure, clinical trial or healthcare-related activity.">
+			>
+			["id4"] = <
+				text = <"Benefits from Non-Participation">
+				description = <"Narrative description of the possible benefits from non-participation in the proposed procedure, clinical trial or healthcare-related activity.">
+			>
+			["id5"] = <
+				text = <"Explicit Risks">
+				description = <"Description about the inherent risks of the procedure, clinical trial or healthcare-related activity.">
+			>
+			["id6"] = <
+				text = <"Explicit Benefits">
+				description = <"Description about the expected risks of the procedure, clinical trial or healthcare-related activity.">
+			>
+			["id8"] = <
+				text = <"Alternative Options">
+				description = <"Description of possible alternative treatement or management options.">
+			>
+		>
+	>

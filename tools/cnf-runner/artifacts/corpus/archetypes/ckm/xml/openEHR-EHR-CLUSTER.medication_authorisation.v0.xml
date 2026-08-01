@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2010-11-08</original_author>
+    <original_author id="name">Sam Heard</original_author>
+    <original_author id="organisation">NEHTA</original_author>
+    <original_author id="email">sam.heard@oceaninformatics.com</original_author>
+    <other_contributors>Silje Ljosland Bakke, Helse Bergen HF, Norway (Editor)</other_contributors>
+    <other_contributors>John Bennett, NEHTA, Australia</other_contributors>
+    <other_contributors>Sharmila Biswas, Australia</other_contributors>
+    <other_contributors>Stephen Chu, NEHTA, Australia (Editor)</other_contributors>
+    <other_contributors>Matthew Cordell, NEHTA, Australia</other_contributors>
+    <other_contributors>Gail Easterbrook, Flinders Medical Centre, Australia</other_contributors>
+    <other_contributors>David Evans, Queensland Health, Australia</other_contributors>
+    <other_contributors>Sarah Gaunt, NEHTA, Australia</other_contributors>
+    <other_contributors>Trina Gregory, cpc, Australia</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Mary Kelaher, NEHTA, Australia</other_contributors>
+    <other_contributors>Robert L'egan, NEHTA, Australia</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Susan McIndoe, Royal District Nursing Service, Australia</other_contributors>
+    <other_contributors>David McKillop, NEHTA, Australia</other_contributors>
+    <other_contributors>Chris Mitchell, RACGP, Australia</other_contributors>
+    <other_contributors>Stewart Morrison, NEHTA, Australia</other_contributors>
+    <other_contributors>Chris Pearce, Melbourne East GP Network, Australia</other_contributors>
+    <other_contributors>Camilla Preeston, Royal Australian College of General Practitioners, Australia</other_contributors>
+    <other_contributors>Margaret Prichard, NEHTA, Australia</other_contributors>
+    <other_contributors>Cathy Richardson, NEHTA, Australia</other_contributors>
+    <other_contributors>Robyn Richards, NEHTA - Clinical Terminology, Australia</other_contributors>
+    <other_contributors>John Taylor, NEHTA, Australia</other_contributors>
+    <other_contributors>Richard Townley-O'Neill, NEHTA, Australia (Editor)</other_contributors>
+    <other_contributors>Kylie Young, The Royal Australian College of General Practitioners, Australia</other_contributors>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">openEHR Foundation Medication archetypes http://www.openehr.org/knowledge&#xD;
+NEHTA's Therapeutic Good Use Data Group from the NEHTA Website http://www.nehta.gov.au&#xD;
+Intermountain Healthcare Medication order model, Personal Communication to Sam Heard by Dr Stan Huff.&#xD;
+Royal Australian College of General Practitioners. Fact Sheet: Medicines List. 2010.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">0368944C92A220B9835A3272699B7877</other_details>
+    <other_details id="build_uid">1faf213a-f52f-4048-b352-ed3f6a154962</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para registrar detalhes da autorização de um medicamento, que pode ser da receita original, ou de reautorização de uma recarga da receita.</purpose>
+      <keywords>medicamentos</keywords>
+      <keywords>prescrição</keywords>
+      <keywords>prescrever</keywords>
+      <keywords>terapia</keywords>
+      <keywords>substância</keywords>
+      <keywords>droga</keywords>
+      <keywords>terapêutico</keywords>
+      <keywords>etc</keywords>
+      <keywords>produto terapêutico</keywords>
+      <keywords>repetir</keywords>
+      <use>Utilize no conteúdo da INSTRUCTION referente a uma prescrição de medicamentos para especificar a autorização original, ou no contexto de ACTION de Medicamentos para registrar detalhes de uma nova autorização ou autorização de uma re-emissão.&#xD;
+&#xD;
+Este arquétipo cobre os requisitos comuns e universais para a autorização de medicação, mas outros arquétipos locais podem ser necessários para cobrir variantes nacionais ou regionais, por exemplo, acordos contratuais especiais ou requisitos para atestado adicional por um clínico secundário.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details of authorisation of a medication, which may be of the original prescription, or of re-authorisation of a repeat refill.</purpose>
+      <keywords>medication</keywords>
+      <keywords>order</keywords>
+      <keywords>prescribe</keywords>
+      <keywords>therapy</keywords>
+      <keywords>substance</keywords>
+      <keywords>drug</keywords>
+      <keywords>therapeutic</keywords>
+      <keywords>otc</keywords>
+      <keywords>therapeutic good</keywords>
+      <keywords>repeat</keywords>
+      <use>Use in the content of a medication order INSTRUCTION to specify the original authorisation, or in the context of a Medication action ACTION to record details of a re-authorisation or authorisation of a re-issue.&#xD;
+&#xD;
+This archetype covers the common, universal requirements for authorisation of medication but other local archetypes may be required to cover national or regional variants e.g special contractual arrangements or requirements for further attestation by a secondary clinician.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Beatriz de Faria Leao</author>
+    <author id="organisation">BLEAO INFORMÁTICA EM SAÚDE</author>
+    <author id="email">bfleao@terra.com.br</author>
+    <accreditation>MD. PhD</accreditation>
+  </translations>
+  <uid>
+    <value>073360e3-7a26-48ea-bf09-000665ec3e69</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.medication_authorisation.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0073</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0074</code_list>
+                <code_list>at0075</code_list>
+                <code_list>at0076</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0078</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0079</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>magnitude</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_PRIMITIVE_OBJECT">
+                <rm_type_name>INTEGER</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <item xsi:type="C_INTEGER">
+                  <range>
+                    <lower_included>true</lower_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>true</upper_unbounded>
+                    <lower>0</lower>
+                  </range>
+                </item>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0046</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DURATION</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0072</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0080</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Medication authorisation</items>
+        <items id="description">Details of the authorisation of a medicine, vaccine or other therapeutic good.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Maximum number of refills</items>
+        <items id="description">The number of times the expressed quantity of medicine, vaccine or other therapeutic good may be refilled or redispensed without a new prescription.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Minimum interval between refills</items>
+        <items id="description">The minimum time between repeat supply of the medicine, vaccine or therapeutic good. Note: This is specified by the ordering clinician for a specific reason such as safety or best practice.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Authorisation expiry date</items>
+        <items id="description">The repeat supply authorisation has expired after this date.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Authorisation type</items>
+        <items id="description">Whether the medication is only issued once or may re-issued and dispensed 're-filled' after authorisation by the prescriber.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">No repeat supply</items>
+        <items id="description">Repeat supply has not been authorised.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Repeat prescribing</items>
+        <items id="description">Multiple refills of the prescription may be obtained from the prescriber.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Repeat dispensing</items>
+        <items id="description">Multiple refills of the prescription may be obtained from the dispenser.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Number of refills issued</items>
+        <items id="description">The number of refills which have been issued or dispensed for this period of authorisation.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Number of refills remaining</items>
+        <items id="description">The number of re-fills or re-issues that remain valid for this authorisation period.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Prescriber endorsement</items>
+        <items id="description">An endorsement by the prescriber that the medication may be supplied under a specific contractual arrangement.</items>
+        <items id="comment">e.g. Some medications may be supplied only to certain patients in specifc circumstances, or may be made avaialble free-of-charge. It is common for prescribers to be asked to endorse the prescription to that effect. </items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sl">
+      <items code="at0000">
+        <items id="text">*Medication authorisation(en)</items>
+        <items id="description">*Details of the authorisation of a medicine, vaccine or other therapeutic good.(en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*Maximum number of refills(en)</items>
+        <items id="description">*The number of times the expressed quantity of medicine, vaccine or other therapeutic good may be refilled or redispensed without a new prescription.(en)</items>
+      </items>
+      <items code="at0046">
+        <items id="text">*Minimum interval between refills(en)</items>
+        <items id="description">*The minimum time between repeat supply of the medicine, vaccine or therapeutic good. Note: This is specified by the ordering clinician for a specific reason such as safety or best practice.(en)</items>
+      </items>
+      <items code="at0072">
+        <items id="text">*Authorisation expiry date(en)</items>
+        <items id="description">*The repeat supply authorisation has expired after this date.(en)</items>
+      </items>
+      <items code="at0073">
+        <items id="text">*Authorisation type(en)</items>
+        <items id="description">*Whether the medication is only issued once or may re-issued and dispensed 're-filled' after authorisation by the prescriber.(en)</items>
+      </items>
+      <items code="at0074">
+        <items id="text">*No repeat supply(en)</items>
+        <items id="description">*Repeat supply has not been authorised.(en)</items>
+      </items>
+      <items code="at0075">
+        <items id="text">*Repeat prescribing(en)</items>
+        <items id="description">*Multiple refills of the prescription may be obtained from the prescriber.(en)</items>
+      </items>
+      <items code="at0076">
+        <items id="text">*Repeat dispensing(en)</items>
+        <items id="description">*Multiple refills of the prescription may be obtained from the dispenser.(en)</items>
+      </items>
+      <items code="at0078">
+        <items id="text">*Number of refills issued(en)</items>
+        <items id="description">*The number of refills which have been issued or dispensed for this period of authorisation.(en)</items>
+      </items>
+      <items code="at0079">
+        <items id="text">*Number of refills remaining(en)</items>
+        <items id="description">*The number of re-fills or re-issues that remain valid for this authorisation period.(en)</items>
+      </items>
+      <items code="at0080">
+        <items id="text">*Prescriber endorsement(en)</items>
+        <items id="description">*An endorsement by the prescriber that the medication may be supplied under a specific contractual arrangement. (en)</items>
+        <items id="comment">*e.g. Some medications may be supplied only to certain patients in specifc circumstances, or may be made avaialble free-of-charge. It is common for prescribers to be asked to endorse the prescription to that effect. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Autorização de Medicamentos</items>
+        <items id="description">Detalhes da autorização do medicamento, vacina ou outro produto terapêutico.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Número máximo de recargas</items>
+        <items id="description">O número de vezes que a quantidade especificada de medicamentos, vacinas ou outro produto terapêutico pode ter recarga ou repetição da dispensação sem uma nova receita médica.</items>
+      </items>
+      <items code="at0046">
+        <items id="text">Intervalo mínimo entre as recargas</items>
+        <items id="description">O tempo mínimo de fornecimento de recargas de medicamento, vacina ou produto terapêutico. Nota: Isto é especificado pelo médico prescritor, por um motivo específico, como segurança ou melhores práticas.</items>
+      </items>
+      <items code="at0072">
+        <items id="text">Data de validade da autorização</items>
+        <items id="description">Data de validade, após a qual, a autorização de recarga não tem mais validade.</items>
+      </items>
+      <items code="at0073">
+        <items id="text">Tipo de Autorização</items>
+        <items id="description">Informa o medicamento só é entregue uma vez ou pode ser re-reentregue e dispensado após a autorização do prescritor.</items>
+      </items>
+      <items code="at0074">
+        <items id="text">Não repetir</items>
+        <items id="description">Repetição da entrega não é autorizada.</items>
+      </items>
+      <items code="at0075">
+        <items id="text">Repetir a prescrição</items>
+        <items id="description">O prescritor pode fornecer várias recargas da receita.</items>
+      </items>
+      <items code="at0076">
+        <items id="text">Repetir a dispensarão</items>
+        <items id="description">Múltiplas recargas da receita podem ser obtidas a partir do dispensador.</items>
+      </items>
+      <items code="at0078">
+        <items id="text">Número de recargas emitidas</items>
+        <items id="description">O número de recargas que foram emitidas ou dispensadas para este período de autorização.</items>
+      </items>
+      <items code="at0079">
+        <items id="text">Número de recargas restantes</items>
+        <items id="description">O número de recargas que permanecem válidos para este período de autorização.</items>
+      </items>
+      <items code="at0080">
+        <items id="text">Aval do prescritor</items>
+        <items id="description">Endosso do prescritor de que o medicamento pode ser fornecida através de um acordo específico contratual.</items>
+        <items id="comment">por exemplo. Alguns medicamentos podem ser fornecidos apenas a certos pacientes em circunstâncias específicas, ou podem ser disponibilizados de forma gratuita. É comum que os prescritores endossem as receita nestes casos.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

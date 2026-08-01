@@ -1,0 +1,625 @@
+﻿archetype (adl_version=1.4; uid=951da48a-1705-4ef8-b9c9-045a6027f32d)
+	openEHR-EHR-OBSERVATION.onews_se.v0
+
+concept
+	[at0000]	-- Obstetrisk National Early Warning Score (ONEWS)
+language
+	original_language = <[ISO_639-1::sv]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Mikael Nyström">
+				["organisation"] = <"mikael.nystrom@cambio.se">
+				["email"] = <"Cambio Healthcare Systems AB">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Mikael Nyström">
+		["organisation"] = <"Cambio Healthcare Systems AB">
+		["email"] = <"mikael.nystrom@cambio.se">
+		["date"] = <"2021-06-07">
+	>
+	details = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"Registrering av de ingående parametrarna i bedömningsinstrumentet Obstetrisk National Early Warning Score (ONEWS) och deras totalpoäng.">
+			use = <"Används för att registrera de ingående parametrarna och deras totalpoäng i bedömningssystemet Obstetrisk National Early Warning Score (ONEWS) hos en patient under tiden från att graviditet är känd eller kan misstänkas till och med 6 veckor efter förlossning.">
+			keywords = <"ONEWS, NEWS2, Svensk, Sverige, Swedish, Sweden", ...>
+			misuse = <"Ska inte användas för att registrera parametrar för patienter som inte är eller misstänks vara gravida eller där mer än 6 veckor har förflutit sedan förlossning.">
+			copyright = <"© Swedish Medical Informatics Association, openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the Swedish Obstetric National Early Warning Score (ONEWS).">
+			use = <"To record the results for each component parameter and their total sum for the Swedish Obstetric National Early Warning Score (ONEWS).">
+			keywords = <"ONEWS, NEWS2, Svensk, Sverige, Swedish, Sweden", ...>
+			misuse = <"">
+			copyright = <"© Swedish Medical Informatics Association, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Djärv T, Joelsson-Alm E, Rutberg H, Spångfors M, Hein A, Lindroos L, Åmark H. National Early Warning Score 2 NEWS2 : Övervakning och bedömning av vitalparametrar (2018) [Internet]. Stockholm: Löf regionernas ömsesidiga försäkringsbolag; 2018 [cited 2021 Jun 07]. Avaiable from: https://lof.se/filer/NEWS2-broschyr.pdf">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"343CE8037BE0C4A26A51CF209541F45A">
+		["build_uid"] = <"83c257db-9142-45bf-8426-a99795f71648">
+		["ip_acknowledgements"] = <"While openEHR archetypes are all freely available under an open license, the specific content of this Obstetric National Early Warning Score (ONEWS) archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners. 
+Copyright statement: ©2018. All rights reserved. Löf the Swedish patient insurance, Stockholm, Sweden.">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Obstetrisk National Early Warning Score (ONEWS)
+		data matches {
+			HISTORY[at0001] matches {    -- History
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Andningsfrekvens
+										value matches {
+											3|[local::at0007],
+											0|[local::at0005],
+											2|[local::at0006],
+											3|[local::at0008]
+										}
+									}
+									ELEMENT[at0009] occurrences matches {0..1} matches {    -- Syremättnad
+										value matches {
+											3|[local::at0011],
+											0|[local::at0010]
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Tillförd syrgas
+										value matches {
+											0|[local::at0013],
+											3|[local::at0014]
+										}
+									}
+									ELEMENT[at0015] occurrences matches {0..1} matches {    -- Systoliskt blodtryck
+										value matches {
+											3|[local::at0020],
+											2|[local::at0018],
+											0|[local::at0016],
+											1|[local::at0017],
+											2|[local::at0019],
+											3|[local::at0021]
+										}
+									}
+									ELEMENT[at0022] occurrences matches {0..1} matches {    -- Diastoliskt blodtryck
+										value matches {
+											0|[local::at0023],
+											1|[local::at0024],
+											2|[local::at0025],
+											3|[local::at0026]
+										}
+									}
+									ELEMENT[at0027] occurrences matches {0..1} matches {    -- Pulsfrekvens
+										value matches {
+											3|[local::at0030],
+											0|[local::at0028],
+											2|[local::at0029],
+											3|[local::at0031]
+										}
+									}
+									ELEMENT[at0032] occurrences matches {0..1} matches {    -- Medvetandegrad
+										value matches {
+											0|[local::at0033],
+											3|[local::at0034]
+										}
+									}
+									ELEMENT[at0035] occurrences matches {0..1} matches {    -- Temperatur
+										value matches {
+											3|[local::at0039],
+											1|[local::at0037],
+											0|[local::at0036],
+											1|[local::at0038],
+											3|[local::at0040]
+										}
+									}
+									ELEMENT[at0041] occurrences matches {0..1} matches {    -- Totalpoäng
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..24|}
+											}
+										}
+									}
+									ELEMENT[at0042] occurrences matches {0..1} matches {    -- Åtgärdstrappa
+										value matches {
+											DV_CODED_TEXT matches {
+												defining_code matches {
+													[local::
+													at0043,    -- 0
+													at0044,    -- Totalt 1-3
+													at0045,    -- Totalt 4-5 eller 3 poäng i en parameter
+													at0046]    -- Totalt ≥6
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0047] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0048] occurrences matches {0..*} matches {    -- Tilläggsinformation
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["sv"] = <
+			items = <
+				["at0000"] = <
+					text = <"Obstetrisk National Early Warning Score (ONEWS)">
+					description = <"Ett svenskt bedömningsinstrument baserat på National Early Warning Score 2 (NEWS2) som används för att identifiera klinisk försämring hos en patient under tiden från att graviditet är känd eller kan misstänkas till och med 6 veckor efter förlossning.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Andningsfrekvens">
+					description = <"">
+					comment = <"Andningsfrekvens räknas under 60 sekunder.">
+				>
+				["at0005"] = <
+					text = <"10-20">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"21-29">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"<10">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"≥30">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Syremättnad">
+					description = <"">
+					comment = <"Syremättnad mäts oftast med pulsoximeter. Denna utrustning har ofta vissa begränsningar (se tillverkarens bruksanvisning) men generellt kan felvärden uppkomma vid användning av nagellack, kalla extremiteter, lösnaglar, kraftiga rörelser, elektrisk störning eller starkt ljus i omgivningen.">
+				>
+				["at0010"] = <
+					text = <"≥96">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"≤95">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Tillförd syrgas">
+					description = <"">
+					comment = <"Ange om patienten får syrgasbehandling (ja eller nej).">
+				>
+				["at0013"] = <
+					text = <"Nej">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Ja">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Systoliskt blodtryck">
+					description = <"">
+					comment = <"Mät systoliskt blodtryck enligt standardiserad mätmetod på enheten.">
+				>
+				["at0016"] = <
+					text = <"90-139">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"140-149">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"80-89">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"150-159">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"<80">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"≥160">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Diastoliskt blodtryck">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"<90">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"90-99">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"100-109">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"≥110">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"Pulsfrekvens">
+					description = <"">
+					comment = <"Om hjärtfrekvens mäts via telemetri/arytmiövervakning ska detta värde i första hand användas. Annars används pulsfrekvens mätt via palpation eller pulsoximeter.">
+				>
+				["at0028"] = <
+					text = <"60-110">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"111-129">
+					description = <"">
+				>
+				["at0030"] = <
+					text = <"<60">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"≥130">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"Medvetandegrad">
+					description = <"">
+					comment = <"Medvetandegrad bedöms enligt ACVPU-konceptet (Alert, Confusion, Verbal, Pain, Unresponsive) enligt nedan.
+
+A = Alert
+Innebär att patienten är vaken, öppnar spontant ögonen och reagerar på tilltal. Patienten har även oftast motorisk funktion och kan på uppmaning röra sina extremiteter.
+
+Vid bedömning nattetid när patienten sover får hänsyn tas till att mer stimuli kan behövas för att väcka patienten. En patient som sover och behöver väckas med höjd röst eller med handpåläggning kan bedömas
+som alert om denne efter uppvaknandet ter sig alert.
+
+C = Confusion
+Innebär att patienten har en nytillkommen eller förvärrad förvirring som även kan benämnas konfusion. Patienten är ej adekvat, kan ha svårt att redogöra för tid, rum och person. Ibland är patienten motoriskt orolig och drar i slangar eller kläder. Om patientens tidigare status är okänt ska förvirringen räknas som nytillkommen tills motsatsen är bevisad.
+
+V = Verbal
+Innebär en medvetandesänkt patient som reagerar på tilltal. Patienten reagerar med ögonöppning, tal eller rörelse på verbal stimulering. Även läten från mun som inte kan uppfattas som tal innebär en reaktion på tilltal. Använd höjd röst när du tilltalar patienten.
+
+P = Pain
+Innebär en medvetandesänkt patient som reagerar på smärtstimulering men inte på tilltal. Smärtstimulera både perifert på nagelbädd och centralt i käkvinkel. Patienten reagerar med ögonöppning, tal eller rörelse på smärtstimulering. Även läten från mun som inte kan uppfattas som tal innebär en reaktion på smärtstimulering. Smärtstimulering innebär ofta att patienten drar undan den kroppsdel som smärtstimuleras.
+
+U = Unresponsive
+Innebär att patienten är medvetandesänkt och inte reagerar på tilltal eller smärtstimulering.
+
+Vid all bedömning av medvetandegrad bör patienter som sover eller är sederade med läkemedel bedömas utifrån vad som är rimligt med tanke på givna läkemedel.">
+				>
+				["at0033"] = <
+					text = <"Alert och vaken">
+					description = <"Patienten är helt vaken och alert.">
+				>
+				["at0034"] = <
+					text = <"C, V, P eller U">
+					description = <"Patienten har nytillkommen förvirring, reagerar enbart på tilltal eller smärta, eller är medvetandesänkt och reagerar inte på tilltal eller smärta.">
+				>
+				["at0035"] = <
+					text = <"Temperatur">
+					description = <"">
+					comment = <"Mät kroppstemperatur enligt standardiserad mätmetod på enheten.">
+				>
+				["at0036"] = <
+					text = <"36,1-37,9">
+					description = <"">
+				>
+				["at0037"] = <
+					text = <"35,1-36,0">
+					description = <"">
+				>
+				["at0038"] = <
+					text = <"38,0-38,9">
+					description = <"">
+				>
+				["at0039"] = <
+					text = <"≤35,0">
+					description = <"">
+				>
+				["at0040"] = <
+					text = <"≥39,0">
+					description = <"">
+				>
+				["at0041"] = <
+					text = <"Totalpoäng">
+					description = <"">
+				>
+				["at0042"] = <
+					text = <"Åtgärdstrappa">
+					description = <"">
+					comment = <"Övervakningsfrekvens
+Senast inom 12 timmar
+Åtgärd
+• Fortsätt övervaka NEWS enligt rekommenderad övervakningsfrekvens
+
+Övervakningsfrekvens
+Senast inom 4 timmar
+Åtgärd
+• Informera ansvarig sjuksköterska/barnmorska om NEWS-värdet
+• Ansvarig sjuksköterska/barnmorska bedömer om övervakningsfrekvens ska ökas samt behov av läkarbedömning
+
+Övervakningsfrekvens
+Senast inom 1 timme
+Åtgärd
+• Ansvarig sjuksköterska/barnmorska ska omedelbart informera ansvarig läkare
+• Brådskande bedömning av ansvarig läkare samt eventuellt team med kompetens i akut omhändertagande. Överväg vård med möjlighet till tät tillsyn och övervakning
+• Avsteg från övervakningsfrekvens kan göras av ansvarig läkare efter bedömning av patient
+
+Övervakningsfrekvens
+Senast inom 15 minuter
+Åtgärd
+• Ansvarig sjuksköterska/barnmorska ska omedelbart tillkalla ansvarig läkare
+• Överväg kontakt med intensivvårdskompetens t.ex. MIG
+• Överväg att flytta patienten till högre vårdnivå">
+				>
+				["at0043"] = <
+					text = <"0">
+					description = <"Senast inom 12 timmar.">
+				>
+				["at0044"] = <
+					text = <"Totalt 1-3">
+					description = <"Senast inom 4 timmar.">
+				>
+				["at0045"] = <
+					text = <"Totalt 4-5 eller 3 poäng i en parameter">
+					description = <"Senast inom 1 timme.">
+				>
+				["at0046"] = <
+					text = <"Totalt ≥6">
+					description = <"Senast inom 15 minuter.">
+				>
+				["at0047"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0048"] = <
+					text = <"Tilläggsinformation">
+					description = <"Plats för att infoga tilläggsinformation som krävs för lokala anpassningar eller anpassning till andra referensmodeller eller formella krav.">
+					comment = <"Exempelvis lokala informationskrav eller metadata för anpassning till FHIR.">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Obstetric National Early Warning Score (ONEWS) - Sweden">
+					description = <"A Swedish assessment score used to identify clinical deterioration in an individual who is pregnant or up to 6 weeks postpartum.">
+				>
+				["at0001"] = <
+					text = <"History">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Respiratory rate">
+					description = <"Category for the respiratory rate measurement.">
+				>
+				["at0005"] = <
+					text = <"10-20">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"21-29">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"<10">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"≥30">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Oxygen saturation">
+					description = <"Category for the oxygen saturation measurement.">
+				>
+				["at0010"] = <
+					text = <"≥96">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"≤95">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Oxygen delivered">
+					description = <"Is the patient receiving supplemental oxygen?">
+				>
+				["at0013"] = <
+					text = <"No">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"Yes">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"Systolic blood pressure">
+					description = <"Category for the systolic blood pressure measurement.">
+				>
+				["at0016"] = <
+					text = <"90-139">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"140-149">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"80-89">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"150-159">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"<80">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"≥160">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Diastolic blood pressure">
+					description = <"Category for the diastolic blood pressure measurement.">
+				>
+				["at0023"] = <
+					text = <"<90">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"90-99">
+					description = <"">
+				>
+				["at0025"] = <
+					text = <"100-109">
+					description = <"">
+				>
+				["at0026"] = <
+					text = <"≥110">
+					description = <"">
+				>
+				["at0027"] = <
+					text = <"Pulse rate">
+					description = <"Category for the pulse measurement.">
+				>
+				["at0028"] = <
+					text = <"60-110">
+					description = <"">
+				>
+				["at0029"] = <
+					text = <"111-129">
+					description = <"">
+				>
+				["at0030"] = <
+					text = <"<60">
+					description = <"">
+				>
+				["at0031"] = <
+					text = <"≥130">
+					description = <"">
+				>
+				["at0032"] = <
+					text = <"Level of consciousness">
+					description = <"Category for the observed conscious state, using the ACVPU scale.">
+				>
+				["at0033"] = <
+					text = <"Alert">
+					description = <"The patient is alert or awake.">
+				>
+				["at0034"] = <
+					text = <"C, V, P or U">
+					description = <"The patient is newly confused, responds only to voice or pain, or is unresponsive.">
+				>
+				["at0035"] = <
+					text = <"Temperature">
+					description = <"Range category for the body temperature measurement.">
+				>
+				["at0036"] = <
+					text = <"36.1-37.9">
+					description = <"">
+				>
+				["at0037"] = <
+					text = <"35.1-36.0">
+					description = <"">
+				>
+				["at0038"] = <
+					text = <"38.0-38.9">
+					description = <"">
+				>
+				["at0039"] = <
+					text = <"≤35.0">
+					description = <"">
+				>
+				["at0040"] = <
+					text = <"≥39.0">
+					description = <"">
+				>
+				["at0041"] = <
+					text = <"Total score">
+					description = <"The sum of points assigned for each of the component variables.">
+					comment = <"The total score may be generated at run-time.">
+				>
+				["at0042"] = <
+					text = <"Clinical response steps">
+					description = <"Overall category representing the urgency and scale of the clinical response required in response to the physiological variables.">
+				>
+				["at0043"] = <
+					text = <"0">
+					description = <"At the latest within 12 hours.">
+				>
+				["at0044"] = <
+					text = <"Total 1-3">
+					description = <"At the latest within 4 hours.">
+				>
+				["at0045"] = <
+					text = <"Total of 4-5 or 3 points in one parameter">
+					description = <"At the latest within 1 hour.">
+				>
+				["at0046"] = <
+					text = <"Total ≥6">
+					description = <"At the latest within 15 minutes.">
+				>
+				["at0047"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0048"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+			>
+		>
+	>

@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-06-04</original_author>
+    <original_author id="name">Silje Ljosland Bakke</original_author>
+    <original_author id="organisation">Helse Vest IKT AS</original_author>
+    <original_author id="email">silje.ljosland.bakke@helse-vest-ikt.no</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">https://www.healthmeasures.net/explore-measurement-systems/promis/intro-to-promis</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">C1FD027059D537CD37B69C9FC30EAA00</other_details>
+    <other_details id="build_uid">73f44864-af55-4f5f-99d0-d1ba366d386f</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zu Repräsentation jeder PROMIS-Messung.</purpose>
+      <keywords>PROMIS</keywords>
+      <keywords>Messung</keywords>
+      <keywords>Skala</keywords>
+      <use>Zur Aufzeichnung jeder PROMIS-Maßnahme verwenden.&#xD;
+&#xD;
+Dieser Archetyp wurde entwickelt, um als Rahmen für die Erstellung von Templates für bestimmte PROMIS-Messungen, wie z.B. PROMIS-29 oder PROMIS-57, zu dienen. CLUSTER-Archetypen sollten für jede PROMIS-Fragenbank modelliert werden, die innerhalb dieses Archetyps eingeschränkt sind.&#xD;
+&#xD;
+Alle openEHR-Archetypen sind zwar unter einer offenen Lizenz frei verfügbar, der spezifische Inhalt dieses Archetyps ist jedoch urheberrechtlich geschützt. Jede Verwendung dieses Archetyps innerhalb von Implementierungen muss in Übereinstimmung mit den von den Urheberrechtsinhabern festgelegten Bedingungen erfolgen.&#xD;
+&#xD;
+Erklärung zum Urheberrecht: PROMIS-Tests, Testprotokolle, Testaufgaben, Normen, Normtabellen, Bewertungsprogramme, Bewertungsschlüssel (einschließlich Bewertungsalgorithmen, Skalendefinitionen, Skalenzugehörigkeit und Bewertungsrichtungen), Bewertungsberichte, Software und andere PROMIS-bezogene Materialien sind ©2006-2017 PROMIS Gesundheitsorganisation oder andere Personen/Einrichtungen, die Informationen und Materialien beigetragen haben, und werden mit Genehmigung der Urheberrechtsinhaber verwendet.&#xD;
+&#xD;
+Allgemeine Nutzungsbedingungen: https://www.healthmeasures.net/images/PROMIS/Terms_of_Use_HM_approved_1-12-17_-_Updated_Copyright_Notices.pdf.</use>
+      <misuse>Nicht zur Repräsentation anderer Messung außer PROMIS zu verwenden.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>För att spela in eventuella PROMIS-mått.</purpose>
+      <use>&#xD;
+Används för att spela in valfritt PROMIS-mått.&#xD;
+&#xD;
+Denna arketyp har utformats för att användas som ett ramverk för att konstruera mallar för specifika PROMIS-mått, till exempel PROMIS-29 eller PROMIS-57. CLUSTER-arketyper bör modelleras för varje PROMIS-frågebank, begränsad inom den här arketypen.&#xD;
+&#xD;
+Medan openEHR-arketyper alla är fritt tillgängliga under en öppen licens, är det specifika innehållet i denna arketyp upphovsrättsskyddat. All användning av denna arketyp inom implementeringar måste vara i enlighet med de villkor som fastställts av upphovsrättsinnehavarna.&#xD;
+&#xD;
+Upphovsrättsförklaring: PROMIS-tester, testprotokoll, testobjekt, normer, normtabeller, poängsättningsprogram, poängsättningsnycklar (inklusive poängsättningsalgoritmer, skaldefinitioner, skalmedlemskap och poängriktningar), poängrapporter, programvara och annat PROMIS-relaterat material är ©2006-2017 PROMIS Health Organization eller andra individer / enheter som har bidragit med information och material och används med tillstånd av upphovsrättsinnehavarna.&#xD;
+&#xD;
+Användarvillkor: https://www.healthmeasures.net/images/PROMIS/Terms_of_Use_HM_approved_1-12-17_-_Updated_Copyright_Notices.pdf</use>
+      <misuse>Får inte användas för att registrera andra mått än PROMIS.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record any PROMIS measure.</purpose>
+      <use>Use to record any PROMIS measure.&#xD;
+&#xD;
+This archetype has been designed to be used as a framework for constructing templates for specific PROMIS measures, such as PROMIS-29 or PROMIS-57. CLUSTER archetypes should be modeled for each PROMIS question bank, constrained within this archetype.&#xD;
+&#xD;
+While openEHR archetypes are all freely available under an open license, the specific content of this archetype is copyright protected. Any use of this archetype within implementations must be in compliance with the terms established by the copyright owners.&#xD;
+&#xD;
+Copyright statement: PROMIS tests, test protocols, test items, norms, norms tables, scoring programs, scoring keys (including scoring algorithms, scale definitions, scale membership, and scoring directions), score reports, software, and other PROMIS-related materials are ©2006-2017 PROMIS Health Organization or other individuals/entities that have contributed information and materials, and are being used with the permission of the copyright holders.&#xD;
+&#xD;
+Terms and conditions for use: https://www.healthmeasures.net/images/PROMIS/Terms_of_Use_HM_approved_1-12-17_-_Updated_Copyright_Notices.pdf</use>
+      <misuse>Not to be used to record any measures other than PROMIS.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout</author>
+    <author id="organisation">MHH-Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Elham Gholami</author>
+    <author id="organisation">SLL</author>
+    <author id="email">elham.gholami@sll.se</author>
+    <accreditation>Ackreditering</accreditation>
+  </translations>
+  <uid>
+    <value>8fdc5e44-8601-4b52-a301-27b1a55b484c</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.promis.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="ARCHETYPE_SLOT">
+                    <rm_type_name>CLUSTER</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <includes>
+                      <string_expression>archetype_id/value matches {/.*/}</string_expression>
+                      <expression xsi:type="EXPR_BINARY_OPERATOR">
+                        <type>Boolean</type>
+                        <operator>2007</operator>
+                        <precedence_overridden>false</precedence_overridden>
+                        <left_operand xsi:type="EXPR_LEAF">
+                          <type>String</type>
+                          <item xsi:type="xsd:string">archetype_id/value</item>
+                          <reference_type>attribute</reference_type>
+                        </left_operand>
+                        <right_operand xsi:type="EXPR_LEAF">
+                          <type>C_STRING</type>
+                          <item xsi:type="C_STRING">
+                            <pattern>.*</pattern>
+                          </item>
+                          <reference_type>constraint</reference_type>
+                        </right_operand>
+                      </expression>
+                    </includes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0006</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">PROMIS</items>
+        <items id="description">Patient Reported Outcomes Measurement Information System®, a set of over 300 measures of physical, mental, and social health for use with the general population and with individuals living with chronic conditions.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">PROMIS questions</items>
+        <items id="description">Specific PROMIS questions.</items>
+        <items id="comment">This SLOT is designed to accept a set of PROMIS question bank CLUSTER archetypes, which can then be constrained in a template to match specific measures such as PROMIS-29.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Assessment or test name</items>
+        <items id="description">The name of the PROMIS assessment or test performed.</items>
+        <items id="comment">For example: 'PROMIS-29' or 'PROMIS-57'.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Total score</items>
+        <items id="description">The total score of the PROMIS assessment.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">PROMIS</items>
+        <items id="description">Patient Reported Outcomes Measurement Information System®, ein Satz von über 300 Messungen der physischen, psychischen und sozialen Gesundheit zur Verwendung in der Allgemeinbevölkerung und bei Personen mit chronischen Erkrankungen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardmäßiger, nicht näher beschriebener Zeitpunkt oder Intervall Ereignis welches in einem Template oder bei der Anwendung genauer definiert werden kann</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">PROMIS-Fragen</items>
+        <items id="description">Spezifische PROMIS-Fragen.</items>
+        <items id="comment">Dieser SLOT ist so konzipiert, dass er eine Reihe von Fragebögen der PROMIS-Datenbank CLUSTER akzeptiert, die dann in einer Vorlage auf bestimmte Messungen wie PROMIS-29 eingeschränkt werden können.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Erweiterungen</items>
+        <items id="description">Zusätzliche Informationen, die zur Erfassung lokaler Inhalte oder zur Anpassung an andere Referenzmodelle/Formalismen erforderlich sind.</items>
+        <items id="comment">Zum Beispiel: Lokale Informationsanforderungen oder zusätzliche Metadaten, um Verknüpfungen mit FHIR zu erzielen.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Bezeichnung der Bewertung oder des Tests</items>
+        <items id="description">Der Name der durchgeführten PROMIS-Bewertung oder des Tests.</items>
+        <items id="comment">Zum Beispiel: 'PROMIS-29' oder 'PROMIS-57'.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Gesamtergebnis</items>
+        <items id="description">Das Gesamtergebnis der PROMIS-Bewertung.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">PROMIS</items>
+        <items id="description">Patient rapporterade resultat mätinformationssystem®, en uppsättning av över 300 mått på fysisk, psykisk och social hälsa för användning med den allmänna befolkningen och med individer som lever med kroniska tillstånd.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Alla händelser</items>
+        <items id="description">Standardhändelse, ospecificerad tids- eller intervallhändelse som uttryckligen kan definieras i en mall eller vid körning.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">PROMIS frågor</items>
+        <items id="description">Specifika PROMIS-frågor.</items>
+        <items id="comment">Den här sloten är utformad för att acceptera en uppsättning PROMIS-frågebanks-KLUSTER-arketyper, som sedan kan begränsas i en mall för att matcha specifika åtgärder som PROMIS-29.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Förlängning</items>
+        <items id="description">Ytterligare information krävs för att utöka modellen med lokalt innehåll eller för att anpassa sig till andra referensmodeller eller formalismer.</items>
+        <items id="comment">Till exempel: lokala informationskrav; eller ytterligare metadata för att anpassa sig till FHIR.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Bedömnings- eller testnamn</items>
+        <items id="description">Namnet på PROMIS-utvärderingen eller testet som utförts.</items>
+        <items id="comment">Till exempel: PROMIS-29 eller "PROMIS-57".</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Totalpoäng</items>
+        <items id="description">Promis-bedömningens totala poäng.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

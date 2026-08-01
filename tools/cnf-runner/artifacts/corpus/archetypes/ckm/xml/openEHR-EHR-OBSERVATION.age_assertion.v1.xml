@@ -1,0 +1,1182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2018-07-23</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Nuno Abreu, openEHR Portugal, Portugal</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ivar Berge, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Bhattacharyyas Clinical Records Research &amp; Informatics LLP, India</other_contributors>
+    <other_contributors>Tara Bonet Chinillach, Catalan Health Service, Spain</other_contributors>
+    <other_contributors>Hugo Claudio Briceño García, Catsalut, Spain</other_contributors>
+    <other_contributors>Hanne Marte Bårholm, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Clara Calleja Vega, CatSalut. Servei Català de la Salut., Spain</other_contributors>
+    <other_contributors>Christian Chevalley, ADOC, Thailand</other_contributors>
+    <other_contributors>Julio de Sosa, Servei Català de la Salut, Spain</other_contributors>
+    <other_contributors>giovanni delussu, crs4, Italy</other_contributors>
+    <other_contributors>Mona Didriksen, Helse Vest IKT, Norway</other_contributors>
+    <other_contributors>Manuela Domingo, hospital general universitario dr. balmis, Spain</other_contributors>
+    <other_contributors>Stefan Dubois, Dep't of Pathology and Genetics, University Hospitals of Lund and Malmö, Sweden</other_contributors>
+    <other_contributors>Emmanuel Eschmann, CISTEC, Switzerland</other_contributors>
+    <other_contributors>Kåre Flø, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Grant Forrest, Lunaria Ltd, United Kingdom</other_contributors>
+    <other_contributors>Fabian Franzeck, University Hospital Basel, Switzerland</other_contributors>
+    <other_contributors>Santiago Frid, Hospital Clínic de Barcelona, Spain</other_contributors>
+    <other_contributors>Rosane Gotardo, Systema Ltda., Brazil</other_contributors>
+    <other_contributors>Mikkel Johan Gaup Grønmo, Helse Nord IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Atle Hansen, Universitetssykehuset Nord-Norge, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Lars Ivar Mehlum, Helse Vest IKT AS, Norway</other_contributors>
+    <other_contributors>Mika Kiviaho, Tietoevry, Finland</other_contributors>
+    <other_contributors>June Marie Nepstad Knappskog, Helse Nord IKT AS, Norway (openEHR Editor), Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Ronald Krawec, Alberta Health Services, Canada</other_contributors>
+    <other_contributors>Lise Kristin Knutsen, Oslo universitetssykehus, Norway</other_contributors>
+    <other_contributors>Anjali Kulkarni, Karkinos, India</other_contributors>
+    <other_contributors>Kanika Kuwelker, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Jörgen Kuylenstierna, eWeave AB, Sweden</other_contributors>
+    <other_contributors>michel laji!, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Brad Littleton, Big Picture Medical, Australia</other_contributors>
+    <other_contributors>Ruth Lochan, Akademiska Sjukhuset Uppsala, Sweden</other_contributors>
+    <other_contributors>June Marie Knappskog, Helse Nord IKT AS, Norway (Nasjonal IKT redaktør), Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Christine Mikalsen, Helse Nord IKT, Norway</other_contributors>
+    <other_contributors>Laura Moral Lopez, Sistema de Salut de Catalunya, Spain</other_contributors>
+    <other_contributors>Arunakiry Natarajan, medondo, Germany</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Anne-Berit Norman Paulsen, Universitetssykehuset Nord-Norge, Norway</other_contributors>
+    <other_contributors>Mikael Nyström, Cambio Healthcare Systems AB, Sweden</other_contributors>
+    <other_contributors>Mariana Pais, Faculty of Medicine of the University of Porto, Portugal</other_contributors>
+    <other_contributors>Ana Pascual Segura, Catsalut, Spain</other_contributors>
+    <other_contributors>Xavier Pastor, Hospital Clínic - University of Barcelona, Spain</other_contributors>
+    <other_contributors>Terje Sagmyr, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Benjamin Senst, Germany</other_contributors>
+    <other_contributors>Videha Sharma, University of Manchester, United Kingdom</other_contributors>
+    <other_contributors>Norwegian Review Summary, Norwegian Public Hospitals, Norway</other_contributors>
+    <other_contributors>Kanthan Theivendran, NHS, United Kingdom</other_contributors>
+    <other_contributors>Anders Thurin, VGR, Sweden</other_contributors>
+    <other_contributors>John Tore Valand, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics&lt;heather.leslie@atomicainformatics.com&gt;</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">60CDC878F9DB9810B55BD0207645BD40</other_details>
+    <other_details id="build_uid">7aadcfa1-d1a0-409c-ac9a-c3ea758b3bbe</other_details>
+    <other_details id="revision">1.0.3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Aufzeichnung einer Aussage über das Alter einer Person zu einem bestimmten Zeitpunkt als klinischer Kontext für weitere Informationen in derselben COMPOSITION.</purpose>
+      <keywords>chronologisch</keywords>
+      <keywords>korrigiert</keywords>
+      <keywords>angepasst</keywords>
+      <keywords>Alter</keywords>
+      <use>Zur Aufzeichnung einer Aussage über das Alter einer Person zu einem bestimmten Zeitpunkt als klinischer Kontext für weitere Informationen in derselben COMPOSITION.&#xD;
+&#xD;
+Dieser Archetyp ist so strukturiert, dass entweder das chronologische oder das angepasste Alter unabhängig voneinander aufgezeichnet werden können, aber auch beide gleichzeitig zu Vergleichszwecken erfasst werden können. &#xD;
+&#xD;
+Sowohl das chronologische Alter als auch das bereinigte Alter werden auf der Grundlage des tatsächlichen oder geschätzten Geburtsdatums und/oder des Geburtstermins berechnet. Die EVENT-Struktur aus dem Referenzmodell kann verwendet werden, um anzugeben, ob sich die Altersangabe auf einen aktuellen oder einen historischen Zeitpunkt bezieht. &#xD;
+&#xD;
+Zu den Anwendungsfällen gehören unter anderem:&#xD;
+- gleichzeitige Aufzeichnung des chronologischen Alters und des angepassten Alters zusammen mit den Wachstumsparametern des Kindes;&#xD;
+- Aufzeichnung des Alters einer Person zum Zeitpunkt der Aufzeichnung als Kontext für andere Inhalte in einem Dokument, wie z. B. das Alter eines Kindes zum Zeitpunkt der Überweisung;&#xD;
+- das Alter der Mutter (die auf der ENTRY-Ebene als Pflegeperson bezeichnet wird) zum Zeitpunkt der Aufnahme in die Akte eines Neugeborenen zu erfassen; oder&#xD;
+- das Alter einer Person zum Zeitpunkt des Ausfüllens eines Fragebogens zur Gesundheitsbewertung.&#xD;
+- die Grundlage für die Berechnung von Referenzwerten für physiologische Messungen. Zum Beispiel im Archetyp CHA₂DS₂-VASc-Score.</use>
+      <misuse>Nicht zur Darstellung des aktuellen Alters einer Person in der Benutzeroberfläche einer elektronischen Patientenakte zu verwenden. Verwenden Sie zu diesem Zweck ein formales Patientenregister oder Archetypen, die auf dem openEHR-Modell für demografische Informationen basieren.&#xD;
+&#xD;
+Nicht für die Erfassung des Skelettalters zu verwenden, verwenden Sie zu diesem Zweck OBSERVATION.skeletal_age.&#xD;
+&#xD;
+Nicht zur Erfassung des geschätzten oder bekannten Zeitraums oder der Dauer der Schwangerschaft oder des Schwangerschaftsalters des Fötus oder des Neugeborenen zu verwenden, verwenden Sie zu diesem Zweck OBSERVATION.gestational_age_assertion.&#xD;
+&#xD;
+Nicht zu verwenden für die Erfassung des biologischen Alters, das sich auf den Zustand der Körpersysteme einer Person bezieht und angibt, wie gut oder schlecht der Körper im Vergleich zur erwarteten Norm für das chronologische Alter funktioniert - verwenden Sie zu diesem Zweck entsprechende Archetypen.&#xD;
+&#xD;
+Nicht zu verwenden für die Aufzeichnung einer Bewertung des mentalen, kognitiven oder Entwicklungsalters oder ähnlicher Einschätzungen, die sich auf das Alter beziehen, das die Funktionen und Fähigkeiten einer Person widerspiegelt. Verwenden Sie für diesen Zweck einen geeigneten Archetyp.&#xD;
+&#xD;
+Nicht zur Aufzeichnung eines geschätzten Alters in einem forensischen Bericht oder für eine bewusstlose Person zu verwenden - verwenden Sie für diesen Zweck einen geeigneten Archetyp.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere et utsagn om alderen til et individ på et tidspunkt, for å gi klinisk kontekst til den øvrige informasjonen i samme COMPOSITION.</purpose>
+      <keywords>kronologisk</keywords>
+      <keywords>justert</keywords>
+      <keywords>alder</keywords>
+      <use>Brukes for å registrere et utsagn om alderen til et individ på et tidspunkt, for å gi klinisk kontekst til den øvrige informasjonen i samme COMPOSITION.&#xD;
+&#xD;
+Denne arketypen er utformet for å støtte registrering av enten kronologisk eller justert alder, samtidig som den også gir muligheten til å registrere begge for sammenligningsformål.&#xD;
+&#xD;
+Både kronologisk alder og justert alder beregnes basert på faktisk eller antatt fødselsdato og/eller dato for termin. EVENT strukturen fra referansemodellen kan brukes til å spesifisere om aldersutsagnet gjelder et nåværende tidspunkt eller et historisk tidspunkt.&#xD;
+&#xD;
+Eksempler på bruksområder for arketypen:&#xD;
+- samtidig registrering av kronologisk alder og justert alder sammen med informasjon om vekst hos barn&#xD;
+- å registrere et individs alder på registreringstidspunktet, som kontekst for det andre innholdet i et dokument, for eksempel et barns alder på henvisningstidspunktet&#xD;
+- å registrere mors alder på registreringstidspunktet i barnets journal (mor kan her registreres som "subject of care" ved hjelp av referansemodell-elementer)&#xD;
+- et individs alder på tidspunktet for utfylling av et spørreskjema for helsevurdering.&#xD;
+- grunnlaget for beregnede referanseverdier for fysiologiske målinger. For eksempel i arketypen CHA₂DS₂-VASc score.</use>
+      <misuse>Skal ikke brukes til å vise individets nåværende alder i brukergrensesnittet i et elektronisk journalsystem. Bruk et formelt pasientregister eller arketyper basert på openEHR demografisk informasjonsmodell til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere skjelettalder, bruk OBSERVATION.skeletal_age (Skjelettalder) til dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere et anslag eller den kjente varigheten av et svangerskap, eller svangerskapsalderen til fosteret eller et nyfødt barn, bruk OBSERVATION.gestational_age_assertion for dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere biologisk alder, som refererer til tilstanden til en persons kroppssystemer og indikerer hvor godt eller dårlig kroppen fungerer i forhold til det forventede for deres kronologiske alder. Bruk passende arketyper for dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registere en vurdering av et individs mentale, kognitive eller utviklingsmessige alder, eller lignende som uttrykk for individets funksjon eller ferdigheter. Bruk en passende arketype for dette formålet.&#xD;
+&#xD;
+Skal ikke brukes til å registrere estimert alder i en rettsmedisinsk rapport eller for en bevisstløs person. Bruk en passende arketype for dette formålet.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record a statement about the age of an individual at a point in time, as clinical context for the other information in the same COMPOSITION.</purpose>
+      <keywords>chronological</keywords>
+      <keywords>corrected</keywords>
+      <keywords>adjusted</keywords>
+      <keywords>age</keywords>
+      <use>Use to record a statement about the age of an individual at a point in time, as clinical context for the other information in the same COMPOSITION.&#xD;
+&#xD;
+This archetype is structured to support the recording of either chronological or adjusted age independently, while also providing the capability to record both simultaneously for comparison purposes. &#xD;
+&#xD;
+Both the Chronological age and Adjusted age are calculated based on actual or estimated dates of birth and/or due date. The EVENT structure from the reference model can be used to specify whether the age assertion relates to a current point in time or a historical point in time. &#xD;
+&#xD;
+Use cases include, but are not limited to:&#xD;
+- simultaneously record the chronological age and adjusted age alongside child growth parameters;&#xD;
+- record the age of an individual at the time of recording as context for the other content in a document, such as the age of a child at the time of referral;&#xD;
+- record the age of the mother (designated as the subject of care at ENTRY level) at the time of recording within a newborn's record; or&#xD;
+- the age of an individual at the time of filling out a health assessment questionnaire.&#xD;
+- the basis for calculated reference values for physiological measurements. For example in the CHA₂DS₂-VASc score archetype.</use>
+      <misuse>Not to be used to display the individual's current age in the user interface of an electronic health record. Use a formal patient registry or archetypes based on the openEHR demographic information model for this purpose.&#xD;
+&#xD;
+Not to be used to record skeletal age, use OBSERVATION.skeletal_age for this purpose.&#xD;
+&#xD;
+Not to be used to record the estimate or known period or duration of the pregnancy or gestational age of the foetus or new born, use OBSERVATION.gestational_age_assertion for this purpose.&#xD;
+&#xD;
+Not to be used to record the Biological age, which refers to the condition of an individual's body systems, indicating how well or poorly the body is functioning relative to the expected norm for their chronological age - use approriate archetypes for this purpose.&#xD;
+&#xD;
+Not to be used to record an assessment of the mental, cognitive or developmental age, or similar assements, which refers to the age that reflects an individual's functions and abilities. Use an appropriate archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record an estimated age in a forensic report or for an unconscious inidividual - use an approriate archetype for this purpose.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>fr</code_string>
+      </language>
+      <purpose>*To record a statement about the age of an individual at a point in time, as clinical context for the other information in the same COMPOSITION. (en)</purpose>
+      <keywords>chronologique</keywords>
+      <keywords>corrigé</keywords>
+      <keywords>âge</keywords>
+      <use>*Use to record a statement about the age of an individual at a point in time, as clinical context for the other information in the same COMPOSITION.&#xD;
+&#xD;
+This archetype is structured to support the recording of either chronological or adjusted age independently, while also providing the capability to record both simultaneously for comparison purposes.&#xD;
+&#xD;
+The EVENT structure from the reference model can be used to specify whether the age assertion relates to a current point in time or a historical point in time. &#xD;
+&#xD;
+Use cases include, but are not limited to;&#xD;
+- to simultaneously record the chronological age and adjusted age alongside child growth parameters;&#xD;
+- to record the age of an individual at the time of recording as context for the other content in a document, such as the age of a child at the time of referral;&#xD;
+- to record the age of the mother (designated as the subject of care at ENTRY level) at the time of recording within a newborn's record; or&#xD;
+- the age of an individual at the time of filling out a health assessment questionnaire.&#xD;
+- as basis for calculated reference values for physiologic measurements. For example in the CHA₂DS₂-VASc score archetype. (en)</use>
+      <misuse>*Not to be used to display the individual's current age in the user interface of an electronic health record. Use a formal patient registry or archetypes based on the openEHR demographic information model for this purpose.&#xD;
+&#xD;
+Not to be used to record skeletal age, use OBSERVATION.skeletal_age for this purpose.&#xD;
+&#xD;
+Not to be used to record the estimate or known period or duration of the pregnancy or gestational age of the foetus or new born, use OBSERVATION.gestational_age_assertion for this purpose.&#xD;
+&#xD;
+Not to be used to record the Biological age, which refers to the condition of an individual's body systems, indicating how well or poorly the body is functioning relative to the expected norm for their chronological age - use approriate archetypes for this purpose.&#xD;
+&#xD;
+Not to be used to record the Mental age or Cognitive age, which refers to the age that reflects an individual's mental functions and abilities. Use an appropriate archetype for this purpose.&#xD;
+&#xD;
+Not to be used to record an estimated age in a forensic report or for an unconscious inidividual - use an approriate archetype for this purpose. (en)</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>ca</code_string>
+      </language>
+      <purpose>Registrar una declaració sobre l'edat d'un pacient en un moment donat, com a context clínic per a la resta d'informació de la mateixa COMPOSITION.</purpose>
+      <keywords>cronològic</keywords>
+      <keywords>corregit</keywords>
+      <keywords>ajustat</keywords>
+      <keywords>edat</keywords>
+      <use>Utilitzar per a registrar una declaració sobre l'edat d'un pacient en un moment donat, com a context clínic per a la resta d'informació de la mateixa COMPOSITION.&#xD;
+&#xD;
+Aquest arquetip s'estructura per a donar suport a l'enregistrament de l'edat cronològica o ajustada de manera independent, alhora que proporciona la capacitat de registrar tots dos simultàniament amb finalitats comparatives.&#xD;
+&#xD;
+Tant l'edat Cronològica com l'edat Ajustada es calculen en funció de les dates reals o estimades de naixement o del part. L'estructura de EVENT del model de referència es pot utilitzar per a especificar si la declaració d'edat es relaciona amb un moment actual en el temps o un moment històric en el temps.&#xD;
+&#xD;
+Els casos d'ús inclouen, però no es limiten als següents:&#xD;
+- registrar simultàniament l'edat cronològica i l'edat ajustada amb els paràmetres de creixement de l’infant;&#xD;
+- registrar l'edat d'un pacient en el moment de l’enregistrament com a context per a l'altre contingut d'un document, com ara l'edat d'un infant en el moment de la derivació;&#xD;
+- registrar l'edat de la mare (designada com a pacient a nivell ENTRY) en el moment d’enregistrament dins d'un registre d'un nadó; o&#xD;
+- l'edat d'un pacient en el moment d'emplenar un qüestionari d'avaluació de la salut.&#xD;
+- la base dels valors de referència calculats per a les mesures fisiològiques. Per exemple en l'arquetip de puntuació CHA₂DS₂-VASc.</use>
+      <misuse>No utilitzar per a mostrar l'edat actual del pacient a la interfície d'usuari d'un registre de salut electrònic. Utilitzar un registre formal de pacients o arquetips basats en el model d'informació demogràfica openEHR per aquesta finalitat.&#xD;
+&#xD;
+No utilitzar per a registrar l'edat òssia, utilitzar OBSERVATION.skeletal.age per aquesta finalitat.&#xD;
+&#xD;
+No utilitzar per a registrar la durada o el període estimats o coneguts de l'embaràs o l'edat gestacional del fetus o del nadó, utilitzar OBSERVATION.gestational_age_assertion per aquesta finalitat.&#xD;
+&#xD;
+No utilitzar per a registrar l'edat Biològica, la qual es refereix a la condició dels sistemes corporals d'un pacient, indicant com de bé o malament el cos està funcionant en relació amb la norma esperada per a la seva edat cronològica - utilitzar arquetips adequats per aquesta finalitat.&#xD;
+&#xD;
+No utilitzar per a registrar una avaluació de l'edat mental, cognitiva o del desenvolupament, o avaluacions similars, que es refereix a l'edat que reflecteixen les funcions i habilitats d'un pacient. Utilitzar un arquetip adequat per aquesta finalitat.&#xD;
+&#xD;
+No utilitzar per a registrar una edat estimada en un informe forense o per a un pacient inconscient - utilitzar un arquetip apropiat per aquesta finalitat.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Registrar una declaración sobre la edad de un paciente en un momento dado, como un contexto clínico para el resto de información de la misma COMPOSITION.</purpose>
+      <keywords>cronológico</keywords>
+      <keywords>corregido</keywords>
+      <keywords>ajustado</keywords>
+      <keywords>edad</keywords>
+      <use>Usar para registrar una declaración sobre la edad de un paciente en un momento determinado, como contexto clínico para el resto de la información contenida en la misma COMPOSITION.&#xD;
+&#xD;
+Este arquetipo está estructurado para permitir el registro de la edad cronológica o ajustada de forma independiente, y también proporciona la posibilidad de registrar ambas simultáneamente con fines comparativos.&#xD;
+&#xD;
+Tanto la edad cronológica como la edad ajustada se calculan en función de fechas reales o estimadas de nacimiento o de parto. La estructura EVENT del modelo de referencia puede utilizarse para especificar si la declaración de edad se refiere a un momento actual o a un momento histórico en el tiempo.&#xD;
+&#xD;
+Los casos de uso incluyen, pero no se limitan a:&#xD;
+&#xD;
+- Registrar simultáneamente la edad cronológica y la edad ajustada junto con los parámetros de crecimiento del niño;&#xD;
+- Registrar la edad del paciente en el momento del registro como contexto para otros contenidos de un documento, como por ejemplo, la edad de un niño en el momento de una derivación;&#xD;
+- Registrar la edad de la madre (designada como paciente a nivel de ENTRY) en el momento del registro dentro de una ficha clínica del recién nacido;&#xD;
+- Registrar la edad del paciente en el momento de completar un cuestionario de evaluación de salud;&#xD;
+- Servir como base para los valores de referencia calculados en mediciones fisiológicas, por ejemplo, en el arquetipo de puntuación CHA₂DS₂-VASc.</use>
+      <misuse>No debe utilizarse para mostrar la edad actual del individuo en la interfaz de usuario de una historia clínica electrónica. Para este propósito, utilice un registro formal de pacientes o arquetipos basados en el modelo de información demográfica de openEHR.&#xD;
+&#xD;
+No debe utilizarse para registrar la edad ósea, utilice OBSERVATION.skeletal_age para este propósito.&#xD;
+&#xD;
+No debe utilizarse para registrar el período estimado o conocido del embarazo o la edad gestacional del feto o del recién nacido, utilice OBSERVATION.gestational_age_assertion para este propósito.&#xD;
+&#xD;
+No debe utilizarse para registrar la edad biológica, que se refiere al estado de los sistemas corporales de un individuo, indicando qué tan bien o mal funciona el cuerpo en comparación con la norma esperada para su edad cronológica. Utilice arquetipos apropiados para este propósito.&#xD;
+&#xD;
+No debe utilizarse para registrar una evaluación de la edad mental, cognitiva o del desarrollo, o evaluaciones similares, que se refieren a la edad que refleja las funciones y capacidades de un individuo. Utilice un arquetipo adecuado para este propósito.&#xD;
+&#xD;
+No debe utilizarse para registrar una edad estimada en un informe forense o para un individuo inconsciente, utilice un arquetipo apropiado para este propósito.</misuse>
+      <copyright />
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout, Natalia Strauch, Darin Leonhardt</author>
+    <author id="organisation">MHH-Hannover, Medizinische Hochschule Hannover, PLRI, PLRI für medizinische Informatik/ Medizinische Hochschule</author>
+    <author id="email">ballout.sarah@mh-hannover.de, Strauch.Natalia@mh-hannover.de, leonhardt.darin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Vebjørn Arntzen, John Tore Valand, Hanne Marte Bårholm</author>
+    <author id="organisation">Helse Vest IKT AS, Oslo University Hospital</author>
+    <author id="email">silje.ljosland.bakke@helse-vest-ikt.no, varntzen@ous-hf.no, john.tore.valand@helse-vest-ikt.no, hanne.marte.sandal.barholm@helse-vest-ikt.no</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>fr</code_string>
+    </language>
+    <author id="name">Vanessa Pereira</author>
+    <author id="organisation">Luxembourg Institute of Health (LIH)</author>
+    <author id="email">vanessapereira@protonmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>ca</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es</code_string>
+    </language>
+    <author id="name">Laura Moral Lopez</author>
+    <author id="organisation">Sistema de Salut de Catalunya</author>
+    <author id="email">lauramoral@catsalut.cat</author>
+  </translations>
+  <uid>
+    <value>ceb203cf-0f8e-40a0-a124-59871c14d6d8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.age_assertion.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>POINT_EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0004</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>true</upper_unbounded>
+                                <lower>PT0S</lower>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>200.0</upper>
+                          </magnitude>
+                          <units>a</units>
+                        </list>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>200.0</upper>
+                          </magnitude>
+                          <units>a_j</units>
+                        </list>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_INTERVAL&lt;DV_DURATION&gt;</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>lower</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>0</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>value</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_PRIMITIVE_OBJECT">
+                                <rm_type_name>DV_DURATION</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <item xsi:type="C_DURATION">
+                                  <range>
+                                    <lower_included>true</lower_included>
+                                    <upper_included>false</upper_included>
+                                    <lower_unbounded>false</lower_unbounded>
+                                    <upper_unbounded>false</upper_unbounded>
+                                    <lower>PT0S</lower>
+                                    <upper>P200Y</upper>
+                                  </range>
+                                </item>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>upper</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_COMPLEX_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>0</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                              <rm_attribute_name>value</rm_attribute_name>
+                              <existence>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>1</lower>
+                                <upper>1</upper>
+                              </existence>
+                              <children xsi:type="C_PRIMITIVE_OBJECT">
+                                <rm_type_name>DV_DURATION</rm_type_name>
+                                <occurrences>
+                                  <lower_included>true</lower_included>
+                                  <upper_included>true</upper_included>
+                                  <lower_unbounded>false</lower_unbounded>
+                                  <upper_unbounded>false</upper_unbounded>
+                                  <lower>1</lower>
+                                  <upper>1</upper>
+                                </occurrences>
+                                <node_id />
+                                <item xsi:type="C_DURATION">
+                                  <range>
+                                    <lower_included>true</lower_included>
+                                    <upper_included>false</upper_included>
+                                    <lower_unbounded>false</lower_unbounded>
+                                    <upper_unbounded>false</upper_unbounded>
+                                    <lower>PT0S</lower>
+                                    <upper>P200Y</upper>
+                                  </range>
+                                </item>
+                              </children>
+                            </attributes>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_DURATION</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>value</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>DV_DURATION</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_DURATION">
+                              <range>
+                                <lower_included>false</lower_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>true</upper_unbounded>
+                                <lower>-P1Y</lower>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <magnitude>
+                            <lower_included>false</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>-1.0</lower>
+                            <upper>10.0</upper>
+                          </magnitude>
+                          <units>a</units>
+                        </list>
+                        <list>
+                          <magnitude>
+                            <lower_included>false</lower_included>
+                            <upper_included>false</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>-1.0</lower>
+                            <upper>10.0</upper>
+                          </magnitude>
+                          <units>a_j</units>
+                        </list>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0006</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0008</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0009</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Age assertion</items>
+        <items id="description">A statement about the age of an individual at a point in time.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Point in time event</items>
+        <items id="description">Default, unspecified point in time event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Chronological age</items>
+        <items id="description">The age of an individual at the event time, calculated from date of birth.</items>
+        <items id="comment">In most use cases the DV_DURATION data type is used to record the Chronological age. The DV_INTERVAL_DURATION is used for recording a structured age interval in cases where there's uncertainty about the individual's exact age. The DV_QUANTITY data type is used for recording a decimal age in years or mean Julian years (365.25 days). The DV_TEXT data type is used for recording a textual representation of the individual's age, or age category often found in questionnaires. For example: 'P3M2W', '0,2884615384615385 a_j', '3 months 2 weeks' or '31-40 years' or 'Teenager'.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Adjusted age</items>
+        <items id="description">The age of a premature infant, calculated from their expected due date rather than their actual date of birth.</items>
+        <items id="comment">Also known as 'Corrected age'. In most use cases the DV_DURATION data type is used to record the Adjusted age. The DV_QUANTITY data type is used for recording a decimal age in years or mean Julian years (365.25 days), and the DV_TEXT data type is used for recording a textual representation of the individual's age. For example: 'P3M2W', '0,2884615384615385 a_j' or '3 months 2 weeks'.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the age of an individual, not captured in other fields.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Altersangabe</items>
+        <items id="description">Eine Aussage über das Alter einer Person zu einem bestimmten Zeitpunkt.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Ereigniszeitpunkt</items>
+        <items id="description">Standardwert, ein undefinierter Zeitpunkt des Ereignisses, das explizit im Template oder zur Laufzeit der Anwendung definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Chronologisches Alter</items>
+        <items id="description">Das Alter einer Person zum Zeitpunkt des Ereignisses, berechnet anhand des Geburtsdatums.</items>
+        <items id="comment">In den meisten Anwendungsfällen wird der Datentyp DV_DURATION zur Erfassung des chronologischen Alters verwendet. Der Datentyp DV_INTERVAL_DURATION wird für die Aufzeichnung eines strukturierten Altersintervalls in Fällen verwendet, in denen Unsicherheit über das genaue Alter der Person besteht. Der Datentyp DV_QUANTITY wird für die Erfassung eines dezimalen Alters in Jahren oder mittleren julianischen Jahren (365,25 Tage) verwendet. Der Datentyp DV_TEXT wird für die Aufzeichnung einer textuellen Darstellung des Alters der Person oder einer Alterskategorie verwendet, die häufig in Fragebögen zu finden ist. Zum Beispiel: "P3M2W", "0,2884615384615385 a_j", "3 Monate 2 Wochen" oder "31-40 Jahre" oder "Teenager".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Korrigiertes Alter</items>
+        <items id="description">Das Alter eines Frühgeborenen, das anhand des voraussichtlichen Geburtstermins und nicht des tatsächlichen Geburtsdatums berechnet wird.</items>
+        <items id="comment">Auch bekannt als 'Korrigiertes Alter'. In den meisten Anwendungsfällen wird der Datentyp DV_DURATION zur Erfassung des korrigierten Alters verwendet. Der Datentyp DV_QUANTITY wird für die Aufzeichnung eines dezimalen Alters in Jahren oder mittleren julianischen Jahren (365,25 Tage) verwendet, und der Datentyp DV_TEXT wird für die Aufzeichnung einer textuellen Darstellung des Alters der Person verwendet. Zum Beispiel: "P3M2W", "0,2884615384615385 a_j" oder "3 Monate 2 Wochen".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Kommentar</items>
+        <items id="description">Beschreibung des Alters einer Person, das nicht in anderen Datenelementen dargestellt wird.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Item tree(en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder Anpassung an andere Referenzmodelle/Formalismen.</items>
+        <items id="comment">Zum Beispiel: Lokaler Informationsbedarf oder zusätzliche Metadaten zur Anpassung an FHIR-Ressourcen.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Alder</items>
+        <items id="description">Angivelse av et individs alder, definert som tiden som har løpt fra fødsel eller termindato til et gitt tidspunkt.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert tidspunkthendelse</items>
+        <items id="description">Uspesifisert tidspunkt som kan defineres mer eksplisitt i en templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Kronologisk alder</items>
+        <items id="description">Alderen til et individ ved hendelsestidspunktet, beregnet ut fra fødselsdatoen.</items>
+        <items id="comment">I de fleste tilfeller benyttes datatypen DV_DURATION for å registrere den kronologiske alderen. Datatypen DV_INTERVAL_DURATION brukes for å registrere et strukturert aldersintervall i tilfeller der det er usikkerhet om individets nøyaktige alder. Datatypen DV_QUANTITY brukes til å registrere en alder med desimaler i år eller gjennomsnittlige julianske år (365,25 dager), datatypen DV_TEXT brukes til å registrere en tekstlig representasjon av individets alder eller alderskategori ofte benyttet i spørreskjema. &#xD;
+For eksempel: "P3M2W", "0,2884615384615385 a_j" eller "3 måneder 2 uker", "31-40 år" eller "Tenåring".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Justert alder</items>
+        <items id="description">Alderen til et prematurt spedbarn, beregnet ut fra forventet fødselsdato i stedet for den faktiske fødselsdatoen.</items>
+        <items id="comment">I de fleste tilfeller benyttes datatypen DV_DURATION for å registrere justert alder. Datatypen DV_QUANTITY brukes til å registrere en alder med desimaler i år eller gjennomsnittlige julianske år (365,25 dager), datatypen DV_TEXT brukes til å registrere en tekstlig representasjon av individets alder. &#xD;
+For eksempel: "P3M2W", "0,2884615384615385 a_j" eller "3 måneder 2 uker".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om et individs alder som ikke fanges opp i andre felt.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">*Item tree (en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="fr">
+      <items code="at0000">
+        <items id="text">Assertion d'âge</items>
+        <items id="description">*A statement about the age of an individual at a point in time. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Événement ponctuel</items>
+        <items id="description">Événement par défaut, non spécifié, qui peut être défini explicitement dans un modèle ou lors de l'exécution.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Âge chronologique</items>
+        <items id="description">*The age of an individual at the event time, calculated from date of birth. (en)</items>
+        <items id="comment">Dans la plupart des cas, le type de données DV_DURATION est utilisé pour enregistrer l'âge chronologique. Le type de données DV_INTERVAL_DURATION est utilisé pour enregistrer un intervalle d'âge structuré en cas d'incertitude sur l'âge exact de la personne. Le type de données DV_QUANTITY est utilisé pour enregistrer un âge décimal en années ou en années juliennes moyennes (365,25 jours). Le type de données DV_TEXT est utilisé pour enregistrer une représentation textuelle de l'âge de l'individu ou de la catégorie d'âge souvent utilisée dans les questionnaires. Par exemple : "P3M2W", "0,2884615384615385 a_j", "3 mois 2 semaines" ou "31-40 ans" ou "Adolescent".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Âge ajusté</items>
+        <items id="description">*The age of a premature infant, calculated from their expected due date rather than their actual date of birth. (en)</items>
+        <items id="comment">Également appelé "âge corrigé". Dans la plupart des cas, le type de données DV_DURATION est utilisé pour enregistrer l'âge corrigé. Le type de données DV_QUANTITY est utilisé pour enregistrer un âge décimal en années ou en années juliennes moyennes (365,25 jours), et le type de données DV_TEXT est utilisé pour enregistrer une représentation textuelle de l'âge de l'individu. Par exemple : "P3M2W", "0,2884615384615385 a_j" ou "3 mois 2 semaines".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Commentaire</items>
+        <items id="description">Informations supplémentaires sur l'âge d'un individu, qui ne figurent pas dans d'autres champs.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extension</items>
+        <items id="description">Informations supplémentaires nécessaires pour étendre le modèle au contenu local ou pour l'aligner sur d'autres modèles de référence ou formalismes.</items>
+        <items id="comment">Par exemple : exigences locales en matière d'information ou métadonnées supplémentaires pour s'aligner sur FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="ca">
+      <items code="at0000">
+        <items id="text">Declaració d'edat</items>
+        <items id="description">Una declaració sobre l'edat d'un pacient en un moment donat.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Esdeveniment d’un moment donat</items>
+        <items id="description">Esdeveniment predeterminat i no especificat d’un moment donat que es pot definir explícitament en una plantilla o en temps d’execució.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Edat cronològica</items>
+        <items id="description">L'edat d'un pacient en el moment de l'esdeveniment, calculada a partir de la data de naixement.</items>
+        <items id="comment">En la majoria dels casos d’ús, el tipus de dades DV_DURATION s'utilitza per a registrar l'edat Cronològica. La DV_INTERVAL.DURATION s'utilitza per a registrar un interval estructurat d'edat en els casos en què hi ha incertesa sobre l'edat exacta del pacient. El tipus de dades DV_QUANTITY s'utilitza per a registrar una edat decimal en anys o anys julians (365,25 dies). El tipus de dades DV_TEXT s'utilitza per a registrar una representació textual de l'edat del pacient, o categoria d'edat que sovint es troba en els qüestionaris. Per exemple: «A3M2S», «0,2884615384615385 a_j», «3 mesos 2 setmanes» o «31-40 anys» o «Adolescent».</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Edat ajustada</items>
+        <items id="description">L'edat d'un nadó prematur, calculada a partir de la data del part prevista en lloc de la data real de naixement.</items>
+        <items id="comment">També coneguda com «Edat corregida». En la majoria dels casos d’ús, el tipus de dades DV_DURATION s'utilitza per a registrar l'edat Ajustada. El tipus de dades DV_QUANTITY s'utilitza per a registrar una edat decimal en anys o anys julians (365,25 dies), i el tipus de dades DV_TEXT s'utilitza per a registrar una representació textual de l'edat del pacient. Per exemple: «A3M2S», «0,2884615384615385 a_j», «3 mesos 2 setmanes».</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Observacions</items>
+        <items id="description">Informació addicional sobre l'edat d'un pacient, no recollida en altres caselles.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extensió</items>
+        <items id="description">Informació addicional necessària per a ampliar el model amb contingut local o per alinear-se amb altres models/formalismes de referència.</items>
+        <items id="comment">Per exemple: requisits locals d'informació; o metadades addicionals per alinear-se amb equivalents de FHIR.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Declaración de edad</items>
+        <items id="description">Una declaración sobre la edad de un paciente en un momento dado.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Evento de un momento dado</items>
+        <items id="description">Evento predeterminado y no especificado de un momento dado que se puede definir explícitamente en una plantilla o en tiempo de ejecución.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Edad cronológica</items>
+        <items id="description">La edad de un paciente en el momento del evento, calculada a partir de la fecha de nacimiento.</items>
+        <items id="comment">En la mayoría de los casos de uso, el tipo de datos DV_DURATION se utiliza para registrar la edad cronológica. La DV_INTERVAL_DURATION se utiliza para registrar un intervalo estructurado de edad en los casos en que hay incerteza sobre la edad exacta del paciente. El tipo de datos DV_QUANTITY se utiliza para registrar una edad decimal en años o años julianos (365.25 días). El tipo de datos DV_TEXT se utiliza para registrar una representación textual de la edad del paciente, o categoría de edad que a menudo se encuentra en los cuestionarios. Por ejemplo: "A3M2S", '0,2884615384615385 a_j', "3 meses 2 semanas" o "31-10 años" o "Adolescente".</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Edad ajustada</items>
+        <items id="description">La edad de un bebé prematuro, calculada a partir de la fecha del parto prevista en lugar de la fecha real de nacimiento.</items>
+        <items id="comment">También conocida como "Edad corregida". En la mayoría de los casos de uso, el tipo de dato DV_DURATION es usado para registrar la "Edad ajustada". El tipo de dato DV_QUANTITY es usado para registrar una edad con decimales en años o años julianos (365.25 días), y el tipo de dato DV_TEXT se usa para registrar una representación textual de la edad del individuo. Por ejemplo: "P3M2W", "0,2884615384615385 a_j" o "3 meses 2 semanas".</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Comentario</items>
+        <items id="description">Información adicional sobre la edad de un paciente, no recogida en otros campos.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional necesaria para ampliar el modelo con contenido local o para alinearse con otros modelos/formalismos de referencia.</items>
+        <items id="comment">Por ejemplo: requerimientos locales de información; o metadatos adicionales para alinearse con FHIR.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

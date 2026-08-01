@@ -1,0 +1,861 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2015-01-23</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Ocean Informatics</original_author>
+    <original_author id="email">heather.leslie@oceaninformatics.com</original_author>
+    <other_contributors>Morten Aas, Oslo Universitetssykehus, Norway</other_contributors>
+    <other_contributors>Ole Andreas Bjordal, Webmed, Norway</other_contributors>
+    <other_contributors>Stein Arne Rimehaug, Sunnaas sykehus, Norway</other_contributors>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Nasjonal IKT HF, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Kristian Berg, Universitetssykehuset Nord Norge, Norway</other_contributors>
+    <other_contributors>SB BHATTACHARYYA, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>SBhusan Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Bjørn Christensen, Helse Bergen HF, Norway</other_contributors>
+    <other_contributors>Chris Dickson, NHS Digital, United Kingdom</other_contributors>
+    <other_contributors>Hildegard Franke, freshEHR Clinical Informatics Ltd., United Kingdom</other_contributors>
+    <other_contributors>Bente Gjelsvik, Helse Bergen, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Hanne Joensen, Helse Bergen HUS, Norway</other_contributors>
+    <other_contributors>Siri Larønningen, Kreftregisteret, Norway</other_contributors>
+    <other_contributors>Heather Leslie, Ocean Informatics, Australia (openEHR Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Direktoratet for e-helse, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (openEHR Editor)</other_contributors>
+    <other_contributors>Lars Morgan Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Bjørn Næss, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Vladimir Pizzo, Hospital Sírio Libanês, Brazil</other_contributors>
+    <other_contributors>Navin Ramachandran, NHS, United Kingdom</other_contributors>
+    <other_contributors>Raymond Simkus, Brookswood Family Practice, Canada</other_contributors>
+    <other_contributors>Iztok Stotl, UKCLJ, Slovenia</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>John Tore Valand, Haukeland Universitetssjukehus, Norway (Nasjonal IKT redaktør)</other_contributors>
+    <other_contributors>Mette Wam, Esito AS, Norway</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="current_contact">Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">9CA673C44D07EB44E7473631D0F97DD4</other_details>
+    <other_details id="build_uid">25f3f07e-1c99-47c3-99a2-56967b763817</other_details>
+    <other_details id="revision">1.3.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Dokumentation eines expliziten Befundes zur Unterstützung einer klinischen Behauptung, wie z.B. eines Problems/einer Diagnose, eines Nebenwirkungsrisikos, einer Gesundheitsrisikobewertung oder einer Kontraindikation.</purpose>
+      <keywords>Diagnose</keywords>
+      <keywords>Beweis</keywords>
+      <keywords>Bedingung</keywords>
+      <keywords>Krankheit</keywords>
+      <keywords>Problem</keywords>
+      <keywords>Feststellung</keywords>
+      <keywords>Befund</keywords>
+      <keywords>Beobachtung</keywords>
+      <use>Zur Dokumentationn von Details zu Befunden, die eine klinische Feststellung unterstützen, entweder als Zusammenfassung von Daten, die in anderen (oft der Klasse OBSERVATION) Archetypen verfügbar sind, oder wenn die ursprünglichen Beobachtungsdaten nicht verfügbar sind.&#xD;
+&#xD;
+Diesen Archetypen innerhalb eines SLOTS Archetypen wie EVALUATION.problem_diagnose, EVALUATION.adverse_reaction_risk, EVALUATION.health_risk, EVALUATION.contraindication oder ähnlichen zusammenfassenden Archetypen verwenden, bei denen der Name der Feststellung bereits in der EVALUATION angegeben wurde, verschachtelt wird, um den Inhalt um diesen zusätzlichen und optionalen Datensatz zu erweitern. Während LINKs innerhalb des openEHR-Referenzmodells eine Verknüpfung mit Daten ermöglichen, die an anderer Stelle in der Gesundheitsakte gespeichert sind, wurde dieser Archetyp entwickelt, um diese Funktionalität explizit zu machen und um die klinische Sichtbarkeit und Überprüfung dieser Daten zu ermöglichen, wo sie in einer Vorlage oder Spezifikation relevant sein können.&#xD;
+&#xD;
+Der klinische Beweis kann direkt in diesen Archetyp als "Finding" eingegeben werden, oder es kann ein Zitat verwendet werden, um explizit auf Daten innerhalb der Gesundheitsakte zu verweisen.&#xD;
+&#xD;
+</use>
+      <misuse>Nicht zur Dokumentation von zusammenfassende Details zu einem identifizierten Problem oder einer Diagnose verwenden - verwenden Sie dazu die EVALUATION.problem_diagnosis.&#xD;
+&#xD;
+Nicht zur Dokumentation von zusammenfassenden Details über ein identifiziertes Nebenwirkungsrisiko verwenden - verwenden Sie dazu die Datei EVALUATION.adverse_reaction_risk.&#xD;
+&#xD;
+Nicht zur Dokumentation von zusammenfassenden Details über ein identifiziertes Gesundheitsrisiko zu verwenden - verwenden Sie zu diesem Zweck die Datei EVALUATION.health_risk.&#xD;
+&#xD;
+Nicht zur Dokumentation von zusammenfassende Einzelheiten über eine identifizierte Kontraindikation verwenden - verwenden Sie dazu die Datei EVALUATION.contraindication.&#xD;
+</misuse>
+      <copyright>© openEHR Foundation, openEHR Norway</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att registrera ett uttryckligt resultat till stöd för ett kliniskt påstående, såsom ett problem / diagnos, biverkningsrisk, hälsoriskbedömning eller kontraindikation.</purpose>
+      <keywords>diagnos</keywords>
+      <keywords>bevis</keywords>
+      <keywords>tillstånd</keywords>
+      <keywords>sjukdom</keywords>
+      <keywords>problem</keywords>
+      <keywords>påstående</keywords>
+      <keywords>fynd</keywords>
+      <keywords>observation</keywords>
+      <use>*Används för att registrera detaljer om fynd som stöder ett kliniskt påstående, antingen som en sammanfattning av data som finns tillgängliga i andra (ofta OBSERVATION-klass) arketyper, eller när de ursprungliga observationsdata inte är tillgängliga.&#xD;
+&#xD;
+Denna arketyp är utformad för att kapslas in i en SLOT i EVALUATION.problem_diagnosis, EVALUATION.adverse_reaction_risk, EVALUATION.health_risk, EVALUATION.contraindication, eller liknande sammanfattande arketyper, där namnet på påståendet redan har specificerats i EVALUATIONEN, för att utöka innehållet med denna extra och valfria dataset. Medan LÄNKAR inom openEHR-referensmodellen möjliggör koppling till data som hålls någon annanstans inom hälsojournalen har denna arketyp utvecklats för att göra denna funktion tydlig och för att möjliggöra klinisk synlighet och granskning av dessa data, där det kan vara relevant i en template eller specifikation.&#xD;
+&#xD;
+De kliniska bevisen kan matas in direkt i denna arketyp som en "Finding", eller en citering kan användas för att uttryckligen peka på data i hälsojournalen.</use>
+      <misuse>Är inte utformad för att registrera sammanfattade detaljer om ett identifierat problem eller diagnos - använd EVALUATION.problem_diagnosis för detta ändamål.&#xD;
+&#xD;
+Är inte utformad för att registrera sammanfattande detaljer om en identifierad biverkningsrisk - använd EVALUATION.adverse_reaction_risk för detta ändamål.&#xD;
+&#xD;
+Är inte utformad för att registrera sammanfattande detaljer om en identifierad hälsorisk - använd EVALUATION.health_risk för detta ändamål.&#xD;
+&#xD;
+Är inte utformad för att registrera sammanfattande detaljer om en identifierad kontraindikation - använd EVALUATION.-kontraindikationen för detta ändamål.</misuse>
+      <copyright>© openEHR Foundation, openEHR Norway</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere eksplisitte detaljer om grunnlaget for et klinisk utsagn, for eksempel en problem/diagnose, risiko for overfølsomhetsreaksjon, helserisiko, eller kontraindikasjon.</purpose>
+      <keywords>diagnose</keywords>
+      <keywords>evidens</keywords>
+      <keywords>tilstand</keywords>
+      <keywords>sykdom</keywords>
+      <keywords>problem</keywords>
+      <keywords>observasjon</keywords>
+      <keywords>begrunnelse</keywords>
+      <use>Brukes for å registrere eksplisitte detaljer om grunnlaget for et klinisk utsagn, enten som en oppsummering av data som er tilgjengelig i andre arketyper (ofte av OBSERVATION-klassen), eller når de opprinnelige dataene ikke er tilgjengelige for applikasjonen.&#xD;
+&#xD;
+Denne arketypen er ment å legges i et SLOT i arketypene EVALUATION.problem_diagnosis, EVALUATION.adverse_reaction_risk, EVALUATION.health_risk, EVALUATION.contraindication eller lignende oppsummerende arketyper, der utsagnet allerede er spesifisert i EVALUATION-arketypen. Den fungerer der som en valgfri utvidelse av datasettet i EVALUATION-arketypen.&#xD;
+&#xD;
+Som spesifisert i openEHR referansemodellen kan det benyttes lenker for å lenke til data som ligger andre steder i journalen, mens denne arketypen er laget for å gjøre dette eksplisitt, og for å gjøre det mulig å vise og gjennomgå disse dataene klinisk der dette er relevant.&#xD;
+&#xD;
+Grunnlaget kan legges direkte i denne i arketypen som et "Resultat", "Strukturert resultat", som fritekstlig oppsummering i "Oppsummering", eller en referans kan benyttes for å peke direkte til dataene som ligger et annet sted i journalen.</use>
+      <misuse>Skal ikke brukes til å registrere sammendrag om et problem eller en diagnose. For dette brukes arketypen EVALUATION.problem_diagnosis.&#xD;
+&#xD;
+Skal ikke brukes til å registrere sammendrag om risiko for overfølsomhetsreaksjoner. For dette brukes arketypen EVALUATION.adverse_reaction_risk.&#xD;
+&#xD;
+Skal ikke brukes til å registrere sammendrag om en helserisiko. For dette brukes arketypen EVALUATION.health_risk.&#xD;
+&#xD;
+Skal ikke brukes til å registrere sammendrag om en kontraindikasjon. For dette brukes arketypen EVALUATION.contraindication.</misuse>
+      <copyright>© openEHR Foundation, openEHR Norway</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record an explicit finding in support of a clinical assertion, such as a problem/diagnosis, adverse reaction risk, health risk assessment, or contraindication.</purpose>
+      <keywords>diagnosis</keywords>
+      <keywords>evidence</keywords>
+      <keywords>condition</keywords>
+      <keywords>disease</keywords>
+      <keywords>problem</keywords>
+      <keywords>assertion</keywords>
+      <keywords>finding</keywords>
+      <keywords>observation</keywords>
+      <use>Use to record details about findings that support a clinical assertion, either as a summary of data available in other (often OBSERVATION class) archetypes, or when the original observational data is not available.&#xD;
+&#xD;
+This archetype is designed to be nested within a SLOT in the EVALUATION.problem_diagnosis, EVALUATION.adverse_reaction_risk, EVALUATION.health_risk, EVALUATION.contraindication, or similar summary archetypes, where the name of the assertion has already been specified in the EVALUATION, in order to extend its content with this additional and optional dataset. While LINKs within the openEHR Reference Model allow for linkage to data held elsewhere within the health record, this archetype has been developed to make this functionality explicit, and to enable clinical visibility and review of this data, where it may be relevant in a template or specification.&#xD;
+&#xD;
+The clinical evidence can be entered directly into this archetype as a 'Result', 'Structured result', a narrative summary in 'Summary'; or a citation can be used to explicitly point to data within the health record.</use>
+      <misuse>Not to be used to record summary details about an identified problem or diagnosis - use the EVALUATION.problem_diagnosis for this purpose.&#xD;
+&#xD;
+Not to be used to record summary details about an identified adverse reaction risk - use the EVALUATION.adverse_reaction_risk for this purpose.&#xD;
+&#xD;
+Not to be used to record summary details about an identified health risk - use the EVALUATION.health_risk for this purpose.&#xD;
+&#xD;
+Not to be used to record summary details about an identified contraindication - use the EVALUATION.contraindication for this purpose.</misuse>
+      <copyright>© openEHR Foundation, openEHR Norway</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Alina Rehberg, Darin Leonhardt</author>
+    <author id="organisation">Medizinische Hochschule Hannover, PLRI, PLRI für medizinische Informatik/ Medizinische Hochschule</author>
+    <author id="email">rehberg.alina@mh-hannover.de, leonhardt.darin@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Therese Lindberg</author>
+    <author id="organisation">Cambio CDS</author>
+    <author id="email">therese.lindberg@cambio.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Silje Ljosland Bakke, Liv Laugen, Vebjørn Arntzen</author>
+    <author id="organisation">Nasjonal IKT HF, ​Oslo University Hospital, Norway</author>
+    <author id="email">silje.ljosland.bakke@nasjonalikt.no, liv.laugen@ous-hf.no, varntzen@ous-hf.no</author>
+  </translations>
+  <uid>
+    <value>1a30b06f-887a-4b08-ab42-243bf6757c33</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.clinical_evidence.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0026</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0007</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.citation(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.citation(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.media_file\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0024</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0023</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Clinical evidence</items>
+        <items id="description">Details about findings that support a clinical assertion.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Method description</items>
+        <items id="description">Narrative description of the method/s used to identify the evidence.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Evidence</items>
+        <items id="description">Identification of an item of clinical evidence by name or type, either as a single result or as a grouping of results.</items>
+        <items id="comment">It is recommended that 'Evidence' should be coded with a terminology, where possible.  For example: 'Mantoux test', 'AFP level', 'tumour volume', 'genetic tests', 'BRCA1 test', 'histopathology result', 'physical examination finding', 'intraoperative finding', 'FIGO stage', 'symptom', 'tumour grading', 'clinical impression'. For use cases where the evidence is sufficiently identified in 'Result' or 'Structured result', this data element may be redundant and has therefore been made optional.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Summary</items>
+        <items id="description">Narrative summary about this item of clinical evidence.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Result</items>
+        <items id="description">The result or finding that supports the assertion.</items>
+        <items id="comment">For example: '11 mm', '13 µg/L', '2.5 ml' or 'BRCA1 positive'. 'Result' can be coded with a terminology, where appropriate.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Date/time of result</items>
+        <items id="description">The date/time of the result or finding.</items>
+        <items id="comment">For example: The date time of a clinical examination. For labs or imaging this is the collection date/time of the specimen or image.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Citation</items>
+        <items id="description">Detailed data available about the evidence held in another part of the health record.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Multimedia representation</items>
+        <items id="description">Digital image, video or diagram representing the clinical evidence.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Method</items>
+        <items id="description">Type of examination or investigation used to identify the evidence.</items>
+        <items id="comment">Consider coding 'Method' with a terminology, where possible. For example: Physical examination, Chest x-ray, Histopathology result, Colonoscopy.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the finding not captured in other fields.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Additional details</items>
+        <items id="description">Additional structured details about the finding.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Structured result</items>
+        <items id="description">Structured details about the result.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Date/time clinically relevant</items>
+        <items id="description">The date/time when the result was included as evidence for the assertion.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Klinisk grunnlag</items>
+        <items id="description">Detaljer om funn som underbygger et klinisk utsagn.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Metodebeskrivelse</items>
+        <items id="description">Fritekstlig beskrivelse av typen undersøkelse eller utredning som er utført for å komme fram til grunnlaget.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Grunnlag</items>
+        <items id="description">Identifisering av en forekomst av et klinisk grunnlag, enten ved navn eller type, som et enkelt resultat eller en gruppe av resultater.</items>
+        <items id="comment">Det anbefales å kode "Funn" med en terminologi, der det er mulig. For eksempel "Mantoux test", "AFP nivå", "Tumorstørrelse", "Genetisk test", "BRCA1 test", "Histopatologisvar", "Fysisk funn", "Funn ved operasjon", "FIGO stadium", "Symptom", "Tumorgradering", "Klinisk inntrykk". Dersom grunnlaget er tilstrekkelig identifisert i "Resultat" eller "Strukturert resultat" kan dette elementet være overflødig, og har derfor blitt satt som valgfritt.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Oppsummering</items>
+        <items id="description">Fritekstbeskrivelse av denne forekomsten av klinisk grunnlag.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Resultat</items>
+        <items id="description">Resultatet eller funnet som støtter utsagnet.</items>
+        <items id="comment">For eksempel "11 mm", "13 µg/L", "2.5 ml" or "BRCA1 positiv". "Resultat" kan bli kodet med en terminologi der det er passende.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Dato</items>
+        <items id="description">Dato/tid til resultatet eller funnet.</items>
+        <items id="comment">For eksempel når en klinisk undersøkelse ble gjort. For laboratorieanalyser eller bildediagnostikk er dette dato/tid for når prøven eller bildet ble tatt.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Referanse</items>
+        <items id="description">Detaljerte data om funnet i andre deler av journalen.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Multimediarepresentasjon</items>
+        <items id="description">Digitalt bilde, video eller diagram som representerer det kliniske grunnlaget.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Metode</items>
+        <items id="description">Typen undersøkelse eller utredning som er utført for å komme fram til funnet.</items>
+        <items id="comment">Metoden bør vurderes kodet med en terminologi der dette er mulig. For eksempel fysisk undersøkelse, røntgen thorax, patologisvar, koloskopi.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere informasjon om funnet, som ikke kan registreres i andre felter.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Ytterligere detaljer</items>
+        <items id="description">Ytterligere strukturerte detaljer om funnet.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Strukturert resultat</items>
+        <items id="description">Strukturerte detaljer om resultatet.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Dato/tid for klinisk relevans</items>
+        <items id="description">Dato/tid når resultatet ble tatt inn som grunnlag for utsagnet.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Klinische Evidenz</items>
+        <items id="description">Details über Befunde, die eine klinische Feststellung stützen.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Beschreibung der Methode</items>
+        <items id="description">Narrative Beschreibung der Methode(n), die zur Festellung der Evidenz verwendet wurde(n).</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Befund</items>
+        <items id="description">Identifizierung des Befundes, der die Feststellung stützt</items>
+        <items id="comment">Es wird nach Möglichkeit empfohlen den Befund mit einer Terminologie zu kodieren.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Befundbeschreibung</items>
+        <items id="description">Narrative Beschreibung des Befundes.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Ergebnis</items>
+        <items id="description">Messung oder Wert, der mit dem Befund verbunden ist.</items>
+        <items id="comment">Zum Beispiel: Mantoux-Testergebnis.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Feststellungsdatum</items>
+        <items id="description">Das Datum, an dem der Befund klinisch festgestellt wurde.</items>
+        <items id="comment">Zum Beispiel: Das Datum, an dem der Befund vom Arzt gemacht oder ihm zur Verfügung gestellt wurde.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Zitat</items>
+        <items id="description">Detaillierte Daten über die in einem anderen Teil der Gesundheitsakte enthaltenen Beweise sind verfügbar.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Multimediale Darstellung</items>
+        <items id="description">Digitales Bild, Video oder Diagramm, welches die klinischen Evidenz darstellt.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Methode</items>
+        <items id="description">Art der Untersuchung oder Recherche, die zur Feststellung der Evidenz verwendet wird.</items>
+        <items id="comment">Erwägen Sie 'Methode' mit einer Terminologie zu kodieren, wenn möglich. Zum Beispiel: Körperliche Untersuchung, Röntgenaufnahme der Brust, Ergebnis der Histopathologie, Koloskopie.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Informationen über die Befunde, welche noch nicht an anderer Stelle dokumentiert wurden.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Zusätzliche Angaben</items>
+        <items id="description">Zusätzliche strukturierte Angaben zu den Ergebnissen.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Strukturiertes Ergebnis</items>
+        <items id="description">Strukturierte Angaben über das Ergebnis.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Klinisch relevantes Datum/Uhrzeit</items>
+        <items id="description">Das Datum/Uhrzeit, zu der das Ergebnis als Beweis für die Feststellung aufgenommen wurde.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Kliniska bevis</items>
+        <items id="description">Detaljer om resultat som stöder ett kliniskt påstående.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Metodbeskrivning</items>
+        <items id="description">Berättande beskrivning av metoden / metoderna som används för att identifiera bevisen.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Fynd</items>
+        <items id="description">*Identifiering av fyndet som stöder påståendet.</items>
+        <items id="comment">*Det rekommenderas att fynd ska kodas med en terminologi, där det är möjligt.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Beskrivning av fynd</items>
+        <items id="description">Berättande beskrivning av fynd.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Resultat</items>
+        <items id="description">*Mätning eller värde associerat med fyndet.</items>
+        <items id="comment">*Till exempel: Mantoux-testresultat.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Identifieringsdatum</items>
+        <items id="description">*Datum då fyndet kliniskt identifierades.</items>
+        <items id="comment">*Till exempel: Datumet då fynden gjordes av eller gjordes tillgänglig för läkaren.</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Citat</items>
+        <items id="description">Detaljerad information tillgänglig om bevisen som finns i en annan del av hälsojournalen.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Multimedia representation</items>
+        <items id="description">Digital bild, video eller diagram som representerar kliniska bevis.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Metod</items>
+        <items id="description">Typ av undersökning eller utredning som används för att identifiera bevisen.</items>
+        <items id="comment">Överväg att koda 'Metod' med en terminologi, där det är möjligt. Till exempel: Fysisk undersökning, bröströntgen, resultat av histopatologi, koloskopi.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare beskrivning om fynden som inte redan inkluderats.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">*Additional details (en)</items>
+        <items id="description">*Additional structured details about findings. (en)</items>
+      </items>
+      <items code="at0025">
+        <items id="text">*CLUSTER_SLOT (en)</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0026">
+        <items id="text">*DV_DATE_TIME (en)</items>
+        <items id="description"></items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

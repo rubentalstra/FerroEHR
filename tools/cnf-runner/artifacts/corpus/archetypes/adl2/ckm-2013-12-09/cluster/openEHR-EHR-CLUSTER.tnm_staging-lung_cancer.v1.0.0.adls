@@ -1,0 +1,305 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.tnm_staging-lung_cancer.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.tnm_staging.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/07/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the TNM staging classification for lung cancer (Sixth Edition).">
+			use = <"Use only for the Sixth edition of TNM lung cancer classification.">
+			keywords = <"tumour", "TNM", "malignancy", "cancer", "staging", "classification", "lung", "bronchial", "lymph node", "metastasis">
+			misuse = <"Not to be used for pleural mesothelioma, sarcoma or other rare lung tumours.
+Not to be used for other editions of TNM classification.">
+		>
+	>
+	other_contributors = <"Heather Leslie,Ocean Informatics. Australia", "Cathy Richardson, NEHTA, Australia", "David McKillop, NEHTA, Australia", "Koray Atalag, University of Auckland, New Zealand">
+	references = <
+		["1"] = <"Greene FL, Page DL, Fleming ID. et al, eds, for the American Joint Committee on Cancer. AJCC Cancer Staging Manual. 6th ed. New York, NY: Springer-Verlag; 2002.">
+		["2"] = <"American Joint Committee on Cancer. TNM schema files [Internet]. [cited 2009 Jul 27 ]">
+		["3"] = <"Available from: http://www.cancerstaging.org/education/tnmschema/tnmschema.html">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"E03215CDA1A9A90A2730E3949D0B36F7">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- TNM staging - Lung cancer (Sixth Edition)
+		/items[id3]/items[id4]/value matches {
+			DV_CODED_TEXT[id37.1] matches {
+				defining_code matches {[ac0.1]}		-- Primary tumour (T) (synthesised)
+			}
+		}
+		/items[id3]/items[id5]/value matches {
+			DV_CODED_TEXT[id38.1] matches {
+				defining_code matches {[ac0.2]}		-- Regional lymph nodes (N) (synthesised)
+			}
+		}
+		/items[id3]/items[id6]/value matches {
+			DV_CODED_TEXT[id39.1] matches {
+				defining_code matches {[ac0.3]}		-- Distant metastasis (M) (synthesised)
+			}
+		}
+		/items[id3]/items[id15]/value matches {
+			DV_CODED_TEXT[id42.1] matches {
+				defining_code matches {[ac0.4]}		-- Clinical stage grouping (synthesised)
+			}
+		}
+		/items[id7]/items[id8]/value matches {
+			DV_CODED_TEXT[id44.1] matches {
+				defining_code matches {[ac0.5]}		-- Primary tumour (pT) (synthesised)
+			}
+		}
+		/items[id7]/items[id9]/value matches {
+			DV_CODED_TEXT[id45.1] matches {
+				defining_code matches {[ac0.6]}		-- Regional lymph node (pN) (synthesised)
+			}
+		}
+		/items[id7]/items[id10]/value matches {
+			DV_CODED_TEXT[id46.1] matches {
+				defining_code matches {[ac0.7]}		-- Distant metastasis (pM) (synthesised)
+			}
+		}
+		/items[id7]/items[id16]/value matches {
+			DV_CODED_TEXT[id50.1] matches {
+				defining_code matches {[ac0.8]}		-- Pathological stage grouping (synthesised)
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.14"] = <
+				text = <"Tx">
+				description = <"Primary tumour cannot be assessed.">
+			>
+			["at0.15"] = <
+				text = <"T0">
+				description = <"No evidence of primary tumour.">
+			>
+			["at0.16"] = <
+				text = <"Tis">
+				description = <"Carcinoma in situ.">
+			>
+			["at0.17"] = <
+				text = <"T1">
+				description = <"Tumour ≤3cm in greatest dimension and completely surrounded by lung or visceral pleura and not involving a main bronchus.">
+			>
+			["at0.18"] = <
+				text = <"T2">
+				description = <"Tumour >3cm in greatest dimension;or, Involves main bronchus, 2cm or more distal to the carina;or, Invades the visceral pleura; or, Associated with atelectasis of obstructive pneumonia that extends to the hilar region but does not involve entire lung.">
+			>
+			["at0.19"] = <
+				text = <"T3">
+				description = <"Tumour of any size that directly invades chest wall, diaphragm, mediastinal pleura, parietal pericardium; or, Tumour in main bronchus <2cm from carina; or, Tumour with associated atelectasis or obstructive pneumonitis involving the entire lung.">
+			>
+			["at0.20"] = <
+				text = <"T4">
+				description = <"Tumour of any size that invades mediastinum, heart, great vessels, trachea, oesophagus, vertebral body, carina; or, Separate tumour nodules in same lobe; or,Tumour with malignant pleural effusion.">
+			>
+			["at0.21"] = <
+				text = <"NX">
+				description = <"Regional nodes cannot be assessed.">
+			>
+			["at0.22"] = <
+				text = <"N0">
+				description = <"No metastasis to regional lymph nodes.">
+			>
+			["at0.23"] = <
+				text = <"N1">
+				description = <"Metastasis to ipsilateral intralobar, peribronchial and/or hilar nodes including nodes involved by direct extension of the primary tumour.">
+			>
+			["at0.24"] = <
+				text = <"N2">
+				description = <"Metastasis to ipsilateral mediastinal and/or subcarinal nodes.">
+			>
+			["at0.25"] = <
+				text = <"N3">
+				description = <"Metastasis to contralateral mediastinal, contralateral hilar, ipsilateral or contralateral scalene, or supraclavicular nodes.">
+			>
+			["at0.26"] = <
+				text = <"MX">
+				description = <"Distant metastasis cannot be assessed.">
+			>
+			["at0.27"] = <
+				text = <"M0">
+				description = <"No distant metastasis.">
+			>
+			["at0.28"] = <
+				text = <"M1">
+				description = <"Distant metastasis present.">
+			>
+			["at0.33"] = <
+				text = <"Stage 0">
+				description = <"Tis  N0  M0">
+			>
+			["at0.34"] = <
+				text = <"Stage IA">
+				description = <"T1  N0  M0">
+			>
+			["at0.35"] = <
+				text = <"Stage IB">
+				description = <"T2  N0  M0">
+			>
+			["at0.37"] = <
+				text = <"Stage IIB">
+				description = <"T2  N1  M0 ; T3  N0  M0">
+			>
+			["at0.38"] = <
+				text = <"Stage IIIA">
+				description = <"T1  N2  M0,  T2  N2  M0,  T3  N1  M0, T3 N2 M0">
+			>
+			["at0.54"] = <
+				text = <"Stage IIIB">
+				description = <"Any T  N3  M0, T4  Any N  M0">
+			>
+			["at0.40"] = <
+				text = <"pT0">
+				description = <"No evidence of primary tumour.">
+			>
+			["at0.41"] = <
+				text = <"pTis">
+				description = <"Carcinoma in situ.">
+			>
+			["at0.42"] = <
+				text = <"pT1">
+				description = <"Tumour ≤3cm in greatest dimension and completely surrounded by lung or visceral pleura and not involving a main bronchus.">
+			>
+			["at0.43"] = <
+				text = <"pT2">
+				description = <"Tumour >3cm in greatest dimension; or, Involves main bronchus, 2cm or more distal to the carina; or, Invades the visceral pleura; or, Associated with atelectasis of obstructive pneumonia that extends to the hilar region but does not involve entire lung.">
+			>
+			["at0.44"] = <
+				text = <"pT3">
+				description = <"Tumour of any size that directly invades chest wall, diaphragm, mediastinal pleura, parietal pericardium; or, Tumour in main bronchus <2cm from carina; or, Tumour with associated atelectasis or obstructive pneumonitis involving the entire lung.">
+			>
+			["at0.45"] = <
+				text = <"pT4">
+				description = <"Tumour of any size that invades mediastinum, heart, great vessels, trachea, oesophagus, vertebral body, carina; or, Separate tumour nodules in same lobe; or, Tumour with malignant pleural effusion.">
+			>
+			["at0.39"] = <
+				text = <"pTx">
+				description = <"Primary tumour cannot be assessed.">
+			>
+			["at0.46"] = <
+				text = <"pNX">
+				description = <"Regional nodes cannot be assessed.">
+			>
+			["at0.47"] = <
+				text = <"pN0">
+				description = <"No metastasis to regional lymph nodes.">
+			>
+			["at0.48"] = <
+				text = <"pN1">
+				description = <"Metastasis to ipsilateral intralobar, peribronchial and/or hilar nodes including nodes involved by direct extension of the primary tumour.">
+			>
+			["at0.49"] = <
+				text = <"pN2">
+				description = <"Metastasis to ipsilateral mediastinal and/or subcarinal nodes.">
+			>
+			["at0.50"] = <
+				text = <"pN3">
+				description = <"Metastasis to contralateral mediastinal, contralateral hilar, ipsilateral or contralateral scalene, or supraclavicular nodes.">
+			>
+			["at0.51"] = <
+				text = <"pMX">
+				description = <"Distant metastasis cannot be assessed.">
+			>
+			["at0.52"] = <
+				text = <"pM0">
+				description = <"No distant metastasis.">
+			>
+			["at0.53"] = <
+				text = <"pM1">
+				description = <"Distant metastasis present.">
+			>
+			["at0.36"] = <
+				text = <"Stage IIA">
+				description = <"T1  N1  M0">
+			>
+			["id1.1"] = <
+				text = <"TNM staging - Lung cancer (Sixth Edition)">
+				description = <"TNM Staging classification for lung cancer (Sixth edition) .">
+			>
+			["ac0.1"] = <
+				text = <"Primary tumour (T) (synthesised)">
+				description = <"Clincal assessment of the primary tumour. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Regional lymph nodes (N) (synthesised)">
+				description = <"Clinical assessment of the regional lymph nodes. (synthesised)">
+			>
+			["ac0.3"] = <
+				text = <"Distant metastasis (M) (synthesised)">
+				description = <"Clinical assessment of distant metastasis. (synthesised)">
+			>
+			["ac0.4"] = <
+				text = <"Clinical stage grouping (synthesised)">
+				description = <"The TNM Clinical stage grouping. (synthesised)">
+			>
+			["ac0.5"] = <
+				text = <"Primary tumour (pT) (synthesised)">
+				description = <"Pathological assessment of the primary tumour. (synthesised)">
+			>
+			["ac0.6"] = <
+				text = <"Regional lymph node (pN) (synthesised)">
+				description = <"Pathological assessment of the regional lymph nodes. (synthesised)">
+			>
+			["ac0.7"] = <
+				text = <"Distant metastasis (pM) (synthesised)">
+				description = <"Pathological assessment of distant metastases. (synthesised)">
+			>
+			["ac0.8"] = <
+				text = <"Pathological stage grouping (synthesised)">
+				description = <"The TNM Pathological stage grouping. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.14", "at0.15", "at0.16", "at0.17", "at0.18", "at0.19", "at0.20">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.21", "at0.22", "at0.23", "at0.24", "at0.25">
+		>
+		["ac0.3"] = <
+			id = <"ac0.3">
+			members = <"at0.26", "at0.27", "at0.28">
+		>
+		["ac0.4"] = <
+			id = <"ac0.4">
+			members = <"at0.33", "at0.34", "at0.54", "at0.35", "at0.36", "at0.37", "at0.38">
+		>
+		["ac0.5"] = <
+			id = <"ac0.5">
+			members = <"at0.39", "at0.40", "at0.41", "at0.42", "at0.43", "at0.44", "at0.45">
+		>
+		["ac0.6"] = <
+			id = <"ac0.6">
+			members = <"at0.46", "at0.47", "at0.48", "at0.49", "at0.50">
+		>
+		["ac0.7"] = <
+			id = <"ac0.7">
+			members = <"at0.51", "at0.52", "at0.53">
+		>
+		["ac0.8"] = <
+			id = <"ac0.8">
+			members = <"at0.33", "at0.34", "at0.54", "at0.35", "at0.36", "at0.37", "at0.38">
+		>
+	>

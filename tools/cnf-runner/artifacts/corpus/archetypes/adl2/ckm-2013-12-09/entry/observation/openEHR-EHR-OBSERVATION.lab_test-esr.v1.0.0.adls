@@ -1,0 +1,84 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-esr.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"07/11/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record an erythrocyte sedimentation rate (ESR).">
+			use = <"Will normally be reported back to the requesting clinician within the context of an overall Composition-based laboratory report.
+">
+			keywords = <"lab", "pathology", "biochemistry", "haematology", "microbiology", "immunology", "laboratory", "eryrthrocyte", "esr", "sedimentation">
+			misuse = <"This archetype is not a full laboratory report and requires diagnosis and other assessments to be recorded using other archetypes.">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", "Heather Leslie, Ocean Informatics, Australia", "Heath Frankel, Ocean Informatics, Australia", "Koray Atalag, University of Auckland, New Zealand">
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ] Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["2"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"25F3993EF2409A6B94A556ACE921657F">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Erythroctye sedimentation rate
+		/data[id2]/events matches {
+			EVENT[id3] occurrences matches {0..1} matches {
+				data matches {
+					ITEM_TREE[id4] matches {
+						items matches {
+							ELEMENT[id79.1] occurrences matches {0..1} matches {	-- Erythrocyte sedimentation rate (ESR)
+								value matches {
+									DV_QUANTITY[id0.1] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..500.0|}
+										precision matches {0}
+										units matches {"mm/h"}
+									}
+								}
+							}
+							ELEMENT[id79] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Erythroctye sedimentation rate">
+				description = <"To record an erythrocyte sedimentation rate (ESR).">
+			>
+			["id79.1"] = <
+				text = <"Erythrocyte sedimentation rate (ESR)">
+				description = <"The velocity of sedimentation of red cells in the first hour.">
+			>
+			["at0.1"] = <
+				text = <"Velocity">
+				description = <"Velocity">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/338>
+		>
+	>

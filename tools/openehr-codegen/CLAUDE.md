@@ -7,7 +7,10 @@ The single deterministic generator behind the whole spec layer. Lives under
 - `emit-json` — BMM → the canonical-JSON `ToJson`/`FromJson` codec in `openehr-its`.
 - `emit-xml` — XSD + BMM → `ToXml`/`FromXml` in `openehr-its`.
 - `emit-rest` — the vendored OAS → the ITS-REST contract in `openehr-its`.
-- `emit-opt` — the OPT 1.4 model + XML codec.
+- `emit-opt` — the OPT 1.4 model + XML codec (`openehr-its` `opt14`).
+- `emit-aom2` — BOTH AOM2 archetype XML serializations: the persistent form
+  (`P_Archetype.xsd` → `aom2`) and the AOM model form (`Archetype.xsd` →
+  `aom2_model`), each from its own curated XSD closure.
 - `emit-rm-model` — the static RM attribute/type model (refreshes the subtree
   `emit` already writes).
 - `emit-validate` — the machine-classified RM invariant cores.

@@ -1,0 +1,68 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.empty_domain_block.v1
+
+concept
+	[at0000]	-- Empty inline dADL domain blocks
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openEHR-rs regression corpus">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	CLUSTER[at0000] matches {	-- Empty inline dADL domain blocks
+		items cardinality matches {0..*; unordered} matches {
+			ELEMENT[at0001] occurrences matches {0..1} matches {	-- Bare empty quantity
+				value matches {
+					-- An EMPTY domain block constrains the TYPE and nothing
+					-- else — exactly `DV_QUANTITY matches {*}`. Adjudicated
+					-- (#1465 family 3): the block's content is dADL
+					-- (ADL1.4/master05-cadl.adoc §Symbols V_C_DOMAIN_TYPE) and
+					-- the dADL chapter's own grammar admits the empty block
+					-- (ADL1.4/master04-dadl.adoc §Syntax
+					-- untyped_single_attr_object_block, first alternative;
+					-- §Empty Sections: "Empty sections can appear anywhere").
+					-- 9 live CKM archetypes rely on the form.
+					C_DV_QUANTITY <
+					>
+				}
+			}
+			ELEMENT[at0002] occurrences matches {0..1} matches {	-- Parenthesised empty ordinal
+				value matches {
+					-- The parenthesised spelling of the same empty block, on
+					-- the OTHER lowered domain type (master05-cadl §Symbols
+					-- marks the paren-less form deprecated and this one
+					-- "correct ADL 1.4/ADL 1.5").
+					(C_DV_ORDINAL) <
+					>
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Empty inline dADL domain blocks">
+					description = <"Both spellings of the empty domain block lower to the open constraint">
+				>
+				["at0001"] = <
+					text = <"Bare empty quantity">
+					description = <"C_DV_QUANTITY with an empty block">
+				>
+				["at0002"] = <
+					text = <"Parenthesised empty ordinal">
+					description = <"(C_DV_ORDINAL) with an empty block">
+				>
+			>
+		>
+	>

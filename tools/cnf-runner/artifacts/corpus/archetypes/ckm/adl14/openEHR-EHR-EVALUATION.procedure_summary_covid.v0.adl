@@ -1,0 +1,448 @@
+﻿archetype (adl_version=1.4; uid=df19a0ab-1a06-45e6-9687-c4b83c49c54f)
+	openEHR-EHR-EVALUATION.procedure_summary_covid.v0
+
+concept
+	[at0000]	-- COVID - procedure summary
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Sarah Ballout">
+				["organisation"] = <"MHH-Hannover">
+				["email"] = <"ballout.sarah@mh-hannover.de">
+			>
+		>
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			author = <
+			>
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			author = <
+				["name"] = <"Paolo Anedda">
+				["organisation"] = <"Inpeco">
+				["email"] = <"paolo.anedda@inpeco.com">
+			>
+		>
+	>
+description
+	original_author = <
+		["date"] = <"2020-03-09">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Repräsentation der medizinischen Prozeduren und Therapien für epidemiologische Zwecke.">
+			use = <"Zur Repräsentation der medizinischen Prozeduren und Therapien für epidemiologische Zwecke.">
+			misuse = <"">
+		>
+		["fi"] = <
+			language = <[ISO_639-1::fi]>
+			purpose = <"*To record a summary of historical procedures and therapies for epidemiological purposes.(en)">
+			use = <"*To record a summary of historical procedures and therapies for epidemiological purposes.(en)">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record a summary of historical procedures and therapies for epidemiological purposes.">
+			use = <"To record a summary of historical procedures and therapies for epidemiological purposes.">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["it"] = <
+			language = <[ISO_639-1::it]>
+			purpose = <"Registrare una sintesi delle procedure e delle terapie storiche per scopi epidemiologici.">
+			use = <"Registrare una sintesi delle procedure e delle terapie storiche per scopi epidemiologici.">
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"734EBBE048A6BF0F80A9306BED22C381">
+		["build_uid"] = <"e42b1831-0cda-46f4-b464-afe9679ca867">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	EVALUATION[at0000] matches {    -- COVID - procedure summary
+		data matches {
+			ITEM_TREE[at0003] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					CLUSTER[at0012] occurrences matches {0..*} matches {    -- Procedure
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0020] occurrences matches {0..1} matches {    -- Procedure name
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0039,    -- ICU care
+											at0040,    -- Ventilation
+											at0041,    -- ECMO
+											at0042]    -- Isolation
+										}
+									}
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0004] occurrences matches {0..1} matches {    -- Status
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0005,    -- Yes
+											at0006,    -- No
+											at0044]    -- Unknown
+										}
+									}
+								}
+							}
+							ELEMENT[at0043] occurrences matches {0..1} matches {    -- Procedure date
+								value matches {
+									DV_DATE_TIME matches {*}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0001] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[at0047] occurrences matches {0..1} matches {    -- Report phase
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0048,    -- Confirmed diagnosis
+									at0049]    -- Outcome
+								}
+							}
+						}
+					}
+					allow_archetype CLUSTER[at0002] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"COVID - procedure summary">
+					description = <"A summary of historical procedures and therapies">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Extension">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Status">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Yes">
+					description = <"The patient has had the procedure or therapy.">
+				>
+				["at0006"] = <
+					text = <"No">
+					description = <"The patient has not had the procedure or therapy.">
+				>
+				["at0012"] = <
+					text = <"Procedure">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Procedure name">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"ICU care">
+					description = <"ICU care">
+				>
+				["at0040"] = <
+					text = <"Ventilation">
+					description = <"Ventilation">
+				>
+				["at0041"] = <
+					text = <"ECMO">
+					description = <"ECMO">
+				>
+				["at0042"] = <
+					text = <"Isolation">
+					description = <"Isolation">
+				>
+				["at0043"] = <
+					text = <"Procedure date">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Unknown">
+					description = <"It is not known if the patient has had the procedure or therapy.">
+				>
+				["at0047"] = <
+					text = <"Report phase">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Confirmed diagnosis">
+					description = <"Confirmed diagnosis report phase.">
+				>
+				["at0049"] = <
+					text = <"Outcome">
+					description = <"Outcome report phase.">
+				>
+			>
+		>
+		["fi"] = <
+			items = <
+				["at0000"] = <
+					text = <"*COVID - aikaisempien hoitojen yhteenveto">
+					description = <"Yhteenveto aikaisemmista toimenpiteistä sekä hoidoista">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"*Extension(en)">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Status">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Kyllä">
+					description = <"Potilaalla on aikaisempia hoitoja tai toimenpiteitä">
+				>
+				["at0006"] = <
+					text = <"Ei">
+					description = <"Potilaalla ei ole aikaisempia hoitoja tai toimenpiteitä">
+				>
+				["at0012"] = <
+					text = <"Toimenpide">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Toimenpiteen nimi">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"Tehohoito">
+					description = <"*ICU care(en)">
+				>
+				["at0040"] = <
+					text = <"Avustettu hengitys">
+					description = <"*Ventilation(en)">
+				>
+				["at0041"] = <
+					text = <"ECMO">
+					description = <"ECMO (extracorporeal membrane oxygenation) eli kehonulkoinen happeuttaminen on veren happeuttamista koneellisesti kehon ulkopuolella.">
+				>
+				["at0042"] = <
+					text = <"Eristys">
+					description = <"Eristys">
+				>
+				["at0043"] = <
+					text = <"Toimenpiteen ajankohta">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Ei tiedetä">
+					description = <"Ei varmuutta onko potilas saanut hoitoa tai ollut toimenpiteessä.">
+				>
+				["at0047"] = <
+					text = <"Raportoitu hoitojakso">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Diagnosoitu">
+					description = <"Diagnosoitu hoitojakso">
+				>
+				["at0049"] = <
+					text = <"Lopputulema">
+					description = <"Hoitojakson lopputulema">
+				>
+			>
+		>
+		["it"] = <
+			items = <
+				["at0000"] = <
+					text = <"COVID - riepilogo della procedura">
+					description = <"Una sintesi delle procedure e delle terapie storiche.">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Estensione">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Stato">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Si">
+					description = <"Il paziente ha subito la procedura o la terapia.">
+				>
+				["at0006"] = <
+					text = <"No">
+					description = <"Il paziente non ha subito la procedura o la terapia.">
+				>
+				["at0012"] = <
+					text = <"Procedura">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Nome della procedura">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"Cura ICU">
+					description = <"Cura ICU">
+				>
+				["at0040"] = <
+					text = <"Ventilazione">
+					description = <"Ventilazione">
+				>
+				["at0041"] = <
+					text = <"ECMO">
+					description = <"ECMO">
+				>
+				["at0042"] = <
+					text = <"Isolamento">
+					description = <"Isolamento">
+				>
+				["at0043"] = <
+					text = <"Data della procedura">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Sconosciuto">
+					description = <"Non si sa se il paziente ha subito la procedura o la terapia. ">
+				>
+				["at0047"] = <
+					text = <"Fase di rapporto">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Diagnosi confermata">
+					description = <"Fase di rapporto di diagnosi confermata.">
+				>
+				["at0049"] = <
+					text = <"Risultato">
+					description = <"Fase di rapporto del risultato.">
+				>
+			>
+		>
+		["de"] = <
+			items = <
+				["at0000"] = <
+					text = <"COVID - Zusammenfassung des Prozesses">
+					description = <"Eine Zusammenfassung der medizinischen Prozeduren und Therapien">
+				>
+				["at0001"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Erweiterung">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Status">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"Ja">
+					description = <"Der Patient hat die Behandlung oder die Therapie bereits erhalten.">
+				>
+				["at0006"] = <
+					text = <"Nein">
+					description = <"Der Patient hat weder die Behandlung noch die Therapie bekommen.">
+				>
+				["at0012"] = <
+					text = <"Prozedur">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Name der Prozedur">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"Intensivstation-Pflege">
+					description = <"Intensivstation-Pflege">
+				>
+				["at0040"] = <
+					text = <"Ventilation">
+					description = <"Ventilation">
+				>
+				["at0041"] = <
+					text = <"ECMO">
+					description = <"ECMO">
+				>
+				["at0042"] = <
+					text = <"Isolation">
+					description = <"Isolation">
+				>
+				["at0043"] = <
+					text = <"Datum des Verfahrens">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Unbekannt">
+					description = <"Es ist nicht bekannt, ob der Patient die Behandlung oder die Therapie erhalten hat.">
+				>
+				["at0047"] = <
+					text = <"Berichtsphase">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Bestätigte Diagnose">
+					description = <"Bestätigte Diagnosenberichtsphase.">
+				>
+				["at0049"] = <
+					text = <"Ergebnis">
+					description = <"Ergebnisberichtsphase.">
+				>
+			>
+		>
+	>

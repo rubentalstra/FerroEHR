@@ -1,0 +1,148 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.cessation_attempts.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"22/06/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Record information about single, or multiple, attempts of the individual to cease use of a substance.">
+			use = <"Use to record details about attempts to cease use or consumption of a substance, such as alcohol, tobacco or recreational drugs.">
+			keywords = <"cessation", "withdrawal", "substance", "tobacco", "alcohol", "drug">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"0D3EB32A8DA29FFC98EE7ABEE6F7BE81">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Cessation attempts
+		items matches {
+			CLUSTER[id3] matches {	-- Attempt details
+				items matches {
+					ELEMENT[id2] occurrences matches {0..1} matches {	-- Location
+						value matches {
+							DV_TEXT[id12] 
+						}
+					}
+					ELEMENT[id4] occurrences matches {0..1} matches {	-- Date of attempt
+						value matches {
+							DV_DATE_TIME[id13] 
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id14] 
+						}
+					}
+					CLUSTER[id6] matches {	-- Therapeutic intervention
+						items matches {
+							ELEMENT[id7] occurrences matches {0..1} matches {	-- Agent
+								value matches {
+									DV_TEXT[id15] 
+								}
+							}
+							ELEMENT[id9] occurrences matches {0..1} matches {	-- Used optimally
+								value matches {
+									DV_BOOLEAN[id16] matches {
+										value matches {True, False}
+									}
+								}
+							}
+							ELEMENT[id10] occurrences matches {0..1} matches {	-- Comment
+								value matches {
+									DV_TEXT[id17] 
+								}
+							}
+						}
+					}
+					ELEMENT[id11] occurrences matches {0..1} matches {	-- Outcome
+						value matches {
+							DV_CODED_TEXT[id18] matches {
+								defining_code matches {[ac1]}		-- Outcome (synthesised)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Cessation attempts">
+				description = <"Cease use or consumption of a substance.">
+			>
+			["id2"] = <
+				text = <"Location">
+				description = <"Place where attempt to cease use occurred eg home or name of institution.">
+			>
+			["id3"] = <
+				text = <"Attempt details">
+				description = <"Details about cessation attempt/s.">
+			>
+			["id4"] = <
+				text = <"Date of attempt">
+				description = <"Date of commencement of cessation attempt.">
+			>
+			["id5"] = <
+				text = <"Description">
+				description = <"Description of the attempt.">
+			>
+			["id6"] = <
+				text = <"Therapeutic intervention">
+				description = <"Details of therapeutic agent/s used.">
+			>
+			["id7"] = <
+				text = <"Agent">
+				description = <"Name of agent used.">
+			>
+			["id9"] = <
+				text = <"Used optimally">
+				description = <"Was the agent used optimally?">
+			>
+			["id10"] = <
+				text = <"Comment">
+				description = <"Comment about the effect of the agent on the attempt.">
+			>
+			["id11"] = <
+				text = <"Outcome">
+				description = <"Outcome of attempt.">
+			>
+			["at12"] = <
+				text = <"Successful">
+				description = <"Outcome was successful; Use/consumption of substance ceased.">
+			>
+			["at13"] = <
+				text = <"Successful but relapsed">
+				description = <"Outcome was initially successful but use/consumption of substance was resumed.">
+			>
+			["at14"] = <
+				text = <"Failed">
+				description = <"Outcome was not successful; Use/consumption continued.">
+			>
+			["ac1"] = <
+				text = <"Outcome (synthesised)">
+				description = <"Outcome of attempt. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at12", "at13", "at14">
+		>
+	>

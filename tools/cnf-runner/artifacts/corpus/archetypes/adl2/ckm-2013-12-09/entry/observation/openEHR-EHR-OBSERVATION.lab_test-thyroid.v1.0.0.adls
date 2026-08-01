@@ -1,0 +1,168 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-thyroid.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics, Australia">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"26/03/2006">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the function of the thyroid gland and its pituitary stimulation.">
+			use = <"">
+			keywords = <"lab", "pathology", "biochemistry", "laboratory", "TSH", "Thyroid function", "TSH">
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ] Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["2"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"C1A6FF145D31C5A8488AB9F77DAB4609">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Thyroid function tests
+		/data[id2]/events matches {
+			EVENT[id3] occurrences matches {0..1} matches {
+				data matches {
+					ITEM_TREE[id4] matches {
+						items matches {
+							ELEMENT[id79.2] occurrences matches {0..1} matches {	-- Thyroid stimulating hormone (TSH)
+								value matches {
+									DV_QUANTITY[id0.1] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..100.0|}
+										units matches {"mIU/l"}
+									}
+								}
+							}
+							ELEMENT[id79.7] occurrences matches {0..1} matches {	-- Free Triiodothyronine (Free T3)
+								value matches {
+									DV_QUANTITY[id0.2] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..1000.0|}
+										units matches {"pmol/l"}
+									}
+								}
+							}
+							ELEMENT[id79.8] occurrences matches {0..1} matches {	-- Total Triiodothyronine (Total T3)
+								value matches {
+									DV_QUANTITY[id0.3] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..1000.0|}
+										units matches {"pmol/l"}
+									}
+								}
+							}
+							ELEMENT[id79.3] occurrences matches {0..1} matches {	-- Free thyroxine (Free T4)
+								value matches {
+									DV_QUANTITY[id0.4] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..1000.0|}
+										units matches {"pmol/l"}
+									}
+								}
+							}
+							ELEMENT[id79.4] occurrences matches {0..1} matches {	-- Total Thyroxine (Total T4)
+								value matches {
+									DV_QUANTITY[id0.5] matches {
+										property matches {[at0.1]}
+										magnitude matches {|0.0..1000.0|}
+										units matches {"pmol/l"}
+									}
+								}
+							}
+							ELEMENT[id79.5] occurrences matches {0..1} matches {	-- T4 loaded uptake
+								value matches {
+									DV_QUANTITY[id0.6] 
+								}
+							}
+							ELEMENT[id79.9] occurrences matches {0..1} matches {	-- Free Triiodothyronine index (Free T3 index)
+								value matches {
+									DV_PROPORTION[id0.7] matches {
+										numerator matches {|>=0.0|}
+										denominator matches {1.0}
+										type matches {1}
+									}
+								}
+							}
+							ELEMENT[id79.6] occurrences matches {0..1} matches {	-- Free thyroxine index (FTI)
+								value matches {
+									DV_PROPORTION[id0.8] matches {
+										numerator matches {|>=0.0|}
+										denominator matches {1.0}
+										type matches {1}
+									}
+								}
+							}
+							ELEMENT[id79] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Thyroid function tests">
+				description = <"Measurement of biochemical markers of thyroid function.">
+			>
+			["id79.2"] = <
+				text = <"Thyroid stimulating hormone (TSH)">
+				description = <"TSH is released by the pituitary gland to stimulate release of thyroxine. Estimation by a high sensitivity assay is now accepted as the first line test for assessment of thyroid function.">
+			>
+			["id79.3"] = <
+				text = <"Free thyroxine (Free T4)">
+				description = <"Concentration of T4 unbound">
+			>
+			["id79.4"] = <
+				text = <"Total Thyroxine (Total T4)">
+				description = <"Concentration of T4 bound and unbound. ">
+			>
+			["id79.5"] = <
+				text = <"T4 loaded uptake">
+				description = <"Uptake of T3 after loading the serum with T4.">
+			>
+			["id79.6"] = <
+				text = <"Free thyroxine index (FTI)">
+				description = <"Total T4 x T3 uptake">
+			>
+			["id79.7"] = <
+				text = <"Free Triiodothyronine (Free T3)">
+				description = <"Concentration of T3 not bound to proteins">
+			>
+			["id79.8"] = <
+				text = <"Total Triiodothyronine (Total T3)">
+				description = <"Concentration of T3 bound and unbound">
+			>
+			["id79.9"] = <
+				text = <"Free Triiodothyronine index (Free T3 index)">
+				description = <"Total T3 concentration x T3 uptake">
+			>
+			["at0.1"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/119>
+		>
+	>

@@ -1,0 +1,1429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>de</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2019-08-06</original_author>
+    <original_author id="name">Natalia Strauch</original_author>
+    <original_author id="organisation">Medizinische Hochschule Hannover</original_author>
+    <original_author id="email">strauch.natalia@mh-hannover.de</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Irradiation, Published archetype [Internet]. HiGHmed, HiGHmed Clinical Knowledge Manager [cited: 2024-08-22]. Available from: https://ckm.highmed.org/ckm/archetypes/1246.145.602&#xD;
+&#xD;
+NCCN Radiation Therapy Compendium™: NCCN.org/rtcompendium&#xD;
+&#xD;
+http://www.cancernetwork.com/cancer-management-11/chapter02/article/10165/1399960&#xD;
+&#xD;
+Deutschland:&#xD;
+Deutsche Krebsgesellschaft: https://www.krebsgesellschaft.de/onko-internetportal/basis-informationen-krebs/therapieformen/strahlentherapie-bei-krebs.html&#xD;
+&#xD;
+http://www.tumorzentren.de</other_details>
+    <other_details id="current_contact">strauch.natalia@mh-hannover.de</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">2D463B7A08B1D291189004611AB7B0AA</other_details>
+    <other_details id="build_uid">fb66c320-e278-4848-88d7-edbc8bf423a3</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Dieser Archetyp dient dazu, die detaillierten Angaben der Bestrahlung von Krebspatienten aus kurativen oder palliativen Gründen darzustellen.</purpose>
+      <keywords>Strahlentherapie</keywords>
+      <keywords>Bestrahlung</keywords>
+      <keywords>Radiotherapie</keywords>
+      <keywords>Strahlenbehandlung</keywords>
+      <keywords>Strahlung</keywords>
+      <keywords>Zielgebiet</keywords>
+      <keywords>Strahlendosis</keywords>
+      <keywords>Gray</keywords>
+      <keywords>Brachytherapie</keywords>
+      <keywords>Teletherapie</keywords>
+      <keywords>Radioonkologie</keywords>
+      <keywords>Nuklearmedizin</keywords>
+      <keywords>Radionuklidentherapie</keywords>
+      <keywords>Metabolische Therapie</keywords>
+      <keywords>Zielvolumen</keywords>
+      <use>Zur Darstellung detaillierter Angaben zur Bestrahlung eines Zielgebietes mit einer bestimmten Dosis. Dieser Archetyp wurde für die Verwendung als Details zur Prozedur innerhalb des Archetyps "Prozedur" bestimmt, um spezifische Details einer Radiotherapie-Prozedur darzustellen.</use>
+      <misuse>Nicht zur Darstellung von Informationen über die erforderlichen Aktivitäten zum Ausführen einer Radiotherapie-Prozedur bestimmt. Verwenden Sie dafür den ACTION.Archetyp "Prozedur".&#xD;
+&#xD;
+Nicht zur Darstellung einer Strahlenexposition, als Gesamtheit aller Umwelteinflüsse, denen ein Mensch, ausgesetzt werden kann.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record the details of a radiotherapy of a cancer patient for curative or palliative reasons.</purpose>
+      <keywords>Irradiation therapy</keywords>
+      <keywords>Radiation</keywords>
+      <keywords>Radiotherapy</keywords>
+      <keywords>Treatment with radiation</keywords>
+      <keywords>Target area</keywords>
+      <keywords>Radiation dose</keywords>
+      <keywords>Gray</keywords>
+      <keywords>Brachytherapy</keywords>
+      <keywords>Teletherapy</keywords>
+      <keywords>Radio-oncology</keywords>
+      <keywords>Nuclear Medicine</keywords>
+      <keywords>Radionuclide therapy</keywords>
+      <keywords>Metabolic therapy</keywords>
+      <keywords>Radiation Therapy</keywords>
+      <keywords>Irradiation</keywords>
+      <keywords>Target region</keywords>
+      <use>To record information about the radiotherapy of a target region with a specific dose. This archetype is designed to represent specific details of a radiotherapy process. This archetype should be used in the 'Procedure detail' SLOT in the ACTION.procedure archetype.</use>
+      <misuse>Not to be used to represent information about the activities required to perform a radiotherapy procedure. Use the ACTION.archetype 'Procedure' for this purpose.&#xD;
+&#xD;
+&#xD;
+Not to be used to represent radiation exposure as the entirety of all environmental factors to which a person may be exposed.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>en</code_string>
+    </language>
+    <author id="name">Samer Alkarkoukly</author>
+    <author id="organisation">University Hospital Cologne, Germany</author>
+    <author id="email">Mabbouda@uni-koeln.de</author>
+  </translations>
+  <uid>
+    <value>6076fa30-016a-417a-9056-3b0c30101f62</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.radiotherapy.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0002</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.anatomical_location\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0003</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0004</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_DATE_TIME</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0047</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0048</code_list>
+                <code_list>at0049</code_list>
+                <code_list>at0050</code_list>
+                <code_list>at0051</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0027</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0032</code_list>
+                <code_list>at0033</code_list>
+                <code_list>at0041</code_list>
+                <code_list>at0034</code_list>
+                <code_list>at0042</code_list>
+                <code_list>at0035</code_list>
+                <code_list>at0036</code_list>
+                <code_list>at0043</code_list>
+                <code_list>at0044</code_list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0006</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0007</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <property>
+                  <terminology_id>
+                    <value>openehr</value>
+                  </terminology_id>
+                  <code_string>380</code_string>
+                </property>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0.0</lower>
+                    <upper>999.999</upper>
+                  </magnitude>
+                  <units>1</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0008</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0009</code_list>
+                    <code_list>at0045</code_list>
+                    <code_list>at0010</code_list>
+                    <code_list>at0052</code_list>
+                    <code_list>at0054</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0011</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0012</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_DV_QUANTITY">
+                <rm_type_name>DV_QUANTITY</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <property>
+                  <terminology_id>
+                    <value>openehr</value>
+                  </terminology_id>
+                  <code_string>380</code_string>
+                </property>
+                <list>
+                  <magnitude>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0.0</lower>
+                    <upper>999.999</upper>
+                  </magnitude>
+                  <units>1</units>
+                </list>
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0013</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                  <rm_attribute_name>defining_code</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>1</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_CODE_PHRASE">
+                    <rm_type_name>CODE_PHRASE</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id />
+                    <terminology_id>
+                      <value>local</value>
+                    </terminology_id>
+                    <code_list>at0022</code_list>
+                    <code_list>at0046</code_list>
+                    <code_list>at0023</code_list>
+                    <code_list>at0053</code_list>
+                    <code_list>at0055</code_list>
+                  </children>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0014</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0015</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>1</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0016</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_COUNT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0017</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_DATE_TIME</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0018</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0024</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>openEHR-EHR-CLUSTER\.media_file(-[a-zA-Z0-9_]+)*\.v1</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0025</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Bestrahlung</items>
+        <items id="description">Detaillierte Angaben zur Bestrahlung in der Radiotherapie.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Zielgebiet</items>
+        <items id="description">Das Zielgebiet, das bestrahlt wurde, z. B. Pankreas.</items>
+        <items id="comment">Die Kodierung des Zielgebietes ist über eine Terminologie zu bevorzugen. Verwenden Sie dieses Datenelement, um vorab präkoordinierte anatomische Lokalisationen zu erfassen. Wenn die Anforderungen an die Erfassung des Zielgebietes zur Laufzeit der Anwendung bestimmt werden oder komplexere Modellierungen wie z. B. relative Lage erforderlich sind, dann verwenden Sie in diesem Archetyp den CLUSTER.anatomical_location oder CLUSTER.relative_location innerhalb des SLOT "Details zum Zielgebiet".</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Details zum Zielgebiet</items>
+        <items id="description">Spezifische strukturierte Angaben zum Zielgebiet oder Zielvolumen, das bestrahlt wurde.</items>
+        <items id="comment">Verwenden Sie diesen Slot, um die Archetypen CLUSTER.anatomical_location oder CLUSTER.anatomical_location_relative einzufügen, wenn die Anforderungen für die Darstellung des Zielgebietes zur Laufzeit der Anwendung bestimmt werden oder komplexere Modellierungen wie z. B. relative Positionen erforderlich sind. Wenn die anatomische Lage über präkoordinierte Kodes im Feld "Zielgebiet" enthalten ist, kann die Verwendung dieses Slots überflüssig sein.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Beginn</items>
+        <items id="description">Das Datum, an dem mit der Bestrahlung des Zielgebietes begonnen wurde.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">Ende</items>
+        <items id="description">Das Datum, an dem die Bestrahlung des Zielgebietes beendet wurde.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Applikationsart</items>
+        <items id="description">Bestrahlungstechnik, als eine weitere Klassifizierung der Therapiemethode.</items>
+        <items id="comment">Die Techniken einer Bestrahlung sind vielfältig. Die Kodierung mit einer Terminologie wird, wenn möglich, bevorzugt.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Einzeldosis</items>
+        <items id="description">Die Einzeldosis, mit der das Zielgebiet bestrahlt wurde. Die Dosis bezieht sich auf die verschriebene Isodose (gleiche Energie- oder Ionendosis auf einer Linie oder Fläche).</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Dosis (ED)</items>
+        <items id="description">Der Wert der Einzeldosis.</items>
+        <items id="comment">Beispiel: Bei der Angabe von Strahlendosis 3,0 Gy ist der Wert "3,0".</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Einheit (ED)</items>
+        <items id="description">Die Angabe, in welcher Einheit die Einzeldosis angegeben wurde.</items>
+        <items id="comment">Die Einzeldosis bei der Strahlentherapie wird üblicherweise in Gray (Gy) und seltener in Gigabequerel (GBq) erfasst. Bei einer Strahlendosis von "3,0 Gy" ist die Einheit für die Dosis "Gy". Bei einer Strahlendosis von "2,6 GBq" ist die Einheit für die Dosis "GBq".</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Gy</items>
+        <items id="description">Energiedosis in SI-Einheit Gray.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">GBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Gigabecquerel.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Gesamtdosis</items>
+        <items id="description">Die Gesamtdosis, mit der das Zielgebiet bestrahlt wurde.</items>
+        <items id="comment">Die Gesamtdosis setzt sich aus mehreren Einzeldosen (Fraktionen) zusammen. Zum Beispiel: 30,0 Gy kann in 10 Fraktionen á 3,0 Gy verabreicht werden.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Dosis (SD)</items>
+        <items id="description">Der Wert der Gesamtdosis.</items>
+        <items id="comment">Beispiel: Bei der Angabe von Strahlendosis 30,0 Gy ist der Wert "30,0".</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Einheit (SD)</items>
+        <items id="description">Die Angabe, in welcher Einheit die Gesamtdosis angegeben wurde.</items>
+        <items id="comment">Die Einzeldosis bei der Strahlentherapie wird üblicherweise in Gray (Gy) und seltener in Gigabequerel (GBq) erfasst. Bei einer Strahlendosis von "30,0 Gy" ist die Einheit für die Dosis "Gy". Bei einer Strahlendosis von "26,0 GBq" ist die Einheit für die Dosis "GBq".</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Anzahl Fraktionen</items>
+        <items id="description">Die Anzahl der Fraktionen (Einzeldosen), auf die die Gesamtdosis verteilt wurde.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Fraktion</items>
+        <items id="description">Details zu den einzelnen Fraktionen.</items>
+        <items id="comment">Die Bestrahlung wird zur besseren Verträglichkeit in der Regel in viele kleine Einzeldosen unterteilt, diese nennt man Fraktionen.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Folgenummer der Fraktion</items>
+        <items id="description">Die Reihenfolge der Fraktion innerhalb der Abfolge von Fraktionen einer Zielgebietsbestrahlung.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Datum</items>
+        <items id="description">Das Datum, an dem die Fraktion durchgeführt wurde.</items>
+        <items id="comment">Die einzelne Bestrahlung (Fraktion) findet meist an einem gesonderten Tag statt oder es können mehrere einzelne Bestrahlungen an einem Tag stattfinden (Hyperfraktionierte Bestrahlung).</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Kommentar</items>
+        <items id="description">Ergänzende Beschreibung zur Fraktion, die nicht in anderen Bereichen erfasst wurde.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Spezifische Details</items>
+        <items id="description">Spezifische strukturierte Angaben zu der Zielgebietsbestrahlung.</items>
+        <items id="comment">Zum Beispiel spezifische detaillierte Angaben zu einer Applikationstechnik, wie Boost-Bestrahlung bei einer Tele- oder Brachytherapie; oder Strahlenart und/oder -qualität und weitere spezifische Informationen einer Zielgebietsbestrahlung.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Gy</items>
+        <items id="description">Energiedosis in SI-Einheit Gray.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">GBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Gigabecquerel.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Bildgebung/Bestrahlungsplanung</items>
+        <items id="description">Strukturierte Informationen über die Bildgebung und/oder Bestrahlungsplanung.</items>
+        <items id="comment">Ein Bestrahlungsplan ist ein Bilddatensatz mit 100 -120 dreidimensionalen Bildern.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Toxizität</items>
+        <items id="description">Klinische Symptome und / oder Anzeichen, die als Nebenwirkungen beobachtet oder in die Relation zur Bestrahlung des Zielgebietes gebracht werden.</items>
+        <items id="comment">Toxizität kann im einzelnen Wort, Ausdruck oder in einer kurzen Beschreibung ausgedruckt werden. Zum Beispiel: Übelkeit, vereinzelte Hautrötungen. "Keine Nebenwirkungen" kann ebenfalls angebracht sein, wenn keine toxische Wirkung während und nach der Bestrahlung festgestellt wurde. Die "Toxizität" soll nach Möglichkeit mit einer Terminologie kodiert werden. Zu den gebräuchlichen Terminologien zählen die CTCAE-, MedDRA Codes unter anderem SNOMED-CT oder ICD10.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Strahlenart</items>
+        <items id="description">Art der Strahlung nach ihren Bestandteilen.</items>
+        <items id="comment">Es können mehr als eine Strahlenart ausgewählt werden.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Photonen (ɣ)</items>
+        <items id="description">Bestrahlung unter Verwendung von Photonen (Ultraharte Röntgenstrahlung).</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Elektronen (e−)</items>
+        <items id="description">Bestrahlung unter Verwendung von Elektronen.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Protonen (p+)</items>
+        <items id="description">Bestrahlung unter Verwendung von Protonen.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Kohlenstoffionen</items>
+        <items id="description">Bestrahlung unter Verwendung von schweren Kohlenstoffionen.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Alpha-Strahlen (α)</items>
+        <items id="description">Radioaktive Bestrahlung unter Verwendung von Alpha-Strahlen.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Neutronen (n)</items>
+        <items id="description">Bestrahlung unter Verwendung von Neutronen.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Heliumionen</items>
+        <items id="description">Bestrahlung unter Verwendung von Heliumionen.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Beta-Strahlen (β)</items>
+        <items id="description">Radioaktive Bestrahlung unter Verwendung von Beta-Strahlen.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Gamma-Strahlen (γ)</items>
+        <items id="description">Radioaktive Bestrahlung unter Verwendung von Gamma-Strahlen.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">GyE</items>
+        <items id="description">Die Einheit der biologisch-effektiven Dosis in Gray equivalent (keine SI-Einheit).</items>
+      </items>
+      <items code="at0046">
+        <items id="text">GyE</items>
+        <items id="description">Die Einheit der biologisch-effektiven Dosis in Gray equivalent (keine SI-Einheit).</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Therapiemethode</items>
+        <items id="description">Bezeichnung des technischen Verfahrens. Je nachdem, wie die Strahlen in den Körper eindringen, werden verschiedene Methoden der Bestrahlung unterschieden.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Teletherapie</items>
+        <items id="description">Perkutane Strahlentherapie (perkutan – durch die Haut hindurch).</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Brachytherapie</items>
+        <items id="description">Bestrahlung innerhalb oder in unmittelbarer Nähe des zu bestrahlenden Gebietes im Körper.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Metabolische Therapie</items>
+        <items id="description">Therapie mit Anwendung von Radionukliden. Die Radionuklidtherapie wird zu den nuklearmedizinischen Therapien gerechnet.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Sonstige Therapie</items>
+        <items id="description">Andere Therapien z.B. Stereotaxie oder kombinierte Therapie.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">MBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Megabecquerel.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">MBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Megabecquerel.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">kBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Kilobecquerel.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">kBq</items>
+        <items id="description">Radioaktivität in SI-Einheit Kilobecquerel.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Irradiation</items>
+        <items id="description">Detailed information about the irradiation in radiotherapy.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Target region</items>
+        <items id="description">The target region that was irradiated, e.g. pancreas.</items>
+        <items id="comment">The terminology encoding of the target region is preferred. Use this data element to record the pre-identified anatomical location. If it's required to document the targeted region during the time of application, or more complicated modelling is required, such as relative location, then use the CLUSTER.anatomical_location or CLUSTER.relative_location within the SLOT 'Target region details' in this archetype.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Target region details</items>
+        <items id="description">Specific structured information on the target region that was irradiated.</items>
+        <items id="comment">Use this slot to insert CLUSTER.anatomical_location or CLUSTER.anatomical_location_relative archetypes if it's required to document the target region during the time of application, or when more complicated modelling, such as relative positions, is needed. If the anatomical location is included in the 'target region' field via pre-existing codes, the use of this slot might be redundant.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Start</items>
+        <items id="description">The date, on which the radiotherapy of the target region was started.</items>
+      </items>
+      <items code="at0004">
+        <items id="text">End</items>
+        <items id="description">The date, on which the radiotherapy of the target region was ended.</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Application type</items>
+        <items id="description">Irradiation technique, as a further classification of the treatment method.</items>
+        <items id="comment">The techniques of irradiation are diverse. If possible, encoding with a&#xD;
+terminology is preferred.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Single dose</items>
+        <items id="description">The single dose used to irradiated the target region. The dose refers to the prescribed isodose (equal energy or ion dose on a line or area).</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Dose (ED)</items>
+        <items id="description">The value of the single dose.</items>
+        <items id="comment">Example: When specifying radiation dose 3.0 Gy, the value is '3.0'.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Unit (ED)</items>
+        <items id="description">The unit in which the single dose was specified.</items>
+        <items id="comment">The individual dose in radiation therapy is usually recorded in grays (Gy) and less frequently in gigabequerels (GBq). For a radiation dose of '3.0 Gy', the unit for the dose is 'Gy'. For a radiation dose of '2.6 GBq', the unit for the dose is 'GBq'.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Gy</items>
+        <items id="description">Absorbed dose in SI-unit Gray.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">GBq</items>
+        <items id="description">Radioactivity in SI unit gigabecquerel.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Total dose</items>
+        <items id="description">The total dose used to irradiate the&#xD;
+target region.</items>
+        <items id="comment">The total dose is composed of several individual doses (fractions). For example: 30.0 Gy can be administered in 10 fractions of 3.0 Gy each.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Dose (SD)</items>
+        <items id="description">The value of the total dose.</items>
+        <items id="comment">Example: When indicating radiation dose of 30.0 Gy, the value is '30.0'.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Unit (SD)</items>
+        <items id="description">The unit in which the total dose was&#xD;
+specified.</items>
+        <items id="comment">The individual dose in radiation therapy is usually recorded in grays (Gy) and less frequently in gigabequerels (GBq). For a radiation dose of '30.0 Gy', the unit for the dose is 'Gy'. For a radiation dose of '26.0 GBq', the unit for the dose is 'GBq'.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Number of dose fractions</items>
+        <items id="description">The number of fractions (individual doses) to which the total dose was allocated.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Fraction</items>
+        <items id="description">Details on the individual fractions.</items>
+        <items id="comment">For better tolerability, the radiation is usually divided into many small individual doses, these are called fractions.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Sequence number of the fraction</items>
+        <items id="description">The order of the fraction within the sequence of fractions of a target area irradiation.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Date</items>
+        <items id="description">The date on which the fraction was&#xD;
+applied.</items>
+        <items id="comment">The individual irradiation (fraction) usually takes place on a separate day or several individual irradiations can take place on one day (hyper-fractionated irradiation).</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Comment</items>
+        <items id="description">Supplementary description for the fraction that was not recorded in other areas.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Specific details</items>
+        <items id="description">Specific structured information on the irradiation of the target region.</items>
+        <items id="comment">For example, specific detailed information on an application technique, such as boost irradiation for teletherapy or brachytherapy; or radiation type and/or quality and other specific information of a target region irradiation.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Gy</items>
+        <items id="description">Absorbed dose in SI-unit Gray.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">GBq</items>
+        <items id="description">Radioactivity in SI unit gigabecquerel.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Imaging/radiation planning</items>
+        <items id="description">Structured information about the&#xD;
+imaging and/or radiation plan.</items>
+        <items id="comment">A radiation plan is an image data-set with 100 -120 three-dimensional images.</items>
+      </items>
+      <items code="at0025">
+        <items id="text">Toxicity</items>
+        <items id="description">Clinical symptoms and/or signs observed as side effects, or considered related to the irradiation of the target region.</items>
+        <items id="comment">Toxicity can be expressed in the single word, phrase or in a short description. For example: Nausea, isolated skin redness. 'No side effects' may also be appropriate if no toxic effect was observed during and after irradiation. 'Toxicity' should be encoded with a terminology if possible. Common terminologies include the CTCAE, MedDRA codes, in addition to SNOMED-CT and ICD10.</items>
+      </items>
+      <items code="at0027">
+        <items id="text">Type of radiation</items>
+        <items id="description">Type of radiation according to its components.</items>
+        <items id="comment">More than one radiation type can be selected.</items>
+      </items>
+      <items code="at0032">
+        <items id="text">Photons (ɣ)</items>
+        <items id="description">Irradiation using photons (ultra-hard X-rays).</items>
+      </items>
+      <items code="at0033">
+        <items id="text">Electrons (e-)</items>
+        <items id="description">Irradiation using electrons.</items>
+      </items>
+      <items code="at0034">
+        <items id="text">Protons (p+)</items>
+        <items id="description">Irradiation using protons.</items>
+      </items>
+      <items code="at0035">
+        <items id="text">Carbon ions</items>
+        <items id="description">Irradiation using heavy carbon ions.</items>
+      </items>
+      <items code="at0036">
+        <items id="text">Alpha rays (α)</items>
+        <items id="description">Radioactive irradiation using alpha rays.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Neutrons (n)</items>
+        <items id="description">Irradiation using neutrons.</items>
+      </items>
+      <items code="at0042">
+        <items id="text">Helium ions</items>
+        <items id="description">Irradiation using helium ions.</items>
+      </items>
+      <items code="at0043">
+        <items id="text">Beta rays (β)</items>
+        <items id="description">Radioactive irradiation using beta rays.</items>
+      </items>
+      <items code="at0044">
+        <items id="text">Gamma rays (γ)</items>
+        <items id="description">Radioactive irradiation using gamma rays.</items>
+      </items>
+      <items code="at0045">
+        <items id="text">GyE</items>
+        <items id="description">The unit of the biological effective dose in Gray equivalent (no SI unit).</items>
+      </items>
+      <items code="at0046">
+        <items id="text">GyE</items>
+        <items id="description">The unit of the biological effective dose in Gray equivalent (no SI unit).</items>
+      </items>
+      <items code="at0047">
+        <items id="text">Treatment method</items>
+        <items id="description">Description of the technical procedure. Depending on how the radiation penetrates the body, different methods of irradiation are distinguished.</items>
+      </items>
+      <items code="at0048">
+        <items id="text">Teletherapy</items>
+        <items id="description">Percutaneous radiotherapy (percutaneous - through the skin).</items>
+      </items>
+      <items code="at0049">
+        <items id="text">Brachytherapy</items>
+        <items id="description">Radiotherapy within, or in the close surroundings of the region to be irradiated in the body.</items>
+      </items>
+      <items code="at0050">
+        <items id="text">Metabolic therapy</items>
+        <items id="description">Therapy with the use of radionuclides. Radionuclide therapy is classified as a nuclear medicine therapy.</items>
+      </items>
+      <items code="at0051">
+        <items id="text">Other therapy</items>
+        <items id="description">Other therapies e.g. Stereotactic radiosurgery or combined therapy.</items>
+      </items>
+      <items code="at0052">
+        <items id="text">MBq</items>
+        <items id="description">Radioactivity in SI unit megabecquerel.</items>
+      </items>
+      <items code="at0053">
+        <items id="text">MBq</items>
+        <items id="description">Radioactivity in SI unit megabecquerel.</items>
+      </items>
+      <items code="at0054">
+        <items id="text">kBq</items>
+        <items id="description">Radioactivity in SI unit kilobecquerel.</items>
+      </items>
+      <items code="at0055">
+        <items id="text">kBq</items>
+        <items id="description">Radioactivity in SI unit kilobecquerel.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

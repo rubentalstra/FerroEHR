@@ -1,0 +1,223 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.exam.v1
+
+concept
+	[at0000]	-- Physical Examination Findings
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2007-11-10">
+	>
+	details = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل الموجودات التي تم العثور عليها عند الفحص البدني">
+			use = <"تم تصميم النموذج ليحتوي على عناقيد مفصلة متعلقة بالفحص بما في ذلك الاكتشاف, الجس, التسمع و القرع بما في هذه العناقيد من تخصيصات.">
+			keywords = <"الفحص", "البدني">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"For recording a narrative description and clinical interpretation of the findings observed during the overall physical examination of a subject, and to provide a framework in which to nest detailed CLUSTER archetypes, each of which will enable specific aspects of the physical examination to be recorded in detail.">
+			use = <"Use to record a narrative description of the findings observed during the overall physical examination of a subject.
+
+Use to incorporate the narrative descriptions of clinical findings within existing or legacy clinical systems into an archetyped format, using the 'Clinical Description' data element.
+
+Use as a container archetype - to provide a common, queryable ENTRY archetype in which specific, detailed CLUSTER examination archetypes can be nested. Examples of CLUSTER examination archetypes include those that detail the inspection, palpation, auscultation, percussion and movement of body systems or anatomical structures.">
+			keywords = <"examination", "physical", "exam", "findings", "clinical">
+			misuse = <"Not to be used for recording history-taking observations - use specific OBSERVATION and CLUSTER archetypes. For example OBSERVATION.story and CLUSTER.symptom.
+
+Not to be used to record stand-alone clinical observations - use specific OBSERVATION archetypes. For example OBSERVATION.blood_pressure, OBSERVATION.body_weight, or OBSERVATION.height.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"OrganisationDraft">
+	other_contributors = <"Sheryl Alexander, NT Department of Health, Australia", "Rita Apelt, Department of Health,NT, Australia", "Margaret Campbell, Queensland Health, Australia", "Stephen Chu, NEHTA, Australia", "Margaret Cotter, AMSANT, Australia", "Michelle Dowden, Miwatj Health Ngalkanbuy Health, Australia", "Tim Garden, NTG Department of Health, Australia", "Tanya Gardner, CAAC, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "Jeremy Oats, NT Health, Australia", "Steven Schatz, Department of Health (Northern Territory), Australia", "Cherie Whitbread, Royal Darwin Hospital, Australia", "Jo Wright, NT Dept of Health, Australia (Editor)">
+	other_details = <
+		["current_contact"] = <"Heather Leslie, Ocean Informatics, heather.leslie@oceaninformatics.com">
+		["MD5-CAM-1.0.1"] = <"80899BB6E9AEE27C4482EC7E74B6A755">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Physical Examination Findings
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									allow_archetype CLUSTER[at0005] occurrences matches {0..*} matches {	-- Examination Detail
+										include
+											archetype_id/value matches {/.*/}
+									}
+									ELEMENT[at0006] occurrences matches {0..*} matches {	-- Interpretation
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0011] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[at0009] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0008] occurrences matches {0..*} matches {	-- Confounding Factors
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0007] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0010] occurrences matches {0..*} matches {	-- Device Details
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["ar-sy"] = <
+			items = <
+				["at0000"] = <
+					text = <"*Physical Examination Findings(en)">
+					description = <"*Findings observed during the physical examination of a subject.(en)">
+				>
+				["at0001"] = <
+					text = <"*Event Series(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Any event(en)">
+					description = <"*Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.(en)">
+				>
+				["at0003"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0004"] = <
+					text = <"*Description(en)">
+					description = <"*Narrative description of the overall findings observed during a physical examination of a patient.(en)">
+					comment = <"*May be used to record a narrative summary of the complete clinical examination or key aspects of clinical examination findings, which will be supported by structured data. Details of specific structured findings can be included using CLUSTER archetypes in the 'Examination Detail' slot. This data element may be used to capture legacy data that is not available in a structured format.(en)">
+				>
+				["at0005"] = <
+					text = <"*Examination Detail(en)">
+					description = <"*Structured details of the physical examination.(en)">
+				>
+				["at0006"] = <
+					text = <"*Interpretation(en)">
+					description = <"*Single word, phrase or brief description represents the clinical meaning and significance of the physical examination findings.(en)">
+					comment = <"*Coding with a terminology is preferred, if possible. For example, normal examination or chronic otitis media.(en)">
+				>
+				["at0007"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0008"] = <
+					text = <"*Confounding Factors(en)">
+					description = <"*Description of any incidental factors that may have contributed to the physical examination findings.(en)">
+				>
+				["at0009"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0010"] = <
+					text = <"*Device Details(en)">
+					description = <"*Details about any device used during the physical examination.(en)">
+				>
+				["at0011"] = <
+					text = <"*Comment(en)">
+					description = <"*Any additional narrative comment not covered by other elements.(en)">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Physical Examination Findings">
+					description = <"Findings observed during the physical examination of a subject.">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Description">
+					description = <"Narrative description of the overall findings observed during a physical examination of a patient.">
+					comment = <"May be used to record a narrative summary of the complete clinical examination or key aspects of clinical examination findings, which will be supported by structured data. Details of specific structured findings can be included using CLUSTER archetypes in the 'Examination Detail' slot. This data element may be used to capture legacy data that is not available in a structured format.">
+				>
+				["at0005"] = <
+					text = <"Examination Detail">
+					description = <"Structured details of the physical examination.">
+				>
+				["at0006"] = <
+					text = <"Interpretation">
+					description = <"Single word, phrase or brief description represents the clinical meaning and significance of the physical examination findings.">
+					comment = <"Coding with a terminology is preferred, if possible. For example, normal examination or chronic otitis media.">
+				>
+				["at0007"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0008"] = <
+					text = <"Confounding Factors">
+					description = <"Description of any incidental factors that may have contributed to the physical examination findings.">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0010"] = <
+					text = <"Device Details">
+					description = <"Details about any device used during the physical examination.">
+				>
+				["at0011"] = <
+					text = <"Comment">
+					description = <"Any additional narrative comment not covered by other elements.">
+				>
+			>
+		>
+	>

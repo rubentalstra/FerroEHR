@@ -1,0 +1,243 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.address.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["name"] = <"Hans Demski">
+				["organisation"] = <"Helmholtz Zentrum München">
+				["email"] = <"demski@helmholtz-muenchen.de">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["date"] = <"11/11/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of one or more personal addresses for an individual.">
+			use = <"">
+			keywords = <"address", ...>
+			misuse = <"">
+		>
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Dokumentation einer oder mehrerer Adressen einer Person oder Einrichtung.">
+			use = <"">
+			keywords = <"Adresse", ...>
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"From NHS Scotland SCI-XML messaging standards http://www.isdscotland.org/isd/files/general-v2-7.xsd NHS Scotland Interoperability Working Group http://www.isdscotland.org/isd/5194.htm originally based on: Postal address of person.  ENV 13606 - 4:2000 7.11.13">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"CD4E0D86020F35378BB03F30F08B56B4">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Address
+		items matches {
+			CLUSTER[id2] matches {	-- Address
+				items matches {
+					ELEMENT[id7] matches {	-- Address Type
+						value matches {
+							DV_CODED_TEXT[id17] matches {
+								defining_code matches {[ac1]}		-- Address Type (synthesised)
+							}
+						}
+					}
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Unstructured address
+						value matches {
+							DV_TEXT[id18] 
+						}
+					}
+					CLUSTER[id4] occurrences matches {0..1} matches {	-- Structured address
+						items matches {
+							ELEMENT[id6] occurrences matches {0..1} matches {	-- Property number
+								value matches {
+									DV_TEXT[id19] 
+								}
+							}
+							ELEMENT[id10] occurrences matches {0..4} matches {	-- Address line
+								value matches {
+									DV_TEXT[id20] 
+								}
+							}
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Post code
+						value matches {
+							DV_TEXT[id21] 
+						}
+					}
+					CLUSTER[id16] occurrences matches {0..1} matches {	-- AddressValid Period
+						items matches {
+							ELEMENT[id8] occurrences matches {0..1} matches {	-- Valid from
+								value matches {
+									DV_DATE_TIME[id22] 
+								}
+							}
+							ELEMENT[id9] occurrences matches {0..1} matches {	-- Valid to
+								value matches {
+									DV_DATE_TIME[id23] 
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Address">
+				description = <"To record details of one or more personal addresses.">
+			>
+			["id2"] = <
+				text = <"Address">
+				description = <"One or more adresses for an individual.">
+			>
+			["id3"] = <
+				text = <"Unstructured address">
+				description = <"A postal address expressed in an unstructured format. ENV 13606 - 4:2000 7.11.15.">
+			>
+			["id4"] = <
+				text = <"Structured address">
+				description = <"The structure of a postal address representing the residence of a patient or the physical location of an organisation.  ENV 13606-4:2000 7.11.1.">
+			>
+			["id5"] = <
+				text = <"Post code">
+				description = <"Post code.">
+			>
+			["id6"] = <
+				text = <"Property number">
+				description = <"The number of the property.">
+			>
+			["id7"] = <
+				text = <"Address Type">
+				description = <"The type of address.">
+			>
+			["id8"] = <
+				text = <"Valid from">
+				description = <"The start of the period for which this address is valid.">
+			>
+			["id9"] = <
+				text = <"Valid to">
+				description = <"Date from which the Address is no longer valid.">
+			>
+			["id10"] = <
+				text = <"Address line">
+				description = <"A series of address lines.">
+			>
+			["at12"] = <
+				text = <"Residential">
+				description = <"Address of place of residence.">
+			>
+			["at13"] = <
+				text = <"Correspondence">
+				description = <"Address for correspondence.">
+			>
+			["at14"] = <
+				text = <"Business">
+				description = <"Address of place of business.">
+			>
+			["at15"] = <
+				text = <"Temporary">
+				description = <"Temporary address.">
+			>
+			["id16"] = <
+				text = <"AddressValid Period">
+				description = <"The period during which the associated address is applicable to the person / organisation.  ENV 13606 - 4:2000 7.11.11.  This describes the actual period.">
+			>
+			["ac1"] = <
+				text = <"Address Type (synthesised)">
+				description = <"The type of address. (synthesised)">
+			>
+		>
+		["de"] = <
+			["id1"] = <
+				text = <"Adresse">
+				description = <"Zur Dokumentation einer oder mehrerer Postadressen einer Person oder Einrichtung">
+			>
+			["id2"] = <
+				text = <"Adresse">
+				description = <"Eine oder mehrere Adressen einer Person oder Einrichtung">
+			>
+			["id3"] = <
+				text = <"Unstrukturierte Adresse">
+				description = <"Eine Postadresse in unstrukturiertem Format. ENV 13606 - 4:2000 7.11.15">
+			>
+			["id4"] = <
+				text = <"Strukturierte Adresse">
+				description = <"Struktur zur Aufnahme der Postadresse einer Person oder Einrichtung.  ENV 13606-4:2000 7.11.1">
+			>
+			["id5"] = <
+				text = <"Postleitzahl">
+				description = <"Postleitzahl">
+			>
+			["id6"] = <
+				text = <"Hausnummer">
+				description = <"Hausnummer">
+			>
+			["id7"] = <
+				text = <"Art">
+				description = <"Art der Adresse">
+			>
+			["id8"] = <
+				text = <"Gültig seit">
+				description = <"Das Datum seit dem die Adresse gültig ist">
+			>
+			["id9"] = <
+				text = <"Gültig bis">
+				description = <"Das Datum an dem die Adresse ungültig wurde">
+			>
+			["id10"] = <
+				text = <"Adresse">
+				description = <"Eine Reihe von Adresszeilen">
+			>
+			["at12"] = <
+				text = <"Privat">
+				description = <"*">
+			>
+			["at13"] = <
+				text = <"Schriftverkehr">
+				description = <"*">
+			>
+			["at14"] = <
+				text = <"Geschäftlich">
+				description = <"*">
+			>
+			["at15"] = <
+				text = <"Vorläufig">
+				description = <"*">
+			>
+			["id16"] = <
+				text = <"Gültigkeitszeitraum">
+				description = <"Der Zeitraum in dem die Adresse gültig ist.  ENV 13606 - 4:2000 7.11.11.">
+			>
+			["ac1"] = <
+				text = <"Art (synthesised)">
+				description = <"Art der Adresse (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at12", "at13", "at14", "at15">
+		>
+	>

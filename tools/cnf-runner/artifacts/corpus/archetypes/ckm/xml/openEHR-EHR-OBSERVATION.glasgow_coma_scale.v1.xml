@@ -1,0 +1,1984 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2007-03-13</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <other_contributors>Tomas Alme, DIPS, Norway</other_contributors>
+    <other_contributors>Nadim Anani, Karolinska Institutet, Sweden</other_contributors>
+    <other_contributors>Vebjoern Arntzen, Oslo university hospital, Norway</other_contributors>
+    <other_contributors>Koray Atalag, University of Auckland, New Zealand</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Bergen Hospital Trust, Norway</other_contributors>
+    <other_contributors>Lars Bitsch-Larsen, Haukeland University hospital, Norway</other_contributors>
+    <other_contributors>Martin Boeker, Medical Center - University of Freiburg, Germany</other_contributors>
+    <other_contributors>Marja Buur, Medisch Centrum Alkmaar/ Code24, Netherlands</other_contributors>
+    <other_contributors>Margaret Campbell, Queensland Health, Australia</other_contributors>
+    <other_contributors>Rong Chen, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Stephen Chu, Queensland Health, Australia</other_contributors>
+    <other_contributors>Tamsin Cockayne, Australia</other_contributors>
+    <other_contributors>Marc Cotran, identity vision systems, Canada</other_contributors>
+    <other_contributors>Angela de Zwart, Orion Health, New Zealand</other_contributors>
+    <other_contributors>Einar Fosse, National Centre for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Sebastian Garde, Ocean Informatics, Germany</other_contributors>
+    <other_contributors>Christian Ghan, The Chris O'Brien Lifehouse at RPA, Australia</other_contributors>
+    <other_contributors>William Goossen, Results 4 Care, Netherlands</other_contributors>
+    <other_contributors>Heather Grain, Llewelyn Grain Informatics, Australia</other_contributors>
+    <other_contributors>Birger Haarbrandt, Hannover Medical School, Germany</other_contributors>
+    <other_contributors>Sam Heard, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Oliver Hosking, Remote Health NT, Australia</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Eugene Igras, IRIS Systems, Inc., Canada</other_contributors>
+    <other_contributors>Sundaresan Jagannathan, Scottish NHS, United Kingdom</other_contributors>
+    <other_contributors>Konstantinos Kalliamvakos, Cambio Healthcare Systems, Sweden</other_contributors>
+    <other_contributors>Lars Karlsen, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Shinji Kobayashi, Kyoto University, Japan</other_contributors>
+    <other_contributors>Sergey Kovalenko, Chelyabinsk Regional Children Hospital, Russia</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia (Editor)</other_contributors>
+    <other_contributors>Hallvard Lærum, Oslo University Hospital, Norway</other_contributors>
+    <other_contributors>Luis Marco Ruiz, Norwegian Center for Integrated Care and Telemedicine, Norway</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom (Editor)</other_contributors>
+    <other_contributors>Jeroen Meintjens, Medisch Centrum Alkmaar, Netherlands</other_contributors>
+    <other_contributors>Andrej Orel, Marand d.o.o., Slovenia</other_contributors>
+    <other_contributors>Michael Reynolds, Great Lakes Pediatric Associates, PLLC, United States</other_contributors>
+    <other_contributors>Hossein Riazi, Iran</other_contributors>
+    <other_contributors>Arturo Romero, SESCAM, Spain</other_contributors>
+    <other_contributors>Jussara Rotzsch, UNB, Brazil</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Tony Shannon, NHS, United Kingdom</other_contributors>
+    <other_contributors>Gary Sinclair, NT DoH, Australia</other_contributors>
+    <other_contributors>Tim Sturgill, United States</other_contributors>
+    <other_contributors>Soon Ghee Yap, Singapore General Hospital, Singapore</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Crippen DW. Head Trauma - Presentation: Medscape Reference: Drugs, Diseases &amp; Procedures [Internet]. WebMD LLC: c1994-2013; [updated 2012 Jun 21; accessed 2015 Mar 05]. Available from: http://emedicine.medscape.com/article/433855-overview#a0112.&#xD;
+&#xD;
+Glasgow Coma Scale, draft archetype, NEHTA Clinical Knowledge Manager [Internet]. Australia: National eHealth Transition Authority. Authored: 2007 Mar 13. Available at: http://dcm.nehta.org.au/ckm/#showArchetype_1013.1.1160 (no longer available).&#xD;
+&#xD;
+Teasdale G. Glasgow Coma Scale: The Glasgow structured approach to Assessment of the Glasgow Coma Scale [Internet]. Sir Graham Teasdale; 2014 [accessed 2019 Oct 08]. Available from: http://www.glasgowcomascale.org/ and http://www.glasgowcomascale.org/downloads/GCS-Assessment-Aid.pdf.&#xD;
+&#xD;
+Teasdale G, Jennett B. Assessment of coma and impaired consciousness. A practical scale. Lancet. 1974 Jul 13;2(7872):81-4. doi: 10.1016/s0140-6736(74)91639-0. PubMed PMID: 4136544.&#xD;
+&#xD;
+Teasdale GM, Murray L. Revisiting the Glasgow Coma Scale and Coma Score. Intensive Care Med. 2000 Feb;26(2):153-4. doi: 10.1007/s001340050037. PubMed PMID: 10784300.&#xD;
+&#xD;
+V3 DCModels R1 I1 2010 Sep - Glasgow Coma Scale v0.75 [Internet]. Health Level Seven International. Published Jan 2014 [accessed 2019 Oct 08]. Available at: https://github.com/DetailedClinicalModels/Detailed-Clinical-Models/blob/master/Glasgow%20Coma%20Scale%20(GCS)/org.hl7.GlasgowComaScale(15pointversion)English-v0.75.pdf.</other_details>
+    <other_details id="current_contact">Heather Leslie, Atomica Informatics, heather.leslie@atomicainformatics.com</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">6C9DE7307EE72E4041258332EA705382</other_details>
+    <other_details id="build_uid">661d7a86-424d-403e-8040-d2db2d8bee42</other_details>
+    <other_details id="revision">1.2.0</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Repräsentation klinischer Reaktionen des Pflegebedürftigen auf definierte Impulse als eine objektive Bewertung des Bewusstseinsniveaus.</purpose>
+      <keywords>Reaktion</keywords>
+      <keywords>Motorik</keywords>
+      <keywords>verbal</keywords>
+      <keywords>Auge</keywords>
+      <keywords>Anreiz</keywords>
+      <keywords>Glasgow</keywords>
+      <keywords>Koma</keywords>
+      <keywords>Skala</keywords>
+      <keywords>neurologisch</keywords>
+      <keywords>Reaktionsfähigkeit</keywords>
+      <keywords>EMV</keywords>
+      <keywords>bewusst</keywords>
+      <keywords>GCS</keywords>
+      <keywords>Trauma</keywords>
+      <keywords>Zentralnervensystem</keywords>
+      <keywords>Bewusstsein</keywords>
+      <use>Zur Repräsentation der klinischen Reaktionen eines erwachsenen Pflegebedürftigen auf Reize. Die Methode wird häufig verwendet, um den bewussten Ausgangszustand und die neurologische Funktion zu beurteilen und/oder um Patienten zu erkennen, die möglicherweise eine sofortige medizinische Intervention erfordern.&#xD;
+&#xD;
+Die Glasgower Komaskala hat drei Unterskalen E (Auge), V (verbal) und M (motorisch). In der klinischen Praxis werden alle drei Subskalen einzeln und ggf. mit der Gesamtbewertung" angegeben.&#xD;
+&#xD;
+Eine protokollierte Rückmeldung für E, V und M ist verpflichtend. Wenn eine Reaktion nicht getestet werden kann, sollte der Nullwert "Nicht zutreffend" protokolliert werden; Verwenden Sie nicht den Ordinal Wert 'Keine Angaben', um eine fehlende Komponente zu erfassen. Einzelheiten über den Grund, warum eine Reaktion nicht getestet werden kann, können im Datenelement 'Störfaktoren' protokolliert werden.&#xD;
+&#xD;
+Die "Gesamtbewertung" kann als Summe der erfassten Augen-, motorischen und verbalen Reaktionswerte abgeleitet werden. Es ist nicht angebracht, eine "Gesamtbewertung" zu melden, wenn eine oder mehrere Komponenten nicht testbar sind, weil die Bewertung automatisch zu niedrig ist - in dieser Situation sollte stattdessen das EVM-Profil erfasst werden.&#xD;
+&#xD;
+Die drei Antwortvorgaben werden sowohl separat als auch in ihrer Gesamtheit betrachtet. Das 'EVM-Profil' kann als eine Verkettung der erfassten Augen-, motorischen und verbalen Antwort-Scores abgeleitet werden. E3 V4 M2 repräsentiert beispielsweise den Bewusstseinszustand eines Probanden, der die Augen für Sprache öffnet, unverständliche Laute ausstößt und eine Streckreaktion auf die Stimulation hat.&#xD;
+&#xD;
+Der minimal mögliche Wert der Gesamtbewertung beträgt 3 (entspricht E1 V1 M1) und der maximal mögliche Wert 15 (entspricht E4 V5 M6).&#xD;
+&#xD;
+In der Praxis wird die Glasgow-Koma-Skala als eine Komponente der klinischen Überwachung unter Verwendung von sequentiellen und wiederholten Punkt-im-Zeit-Messungen erfasst. Für jede Messung sollten Datum und Uhrzeit sowie alle Faktoren, die die Interpretation von Veränderungen beeinflussen können, protokolliert werden. Änderungen des "Gesamtergebnisses" oder der E-, V- oder M-Werte können ebenso viel klinische Bedeutung haben wie der ursprünglich gespeicherte Wert.&#xD;
+&#xD;
+</use>
+      <misuse>Nicht zur Repräsentation von Säuglingen und Kleinkindern verwenden. Es wird ein Archetyp für die pädiatrische Glasgow-Koma-Skala benötigt, um zu gewährleisten, dass die Entscheidung für die Augen, die Motorik und die verbale Reaktion dem Alter und den Fähigkeiten des Kindes angemessen ist.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>Att mäta patientens kliniska reaktion till definierad stimuli som en objektiv bedömning av medvetandegrad.</purpose>
+      <keywords>reaktion</keywords>
+      <keywords>motorisk</keywords>
+      <keywords>verbal</keywords>
+      <keywords>ögon</keywords>
+      <keywords>stimulans</keywords>
+      <keywords>glasgow</keywords>
+      <keywords>koma</keywords>
+      <keywords>skala</keywords>
+      <keywords>neurologisk</keywords>
+      <keywords>reaktionsförmåga</keywords>
+      <keywords>EMV</keywords>
+      <keywords>vid medvetande</keywords>
+      <keywords>GCS</keywords>
+      <keywords>trauma</keywords>
+      <keywords>centrala nervsystemet</keywords>
+      <keywords>medvetandegrad</keywords>
+      <use>Används för att registrera vuxna patienters kliniska reaktioner på stimuli. Det används vanligtvis för att fastställa medvetandegrad och neurologisk funktionsbedömning och/eller för att upptäcka patienter som kan kräva omedelbara medicinska insatser.&#xD;
+&#xD;
+GCS-skalan (Glasgow coma scale) har tre komponenter E (ögon), V (verbal) och M (motorisk). I klinisk praxis rapporteras alla tre komponenterna individuellt plus "Totalpoäng", om det är tillämpligt.&#xD;
+&#xD;
+Ett registrerat värde för varje E, V och är obligatorisk. Om ett värde inte kan testas, bör "Ej tillämpligt" registreras som nollvärde; använd inte värdet "Ingen" för att registrera en saknat värde. Detaljer om orsaken till att du inte kan testa ett svar kan registreras i fältet "Påverkande faktorer".&#xD;
+&#xD;
+Totalpoängen kan härledas som summan av mätta ögon-, motoriska- och verbala resultat. Det är inte lämpligt att rapportera "Totalpoäng" när en eller flera komponenter inte kan testas, eftersom poängen blir felaktigt låg - i sådana fall registrerar du EVM-profilen istället.&#xD;
+&#xD;
+De tre svarsvärdena betraktas separat såväl som deras summa. "EVM-profilen" kan härledas som en sammanlänkning av varje registrerat ögon-, motorisk- och verbala responsresultat. E3 V4 M2 beskriver t.ex. ett medvetande tillstånd hos en patient som öppnar ögon för tal, uttalar obegripliga ljud och har en extensorreflex på stimulans.&#xD;
+&#xD;
+Minsta möjliga "Totalpoäng" -värde är 3 (motsvarar E1 V1 M1) och högsta möjliga är 15 (ekvivalent med E4 V5 M6).&#xD;
+&#xD;
+I praktisk användning registreras GCS-skalan som en del av den klinisk övervakning. Den använder sig av sekvensmätningar och upprepade tidpunkts mätningar. Datum och tid bör registreras för varje mätning, liksom eventuella faktorer som kan påverka tolkningen av förändringar. Förändringar i "Totalpoäng" eller E, V eller M-värden kan ha lika mycket klinisk signifikans som det värde som ursprungligen registrerades.&#xD;
+</use>
+      <misuse>Används inte för att bedöma spädbarn och småbarn. En Pediatrisk Glasgow koma-skala arketyp kommer att krävas för att säkerställa att ögon- motoriska- och verbala reaktionen är lämpliga för barnets ålder och förmåga.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es-ar</code_string>
+      </language>
+      <purpose>Para el registro de las respuestas clínicas a estímulos definidos por parte de un sujeto de cuidados, como evaluación objetiva del nivel de conciencia.</purpose>
+      <keywords>respuesta</keywords>
+      <keywords>motora</keywords>
+      <keywords>verbal</keywords>
+      <keywords>ocular</keywords>
+      <keywords>estímulo</keywords>
+      <keywords>Glasgow</keywords>
+      <keywords>coma</keywords>
+      <keywords>escala</keywords>
+      <keywords>neurológica</keywords>
+      <keywords>respuesta</keywords>
+      <keywords>OVM</keywords>
+      <keywords>EVM</keywords>
+      <keywords>conciente</keywords>
+      <keywords>GCS</keywords>
+      <keywords>trauma</keywords>
+      <keywords>sistema nervioso central</keywords>
+      <keywords>consciencia</keywords>
+      <use>Utilizar para registrar respuestas clínicas a estímulos por parte de un adulto sujeto de cuidados. Se utiliza comunmente para establecer un nivel de conciencia y una evaluación de la función neurológico basales y/o para la detección de pacientes que puedan requerir una intervención médica inmediata.&#xD;
+La escala de Glasgow tiene tres subescalas O (ocular), V (Verbal) y M (motora). En la práctica clínica todas las subclases son informadas individualmente junto con el "Puntaje total", si corresponde.&#xD;
+El registro de cada respuesta O, V y M es obligatorio. Si una respuesta no puede ser evaluada, el valor nulo "No aplica" debe ser registrado; no utilizar el valor ordidnal "Ninguna" para registrar un componente ausente. Los detalles acerca de la razón por la cual no se pudo evaluar una respuesta puede ser registrada en el elemento "Factores de confusión".&#xD;
+El "Puntaje total" puede ser derivado de la suma de los puntajes registrados para las respuestas ocular, verbal y motora. No es apropiado registrar un "Puntaje total" toda vez que uno o mas componentes no son evaluables ya que eso determinaría un puntaje artificialmente bajo. Es este caso debe registrarse el perfil OVM.&#xD;
+Los valores para las tres respuestas deben ser considerados separadamente, al igual que como suma. El "perfil OVM" puede obtenerse mediante la concatenación de cada una de las respuestas ocular, verbal y motora registradas. Por ejemplo, O3 V4 M2 representa el estado consciente de un individuo que abre los ojos antes el estímulo verbal, emite sonidos incomprensibles y tiene una respuesta extensora al estímulo.&#xD;
+El "Puntaje total" mínimo posible es de 3 (equivalente a O1 V1 M1) y el máximo posible es 15 (equivalente a O4 V5 M6).&#xD;
+En el uso práctico, la escala del coma de Glasgow es registrada como uno de los componentes del monitoreo clínico, utilizando mediciones puntuales en el tiempo, secuenciales y repetidas. La fecha y la hora deben ser registradas en cada evaluación, al igual que cualquier factor que pueda influenciar la interpretación de los cambios. Los cambios en el "Puntaje total" o en cualquiera de los valores O, V o M pueden tener tanto significado clínico como el valor inicialmente registrado.</use>
+      <misuse>No debe ser utilizada en niños - el arquetipo para la Escala del Coma de Glasgow Pediátrica se requerirá para asegurar que las respuestas ocular, verbal y motora sean las apropiadas para la edad y capacidades del niño.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere klinisk respons på spesifikk stimuli, som en objektiv vurdering av bevissthetsnivået til en pasient.</purpose>
+      <keywords>respons</keywords>
+      <keywords>motorikk</keywords>
+      <keywords>verbal</keywords>
+      <keywords>øye</keywords>
+      <keywords>stimuli</keywords>
+      <keywords>koma</keywords>
+      <keywords>skala</keywords>
+      <keywords>nevrologisk</keywords>
+      <keywords>responsitivitet</keywords>
+      <keywords>ØVM</keywords>
+      <keywords>ØMV</keywords>
+      <keywords>Bevisst</keywords>
+      <keywords>GCS</keywords>
+      <keywords>traume</keywords>
+      <keywords>sentralnervesystemet</keywords>
+      <keywords>bevisstløs</keywords>
+      <keywords>CNS</keywords>
+      <use>Brukes for å registrere den kliniske responsen på spesifikk stimuli hos en voksen pasient. Brukes vanligvis for å etablere en basis for bevissthetsnivå og nevrologisk funksjonsnivå og/eller for å fange opp pasienter som trenger en øyeblikkelig medisinsk intervensjon.&#xD;
+&#xD;
+Glasgow coma scale har tre subskalaer Ø (øye), V (Verbal) og M (Motorisk). I klinisk praksis rapporteres alle de tre subskalaene individuelt, samt "Totalskår" dersom aktuelt.&#xD;
+&#xD;
+En registrert respons på Ø, V og M er obligatorisk. I tilfeller der en respons ikke kan testes, skal null-verdien "Not applicable" registreres. Bruk ikke ordinalverdien "Ingen" for å registrere en manglende komponent. Detaljer om hvorfor en ikke var i stand til å utføre en eller flere av testene kan registreres i dataelementet "Konfunderende faktorer".&#xD;
+&#xD;
+"Totalskår" beregnes som en sum av verdiene registrert i datelementene for "Åpning av øynene", "Verbal respons" og "Motorisk respons". En skal ikke rapportere "Totalskår" når en eller flere komponenter ikke lar seg teste da skåringen vil bli kunstig lav - i slike situasjoner benyttes ØVM-profilen i stedet.&#xD;
+&#xD;
+De tre responsverdiene vurderes separat og som en totalskår. "ØVM-profilen" kan utledes som en sammensetning av hver enkelt av de registrerte skåringene for "Åpning av øynene", "Verbal respons" og "Motorisk respons". For eksempel vil Ø3 V4 M2 representere bevissthetstilstanden til et individ som åpner øyne ved tiltale, har en usammehengende tale, og reagerer med ekstensjon ved smertestimulering.&#xD;
+&#xD;
+En totalskår kan som et minimum ha verdien 3 (Tilsvarer Ø1, V1, M1) og en maksimumsverdi på 15 (Ø4, V5, M6).&#xD;
+&#xD;
+I praksis registreres Glasgow coma scale som en del av klinisk monitorering, målingene utføres sekvensielt og som gjentagende tidspunktmålinger. Dato og tid bør registreres for hver enkelt måling, på samme måte som faktorer som kan påvirke tolkning av målingen. Endringer i "Totalskår" eller verdiene Ø, V eller M har vanligvis en like stor klinisk betydning som verdien som først ble registrert.</use>
+      <misuse>Brukes ikke for å vurdere spedbarn og små barn - en vil da måtte bruke en arketype for Paediatric Glasgow Coma Scale for å sikre at valgene knyttet til øyne, motorikk og verbal respons valg er best tilpasset barnets alder og evner.</misuse>
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>pt-br</code_string>
+      </language>
+      <purpose>Para registar informações clínicas sobre a resposta de um sujeito a estímulos como uma avaliação objetiva do estado de consciência de um sujeito.&#xD;
+A escala de coma de Glasgow (ECG) é uma escala neurológica que parece constituir-se num método confiável e objetivo de registrar o nível de consciência de uma pessoa, para avaliação inicial e contínua após um traumatismo craniano.</purpose>
+      <keywords>resposta</keywords>
+      <keywords>motora</keywords>
+      <keywords>verbal</keywords>
+      <keywords>visual</keywords>
+      <keywords>estímulo</keywords>
+      <keywords>glasgow</keywords>
+      <keywords>coma</keywords>
+      <keywords>escala</keywords>
+      <keywords>neurológicas</keywords>
+      <keywords>responsividade</keywords>
+      <keywords>OVM</keywords>
+      <keywords>consciência</keywords>
+      <keywords>ECG</keywords>
+      <keywords>trauma</keywords>
+      <keywords>sistema nervoso central</keywords>
+      <keywords>inconsciente</keywords>
+      <use>Use para registrar observações clínicas relacionadas a responsividade a estímulos de um indivíduo adulto. É utilizada comumente para estabelecer um nível de consciência basal e avaliação neurológica funcional e ou para detectar pacientes que possam necessitar intervenções médicas imediatas.&#xD;
+&#xD;
+Em termos práticos, a Escala de Coma de Glasgow é frequentemente calculada como variável de monitoramento, utilizando reavaliações sequenciais. Data e hora devem ser registradas para cada medida assim como fatores que possam influenciar na interpretação do score. Modificações no score total ou nos valores O, V ou M podem ter maior significado clínico que os valores registrados inicialmente.&#xD;
+&#xD;
+O Score Total é obtido como o somatório das respostas ocular, verbal e motora.&#xD;
+&#xD;
+Os três valores de resposta são considerados, bem como sua soma.&#xD;
+&#xD;
+O Score OVM é obtido da concatenação de cada score registrado para cada resposta (ocular, verbal e motora). Por exemplo, O3 V2 M2 representa indivíduo que abre os olhos ao chamado, emite sons incompreensíveis e apresenta padrão de extensão frente a estímulo doloroso.&#xD;
+&#xD;
+O menor valor possível do score é 3 (equivalente a O1 V1 M1) e o máximo possível é 15 (equivalente a O4 V5 M6).&#xD;
+&#xD;
+Um registro de resposta para cada O, V e M é mandatório. Se a resposta não puder ser determinada então a opção "não se aplica" é o registro apropriado. Se uma das respostas não puder ser acessada - por exemplo o indivíduo está entubado e não é capaz de responder verbalmente, ou paralisado e não é esperada resposta motora - o score registrado para esta resposta é 1 e um detalhe é registrado. Se um indivíduo está entubado o componente de resposta verbal pode ser representado como V1t, em que t = tubo, ou V1entubado. Se o indivíduo tem um edema facial ou periorbitário intenso ou lesões que o impeçam de abrir os olhos, o componente de resposta ocular pode ser representado como O1f, em que f=fechado. Ás vezes o valor numérico pode ser omitido, neste caso o componente de resposta ocular deve ser expresso como Of - por exemplo, Of V4 M2. O motivo de não ser possível acessar a resposta pode ser registrado no campo ´comentários´.&#xD;
+&#xD;
+Suporte a decisão clínica pode ser baseado em registros específicos para cada um dos padrões de respostas O, V e M em detrimento dos valores derivados do score composto.</use>
+      <misuse>Não deve ser utilizado para avaliar recém nascidos e e crianças de colo - para tal, utilizar OBSERVATION.glasgow_coma-paediatric.v1.adl para garantir respostas apropriados para a idade e capacidade da criança.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record clinical responses of an adult to defined stimuli as an objective assessment of the level of consciousness.</purpose>
+      <keywords>response</keywords>
+      <keywords>motor</keywords>
+      <keywords>verbal</keywords>
+      <keywords>eye</keywords>
+      <keywords>stimulus</keywords>
+      <keywords>glasgow</keywords>
+      <keywords>coma</keywords>
+      <keywords>scale</keywords>
+      <keywords>neurological</keywords>
+      <keywords>responsiveness</keywords>
+      <keywords>EMV</keywords>
+      <keywords>conscious</keywords>
+      <keywords>GCS</keywords>
+      <keywords>trauma</keywords>
+      <keywords>central nervous system</keywords>
+      <keywords>consciousness</keywords>
+      <use>Use to record clinical responses of an adult to defined stimuli as an objective assessment of the level of consciousness. It is commonly used to establish a baseline conscious state and neurological function assessment and/or to detect patients who may require immediate medical intervention.&#xD;
+&#xD;
+The Glasgow coma scale has three subscales E (eye), V (verbal) and M (motor). In clinical practice all three subscales are reported individually plus the 'Total score', if applicable.&#xD;
+&#xD;
+A recorded response for each of E, V and M is mandatory. If a response cannot be tested, then the 'Not Applicable' null flavour should be recorded; do not use the 'None' ordinal value to record a missing component. Details about the reason for not being able to test a response can be recorded in the 'Confounding factors' data element.&#xD;
+&#xD;
+The 'Total score' can be derived as the sum of the recorded eye, motor and verbal response scores. It is not appropriate to report a 'Total score' when one or more components are not testable because the score will be artificially low - in this situation record the EVM profile instead.&#xD;
+&#xD;
+The three response values are considered separately as well as their sum. The 'EVM profile' can be derived as a concatenation of each of the recorded eye, motor and verbal response scores. For example, E3 V4 M2 represents the conscious state of a subject who opens eyes to speech, utters incomprehensible sounds and has an extensor response to stimulation.&#xD;
+&#xD;
+The minimum possible 'Total score' value is 3 (equivalent to E1 V1 M1) and the maximum possible is 15 (equivalent to E4 V5 M6).&#xD;
+&#xD;
+In practical use, Glasgow coma scale is recorded as one component of clinical monitoring, using sequential and repeated point-in-time measurements. Date and time should be recorded for each measurement, as well as any factors that may influence interpretation of changes. Changes in 'Total score' or any E, V or M values may have as much clinical significance as the value recorded initially.</use>
+      <misuse>Not to be used for assessing infants and young children - use OBSERVATION.glasgow_coma_scale_paediatric for this purpose to ensure that the eye, motor and verbal response choices are appropriate for the age and ability of the child.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Sarah Ballout</author>
+    <author id="organisation">MHH-Hannover</author>
+    <author id="email">ballout.sarah@mh-hannover.de</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Kirsi Poikela</author>
+    <author id="organisation">Tieto Sweden Healthcare &amp; Welfare AB</author>
+    <author id="email">ext.kirsi.poikela@tieto.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">John Tore Valand/Silje Ljosland Bakke</author>
+    <author id="organisation">Helse Bergen HF/Nasjonal IKT HF</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>es-ar</code_string>
+    </language>
+    <author id="name">Alan March</author>
+    <author id="organisation">Hospital Universitario Austral, Pilar, Buenos Aires, Argentina</author>
+    <author id="email">alandmarch@gmail.com</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>pt-br</code_string>
+    </language>
+    <author id="name">Vladimir Pizzo</author>
+    <author id="organisation">Hospital Sirio Libanes, Brazil</author>
+    <author id="email">vladimir.pizzo@hsl.org.br</author>
+  </translations>
+  <uid>
+    <value>2b50f15c-f3c9-473b-8e9c-f57c00507561</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.glasgow_coma_scale.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0010</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0011</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0012</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0013</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>null_flavour</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>openehr</value>
+                            </terminology_id>
+                            <code_list>273</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0007</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0014</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0015</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0016</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0017</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>5</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0018</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>null_flavour</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>openehr</value>
+                            </terminology_id>
+                            <code_list>273</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>1</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0008</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_ORDINAL">
+                        <rm_type_name>DV_ORDINAL</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <list>
+                          <value>1</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0019</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>2</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0020</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>3</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0021</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>4</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0022</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>5</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0023</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                        <list>
+                          <value>6</value>
+                          <symbol>
+                            <value />
+                            <defining_code>
+                              <terminology_id>
+                                <value>local</value>
+                              </terminology_id>
+                              <code_string>at0024</code_string>
+                            </defining_code>
+                          </symbol>
+                        </list>
+                      </children>
+                    </attributes>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>null_flavour</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>openehr</value>
+                            </terminology_id>
+                            <code_list>273</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0026</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_COUNT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>magnitude</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_PRIMITIVE_OBJECT">
+                            <rm_type_name>INTEGER</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <item xsi:type="C_INTEGER">
+                              <range>
+                                <lower_included>true</lower_included>
+                                <upper_included>true</upper_included>
+                                <lower_unbounded>false</lower_unbounded>
+                                <upper_unbounded>false</upper_unbounded>
+                                <lower>3</lower>
+                                <upper>15</upper>
+                              </range>
+                            </item>
+                          </children>
+                        </attributes>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0030</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0037</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>3</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0040</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </occurrences>
+                    <node_id>at0041</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>1</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0038</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0039</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Glasgow Coma Scale (GCS)</items>
+        <items id="description">Fifteen point scale used to assess impairment of consciousness in response to defined stimuli.</items>
+        <items id="comment">More correctly known as the Modified Glasgow coma scale.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Best verbal response (V)</items>
+        <items id="description">Best verbal response to test stimulus.</items>
+        <items id="comment">Most commonly, the score for verbal response will be selected from one of the ordinal values, however if a response cannot be tested, for example if the subject of care is intubated, then the "Not Applicable" null flavour should be recorded.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Best motor response (M)</items>
+        <items id="description">Best motor response to test stimulus.</items>
+        <items id="comment">Most commonly, the score for motor response will be selected from one of the ordinal values, however if a response cannot be tested, for example if the subject of care cannot move their limbs due to injury or paralysis, then the "Not Applicable" null flavour should be recorded.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Best eye response (E)</items>
+        <items id="description">Best response of eyes to test stimulus.</items>
+        <items id="comment">Most commonly, the score for eye response will be selected from one of the ordinal values, however if a response cannot be tested, for example if the subject of care cannot physically open their eyes due to other injuries, then the "Not Applicable" null flavour should be recorded.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">None</items>
+        <items id="description">No eye opening at any time, no interfering factor. For example: eyes closed by local swelling.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">To pressure</items>
+        <items id="description">Eyes opening after finger tip stimulus.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">To sound</items>
+        <items id="description">Eyes opening after spoken or shouted request. Not to be confused with wakening of a sleeping person.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Spontaneous</items>
+        <items id="description">Eyes open before stimulus.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">None</items>
+        <items id="description">No audible response, no interfering factor. For example: intubation; profound deafness.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Sounds</items>
+        <items id="description">Only moans/groans.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Words</items>
+        <items id="description">Intelligible single words.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Confused</items>
+        <items id="description">Not orientated but communicates coherently.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Orientated</items>
+        <items id="description">Correctly gives name, place and date.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">None</items>
+        <items id="description">No movement in arms/legs, no interfering factor. For example: paralysed.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Extension</items>
+        <items id="description">Decerebrate extension of arms and/or legs in response to stimuli. For example: extends arm at elbow.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Abnormal flexion</items>
+        <items id="description">Slow, decorticate flexion of arms and/or legs. For example: bends arm at elbow, but features predominantly abnormal.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Normal flexion</items>
+        <items id="description">Rapid flexion in response to stimuli but features predominantly normal. For example: flexion of wrist when supra-orbital pressure applied; pulls part of body away when nailbed pinched.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Localising</items>
+        <items id="description">Purposeful flexion towards painful stimuli. For example: brings hand above the clavicle when supra-orbital pressure is applied.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Obeys commands</items>
+        <items id="description">Follows verbal request for movement.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Total score</items>
+        <items id="description">The sum of the ordinal scores recorded for each of the three component responses.</items>
+        <items id="comment">The Total Score may be derived as the sum of the three response data elements and, if so, should be validated by the clinical information system against the individual scores entered by the clinician to ensure there is no conflict or inconsistency. Do not report a total score when one or more components are not testable because the score will be artificially low - in this situation record the EVM profile.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">EVM profile</items>
+        <items id="description">Alternative assessment to 'Total Score' where the Eye Verbal Motor profile is expressed as three discrete components.</items>
+        <items id="comment">The EMV Score may be automatically derived as a concatenation of the three response data elements and, if so, should be validated by the clinical information system against the individual scores entered by the clinician to ensure there is no conflict or inconsistency. The 'Not applicable' null flavour value should be recorded as 'NT', for 'not tested' as per http://www.glasgowcomascale.org/.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the measurement of the scale not captured in other fields.</items>
+        <items id="comment">Record the reasons for inability to test in the 'Confounding factors' data element.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to capture local content or to align with other reference models/formalisms.</items>
+        <items id="comment">For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Confounding factors</items>
+        <items id="description">Narrative record of factors that may have contributed to the GCS scores.</items>
+        <items id="comment">For example: deafness; aphasia; language issues; use of sedatives; hypothermia; or paralysis, severe facial/eye swelling or tracheal intubation as reasons for inability to record any one of the ordinal E, V or M assessments.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="pt-br">
+      <items code="at0000">
+        <items id="text">Escala de Coma de Glasgow</items>
+        <items id="description">Escala de 15 pontos utilizada para avaliar alterações de consciência relacionadas a determinados estímulos.</items>
+        <items id="comment">Melhor descrita como Escala de Coma de Glasgow modificada.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">*Tree(en)</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Melhor Resposta Verbal (V)</items>
+        <items id="description">Melhor resposta verbal ao estímulo-teste.</items>
+        <items id="comment">Mais comumente, o score da resposta verbal é selecionado entre valores ordinais, entretanto se uma resposta não puder ser testada, por exemplo se o sujeito do cuidado estiver intubado, então o valor nulo "Não Aplicável" deve ser registrado.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Melhor Resposta Motora (M)</items>
+        <items id="description">Melhor resposta motora ao estímulo-teste.</items>
+        <items id="comment">Mais comumente, o score da resposta verbal é selecionado entre valores ordinais, entretanto se uma resposta não puder ser testada, por exemplo se o sujeito do cuidado não puder mexer as pernas em decorrência de uma lesão ou paralisia, então o valor nulo "Não Aplicável" deve ser registrado.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Melhor Resposta Ocular (O)</items>
+        <items id="description">Melhor resposta ocular ao estímulo-teste.</items>
+        <items id="comment">Mais comumente, o score da resposta ocular é selecionado entre valores ordinais, entretanto se uma resposta não puder ser testada, por exemplo se o sujeito do cuidado estiver impossibilitado de abrir os olhos por outras lesões, então o valor nulo "Não Aplicável" deve ser registrado.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ausente</items>
+        <items id="description">Ausência de abertura ocular em qualquer momento, na ausência de fatores interferentes. Por exemplo: olhos fechados por edema local.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">À pressão</items>
+        <items id="description">Abertura ocular após estímulo digital.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">A sons</items>
+        <items id="description">Abertura ocular após solicitação oral. Não confundir com despertar de uma pessoa dormindo.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Espontânea</items>
+        <items id="description">Olhos abertos mesmo antes de qualquer estímulo.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Ausente</items>
+        <items id="description">Ausência de resposta audível na ausência de fatores interferentes. Por exemplo: intubação orotraqueal ou surdez.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Sons</items>
+        <items id="description">Apenas gemidos, grunhidos, sons incompreensíveis.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Palavras</items>
+        <items id="description">Palavras inteligíveis.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Confuso</items>
+        <items id="description">Desorientado mas comunica-se coerentemente.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Orientado</items>
+        <items id="description">Diz o nome, local e data corretamente.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Ausente</items>
+        <items id="description">Ausência de movimento de braços e pernas na ausência de fatores interferentes. Por exemplo: paralisia.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Extensão</items>
+        <items id="description">Postura em descerebração de braços e pernas em resposta ao estímulo. Extensão do antebraço e cotovelo.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Flexão anormal</items>
+        <items id="description">Postura em decorticação, lenta, de braços e/ou pernas. Por exemplo: flexão do cotovelo porém predominantemente anormal.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Flexão normal</items>
+        <items id="description">Flexão rápida em resposta ao estímulo, normal. Por exemplo: retirada da mão quando estimulado o leito ungueal.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Localiza</items>
+        <items id="description">Flexão organizada em resposta a estímulo doloroso. Por exemplo: traz a mão para tentar retirar a fonte do estímulo.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Obedece comandos</items>
+        <items id="description">Segue uma ordem para movimento.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Score Total</items>
+        <items id="description">A soma dos pontos referentes a cada componente testado.</items>
+        <items id="comment">O Score Total pode ser obtido através da soma da resposta dos três elementos, como também, pode ser validado pelos sistemas de informações clínicas contra scores registrados por clínicos para garantir ausência de conflitos ou inconsistências. Não relatar um score total quando um ou mais dos componentes não forem testados porque o score ficará artificialmente baixo - nesta situação registrar o perfil OVM.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Perfil OVM</items>
+        <items id="description">Alternativa ao 'Score Total' em que o perfil Ocular Verbal Motor é expresso em três componentes.</items>
+        <items id="comment">O Score OVM pode ser derivado automaticamente através da concatenação das respostas de cada elemento; neste contexto deve ser validado pelos sistemas de informações clínicas contra scores registrados por clínicos para garantir ausência de conflitos ou inconsistências. O valor nulo 'Não Aplicável' deve ser registrado como 'NT', para 'não testado' como sugerido em http://www.glasgowcomascale.org/.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Comentários</items>
+        <items id="description">Narrativa adicional sobre a aquisição do score não pertinente a outros campos.</items>
+        <items id="comment">Registrar as razões para a impossibilidade de testar no elemento 'Fatores de confusão'.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Extensão</items>
+        <items id="description">Informações adicionais necessárias para alinhar com outros modelos/formalismo de referência.</items>
+        <items id="comment">Por exemplo: informações requeridas localmente ou metadados adicionais para alinhar com equivalentes a FHIR ou CIMI.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">*Tree(en)</items>
+        <items id="description">*@ internal @(en)</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Fatores de confusão</items>
+        <items id="description">Relato de fatores que podem ter contribuído para o score.</items>
+        <items id="comment">Por exemplo: surdez, afasia, questões de linguagem, uso de sedativos, hipotermia, paralisia, edema facial ou periorbitário grave ou intubação oro-traqueal como razões de impossibilidade de registrar um dos valores ordinais nos domínios O, V ou M.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="es-ar">
+      <items code="at0000">
+        <items id="text">Escala del coma de Glasgow</items>
+        <items id="description">Escala de quince puntos para la evaluación del la consciencia en respuesta a estímulos definidos.</items>
+        <items id="comment">Mejor conocida como la escala del coma de Glasgow modificada.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">*Any event(en)</items>
+        <items id="description">*Default, unspecified event which may be explicitly defined in a template or at run-time.(en)</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Mejor respuesta verbal (V)</items>
+        <items id="description">Mejor respuesta verbal al estímulo de prueba.</items>
+        <items id="comment">En el caso mas común, el puntaje de la respuesta verbal será seleccionado como uno entre los valores ordinales. No obstante, si no se puede obtener una respuesta (si por ejemplo el sujeto se encuentra intubado) se registrará la opción de "No aplicable" para valor nulo.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Mejor respuesta motora (M)</items>
+        <items id="description">Mejor respuesta motora al estímulo de prueba.</items>
+        <items id="comment">En el caso mas común, el puntaje de la respuesta motora será seleccionado como uno entre los valores ordinales. No obstante, si no se puede obtener una respuesta (si por ejemplo el sujeto no puede mover sus miembros por lesiones o parálisis) se registrará la opción de "No aplicable" para valor nulo.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Mejor respuesta ocular (O)</items>
+        <items id="description">Mejor respuesta ocular a la prueba de estímulo.</items>
+        <items id="comment">En el caso mas común, el puntaje de la respuesta ocular será seleccionado como uno entre los valores ordinales. No obstante, si no se puede obtener una respuesta (si por ejemplo el sujeto es incapaz de abrir sus ojos debido a lesiones) se registrará la opción de "No aplicable" para valor nulo.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ninguna</items>
+        <items id="description">Sin apertura ocular en momento alguno, siempre y cuando no existan factores de interferencia (por ejemplo, ojos cerrados por inflamación local)</items>
+      </items>
+      <items code="at0011">
+        <items id="text">A la presión</items>
+        <items id="description">Apertura ocular como respuesta al estimulo utilizando las puntas de los dedos del operador.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Al sonido</items>
+        <items id="description">Apertura ocular como respuesta al habla o grito del operador. No debe confundirse con el despertar de una persona dormida.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Espontanea</items>
+        <items id="description">Ojos abiertos sin necesidad de estímulos.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Ninguna</items>
+        <items id="description">Sin respuesta audible, siempre y cuando no existan factores de interferencia (por ejemplo, intubación o sordera profunda).</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Sonidos</items>
+        <items id="description">Solo lamentos o gruñidos.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Palabras</items>
+        <items id="description">Palabras simples e inteligibles.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Confuso</items>
+        <items id="description">Desorientado pero se comunica en forma coherente.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Orientado</items>
+        <items id="description">Proporciona correctamente su nombre, el lugar y la fecha.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Ninguna</items>
+        <items id="description">Sin movimientos de brazos o piernas, siempre y cuando no existan factores de interferencia (por ejemplo, parálisis).</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Extensión</items>
+        <items id="description">Respuesta extensora de descerebración en piernas y/o brazos en respuesta al estímulo. Por ejemplo: extiende el brazo a nivel del codo.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Flexión anormal</items>
+        <items id="description">Flexión de brazos y/o piernas en forma lenta con patrón de decorticación. Por ejemplo, flexiona el brazo a nivel del codo pero de modo predominantemente anormal.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Flexión normal</items>
+        <items id="description">Flexión rápida en respuesta a estímulo pero de características predominantemente normales. Por ejemplo: flexión de la muñeca cuando se aplica presión supraorbitaria; retira parte del cuerpo ante un pinchazo.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Localización</items>
+        <items id="description">Flexión volitiva frente al estímulo doloroso. Por ejemplo: acerca el brazo a la clavícula ante la aplicación de presión supraorbitaria.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Obedece órdenes</items>
+        <items id="description">Realiza movimientos en respuesta a órdenes verbales.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Puntaje total</items>
+        <items id="description">La suma de los puntajes ordinales registradas para cada una de las respuestas a los tres componentes.</items>
+        <items id="comment">El Puntaje Total puede ser calculado como la suma de las elementos de las tres respuestas y, si así fuera, debe ser validado por la información clínica del sistema frente a los puntajes individuales anotados por el clínico de modo que se pueda segurar la ausencia de conflictos o inconsistencias. No se debe registrar un puntaje total cuando uno o más componentes no pudo ser evaluado dado que el puntaje resultante sería artificialmente bajo. En esta situación se debe registrar el perfil OVM.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">Perfil OVM</items>
+        <items id="description">Evaluación alternativa al "Puntaje total", donde el perfil Ocular Verbal Motor es expresado como tres componentes discretos.</items>
+        <items id="comment">El puntaje OVM puede ser calculado automáticamente como la concatenación de los elementos de las tres respuestas y, si así fuera, debe ser validado por la información clínica del sistema frente a los puntajes individuales anotados por el clínico de modo que se pueda segurar la ausencia de conflictos o inconsistencias. El valor nulo "No aplicable" debería ser registrado como NT (por "No testeado") según se indica en http://www.glasgowcomascale.org/.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Comentario</items>
+        <items id="description">Narrativa adicional acerca de la medición del puntaje que nu fué capturado en otros campos.</items>
+        <items id="comment">Registrar las razones para la imposibilidad de obtener una respuesta en el elemento "Factores de confusión".</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Extensión</items>
+        <items id="description">Información adicional requerida para contemplar contenidos locales o para alinear con otros modelos o formalismos de referencia.</items>
+        <items id="comment">Por ejemplo: requerimientos locales de información o metadatos adicionales necesarios para el alineamiento con FHIR o equivalentes de CIMI.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Factores de confusión</items>
+        <items id="description">Registro narrativo de los factores que pueden haber contribuido a los puntajes de la escala de coma de Glasgow.</items>
+        <items id="comment">Por ejemplo: sordera; afasia; problemas de lenguaje; uso de sedantes; hiptermia; parálisis; inflamación facial u ocular severas o intubación traqueal como razones para ma imposibildad para resitrar cualquiera de los parámetros ordinales O, V o M.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Glasgow Coma Scale</items>
+        <items id="description">En femtenpoengs skala som brukes for å anslå svekkelse av bevissthetsnivå ut fra et definert stimuli.</items>
+        <items id="comment">Skalaen er mer korrekt kalt Modified Glasgow Coma Scale.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i en template eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Verbal respons (V)</items>
+        <items id="description">Beste verbal respons på stimuli.</items>
+        <items id="comment">Vanligvis vil skår for verbalrespons velges fra en av ordinalverdiene, men i tilfeller hvor verbalrespons ikke kan testes for eksempel om pasienten er intubert, skal null-verdien "Not Applicable" registreres.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Motorisk respons (M)</items>
+        <items id="description">Beste motoriske respons på stimuli.</items>
+        <items id="comment">Vanligvis vil skår for motorisk respons velges fra en av ordinalverdiene, men i tilfeller hvor en respons ikke kan testes for eksempel om pasienten ikke kan bevege lemmene som følge av skade eller lammelse skal null-verdien "Not Applicable" registreres.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Åpning av øynene (Ø)</items>
+        <items id="description">Beste øyerespons ved stimuli.</items>
+        <items id="comment">Vanligvis vil skår for øyerespons velges fra en av ordinalverdiene, men i tilfeller hvor øyerespons ikke kan testes, for eksempel om pasienten ikke fysisk kan åpne øynene grunnet skade, skal null-verdien "Not Applicable" registreres.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ingen reaksjon</items>
+        <items id="description">Øynene åpnes ikke, ingen forstyrrende faktorer som for eksempel lukkede øyne på grunn av lokal hevelse.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Ved smertestimulering</items>
+        <items id="description">Åpner øynene etter stimulering av fingertuppen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Ved tiltale</items>
+        <items id="description">Øynene åpnes ved tiltale eller ved roping. Må ikke forveksles med vekking av en sovende person.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Spontant</items>
+        <items id="description">Øyne åpnes spontant uten stimuli.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Ingen reaksjon</items>
+        <items id="description">Ingen hørbar respons og ingen forstyrrende faktorer, som for eksempel intubasjon eller døvhet.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Uforståelige lyder</items>
+        <items id="description">Bare stønning/jamring.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Usammenhengende tale</items>
+        <items id="description">Forståelige enkeltord.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Forvirret, desorientert</items>
+        <items id="description">Ikke orientert men kommuniserer sammenhengende.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Orientert</items>
+        <items id="description">Oppgir riktig navn, sted og dato.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Ingen reaksjon</items>
+        <items id="description">Ingen bevegelse i armer/bein, ingen forstyrrende faktorer som for eksempel lammelser.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Ekstensjon ved smerte</items>
+        <items id="description">Decerebrert ekstensjon av armer og/eller bein som respons på stimuli. For eksempel kan armen ekstenderes ved albuen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Abnormal fleksjon</items>
+        <items id="description">Sakte, decortikert fleksjon av armer og/eller bein. For eksempel kan armen bøyes ved albuen, men trekkene er hovedsakelig abnormale.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Normal fleksjon</items>
+        <items id="description">Hurtig fleksjon som respons på stimuli, men trekkene er hovedsakelig normale. For eksempel kan håndleddet bøyes når det utføres supraorbitalt trykk, eller lemmet trekkes til seg ved trykk på negleroten.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Lokaliserer smerte</items>
+        <items id="description">Målrettet fleksjon mot smertestimuli. For eksempel kan hånden løftes til over kragebeinet når det utføres supraorbitalt trykk.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Følger oppfordringer</items>
+        <items id="description">Følger verbal oppfordring for bevegelse.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Totalskår</items>
+        <items id="description">Sum av verdiene som er registrert for hver enkelt av de tre undersøkelsesdelene.</items>
+        <items id="comment">Totalskåren kan regnes ut ved å summere de tre undersøkelsesdelene. Totalskår skal ikke regnes ut når en eller flere undersøkelsesdeler ikke er mulig å gjennomføre, fordi skåren da vil bli kunstig lav. I disse situasjonene skal ØVM-profilen registreres.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">ØVM-profil</items>
+        <items id="description">Alternativ til Totalskår der responsen til Øye, Verbal og Motorisk er uttrykt som tre separate verdier.</items>
+        <items id="comment">ØVM-profilen kan genereres automatisk ved å sette sammen de tre undersøkelsesdelene. Hvis dette gjøres bør resultatet sammenlignes mellom det som det som det kliniske informasjonssystemet presenterer og det som klinikere har registrert for å utelukke konflikter eller inkonsistens. Nullverdien "Not applicable" registreres som "IT", for "ikke testet", som beskrevet på http://www.glasgowcomascale.org/.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om målingen som ikke er fanget i andre felt.</items>
+        <items id="comment">Registrer årsaker for at testen ikke var gjennomførbar i dataelementet "Konfunderende faktorer".</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Utvidelse</items>
+        <items id="description">Ytterligere informasjon som er nødvendig for å sammenstille med andre referansemodeller/formalismer.&#xD;
+</items>
+        <items id="comment">For eksempel: lokale informasjonskrav eller ekstra metadata for å samsvare med FHIR eller CIMI ekvivalenter.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Fritekst om faktorer som kan ha bidratt til GCS-skåringene.</items>
+        <items id="comment">For eksempel: Døvhet, afasi, språkproblemer, bruk av beroligende medisin, hypotermi eller paralyser, alvorlige hevelser i ansikt/øyne, trakeal intubasjon som årsaker til at en ikke kunne registrere en eller flere av ordinalene i Ø-, V- eller M-vurderingene.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">Glasgow Coma Scale (GCS)</items>
+        <items id="description">Femton poängs-skala som används för att bedöma nedsatt medvetandegrad av reaktion på definierade stimuli.</items>
+        <items id="comment">Mer korrekt känd som den Modifierade Glasgow koma-skalan.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Händelseförlopp</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Tidpunkt</items>
+        <items id="description">Ospecificerad tidpunkt som tydligt kan definieras i en mall eller vid körning av program.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Bästa verbala reaktion</items>
+        <items id="description">Bästa verbala reaktion till stimulanstest.</items>
+        <items id="comment">Oftast kommer poängen för verbal reaktion att väljas från ett av klassificeringstalen, men om en reaktion inte kan undersökas, t.ex. om patienten är intuberad, bör "Ej tillämpligt" registreras som nollvärde.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Bästa motoriska reaktion</items>
+        <items id="description">Bästa motoriska reaktion på stimuleringstest.</items>
+        <items id="comment">Vanligtvis kommer poängen för motorisk reaktion att väljas från ett av klassificeringsvärdena, men om en reaktion inte kan testas, t.ex. om patienten inte kan flytta sina ben pga. skada eller förlamning, då bör nollvärdet "Ej tillämpligt" registreras.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Bästa förmåga att öppna ögonen</items>
+        <items id="description">Bäst ögonreaktion efter stimulansundersökning.</items>
+        <items id="comment">Oftast kommer poängen för ögonreaktion att väljas från ett av klassificeringsvärdena, men om en reaktion inte kan undersökas, t.ex. om patienten inte fysiskt kan öppna sina ögon på grund av andra skador, bör "Ej tillämpligt" registreras som nollvärde.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Ingen</items>
+        <items id="description">Ingen ögonöppning vid någon tidpunkt, ingen störande faktor, t.ex. stängda ögon p.g.a. lokal svullnad.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Till tryck</items>
+        <items id="description">Ögonöppning efter fingertoppstimulans.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Till ljud</items>
+        <items id="description">Ögonöppning efter talad eller ropad uppmaning. Bör inte förväxlas med väckning av en sovande person.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Spontan</items>
+        <items id="description">Ögonöppning före stimulans.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Ingen</items>
+        <items id="description">Ingen hörbar reaktion, ingen störande faktor, t.ex. intubation eller total dövhet.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Ljud</items>
+        <items id="description">Bara stönar/jämrar sig.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Ord</items>
+        <items id="description">Uttrycker enstaka begripliga ord.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Desorienterad</items>
+        <items id="description">Desorienterad men kommunicerar sammanhängande.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Fullt orienterad</items>
+        <items id="description">Återger namn, plats och datum korrekt.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Ingen</items>
+        <items id="description">Ingen rörelse i armar/ben, ingen störande faktor, t.ex. förlamad.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Utsträckning</items>
+        <items id="description">Decerebrat utsträckning av armar och/eller ben som reaktion på stimulering, t.ex. sträcker ut armen från armbågen.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Onormal böjning</items>
+        <items id="description">Långsam, dekortikeringsstelhet vid böjning av armar och/eller ben, t.ex. böjer armen i armbågen, men funktionen är huvudsakligen onormal.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Normal böjning</items>
+        <items id="description">Snabb böjning som reaktion på stimulering, men som har ett övervägande normalt utseende. T.ex.: böjning av handleden vid tillämpning av supra-orbitaltryck: drar sig undan när fingernagelbädden nyps.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Lokalisering</items>
+        <items id="description">Ändamålsenlig böjning efter smärtstimulering, t.ex. lägger handen över nyckelbenet vid supra-orbitaltryck.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Lyder kommando</items>
+        <items id="description">Lyder uppmaning om rörelse.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Totalpoäng</items>
+        <items id="description">Poängsumman av klassificeringstalen som registrerats av reaktionen för var och en av de tre komponenterna.</items>
+        <items id="comment">Totalpoängen kan härledas som summan av de tre svarskomponenterna och i så fall bör det valideras av det kliniska informationssystemet mot de individuella poängen som matats in av behandlande läkare för att säkerställa att det inte finns någon konflikt eller inkonsekvens. Rapportera inte en totalpoäng när en eller flera komponenter inte kan testas eftersom poängen blir artificiellt låg – om så är fallet, registrera EVM-profilen.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">EVM-profil</items>
+        <items id="description">Alternativ bedömning till "Totalpoäng" där Ögon-, Verbala- och Motoriska- profilen uttrycks som tre separata komponenter.</items>
+        <items id="comment">EMV-poängen kan automatiskt härledas som en sammanlänkning av de tre svarskomponenterna och om så är fallet, bör valideras av det kliniska informationssystemet mot de individuella poängen som matats in av behandlande läkare för att säkerställa att det inte finns någon konflikt eller inkonsekvens. "Ej tillämpligt" nollvärdet bör registreras som "NT", för "ej testat" enligt http://www.glasgowcomascale.org/.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kommentarer</items>
+        <items id="description">Ytterligare beskrivning om mätningen av skalan som inte beskrivits i andra fält.</items>
+        <items id="comment">Beskriv orsakerna till oförmåga att undersöka i fältet "Påverkande faktorer".</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Övrig information</items>
+        <items id="description">Ytterligare information krävs för att fånga upp lokalt innehåll eller att anpassa sig till andra referensmodeller/formalismer.</items>
+        <items id="comment">T.ex. lokala informationskrav eller ytterligare metadata för att anpassa sig till FHIR- eller CIMI-ekvivalenter.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Påverkande faktorer</items>
+        <items id="description">Beskrivning av faktorer som kan ha påverkat till GCS-poängen under mätningen.</items>
+        <items id="comment">Exempelvis: dövhet, afasi, språkproblem, användning av lugnande medel, hypotermi, eller förlamning, svår ansikts-/ögonsvullnad eller trakeal intubation som orsaker till oförmåga att registrera något av klassificeringstalen från E-, V- eller M-bedömningarna.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Glasgow-Koma-Skala</items>
+        <items id="description">Fünfzehn-Punkte-Skala zur Beurteilung von Bewusstseinsbeeinträchtigungen als Reaktion auf definierte Stimulationen. Genauer bekannt als die Modifizierte Glasgow-Koma-Skala.</items>
+        <items id="comment">*More correctly known as the Modified Glasgow coma scale.(en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Event Series</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Standardmäßiger, nicht näher beschriebener Zeitpunkt oder Intervall Ereignis welches in einem Template oder bei der Anwendung genauer definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Beste verbale Reaktion (V)</items>
+        <items id="description">Beste verbale Reaktion auf den Test Reiz.</items>
+        <items id="comment">In den meisten Fällen wird der Wert für die verbale Reaktion aus einem der Ordinal Werte ausgewählt. Wenn jedoch eine Reaktion nicht getestet werden kann, z.B. wenn die betroffene Person intubiert wurde, sollte der "Nicht zutreffende" Nullwert protokolliert werden.</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Beste motorische Reaktion (M)</items>
+        <items id="description">Beste motorische Reaktion auf den Test Reiz.</items>
+        <items id="comment">In den meisten Fällen wird der Wert für die motorische Reaktion aus einem der Ordinal Werte ausgewählt. Wenn jedoch eine Reaktion nicht getestet werden kann, z.B. wenn die zu versorgende Person ihre Gliedmaßen aufgrund einer Verletzung oder Lähmung nicht bewegen kann, dann sollte der Nullwert "Nicht zutreffend" erfasst werden.</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Beste Augenreaktion (E)</items>
+        <items id="description">Beste Reaktion der Augen auf den Test Reiz.</items>
+        <items id="comment">In den meisten Fällen wird der Wert für die Augenreaktion aus einem der Ordinal Werte ausgewählt. Wenn jedoch eine Reaktion nicht getestet werden kann, z.B. wenn die zu behandelnde Person aufgrund anderer Verletzungen die Augen nicht physisch öffnen kann, sollte der Nullwert "Nicht zutreffend" protokolliert werden.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Keine</items>
+        <items id="description">Zu keinem Zeitpunkt wird das Auge geöffnet, kein störender Faktor. Zum Beispiel: Augen durch lokale Schwellung geschlossen.</items>
+      </items>
+      <items code="at0011">
+        <items id="text">Auf Druck</items>
+        <items id="description">Die Augen öffnen sich nach einem Stimulus mit den Fingerspitzen.</items>
+      </items>
+      <items code="at0012">
+        <items id="text">Tonfall</items>
+        <items id="description">Nach gesprochener oder geschriener Aufforderung, öffnen sich die Augen. Nicht zu verwechseln mit dem Erwachen einer schlafenden Person.</items>
+      </items>
+      <items code="at0013">
+        <items id="text">Spontan</items>
+        <items id="description">Die Augen sind vor der Stimulation geöffnet.</items>
+      </items>
+      <items code="at0014">
+        <items id="text">Keine Angabe</items>
+        <items id="description">Keine hörbare Reaktion, kein störender Faktor. Zum Beispiel: Intubation; starke Schwerhörigkeit.</items>
+      </items>
+      <items code="at0015">
+        <items id="text">Töne</items>
+        <items id="description">Nur Stöhnen/Grunzen.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Worte</items>
+        <items id="description">Einzelne Wörter sind verständlich.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Verwirrt</items>
+        <items id="description">Nicht orientiert, sondern schlüssig kommuniziert.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Orientiert</items>
+        <items id="description">Korrekte Angabe von Name, Ort und Datum.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Keine Angabe</items>
+        <items id="description">Keine Bewegung der Arme/Beine, kein störender Faktor. Zum Beispiel: gelähmt.</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Erweiterung</items>
+        <items id="description">Dezerebration der Streckung von Armen und/oder Beinen als Reaktion auf Reize. Zum Beispiel: streckt den Arm am Ellenbogen aus.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Abnormale Beugung</items>
+        <items id="description">Langsame, schwach ausgeprägte Beugung der Arme und/oder Beine. Zum Beispiel: beugt den Arm am Ellenbogen, weist aber überwiegend abnorme Funktionen auf.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Normale Beugung</items>
+        <items id="description">Die schnelle Beugung als Reaktion auf Reize, ist aber überwiegend normal. Zum Beispiel: Beugung des Handgelenks bei supra-orbitalem Druck; zieht einen Teil des Körpers weg, wenn das Nagelbett eingeklemmt ist.</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Lokalisierung</items>
+        <items id="description">Zielgerichtete Beugung in Richtung schmerzhafter Reize. Zum Beispiel: bringt die Hand über das Schlüsselbein, wenn supra-orbitaler Druck ausgeübt wird.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Anweisungen folgen</items>
+        <items id="description">Folgt der mündlichen Aufforderung zur Bewegung.</items>
+      </items>
+      <items code="at0026">
+        <items id="text">Gesamtauswertung</items>
+        <items id="description">Dies ist die Summe der für jede der drei Antwortkomponenten erfassten Ordinal Werte.</items>
+        <items id="comment">Die Gesamtauswertung kann als Summe der drei Antwortdatenelemente abgeleitet werden und ist in diesem Fall durch das klinische Informationssystem anhand der vom Kliniker eingegebenen Einzelwerte zu validieren, um zu gewährleisten, dass es keinen Konflikt oder eine Inkonsistenz gibt. Melden Sie keine Gesamtergebnisse, wenn einzelne oder mehrere Komponenten nicht prüfbar sind, weil das Ergebnis dadurch technisch zu niedrig ausfällt - in diesem Fall ist das EVM-Profil anzugeben.</items>
+      </items>
+      <items code="at0030">
+        <items id="text">EVM-Profil</items>
+        <items id="description">Eine alternative Bewertung zum 'Total Score', bei der das Profil der Augenmotorik in drei diskreten Komponenten ausgedrückt wird.</items>
+        <items id="comment">Der EMV-Score lässt sich automatisch als eine Verkettung der drei Antwortdatenelemente ableiten und sollte, sofern dies der Fall ist, durch das klinische Informationssystem gegen die vom Kliniker eingegebenen individuellen Scores validiert werden, um zu gewährleisten, dass es keinen Konflikt oder eine Inkonsistenz gibt. Der Nullwert für "Nicht zutreffend" sollte als "NT" und für "nicht getestet" gemäß http://www.glasgowcomascale.org/ erfasst werden.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung der Bemessung der Skala, die in anderen Bereichen nicht erfasst wurde.</items>
+        <items id="comment">Protokollieren Sie im Datenelement "Störfaktoren" die Gründe für die fehlende Testmöglichkeit.</items>
+      </items>
+      <items code="at0038">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen, die zur Erfassung lokaler Inhalte oder zur Anpassung an andere Referenzmodelle/Formalismen erforderlich sind.</items>
+        <items id="comment">Zum Beispiel: Lokale Informationsanforderungen oder zusätzliche Metadaten, um Verknüpfungen mit FHIR oder CIMI Äquivalenten herzustellen.&#xD;
+</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Störfaktoren</items>
+        <items id="description">Beschreibung der Faktoren, die zur Bewertung des GCS beigetragen haben könnten.</items>
+        <items id="comment">Zum Beispiel: Taubheit, Aphasie, Sprachprobleme, Gebrauch von Beruhigungsmitteln, Unterkühlung; oder Lähmung, schwere Gesichts-/Augenschwellung oder Trachealintubation als Ursache für die Unfähigkeit, eine der normalen E-, V- oder M-Bewertungen zu erfassen.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

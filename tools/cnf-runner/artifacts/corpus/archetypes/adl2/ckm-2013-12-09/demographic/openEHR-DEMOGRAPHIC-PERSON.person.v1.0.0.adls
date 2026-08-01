@@ -1,0 +1,162 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-PERSON.person.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"22/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's demographic data.">
+			use = <"Used in demographic service to collect a person's data.">
+			keywords = <"demographic service", "person's data">
+			misuse = <"">
+		>
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação dos dados demográficos de uma pessoa.">
+			use = <"Usado em serviço demográficos para coletar os dados de uma pessoa.">
+			keywords = <"serviço demográfico", "dados de uma pessoa">
+			misuse = <"">
+		>
+	>
+	other_contributors = <"Sebastian Garde, Ocean Informatics, Germany (Editor)", "Omer Hotomaroglu, Turkey (Editor)", "Heather Leslie, Ocean Informatics, Australia (Editor)">
+	references = <
+		["1"] = <"ISO/TS 22220:2008(E) - Identification of Subject of Care - Technical Specification - International Organization for Standardization.">
+	>
+
+definition
+	PERSON[id1] matches {	-- Person
+		details matches {
+			allow_archetype ITEM_TREE[id2] occurrences matches {1} matches {	-- Demographic details
+				include
+					archetype_id/value matches {/(person_details)[a-zA-Z0-9_-]*\.v1/}
+			}
+		}
+		identities matches {
+			allow_archetype PARTY_IDENTITY[id3] occurrences matches {1} matches {	-- Name
+				include
+					archetype_id/value matches {/(person_name)[a-zA-Z0-9_-]*\.v1/}
+			}
+		}
+		contacts matches {
+			CONTACT[id4] occurrences matches {1} matches {	-- Contacts
+				addresses matches {
+					allow_archetype ADDRESS[id31] occurrences matches {1} matches {	-- Addresses
+						include
+							archetype_id/value matches {/(address)([a-zA-Z0-9_-]+)*\.v1/}
+							archetype_id/value matches {/(electronic_communication)[a-zA-Z0-9_-]*\.v1/}
+					}
+				}
+			}
+		}
+		relationships matches {
+			PARTY_RELATIONSHIP[id5] matches {	-- Relationships
+				details matches {
+					ITEM_TREE[id42] matches {
+						items matches {
+							ELEMENT[id41] matches {	-- Relationship type
+								value matches {
+									DV_TEXT[id43] 
+									DV_CODED_TEXT[id44] matches {
+										defining_code matches {[ac1]}		-- Codes for type of relationship
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Dados da pessoa">
+				description = <"Dados da pessoa.">
+			>
+			["id2"] = <
+				text = <"Detalhes">
+				description = <"Detalhes demográficos da pessoa.">
+			>
+			["id3"] = <
+				text = <"Nome">
+				description = <"Conjunto de dados que especificam o nome da pessoa.">
+			>
+			["id4"] = <
+				text = <"Contatos">
+				description = <"Contatos da pessoa.">
+			>
+			["id5"] = <
+				text = <"Relacionamentos">
+				description = <"Relacionamentos de uma pessoa, especialmente laços familiares.">
+			>
+			["id31"] = <
+				text = <"Endereço">
+				description = <"Endereços vinculados a um único contato, ou seja, com o mesmo período de validade.">
+			>
+			["id41"] = <
+				text = <"Grau de parentesco">
+				description = <"Define o grau de parentesco entre as pessoas envolvidas.">
+			>
+			["ac1"] = <
+				text = <"Códigos para tipo de parentesco">
+				description = <"códigos válidos para tipo de parentesco.">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Person">
+				description = <"Personal demographic data.">
+			>
+			["id2"] = <
+				text = <"Demographic details">
+				description = <"A person's demographic details.">
+			>
+			["id3"] = <
+				text = <"Name">
+				description = <"A person's name.">
+			>
+			["id4"] = <
+				text = <"Contacts">
+				description = <"A person's contacts.">
+			>
+			["id5"] = <
+				text = <"Relationships">
+				description = <"A person's relationships, especially family ties.">
+			>
+			["id31"] = <
+				text = <"Addresses">
+				description = <"Addresses linked to a single contact, i.e. with the same time validity.">
+			>
+			["id41"] = <
+				text = <"Relationship type">
+				description = <"Defines the type of relationship between related persons.">
+			>
+			["ac1"] = <
+				text = <"Codes for type of relationship">
+				description = <"Valid codes for type of relationship.">
+			>
+		>
+	>

@@ -1,0 +1,227 @@
+﻿archetype (adl_version=1.4; uid=43410df5-1ea5-47fb-849e-6040f8f207a6)
+	openEHR-EHR-OBSERVATION.aldrete_score.v0
+
+concept
+	[at0000]	-- Aldrete score
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Konstantinos Kalliamvakos">
+		["organisation"] = <"Cambio CDS">
+		["email"] = <"konstantinos.kalliamvakos@cambio.se">
+		["date"] = <"2021-02-19">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the results for each component parameter and their total sum for the Aldrete score.">
+			use = <"Use to record the results for each component parameter and their total sum for the Aldrete score.">
+			keywords = <"Aldrete", "score", "recovery", "anesthesia", "PACU", "post-anesthesia", "care", "unit", "discharge">
+			misuse = <"">
+			copyright = <"© Cambio CDS, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Heather Leslie, Atomica Informatics, Australia", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Aldrete JA, Kroulik D. A postanesthetic recovery score. Anesth Analg. 1970 Nov-Dec;49(6):924-34. PMID: 5534693.">
+		["current_contact"] = <"Konstantinos Kalliamvakos, Cambio CDS<konstantinos.kalliamvakos@cambio.se>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"FEB715F979F8F91CE8FE499D9B6D0779">
+		["build_uid"] = <"b2cec21d-f4a4-45ea-bff7-e7318d6137ab">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {    -- Aldrete score
+		data matches {
+			HISTORY[at0001] matches {    -- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {    -- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {    -- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {    -- Activity
+										value matches {
+											0|[local::at0005],
+											1|[local::at0006],
+											2|[local::at0007]
+										}
+									}
+									ELEMENT[at0008] occurrences matches {0..1} matches {    -- Respiration
+										value matches {
+											0|[local::at0009],
+											1|[local::at0010],
+											2|[local::at0011]
+										}
+									}
+									ELEMENT[at0012] occurrences matches {0..1} matches {    -- Circulation
+										value matches {
+											0|[local::at0013],
+											1|[local::at0014],
+											2|[local::at0015]
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {    -- Consciousness
+										value matches {
+											0|[local::at0017],
+											1|[local::at0018],
+											2|[local::at0019]
+										}
+									}
+									ELEMENT[at0020] occurrences matches {0..1} matches {    -- Colour
+										value matches {
+											0|[local::at0021],
+											1|[local::at0022],
+											2|[local::at0023]
+										}
+									}
+									ELEMENT[at0024] occurrences matches {0..1} matches {    -- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..10|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0025] matches {    -- Item tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0026] occurrences matches {0..*} matches {    -- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Aldrete score">
+					description = <"An assessment score used to evaluate recovery after anaesthesia and patient readiness to be discharged from a post-anaesthesia care unit (PACU).">
+					comment = <"Original version, c 1970">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Activity">
+					description = <"">
+				>
+				["at0005"] = <
+					text = <"Unable to move extremities voluntarily or on command">
+					description = <"">
+				>
+				["at0006"] = <
+					text = <"Able to move 2 extremities voluntarily or on command">
+					description = <"">
+				>
+				["at0007"] = <
+					text = <"Able to move 4 extremities voluntarily or on command">
+					description = <"">
+				>
+				["at0008"] = <
+					text = <"Respiration">
+					description = <"">
+				>
+				["at0009"] = <
+					text = <"Apnoeic">
+					description = <"">
+				>
+				["at0010"] = <
+					text = <"Dyspnoea or limited breathing">
+					description = <"">
+				>
+				["at0011"] = <
+					text = <"Able to breathe deeply and cough freely">
+					description = <"">
+				>
+				["at0012"] = <
+					text = <"Circulation">
+					description = <"">
+				>
+				["at0013"] = <
+					text = <"BP ±50% of pre-anaesthetic level">
+					description = <"">
+				>
+				["at0014"] = <
+					text = <"BP between 20-49% of pre-anaesthetic level">
+					description = <"">
+				>
+				["at0015"] = <
+					text = <"BP ±20% of pre-anaesthetic level">
+					description = <"">
+				>
+				["at0016"] = <
+					text = <"Consciousness">
+					description = <"">
+				>
+				["at0017"] = <
+					text = <"Not responding">
+					description = <"">
+				>
+				["at0018"] = <
+					text = <"Arousable on calling">
+					description = <"">
+				>
+				["at0019"] = <
+					text = <"Fully awake">
+					description = <"">
+				>
+				["at0020"] = <
+					text = <"Colour">
+					description = <"">
+				>
+				["at0021"] = <
+					text = <"Cyanotic">
+					description = <"">
+				>
+				["at0022"] = <
+					text = <"Pale, dusky, blotchy, jaundiced, or other">
+					description = <"">
+				>
+				["at0023"] = <
+					text = <"Normal">
+					description = <"">
+				>
+				["at0024"] = <
+					text = <"Total score">
+					description = <"The total sum of each component parameter for the Aldrete score.">
+				>
+				["at0025"] = <
+					text = <"Item tree">
+					description = <"@ internal @">
+				>
+				["at0026"] = <
+					text = <"Extension">
+					description = <"Additional information required to extend the model with local content or to align with other reference models or formalisms.">
+					comment = <"For example: local information requirements; or additional metadata to align with FHIR.">
+				>
+			>
+		>
+	>

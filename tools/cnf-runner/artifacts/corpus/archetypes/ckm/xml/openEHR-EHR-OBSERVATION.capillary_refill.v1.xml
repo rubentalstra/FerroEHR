@@ -1,0 +1,1080 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2020-04-26</original_author>
+    <original_author id="name">Ian McNicoll</original_author>
+    <original_author id="organisation">freshEHR Clinical Informatics Ltd.</original_author>
+    <original_author id="email">ian@freshehr.com</original_author>
+    <other_contributors>Vebjørn Arntzen, Oslo University Hospital, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Silje Ljosland Bakke, Helse Vest IKT AS, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>SB Bhattacharyya, Sudisa Consultancy Services, India</other_contributors>
+    <other_contributors>Mikkel Gaup Grønmo, Helse-Nord, FSE, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Anca Heyd, DIPS ASA, Norway</other_contributors>
+    <other_contributors>Evelyn Hovenga, EJSH Consulting, Australia</other_contributors>
+    <other_contributors>Liv Laugen, ​Oslo University Hospital, Norway, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Heather Leslie, Atomica Informatics, Australia</other_contributors>
+    <other_contributors>Robert Madeley, Cambio Healthcare systems, Sweden</other_contributors>
+    <other_contributors>Ian McNicoll, freshEHR Clinical Informatics, United Kingdom</other_contributors>
+    <other_contributors>Svenne Naumann, Finnmarkssykehuset, Norway</other_contributors>
+    <other_contributors>Anoop Shah, University College London, United Kingdom</other_contributors>
+    <other_contributors>Trine Strand, Oslo Universitetssykehus (OUS), Norway</other_contributors>
+    <other_contributors>Roy Støle, OUS, Norway</other_contributors>
+    <other_contributors>Norwegian Review Summary, Nasjonal IKT HF, Norway</other_contributors>
+    <other_contributors>Nyree Taylor, Ocean Informatics, Australia</other_contributors>
+    <other_contributors>Jeremy Tong, NHS, United Kingdom</other_contributors>
+    <other_contributors>John Tore Valand, Helse Bergen, Norway (openEHR Editor)</other_contributors>
+    <other_contributors>Marit Alice Venheim, Helse Vest IKT, Norway (openEHR Editor)</other_contributors>
+    <lifecycle_state>published</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">King D, Morton R, Bevan C. How to use capillary refill time. Arch Dis Child Educ Pract Ed. 2014 Jun;99(3):111-6. doi: 10.1136/archdischild-2013-305198. Epub 2013 Nov 13. Review. PubMed PMID: 24227793.&#xD;
+&#xD;
+E. Kviesis-Kipge, E. Curkste, J. Spigulis, L. Eihvalde, “Real-time analysis of skin capillary-refill processes using blue LED,” Proc. SPIE 7715, Biophotonics: Photonic Solutions for Better Health Care II, 771523 (18 May 2010); https://doi.org/10.1117/12.854263&#xD;
+&#xD;
+Kawaguchi R, Nakada TA, Oshima T, Shinozaki M, Nakaguchi T, Haneishi H, Oda S. Optimal pressing strength and time for capillary refilling time. Crit Care. 2019 Jan 8;23(1):4. doi: 10.1186/s13054-018-2295-3. PubMed PMID: 30621748; PubMed Central PMCID: PMC6323707.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">7B735BC6C51322555BD6E3E288135F25</other_details>
+    <other_details id="build_uid">fe31f88e-f3cd-4b66-8652-144aa095362f</other_details>
+    <other_details id="ip_acknowledgements">This artefact includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyrighted material of the International Health Terminology Standards Development Organisation (IHTSDO). Where an implementation of this artefact makes use of SNOMED CT content, the implementer must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomedct or info@snomed.org.</other_details>
+    <other_details id="revision">1.0.1</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Aufzeichnung der Befunde im Zusammenhang mit der Rekapillarisierungszeit.</purpose>
+      <keywords>Kapilläre Rückfüllzeit</keywords>
+      <use>Zur Aufzeichnung der beobachteten Befunde im Zusammenhang mit der Rekapillarisierungszeit.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>sv</code_string>
+      </language>
+      <purpose>*To record findings related to the capillary refill time. (en)</purpose>
+      <keywords>*return (en)</keywords>
+      <use>*Use to record findings related to the capillary refill time. (en)</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>nb</code_string>
+      </language>
+      <purpose>For å registrere funn knyttet til den kapillære fylningstiden (CRT).</purpose>
+      <keywords>refyldningstid, CRT, Capillary refill time, kapillær refill</keywords>
+      <use>Bruk for å registrere funn knyttet til den kapillære fylningstiden (CRT).</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record findings related to the capillary refill time.</purpose>
+      <keywords>return</keywords>
+      <use>Use to record findings related to the capillary refill time.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Jonas Bucher</author>
+    <author id="organisation">Cistec AG</author>
+    <author id="email">jonas.bucher@cistec.com</author>
+    <other_details id="other_contributors">Emmanuel Eschmann, Cistec AG</other_details>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>sv</code_string>
+    </language>
+    <author id="name">Viktor Bäckman</author>
+    <author id="organisation">Linköpings Universitet</author>
+    <author id="email">vikba308@student.liu.se</author>
+  </translations>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>nb</code_string>
+    </language>
+    <author id="name">Vebjørn Arntzen, John Tore Valand</author>
+    <author id="organisation">Oslo University Hospital, Helse Bergen</author>
+    <author id="email">varntzen@ous-hf.no, john.tore.valand@helse-bergen.no</author>
+  </translations>
+  <uid>
+    <value>14f30fd1-9cc6-40b9-a5cb-15e2e62e05d9</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-OBSERVATION.capillary_refill.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>OBSERVATION</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>data</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>HISTORY</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>events</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>EVENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0002</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>data</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0003</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0009</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_DV_QUANTITY">
+                        <rm_type_name>DV_QUANTITY</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <property>
+                          <terminology_id>
+                            <value>openehr</value>
+                          </terminology_id>
+                          <code_string>128</code_string>
+                        </property>
+                        <list>
+                          <magnitude>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>0.0</lower>
+                            <upper>20.0</upper>
+                          </magnitude>
+                          <precision>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </precision>
+                          <units>s</units>
+                        </list>
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0005</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_CODED_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                          <rm_attribute_name>defining_code</rm_attribute_name>
+                          <existence>
+                            <lower_included>true</lower_included>
+                            <upper_included>true</upper_included>
+                            <lower_unbounded>false</lower_unbounded>
+                            <upper_unbounded>false</upper_unbounded>
+                            <lower>1</lower>
+                            <upper>1</upper>
+                          </existence>
+                          <children xsi:type="C_CODE_PHRASE">
+                            <rm_type_name>CODE_PHRASE</rm_type_name>
+                            <occurrences>
+                              <lower_included>true</lower_included>
+                              <upper_included>true</upper_included>
+                              <lower_unbounded>false</lower_unbounded>
+                              <upper_unbounded>false</upper_unbounded>
+                              <lower>1</lower>
+                              <upper>1</upper>
+                            </occurrences>
+                            <node_id />
+                            <terminology_id>
+                              <value>local</value>
+                            </terminology_id>
+                            <code_list>at0006</code_list>
+                            <code_list>at0007</code_list>
+                            <code_list>at0008</code_list>
+                          </children>
+                        </attributes>
+                      </children>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0040</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>state</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>ITEM_TREE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id>at0021</node_id>
+                <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+                  <rm_attribute_name>items</rm_attribute_name>
+                  <existence>
+                    <lower_included>true</lower_included>
+                    <upper_included>true</upper_included>
+                    <lower_unbounded>false</lower_unbounded>
+                    <upper_unbounded>false</upper_unbounded>
+                    <lower>0</lower>
+                    <upper>1</upper>
+                  </existence>
+                  <children xsi:type="C_COMPLEX_OBJECT">
+                    <rm_type_name>ELEMENT</rm_type_name>
+                    <occurrences>
+                      <lower_included>true</lower_included>
+                      <upper_included>true</upper_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>false</upper_unbounded>
+                      <lower>0</lower>
+                      <upper>1</upper>
+                    </occurrences>
+                    <node_id>at0023</node_id>
+                    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+                      <rm_attribute_name>value</rm_attribute_name>
+                      <existence>
+                        <lower_included>true</lower_included>
+                        <upper_included>true</upper_included>
+                        <lower_unbounded>false</lower_unbounded>
+                        <upper_unbounded>false</upper_unbounded>
+                        <lower>0</lower>
+                        <upper>1</upper>
+                      </existence>
+                      <children xsi:type="C_COMPLEX_OBJECT">
+                        <rm_type_name>DV_TEXT</rm_type_name>
+                        <occurrences>
+                          <lower_included>true</lower_included>
+                          <upper_included>true</upper_included>
+                          <lower_unbounded>false</lower_unbounded>
+                          <upper_unbounded>false</upper_unbounded>
+                          <lower>1</lower>
+                          <upper>1</upper>
+                        </occurrences>
+                        <node_id />
+                      </children>
+                    </attributes>
+                  </children>
+                  <cardinality>
+                    <is_ordered>false</is_ordered>
+                    <is_unique>false</is_unique>
+                    <interval>
+                      <lower_included>true</lower_included>
+                      <lower_unbounded>false</lower_unbounded>
+                      <upper_unbounded>true</upper_unbounded>
+                      <lower>0</lower>
+                    </interval>
+                  </cardinality>
+                </attributes>
+              </children>
+            </attributes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+    <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+      <rm_attribute_name>protocol</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>0</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ITEM_TREE</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>1</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+          <rm_attribute_name>items</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0024</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0039</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative\.v2/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.anatomical_location_relative\.v2</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>ELEMENT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0041</node_id>
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>value</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>0</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_COMPLEX_OBJECT">
+                <rm_type_name>DV_TEXT</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+              </children>
+            </attributes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>0</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id>at0037</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <children xsi:type="ARCHETYPE_SLOT">
+            <rm_type_name>CLUSTER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </occurrences>
+            <node_id>at0020</node_id>
+            <includes>
+              <string_expression>archetype_id/value matches {/.*/}</string_expression>
+              <expression xsi:type="EXPR_BINARY_OPERATOR">
+                <type>Boolean</type>
+                <operator>2007</operator>
+                <precedence_overridden>false</precedence_overridden>
+                <left_operand xsi:type="EXPR_LEAF">
+                  <type>String</type>
+                  <item xsi:type="xsd:string">archetype_id/value</item>
+                  <reference_type>attribute</reference_type>
+                </left_operand>
+                <right_operand xsi:type="EXPR_LEAF">
+                  <type>C_STRING</type>
+                  <item xsi:type="C_STRING">
+                    <pattern>.*</pattern>
+                  </item>
+                  <reference_type>constraint</reference_type>
+                </right_operand>
+              </expression>
+            </includes>
+          </children>
+          <cardinality>
+            <is_ordered>false</is_ordered>
+            <is_unique>false</is_unique>
+            <interval>
+              <lower_included>true</lower_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>true</upper_unbounded>
+              <lower>0</lower>
+            </interval>
+          </cardinality>
+        </attributes>
+      </children>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Capillary refill time (CRT)</items>
+        <items id="description">Measurement of the time taken for color to return to an external capillary bed after pressure is applied to cause blanching.</items>
+        <items id="comment"> Sometimes expressed as 'capillary return'.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Any event</items>
+        <items id="description">Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Clinical interpretation</items>
+        <items id="description">A clinical interpretation of the capillary refill time.</items>
+        <items id="comment">Normal range may vary based on age.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Normal capillary filling time</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Increased capillary filling time</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Decreased capillary filing time</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Refill time</items>
+        <items id="description">The measured time taken for color to return after blanching.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Extension</items>
+        <items id="description">Additional information required to extend the model with local content or to align with other reference models or formalisms.</items>
+        <items id="comment">For example: local information requirements; or additional metadata to align with FHIR.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Confounding factors</items>
+        <items id="description">Issues or factors that may impact on measurement of the capillary refill time, not captured in other fields.</items>
+        <items id="comment">For example: pain; fever; ambient temperature and light; use of vasoactive medication or peripheral vascular occlusion.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Location of measurement</items>
+        <items id="description">Simple body site where the capillary filling time was measured.</items>
+        <items id="comment">For example: 'nail bed right index finger', 'forehead', 'sternum' and 'skin patch left breast'.</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Device</items>
+        <items id="description">Details about any device used to measure capillary refill time.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Structured measurement location</items>
+        <items id="description">Structured anatomical location of where the measurement was taken.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Comment</items>
+        <items id="description">Additional narrative about the capillary refill time not captured in other fields.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Measurement method</items>
+        <items id="description">Narrative description of the method used for measuring the capillary refill time.</items>
+        <items id="comment">Specify in order to ensure that a sequence of measurements are taken in the same way.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="nb">
+      <items code="at0000">
+        <items id="text">Kapillær fylningstid (CRT)</items>
+        <items id="description">Måling av tiden det tar før fargen vender tilbake i en ekstern kapillærseng etter å ha blitt utsatt for ytre press.</items>
+        <items id="comment">Noen ganger benevnt som "kapillær refill".</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Uspesifisert hendelse</items>
+        <items id="description">Standard, uspesifisert tidspunkt eller tidsintervall som kan defineres mer eksplisitt i et templat eller i en applikasjon.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Klinisk tolkning</items>
+        <items id="description">En klinisk tolkning av tiden for kapillær refylning.</items>
+        <items id="comment">Normalområdet kan variere med alder.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Normal kapillær fylningstid</items>
+        <items id="description">*(en)</items>
+      </items>
+      <items code="at0007">
+        <items id="text">Økt kapillær fylningstid</items>
+        <items id="description">*(en)</items>
+      </items>
+      <items code="at0008">
+        <items id="text">Redusert kapillær fylningstid</items>
+        <items id="description">*(en)</items>
+      </items>
+      <items code="at0009">
+        <items id="text">Fylningstid</items>
+        <items id="description">Den målte tiden det tar før fargen vender tilbake etter å ha blitt utsatt for ytre press.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Tilleggsinformasjon</items>
+        <items id="description">Ytterligere informasjon som trengs for å kunne registrere lokalt definert innhold eller for å tilpasse til andre referansemodeller/formalismer.</items>
+        <items id="comment">For eksempel lokale informasjonsbehov eller ytterligere metadata for å kunne tilpasse til tilsvarende konsepter i FHIR.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Konfunderende faktorer</items>
+        <items id="description">Fritekstbeskrivelse av problemer eller faktorer som kan ha påvirkning på målingen av kapillær fylningstid.</items>
+        <items id="comment">For eksempel smerter, feber, temperatur eller lys i omgivelsene, bruk av vasoaktive medikamenter eller tilstoppet eller hindret perifer sirkulasjon.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Målested</items>
+        <items id="description">Anatomisk sted hvor den kapillære fylningstiden var målt.</items>
+        <items id="comment">For eksempel "negleseng 2. høyre finger", "panne", "sternum" eller "fri hudlapp venstre bryst".</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Måleapparat</items>
+        <items id="description">Detaljer om eventuelt måleapparat som er brukt til å måle kapillær fylningstid.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Strukturert målested</items>
+        <items id="description">Strukturert anatomisk lokalisering av stedet målingen ble gjort.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligere fritekst om kapillær fylningstid, som ikke er fanget i andre felt.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Målemetode</items>
+        <items id="description">Fritekstbeskrivelse av metoden som ble benyttet for måling av kapillær fylningstid.</items>
+        <items id="comment">Spesifiser for å sikre at en sekvens av målinger blir gjort på samme måte.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="sv">
+      <items code="at0000">
+        <items id="text">*Capillary refill time (CRT) (en)</items>
+        <items id="description">*Measurement of the time taken for color to return to an external capillary bed after pressure is applied to cause blanching. (en)</items>
+        <items id="comment">* Sometimes expressed as 'capillary return'. (en)</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">ospecificerad händelse</items>
+        <items id="description">Standard, ospecificerad tidpunkt eller intervallhändelse som kan uttryckligen definieras i en mall eller vid körning.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Klinisk tolkning</items>
+        <items id="description">En klinisk tolkning av normalitet vid kapillärfyllnad.</items>
+        <items id="comment">*Normal range may vary based on age. (en)</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Normal kapillärfyllnad</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Ökad kapillärfyllnad</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Minskad kapillärfyllnad</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">*Refill time (en)</items>
+        <items id="description">*The measured time taken for color to return after blanching. (en)</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Förlängning</items>
+        <items id="description">Ytterligare information som krävs för att utöka modellen med lokalt innehåll eller för att anpassa sig till andra referensmodeller eller formaliteter.</items>
+        <items id="comment">Tillexempel, lokal informationskrav eller ytterligare metadata för att anpassa till FHIR.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Tillfredsställande faktorer</items>
+        <items id="description">*Issues or factors that may impact on measurement of the capillary refill time, not captured in other fields. (en)</items>
+        <items id="comment">*For example: pain; fever; ambient temperature and light; use of vasoactive medication or peripheral vascular occlusion. (en)</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Mätplats</items>
+        <items id="description">Enkel lokalisation av var kapillärfyllnad mätes.</items>
+        <items id="comment">*For example: 'nail bed right index finger', 'forehead', 'sternum' and 'skin patch left breast'. (en)</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Utrustning</items>
+        <items id="description">Detaljer om utrustning som användes vid mätningen av kapillärfyllnad.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Strukturerad mätplats</items>
+        <items id="description">Strukturerad anatomisk lokalisation av var mätningarna togs.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Kommentar</items>
+        <items id="description">Ytterligare redogörelse om kapillärfyllnad som inte beskriven i andra fält.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">*Measurement method(en)</items>
+        <items id="description">*Narrative description of the method used for measuring the capillary refill time.(en)</items>
+        <items id="comment">*Specify in order to ensure that a sequence of measurements are taken in the same way. (en)</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Rekapillarisierungszeit (RKZ)</items>
+        <items id="description">Messung der Zeit, in der sich ein Kapillarbett nach Einwirkung von äußerem Druck wieder mit Blut füllt.</items>
+        <items id="comment">Manchmal auch als "kapilläre Rückfüllzeit" bezeichnet.</items>
+      </items>
+      <items code="at0001">
+        <items id="text">History</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0002">
+        <items id="text">Beliebiges Ereignis</items>
+        <items id="description">Ein Standardwert, ein spezifizierter Zeitpunkt oder ein Intervallereignis, welches explizit in einem Template oder während der Laufzeit definiert werden kann.</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Klinische Interpretation</items>
+        <items id="description">Klinische Interpretation der Rekapillarisierungszeit.&#xD;
+</items>
+        <items id="comment">Der Normalbereich kann altersabhängig variieren.</items>
+      </items>
+      <items code="at0006">
+        <items id="text">Normale Rekapillarisierungszeit</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0007">
+        <items id="text">Verlängerte Rekapillarisierungszeit</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0008">
+        <items id="text">Verkürzte Rekapillarisierungszeit</items>
+        <items id="description"></items>
+      </items>
+      <items code="at0009">
+        <items id="text">Rückfüllzeit</items>
+        <items id="description">Die gemessene Zeit bis zur Farbänderung durch Rückfluss des Blutes nach Druckentlastung.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0020">
+        <items id="text">Erweiterung</items>
+        <items id="description">Zusätzliche Informationen zur Erfassung lokaler Inhalte oder zur Anpassung an andere Referenzmodelle oder Formalismen.</items>
+        <items id="comment">Zum Beispiel: Informationen bzgl. der lokalen Krankenhausabteilung oder zusätzliche Metadata zur Anpassung an entsprechende FHIR oder CIMI Gegenstücke.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Item tree</items>
+        <items id="description">@ internal @</items>
+      </items>
+      <items code="at0023">
+        <items id="text">Einflussfaktoren</items>
+        <items id="description">Probleme oder Faktoren, die die Messung der Rekapillarisierungszeit beeinflussen können und in anderen Feldern nicht erfasst sind.</items>
+        <items id="comment">Zum Beispiel: Schmerzen, Fieber, Umgebungstemperatur und Licht, Einnahme vasoaktiver Medikamente oder periphere Gefäßverstopfung.</items>
+      </items>
+      <items code="at0024">
+        <items id="text">Stelle der Messung</items>
+        <items id="description">Einfache Beschreibung der Körperstelle, an der die Rekapillarisierungszeit gemessen wurde.</items>
+        <items id="comment">Zum Beispiel: 'Nagelbett rechter Zeigefinger', 'Stirn' oder 'Sternum'</items>
+      </items>
+      <items code="at0037">
+        <items id="text">Gerät</items>
+        <items id="description">Details über das Gerät, das zur Messung der Rekapillarisierungszeit verwendet wurde.</items>
+      </items>
+      <items code="at0039">
+        <items id="text">Strukturierte Stelle der Messung</items>
+        <items id="description">Strukturierte Körperstelle, an der die Rekapillarisierungszeit gemessen wurde.</items>
+      </items>
+      <items code="at0040">
+        <items id="text">Kommentar</items>
+        <items id="description">Zusätzliche Beschreibung zur Rekapillarisierungszeit, die in anderen Feldern nicht erfasst wurde.</items>
+      </items>
+      <items code="at0041">
+        <items id="text">Methode</items>
+        <items id="description">Beschreibung der zur Messung der Rekapillarisierungszeit verwendeten Methode.</items>
+        <items id="comment">Angeben, um sicherzustellen, dass eine Reihe von Messungen auf dieselbe Weise durchgeführt werden.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0009">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>15527001</code_string>
+        </value>
+      </items>
+      <items code="at0006">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>45332005</code_string>
+        </value>
+      </items>
+      <items code="at0007">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>50427001</code_string>
+        </value>
+      </items>
+      <items code="at0008">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>27157002</code_string>
+        </value>
+      </items>
+    </term_bindings>
+    <term_bindings terminology="LOINC">
+      <items code="at0009">
+        <value>
+          <terminology_id>
+            <value>LOINC</value>
+          </terminology_id>
+          <code_string>44971-0</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+

@@ -1,0 +1,460 @@
+﻿archetype (adl_version=1.4; uid=42d06d0f-ffd2-461e-9c49-d4340df7ae72)
+	openEHR-EHR-CLUSTER.exam_dentition.v0
+
+concept
+	[at0000]	-- Examination of dentition
+language
+	original_language = <[ISO_639-1::ja]>
+description
+	original_author = <
+		["name"] = <"">
+	>
+	details = <
+		["ja"] = <
+			language = <[ISO_639-1::ja]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+			copyright = <"© Takahiro Nakahara
+Shinji Kobayashi
+© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"DE6A090788AFAB1D7A41FC8203D8800A">
+		["build_uid"] = <"9c1c8e6a-7251-48e8-9767-ae88db2b3ab1">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Examination of dentition
+		items cardinality matches {1..*; unordered} matches {
+			CLUSTER[at0001] occurrences matches {0..1} matches {	-- Face
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0002] occurrences matches {0..1} matches {	-- View
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0040, 	-- Front
+									at0041]	-- Side
+								}
+							}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Facial type
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0042, 	-- Convex
+									at0043, 	-- Straight
+									at0044]	-- Concave
+								}
+							}
+						}
+					}
+					ELEMENT[at0004] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- No abnormality detected
+				value matches {
+					DV_BOOLEAN matches {
+						value matches {True, False}
+					}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- Clinical description
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype ELEMENT[at0007] occurrences matches {0..*} matches {	-- Examination findings
+				include
+					archetype_id/value matches {/.*/}
+			}
+			allow_archetype ELEMENT[at0008] occurrences matches {0..*} matches {	-- Multimedia representation
+				include
+					archetype_id/value matches {/openEHR-EHR-ELEMENT\.multimedia(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			ELEMENT[at0009] occurrences matches {0..1} matches {	-- Clinical interpretation
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0010] occurrences matches {0..1} matches {	-- Comment
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype ELEMENT[at0011] occurrences matches {0..*} matches {	-- Examination not done
+				include
+					archetype_id/value matches {/openEHR-EHR-ELEMENT\.exclusion_exam(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			CLUSTER[at0012] occurrences matches {0..*} matches {	-- Measurements
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0034] occurrences matches {0..1} matches {	-- Arch length discrepancy
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					CLUSTER[at0031] occurrences matches {0..*} matches {	-- Tooth size ratio
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0032] occurrences matches {0..1} matches {	-- Overall
+								value matches {
+									DV_PROPORTION matches {*}
+								}
+							}
+							ELEMENT[at0033] occurrences matches {0..1} matches {	-- Anterior ratio
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+						}
+					}
+					CLUSTER[at0026] occurrences matches {0..*} matches {	-- Basal arch
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0027] occurrences matches {0..1} matches {	-- Width
+								value matches {
+									C_DV_QUANTITY <
+									>
+								}
+							}
+							ELEMENT[at0028] occurrences matches {0..1} matches {	-- Length
+								value matches {
+									C_DV_QUANTITY <
+									>
+								}
+							}
+							ELEMENT[at0029] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0030] occurrences matches {0..1} matches {	-- Side
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0047, 	-- Upper
+											at0048]	-- Lower
+										}
+									}
+								}
+							}
+						}
+					}
+					CLUSTER[at0021] occurrences matches {0..*} matches {	-- Coronal arch
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0025] occurrences matches {0..1} matches {	-- Side
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0045, 	-- Upper
+											at0046]	-- Lower
+										}
+									}
+								}
+							}
+							ELEMENT[at0024] occurrences matches {0..1} matches {	-- Description
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0023] occurrences matches {0..1} matches {	-- Length
+								value matches {
+									C_DV_QUANTITY <
+									>
+								}
+							}
+							ELEMENT[at0022] occurrences matches {0..1} matches {	-- Width
+								value matches {
+									C_DV_QUANTITY <
+									>
+								}
+							}
+						}
+					}
+					CLUSTER[at0013] occurrences matches {0..*} matches {	-- Tooth
+						items cardinality matches {1..*; unordered} matches {
+							allow_archetype ELEMENT[at0019] occurrences matches {0..*} matches {	-- Anatomical location teeth
+								include
+									archetype_id/value matches {/.*/}
+							}
+							ELEMENT[at0020] occurrences matches {0..1} matches {	-- Comment
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0014] occurrences matches {0..1} matches {	-- Site
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							ELEMENT[at0015] occurrences matches {0..1} matches {	-- Axis
+								value matches {
+									DV_TEXT matches {*}
+								}
+							}
+							CLUSTER[at0016] occurrences matches {0..1} matches {	-- Size
+								items cardinality matches {1..*; unordered} matches {
+									ELEMENT[at0018] occurrences matches {0..1} matches {	-- Width
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {	-- Description
+										value matches {
+											C_DV_QUANTITY <
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			ELEMENT[at0035] occurrences matches {0..1} matches {	-- Specific findings
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			CLUSTER[at0036] occurrences matches {0..*} matches {	-- Style
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0038] occurrences matches {0..1} matches {	-- Group function
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0037] occurrences matches {0..1} matches {	-- Cuspid protected
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			ELEMENT[at0039] occurrences matches {0..1} matches {	-- Relationship
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["ja"] = <
+			items = <
+				["at0000"] = <
+					text = <"Examination of dentition">
+					description = <"unknown">
+				>
+				["at0001"] = <
+					text = <"Face">
+					description = <"*">
+				>
+				["at0002"] = <
+					text = <"View">
+					description = <"*">
+				>
+				["at0003"] = <
+					text = <"Facial type">
+					description = <"*">
+				>
+				["at0004"] = <
+					text = <"Description">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"No abnormality detected">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"Clinical description">
+					description = <"*">
+				>
+				["at0007"] = <
+					text = <"Examination findings">
+					description = <"*">
+				>
+				["at0008"] = <
+					text = <"Multimedia representation">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"Clinical interpretation">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Comment">
+					description = <"*">
+				>
+				["at0011"] = <
+					text = <"Examination not done">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"Measurements">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"Tooth">
+					description = <"*">
+				>
+				["at0014"] = <
+					text = <"Site">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Axis">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Size">
+					description = <"*">
+				>
+				["at0017"] = <
+					text = <"Description">
+					description = <"*">
+				>
+				["at0018"] = <
+					text = <"Width">
+					description = <"*">
+				>
+				["at0019"] = <
+					text = <"Anatomical location teeth">
+					description = <"*">
+				>
+				["at0020"] = <
+					text = <"Comment">
+					description = <"*">
+				>
+				["at0021"] = <
+					text = <"Coronal arch">
+					description = <"*">
+				>
+				["at0022"] = <
+					text = <"Width">
+					description = <"*">
+				>
+				["at0023"] = <
+					text = <"Length">
+					description = <"*">
+				>
+				["at0024"] = <
+					text = <"Description">
+					description = <"*">
+				>
+				["at0025"] = <
+					text = <"Side">
+					description = <"*">
+				>
+				["at0026"] = <
+					text = <"Basal arch">
+					description = <"*">
+				>
+				["at0027"] = <
+					text = <"Width">
+					description = <"*">
+				>
+				["at0028"] = <
+					text = <"Length">
+					description = <"*">
+				>
+				["at0029"] = <
+					text = <"Description">
+					description = <"*">
+				>
+				["at0030"] = <
+					text = <"Side">
+					description = <"*">
+				>
+				["at0031"] = <
+					text = <"Tooth size ratio">
+					description = <"*">
+				>
+				["at0032"] = <
+					text = <"Overall">
+					description = <"*">
+				>
+				["at0033"] = <
+					text = <"Anterior ratio">
+					description = <"*">
+				>
+				["at0034"] = <
+					text = <"Arch length discrepancy">
+					description = <"*">
+				>
+				["at0035"] = <
+					text = <"Specific findings">
+					description = <"*">
+				>
+				["at0036"] = <
+					text = <"Style">
+					description = <"*">
+				>
+				["at0037"] = <
+					text = <"Cuspid protected">
+					description = <"*">
+				>
+				["at0038"] = <
+					text = <"Group function">
+					description = <"*">
+				>
+				["at0039"] = <
+					text = <"Relationship">
+					description = <"*">
+				>
+				["at0040"] = <
+					text = <"Front">
+					description = <"*">
+				>
+				["at0041"] = <
+					text = <"Side">
+					description = <"*">
+				>
+				["at0042"] = <
+					text = <"Convex">
+					description = <"*">
+				>
+				["at0043"] = <
+					text = <"Straight">
+					description = <"*">
+				>
+				["at0044"] = <
+					text = <"Concave">
+					description = <"*">
+				>
+				["at0045"] = <
+					text = <"Upper">
+					description = <"*">
+				>
+				["at0046"] = <
+					text = <"Lower">
+					description = <"*">
+				>
+				["at0047"] = <
+					text = <"Upper">
+					description = <"*">
+				>
+				["at0048"] = <
+					text = <"Lower">
+					description = <"*">
+				>
+			>
+		>
+	>

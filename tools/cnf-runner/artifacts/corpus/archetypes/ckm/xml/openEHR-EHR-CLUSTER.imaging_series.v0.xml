@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>en</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2022-01-25</original_author>
+    <original_author id="name">Heather Leslie</original_author>
+    <original_author id="organisation">Atomica Informatics</original_author>
+    <original_author id="email">heather.leslie@atomicainformatics.com</original_author>
+    <lifecycle_state>in_development</lifecycle_state>
+    <other_details id="licence">This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/.</other_details>
+    <other_details id="custodian_organisation">openEHR Foundation</other_details>
+    <other_details id="references">Digital imaging and Communications in Medicine (DICOM) [Internet]. Medical Imaging Technology Association (MITA); [cited 2022 Jan 25]. Available from: https://www.dicomstandard.org/current.&#xD;
+&#xD;
+HL7 FHIR Resource - DiagnosticReport v4.0.1 R4 [Internet]. Health Level Seven International; [accessed 2021 Aug 04]. Available from: https://www.hl7.org/fhir/diagnosticreport.html.&#xD;
+&#xD;
+HL7 FHIR Resource - ImagingStudy v4.0.1 R4 [Internet]. Health Level Seven International; [accessed 2021 Aug 04]. Available from: http://hl7.org/fhir/imagingstudy.html.</other_details>
+    <other_details id="original_namespace">org.openehr</other_details>
+    <other_details id="original_publisher">openEHR Foundation</other_details>
+    <other_details id="custodian_namespace">org.openehr</other_details>
+    <other_details id="MD5-CAM-1.0.1">45E420440F969D0D932CD86484E07A34</other_details>
+    <other_details id="build_uid">58bbb144-df67-4157-9c26-4d0eb9564769</other_details>
+    <other_details id="revision">0.0.1-alpha</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>de</code_string>
+      </language>
+      <purpose>Zur Darstellung von Informationen zu einer DICOM-Serie.</purpose>
+      <keywords>DICOM</keywords>
+      <keywords>Radiologie</keywords>
+      <keywords>Serie</keywords>
+      <keywords>Bild</keywords>
+      <use>Zur Darstellung von Informationen zu einer DICOM-Serie.&#xD;
+&#xD;
+Dieser Archetyp wurde entworfen, um ihn in den SLOT „Seriendetails“ und/oder „Details zur Vergleichsserie“ in OBSERVATION.imaging_exam_result oder anderen Archetypen, sofern klinisch relevant, einzufügen.</use>
+      <misuse />
+      <copyright />
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>To record details about a DICOM series.</purpose>
+      <keywords>DICOM</keywords>
+      <keywords>radiology</keywords>
+      <keywords>series</keywords>
+      <keywords>image</keywords>
+      <use>Use to record details about a DICOM series.&#xD;
+&#xD;
+This archetype has been designed to be nested within the 'Series details' and 'Comparison series details' SLOTs in the OBSERVATION.imaging_exam_result or other archetypes where clinically relevant.</use>
+      <misuse />
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>de</code_string>
+    </language>
+    <author id="name">Natalia Strauch</author>
+    <author id="organisation">Medizinische Hochschule Hannover</author>
+    <author id="email">Strauch.Natalia@mh-hannover.de</author>
+  </translations>
+  <uid>
+    <value>aa04836a-789a-4ceb-8dd9-b0415b7629e8</value>
+  </uid>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.imaging_series.v0</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0016</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_IDENTIFIER</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0017</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0022</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0018</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0010</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_COUNT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0019</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_URI</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="ARCHETYPE_SLOT">
+        <rm_type_name>CLUSTER</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>0</lower>
+        </occurrences>
+        <node_id>at0021</node_id>
+        <includes>
+          <string_expression>archetype_id/value matches {/.*/}</string_expression>
+          <expression xsi:type="EXPR_BINARY_OPERATOR">
+            <type>Boolean</type>
+            <operator>2007</operator>
+            <precedence_overridden>false</precedence_overridden>
+            <left_operand xsi:type="EXPR_LEAF">
+              <type>String</type>
+              <item xsi:type="xsd:string">archetype_id/value</item>
+              <reference_type>attribute</reference_type>
+            </left_operand>
+            <right_operand xsi:type="EXPR_LEAF">
+              <type>C_STRING</type>
+              <item xsi:type="C_STRING">
+                <pattern>.*</pattern>
+              </item>
+              <reference_type>constraint</reference_type>
+            </right_operand>
+          </expression>
+        </includes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Imaging series</items>
+        <items id="description">Details about a series of images, as part of a DICOM study.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Number of instances</items>
+        <items id="description">The number of instances contained in the series.</items>
+        <items id="comment">Equivalent to ImagingStudy.series.numberOfInstances in FHIR.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Series instance identifier</items>
+        <items id="description">Unique identifier for the imaging series assigned by the radiology service.</items>
+        <items id="comment">Equivalent to FHIR ImagingStudy.identifier and DICOM Series Instance UID (0020,000E).</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Series number</items>
+        <items id="description">The numeric identifier of this series in the study.</items>
+        <items id="comment">Equivalent to ImagingStudy.series.number in FHIR.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Modality</items>
+        <items id="description">The type of diagnostic equipment, or function or technique of that equipment, that originally acquired, the data used to create the image series.</items>
+        <items id="comment">Coding of the 'Modality' with a value set is recommended. For example, the DICOM CID 29 Acquisition Modality value set. Equivalent to ImagingStudy.series.modality in FHIR.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Series end point</items>
+        <items id="description">Location of where to query for imaging content and metadata (QIDO-RS, WADO-RS, or WADO-URI).</items>
+        <items id="comment">The network service providing access (e.g., query, view, or retrieval) for the series. Equivalent to ImagingStudy.series.endpoint in FHIR.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Device</items>
+        <items id="description">Details about imaging device/s used to capture the series.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Series description</items>
+        <items id="description">Description about the series.</items>
+        <items id="comment">Equivalent to Series description (0008, 103E) in DICOM.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="de">
+      <items code="at0000">
+        <items id="text">Bildserie</items>
+        <items id="description">Details zu einer Bilderserie im Rahmen einer DICOM-Studie.</items>
+      </items>
+      <items code="at0010">
+        <items id="text">Anzahl der Instanz</items>
+        <items id="description">Die Anzahl der in der Serie enthaltenen Instanzen.</items>
+        <items id="comment">Entspricht ImagingStudy.series.numberOfInstances in FHIR.</items>
+      </items>
+      <items code="at0016">
+        <items id="text">Serieninstanz-ID</items>
+        <items id="description">Eindeutige Kennung für die vom radiologischen Dienst vergebene Bildserie.</items>
+        <items id="comment">Entspricht ImagingStudy.identifier in FHIR und Series Instance UID (0020,000E) in DICOM.</items>
+      </items>
+      <items code="at0017">
+        <items id="text">Seriennummer</items>
+        <items id="description">Die numerische Kennung dieser Serie in der Studie.</items>
+        <items id="comment">Entspricht ImagingStudy.series.number in FHIR.</items>
+      </items>
+      <items code="at0018">
+        <items id="text">Modalität</items>
+        <items id="description">Die Art des diagnostischen Geräts oder die Funktion oder Technik dieses Geräts, das ursprünglich die Daten erfasst hat, die zur Erstellung der Bildserie verwendet wurden.</items>
+        <items id="comment">Es wird empfohlen, die "Modalität" mit einem Wertesatz zu codieren. Zum Beispiel der Wertesatz DICOM CID 29 Acquisition Modality. Entspricht ImagingStudy.series.modality in FHIR.</items>
+      </items>
+      <items code="at0019">
+        <items id="text">Serienendpunkt</items>
+        <items id="description">Ort, an dem Bildinhalte und Metadaten (QIDO-RS, WADO-RS, or WADO-URI) abgefragt werden.</items>
+        <items id="comment">Der Netzwerkdienst, der den Zugriff (z. B. Abfrage, Ansicht oder Abruf) für die Serie bereitstellt. Entspricht ImagingStudy.series.endpoint in FHIR.</items>
+      </items>
+      <items code="at0021">
+        <items id="text">Gerät</items>
+        <items id="description">Details zu dem/-n Bildgebungsgerät/-en, das/die zum Erfassen der Serie verwendet wurde/-n.</items>
+      </items>
+      <items code="at0022">
+        <items id="text">Serienbeschreibung</items>
+        <items id="description">Beschreibung zur Serie.</items>
+        <items id="comment">Entspricht Series description (0008, 103E) in DICOM.</items>
+      </items>
+    </term_definitions>
+  </ontology>
+</archetype>
+

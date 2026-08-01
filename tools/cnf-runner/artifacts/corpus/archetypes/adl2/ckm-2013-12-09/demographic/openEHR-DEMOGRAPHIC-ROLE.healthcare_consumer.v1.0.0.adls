@@ -1,0 +1,149 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-DEMOGRAPHIC-ROLE.healthcare_consumer.v1.0.0
+
+language
+	original_language = <[ISO_639-1::pt-br]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Sergio Miranda Freire">
+				["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+				["email"] = <"sergio@lampada.uerj.br">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sergio Miranda Freire & Rigoleta Dutra Mediano Dias">
+		["organisation"] = <"Universidade do Estado do Rio de Janeiro - UERJ">
+		["email"] = <"sergio@lampada.uerj.br">
+		["date"] = <"22/05/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["pt-br"] = <
+			language = <[ISO_639-1::pt-br]>
+			purpose = <"Representação dos dados de uma pessoa que exerce o papel de um consumidor de serviços de saúde">
+			use = <"Usado em serviços de demografia para coletar dados demográficos de uma pessoa que exerce o papel de um consumidor de serviços de saúde">
+			keywords = <"serviço demográfico", "consumidor em saúde", "fonte pagadora">
+			misuse = <"">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Representation of a person's data when he/she acts as a healthcare consumer">
+			use = <"Used in demographic service to collect demographic data about a person when he/she acts as a healthcare consumer">
+			keywords = <"demographic service", "healthcare consumer", "third-party payer">
+			misuse = <"">
+		>
+	>
+
+definition
+	ROLE[id1] matches {	-- Healthcare consumer
+		identities matches {
+			allow_archetype PARTY_IDENTITY[id2] matches {	-- Consumer name
+				include
+					archetype_id/value matches {/(person_name)[a-zA-Z0-9_-]*\.v1/}
+			}
+		}
+		relationships matches {
+			PARTY_RELATIONSHIP[id3] matches {	-- Consumer-Third party payer
+				details matches {
+					ITEM_TREE[id21] matches {	-- Healthcare consumer identifiers
+						items cardinality matches {1..*; ordered} matches {
+							allow_archetype CLUSTER[id22] matches {	-- Healthcare consumer identifier
+								include
+									archetype_id/value matches {/(person_identifier)[a-zA-Z0-9_-]*\.v1/}
+							}
+						}
+					}
+				}
+			}
+			PARTY_RELATIONSHIP[id4] matches {	-- Patient
+				details matches {
+					ITEM_TREE[id31] matches {	-- Patient identifiers
+						items cardinality matches {1..*; ordered} matches {
+							allow_archetype CLUSTER[id32] matches {	-- Patient identifier
+								include
+									archetype_id/value matches {/(person_identifier)[a-zA-Z0-9_-]*\.v1/}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["pt-br"] = <
+			["id1"] = <
+				text = <"Consumidor em saúde">
+				description = <"Papel Consumidor de serviços de saúde">
+			>
+			["id2"] = <
+				text = <"Nome do consumidor">
+				description = <"Nome do consumidor de saúde">
+			>
+			["id3"] = <
+				text = <"Beneficiário">
+				description = <"Beneficiário: Relacionamento do Consumidor com uma Fonte Pagadora">
+			>
+			["id4"] = <
+				text = <"Paciente">
+				description = <"Paciente: Relacionamento do Consumidor com uma organização prestadora de serviço de saúde/profissional de saúde">
+			>
+			["id21"] = <
+				text = <"Identificações do beneficiário">
+				description = <"Identificações do beneficiário junto à fonte pagadora">
+			>
+			["id22"] = <
+				text = <"Identificação do beneficiário">
+				description = <"Documento de identificação do beneficiário junto à fonte pagadora">
+			>
+			["id31"] = <
+				text = <"Identificações no prestador">
+				description = <"Identificações do paciente junto ao prestador">
+			>
+			["id32"] = <
+				text = <"Identificação no prestador">
+				description = <"Documento de identificação do paciente junto ao prestador">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"Healthcare consumer">
+				description = <"A person performing the role of a healthcare consumer">
+			>
+			["id2"] = <
+				text = <"Consumer name">
+				description = <"Healthcare consumer's name">
+			>
+			["id3"] = <
+				text = <"Consumer-Third party payer">
+				description = <"Relationship between a healthcare consumer and a third-party payer">
+			>
+			["id4"] = <
+				text = <"Patient">
+				description = <"Patient: relationship between a healthcare consumer and a healthcare provider organisation/health professional">
+			>
+			["id21"] = <
+				text = <"Healthcare consumer identifiers">
+				description = <"Identifiers of a healthcare consumer at the third-party payer">
+			>
+			["id22"] = <
+				text = <"Healthcare consumer identifier">
+				description = <"Identifier of a healthcare consumer at the third-party payer">
+			>
+			["id31"] = <
+				text = <"Patient identifiers">
+				description = <"Patient identifiers at the related healthcare provider">
+			>
+			["id32"] = <
+				text = <"Patient identifier">
+				description = <"A patient identifier at the related healthcare provider">
+			>
+		>
+	>

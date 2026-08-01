@@ -1,0 +1,315 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.exam-chest.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.exam.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"Sam.Heard@OceanInformatics.com">
+		["date"] = <"9/04/2007">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"A cluster for recording findings on physical examination of the chest.">
+			use = <"">
+			keywords = <"examination", "physical", "chest", "thorax", "lungs">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"215A2C17D4B48244C07F9920C844CEA4">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Examination of the chest
+		/items[id9]/items matches {
+			ELEMENT[id0.4] occurrences matches {0..1} matches {	-- Trachea
+				value matches {
+					DV_CODED_TEXT[id0.39] matches {
+						defining_code matches {[ac0.1]}		-- Trachea (synthesised)
+					}
+				}
+			}
+			CLUSTER[id0.35] occurrences matches {0..1} matches {	-- Apex beat
+				items matches {
+					ELEMENT[id0.31] occurrences matches {0..1} matches {	-- Visible
+						value matches {
+							DV_BOOLEAN[id0.40] matches {
+								value matches {True, False}
+							}
+						}
+					}
+					CLUSTER[id0.32] occurrences matches {0..1} matches {	-- Palpation
+						items matches {
+							ELEMENT[id0.33] occurrences matches {0..1} matches {	-- Palpable
+								value matches {
+									DV_BOOLEAN[id0.41] matches {
+										value matches {True, False}
+									}
+								}
+							}
+							ELEMENT[id0.34] occurrences matches {0..1} matches {	-- Maximal location
+								value matches {
+									DV_TEXT[id0.42] 
+								}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id0.8] occurrences matches {0..1} matches {	-- Breathing
+				items matches {
+					ELEMENT[id0.19] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id0.43] 
+						}
+					}
+					ELEMENT[id0.9] occurrences matches {0..1} matches {	-- Type
+						value matches {
+							DV_CODED_TEXT[id0.44] matches {
+								defining_code matches {[ac0.2]}		-- Type (synthesised)
+							}
+						}
+					}
+					ELEMENT[id0.12] occurrences matches {0..1} matches {	-- Effort
+						value matches {
+							DV_ORDINAL[id0.45] matches {
+								[value, symbol] matches {
+									[{5}, {[at0.13]}],
+									[{6}, {[at0.14]}],
+									[{8}, {[at0.15]}],
+									[{10}, {[at0.16]}]
+								}
+							}
+						}
+					}
+					CLUSTER[id0.17] occurrences matches {0..1} matches {	-- Signs of increased effort
+						items matches {
+							ELEMENT[id0.18] matches {	-- Sign
+								value matches {
+									DV_CODED_TEXT[id0.46] matches {
+										defining_code matches {[ac0.3]}		-- Sign (synthesised)
+									}
+								}
+							}
+						}
+					}
+					ELEMENT[id0.26] occurrences matches {0..1} matches {	-- Paradoxical movement (flail chest)
+						value matches {
+							DV_BOOLEAN[id0.47] matches {
+								value matches {True, False}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id0.1] occurrences matches {0..1} matches {	-- Chest wall
+				items matches {
+					ELEMENT[id0.2] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id0.48] 
+						}
+					}
+					ELEMENT[id0.28] occurrences matches {0..1} matches {	-- Shape
+						value matches {
+							DV_TEXT[id0.49] 
+						}
+					}
+					allow_archetype CLUSTER[id0.37] occurrences matches {0..1} matches {	-- Chest wall detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.inspection(-[a-zA-Z0-9_]+)*\.v1|openEHR-EHR-CLUSTER\.palpation(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+			before [id10]
+			CLUSTER[id0.27] occurrences matches {0..1} matches {	-- Lymph nodes
+				items matches {
+					allow_archetype CLUSTER[id0.38] matches {	-- Lymph node detail
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.exam-generic-lymphnode(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"Chest wall">
+				description = <"Findings about the chest wall.">
+			>
+			["at0.10"] = <
+				text = <"Diaphragmatic breathing">
+				description = <"Breathing using the diaphragm and not the chest wall.">
+			>
+			["at0.11"] = <
+				text = <"Thoracic breathing">
+				description = <"Breathing using expansion of the chest wall.">
+			>
+			["id0.12"] = <
+				text = <"Effort">
+				description = <"Effort required for breathing.">
+			>
+			["at0.13"] = <
+				text = <"Normal breathing effort">
+				description = <"Diaphragmatic breathing as at rest.">
+			>
+			["at0.14"] = <
+				text = <"Mild increase in effort">
+				description = <"Breathing using obvious chest expansion.">
+			>
+			["at0.15"] = <
+				text = <"Moderate increased effort">
+				description = <"Breathing with signs of abnormal breathing.">
+			>
+			["at0.16"] = <
+				text = <"Major increased effort">
+				description = <"Many signs of increased breathing effort.">
+			>
+			["id0.17"] = <
+				text = <"Signs of increased effort">
+				description = <"Signs of increased respiratory effort.">
+			>
+			["id0.18"] = <
+				text = <"Sign">
+				description = <"Use of accessory respiratory muscles.">
+			>
+			["id0.19"] = <
+				text = <"Description">
+				description = <"Description of breathing.">
+			>
+			["id0.2"] = <
+				text = <"Description">
+				description = <"The contour of the chest wall.">
+			>
+			["at0.20"] = <
+				text = <"Intercostal recession">
+				description = <"Drawing in between the ribs on inspiration.">
+			>
+			["at0.21"] = <
+				text = <"Sternal recession">
+				description = <"Drawing in of the sternum on inspiration.">
+			>
+			["at0.22"] = <
+				text = <"Rib retraction">
+				description = <"Indrawing of the chest wall on inspiration.">
+			>
+			["at0.23"] = <
+				text = <"Suprasternal recession">
+				description = <"Indrawing above the sternum on inspiration.">
+			>
+			["at0.24"] = <
+				text = <"Subcostal recession">
+				description = <"Indrawing of the subcostal abdominal wall .">
+			>
+			["at0.25"] = <
+				text = <"Using accessory muscles">
+				description = <"Use of accessory respiratory muscles during inspiration.">
+			>
+			["id0.26"] = <
+				text = <"Paradoxical movement (flail chest)">
+				description = <"Any paradoxical movement of the chest wall during respiration.">
+			>
+			["id0.27"] = <
+				text = <"Lymph nodes">
+				description = <"Findings about lymph nodes.">
+			>
+			["id0.28"] = <
+				text = <"Shape">
+				description = <"The shape of the chest.">
+			>
+			["id0.31"] = <
+				text = <"Visible">
+				description = <"Apex beat is visible.">
+			>
+			["id0.32"] = <
+				text = <"Palpation">
+				description = <"*">
+			>
+			["id0.33"] = <
+				text = <"Palpable">
+				description = <"Apex beat is palpable.">
+			>
+			["id0.34"] = <
+				text = <"Maximal location">
+				description = <"Site of maximal apex beat.">
+			>
+			["id0.35"] = <
+				text = <"Apex beat">
+				description = <"*">
+			>
+			["id0.37"] = <
+				text = <"Chest wall detail">
+				description = <"Detailed chest wall findings.">
+			>
+			["id0.38"] = <
+				text = <"Lymph node detail">
+				description = <"Detailed lymph node findings.">
+			>
+			["id0.4"] = <
+				text = <"Trachea">
+				description = <"The position of the trachea.">
+			>
+			["at0.5"] = <
+				text = <"Midline">
+				description = <"The trachea is in the midline position.">
+			>
+			["at0.6"] = <
+				text = <"Deviated to the left">
+				description = <"The trachea is deviated to the left.">
+			>
+			["at0.7"] = <
+				text = <"Deviated to the right">
+				description = <"The trachea is deviated to the right.">
+			>
+			["id0.8"] = <
+				text = <"Breathing">
+				description = <"Findings about breathing.">
+			>
+			["id0.9"] = <
+				text = <"Type">
+				description = <"Type of breathing.">
+			>
+			["id1.1"] = <
+				text = <"Examination of the chest">
+				description = <"For recording findings on physical examination of the chest wall and lungs.">
+			>
+			["ac0.1"] = <
+				text = <"Trachea (synthesised)">
+				description = <"The position of the trachea. (synthesised)">
+			>
+			["ac0.2"] = <
+				text = <"Type (synthesised)">
+				description = <"Type of breathing. (synthesised)">
+			>
+			["ac0.3"] = <
+				text = <"Sign (synthesised)">
+				description = <"Use of accessory respiratory muscles. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.5", "at0.6", "at0.7">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at0.10", "at0.11">
+		>
+		["ac0.3"] = <
+			id = <"ac0.3">
+			members = <"at0.25", "at0.20", "at0.24", "at0.23", "at0.21", "at0.22">
+		>
+	>

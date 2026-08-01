@@ -1,0 +1,433 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.specimen.v1
+
+concept
+	[at0000]	-- Specimen
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"openEHR Archetype Editorial Group / Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of a laboratory specimen. Will often be used in different contexts e.g within an Instruction archetype to describe the specimen that has to be taken, or describing the specimen which accompanies the laboratory request. It may occur within an Action archetype e.g. describing specimens taken as part of a surgical procedure.
+
+It will finally be used within a laboratory result archetype to describe the specimen being reported. ">
+			use = <"Generally used within OBSERVATION. Laboratory and other laboratory related Instruction and Action archetypes">
+			keywords = <"specimen", "laboratory", "sample", "collection">
+			misuse = <"">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <"Sam Heard Ocean Informatics", "Heather Leslie Ocean Informatics", "Koray Atalag University of Auckland">
+	other_details = <
+		["references"] = <"">
+		["MD5-CAM-1.0.1"] = <"9E72A5809331E0ABD21D83D6DB95E799">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Specimen
+		items cardinality matches {1..*; unordered} matches {
+			ELEMENT[at0029] occurrences matches {0..1} matches {	-- Specimen tissue type
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0007] occurrences matches {0..1} matches {	-- Collection procedure
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			allow_archetype CLUSTER[at0013] occurrences matches {0..*} matches {	-- Site 
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			allow_archetype CLUSTER[at0027] occurrences matches {0..*} matches {	-- Physical details 
+				include
+					archetype_id/value matches {/openEHR-EHR-CLUSTER\.physical_properties(-[a-zA-Z0-9_]+)*\.v1/}
+			}
+			CLUSTER[at0073] occurrences matches {0..1} matches {	-- Needle biopsy core details
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0074] occurrences matches {0..1} matches {	-- Biopsy core needle gauge
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0075] occurrences matches {0..1} matches {	-- Maximum biopsy core length
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::122]>
+								list = <
+									["1"] = <
+										units = <"mm">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+					ELEMENT[at0076] occurrences matches {0..1} matches {	-- Number of cores received
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[at0050] occurrences matches {0..1} matches {	-- Collection and handling
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0005] occurrences matches {0..1} matches {	-- Potential risk / biohazard
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0008] occurrences matches {0..1} matches {	-- Sampling preconditions
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0080] occurrences matches {0..1} matches {	-- Number of containers
+						value matches {
+							DV_COUNT matches {
+								magnitude matches {|>=0|}
+							}
+						}
+					}
+					ELEMENT[at0079] occurrences matches {0..1} matches {	-- Collection procedure details
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0025] occurrences matches {0..1} matches {	-- Transport medium
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0068] occurrences matches {0..*} matches {	-- Additional preparation   
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen_preparation(-[a-zA-Z0-9_]+)*\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[at0078] occurrences matches {0..1} matches {	-- Testing method
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0077] occurrences matches {0..*} matches {	-- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-[a-zA-Z0-9_]+)*\.v1/}
+						exclude
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+			CLUSTER[at0046] occurrences matches {0..1} matches {	-- Handling and processing
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0015] occurrences matches {0..1} matches {	-- Date and time of collection
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0067] occurrences matches {0..1} matches {	-- Collection setting
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0034] occurrences matches {0..1} matches {	-- Date and time of receipt
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+					ELEMENT[at0035] occurrences matches {0..1} matches {	-- Date and time processed
+						value matches {
+							DV_DATE_TIME matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0039] occurrences matches {0..1} matches {	-- Specimen quality
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0042] occurrences matches {0..*} matches {	-- Specimen received issues
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0052, 	-- Haemolysed
+									at0053, 	-- Lipaemic
+									at0054, 	-- Incorrect transport medium
+									at0055]	-- Insufficient sample
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0044] occurrences matches {0..*} matches {	-- Laboratory handling issues
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0056, 	-- Handling error
+									at0057, 	-- Age
+									at0058, 	-- Laboratory accident
+									at0059]	-- Technical failure
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0041] occurrences matches {0..1} matches {	-- Adequacy for testing
+						value matches {
+							DV_CODED_TEXT matches {
+								defining_code matches {
+									[local::
+									at0062, 	-- Satisfactory
+									at0063, 	-- Unsatisfactory - processed
+									at0064]	-- Unsatisfactory - not processed
+								}
+							}
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0045] occurrences matches {0..1} matches {	-- Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0002] occurrences matches {0..1} matches {	-- Identifiers
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0001] occurrences matches {0..1} matches {	-- Specimen identifier
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0003] occurrences matches {0..1} matches {	-- Parent specimen identifier
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0072] occurrences matches {0..1} matches {	-- Container identifier
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					ELEMENT[at0070] occurrences matches {0..1} matches {	-- Specimen collector identifier
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+					allow_archetype CLUSTER[at0071] occurrences matches {0..*} matches {	-- Specimen collector details
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Specimen">
+					description = <"To record details of a laboratory specimen.">
+				>
+				["at0001"] = <
+					text = <"Specimen identifier">
+					description = <"Unique identifier of the specimen, normally assigned by the laboratory.">
+				>
+				["at0002"] = <
+					text = <"Identifiers">
+					description = <"Sample identifications.">
+				>
+				["at0003"] = <
+					text = <"Parent specimen identifier">
+					description = <"Unique identifier of the parent specimen, where the specimen is split into sub-samples.">
+				>
+				["at0005"] = <
+					text = <"Potential risk / biohazard">
+					description = <"Any risk or biohazard associated with  collecting or handling the specimen.">
+				>
+				["at0007"] = <
+					text = <"Collection procedure">
+					description = <"The method of collection to be used eg Venepuncture, biopsy. resection.">
+				>
+				["at0008"] = <
+					text = <"Sampling preconditions">
+					description = <"Any conditions to be met before the sample should be taken e.g. fasting, 'full bladder', 'sterile field' or any special instructions on the handling or immediate processing of the sample e.g. centrifuge on receipt. 
+
+Can also be used to document any known deviations from collection or handling instructions e.g patient was not fasted.">
+				>
+				["at0013"] = <
+					text = <"Site ">
+					description = <"The anatomical site(s) from where the specimen was taken.">
+				>
+				["at0015"] = <
+					text = <"Date and time of collection">
+					description = <"The date and time that collection has been ordered to take place or has taken place.">
+				>
+				["at0025"] = <
+					text = <"Transport medium">
+					description = <"Any special preservative or transport medium requirements">
+				>
+				["at0027"] = <
+					text = <"Physical details ">
+					description = <"Dimensions / weight of sample. Set as unbounded to allow variations e.g Weight of prostatic gland with and without seminal vesicles ">
+				>
+				["at0029"] = <
+					text = <"Specimen tissue type">
+					description = <"The type of specimen to be collected e.g venous blood, prostatic biopsy. ">
+				>
+				["at0034"] = <
+					text = <"Date and time of receipt">
+					description = <"The date and time that the sample was received at the laboratory.">
+				>
+				["at0035"] = <
+					text = <"Date and time processed">
+					description = <"The date and time that the specimen was processed by the laboratory.">
+				>
+				["at0039"] = <
+					text = <"Specimen quality">
+					description = <"Problems with the received specimen. ">
+				>
+				["at0041"] = <
+					text = <"Adequacy for testing">
+					description = <"Is the specimen adequate for testing?">
+				>
+				["at0042"] = <
+					text = <"Specimen received issues">
+					description = <"Specific issue with a received specimen.">
+				>
+				["at0044"] = <
+					text = <"Laboratory handling issues">
+					description = <"Issue arising with handling or processing of the specimen within the laboratory.">
+				>
+				["at0045"] = <
+					text = <"Comment">
+					description = <"An additional text comment on the quality of the received specimen.">
+				>
+				["at0046"] = <
+					text = <"Handling and processing">
+					description = <"Workflow of specimen processing/handling.">
+				>
+				["at0050"] = <
+					text = <"Collection and handling">
+					description = <"Collection and handling requirements.">
+				>
+				["at0052"] = <
+					text = <"Haemolysed">
+					description = <"The specimen was haemolysed.">
+				>
+				["at0053"] = <
+					text = <"Lipaemic">
+					description = <"The specimen was lipaemic.">
+				>
+				["at0054"] = <
+					text = <"Incorrect transport medium">
+					description = <"An incorrect preservative was used when transporting the specimen.">
+				>
+				["at0055"] = <
+					text = <"Insufficient sample">
+					description = <"An insufficient sample was given to undertake measurement.">
+				>
+				["at0056"] = <
+					text = <"Handling error">
+					description = <"An error arose when handling the specimen.">
+				>
+				["at0057"] = <
+					text = <"Age">
+					description = <"The specimen was too old to analyse accurately.">
+				>
+				["at0058"] = <
+					text = <"Laboratory accident">
+					description = <"An accident occurred with the sample in the laboratory.">
+				>
+				["at0059"] = <
+					text = <"Technical failure">
+					description = <"The specimen could not be analysed for technical reasons.">
+				>
+				["at0062"] = <
+					text = <"Satisfactory">
+					description = <"The specimen is of sufficient quality to allow reporting.">
+				>
+				["at0063"] = <
+					text = <"Unsatisfactory - processed">
+					description = <"The specimen is unsatisfactory but has been processed.">
+				>
+				["at0064"] = <
+					text = <"Unsatisfactory - not processed">
+					description = <"The specimen is unsatisfactory and has not been processed.">
+				>
+				["at0067"] = <
+					text = <"Collection setting">
+					description = <"Identification of the setting at which the specimen was collected 
+from a subject of care. The specimen is often collected by a 
+healthcare provider, but may be collected directly by the patient or carer at home.">
+					comment = <"This specifies the specimen collection location within the healthcare
+environment. It enables the laboratory to ask questions about the
+collection of the specimen, if required. The specimen collection
+setting may provide additional information relevant to the analysis
+of the result data.">
+				>
+				["at0068"] = <
+					text = <"Additional preparation   ">
+					description = <"The specimen preparation cluster allows detailed recording of a particular preparation step e.g staining or fixation.">
+				>
+				["at0070"] = <
+					text = <"Specimen collector identifier">
+					description = <"Identifier of the person or agency responsible for collecting the specimen.">
+				>
+				["at0071"] = <
+					text = <"Specimen collector details">
+					description = <"The person or organisation responsible for collecting the specimen.">
+				>
+				["at0072"] = <
+					text = <"Container identifier">
+					description = <"Unique identifier given to the container in which the specimen is transported or processed.">
+				>
+				["at0073"] = <
+					text = <"Needle biopsy core details">
+					description = <"Details of the needle used to take a needle biopsy.">
+				>
+				["at0074"] = <
+					text = <"Biopsy core needle gauge">
+					description = <"The diameter of the core obtained via needle biopsy expressed using the needle gauge used to take the specimen.">
+				>
+				["at0075"] = <
+					text = <"Maximum biopsy core length">
+					description = <"The length of the core obtained by needle biopsy.">
+				>
+				["at0076"] = <
+					text = <"Number of cores received">
+					description = <"The number of needle biopsy cores received.">
+				>
+				["at0077"] = <
+					text = <"Device">
+					description = <"Details of the device used to perform the test.">
+				>
+				["at0078"] = <
+					text = <"Testing method">
+					description = <"The test method used to arrive at  result. This may be recorded or reported at whole test level or for an individual result.">
+				>
+				["at0079"] = <
+					text = <"Collection procedure details">
+					description = <"Additional detailed description of method of sample collection.">
+				>
+				["at0080"] = <
+					text = <"Number of containers">
+					description = <"The total number of containers holding this specimen.">
+				>
+			>
+		>
+	>

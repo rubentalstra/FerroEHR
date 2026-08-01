@@ -1,0 +1,113 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.notifiable_condition.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"08/12/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of a notifiable condition as part of a microbiology result.">
+			use = <"">
+			keywords = <"microbiology", "public health">
+			misuse = <"">
+		>
+	>
+	references = <
+		["1"] = <"IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"8A7C34AF1AEB9C97D7CD69C51BCDEC8C">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Notifiable condition
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Specimen surce
+				value matches {
+					DV_TEXT[id9] 
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- Status
+				value matches {
+					DV_CODED_TEXT[id10] matches {
+						defining_code matches {[ac1]}		-- Status (synthesised)
+					}
+				}
+			}
+			ELEMENT[id6] occurrences matches {0..1} matches {	-- Date of notification
+				value matches {
+					DV_DATE_TIME[id11] 
+				}
+			}
+			ELEMENT[id7] occurrences matches {0..1} matches {	-- Notifiable condition
+				value matches {
+					DV_TEXT[id12] 
+				}
+			}
+			ELEMENT[id8] occurrences matches {0..1} matches {	-- Record of notifiable condition
+				value matches {
+					DV_EHR_URI[id13] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Notifiable condition">
+				description = <"To record details of a notifiable condition as part of a microbiology result.">
+			>
+			["id2"] = <
+				text = <"Specimen surce">
+				description = <"Identifies the specimen source of the condition – patient, food, soil,...">
+			>
+			["id3"] = <
+				text = <"Status">
+				description = <"A status of completed means the patient has been associated with the given notifiable condition.
+A status of aborted means the patient was associated with the notifiable condition in error.">
+			>
+			["at4"] = <
+				text = <"Completed">
+				description = <"Patient correctly associated with notifiable condition.">
+			>
+			["at5"] = <
+				text = <"Aborted">
+				description = <"Patient associated with notifiable condition in error.">
+			>
+			["id6"] = <
+				text = <"Date of notification">
+				description = <"The data and time that the notification was made.">
+			>
+			["id7"] = <
+				text = <"Notifiable condition">
+				description = <"A description or coded entry for the notifiable condition.">
+			>
+			["id8"] = <
+				text = <"Record of notifiable condition">
+				description = <"A link to the original record identifying the notifiable condition.">
+			>
+			["ac1"] = <
+				text = <"Status (synthesised)">
+				description = <"A status of completed means the patient has been associated with the given notifiable condition.
+A status of aborted means the patient was associated with the notifiable condition in error. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at4", "at5">
+		>
+	>

@@ -1,0 +1,299 @@
+﻿archetype (adl_version=1.4; uid=160ab4db-7f07-4caa-b409-242de9147062)
+	openEHR-EHR-OBSERVATION.abc_score_massive_transfusion.v0
+
+concept
+	[at0000]	-- Assessment of Blood Consumption (ABC) Score
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			author = <
+				["name"] = <"Dennis Forslund">
+				["organisation"] = <"Cambio Healthcare Systems">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"Eneimi Allwell-Brown">
+		["organisation"] = <"Cambio Healthcare Systems">
+		["email"] = <"models@cambiocds.com">
+		["date"] = <"2017-01-05">
+	>
+	details = <
+		["sv"] = <
+			language = <[ISO_639-1::sv]>
+			purpose = <"Att med enkla kliniska kriterier bedöma behov av massiv blodtransfusion hos patienter med akut traumatisk skada.">
+			use = <"Att registrera resultat i enlighet med ABC Score och dess faktorer: penetrerande trauma, systoliskt blodtryck ≤90 mmHg, hjärtfrekvens ≥120 /min, positiv FAST. Maximal poäng uppgår till 4p och en poäng om ≥2p indikerar hög sannolikhet för behov av massiv blodtransfusion.">
+			keywords = <"Assessment of Blood Consumption", "transfusion", "FAST", "trauma">
+			misuse = <"Endast avsedd för bedömning av behov av massiv transfusion i enlighet med lokala protokoll.">
+			copyright = <"© Cambio Healthcare Systems, openEHR Foundation">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the assessment and total of the Assessment of Blood Consumption (ABC) Score.">
+			use = <"Use to record the assessment and total of the Assessment of Blood Consumption (ABC) Score.">
+			keywords = <"trauma", "transfusion">
+			misuse = <"">
+			copyright = <"© Cambio Healthcare Systems, openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"in_development">
+	other_contributors = <"Heather Leslie, Atomica Informatics, Australia", ...>
+	other_details = <
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["custodian_organisation"] = <"openEHR Foundation">
+		["references"] = <"Cotton BA, Dossett LA, Haut ER, Shafi S, Nunez TC, Au BK, Zaydfudim V, Johnston M, Arbogast P, Young PP. Multicenter validation of a simplified score to predict massive transfusion in trauma. Journal of Trauma and Acute Care Surgery. 2010 Jul 1;69(1):S33-9.
+
+Nunez TC, Voskresensky IV, Dossett LA, Shinall R, Dutton WD, Cotton BA. Early prediction of massive transfusion in trauma: simple as ABC (assessment of blood consumption)? J Trauma. 2009 Feb;66(2):346-52. doi: 10.1097/TA.0b013e3181961c35. PubMed PMID: 19204506.
+
+Subramanian A, Albert V, Sharma S, Kondru S, Pandey RM. Assessing the Efficiency of Scoring System for Predicting the Probability of Massive Transfusion in Trauma Patients. Journal of Hematology & Thromboembolic Diseases. 2014 Nov 4;2014.">
+		["current_contact"] = <"Heather Leslie, Atomica Informatics<heather.leslie@atomicainformatics.com>">
+		["original_namespace"] = <"org.openehr">
+		["original_publisher"] = <"openEHR Foundation">
+		["custodian_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"1AD07B486A330D05C8CE3C7DC84988FA">
+		["build_uid"] = <"4df78075-00e3-4c3c-b4b7-499ac8797e32">
+		["revision"] = <"0.0.1-alpha">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Assessment of Blood Consumption (ABC) Score
+		data matches {
+			HISTORY[at0001] matches {	-- Event Series
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0002] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- Tree
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Penetrating trauma
+										value matches {
+											0|[local::at0005], 	-- No
+											1|[local::at0006]  	-- Yes
+										}
+									}
+									ELEMENT[at0007] occurrences matches {0..1} matches {	-- Systolic blood pressure (SBP)
+										value matches {
+											0|[local::at0008], 	-- >90 mmHg
+											1|[local::at0009]  	-- ≤90 mmHg
+										}
+									}
+									ELEMENT[at0010] occurrences matches {0..1} matches {	-- Heart rate
+										value matches {
+											0|[local::at0011], 	-- <120 /min
+											1|[local::at0012]  	-- ≥120 /min
+										}
+									}
+									ELEMENT[at0013] occurrences matches {0..1} matches {	-- Focused assessment with sonography for trauma (FAST)
+										value matches {
+											0|[local::at0014], 	-- Negative
+											1|[local::at0015]  	-- Positive
+										}
+									}
+									ELEMENT[at0016] occurrences matches {0..1} matches {	-- Total score
+										value matches {
+											DV_COUNT matches {
+												magnitude matches {|0..4|}
+											}
+										}
+									}
+									ELEMENT[at0017] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT matches {*}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[at0018] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at0019] occurrences matches {0..*} matches {	-- Extension
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Assessment of Blood Consumption (ABC) Score">
+					description = <"Tool used as a rapid and initial assessment of the need for massive transfusion in acutely injured patients.">
+					comment = <"ABC score was the simplest and the quickest, but least accurate (13.1%), in an efficiency assessment of massive transfusion scoring systems, when compared with trauma associated severe haemorrhage (TASH) and emergency transfusion score (ETS).">
+				>
+				["at0001"] = <
+					text = <"Event Series">
+					description = <"@ internal @">
+				>
+				["at0002"] = <
+					text = <"Any event">
+					description = <"Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time.">
+				>
+				["at0003"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0004"] = <
+					text = <"Penetrating trauma">
+					description = <"Did the patient's trauma involve a penetrating mechanism?">
+				>
+				["at0005"] = <
+					text = <"No">
+					description = <"No penetrating injury at assessment.">
+				>
+				["at0006"] = <
+					text = <"Yes">
+					description = <"Penetrating injury present at assessment.">
+				>
+				["at0007"] = <
+					text = <"Systolic blood pressure (SBP)">
+					description = <"What was the systolic blood pressure at initial assessment?">
+				>
+				["at0008"] = <
+					text = <">90 mmHg">
+					description = <"SBP at initial assssment greater than 90 mmHg.">
+				>
+				["at0009"] = <
+					text = <"≤90 mmHg">
+					description = <"SBP at initial assessment less than or equals 90 mmHg.">
+				>
+				["at0010"] = <
+					text = <"Heart rate">
+					description = <"What was the heart rate at initial assessment?">
+				>
+				["at0011"] = <
+					text = <"<120 /min">
+					description = <"Heart rate at initial assessment less than 120 /min.">
+				>
+				["at0012"] = <
+					text = <"≥120 /min">
+					description = <"Heart rate at initial assessment greater than or equals 120 /min.">
+				>
+				["at0013"] = <
+					text = <"Focused assessment with sonography for trauma (FAST)">
+					description = <"What was the result of a FAST scan?">
+				>
+				["at0014"] = <
+					text = <"Negative">
+					description = <"Negative FAST scan.">
+				>
+				["at0015"] = <
+					text = <"Positive">
+					description = <"Positive FAST scan.">
+				>
+				["at0016"] = <
+					text = <"Total score">
+					description = <"Sum of the individual scores assigned for each of the contributing variables.">
+				>
+				["at0017"] = <
+					text = <"Comment">
+					description = <"Additional narrative about the ABC score, not captured in other fields.">
+				>
+				["at0018"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0019"] = <
+					text = <"Extension">
+					description = <"Additional information required to capture local content or to align with other reference models/formalisms.">
+					comment = <"For example: local information requirements or additional metadata to align with FHIR or CIMI equivalents.">
+				>
+			>
+		>
+		["sv"] = <
+			items = <
+				["at0000"] = <
+					text = <"ABC score for massive transfusion">
+					description = <"Assessment of Blood Consumption (ABC) Score används för att tidigt och snabbt med enkla kliniska kriterier bedöma behov av massiv blodtransfusion hos patienter med akut traumatisk skada. Instrumentet baseras på fyra parametrar: penetrerande trauma, systoliskt blodtryck ≤90 mmHg, hjärtfrekvens ≥120 /min, positiv FAST. En poäng om ≥2p indikerar hög sannolikhet för behov av massiv blodtransfusion.">
+					comment = <"*ABC score was the simplest and the quickest, but least accurate (13.1%), in an efficiency assessment of massive transfusion scoring systems, when compared with trauma associated severe haemorrhage (TASH) and emergency transfusion score (ETS).(en)">
+				>
+				["at0001"] = <
+					text = <"*Event Series(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0002"] = <
+					text = <"*Any event(en)">
+					description = <"**(en)">
+				>
+				["at0003"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0004"] = <
+					text = <"Penetrerande trauma">
+					description = <"Var patientens trauma av penetrerande mekanism?">
+				>
+				["at0005"] = <
+					text = <"Nej">
+					description = <"Inget penetrerande trauma">
+				>
+				["at0006"] = <
+					text = <"Ja">
+					description = <"Penetrerande trauma">
+				>
+				["at0007"] = <
+					text = <"Systoliskt blodtryck">
+					description = <"Patientens blodtryck vid initial bedömning">
+				>
+				["at0008"] = <
+					text = <">90 mmHg">
+					description = <"*">
+				>
+				["at0009"] = <
+					text = <"≤90 mmHg">
+					description = <"*">
+				>
+				["at0010"] = <
+					text = <"Hjärtfrekvens">
+					description = <"Patientens hjärtfrekvens vid initial bedömning">
+				>
+				["at0011"] = <
+					text = <"<120 /min">
+					description = <"*">
+				>
+				["at0012"] = <
+					text = <"≥120 /min">
+					description = <"*">
+				>
+				["at0013"] = <
+					text = <"FAST">
+					description = <"Resultat av Focused Assessment with Sonography for Trauma (FAST)">
+				>
+				["at0014"] = <
+					text = <"Negativ">
+					description = <"*">
+				>
+				["at0015"] = <
+					text = <"Positiv">
+					description = <"*">
+				>
+				["at0016"] = <
+					text = <"Total poäng">
+					description = <"Summan av samtliga faktorer">
+				>
+				["at0017"] = <
+					text = <"Kommentar">
+					description = <"Ev tillägg">
+				>
+				["at0018"] = <
+					text = <"*Tree(en)">
+					description = <"*@ internal @(en)">
+				>
+				["at0019"] = <
+					text = <"*Cluster(en)">
+					description = <"**(en)">
+				>
+			>
+		>
+	>

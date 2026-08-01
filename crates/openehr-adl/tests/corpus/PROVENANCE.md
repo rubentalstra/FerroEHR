@@ -69,6 +69,17 @@
   (`cadl_breadth_{structure,primitives,datetime}`) covering every construct
   master05 defines, alongside `cadl_keyword_case` for the case-insensitive
   lexis of §Symbols L1326-1354.
+- **Docs-text-silent forms the reference grammar admits and CKM emits** get
+  accepting fixtures: `term_constraint_open_and_mixed_ordinal.v1.adl` covers an
+  empty qualified code list (`[local::]`, `[openEHR::]` — §Custom Syntax of
+  `master09-customising_adl.adoc` shows only the non-empty spelling, while
+  `cadl14_primitives.g4` `c_qualified_term_code` makes the code-list group
+  optional) and the ordinal shorthand standing beside a typed alternative in one
+  block, in both orders (§Mixed Structures: a block is "a series of possible
+  constraints on objects" and "at any given node, all three types can
+  co-exist"). Both forms were refused until the real-world CKM archetype packs
+  (`tools/cnf-runner/artifacts/corpus/archetypes/`) surfaced them; this fixture
+  is the durable regression net, independent of those vendored packs.
 - **Operators the chapter NAMES but no grammar DEFINES** get refusal fixtures of
   their own: the negated-matches family (`~matches`/`~is_in`/`∉`, §Keywords L47
   + L95-98) and the regex-match operators (`=~`/`!~`, §Regular Expression

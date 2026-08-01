@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype xmlns="http://schemas.openehr.org/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <original_language>
+    <terminology_id>
+      <value>ISO_639-1</value>
+    </terminology_id>
+    <code_string>es</code_string>
+  </original_language>
+  <is_controlled>false</is_controlled>
+  <description>
+    <original_author id="date">2013-04-22</original_author>
+    <original_author id="name">Aitor Eguzkitza</original_author>
+    <original_author id="organisation">Universidad Pública de Navarra - Complejo Hospitalario de Navarra</original_author>
+    <original_author id="email">aitor.eguzkiza@unavarra.es</original_author>
+    <other_contributors>José Andonegui Navarro</other_contributors>
+    <other_contributors>Luis Serrano Arriezu</other_contributors>
+    <lifecycle_state>AuthorDraft</lifecycle_state>
+    <other_details id="references">American Telemedicine Association. Telehealth Practice Recommendations for Diabetic Retinopathy (Category 1). February 2011. Available from: http://www.americantelemed.org/docs/default-source/standards/telehealth-practice-recommendations-for-diabetic-retinopathy.pdf?sfvrsn=10</other_details>
+    <other_details id="current_contact">Aitor Eguzkitza, Universidad Pública de Navarra - Complejo Hospitalario de Navarra, aitor.eguzkiza@unavarra.es</other_details>
+    <other_details id="MD5-CAM-1.0.1">F9F94A2C31F765BF325CCDEBDC4E82A3</other_details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>en</code_string>
+      </language>
+      <purpose>*(es)</purpose>
+      <use>*(es)</use>
+      <misuse>*(es)</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+    <details>
+      <language>
+        <terminology_id>
+          <value>ISO_639-1</value>
+        </terminology_id>
+        <code_string>es</code_string>
+      </language>
+      <purpose>Representación de la Clasificación de la retinopatía diabética según categoría 1 definida en las recomendaciones de la American Telemedicine Association (ATA).</purpose>
+      <keywords>retinopatía diabética</keywords>
+      <keywords>clasificación</keywords>
+      <use>Concretar el diagnóstico de la retinopatía diabética en circuitos de cribado.</use>
+      <misuse>Si se quiere especificar la gravedad de la retinopatía diabética.</misuse>
+      <copyright>© openEHR Foundation</copyright>
+    </details>
+  </description>
+  <translations>
+    <language>
+      <terminology_id>
+        <value>ISO_639-1</value>
+      </terminology_id>
+      <code_string>en</code_string>
+    </language>
+    <author id="name">?</author>
+  </translations>
+  <archetype_id>
+    <value>openEHR-EHR-CLUSTER.diabetic_retinopathy_screening_result.v1</value>
+  </archetype_id>
+  <adl_version>1.4</adl_version>
+  <concept>at0000</concept>
+  <definition>
+    <rm_type_name>CLUSTER</rm_type_name>
+    <occurrences>
+      <lower_included>true</lower_included>
+      <upper_included>true</upper_included>
+      <lower_unbounded>false</lower_unbounded>
+      <upper_unbounded>false</upper_unbounded>
+      <lower>1</lower>
+      <upper>1</upper>
+    </occurrences>
+    <node_id>at0000</node_id>
+    <attributes xsi:type="C_MULTIPLE_ATTRIBUTE">
+      <rm_attribute_name>items</rm_attribute_name>
+      <existence>
+        <lower_included>true</lower_included>
+        <upper_included>true</upper_included>
+        <lower_unbounded>false</lower_unbounded>
+        <upper_unbounded>false</upper_unbounded>
+        <lower>1</lower>
+        <upper>1</upper>
+      </existence>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0001</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_CODED_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+            <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+              <rm_attribute_name>defining_code</rm_attribute_name>
+              <existence>
+                <lower_included>true</lower_included>
+                <upper_included>true</upper_included>
+                <lower_unbounded>false</lower_unbounded>
+                <upper_unbounded>false</upper_unbounded>
+                <lower>1</lower>
+                <upper>1</upper>
+              </existence>
+              <children xsi:type="C_CODE_PHRASE">
+                <rm_type_name>CODE_PHRASE</rm_type_name>
+                <occurrences>
+                  <lower_included>true</lower_included>
+                  <upper_included>true</upper_included>
+                  <lower_unbounded>false</lower_unbounded>
+                  <upper_unbounded>false</upper_unbounded>
+                  <lower>1</lower>
+                  <upper>1</upper>
+                </occurrences>
+                <node_id />
+                <terminology_id>
+                  <value>local</value>
+                </terminology_id>
+                <code_list>at0002</code_list>
+                <code_list>at0003</code_list>
+                <code_list>at0004</code_list>
+              </children>
+            </attributes>
+          </children>
+        </attributes>
+      </children>
+      <children xsi:type="C_COMPLEX_OBJECT">
+        <rm_type_name>ELEMENT</rm_type_name>
+        <occurrences>
+          <lower_included>true</lower_included>
+          <upper_included>true</upper_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>false</upper_unbounded>
+          <lower>0</lower>
+          <upper>1</upper>
+        </occurrences>
+        <node_id>at0005</node_id>
+        <attributes xsi:type="C_SINGLE_ATTRIBUTE">
+          <rm_attribute_name>value</rm_attribute_name>
+          <existence>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1</upper>
+          </existence>
+          <children xsi:type="C_COMPLEX_OBJECT">
+            <rm_type_name>DV_TEXT</rm_type_name>
+            <occurrences>
+              <lower_included>true</lower_included>
+              <upper_included>true</upper_included>
+              <lower_unbounded>false</lower_unbounded>
+              <upper_unbounded>false</upper_unbounded>
+              <lower>1</lower>
+              <upper>1</upper>
+            </occurrences>
+            <node_id />
+          </children>
+        </attributes>
+      </children>
+      <cardinality>
+        <is_ordered>false</is_ordered>
+        <is_unique>false</is_unique>
+        <interval>
+          <lower_included>true</lower_included>
+          <lower_unbounded>false</lower_unbounded>
+          <upper_unbounded>true</upper_unbounded>
+          <lower>1</lower>
+        </interval>
+      </cardinality>
+    </attributes>
+  </definition>
+  <ontology>
+    <term_definitions language="es">
+      <items code="at0000">
+        <items id="text">Clasificación de la retinopatía diabética durante su cribado</items>
+        <items id="description">Identificación de signos de retinopatía diabética objeto de llevar a cabo un cribado de la afección</items>
+      </items>
+      <items code="at0001">
+        <items id="text">Cribado de la RD</items>
+        <items id="description">Identifica la presencia o ausencia de síntomas significativos de RD durante el cribado. La clasificación se ha elaborado considerando las características de la categoría 1 según las recomendaciones de la ATA. </items>
+      </items>
+      <items code="at0002">
+        <items id="text">No RD aparente</items>
+        <items id="description">Niveles 10, 14, 15 en clasificación ETRDS de retinopatía diabética; Ausencia de RD</items>
+      </items>
+      <items code="at0003">
+        <items id="text">Retinopatía diabética aparente</items>
+        <items id="description">Nivel superior a 20 en la clasificación ETRDS</items>
+      </items>
+      <items code="at0004">
+        <items id="text">No valorable</items>
+        <items id="description">Las pruebas no son evaluables por la baja calidad de las capturas o por indecisión en el diagnóstico</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Comentarios</items>
+        <items id="description">Comentarios dirigidos a los revisores especializados en el cribado de la RD. Se pueden incluir particularidades de la prueba o cuestiones que provocaran incertidumbre al clasificar la afección. Sirve de canal de feedback para mejorar la calidad del servicio de cribado de la RD.</items>
+      </items>
+    </term_definitions>
+    <term_definitions language="en">
+      <items code="at0000">
+        <items id="text">Classification of diabetic retinopathy during its screening</items>
+        <items id="description">Identifies presence or absence of signs for diabetic retinopathy to carry out a screening of the disease</items>
+      </items>
+      <items code="at0001">
+        <items id="text">DR screening</items>
+        <items id="description">Identification of presence or absence of diabetic retinopathy during screening. This classification has been grounded considering the characteristics of category 1 regarding the recommendations provided by the ATA.</items>
+      </items>
+      <items code="at0002">
+        <items id="text">No apparent DR</items>
+        <items id="description">ETDRS Levels of DR 10, 14, 15; DR absent </items>
+      </items>
+      <items code="at0003">
+        <items id="text">Diabetic retinopathy apparent </items>
+        <items id="description">Level above 20 from the ETRDS classification</items>
+      </items>
+      <items code="at0004">
+        <items id="text">DR not assessable</items>
+        <items id="description">The test is not assessable due to the low quality of acquisitions or uncertainty of the evaluator</items>
+      </items>
+      <items code="at0005">
+        <items id="text">Comments</items>
+        <items id="description">Comments directed to reviewers specialized on DR screening. It may include test details or issues that provoke uncertainty while classifying the disease. It is useful as feedback channel  to improve the quality of the DR screening service.</items>
+      </items>
+    </term_definitions>
+    <term_bindings terminology="SNOMED-CT">
+      <items code="at0001">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>134395001</code_string>
+        </value>
+      </items>
+      <items code="at0002">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>201141000000103</code_string>
+        </value>
+      </items>
+      <items code="at0003">
+        <value>
+          <terminology_id>
+            <value>SNOMED-CT</value>
+          </terminology_id>
+          <code_string>4855003</code_string>
+        </value>
+      </items>
+    </term_bindings>
+  </ontology>
+</archetype>
+
