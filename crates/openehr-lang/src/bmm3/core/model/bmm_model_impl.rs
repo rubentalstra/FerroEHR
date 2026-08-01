@@ -412,14 +412,15 @@ impl BmmModel {
     /// conformant — the rule set admits generic parameters only on the
     /// descendant side.
     ///
-    /// NOTE (adjudicated): "replaced with their appropriate constrainer types,
-    /// or Any" needs the owning generic class to find a constrainer, and these
-    /// arguments are bare type NAMES with no owner in scope, so an open
-    /// parameter name (`Inv_generic_name`: one upper-case character) is
-    /// substituted by `Any`, the case the class doc names as the fallback.
-    /// Every type conforms to `Any`, the top class
-    /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`:
-    /// "built-in class definition corresponding to the top `Any` class").
+    /// An open ancestor parameter is "replaced with their appropriate
+    /// constrainer types, or Any": the constrainer is resolved POSITIONALLY
+    /// from the ancestor root's own generic-parameter declarations
+    /// (`BMM_GENERIC_CLASS.generic_parameter_conformance_type` —
+    /// `org.openehr.lang.bmm3.bmm_generic_class.adoc` §Functions;
+    /// `master06-core-types.adoc` §Type Conformance's
+    /// `generic_parameter_conformance_type` step), and `Any` remains only the
+    /// genuinely-unconstrained fallback
+    /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`).
     #[must_use]
     pub fn type_conforms_to(&self, a_desc_type: &str, an_anc_type: &str) -> bool {
         let (descendant_root, descendant_parameters) = split_type(a_desc_type);
@@ -438,21 +439,53 @@ impl BmmModel {
         descendant_parameters
             .iter()
             .zip(ancestor_parameters.iter())
-            .all(|(descendant, ancestor)| self.type_conforms_to(descendant, ancestor))
+            .enumerate()
+            .all(|(position, (descendant, ancestor))| {
+                let target = if is_open_parameter_name(ancestor) {
+                    self.generic_parameter_conformance_type(ancestor_root, position)
+                } else {
+                    (*ancestor).to_owned()
+                };
+                self.type_conforms_to(descendant, &target)
+            })
+    }
+
+    /// `BMM_GENERIC_CLASS.generic_parameter_conformance_type` for the
+    /// parameter at `position` of the class named `a_class_name`: the
+    /// parameter's ultimate conformance constraint, else `Any`
+    /// (`org.openehr.lang.bmm3.bmm_generic_class.adoc` §Functions;
+    /// `bmm_generic_parameter.adoc` `effective_conforms_to_type`).
+    ///
+    /// NOTE: the generated `generic_parameters` map is name-keyed and
+    /// declaration order is lost (the sorted-map deviation recorded at
+    /// [`BmmClass::type_name`]); single-letter upper-case parameter names make
+    /// the sorted order the declaration order in practice.
+    fn generic_parameter_conformance_type(&self, a_class_name: &str, position: usize) -> String {
+        self.class_definition(a_class_name)
+            .and_then(BmmClass::generic_parameters)
+            .and_then(|parameters| parameters.values().nth(position))
+            .map(crate::bmm::core::bmm_generic_parameter::BmmGenericParameter::effective_conforms_to_type_name)
+            .unwrap_or_else(|| ANY_TYPE_NAME.to_owned())
     }
 
     /// The "base class test" of `BMM_MODEL.type_conforms_to`: identical names,
-    /// or the ancestor among the descendant's ancestors, with open parameter
-    /// names substituted by `Any` first.
+    /// or the ancestor among the descendant's ancestors, with an open
+    /// DESCENDANT parameter substituted by `Any` (a bare descendant-side `T`
+    /// has no owner in scope — the class doc's stated fallback). Name
+    /// comparison is case-insensitive per §6.6's own algorithm
+    /// (`master06-core-types.adoc` §Type Conformance:
+    /// `base_class.is_case_insensitive_equal (anc_base_class)`) and the §5.2
+    /// naming convention (underscores significant).
     fn base_class_conforms_to(&self, descendant_root: &str, ancestor_root: &str) -> bool {
         let descendant = substitute_open_parameter(descendant_root);
         let ancestor = substitute_open_parameter(ancestor_root);
-        if ancestor == ANY_TYPE_NAME || descendant == ancestor {
+        if ancestor.eq_ignore_ascii_case(ANY_TYPE_NAME) || descendant.eq_ignore_ascii_case(ancestor)
+        {
             return true;
         }
         self.all_ancestor_classes(descendant)
             .iter()
-            .any(|name| name == ancestor)
+            .any(|name| name.eq_ignore_ascii_case(ancestor))
     }
 
     /// `BMM_MODEL.ms_conformant_property_type`: "True if `a_ms_property_type` is
@@ -523,9 +556,11 @@ fn substitute_open_parameter(a_type_name: &str) -> &str {
 mod tests {
     use std::collections::BTreeMap;
 
+    use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
     use crate::bmm3::core::entity::bmm_class::BmmClass;
     use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
     use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
+    use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
     use crate::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
     use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
     use crate::bmm3::core::entity::bmm_type::BmmType;
@@ -906,6 +941,60 @@ mod tests {
         assert!(!model.type_conforms_to("Interval<T>", "Interval<Time>"));
         assert!(model.type_conforms_to("DV_ORDERED", "Any"));
         assert!(!model.type_conforms_to("Any", "DV_ORDERED"));
+
+        // §6.6's own algorithm compares base classes case-INSENSITIVELY
+        // (`base_class.is_case_insensitive_equal (anc_base_class)`), with
+        // underscores significant (§5.2 Naming Convention).
+        assert!(model.type_conforms_to("dv_ordered", "DV_ORDERED"));
+        assert!(model.type_conforms_to("DV_ORDERED", "data_value"));
+        assert!(!model.type_conforms_to("dvordered", "DV_ORDERED"));
+    }
+
+    /// An open ANCESTOR parameter substitutes to its declared conformance
+    /// constraint, not blanket `Any`
+    /// (`BMM_GENERIC_CLASS.generic_parameter_conformance_type`,
+    /// `org.openehr.lang.bmm3.bmm_generic_class.adoc` §Functions): with
+    /// `Interval<T:Ordered>` in the model, `Interval<String>` does NOT
+    /// conform to `Interval<T>` because `String` is not `Ordered`.
+    #[test]
+    fn open_ancestor_parameters_substitute_their_constraint() {
+        let interval = BmmClass::BmmGenericClass(BmmGenericClass {
+            documentation: None,
+            name: "Interval".to_owned(),
+            ancestors: None,
+            package: package("org.openehr.base.test"),
+            properties: None,
+            source_schema_id: "test".to_owned(),
+            immediate_descendants: Vec::new(),
+            is_abstract: false,
+            is_primitive_type: false,
+            is_override: false,
+            generic_parameters: [(
+                "T".to_owned(),
+                BmmGenericParameter {
+                    documentation: None,
+                    name: "T".to_owned(),
+                    conforms_to_type: Some(class("Ordered", &[], &[], false)),
+                    inheritance_precursor: None,
+                },
+            )]
+            .into_iter()
+            .collect(),
+        });
+        let model = model(
+            vec![
+                interval,
+                class("Ordered", &[], &[], false),
+                class("Time", &["Ordered"], &[], false),
+                class("String", &[], &[], false),
+            ],
+            Vec::new(),
+        );
+        assert!(model.type_conforms_to("Interval<Time>", "Interval<T>"));
+        assert!(
+            !model.type_conforms_to("Interval<String>", "Interval<T>"),
+            "String does not conform to the T:Ordered constraint"
+        );
     }
 
     #[test]
