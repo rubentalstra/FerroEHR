@@ -72,3 +72,4 @@ commit-message wording; close/reopen for late labels.
    rustfmt wants a chained `.into_any()` — running leptosfmt after a clean
    `cargo fmt --check` leaves the tree rustfmt-dirty. Always finish with
    `cargo fmt --all && cargo fmt --all --check`.
+- **Changelog inserts:** a section (`### Fixed` etc.) may already exist in the target release block — ALWAYS merge the entry into the existing subsection header; blindly inserting a new header creates a duplicate (happened twice, owner-corrected 2026-08-01). Check `grep -n '^###' CHANGELOG.md` for the block first.
