@@ -24,17 +24,26 @@
 //! (`LANG/docs/bmm3/master00-amendment_record.adoc` SPECLANG-14, "Formalise the
 //! BMM v2/v3 split").
 //!
-//! TODO: only the naming/flattening surface is implemented here. The rest of the
-//! v3 type lattice declared by those class definitions — `is_abstract`,
-//! `is_open`/`is_closed`/`is_partially_closed`, `effective_base_class`,
-//! `unitary_type`, `effective_type`, `is_primitive`, `type_base_name` — and the
-//! v3 class/feature/model function surface (`BMM_CLASS.flat_features`,
-//! `BMM_MODEL` navigation, the declared invariants) are unimplemented.
+//! The naming/flattening surface and the meta-type LATTICE
+//! (`is_abstract`, `is_primitive`, `type_base_name`, `unitary_type`,
+//! `effective_type`, `effective_base_class`, `is_open`/`is_closed`/
+//! `is_partially_closed`) both live here; the class and feature surfaces are the
+//! siblings [`crate::bmm3::core::entity::bmm_class_impl`] and
+//! [`crate::bmm3::core::feature::bmm_feature_impl`].
+//!
+//! TODO: implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
+//! [`crate::bmm::core::bmm_model_impl`]'s `type_conforms_to` /
+//! `all_ancestor_classes` / `property_definition` over
+//! `crate::bmm3::core::model::bmm_model::BmmModel`). The type-level lattice above
+//! is its precondition and is now in place; §Type Conformance
+//! (`LANG/docs/bmm3/master06-core-types.adoc`) is the algorithm to implement, and
+//! its Tuple and Signature branches are empty upstream (L251, L253).
 
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
 use crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
 use crate::bmm3::core::entity::bmm_function_type::BmmFunctionType;
+use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
 use crate::bmm3::core::entity::bmm_model_type::BmmModelType;
@@ -50,7 +59,6 @@ use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
-use crate::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
 
 /// The name of the top `Any` type, used wherever an unconstrained generic
 /// parameter has to be reduced to a concrete conformance name
@@ -69,45 +77,6 @@ fn unique(names: Vec<String>) -> Vec<String> {
         }
     }
     out
-}
-
-impl BmmEnumeration {
-    /// `BMM_MODEL_ELEMENT.name`: "Name of this model element"
-    /// (`org.openehr.lang.bmm3.bmm_model_element.adoc` §Attributes).
-    #[must_use]
-    pub fn name(&self) -> &str {
-        match self {
-            Self::BmmEnumerationInteger(e) => e.name.as_str(),
-            Self::BmmEnumerationString(e) => e.name.as_str(),
-            Self::BmmEnumeration(e) => e.name.as_str(),
-        }
-    }
-}
-
-impl BmmSimpleClass {
-    /// `BMM_MODEL_ELEMENT.name`: "Name of this model element"
-    /// (`org.openehr.lang.bmm3.bmm_model_element.adoc` §Attributes).
-    #[must_use]
-    pub fn name(&self) -> &str {
-        match self {
-            Self::BmmEnumeration(e) => e.name(),
-            Self::BmmSimpleClass(c) => c.name.as_str(),
-        }
-    }
-}
-
-impl BmmClass {
-    /// `BMM_MODEL_ELEMENT.name`: "Name of this model element"
-    /// (`org.openehr.lang.bmm3.bmm_model_element.adoc` §Attributes). Note that
-    /// unlike UML this is "just the root name, even if the class is generic"
-    /// (`org.openehr.lang.bmm3.bmm_class.adoc` §Description NOTE).
-    #[must_use]
-    pub fn name(&self) -> &str {
-        match self {
-            Self::BmmGenericClass(c) => c.name.as_str(),
-            Self::BmmSimpleClass(c) => c.name(),
-        }
-    }
 }
 
 impl BmmSimpleType {
@@ -716,5 +685,643 @@ impl BmmType {
             Self::BmmStatusType(status) => status.flattened_type_list(),
             Self::BmmTupleType(tuple) => tuple.flattened_type_list(),
         }
+    }
+}
+
+// ── the meta-type lattice (master06-core-types.adoc §Overview) ───────────────
+// `BMM_TYPE` splits into the abstract `BMM_UNITARY_TYPE` and the concrete
+// container meta-types; unitary splits into `BMM_PARAMETER_TYPE` and
+// `BMM_EFFECTIVE_TYPE`; effective splits into `BMM_MODEL_TYPE`,
+// `BMM_TUPLE_TYPE` and `BMM_SIGNATURE` (L39-45). Rust models each level as its
+// own closed enum, so moving UP a level is a total conversion — these `From`
+// impls are that lattice, and they are what makes `unitary_type()` /
+// `effective_type()` typeable.
+
+impl From<BmmUnitaryType> for BmmType {
+    fn from(unitary: BmmUnitaryType) -> Self {
+        match unitary {
+            BmmUnitaryType::BmmGenericType(generic) => Self::BmmGenericType(generic),
+            BmmUnitaryType::BmmParameterType(parameter) => Self::BmmParameterType(parameter),
+            BmmUnitaryType::BmmSignature(signature) => Self::BmmSignature(signature),
+            BmmUnitaryType::BmmSimpleType(simple) => Self::BmmSimpleType(simple),
+            BmmUnitaryType::BmmStatusType(status) => Self::BmmStatusType(status),
+            BmmUnitaryType::BmmTupleType(tuple) => Self::BmmTupleType(tuple),
+        }
+    }
+}
+
+impl From<BmmEffectiveType> for BmmUnitaryType {
+    fn from(effective: BmmEffectiveType) -> Self {
+        match effective {
+            BmmEffectiveType::BmmGenericType(generic) => Self::BmmGenericType(generic),
+            BmmEffectiveType::BmmSignature(signature) => Self::BmmSignature(signature),
+            BmmEffectiveType::BmmSimpleType(simple) => Self::BmmSimpleType(simple),
+            BmmEffectiveType::BmmStatusType(status) => Self::BmmStatusType(status),
+            BmmEffectiveType::BmmTupleType(tuple) => Self::BmmTupleType(tuple),
+        }
+    }
+}
+
+impl From<BmmEffectiveType> for BmmType {
+    fn from(effective: BmmEffectiveType) -> Self {
+        Self::from(BmmUnitaryType::from(effective))
+    }
+}
+
+impl From<BmmModelType> for BmmEffectiveType {
+    fn from(model_type: BmmModelType) -> Self {
+        match model_type {
+            BmmModelType::BmmGenericType(generic) => Self::BmmGenericType(generic),
+            BmmModelType::BmmSimpleType(simple) => Self::BmmSimpleType(simple),
+        }
+    }
+}
+
+impl From<BmmModelType> for BmmUnitaryType {
+    fn from(model_type: BmmModelType) -> Self {
+        Self::from(BmmEffectiveType::from(model_type))
+    }
+}
+
+impl From<BmmModelType> for BmmType {
+    fn from(model_type: BmmModelType) -> Self {
+        Self::from(BmmEffectiveType::from(model_type))
+    }
+}
+
+impl BmmSimpleType {
+    /// `BMM_SIMPLE_TYPE.is_abstract` (effected): "Result is
+    /// `_base_class.is_abstract_`" (`org.openehr.lang.bmm3.bmm_simple_type.adoc`
+    /// §Functions).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        BmmClass::BmmSimpleClass(self.base_class.clone()).is_abstract()
+    }
+
+    /// `BMM_MODEL_TYPE.is_primitive` (effected): "Result =
+    /// `_base_class.is_primitive_`" (`org.openehr.lang.bmm3.bmm_model_type.adoc`
+    /// §Functions).
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        BmmClass::BmmSimpleClass(self.base_class.clone()).is_primitive()
+    }
+
+    /// `BMM_MODEL_TYPE.type_base_name` (effected): "Result = `_base_class.name_`"
+    /// (`org.openehr.lang.bmm3.bmm_model_type.adoc` §Functions).
+    #[must_use]
+    pub fn type_base_name(&self) -> &str {
+        self.base_class.name()
+    }
+
+    /// `BMM_SIMPLE_TYPE.effective_base_class`: "Main design class for this type,
+    /// from which properties etc can be extracted"
+    /// (`org.openehr.lang.bmm3.bmm_simple_type.adoc` §Functions).
+    ///
+    /// A simple type is 1:1 with its generating class
+    /// (`…bmm3.bmm_simple_class.adoc` §Description), so the effective base class
+    /// IS `_base_class_`; the function exists because the generic form abstracts
+    /// a container away ([`BmmGenericType::effective_base_class`]).
+    #[must_use]
+    pub fn effective_base_class(&self) -> &BmmSimpleClass {
+        &self.base_class
+    }
+}
+
+impl BmmGenericType {
+    /// `BMM_GENERIC_TYPE.is_abstract` (effected): "True if
+    /// `_base_class.is_abstract_` or if any (non-open) parameter type is
+    /// abstract" (`org.openehr.lang.bmm3.bmm_generic_type.adoc` §Functions).
+    ///
+    /// "Non-open" excludes a formal parameter (`BMM_PARAMETER_TYPE`), which the
+    /// class definition declares non-abstract by definition
+    /// (`…bmm3.bmm_parameter_type.adoc` §Functions `is_abstract`: "Result =
+    /// `False`").
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        BmmClass::BmmGenericClass(self.base_class.clone()).is_abstract()
+            || self
+                .generic_parameters
+                .iter()
+                .any(BmmUnitaryType::is_abstract)
+    }
+
+    /// `BMM_MODEL_TYPE.is_primitive` (effected): "Result =
+    /// `_base_class.is_primitive_`" (`org.openehr.lang.bmm3.bmm_model_type.adoc`
+    /// §Functions) — the generating class's own designation, not the parameters'.
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        BmmClass::BmmGenericClass(self.base_class.clone()).is_primitive()
+    }
+
+    /// `BMM_MODEL_TYPE.type_base_name` (effected): "Result = `_base_class.name_`"
+    /// — "Name of base generator type, i.e. excluding any generic parts if
+    /// present" (`org.openehr.lang.bmm3.bmm_model_type.adoc` §Functions,
+    /// `…bmm3.bmm_effective_type.adoc` §Functions).
+    #[must_use]
+    pub fn type_base_name(&self) -> &str {
+        self.base_class.name.as_str()
+    }
+
+    /// `BMM_GENERIC_TYPE.effective_base_class`: "Effective underlying class for
+    /// this type, abstracting away any container type"
+    /// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` §Functions).
+    #[must_use]
+    pub fn effective_base_class(&self) -> &BmmGenericClass {
+        &self.base_class
+    }
+
+    /// `BMM_GENERIC_TYPE.is_open`: "True if all generic parameters from ancestor
+    /// generic types have been substituted in this type"
+    /// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` §Functions).
+    ///
+    /// NOTE (upstream naming slip, adjudicated to the class definition): the
+    /// function is NAMED `is_open` while its stated semantics are those of
+    /// CLOSURE, and `master06-core-types.adoc` §Generic Type calls the same
+    /// property "detected via the function `_is_closed_`" (L81) — a function no
+    /// class definition declares. This implementation follows the class
+    /// definition's SEMANTICS under its own name: `is_open()` is true when no
+    /// parameter is still a formal (open) parameter, i.e. when the type is fully
+    /// substituted. [`BmmGenericType::is_closed`] is the same predicate under the
+    /// chapter's name, so a caller can spell it either way without guessing which
+    /// reading it gets.
+    #[must_use]
+    pub fn is_open(&self) -> bool {
+        !self
+            .generic_parameters
+            .iter()
+            .any(|p| matches!(p, BmmUnitaryType::BmmParameterType(_)))
+    }
+
+    /// `master06-core-types.adoc` §Generic Type L81's name for the fully
+    /// substituted state ("closure is detected via the function `_is_closed_`") —
+    /// identical to [`BmmGenericType::is_open`], see its NOTE for the upstream
+    /// naming slip.
+    #[must_use]
+    pub fn is_closed(&self) -> bool {
+        self.is_open()
+    }
+
+    /// `BMM_GENERIC_TYPE.is_partially_closed`: "Returns True if there is any
+    /// substituted generic parameter"
+    /// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_partially_closed(&self) -> bool {
+        self.generic_parameters
+            .iter()
+            .any(|p| !matches!(p, BmmUnitaryType::BmmParameterType(_)))
+    }
+}
+
+impl BmmModelType {
+    /// `BMM_MODEL_TYPE.type_base_name` (effected): "Result = `_base_class.name_`"
+    /// (`org.openehr.lang.bmm3.bmm_model_type.adoc` §Functions).
+    #[must_use]
+    pub fn type_base_name(&self) -> &str {
+        match self {
+            Self::BmmGenericType(generic) => generic.type_base_name(),
+            Self::BmmSimpleType(simple) => simple.type_base_name(),
+        }
+    }
+
+    /// `BMM_TYPE.is_abstract`: "indicates a type based on an abstract class,
+    /// i.e. a type that cannot be directly instantiated"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_abstract(),
+            Self::BmmSimpleType(simple) => simple.is_abstract(),
+        }
+    }
+
+    /// `BMM_MODEL_TYPE.is_primitive` (effected): "Result =
+    /// `_base_class.is_primitive_`" (`org.openehr.lang.bmm3.bmm_model_type.adoc`
+    /// §Functions).
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_primitive(),
+            Self::BmmSimpleType(simple) => simple.is_primitive(),
+        }
+    }
+
+    /// The class that generates this type — the `_base_class_` every model type
+    /// carries (`org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes).
+    #[must_use]
+    pub fn base_class(&self) -> BmmClass {
+        match self {
+            Self::BmmGenericType(generic) => BmmClass::BmmGenericClass(generic.base_class.clone()),
+            Self::BmmSimpleType(simple) => BmmClass::BmmSimpleClass(simple.base_class.clone()),
+        }
+    }
+}
+
+impl BmmParameterType {
+    /// `BMM_PARAMETER_TYPE.is_abstract` (effected): "Result = `False` - generic
+    /// parameters are understood by definition to be non-abstract"
+    /// (`org.openehr.lang.bmm3.bmm_parameter_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant False"
+    )]
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        false
+    }
+
+    /// `BMM_PARAMETER_TYPE.is_primitive` (effected): "Result = `False` - generic
+    /// parameters are understood by definition to be non-primitive"
+    /// (`org.openehr.lang.bmm3.bmm_parameter_type.adoc` §Functions).
+    ///
+    /// NOTE (upstream contradiction, adjudicated to the stated result): the same
+    /// entry also carries `Post_validity: Result = base_class.is_primitive`, a
+    /// post-condition naming an attribute `BMM_PARAMETER_TYPE` does not have
+    /// (only `BMM_MODEL_TYPE` has `base_class`) — a copy-paste from that class.
+    /// The prose result ("`False`") is the only consistent reading and is the one
+    /// implemented.
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant False"
+    )]
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        false
+    }
+
+    /// `BMM_PARAMETER_TYPE.effective_type` (effected): "Generate ultimate
+    /// conformance type, which is either `_flattened_conforms_to_type_` or if not
+    /// set, `'Any'`" (`org.openehr.lang.bmm3.bmm_parameter_type.adoc`
+    /// §Functions).
+    ///
+    /// `None` is the `'Any'` case: `Any` is the model's top class
+    /// (`…bmm3.bmm_definitions.adoc` §Functions `Any_class`), so returning it as
+    /// a `BMM_EFFECTIVE_TYPE` would mean inventing a `BMM_SIMPLE_TYPE` over a
+    /// class definition this parameter does not carry. The name is available as
+    /// [`ANY_TYPE_NAME`], and [`BmmParameterType::conformance_type_name`] is the
+    /// name-level answer that already applies it.
+    #[must_use]
+    pub fn effective_type(&self) -> Option<BmmEffectiveType> {
+        self.flattened_conforms_to_type().cloned()
+    }
+}
+
+impl BmmSignature {
+    /// `BMM_BUILTIN_TYPE.is_abstract` (effected): "Return False" — built-in types
+    /// "are treated as being primitive and non-abstract"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions + §Description).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant False"
+    )]
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        false
+    }
+
+    /// `BMM_BUILTIN_TYPE.is_primitive` (effected): "Return True"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant True"
+    )]
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        true
+    }
+
+    /// `BMM_BUILTIN_TYPE.type_base_name` (effected): "Return `_base_name_`"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions) — the
+    /// `"Signature"` / `"Routine"` / `"Function"` / `"Procedure"` constants of
+    /// the signature family.
+    #[must_use]
+    pub fn type_base_name(&self) -> &'static str {
+        match self {
+            // `BMM_PROPERTY_TYPE` declares no `base_name` of its own
+            // (`org.openehr.lang.bmm3.bmm_property_type.adoc`), so it inherits
+            // `BMM_SIGNATURE`'s — the same answer as the base form.
+            Self::BmmPropertyType(_) | Self::BmmSignature(_) => BmmSignatureData::BASE_NAME,
+            Self::BmmRoutineType(routine) => match routine.as_ref() {
+                BmmRoutineType::BmmFunctionType(_) => BmmFunctionType::BASE_NAME,
+                BmmRoutineType::BmmProcedureType(_) => BmmProcedureType::BASE_NAME,
+                BmmRoutineType::BmmRoutineType(_) => BmmRoutineTypeData::BASE_NAME,
+            },
+        }
+    }
+}
+
+impl BmmStatusType {
+    /// `BMM_BUILTIN_TYPE.is_abstract` (effected): "Return False"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant False"
+    )]
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        false
+    }
+
+    /// `BMM_BUILTIN_TYPE.is_primitive` (effected): "Return True"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant True"
+    )]
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        true
+    }
+
+    /// `BMM_BUILTIN_TYPE.type_base_name` (effected): "Return `_base_name_`"
+    /// (`org.openehr.lang.bmm3.bmm_status_type.adoc` §Constants: `"Status"`).
+    #[expect(
+        clippy::unused_self,
+        reason = "a built-in meta-type's base name is its declared constant"
+    )]
+    #[must_use]
+    pub fn type_base_name(&self) -> &'static str {
+        Self::BASE_NAME
+    }
+}
+
+impl BmmTupleType {
+    /// `BMM_BUILTIN_TYPE.is_abstract` (effected): "Return False"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant False"
+    )]
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        false
+    }
+
+    /// `BMM_BUILTIN_TYPE.is_primitive` (effected): "Return True"
+    /// (`org.openehr.lang.bmm3.bmm_builtin_type.adoc` §Functions).
+    #[expect(
+        clippy::unused_self,
+        reason = "the class definition declares this as an instance function whose result is the constant True"
+    )]
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        true
+    }
+
+    /// `BMM_BUILTIN_TYPE.type_base_name` (effected): "Return `_base_name_`"
+    /// (`org.openehr.lang.bmm3.bmm_tuple_type.adoc` §Constants: `"Tuple"`).
+    #[expect(
+        clippy::unused_self,
+        reason = "a built-in meta-type's base name is its declared constant"
+    )]
+    #[must_use]
+    pub fn type_base_name(&self) -> &'static str {
+        Self::BASE_NAME
+    }
+}
+
+impl BmmContainerType {
+    /// `BMM_CONTAINER_TYPE.is_abstract` (effected): "True if the container class
+    /// is abstract", `Post_is_abstract: Result = container_type.is_abstract`
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Functions — the
+    /// post-condition's `container_type` is the attribute now spelled
+    /// `_container_class_`, same §Attributes).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        BmmClass::BmmGenericClass(self.container_class().clone()).is_abstract()
+    }
+
+    /// `BMM_CONTAINER_TYPE.is_primitive` (effected): "True if `_item_type_` is
+    /// primitive", `Post_result: Result = item_type.is_primitive`
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Functions).
+    ///
+    /// NOTE (upstream contradiction, adjudicated to `Post_result`): the same
+    /// entry also carries `Post_validity: Result = base_class.is_primitive`,
+    /// naming an attribute `BMM_CONTAINER_TYPE` does not have (it has
+    /// `_container_class_` and `_item_type_`; `base_class` belongs to
+    /// `BMM_MODEL_TYPE`). `Post_result` agrees with the prose description, so it
+    /// is the implemented reading.
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        self.item_type().is_primitive()
+    }
+
+    /// `BMM_CONTAINER_TYPE.container_class`: "The type of the container"
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Attributes), for either
+    /// container form.
+    #[must_use]
+    pub fn container_class(&self) -> &BmmGenericClass {
+        match self {
+            Self::BmmIndexedContainerType(indexed) => &indexed.container_class,
+            Self::BmmContainerType(data) => &data.container_class,
+        }
+    }
+
+    /// `BMM_CONTAINER_TYPE.item_type`: "The container item type"
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Attributes), for either
+    /// container form.
+    #[must_use]
+    pub fn item_type(&self) -> &BmmUnitaryType {
+        match self {
+            Self::BmmIndexedContainerType(indexed) => &indexed.item_type,
+            Self::BmmContainerType(data) => data.item_type.as_ref(),
+        }
+    }
+
+    /// `BMM_CONTAINER_TYPE.unitary_type` (effected): "Return `_item_type_`"
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Functions) — the type
+    /// "with any container abstracted away"
+    /// (`…bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn unitary_type(&self) -> BmmUnitaryType {
+        self.item_type().clone()
+    }
+
+    /// `BMM_CONTAINER_TYPE.effective_type` (effected): "Return
+    /// `_item_type.effective_type_()`"
+    /// (`org.openehr.lang.bmm3.bmm_container_type.adoc` §Functions).
+    ///
+    /// `None` carries the `'Any'` case through from
+    /// [`BmmParameterType::effective_type`] — a container of an unconstrained
+    /// formal parameter has no effective type object.
+    #[must_use]
+    pub fn effective_type(&self) -> Option<BmmEffectiveType> {
+        self.item_type().effective_type()
+    }
+}
+
+impl BmmUnitaryType {
+    /// `BMM_TYPE.is_abstract` for a unitary type
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_abstract(),
+            Self::BmmParameterType(parameter) => parameter.is_abstract(),
+            Self::BmmSignature(signature) => signature.is_abstract(),
+            Self::BmmSimpleType(simple) => simple.is_abstract(),
+            Self::BmmStatusType(status) => status.is_abstract(),
+            Self::BmmTupleType(tuple) => tuple.is_abstract(),
+        }
+    }
+
+    /// `BMM_TYPE.is_primitive` for a unitary type: "If True, indicates that a
+    /// type based solely on primitive classes"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_primitive(),
+            Self::BmmParameterType(parameter) => parameter.is_primitive(),
+            Self::BmmSignature(signature) => signature.is_primitive(),
+            Self::BmmSimpleType(simple) => simple.is_primitive(),
+            Self::BmmStatusType(status) => status.is_primitive(),
+            Self::BmmTupleType(tuple) => tuple.is_primitive(),
+        }
+    }
+
+    /// `BMM_UNITARY_TYPE.unitary_type` (effected): "Result = self"
+    /// (`org.openehr.lang.bmm3.bmm_unitary_type.adoc` §Functions).
+    #[must_use]
+    pub fn unitary_type(&self) -> Self {
+        self.clone()
+    }
+
+    /// `BMM_TYPE.effective_type`: "Type with any container abstracted away, and
+    /// any formal parameter replaced by its effective constraint type"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions). For an effective type
+    /// this is the identity ("Result = self",
+    /// `…bmm3.bmm_effective_type.adoc` §Functions); for a formal parameter it is
+    /// the parameter's constraint ([`BmmParameterType::effective_type`], whose
+    /// `None` = the `'Any'` top).
+    #[must_use]
+    pub fn effective_type(&self) -> Option<BmmEffectiveType> {
+        match self {
+            Self::BmmGenericType(generic) => {
+                Some(BmmEffectiveType::BmmGenericType(generic.clone()))
+            }
+            Self::BmmParameterType(parameter) => parameter.effective_type(),
+            Self::BmmSignature(signature) => {
+                Some(BmmEffectiveType::BmmSignature(signature.clone()))
+            }
+            Self::BmmSimpleType(simple) => Some(BmmEffectiveType::BmmSimpleType(simple.clone())),
+            Self::BmmStatusType(status) => Some(BmmEffectiveType::BmmStatusType(status.clone())),
+            Self::BmmTupleType(tuple) => Some(BmmEffectiveType::BmmTupleType(tuple.clone())),
+        }
+    }
+}
+
+impl BmmEffectiveType {
+    /// `BMM_EFFECTIVE_TYPE.type_base_name` (abstract): "Name of base generator
+    /// type, i.e. excluding any generic parts if present"
+    /// (`org.openehr.lang.bmm3.bmm_effective_type.adoc` §Functions), effected by
+    /// `BMM_MODEL_TYPE` ("`_base_class.name_`") and `BMM_BUILTIN_TYPE`
+    /// ("`_base_name_`").
+    #[must_use]
+    pub fn type_base_name(&self) -> &str {
+        match self {
+            Self::BmmGenericType(generic) => generic.type_base_name(),
+            Self::BmmSignature(signature) => signature.type_base_name(),
+            Self::BmmSimpleType(simple) => simple.type_base_name(),
+            Self::BmmStatusType(status) => status.type_base_name(),
+            Self::BmmTupleType(tuple) => tuple.type_base_name(),
+        }
+    }
+
+    /// `BMM_TYPE.is_abstract` for an effective type
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_abstract(),
+            Self::BmmSignature(signature) => signature.is_abstract(),
+            Self::BmmSimpleType(simple) => simple.is_abstract(),
+            Self::BmmStatusType(status) => status.is_abstract(),
+            Self::BmmTupleType(tuple) => tuple.is_abstract(),
+        }
+    }
+
+    /// `BMM_TYPE.is_primitive` for an effective type
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        match self {
+            Self::BmmGenericType(generic) => generic.is_primitive(),
+            Self::BmmSignature(signature) => signature.is_primitive(),
+            Self::BmmSimpleType(simple) => simple.is_primitive(),
+            Self::BmmStatusType(status) => status.is_primitive(),
+            Self::BmmTupleType(tuple) => tuple.is_primitive(),
+        }
+    }
+
+    /// `BMM_EFFECTIVE_TYPE.effective_type` (effected): "Result = self"
+    /// (`org.openehr.lang.bmm3.bmm_effective_type.adoc` §Functions).
+    #[must_use]
+    pub fn effective_type(&self) -> Self {
+        self.clone()
+    }
+}
+
+impl BmmType {
+    /// `BMM_TYPE.is_abstract` (abstract): "If true, indicates a type based on an
+    /// abstract class, i.e. a type that cannot be directly instantiated"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    #[must_use]
+    pub fn is_abstract(&self) -> bool {
+        match self {
+            Self::BmmContainerType(container) => container.is_abstract(),
+            Self::BmmGenericType(generic) => generic.is_abstract(),
+            Self::BmmParameterType(parameter) => parameter.is_abstract(),
+            Self::BmmSignature(signature) => signature.is_abstract(),
+            Self::BmmSimpleType(simple) => simple.is_abstract(),
+            Self::BmmStatusType(status) => status.is_abstract(),
+            Self::BmmTupleType(tuple) => tuple.is_abstract(),
+        }
+    }
+
+    /// `BMM_TYPE.is_primitive` (abstract): "If True, indicates that a type based
+    /// solely on primitive classes" (`org.openehr.lang.bmm3.bmm_type.adoc`
+    /// §Functions).
+    #[must_use]
+    pub fn is_primitive(&self) -> bool {
+        match self {
+            Self::BmmContainerType(container) => container.is_primitive(),
+            Self::BmmGenericType(generic) => generic.is_primitive(),
+            Self::BmmParameterType(parameter) => parameter.is_primitive(),
+            Self::BmmSignature(signature) => signature.is_primitive(),
+            Self::BmmSimpleType(simple) => simple.is_primitive(),
+            Self::BmmStatusType(status) => status.is_primitive(),
+            Self::BmmTupleType(tuple) => tuple.is_primitive(),
+        }
+    }
+
+    /// `BMM_TYPE.unitary_type` (abstract): "Type with any container abstracted
+    /// away; may be a formal generic type"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions) — `_item_type_` for a
+    /// container (`…bmm3.bmm_container_type.adoc` §Functions), self for every
+    /// unitary meta-type (`…bmm3.bmm_unitary_type.adoc` §Functions).
+    #[must_use]
+    pub fn unitary_type(&self) -> BmmUnitaryType {
+        match self {
+            Self::BmmContainerType(container) => container.unitary_type(),
+            Self::BmmGenericType(generic) => BmmUnitaryType::BmmGenericType(generic.clone()),
+            Self::BmmParameterType(parameter) => {
+                BmmUnitaryType::BmmParameterType(parameter.clone())
+            }
+            Self::BmmSignature(signature) => BmmUnitaryType::BmmSignature(signature.clone()),
+            Self::BmmSimpleType(simple) => BmmUnitaryType::BmmSimpleType(simple.clone()),
+            Self::BmmStatusType(status) => BmmUnitaryType::BmmStatusType(status.clone()),
+            Self::BmmTupleType(tuple) => BmmUnitaryType::BmmTupleType(tuple.clone()),
+        }
+    }
+
+    /// `BMM_TYPE.effective_type` (abstract): "Type with any container abstracted
+    /// away, and any formal parameter replaced by its effective constraint type"
+    /// (`org.openehr.lang.bmm3.bmm_type.adoc` §Functions).
+    ///
+    /// `None` is the `'Any'` case of an unconstrained formal parameter — see
+    /// [`BmmParameterType::effective_type`].
+    #[must_use]
+    pub fn effective_type(&self) -> Option<BmmEffectiveType> {
+        self.unitary_type().effective_type()
     }
 }

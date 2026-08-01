@@ -11,3 +11,6 @@ pub mod bmm_literal_value;
 pub mod bmm_primitive_value;
 pub mod bmm_string_value;
 pub mod bmm_unitary_value;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bmm_literal_value_impl;

@@ -34,7 +34,7 @@ use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
 use crate::plan::composition::Composed;
-use crate::plan::overrides::{back_reference, class_binding, type_override};
+use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
@@ -626,6 +626,21 @@ fn render_struct_def(
         // struct attribute — so no serde/`openehr` field attribute is emitted here.
         let ident = naming::field_ident(&p.name);
         let rust_ty = field_type(model, class, p, generics, subst, local, external);
+        // A field that degraded to free-form JSON *and* carries an adjudication
+        // gets the decision written at the site: silence over an untyped slot in
+        // a generated spec crate is indistinguishable from an oversight. The
+        // NOTE is conditional on the degrade actually happening, so a
+        // composition where the type IS resolvable (the AM24 re-emission of
+        // `EL_CASE`, where `C_OBJECT` is local) emits the typed field with no note.
+        if rust_ty.contains("serde_json::Value")
+            && let Some(adj) =
+                untyped_field(&rp.owner, &p.name).or_else(|| untyped_field(&class.name, &p.name))
+        {
+            b.push_str(&format!(
+                "    // NOTE: free-form JSON is adjudicated here, not accidental — {}. {}\n",
+                adj.citation, adj.reason
+            ));
+        }
         b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
     }
 
@@ -821,6 +836,28 @@ fn field_type(
                     "Option<String>".to_string()
                 };
             }
+            // A container property is `Vec<T>` regardless of its BMM
+            // optionality: absent and empty are the same JSON array on the
+            // canonical wire, and the codec omits an empty vector. That
+            // convention is settled (root `CLAUDE.md` §Conventions), and it is
+            // lossless everywhere the Void state carries no meaning.
+            //
+            // TODO: `EL_AGENT.open_args` is the one known site where it IS
+            // lossy — the attribute is `0..1` and its Void state is normatively
+            // load-bearing twice: "If not provided, and the `_name_` refers to
+            // a routine with more arguments than supplied in `_closed_args_`,
+            // the missing arguments are inferred from the `_definition_`"
+            // (`…bmm3.el_agent.adoc` §Attributes), and `is_callable()` is
+            // defined as `Result = open_arguments = Void` (same file
+            // §Functions), which `EL_AGENT_CALL.Inv_valid_call`
+            // (`…bmm3.el_agent_call.adoc` §Invariants),
+            // `EL_FUNCTION_CALL.Inv_valid_agent` (`…bmm3.el_function_call.adoc`
+            // §Invariants) and `BMM_PROCEDURE_CALL.Inv_valid_agent`
+            // (`…bmm3.bmm_procedure_call.adoc` §Invariants) all reduce to. Give
+            // this field `Option<Vec<String>>` (a `type_override`-style entry,
+            // or optionality-aware container rendering) before any EL agent
+            // evaluation or invariant check lands; nothing evaluates EL today,
+            // which is why the convention still stands here.
             format!(
                 "Vec<{}>",
                 model.render_type(item, generics, subst, local, external)

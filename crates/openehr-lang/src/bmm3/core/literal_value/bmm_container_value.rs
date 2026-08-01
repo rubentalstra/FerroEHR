@@ -4,6 +4,8 @@
 //! The openEHR `BMM_CONTAINER_VALUE` spec class, generated from the vendored BMM
 //! meta-model.
 
+use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
+
 /// Meta-type for literals whose concrete type is a linear container type, i.e. array, list or set.
 #[doc(alias = "BMM_CONTAINER_VALUE")]
 #[derive(Debug, Clone, PartialEq)]
@@ -16,5 +18,5 @@ pub struct BmmContainerValue {
     /// Optional specification of formalism of the `_value_literal_` attribute for complex values. Value may be any of `json | json5 | yawl | xml | odin | rdf` or another value agreed by the user community. If not set, `json` is assumed.
     pub syntax: Option<String>,
     /// Concrete type of this literal.
-    pub r#type: serde_json::Value,
+    pub r#type: BmmContainerType,
 }

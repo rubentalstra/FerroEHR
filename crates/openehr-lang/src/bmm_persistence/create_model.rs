@@ -46,12 +46,11 @@
 //!   The **v3** generation DOES declare the destination:
 //!   `org.openehr.lang.bmm3.bmm_model_type.adoc` §Attributes types
 //!   `value_constraint: BMM_VALUE_SET_SPEC` on every model type, and
-//!   `crate::bmm3` emits it.
-//!   TODO: materialise a v3 `BMM_MODEL` from P_BMM (or its v3 successor) so
-//!   `value_constraint`, class `functions`/`procedures`/`invariants` and generic
-//!   ancestor bindings reach a model; the v3 generation's own function surface is
-//!   a precondition (`crate::bmm3::core::entity::bmm_type_impl` has the naming
-//!   surface only).
+//!   `crate::bmm3` emits it — and
+//!   [`crate::bmm_persistence::create_bmm3_model::create_bmm3_model`] materialises
+//!   that generation from the same persisted schema, where the constraint DOES
+//!   land on the type. So the boundary is this transform's target generation, and
+//!   the other transform is the way to keep the constraint.
 
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -103,7 +102,13 @@ use crate::bmm_persistence::p_bmm_type::PBmmType;
 /// [`PBmmReadError::TypeDefinitionMissing`],
 /// [`PBmmReadError::UndeclaredGenericParameter`] or
 /// [`PBmmReadError::NotAGenericClass`] when a symbolic reference in the schema
-/// cannot be resolved to the object reference the `BMM_*` shapes require.
+/// cannot be resolved to the object reference the `BMM_*` shapes require, and
+/// [`PBmmReadError::EnumerationAncestorCount`] /
+/// [`PBmmReadError::EnumerationItemListsNotOneToOne`] when an enumeration class
+/// violates a `BMM_ENUMERATION` validity rule — "may have only one ancestor"
+/// (`LANG/docs/bmm3/master07-core-classes.adoc` §Range-Constrained Classes) and
+/// `item_values` "Must be 1:1 with `item_names` list"
+/// (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes).
 pub fn create_bmm_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError> {
     let builder = Builder::new(schema)?;
     // Keyed by each class's OWN name, the form `BMM_CLASS.name` states and the
@@ -172,13 +177,13 @@ enum EmbedDepth {
 }
 
 /// One class definition of the schema, with the list it was declared in.
-struct ClassEntry<'a> {
+pub(super) struct ClassEntry<'a> {
     /// The persisted definition.
-    class: &'a PBmmClass,
+    pub(super) class: &'a PBmmClass,
     /// Whether it was declared in `primitive_types` — `BMM_CLASS.is_primitive_type`,
     /// "True if this class is designated a primitive type within the overall type
     /// system of the schema" (`org.openehr.lang.bmm.bmm_class.adoc` §Attributes).
-    is_primitive_type: bool,
+    pub(super) is_primitive_type: bool,
 }
 
 /// The resolution indexes the transform needs, all derived from the schema
@@ -200,18 +205,18 @@ struct ClassEntry<'a> {
 /// matching" (`org.openehr.lang.bmm.bmm_package_container.adoc` §Attributes).
 /// Every name written into the produced `BMM_*` values is the class's OWN
 /// `name`, never the upper-cased key.
-struct Builder<'a> {
+pub(super) struct Builder<'a> {
     /// The schema being materialised
     /// ([`crate::bmm_persistence::p_bmm_schema::PBmmSchema::schema_id`]) — the
     /// `BMM_CLASS.source_schema_id` of a definition that carries none of its
     /// own (see [`Builder::build_class`]).
-    schema_id: String,
+    pub(super) schema_id: String,
     /// Class definitions by upper-cased name (`primitive_types` first, then
     /// `class_definitions`).
-    classes: BTreeMap<String, ClassEntry<'a>>,
+    pub(super) classes: BTreeMap<String, ClassEntry<'a>>,
     /// Upper-cased class name → the fully qualified path of the package that
     /// lists it.
-    owning_package: BTreeMap<String, String>,
+    pub(super) owning_package: BTreeMap<String, String>,
     /// Upper-cased class name → immediate inheritance descendants (their own
     /// names), sorted.
     descendants: BTreeMap<String, Vec<String>>,
@@ -220,7 +225,7 @@ struct Builder<'a> {
 impl<'a> Builder<'a> {
     /// Indexes `schema`'s classes, package membership and inverted inheritance
     /// graph.
-    fn new(schema: &'a PBmmSchema) -> Result<Self, PBmmReadError> {
+    pub(super) fn new(schema: &'a PBmmSchema) -> Result<Self, PBmmReadError> {
         let mut classes: BTreeMap<String, ClassEntry<'a>> = BTreeMap::new();
         for (class, is_primitive_type) in schema
             .primitive_types
@@ -265,7 +270,11 @@ impl<'a> Builder<'a> {
     }
 
     /// The class definition named `name`, matched case-insensitively.
-    fn entry(&self, context: &str, name: &str) -> Result<&ClassEntry<'a>, PBmmReadError> {
+    pub(super) fn entry(
+        &self,
+        context: &str,
+        name: &str,
+    ) -> Result<&ClassEntry<'a>, PBmmReadError> {
         self.classes
             .get(&name.to_uppercase())
             .ok_or_else(|| PBmmReadError::UnknownType {
@@ -318,14 +327,13 @@ impl<'a> Builder<'a> {
     /// materialisation targets the v2.x model because P_BMM is that generation's
     /// persistence form (`LANG/docs/bmm/master06-persistence.adoc`). So
     /// `P_BMM_CLASS.functions` is preserved in the P_BMM graph and carried no
-    /// further. That is a boundary of the v2 model, NOT of the openEHR specs: the
-    /// **v3** `BMM_CLASS` declares `features`, `functions`, `procedures`,
-    /// `static_properties`, `invariants`, `creators` and `converters`
-    /// (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), all of which
-    /// `crate::bmm3` emits.
-    /// TODO: materialise a v3 `BMM_MODEL` so class functions/procedures/invariants
-    /// reach a model (see the module docs' `value_constraint` boundary — the same
-    /// follow-on).
+    /// further HERE. That is a boundary of the v2 model, NOT of the openEHR
+    /// specs: the **v3** `BMM_CLASS` declares `features`, `functions`,
+    /// `procedures`, `static_properties`, `invariants`, `creators` and
+    /// `converters` (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), and
+    /// [`crate::bmm_persistence::create_bmm3_model::create_bmm3_model`] lands the
+    /// routines and constants there (invariants excepted — they need an EL parse,
+    /// see that module's docs).
     ///
     /// `BMM_CLASS.source_schema_id` is `1..1` ("Reference to original source
     /// schema defining this class", class doc §Attributes) while an interface
@@ -361,6 +369,7 @@ impl<'a> Builder<'a> {
             is_override: persisted.is_override(),
         };
         if let PBmmClass::PBmmEnumeration(enumeration) = persisted {
+            check_enumeration_validity(name, enumeration)?;
             return Ok(BmmClass::BmmEnumeration(build_enumeration(
                 core,
                 enumeration,
@@ -731,7 +740,7 @@ impl<'a> Builder<'a> {
     /// this class or by the addition of an ancestor class which is generic"
     /// (`org.openehr.lang.bmm.bmm_generic_class.adoc` §Attributes), so the
     /// lookup walks the ancestor graph; it is cycle-safe.
-    fn find_generic_parameter(
+    pub(super) fn find_generic_parameter(
         &self,
         owner: &PBmmClass,
         parameter: &str,
@@ -943,6 +952,48 @@ struct ClassCore {
     is_override: bool,
 }
 
+/// Checks the two `BMM_ENUMERATION` validity rules a persisted enumeration must
+/// satisfy before it can be materialised.
+///
+/// * "may have only one ancestor" (`LANG/docs/bmm3/master07-core-classes.adoc`
+///   §Range-Constrained Classes; `org.openehr.lang.bmm3.bmm_enumeration.adoc`
+///   §Description) — the ancestor provides the base type the range constraint
+///   applies to, which is what `BMM_ENUMERATION.underlying_type_name` names
+///   (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Attributes), so two ancestors
+///   leave it ambiguous. An enumeration with NO ancestor stays legal: the v2
+///   class doc's "It is designed so that the default type is Integer"
+///   (§Description) supplies the base type
+///   ([`crate::bmm_persistence::p_bmm_enumeration_impl::DEFAULT_UNDERLYING_TYPE_NAME`]).
+/// * `item_values` "Must be 1:1 with `item_names` list" (same §Attributes) —
+///   checked only when values are stated, since "If no values are supplied, the
+///   integer values 0, 1, 2, ... are assumed".
+///
+/// # Errors
+/// [`PBmmReadError::EnumerationAncestorCount`] or
+/// [`PBmmReadError::EnumerationItemListsNotOneToOne`].
+pub(super) fn check_enumeration_validity(
+    name: &str,
+    persisted: &PBmmEnumeration,
+) -> Result<(), PBmmReadError> {
+    let ancestors = persisted.ancestors();
+    if ancestors.len() > 1 {
+        return Err(PBmmReadError::EnumerationAncestorCount {
+            class: name.to_owned(),
+            ancestors: ancestors.to_vec(),
+        });
+    }
+    let names = persisted.item_names().len();
+    let values = persisted.item_values().len();
+    if values > 0 && values != names {
+        return Err(PBmmReadError::EnumerationItemListsNotOneToOne {
+            class: name.to_owned(),
+            names,
+            values,
+        });
+    }
+    Ok(())
+}
+
 /// Builds the `BMM_ENUMERATION` form matching the persisted enumeration kind.
 fn build_enumeration(core: ClassCore, persisted: &PBmmEnumeration) -> BmmEnumeration {
     let item_names = persisted.item_names().to_vec();
@@ -1033,7 +1084,7 @@ fn index_packages(
 /// Joins a package name onto its parent path with the
 /// `BMM_DEFINITIONS.Package_name_delimiter` (`"."`,
 /// `org.openehr.lang.bmm.bmm_definitions.adoc` §Constants).
-fn qualify(prefix: &str, name: &str) -> String {
+pub(super) fn qualify(prefix: &str, name: &str) -> String {
     if prefix.is_empty() {
         name.to_owned()
     } else {
@@ -1058,11 +1109,11 @@ fn qualify(prefix: &str, name: &str) -> String {
 /// `ancestors: Hash<String, BMM_MODEL_TYPE>` and states in its §Description that
 /// it "contains a list of _types_ rather than classes"
 /// (`org.openehr.lang.bmm3.bmm_class.adoc`), which DOES carry the binding —
-/// `crate::bmm3` emits that shape.
-/// TODO: materialise a v3 `BMM_MODEL` so a generic ancestor's parameter binding
-/// reaches the model (see the module docs' `value_constraint` boundary — the same
-/// follow-on).
-fn ancestor_names(class: &PBmmClass) -> Vec<String> {
+/// `crate::bmm3` emits that shape, and
+/// [`crate::bmm_persistence::create_bmm3_model::create_bmm3_model`] carries the
+/// binding into it — so the loss is this transform's target generation, not the
+/// pipeline's.
+pub(super) fn ancestor_names(class: &PBmmClass) -> Vec<String> {
     let mut out: Vec<String> = class.ancestors().to_vec();
     out.extend(
         class
@@ -1074,7 +1125,7 @@ fn ancestor_names(class: &PBmmClass) -> Vec<String> {
 }
 
 /// The error context naming one class property.
-fn property_context(class: &str, property: &str) -> String {
+pub(super) fn property_context(class: &str, property: &str) -> String {
     format!("class `{class}` property `{property}`")
 }
 
@@ -1085,7 +1136,7 @@ fn property_context(class: &str, property: &str) -> String {
 /// (`org.openehr.lang.bmm.bmm_container_property.adoc` §Attributes) — "An
 /// Interval of Integer, used to represent multiplicity, cardinality and
 /// optionality in models" (`BASE` `Multiplicity_interval`).
-fn multiplicity_of(interval: &Interval<i32>) -> MultiplicityInterval {
+pub(super) fn multiplicity_of(interval: &Interval<i32>) -> MultiplicityInterval {
     match interval {
         Interval::PointInterval(PointInterval {
             lower,
