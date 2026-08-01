@@ -24,8 +24,8 @@
 # different question and stays unexercised: its envelope carries each new
 # version's data inline and has no XSD counterpart at all — AMB-165.) The
 # released OAS's Accept_LOCATABLE enum listing `application/xml` against a
-# JSON-only `content:` map is the internal inconsistency UPR-125 reports
-# upstream; the document-element inventory itself is UPR-127.
+# JSON-only `content:` map is the internal inconsistency #1605 reports
+# upstream; the document-element inventory itself is #1607.
 #
 # No format axis: this row asserts the refusal discipline itself, which is
 # judged on a declaring party regardless of its XML technology profile.

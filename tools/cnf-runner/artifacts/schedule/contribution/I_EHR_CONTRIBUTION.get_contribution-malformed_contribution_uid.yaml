@@ -18,7 +18,7 @@
 # content)" — while a well-formed-but-unknown uid keeps the 404 the
 # -bad_contribution case pins. What AMB-76 still carries is narrower: this
 # operation declares 200 + 404 and no 400 for a path-parameter-schema
-# violation — the editorial gap UPR-38 asks openEHR to close.
+# violation — the editorial gap #1520 asks openEHR to close.
 #
 # The token fails on both counts: not a UUID, and not any composite identifier
 # form. The sibling -bad_contribution case supplies the other side of the

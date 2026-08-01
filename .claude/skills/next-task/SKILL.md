@@ -25,7 +25,7 @@ separate step the caller takes after seeing the plan.
    `BLOCKED-by` an open issue (surface its blocker as the real next task
    instead); for a parent issue, point at its next open child rather than the
    parent itself. Then `gh issue view <n> --comments` for the full contract
-   (`## Contract` + `## Exit criteria`) and the running discussion, and
+   (the opening summary + `## Acceptance criteria`) and the running discussion, and
    `scripts/gh-rel.sh tree <n>` for its parent/children/blockers. If the issue
    links a plan file (`docs/plans/*.md`), read that too; its unchecked
    (`- [ ]`) tasks are the queue.
@@ -51,7 +51,7 @@ separate step the caller takes after seeing the plan.
      implementation must be read against, per `spec-adherence.md` /
      `/spec-lookup`. Doing the work starts by reading those.
    - **What "done" looks like** for this task specifically — the issue's
-     `## Exit criteria` checklist, plus what proves it: the CNF pipeline's
+     `## Acceptance criteria` checklist, plus what proves it: the CNF pipeline's
      zero-drift gate (`docs/conformance/ferroehr/results.json` +
      `verdicts.json`), the `openehr-its` fidelity gates, or corpus tests.
 3. **Do not edit the issue or commit** — recording progress happens after

@@ -112,11 +112,11 @@ AMB-4:
     latitude — two different template_id strings never collide — so
     I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict is unchanged.
     Partial-template_id RESOLUTION on retrieval is its own entry, AMB-104,
-    whose option pair is unaffected. Reported upstream (UPR-01), re-scoped to
+    whose option pair is unaffected. Reported upstream (#1483), re-scoped to
     the SM half: give `upload_opt` the duplicate rule its two siblings state,
     so SM and ITS agree rather than one of them being silent.
   disposition: fixed_handling
-  upstream_ref: "UPR-01"
+  upstream_issue: 1483
 AMB-5:
   ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
   source: >-
@@ -129,7 +129,7 @@ AMB-5:
     Affected cases carry the flag; verdicts on them are reported but excluded
     from profile computation until resolved.
   disposition: report_only
-  upstream_ref: "UPR-02"
+  upstream_issue: 1484
 AMB-8:
   ambiguity: >-
     Empty-directory retrieval is empty-vs-error ambiguous: get_directory on
@@ -149,7 +149,7 @@ AMB-8:
     sibling exists for this ITS (the option pair stands for future ITS
     bindings). Upstream clarification candidate.
   disposition: option_select
-  upstream_ref: "UPR-03"
+  upstream_issue: 1485
   options: [directory-empty-structure, directory-empty-error]
 AMB-9:
   ambiguity: "EHR_STATUS `incomplete` lifecycle_state references SPECPR-368 (open upstream problem report)."
@@ -159,7 +159,7 @@ AMB-9:
     553|incomplete|) + upstream SPECPR-368
   handling: "Affected cases report but do not gate until SPECPR-368 resolves."
   disposition: report_only
-  upstream_ref: "SPECPR-368"
+  upstream_issue: 1486
 AMB-10:
   ambiguity: >-
     Physical deletion is DEFINED by two released components and FORBIDDEN by a
@@ -234,14 +234,14 @@ AMB-10:
     openehr::523|deleted|)" — exactly what a physical delete does NOT produce —
     so both admin bindings map success to `ok_empty` ("Fulfilled with no
     content"), with the async `202` carried as its `alt_status` (AMB-139).
-    Reported upstream (UPR-04): reconcile the RM's indelibility absolutes with
+    Reported upstream (#1487): reconcile the RM's indelibility absolutes with
     the SM/ITS physical-delete operations — state in RM common that a
     regulator-compelled erasure is an exception to §Logical Deletion, or state
     in SM/ITS-REST that physical deletion is an out-of-model administrative
     facility — and put the data-protection justification somewhere normative
     rather than in two operation descriptions.
   disposition: fixed_handling
-  upstream_ref: "UPR-04"
+  upstream_issue: 1487
 AMB-17:
   ambiguity: >-
     The SM I_DEFINITION_ADL14.delete_opt operation is not surfaced by
@@ -258,7 +258,7 @@ AMB-17:
     activate when a later ITS release adds the endpoint.
     SM/ITS alignment candidate.
   disposition: fixed_handling
-  upstream_ref: "UPR-05"
+  upstream_issue: 1488
 AMB-22:
   ambiguity: >-
     The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced
@@ -279,7 +279,7 @@ AMB-22:
     declaration, so on ITS-REST 1.1.0 they verdict as not-applicable WITH
     CITATION. SM/ITS alignment candidate.
   disposition: fixed_handling
-  upstream_ref: "UPR-06"
+  upstream_issue: 1489
 AMB-24:
   ambiguity: >-
     The SM I_EHR_DIRECTORY.get_versioned_directory operation is not surfaced
@@ -294,7 +294,7 @@ AMB-24:
     unrealized declaration, so on ITS-REST 1.1.0 they verdict as
     not-applicable WITH CITATION. SM/ITS alignment candidate.
   disposition: fixed_handling
-  upstream_ref: "UPR-07"
+  upstream_issue: 1490
 AMB-27:
   ambiguity: >-
     BASE-grounded correction: the master17.3 DV_INTERVAL<DV_TIME> range table
@@ -323,7 +323,7 @@ AMB-27:
     guide-quality observations recorded with the chapter conversion only, NOT
     part of the upstream report.
   disposition: editorial
-  upstream_ref: "UPR-08"
+  upstream_issue: 1491
 AMB-28:
   ambiguity: >-
     AM-grounded correction: the master17.1 DV_BOOLEAN only_false_allowed
@@ -347,7 +347,7 @@ AMB-28:
     column) — a guide-quality observation recorded with the conversion, NOT
     part of the upstream report.
   disposition: editorial
-  upstream_ref: "UPR-09"
+  upstream_issue: 1492
 AMB-29:
   ambiguity: >-
     Reduced-precision temporal comparability is under-specified (open SEC
@@ -364,7 +364,7 @@ AMB-29:
     mixed-precision comparisons are reported but excluded from profile
     computation until the SEC resolves the comparability question.
   disposition: report_only
-  upstream_ref: "UPR-10"
+  upstream_issue: 1493
 AMB-30:
   ambiguity: >-
     Rejection of AQL constructs outside the defined language is spec-silent:
@@ -384,7 +384,7 @@ AMB-30:
     no possible interpretation (e.g. missing FROM) remain gating. SPECQUERY
     candidate.
   disposition: report_only
-  upstream_ref: "SPECQUERY-20"
+  upstream_issue: 1494
 AMB-32:
   ambiguity: >-
     PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire: the Demographic API
@@ -439,7 +439,7 @@ AMB-32:
     wire-conformance claim rests on these routes — the difference is that the
     capability is now TESTED as product function rather than excused.
   disposition: fixed_handling
-  upstream_ref: "UPR-11"
+  upstream_issue: 1495
 AMB-33:
   ambiguity: >-
     The ADMIN surface has realization gaps in BOTH directions. SM→ITS: of the
@@ -492,7 +492,7 @@ AMB-33:
     its own outcome map and its own cases, so the route is exercised and visible
     on the SM-keyed surface gate instead of falling through it. The one fully
     realized operation (`physical_ehr_delete` → `admin_ehr_delete`) keeps its
-    variant-less binding. Reported upstream (UPR-12).
+    variant-less binding. Reported upstream (#1496).
     CLAIMS RE-DERIVED 2026-07-28 (#623) for the four capabilities this entry
     excused — ActivityReport, EhrDumpLoad, EhrArchive, DemographicArchive. The
     two-path released Admin API is CONFIRMED unchanged first-hand, and the
@@ -652,7 +652,7 @@ AMB-33:
     or a segment belongs to no single entity, so it stays the whole-operation
     `file_not_writable`.
   disposition: fixed_handling
-  upstream_ref: "UPR-12"
+  upstream_issue: 1496
 AMB-34:
   ambiguity: >-
     The SM MESSAGE component has NO realization in ITS-REST 1.1.0: there is
@@ -731,7 +731,7 @@ AMB-34:
     batch form's all-or-nothing semantics remain this product's flagged
     extension of the interface, declared in the message-tdd family.
   disposition: fixed_handling
-  upstream_ref: "UPR-13"
+  upstream_issue: 1497
 AMB-37:
   ambiguity: >-
     The SM I_DEFINITION_ADL2 interface is artefact-generic — a single
@@ -782,7 +782,7 @@ AMB-37:
     for extension-only batteries. No openEHR profile tier and no ITS-REST
     wire-conformance claim rests on the extension routes either way.
   disposition: fixed_handling
-  upstream_ref: "UPR-14"
+  upstream_issue: 1498
 AMB-39:
   ambiguity: >-
     Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
@@ -807,7 +807,7 @@ AMB-39:
     HTTP status code 406 Not Acceptable").
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
-  upstream_ref: "UPR-15"
+  upstream_issue: 1499
 AMB-41:
   ambiguity: >-
     The SM I_DEFINITION_ADL14 interface defines archetype provisioning
@@ -872,7 +872,7 @@ AMB-41:
     The evidence_exception is deleted; the workload exclusion stays, tightened
     to its own reason (definition administration, not a per-patient arrival).
   disposition: fixed_handling
-  upstream_ref: "UPR-16"
+  upstream_issue: 1500
 AMB-42:
   ambiguity: >-
     The AOM 1.4 object model defines millisecond_validity on
@@ -899,7 +899,7 @@ AMB-42:
     Archetype.xsd element and stays tested) run normally. The rows activate
     when an ITS-XML release serializes the AOM fields.
   disposition: fixed_handling
-  upstream_ref: "UPR-17"
+  upstream_issue: 1501
 AMB-43:
   ambiguity: >-
     BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
@@ -922,7 +922,7 @@ AMB-43:
     citation. The rows flip to rejected if a future BASE release restores
     the bound-required invariant.
   disposition: fixed_handling
-  upstream_ref: "UPR-18"
+  upstream_issue: 1502
 AMB-44:
   ambiguity: >-
     DV_TIME literal form diverges between the CNF schedule and BASE: the
@@ -943,7 +943,7 @@ AMB-44:
     this entry. Flips back if a future BASE release admits the T-prefixed
     time form.
   disposition: fixed_handling
-  upstream_ref: "UPR-19"
+  upstream_issue: 1503
 AMB-45:
   ambiguity: >-
     The master17.4 DV_DATE_TIME range table's T-precision block tests values
@@ -961,7 +961,7 @@ AMB-45:
     row derivable. Editorial correction proposed with the chapter
     conversion.
   disposition: editorial
-  upstream_ref: "UPR-20"
+  upstream_issue: 1504
 AMB-46:
   ambiguity: >-
     Commit-time enforcement of a CONSTRAINT_REF (C_CODE_REFERENCE) against
@@ -984,7 +984,7 @@ AMB-46:
     rows are unaffected. Flips to rejected only if a future AM release defines
     commit-time binding enforcement.
   disposition: fixed_handling
-  upstream_ref: "UPR-21"
+  upstream_issue: 1505
 AMB-51:
   ambiguity: >-
     Two master16 HISTORY cells contradict the RM Events_valid invariant: the
@@ -1006,7 +1006,7 @@ AMB-51:
     two cells. Flips back to accepted only if a future RM release drops or
     relaxes Events_valid.
   disposition: editorial
-  upstream_ref: "UPR-22"
+  upstream_issue: 1506
 AMB-54:
   ambiguity: >-
     NARROWED 2026-07-27: the released 400_CONTRIBUTION response text
@@ -1041,11 +1041,11 @@ AMB-54:
     antecedent holds and the referent is unique, and the catalogue
     deliberately gates that SHOULD there (a strength choice, recorded here on
     purpose). The first-version-modification case gates at the released 400.
-    Reported upstream (UPR-47): assign the three residual branches, and
+    Reported upstream (#1529): assign the three residual branches, and
     assign (or decline) an identifying header for the body-borne
     precondition failure.
   disposition: fixed_handling
-  upstream_ref: "UPR-47"
+  upstream_issue: 1529
 
 AMB-55:
   ambiguity: >-
@@ -1077,7 +1077,7 @@ AMB-55:
     "must be the rubric" prose to an invariant. Pins the anti-overreach ruling
     that reverted value==rubric enforcement (PR #263).
   disposition: fixed_handling
-  upstream_ref: "UPR-24"
+  upstream_issue: 1507
 AMB-56:
   ambiguity: >-
     Accept quality-factor (q-value) negotiation strictness is not spec-defined.
@@ -1103,7 +1103,7 @@ AMB-56:
     (SF-EXAMPLE-unsupported_accept). Activates as gating cases only if a future
     ITS-REST release defines q-value semantics.
   disposition: statement_declared
-  upstream_ref: "UPR-25"
+  upstream_issue: 1508
 AMB-57:
   ambiguity: >-
     CORRECTED 2026-07-27 (the prior text claimed no simplified-format wire
@@ -1133,11 +1133,11 @@ AMB-57:
     ORIGINAL_VERSIONs and COMPOSITION data serializes in the requested wt
     form (non-COMPOSITION inner payloads 406); without it, the OBJECT_REF
     members pass through and the envelope serves canonically. Reported
-    upstream (UPR-13 lineage; re-reported as UPR-48): align the GET's
+    upstream (#1497 lineage; re-reported as #1530): align the GET's
     simplified paragraph with its declared schema or bind resolve_refs
     explicitly.
   disposition: fixed_handling
-  upstream_ref: "UPR-48"
+  upstream_issue: 1530
 
 AMB-58:
   ambiguity: >-
@@ -1201,7 +1201,7 @@ AMB-58:
     covered by SF-WT-web_template_get (Accept: application/openehr.wt+json →
     the Web Template under its own type). Revisits — and becomes a real
     expectation — if a future ITS-REST release defines the application/json
-    template representation. No upstream_ref: there is no released-source
+    template representation. No upstream_issue: there is no released-source
     defect to report, only a silence we filled.
   disposition: fixed_handling
 AMB-59:
@@ -1701,7 +1701,7 @@ AMB-65:
     by itself there (AMB-129 carries the demographic sharpening and the
     invariant-strength question that comes with it).
   disposition: fixed_handling
-  upstream_ref: "UPR-27"
+  upstream_issue: 1509
 AMB-67:
   ambiguity: >-
     Whether the CONTAINED top-level object served inside an ORIGINAL_VERSION
@@ -1725,7 +1725,7 @@ AMB-67:
     records the outcome without gating any tier — presence is a
     recommendation this server ADOPTS (commit-time stamping, #439) but no
     conformant server can be failed for omitting. The FORM when present
-    stays the gating AMB-65 fixed handling. Reported upstream (UPR-29): the
+    stays the gating AMB-65 fixed handling. Reported upstream (#1511): the
     recommendation's scope and strength deserve an explicit wire-level
     statement for the non-COMPOSITION top-level types.
     SCOPE EXCLUSION (2026-07-27, group-12 audit): this entry does NOT reach
@@ -1737,7 +1737,7 @@ AMB-67:
     cases therefore ASSERT the uid rather than merely recording it, and the
     invariant-vs-NOTE tension that creates is AMB-129.
   disposition: report_only
-  upstream_ref: "UPR-29"
+  upstream_issue: 1511
 AMB-68:
   ambiguity: >-
     The released RM contradicts itself on REVISION_HISTORY item ordering
@@ -1757,10 +1757,10 @@ AMB-68:
   handling: >-
     Fixed handling: the wire serves `items` oldest-first
     (most-recent-last), per the postconditions; the revision-history cases
-    assert that order. Reported upstream (UPR-30): correct the Purpose
+    assert that order. Reported upstream (#1512): correct the Purpose
     sentence.
   disposition: fixed_handling
-  upstream_ref: "UPR-30"
+  upstream_issue: 1512
 
 AMB-69:
   ambiguity: >-
@@ -1783,7 +1783,7 @@ AMB-69:
     `owner_id` as `{namespace: "local", type: "EHR", id: HIER_OBJECT_ID of
     the owning ehr_id}` — the only concrete shape any openEHR artifact
     shows, and consistent with BASE's namespace vocabulary. Reported
-    upstream (UPR-31): state the owner_id wire values normatively.
+    upstream (#1513): state the owner_id wire values normatively.
     SCOPE EXTENDED 2026-07-27 (group-12 audit) to VERSIONED_PARTY, where the
     silence is worse: a PARTY has NO containing EHR at all. RM demographic
     master02-demographic_package.adoc §Versioning Semantics says only "Every
@@ -1800,9 +1800,9 @@ AMB-69:
     shape. As on the EHR side the tokens are NOT asserted by any case: no
     released SENTENCE fixes them, an example is illustration and not a rule,
     and pinning them would resolve the silence privately. Reported upstream
-    with the same ask (UPR-31), now including the no-owning-EHR case.
+    with the same ask (#1513), now including the no-owning-EHR case.
   disposition: fixed_handling
-  upstream_ref: "UPR-31"
+  upstream_issue: 1513
 
 AMB-70:
   ambiguity: >-
@@ -1830,10 +1830,10 @@ AMB-70:
     newest version (a future T is 200, never 404); a T before the first
     held commit is no-version-at-time (404); "latest" is the current trunk
     version; offset-less T resolves in the server-local timezone. The
-    at-time cases pin these choices. Reported upstream (UPR-32): define
+    at-time cases pin these choices. Reported upstream (#1514): define
     the extant-at-time semantics normatively.
   disposition: fixed_handling
-  upstream_ref: "UPR-32"
+  upstream_issue: 1514
 
 AMB-71:
   ambiguity: >-
@@ -1853,10 +1853,10 @@ AMB-71:
     Location pointing at the resulting version, per the §Prefer sentence;
     reads, deletes, and 4xx responses never do, per §Location (the
     wire_surface `header-location-only-on-create` entry scopes the
-    prohibition to those). Reported upstream (UPR-33): reconcile the two
+    prohibition to those). Reported upstream (#1515): reconcile the two
     sentences.
   disposition: fixed_handling
-  upstream_ref: "UPR-33"
+  upstream_issue: 1515
 
 AMB-72:
   ambiguity: >-
@@ -1885,9 +1885,9 @@ AMB-72:
   handling: >-
     Editorial: the catalogue keeps the SM operation names and treats the
     ITS-REST docs text + RM as the behavioural authority where the SM
-    typing/preconditions are defective. Reported upstream (UPR-34).
+    typing/preconditions are defective. Reported upstream (#1516).
   disposition: editorial
-  upstream_ref: "UPR-34"
+  upstream_issue: 1516
 
 AMB-73:
   ambiguity: >-
@@ -1913,10 +1913,10 @@ AMB-73:
     one VERSIONED_COMPOSITION (422) as its own design convention —
     consistent with the versioned container's archetype-stability
     invariants — and the wrong_template case records the outcome without
-    gating any tier. Reported upstream (UPR-35): state whether
+    gating any tier. Reported upstream (#1517): state whether
     template_id is version-stable.
   disposition: report_only
-  upstream_ref: "UPR-35"
+  upstream_issue: 1517
 
 AMB-74:
   ambiguity: >-
@@ -1943,7 +1943,7 @@ AMB-74:
     ORIGINAL_VERSION (lifecycle_state 523|deleted|, commit_audit and
     provenance preserved — the RM-consistent reading, since 204 would
     suppress exactly what the envelope routes exist to expose). Reported
-    upstream (UPR-36): assign the deleted-read branches explicitly.
+    upstream (#1518): assign the deleted-read branches explicitly.
     SCOPE EXTENDED 2026-07-27 (group-12 audit) to the PARTY family, which is
     the same shape sentence for sentence: the five party gets each declare the
     identically-scoped `204_deleted_at_time` ("at specified `version_at_time`")
@@ -1955,7 +1955,7 @@ AMB-74:
     reason, on a change-controlled resource RM common master06 §Overview names
     outright ("Party objects in a demographic system").
   disposition: fixed_handling
-  upstream_ref: "UPR-36"
+  upstream_issue: 1518
 
 AMB-75:
   ambiguity: >-
@@ -1976,14 +1976,14 @@ AMB-75:
     new version, and the ETag names the resource's current state (overview
     §"ETag and Last-Modified": the value "changes as soon as the resource
     changes (i.e. when a new version is created)"). Reported upstream
-    (UPR-37): name the identity explicitly.
+    (#1519): name the identity explicitly.
     SCOPE EXTENDED 2026-07-27 (group-12 audit) to the PARTY delete, which
     references the same generic `204_version_deleted` response and the same
     generic `ETag` header, and whose delete is likewise a commit of a new
     `523|deleted|` VERSION — so its 204 carries the NEW deleted version's uid
     in the weak form, on the identical grounds.
   disposition: fixed_handling
-  upstream_ref: "UPR-37"
+  upstream_issue: 1519
 
 AMB-76:
   ambiguity: >-
@@ -2013,7 +2013,7 @@ AMB-76:
     schema. `ehr_get_by_id`, `versioned_composition_get` and
     `contribution_get` all declare `{200, 404}` and nothing else, so the
     branch is derivable from the overview but absent from every per-operation
-    response map — the gap UPR-38 asks openEHR to close. The release even
+    response map — the gap #1520 asks openEHR to close. The release even
     HAS the sentence, in the reusable `responses/400.yaml` ("`400 Bad
     Request` is returned when the request could not be parsed or is invalid
     (e.g. malformed request URL syntax, missing required header or
@@ -2052,11 +2052,11 @@ AMB-76:
     well-formed identifiers and malformed-identifier cases expect 400, so the
     400/404 split is exercised rather than assumed. The 400 is NOT an option
     branch: it is derived from the released parameter typing plus the
-    overview row, not chosen. Reported upstream (UPR-38), re-scoped: declare
+    overview row, not chosen. Reported upstream (#1520), re-scoped: declare
     the 400 in the per-operation response maps that type their path
     parameters.
   disposition: fixed_handling
-  upstream_ref: "UPR-38"
+  upstream_issue: 1520
 
 AMB-77:
   ambiguity: >-
@@ -2088,9 +2088,9 @@ AMB-77:
   handling: >-
     Editorial: the catalogue keeps the SM operation names and adjudicates
     behaviour from the ITS-REST docs text + RM where the SM
-    typing/preconditions are defective. Reported upstream (UPR-39).
+    typing/preconditions are defective. Reported upstream (#1521).
   disposition: editorial
-  upstream_ref: "UPR-39"
+  upstream_issue: 1521
 
 AMB-78:
   ambiguity: >-
@@ -2155,11 +2155,11 @@ AMB-78:
     released RM invariant rather than a recommendation (AMB-129), so the rule
     is if anything stronger there; the party CREATE is a different question —
     it has no URL identifier for a body uid to contradict — and is AMB-132.
-    Reported upstream (UPR-40), re-scoped: the rule is now findable in the
+    Reported upstream (#1522), re-scoped: the rule is now findable in the
     release's computable artifacts but still absent from the normative prose,
     and its branch is still unassigned on either tier.
   disposition: fixed_handling
-  upstream_ref: "UPR-40"
+  upstream_issue: 1522
 
 AMB-79:
   ambiguity: >-
@@ -2183,10 +2183,10 @@ AMB-79:
     duplicate or a conflict") when a LIVE directory occupies the slot; a
     logically deleted directory vacates it (the container survives, RM
     master06 §Logical Deletion) so a re-create opens a new hierarchy. The
-    create-conflict case gates on 409. Reported upstream (UPR-41): bind
+    create-conflict case gates on 409. Reported upstream (#1523): bind
     the branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-41"
+  upstream_issue: 1523
 
 AMB-80:
   ambiguity: >-
@@ -2206,10 +2206,10 @@ AMB-80:
     resource the request addresses does not exist, the closest released
     semantics (the 404 row: "the resource … does not exist"). The
     no-directory update/delete cases gate on 404. Reported upstream
-    (UPR-42): scope the 404 files to cover the missing-directory case or
+    (#1524): scope the 404 files to cover the missing-directory case or
     bind another branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-42"
+  upstream_issue: 1524
 
 AMB-81:
   ambiguity: >-
@@ -2234,10 +2234,10 @@ AMB-81:
     tolerates a leading slash and empty segments, matches the first
     sibling with the exact name value, navigates folders only (never
     items), and answers 404 for an unresolved path (the declared trigger).
-    Path cases pin this grammar. Reported upstream (UPR-43): define the
+    Path cases pin this grammar. Reported upstream (#1525): define the
     grammar normatively.
   disposition: fixed_handling
-  upstream_ref: "UPR-43"
+  upstream_issue: 1525
 
 AMB-82:
   ambiguity: >-
@@ -2261,9 +2261,9 @@ AMB-82:
     current state; EHR_STATUS itself stays always-writable (RM: "The
     EHR_STATUS object itself can always be written to"), which is how a
     deactivated EHR is reactivated. Cases exercising the deactivated-EHR
-    refusal gate on 409. Reported upstream (UPR-44): assign the branch.
+    refusal gate on 409. Reported upstream (#1526): assign the branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-44"
+  upstream_issue: 1526
 
 AMB-83:
   ambiguity: >-
@@ -2302,9 +2302,9 @@ AMB-83:
     wire behaviour from the ITS-REST docs text + RM; the wire serves ONE
     consistent header contract on both update successes (Location = the
     by-version directory URL, weak ETag = the new version uid) and no
-    Location on 412. Reported upstream (UPR-45).
+    Location on 412. Reported upstream (#1527).
   disposition: editorial
-  upstream_ref: "UPR-45"
+  upstream_issue: 1527
 
 AMB-84:
   ambiguity: >-
@@ -2324,7 +2324,7 @@ AMB-84:
     list 422 — a well-formed envelope that commits nothing cannot be
     followed as a change set (a CONTRIBUTION exists to list "the affected
     VERSION objects", master06 §Contributions). Reported upstream
-    (UPR-46): add the minItems to the commit schema or an invariant to the
+    (#1528): add the minItems to the commit schema or an invariant to the
     RM class.
     SCOPE 2026-07-27 (group-12 audit): the entry is CONTRIBUTION-scoped, not
     EHR-route-scoped, and it reaches `POST /demographic/contribution`
@@ -2334,7 +2334,7 @@ AMB-84:
     missing `minItems`, and the RM class it commits is the same CONTRIBUTION
     with the same absent invariants section.
   disposition: fixed_handling
-  upstream_ref: "UPR-46"
+  upstream_issue: 1528
 
 AMB-85:
   ambiguity: >-
@@ -2354,13 +2354,13 @@ AMB-85:
     MUST omit data (or carry JSON null, treated as absent) and a
     523|deleted| member CARRYING data is rejected 422; the stalled
     schema's required-data is not enforced for deletion members. Reported
-    upstream (UPR-49): give the commit schema a deletion shape.
+    upstream (#1531): give the commit schema a deletion shape.
     SCOPE 2026-07-27 (group-12 audit): the same handling reaches the
     demographic commit — `schemas/demographic/UpdateVersion.yaml` is the
     declared sync-copy of the EHR one and likewise lists `data` among its
     required members, so a `523|deleted|` PARTY member omits data there too.
   disposition: fixed_handling
-  upstream_ref: "UPR-49"
+  upstream_issue: 1531
 
 AMB-86:
   ambiguity: >-
@@ -2381,7 +2381,7 @@ AMB-86:
     committal headers are not merged (they exist to give the convenience
     methods a metadata channel the native envelope already has); the
     server-set fields (time_committed, system_id fallback) apply
-    identically either way. Reported upstream (UPR-50): state the header
+    identically either way. Reported upstream (#1532): state the header
     scope explicitly.
     SCOPE EXTENDED 2026-07-27 (group-12 audit) to the DEMOGRAPHIC contribution
     commit: `operations/demographic_contribution_create.yaml` declares the same
@@ -2389,7 +2389,7 @@ AMB-86:
     committal headers) over the same relaxed envelope prose, so the identical
     body-is-authoritative handling applies to `POST /demographic/contribution`.
   disposition: fixed_handling
-  upstream_ref: "UPR-50"
+  upstream_issue: 1532
 
 AMB-87:
   ambiguity: >-
@@ -2410,7 +2410,7 @@ AMB-87:
     identity the 201 already carries) and Last-Modified from
     audit.time_committed — an immutable resource's unique identifier is a
     unique state identifier, and the instant of committal is its one
-    modification instant. Reported upstream (UPR-51): declare the headers
+    modification instant. Reported upstream (#1533): declare the headers
     on the 200 or scope the SHOULD.
     SCOPE EXTENDED to the COMMIT response (POST /ehr/{ehr_id}/contribution and
     its demographic sibling): the same openness, the same fixed handling. The
@@ -2424,7 +2424,7 @@ AMB-87:
     `return=minimal` the body is empty, so the header is the only channel the
     commit instant has at all.
   disposition: fixed_handling
-  upstream_ref: "UPR-51"
+  upstream_issue: 1533
 
 AMB-88:
   ambiguity: >-
@@ -2447,9 +2447,9 @@ AMB-88:
     Fixed handling: the wire follows the released example — versions[i]
     carries the DATA class (COMPOSITION / EHR_STATUS / FOLDER) as type,
     namespace local, and the full OBJECT_VERSION_ID (with _type) as id.
-    Reported upstream (UPR-52): reconcile the RM wording with the example.
+    Reported upstream (#1534): reconcile the RM wording with the example.
   disposition: fixed_handling
-  upstream_ref: "UPR-52"
+  upstream_issue: 1534
 
 AMB-89:
   ambiguity: >-
@@ -2472,10 +2472,10 @@ AMB-89:
     on the contribution route (nothing released defines the shape); the
     distributed-import capability is realized by our own EHR-Extract
     import extension (import_ehr — flagged our-own-design), which
-    preserves foreign version identities. Reported upstream (UPR-53):
+    preserves foreign version identities. Reported upstream (#1535):
     define the import commit shape.
   disposition: fixed_handling
-  upstream_ref: "UPR-53"
+  upstream_issue: 1535
 
 AMB-90:
   ambiguity: >-
@@ -2518,9 +2518,9 @@ AMB-90:
   handling: >-
     Editorial: the catalogue keeps the SM operation names; wire behaviour
     adjudicates from the ITS-REST 1.1.0 released text (the newer, typed
-    side of every divergence) + RM. Reported upstream (UPR-54).
+    side of every divergence) + RM. Reported upstream (#1536).
   disposition: editorial
-  upstream_ref: "UPR-54"
+  upstream_issue: 1536
 
 AMB-91:
   ambiguity: >-
@@ -2556,9 +2556,9 @@ AMB-91:
     discipline the version routes carry). Enforced on GET, PUT and DELETE
     alike, on all seven typed families, and in both directions: a uid of
     another kind WITHIN the space and a uid belonging to the other space
-    are the same miss. Reported upstream (UPR-55): assign the branch.
+    are the same miss. Reported upstream (#1537): assign the branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-55"
+  upstream_issue: 1537
 
 AMB-92:
   ambiguity: >-
@@ -2578,10 +2578,10 @@ AMB-92:
     Fixed handling: return=identifier on a tag PUT resolves to the APPLIED
     default return=minimal (204, Preference-Applied: return=minimal) —
     there is no identifier to return, and claiming the identifier
-    preference was applied would be false. Reported upstream (UPR-56):
+    preference was applied would be false. Reported upstream (#1538):
     assign or exclude the token for collection resources.
   disposition: fixed_handling
-  upstream_ref: "UPR-56"
+  upstream_issue: 1538
 
 AMB-93:
   ambiguity: >-
@@ -2610,9 +2610,9 @@ AMB-93:
     Fixed handling: RM-invariant violations answer 422; syntactic
     failures (non-array body, non-string key, unparseable JSON) stay 400.
     Applied identically on all seven tag PUTs. Reported upstream
-    (UPR-57): assign the branch.
+    (#1539): assign the branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-57"
+  upstream_issue: 1539
 
 AMB-94:
   ambiguity: >-
@@ -2640,10 +2640,10 @@ AMB-94:
     no path filter). One rule for both list routes — the filter grammar
     does not vary with the space being listed. (The demographic route's
     unbounded SCOPE is a separate silence, AMB-138; this entry fixes only
-    what a supplied filter MEANS.) Reported upstream (UPR-58): define the
+    what a supplied filter MEANS.) Reported upstream (#1540): define the
     filter grammar.
   disposition: fixed_handling
-  upstream_ref: "UPR-58"
+  upstream_issue: 1540
 
 AMB-95:
   ambiguity: >-
@@ -2657,10 +2657,10 @@ AMB-95:
   handling: >-
     Fixed handling: last-wins — the posted set is deduped on the identity
     pair with the final occurrence kept, mirroring a full-replace applied
-    left to right. Reported upstream (UPR-59): assign uniqueItems or a
+    left to right. Reported upstream (#1541): assign uniqueItems or a
     merge rule.
   disposition: fixed_handling
-  upstream_ref: "UPR-59"
+  upstream_issue: 1541
 
 AMB-96:
   ambiguity: >-
@@ -2691,9 +2691,9 @@ AMB-96:
     and folding it into the no-path identity is the only reading that
     keeps such a client's tags addressable by the DELETE-by-key route.
     Applied identically on the EHR and demographic families. Reported
-    upstream (UPR-60): pick one representation.
+    upstream (#1542): pick one representation.
   disposition: fixed_handling
-  upstream_ref: "UPR-60"
+  upstream_issue: 1542
 
 AMB-97:
   ambiguity: >-
@@ -2772,9 +2772,9 @@ AMB-97:
     against released prose, not a spec silence: the docs text plus the
     operation's own sentence say both headers are settable, so both are
     accepted on the party updates and each lands in its own collection
-    per the wrapper law. Reported upstream (UPR-61).
+    per the wrapper law. Reported upstream (#1543).
   disposition: editorial
-  upstream_ref: "UPR-61"
+  upstream_issue: 1543
 
 AMB-98:
   ambiguity: >-
@@ -2795,10 +2795,10 @@ AMB-98:
     the AQL LIMIT/OFFSET clauses shape the logical result, then
     offset/fetch window it; fetch combined with the deprecated TOP is
     rejected 400 (the stated prohibition, code ours). Reported upstream
-    (UPR-62): update the exclusion clause for LIMIT and define the
+    (#1544): update the exclusion clause for LIMIT and define the
     composition.
   disposition: fixed_handling
-  upstream_ref: "UPR-62"
+  upstream_issue: 1544
 
 AMB-99:
   ambiguity: >-
@@ -2815,10 +2815,10 @@ AMB-99:
   handling: >-
     Fixed handling (the AMB-59 pattern): the POSTs accept the URL forms;
     a value carried in both places must agree — equal values accepted,
-    a disagreement is 400. Reported upstream (UPR-63): assign the
+    a disagreement is 400. Reported upstream (#1545): assign the
     precedence.
   disposition: fixed_handling
-  upstream_ref: "UPR-63"
+  upstream_issue: 1545
 
 AMB-100:
   ambiguity: >-
@@ -2838,10 +2838,10 @@ AMB-100:
     parameter named q/ehr_id/offset/fetch is ALWAYS the protocol
     parameter, never a $parameter bind; a query whose AQL declares
     $ehr_id receives it only through the JSON query_parameters object
-    (where no protocol meaning exists). Reported upstream (UPR-64):
+    (where no protocol meaning exists). Reported upstream (#1546):
     reserve the names or rename the protocol parameters.
   disposition: fixed_handling
-  upstream_ref: "UPR-64"
+  upstream_issue: 1546
 
 AMB-101:
   ambiguity: >-
@@ -2865,10 +2865,10 @@ AMB-101:
     empty when they differ), and a well-formed but unknown ehr_id answers
     404, REALIZING the SM's declared ehr_id_does_not_exist (SM is a
     released oracle; the 404 is the only declared realization candidate).
-    Reported upstream (UPR-65): define the scoping semantics and bind the
+    Reported upstream (#1547): define the scoping semantics and bind the
     unknown-EHR branch.
   disposition: fixed_handling
-  upstream_ref: "UPR-65"
+  upstream_issue: 1547
 
 AMB-102:
   ambiguity: >-
@@ -2891,10 +2891,10 @@ AMB-102:
     corresponding WRITE-side branches are AMB-122 (a version segment the
     versioned store cannot write) and AMB-123 (a store under the reserved
     name), both 400 rather than 404, because a write cannot address a
-    resource that does not exist. Reported upstream (UPR-66): assign the
+    resource that does not exist. Reported upstream (#1548): assign the
     malformed-selector branch explicitly.
   disposition: fixed_handling
-  upstream_ref: "UPR-66"
+  upstream_issue: 1548
 
 AMB-103:
   ambiguity: >-
@@ -2936,9 +2936,9 @@ AMB-103:
   handling: >-
     Editorial: the wire adjudicates from the released ITS-REST query
     prose + the QUERY component; the SM's competing shapes are design
-    authority only. Reported upstream (UPR-67).
+    authority only. Reported upstream (#1549).
   disposition: editorial
-  upstream_ref: "UPR-67"
+  upstream_issue: 1549
 
 AMB-66:
   ambiguity: >-
@@ -2980,7 +2980,7 @@ AMB-66:
     cardinality and the wire, and the catalogue does not test a server into a
     defect. Revisits when the SM drops or restates the precondition.
   disposition: fixed_handling
-  upstream_ref: "UPR-28"
+  upstream_issue: 1510
 
 AMB-104:
   ambiguity: >-
@@ -3029,7 +3029,7 @@ AMB-104:
     RESOLVES to on retrieval.
   disposition: option_select
   options: [adl14-partial-id-latest, adl14-partial-id-exact]
-  upstream_ref: "UPR-68"
+  upstream_issue: 1550
 
 AMB-105:
   ambiguity: >-
@@ -3059,10 +3059,10 @@ AMB-105:
     I_DEFINITION_ADL2.upload_artefact-duplicate_conflict. Distinct from AMB-4,
     which is a genuine SILENCE on the ADL 1.4 side (SM `upload_opt` says
     nothing about duplicates at all) rather than a contradiction. Reported
-    upstream (UPR-69): reconcile the SM replace rule with the ITS 409, in
+    upstream (#1551): reconcile the SM replace rule with the ITS 409, in
     either direction.
   disposition: fixed_handling
-  upstream_ref: "UPR-69"
+  upstream_issue: 1551
 
 AMB-106:
   ambiguity: >-
@@ -3091,12 +3091,12 @@ AMB-106:
     cases address templates that way throughout; no case asserts a UUID key,
     and none is authorable, because the released list response gives a client
     nothing to read one from. The divergence is carried, never resolved
-    privately, and is reported upstream (UPR-70) rather than absorbed. It sits
+    privately, and is reported upstream (#1552) rather than absorbed. It sits
     beside AMB-37 (the ADL2 interface's artefact-generic operations vs the
     OPT-only ADL2 wire) — same family, different axis: AMB-37 is about which
     OPERATIONS exist, this entry about which IDENTIFIER they take.
   disposition: report_only
-  upstream_ref: "UPR-70"
+  upstream_issue: 1552
 
 AMB-107:
   ambiguity: >-
@@ -3133,11 +3133,11 @@ AMB-107:
     both the grammar and the status). The glob reading is exercised by
     I_DEFINITION_ADL2.list_matching_artefacts-filter. The remaining
     filter/paging semantics the released text leaves open are AMB-114.
-    Reported upstream (UPR-71): state one pattern language for both
+    Reported upstream (#1553): state one pattern language for both
     components, and either bind the invalid-pattern error to a status or drop
     it.
   disposition: fixed_handling
-  upstream_ref: "UPR-71"
+  upstream_issue: 1553
 
 AMB-108:
   ambiguity: >-
@@ -3173,11 +3173,11 @@ AMB-108:
     neighbouring families are already registered — AMB-17 (delete_opt has no
     wire), AMB-41 (ADL 1.4 archetype provisioning has no wire), AMB-37 (the
     artefact-generic ADL2 operations vs the OPT-only ADL2 wire, including
-    `valid_artefact` and `has_artefact`). Reported upstream (UPR-72): realize
+    `valid_artefact` and `has_artefact`). Reported upstream (#1554): realize
     or retire the four OPT operations, and give example generation an SM
     operation.
   disposition: report_only
-  upstream_ref: "UPR-72"
+  upstream_issue: 1554
 
 AMB-109:
   ambiguity: >-
@@ -3217,9 +3217,9 @@ AMB-109:
     specialize clause is an invalid artefact under AM, not a template the
     upload must accept. The Web Template document is served to the released
     schema, and `semVer` is neither required of a client nor asserted by any
-    case. Reported upstream (UPR-73).
+    case. Reported upstream (#1555).
   disposition: editorial
-  upstream_ref: "UPR-73"
+  upstream_issue: 1555
 
 AMB-110:
   ambiguity: >-
@@ -3296,11 +3296,11 @@ AMB-110:
     families' minimal-arm cases are the AMB-62 NEW-CASE set (tracked, #584).
     Gated by I_DEFINITION_ADL14.upload_opt-prefer_minimal and
     I_DEFINITION_ADL2.upload_artefact-prefer_minimal; the sibling identifier
-    preference by -prefer_identifier on both. Reported upstream (UPR-74): add
+    preference by -prefer_identifier on both. Reported upstream (#1556): add
     the semantic-rejection status to both uploads, and reconcile the 201-empty
     text with the overview's SHOULD-204.
   disposition: fixed_handling
-  upstream_ref: "UPR-74"
+  upstream_issue: 1556
 
 AMB-111:
   ambiguity: >-
@@ -3337,10 +3337,10 @@ AMB-111:
     The position is asserted rather than merely declared — the equivalence
     assertions on I_DEFINITION_ADL14.get_opt-retrieve_single and
     -retrieve_specific_version compare the served OPT against the uploaded
-    fixture. Reported upstream (UPR-75): state the fidelity rule on both
+    fixture. Reported upstream (#1557): state the fidelity rule on both
     retrievals.
   disposition: fixed_handling
-  upstream_ref: "UPR-75"
+  upstream_issue: 1557
 
 AMB-112:
   ambiguity: >-
@@ -3380,10 +3380,10 @@ AMB-112:
     because none is declared there. The ETag declarations execute on the upload
     and retrieval bindings; nothing asserts the ABSENCE of Last-Modified, which
     stays a documented boundary rather than a claim. Reported upstream
-    (UPR-76): say whether templates fall under the conditional-header SHOULD,
+    (#1558): say whether templates fall under the conditional-header SHOULD,
     and if so what `Last-Modified` means for an immutable resource.
   disposition: fixed_handling
-  upstream_ref: "UPR-76"
+  upstream_issue: 1558
 
 AMB-113:
   ambiguity: >-
@@ -3427,10 +3427,10 @@ AMB-113:
     pre-release never wins a `{major}` / `{major}.{minor}` prefix over a
     release version. Prefix resolution over the released forms IS gated
     (I_DEFINITION_ADL2.get_artefact-version_prefix). Reported upstream
-    (UPR-77): define deprecation signalling and the withdrawal contract, and
+    (#1559): define deprecation signalling and the withdrawal contract, and
     extend the version selector to the SEMVER pre-release forms.
   disposition: fixed_handling
-  upstream_ref: "UPR-77"
+  upstream_issue: 1559
 
 AMB-114:
   ambiguity: >-
@@ -3472,11 +3472,11 @@ AMB-114:
     past-the-end halves are recorded as coverage gaps in
     vocab/wire_surface.yaml (`template-list-filter-conjunction`,
     `template-list-offset-past-end`) rather than claimed. Reported upstream
-    (UPR-78): define filter combination, the past-the-end page, and the
+    (#1560): define filter combination, the past-the-end page, and the
     interaction of the version filter with an id whose version grammar is
     undefined.
   disposition: fixed_handling
-  upstream_ref: "UPR-78"
+  upstream_issue: 1560
 
 AMB-115:
   ambiguity: >-
@@ -3527,12 +3527,12 @@ AMB-115:
     and can never gate CORE. The residual permitted configuration (a server
     that neither implements a member nor falls back) simply does not claim
     TemplateExamples and is not judged by these rows. The upstream ask
-    stands: it closes when the released text assigns the branch (UPR-79) or
+    stands: it closes when the released text assigns the branch (#1561) or
     the two enum members are made mandatory.
-    Reported upstream (UPR-79): assign the unsupported-value branch, and give
+    Reported upstream (#1561): assign the unsupported-value branch, and give
     the ADL2 operation the same prose as its ADL 1.4 twin.
   disposition: fixed_handling
-  upstream_ref: "UPR-79"
+  upstream_issue: 1561
 
 AMB-116:
   ambiguity: >-
@@ -3577,10 +3577,10 @@ AMB-116:
     (cnf.adl2.opt.invalid.missing_description /
     cnf.adl2.opt.invalid.missing_definition) stay in the corpus, referenced by
     no case, precisely because pinning them would author a status the released
-    text does not settle. Reported upstream (UPR-80): say which phase owns a
+    text does not settle. Reported upstream (#1562): say which phase owns a
     missing mandatory section, or make the two catalogues disjoint.
   disposition: fixed_handling
-  upstream_ref: "UPR-80"
+  upstream_issue: 1562
 
 AMB-117:
   ambiguity: >-
@@ -3654,10 +3654,10 @@ AMB-117:
     updates the same slot: one row, the new text, no 409),
     -default_slot_with_higher_version (the constant slot beside a stored
     2.0.0) and -version_duplicate_conflict (the immutable half). Reported
-    upstream (UPR-81): state the minted version of a version-less store, and
+    upstream (#1563): state the minted version of a version-less store, and
     reconcile the overwrite sentence with the immutability prose.
   disposition: fixed_handling
-  upstream_ref: "UPR-81"
+  upstream_issue: 1563
 
 AMB-118:
   ambiguity: >-
@@ -3695,9 +3695,9 @@ AMB-118:
     ITS does not offer. The divergence is carried, never resolved privately.
     Sits beside AMB-127, which records the realization gaps of the same
     interface: this entry is about the SHAPE of the one realized store,
-    AMB-127 about which operations exist at all. Reported upstream (UPR-82).
+    AMB-127 about which operations exist at all. Reported upstream (#1564).
   disposition: report_only
-  upstream_ref: "UPR-82"
+  upstream_issue: 1564
 
 AMB-119:
   ambiguity: >-
@@ -3748,11 +3748,11 @@ AMB-119:
     existing resource, i.e. on a read — stands untouched and is asserted the
     other way: `Location` is declared PRESENT on both store outcomes (pinned
     to the written version on the version-less store — AMB-117) and ABSENT on
-    every stored-query read. Reported upstream (UPR-83): say whether the
+    every stored-query read. Reported upstream (#1565): say whether the
     §Location status rule or the §Prefer branch governs a 200-status
     creation, since the release assigns these operations 200 and no 201.
   disposition: fixed_handling
-  upstream_ref: "UPR-83"
+  upstream_issue: 1565
 
 AMB-120:
   ambiguity: >-
@@ -3818,9 +3818,9 @@ AMB-120:
     key). The CASING half is deliberately NOT gated: pinning either spelling
     would assert what the released text declares two ways at once, so the
     served canonical `AQL` is carried here and left for the upstream ruling.
-    Reported upstream (UPR-84).
+    Reported upstream (#1566).
   disposition: fixed_handling
-  upstream_ref: "UPR-84"
+  upstream_issue: 1566
 
 AMB-121:
   ambiguity: >-
@@ -3857,9 +3857,9 @@ AMB-121:
     carries the adjacent SM-vs-wire identifier and paging clauses for the
     query EXECUTION surface; this entry is the DEFINITION surface's listing.
     Sits beside AMB-107, the same regex-vs-glob shape on the template list.
-    Reported upstream (UPR-85).
+    Reported upstream (#1567).
   disposition: report_only
-  upstream_ref: "UPR-85"
+  upstream_issue: 1567
 
 AMB-122:
   ambiguity: >-
@@ -3938,10 +3938,10 @@ AMB-122:
     version has no place in that order.
     Gated by I_DEFINITION_QUERY.store_query-version_prefix_rejected,
     -version_prerelease_rejected and -version_malformed_rejected. Reported
-    upstream (UPR-86): state the write-side version grammar, since the
+    upstream (#1568): state the write-side version grammar, since the
     parameter's prefix semantics cannot apply to a store.
   disposition: fixed_handling
-  upstream_ref: "UPR-86"
+  upstream_issue: 1568
 
 AMB-123:
   ambiguity: >-
@@ -3999,10 +3999,10 @@ AMB-123:
     could never execute. Gated by I_DEFINITION_QUERY.valid_query-invalid
     (syntax), -bad_formalism (the unsupported formalism) and
     store_query-reserved_name (the reserved name, in both letter cases).
-    Reported upstream (UPR-87): assign the three branches, and fix the
+    Reported upstream (#1569): assign the three branches, and fix the
     `is_valid_query` / `valid_query` naming defect.
   disposition: fixed_handling
-  upstream_ref: "UPR-87"
+  upstream_issue: 1569
 
 AMB-124:
   ambiguity: >-
@@ -4051,11 +4051,11 @@ AMB-124:
     unreachable clause. Gated by
     I_DEFINITION_QUERY.list_queries-prefix_all_versions (prefix match across
     every version of every matching name, in the SEMVER-ascending order) and
-    -no_match_empty_list (`200 []`). Reported upstream (UPR-88): assign the
+    -no_match_empty_list (`200 []`). Reported upstream (#1570): assign the
     empty-result branch, state the listing order, and either give the
     operation the SM's paging or drop the unreachable wildcard clause.
   disposition: fixed_handling
-  upstream_ref: "UPR-88"
+  upstream_issue: 1570
 
 AMB-125:
   ambiguity: >-
@@ -4097,11 +4097,11 @@ AMB-125:
     stored-query response defines. The posture is RECORDED, not asserted: no
     case claims the headers are absent, because that would over-read a SHOULD
     into a MUST NOT — the same restraint AMB-112 applies to `Last-Modified`
-    on templates. Reported upstream (UPR-89): say whether stored queries fall
+    on templates. Reported upstream (#1571): say whether stored queries fall
     under the conditional-header SHOULD, and whether the overwriting
     version-less store takes `If-Match`.
   disposition: fixed_handling
-  upstream_ref: "UPR-89"
+  upstream_issue: 1571
 
 AMB-126:
   ambiguity: >-
@@ -4130,10 +4130,10 @@ AMB-126:
     (AMB-117) forbids in substance even where the text is silent about form.
     The same position, for the same reason, as template retrieval (AMB-111).
     Asserted rather than declared: the version-get cases compare the served
-    `q` against the exact text the flow stored. Reported upstream (UPR-90):
+    `q` against the exact text the flow stored. Reported upstream (#1572):
     state the fidelity rule on the stored-query read.
   disposition: fixed_handling
-  upstream_ref: "UPR-90"
+  upstream_issue: 1572
 
 AMB-127:
   ambiguity: >-
@@ -4180,11 +4180,11 @@ AMB-127:
     (its postcondition is `not has_query(a_query_name)`, which a
     single-version delete does not establish), and it is an extension of our
     own — no openEHR spec governs it, and the service code flags it as such.
-    Reported upstream (UPR-91): realize or retire the four unrealized
+    Reported upstream (#1573): realize or retire the four unrealized
     operations, finish `store_query_set`, and give the single-definition read
     an SM operation.
   disposition: report_only
-  upstream_ref: "UPR-91"
+  upstream_issue: 1573
 
 AMB-128:
   ambiguity: >-
@@ -4248,12 +4248,12 @@ AMB-128:
     forbids. Nothing is silently narrowed — the refusal is a declared,
     exercised branch. Gated by
     I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type (415) and
-    I_PARTY.get_party-simplified_accept (406). Reported upstream (UPR-92):
+    I_PARTY.get_party-simplified_accept (406). Reported upstream (#1574):
     either give the Simplified Formats a demographic shape and the party
     commits a template-naming channel, or drop the two Simplified MIME types
     from the party routes' negotiation enums.
   disposition: fixed_handling
-  upstream_ref: "UPR-92"
+  upstream_issue: 1574
 
 AMB-129:
   ambiguity: >-
@@ -4309,12 +4309,12 @@ AMB-129:
     `Uid_mandatory` is an invariant, and AMB-67's scope now carries the
     exclusion. Gated by the party create/get cases, which read the created
     PARTY back and assert its `uid/value` is the version identifier the
-    create's own `ETag` named. Reported upstream (UPR-93): reconcile the
+    create's own `ETag` named. Reported upstream (#1575): reconcile the
     invariant with the NOTE's "strongly recommended", say at which point
     `Uid_mandatory` is evaluated, and fix the NOTE's object_id()-versus-example
     contradiction.
   disposition: fixed_handling
-  upstream_ref: "UPR-93"
+  upstream_issue: 1575
 
 AMB-130:
   ambiguity: >-
@@ -4362,9 +4362,9 @@ AMB-130:
     `PARTY_REF`s whose ids denote version CONTAINERS ("`OBJECT_REFs` containing
     `HIER_OBJECT_IDs` … rather than `OBJECT_VERSION_IDs`"), not versions. The
     inbound direction is undiscoverable over the released wire — recorded on
-    AMB-32. Reported upstream (UPR-94).
+    AMB-32. Reported upstream (#1576).
   disposition: editorial
-  upstream_ref: "UPR-94"
+  upstream_issue: 1576
 
 AMB-131:
   ambiguity: >-
@@ -4409,10 +4409,10 @@ AMB-131:
     layers — one is a body the route cannot mean, the other an address that
     names nothing. Gated by
     I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body (422) and
-    I_PARTY.get_party-wrong_kind_container (404). Reported upstream (UPR-95):
+    I_PARTY.get_party-wrong_kind_container (404). Reported upstream (#1577):
     assign both branches on the typed demographic routes.
   disposition: fixed_handling
-  upstream_ref: "UPR-95"
+  upstream_issue: 1577
 
 AMB-132:
   ambiguity: >-
@@ -4457,11 +4457,11 @@ AMB-132:
     uid is derived from a version the server creates. Gated by
     I_DEMOGRAPHIC_SERVICE.create_party-client_supplied_uid: the create
     succeeds, and the read-back's `uid/value` is the identifier the create's
-    own `ETag` named, not the one the body carried. Reported upstream (UPR-96):
+    own `ETag` named, not the one the body carried. Reported upstream (#1578):
     say what a party create does with a body uid, as the CONTRIBUTION create
     already does.
   disposition: fixed_handling
-  upstream_ref: "UPR-96"
+  upstream_issue: 1578
 
 AMB-133:
   ambiguity: >-
@@ -4502,9 +4502,9 @@ AMB-133:
     carry the request. Carried as the cited wire_surface element
     `demographic-resolve-refs-unrealized`. Activates as a gating case if a
     future ITS-REST release declares `Prefer` on the demographic reads or
-    states what resolution over `PARTY_REF` yields. Reported upstream (UPR-97).
+    states what resolution over `PARTY_REF` yields. Reported upstream (#1579).
   disposition: report_only
-  upstream_ref: "UPR-97"
+  upstream_issue: 1579
 
 AMB-134:
   ambiguity: >-
@@ -4567,9 +4567,9 @@ AMB-134:
     documents nothing, and neither says what an XML envelope is; those
     descriptions are tier-2 text too, and citing them AS the OAS is what the
     order requires (the 2026-07-27 wording called them "released prose", which
-    over-stated their tier). Reported upstream (UPR-98).
+    over-stated their tier). Reported upstream (#1580).
   disposition: fixed_handling
-  upstream_ref: "UPR-98"
+  upstream_issue: 1580
 
 AMB-135:
   ambiguity: >-
@@ -4626,9 +4626,9 @@ AMB-135:
     `change_type` is DELETED), never SM's `not has_party`. Defect (6) likewise
     never reaches the wire: the released routes address versions by
     OBJECT_VERSION_ID, and the catalogue's captures carry that form. Reported
-    upstream (UPR-99).
+    upstream (#1581).
   disposition: editorial
-  upstream_ref: "UPR-99"
+  upstream_issue: 1581
 
 AMB-136:
   ambiguity: >-
@@ -4692,11 +4692,11 @@ AMB-136:
     realizations rather than declared missing (existence is the 200/404 of the
     corresponding read — the AMB-108 pattern), and the two interface factories
     are off-wire by construction, since an interface handle is not a resource.
-    Reported upstream (UPR-100): give the versioned-party reads and the
+    Reported upstream (#1582): give the versioned-party reads and the
     demographic contribution an SM home, and decide whether the existence
     probes deserve a wire.
   disposition: report_only
-  upstream_ref: "UPR-100"
+  upstream_issue: 1582
 
 AMB-137:
   ambiguity: >-
@@ -4764,10 +4764,10 @@ AMB-137:
     it is labelled as a convention wherever it is asserted. `target` is
     unaffected: it stays the bare RM `UID_BASED_ID` (`HIER_OBJECT_ID` for
     the container, `OBJECT_VERSION_ID` for a VERSION) the RM class requires,
-    on both families alike. Reported upstream (UPR-101): state who owns a
+    on both families alike. Reported upstream (#1583): state who owns a
     tag outside an EHR, or declare a demographic `tags` containment.
   disposition: fixed_handling
-  upstream_ref: "UPR-101"
+  upstream_issue: 1583
 
 AMB-138:
   ambiguity: >-
@@ -4814,11 +4814,11 @@ AMB-138:
     and from AMB-97's ordering/paging clause, which records the silence for
     lists that at least HAVE a scope to page within; the delta registered
     here is that this list has no scope at all. Reported upstream
-    (UPR-102): bound the space-wide read — a required filter, a paging
+    (#1584): bound the space-wide read — a required filter, a paging
     pair, or an explicit statement that the whole space is the intended
     answer.
   disposition: fixed_handling
-  upstream_ref: "UPR-102"
+  upstream_issue: 1584
 
 AMB-139:
   ambiguity: >-
@@ -4867,9 +4867,9 @@ AMB-139:
     and the absorption is a pending migration rather than a hard boundary (the
     `admin-delete-async-acceptance-branch` wire-surface element carries it).
     This SUT is synchronous and always answers `204`.
-    Reported upstream (UPR-103).
+    Reported upstream (#1585).
   disposition: editorial
-  upstream_ref: "UPR-103"
+  upstream_issue: 1585
 
 AMB-140:
   ambiguity: >-
@@ -4933,9 +4933,9 @@ AMB-140:
     unasserted rather than resolved: with the async branch released, no
     client-observable test can distinguish an atomic bulk delete from a batched
     one, so asserting either would test a property the wire does not expose.
-    Reported upstream (UPR-104).
+    Reported upstream (#1586).
   disposition: fixed_handling
-  upstream_ref: "UPR-104"
+  upstream_issue: 1586
 
 AMB-141:
   ambiguity: >-
@@ -5004,9 +5004,9 @@ AMB-141:
     the delete cases already use to verify the postcondition (the cross-interface
     reference is a rendering defect, not a semantic one), and the missing
     precondition on `physical_party_delete` costs nothing while that operation
-    is unrealized. Reported upstream (UPR-105).
+    is unrealized. Reported upstream (#1587).
   disposition: editorial
-  upstream_ref: "UPR-105"
+  upstream_issue: 1587
 
 AMB-142:
   ambiguity: >-
@@ -5069,9 +5069,9 @@ AMB-142:
     role-separation behaviour is covered by our own HTTP tests instead, and the
     SEC-BASIC capabilities `AuthenticatedAccess`/`AuthorizationSeparation`
     remain grounded on the generic 401/403 rows, not on the admin surface.
-    Reported upstream (UPR-106).
+    Reported upstream (#1588).
   disposition: fixed_handling
-  upstream_ref: "UPR-106"
+  upstream_issue: 1588
 
 AMB-143:
   ambiguity: >-
@@ -5145,9 +5145,9 @@ AMB-143:
     composition of a destroyed EHR cannot be told apart from the EHR's own
     absence — unreachability is the strongest observable form of the promise,
     and the storage-level closure is proven by DB-backed tests instead.
-    Reported upstream (UPR-107).
+    Reported upstream (#1589).
   disposition: fixed_handling
-  upstream_ref: "UPR-107"
+  upstream_issue: 1589
 
 AMB-144:
   ambiguity: >-
@@ -5201,14 +5201,14 @@ AMB-144:
     trace outside the EHR it destroys. That record lives in a different store
     precisely because the cascade empties the one the RM would have used. The
     entry is deliberately NOT `fixed_handling`: there is no wire behaviour to
-    fix, only an obligation that ought to exist. Reported upstream (UPR-108):
+    fix, only an obligation that ought to exist. Reported upstream (#1590):
     require an audit record for physical deletion — the actor, the time, the
     ids destroyed — and say where it lives, given that the operation's own
     cascade removes the CONTRIBUTIONs and AUDIT_DETAILS that carry every other
     change's history; and either populate `I_SYSTEM_LOG` or drop the ATNA claim
     from the platform overview.
   disposition: report_only
-  upstream_ref: "UPR-108"
+  upstream_issue: 1590
 
 AMB-145:
   ambiguity: >-
@@ -5268,9 +5268,9 @@ AMB-145:
     the unparseable example forms — an operator whose Authorization Server does
     issue them may still advertise them verbatim through the
     `scopes_supported` override, since the advertisement is the AS's claim, not
-    the CDR's. Reported upstream (UPR-109).
+    the CDR's. Reported upstream (#1591).
   disposition: fixed_handling
-  upstream_ref: "UPR-109"
+  upstream_issue: 1591
 
 AMB-146:
   ambiguity: >-
@@ -5309,9 +5309,9 @@ AMB-146:
     attribute set from `/.well-known/smart-configuration`; it publishes no
     `.well-known/openid-configuration` at all, that being an Authorization
     Server document and the CDR being the resource server (master02 §Glossary).
-    No case turns on the distinction. Reported upstream (UPR-110).
+    No case turns on the distinction. Reported upstream (#1592).
   disposition: editorial
-  upstream_ref: "UPR-110"
+  upstream_issue: 1592
 
 AMB-147:
   ambiguity: >-
@@ -5350,9 +5350,9 @@ AMB-147:
     `crates/openehr-its/src/rest/smart_scopes.rs` (`Pattern::matches` +
     `glob_match`: `**` consumes any bytes, `*` consumes any bytes stopping
     before `:`, every other byte literal) and unit-covered there. Reported
-    upstream (UPR-111).
+    upstream (#1593).
   disposition: fixed_handling
-  upstream_ref: "UPR-111"
+  upstream_issue: 1593
 
 AMB-148:
   ambiguity: >-
@@ -5392,9 +5392,9 @@ AMB-148:
     (`app/ferroehr-rest/src/extensions/access/pep.rs`: SMART can only narrow,
     never widen) so that the "applicable access control policies" object of the
     sentence is enforced independently of the scope. No case turns on either
-    reading. Reported upstream (UPR-112).
+    reading. Reported upstream (#1594).
   disposition: editorial
-  upstream_ref: "UPR-112"
+  upstream_issue: 1594
 
 AMB-149:
   ambiguity: >-
@@ -5459,9 +5459,9 @@ AMB-149:
     absolute-URL requirement itself is NOT part of this silence — it is stated,
     and this server satisfies it from the operator-supplied external origin
     (`smart.public_base_url`, boot-required when SMART is enabled), wire-tested
-    in `app/ferroehr-rest/tests/smart_http.rs`. Reported upstream (UPR-113).
+    in `app/ferroehr-rest/tests/smart_http.rs`. Reported upstream (#1595).
   disposition: fixed_handling
-  upstream_ref: "UPR-113"
+  upstream_issue: 1595
 
 AMB-150:
   ambiguity: >-
@@ -5553,9 +5553,9 @@ AMB-150:
     `EHR_STATUS.subject.external_ref` (`subject_gate` in
     `app/ferroehr-rest/src/extensions/access/pep.rs`), the only value the RM
     gives an EHR that identifies its patient. Both are our own design where the
-    spec is silent. Reported upstream (UPR-114).
+    spec is silent. Reported upstream (#1596).
   disposition: fixed_handling
-  upstream_ref: "UPR-114"
+  upstream_issue: 1596
 
 AMB-151:
   ambiguity: >-
@@ -5682,9 +5682,9 @@ AMB-151:
     capability row in `vocab/capability_matrix.yaml` is claimed by THE party
     statement (`party/ferroehr/statement.json`); there is no second
     statement and no per-lane artefact directory.
-    Reported upstream (UPR-115).
+    Reported upstream (#1597).
   disposition: statement_declared
-  upstream_ref: "UPR-115"
+  upstream_issue: 1597
 
 AMB-152:
   ambiguity: >-
@@ -5790,13 +5790,13 @@ AMB-152:
     refusals are declared, exercised branches, gated by
     SF-SCOPE-directory_no_simplified (406) and SF-SCOPE-ehr_status_no_simplified
     (406), with AMB-128 gating the demographic sibling. Reported upstream
-    (UPR-116): either give EHR_STATUS and FOLDER real Simplified mappings plus a
+    (#1598): either give EHR_STATUS and FOLDER real Simplified mappings plus a
     field-identifier source that does not require an OPT, or strike the two
     classes from the contribution_create sentence and drop the Simplified MIME
     types from those seven operations' negotiation enums; and either way say
     what `ehr_create`'s receive-but-not-return asymmetry means.
   disposition: fixed_handling
-  upstream_ref: "UPR-116"
+  upstream_issue: 1598
 
 AMB-153:
   ambiguity: >-
@@ -5857,13 +5857,13 @@ AMB-153:
     §"Conversion Between Formats" actually needs. Gated by SF-STRUCT-style_rules
     (the syntax-rule witness on a live read-back) with SF-STRUCT-arrays_single_
     cardinality and SF-STRUCTURED-commit_roundtrip either side of it. Reported
-    upstream (UPR-117): reconcile Syntax Rule 2 and Structured-to-Flat step 6
+    upstream (#1599): reconcile Syntax Rule 2 and Structured-to-Flat step 6
     with Syntax Rule 5 and with the master04/master03 worked examples — state
     explicitly that STRUCTURED carries the instance index as array POSITION, and
     either delete the "indices remain in property names" sentences or restate
     them as an accepted-on-input alternative.
   disposition: fixed_handling
-  upstream_ref: "UPR-117"
+  upstream_issue: 1599
 
 AMB-154:
   ambiguity: >-
@@ -6021,10 +6021,10 @@ AMB-154:
     a stated MUST (D-07). Each of these is proven row-by-row by the master05
     semantic battery (`crates/openehr-its/tests/master05_tables.rs`), which
     asserts the Flat Path, Flat type and RM landing of every mapping row rather
-    than the published cell. Reported upstream (UPR-118) as one editorial
+    than the published cell. Reported upstream (#1600) as one editorial
     docket.
   disposition: editorial
-  upstream_ref: "UPR-118"
+  upstream_issue: 1600
 
 AMB-155:
   ambiguity: >-
@@ -6113,12 +6113,12 @@ AMB-155:
     SF-RAW-structured_embedding (the STRUCTURED `|raw` commit) with
     SF-RAW-embedding and SF-RAW-missing_type on the FLAT side, and by
     SF-STRUCT-style_rules / SF-STRUCTURED-commit_roundtrip for the `ctx` and
-    bare-value shapes. Reported upstream (UPR-119): give the STRUCTURED variant
+    bare-value shapes. Reported upstream (#1601): give the STRUCTURED variant
     a stated property name for the bare value, a worked `ctx` example covering
     the suffixed and indexed master06 members, and one sentence saying whether
     `|raw` applies in STRUCTURED.
   disposition: fixed_handling
-  upstream_ref: "UPR-119"
+  upstream_issue: 1601
 
 AMB-156:
   ambiguity: >-
@@ -6183,12 +6183,12 @@ AMB-156:
     source of field identifiers — never has to guess. Gated by
     SF-NODEID-generation_rules and SF-NODEID-web_template_ids (the node-id
     algorithm and the advertised ids) and by SF-INDEX-semantics /
-    SF-INDEX-multi_event_commit (the index grammar). Reported upstream (UPR-120):
+    SF-INDEX-multi_event_commit (the index grammar). Reported upstream (#1602):
     state an instance-index bound (or say explicitly that there is none and what
     a receiver must do), define the sparse/out-of-order case, and give
     polymorphic choice alternatives a named, order-independent identifier rule.
   disposition: fixed_handling
-  upstream_ref: "UPR-120"
+  upstream_issue: 1602
 
 AMB-157:
   ambiguity: >-
@@ -6243,7 +6243,7 @@ AMB-157:
     WHY THIS DISPOSITION: `report_only` is wrong because there is nothing to
     report — the silence is not a defect in openEHR's text but the ordinary
     condition of anything outside its scope, and the disposition would force an
-    `upstream_ref` that could only be invented. `fixed_handling` is wrong
+    `upstream_issue` that could only be invented. `fixed_handling` is wrong
     because no case's expectation rests on this entry; nothing in the catalogue
     changes because of it. `statement_declared` is exactly what it is: a
     behaviour the party declares and no normative case covers. Revisits only if
@@ -6359,9 +6359,9 @@ AMB-159:
     honest boundary, never a silent omission and never an invented case. It
     closes the moment a release supplies a client-drivable execution bound —
     then both branches become ordinary gating cases. Reported upstream
-    (UPR-121).
+    (#1603).
   disposition: report_only
-  upstream_ref: "UPR-121"
+  upstream_issue: 1603
 AMB-160:
   ambiguity: >-
     The System API is STABLE, yet its DOCS TEXT describes no wire at all: the
@@ -6402,11 +6402,11 @@ AMB-160:
     obligation the release actually states is a JSON document, which the
     case's canonical-json format check parses; requiring members would exceed
     the release. Sibling entry AMB-158 fixes the CONTENT of the endpoints
-    member; the upstream ask UPR-122 stands editorially — a STABLE API's docs
+    member; the upstream ask #1604 stands editorially — a STABLE API's docs
     text should describe its one exchange rather than delegating it entirely
     to the OAS artifact.
   disposition: fixed_handling
-  upstream_ref: "UPR-122"
+  upstream_issue: 1604
 
 AMB-161:
   ambiguity: >-
@@ -6470,7 +6470,7 @@ AMB-161:
     a validator finding, so the prefix can never become a way around SM
     resolution. Revisits per family: when a future SM release models the System
     API, declares a tag interface, adds a revision-history operation, or gives
-    the demographic container read an SM home (the UPR-100 ask), that family's
+    the demographic container read an SM home (the #1582 ask), that family's
     anchors become real SM operations and its pinned rows go.
   disposition: fixed_handling
 
@@ -6540,9 +6540,9 @@ AMB-165:
     all, so it stays unexercised. Closes when a release publishes a
     CONTRIBUTION XML document (root element + the commit envelope's XML
     representation) or withdraws `application/xml` from the operations'
-    Accept/Content-Type enums. Reported upstream (UPR-125).
+    Accept/Content-Type enums. Reported upstream (#1605).
   disposition: report_only
-  upstream_ref: "UPR-125"
+  upstream_issue: 1605
 
 AMB-166:
   ambiguity: >-
@@ -6581,11 +6581,11 @@ AMB-166:
     and each read returns only its own. The value SHAPE of an echoed header is
     likewise unasserted: the closed header-matcher vocabulary has no
     conditional-value form, so a `present?` declaration cannot also pin a
-    pattern. Reported upstream (UPR-126): align the operation prose with the
+    pattern. Reported upstream (#1606): align the operation prose with the
     overview, or raise the overview MAY to a conditional MUST for writes that
     set the request header.
   disposition: fixed_handling
-  upstream_ref: "UPR-126"
+  upstream_issue: 1606
 
 AMB-167:
   ambiguity: >-
@@ -6798,7 +6798,7 @@ AMB-167:
     option_select review is satisfied by ANY one declared option of an
     entry, so this entry's ten tags are checked as a set, not per family; a
     statement that declares no arm for a family silently deselects both of
-    its rows rather than being flagged. Reported upstream (UPR-127):
+    its rows rather than being flagged. Reported upstream (#1607):
     reconcile the XSD document-element inventory with the REST resource
     surface — publish a document element (or an explicit root-name rule) for
     every resource whose Accept/Content-Type enums offer `application/xml`,
@@ -6818,7 +6818,7 @@ AMB-167:
     - versioned-party-xml-unsupported
     - contribution-xml-supported
     - contribution-xml-unsupported
-  upstream_ref: "UPR-127"
+  upstream_issue: 1607
 AMB-169:
   ambiguity: >-
     NOT an openEHR ambiguity in the operative sense — a DECLARATION of an
@@ -6985,10 +6985,10 @@ AMB-171:
     Robot-derived COMPOSITION fixtures that carried `+0000` on an extended
     base were normalized to `+00:00` on 2026-07-29 (their MANIFEST
     provenance records it); their comma fractions were kept, being legal
-    under the settled half above. Reported upstream (UPR-128): give the
+    under the settled half above. Reported upstream (#1608): give the
     offset form one voice.
   disposition: editorial
-  upstream_ref: "UPR-128"
+  upstream_issue: 1608
 
 AMB-172:
   ambiguity: >-
@@ -7124,7 +7124,7 @@ AMB-174:
     §TOP is unaffected and stays gating — plain `TOP n` (and the explicit
     `FORWARD` default) keeps its own cases. SPECQUERY candidate.
   disposition: report_only
-  upstream_ref: "UPR-129"
+  upstream_issue: 1609
 AMB-175:
   ambiguity: >-
     SPEC SILENCE on the version SCOPE a VERSION standard predicate filters
@@ -7217,4 +7217,4 @@ AMB-176:
     expectation only if a future RM release adds the attribute (or reworks
     the sentence onto an existing mechanism).
   disposition: report_only
-  upstream_ref: "TBD"
+  upstream_issue: 1610

@@ -35,7 +35,7 @@ FEEDER_AUDIT change_type entry).
 
 **Already-adjudicated, do NOT re-report:** the uid-copy form (RM says copy the
 object_id GUID only; ITS-REST says copy the full 3-part id) is AMB-65
-(ambiguities.yaml:1646, disposition report_only, upstream UPR-29); the server
+(ambiguities.yaml:1646, disposition report_only, upstream #1511); the server
 stamps the FULL OBJECT_VERSION_ID in `versioning/change.rs:448
 stamp_version_uid`, cited correctly.
 

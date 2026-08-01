@@ -32,7 +32,7 @@ NAME") and then assert a floor anyway — writing spec, not testing it.
 
 **How to apply:** attribute such rows CATALOGUE, never app. Fix = extend
 AMB-165 (`artifacts/registers/ambiguities.yaml`, `disposition: report_only`,
-UPR-125) to the READ branch, drop `canonical-xml` from
+#1605) to the READ branch, drop `canonical-xml` from
 `bindings/its-rest/I_EHR_CONTRIBUTION.{get,has}_contribution.yaml` `formats:`,
 record the exception in `vocab/wire_surface.yaml` (its lines ~503-515 currently
 assert the opposite). Related open modelling gap: `statement.json`

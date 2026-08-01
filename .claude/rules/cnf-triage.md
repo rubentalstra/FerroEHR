@@ -97,7 +97,40 @@ test suite that presumes our code and questions the tests.
   re-adjudicate before trusting one or attaching an upstream report. A claimed
   ambiguity the spec actually DEFINES is a catalogue defect: remove the entry
   and make the case gating; do NOT report it upstream. `report_only` and
-  `editorial` entries MUST carry an `upstream_ref` (schema-enforced) so a
+  `editorial` entries MUST carry an `upstream_issue` (schema-enforced) so a
   carried divergence is always reported to openEHR, never silently absorbed.
 - Standing test discipline applies: never weaken a test or expectation to
   go green (`.claude/rules/testing.md`).
+
+## Upstream reports (owner ruling 2026-08-01 — the ledger file is deleted)
+
+An outbound report of a released-spec defect/contradiction/silence is a
+**GitHub issue labeled `upstream-report`** (dark red) — the former
+`docs/conformance/upstream-reports.md` ledger is deleted and must not come
+back. One issue per defect; the register entry points at it via
+`upstream_issue: <number>`; the narrative lives ONLY on the issue.
+
+- **Shape** (never ticket-draft framing — no Channel/Status/Ask fields): a
+  plain opening summary, `## What the released spec says` (citations +
+  quotes), `## What this implementation does` (our behaviour + the register
+  disposition), `## Resolution sought upstream`.
+- **Grounding**: docs text first; the released OAS is citable only where the
+  docs text is silent, always cited AS the OAS, and loses every conflict. A
+  behaviour the OAS DEFINES is not a reportable silence; a "defect" that
+  exists only because a stalled guide source (CNF schedule, Robot data) is
+  wrong has no released-component ground and is not reportable.
+- **Lifecycle**: a NEW report is created UNVERIFIED — it enters the current
+  verification milestone with the re-verification acceptance checklist.
+  Once RE-VERIFIED first-hand as genuine, it gains `upstream-confirmed`
+  and leaves the milestone (awaiting-upstream promises no release); when it
+  was a docs misreading, it is CLOSED, its register entry removed or
+  re-grounded, and the affected case made gating. When a confirmed report
+  is filed on an openEHR channel (Jira / spec repo), the returned key
+  (SPECPR-…/SPECQUERY-…) is recorded on the issue; when upstream resolves
+  it, close the issue and file the inbound `spec-update`.
+- **Labels**: `upstream-report` + `spec:<component>` (+ `upstream-confirmed`
+  once verified). `blocked-upstream` is NOT for reports — it keeps its
+  narrower spec-update meaning (resolved in Jira, normative text not yet
+  in the public spec repos). An in-repo work item waiting on a reported
+  defect adds a native `blocked-by` edge to the report issue
+  (`.claude/rules/issue-relationships.md`).

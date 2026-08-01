@@ -41,7 +41,7 @@
 #    restapi_specs_version, conformance_profile, endpoints are all optional),
 #    so no member presence is asserted — the body obligation is a JSON
 #    document, which the canonical-json format check parses.
-#  - Register AMB-160 records this ruling application; upstream ask UPR-122
+#  - Register AMB-160 records this ruling application; upstream ask #1604
 #    stands (the docs text of a STABLE API should describe its one exchange).
 #  - NEGOTIATION. Neither the docs text nor the OAS assigns this exchange a
 #    second media type or a 406 branch (the OAS request declares only an

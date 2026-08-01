@@ -20,7 +20,7 @@
 # [with] mutually exclusive string patterns" but no rejecting lexical
 # invariant, which is why the OAS typing is the operative ground. What AMB-76
 # still carries is narrower: this operation declares 200 + 404 and no 400 for
-# a path-parameter-schema violation — the editorial gap UPR-38 asks openEHR to
+# a path-parameter-schema violation — the editorial gap #1520 asks openEHR to
 # close.
 #
 # The two cases are deliberately adjacent: same route, same EHR, one garbage
